@@ -23,6 +23,8 @@ written bytes and command stream.
   activation and weight nibble layouts used by the selected DIM16 loop.
 - direct FP8 byte layout and direct FP4 nibble layout for logical A[M][K]
   and B[K][N] operands.
+- a contraction payload builder that checks operand and scale shapes together
+  and slices both into matching K waves for all three formats.
 
 Each planned wave fits the first 4 KiB active window for both operands and
 the 9-bit `CONFIG_SCALE_MEM` K bound. This is a layout/capacity plan only:
@@ -45,4 +47,4 @@ Larger spatial dimensions require further tiling and LUT reload scheduling.
 The selected RTL's `MX_LOAD_LUT` DMA reads through the next 8-byte boundary,
 so callers must use the padded result as the actual source buffer.
 
-Run `python -m pytest tests/test_layout.py -q` from this directory.
+Run `python -m pytest tests -q` from this directory.
