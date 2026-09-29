@@ -7,7 +7,11 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from mx_gemmini_support.model2mlir import plan_linear_operands, plan_rank2_operands
+from mx_gemmini_support.model2mlir import (
+    plan_independent_batches,
+    plan_linear_operands,
+    plan_rank2_operands,
+)
 from mx_gemmini_support.diagnostic_program import emit_single_window_baremetal_c
 
 
@@ -106,3 +110,27 @@ def test_torchao_linear_to_rtl_test_source(fmt, zero_block, source_hash):
     )
     functional_payload = plan_rank2_operands(functional, activation_lut=lut, weight_lut=lut)
     assert functional_payload == payload
+
+
+@pytest.mark.parametrize("fmt,code", [("mxfp8", 0x38), ("mxfp6", 0x0c), ("mxfp4", 0x02)])
+def test_functional_attention_batch_axes_are_packed_independently(fmt, code):
+    pytest.importorskip("torchao")
+    pytest.importorskip("m2m")
+    from m2m.capture import mx_gemmini_quant
+
+    if not hasattr(mx_gemmini_quant, "functional_contraction_operands"):
+        pytest.skip("the installed model2MLIR lacks the functional MX operand handoff")
+    lhs = torch.ones(2, 3, 32, 32)
+    lhs[1].fill_(2.0)
+    rhs = torch.ones(2, 3, 32, 32)
+    rhs[..., 16:].fill_(2.0)
+    operands = mx_gemmini_quant.functional_contraction_operands(lhs, rhs, fmt)
+    lut = [[0, code] + [0] * 14 for _ in range(16)] if fmt == "mxfp6" else None
+    packed = plan_independent_batches(operands, activation_lut=lut, weight_lut=lut)
+    assert [row.batch_index for row in packed] == [
+        (0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)
+    ]
+    assert all((row.payload.m, row.payload.k, row.payload.n) == (32, 32, 32) for row in packed)
+    assert packed[0].payload.waves[0].activation_scale_bytes == bytes([127] * 32)
+    assert packed[-1].payload.waves[0].activation_scale_bytes == bytes([128] * 32)
+    assert packed[-1].payload.waves[0].weight_scale_bytes == bytes([127] * 16 + [128] * 16)

@@ -76,6 +76,11 @@ the programs executed on the source-bound RTL simulator. All six tested
 programs exited zero with no BF16 mismatches. The zero blocks produced E8M0
 code 104. The test does not rerun the simulator; these remain narrow
 diagnostics, not whole-model or general lowering.
+`plan_independent_batches` also slices model2MLIR's visible functional matmul
+handoff along matching rank-3 or rank-4 batch axes and returns one indexed
+payload per rank-2 contraction. Its common FP6 codebook must contain every
+selected code in every batch. This prepares buffers; it does not schedule a
+batched attention kernel or qualify the host softmax seam.
 
 Separate source-bound RTL diagnostics ran FP8, FP4, and FP6 32x32x32
 contractions using this package's packed activation, weight, and E8M0
