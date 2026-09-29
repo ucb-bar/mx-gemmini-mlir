@@ -17,6 +17,8 @@ written bytes and command stream.
 - capacity-bounded K-wave partitioning and zero-based scale payload slicing;
 - `CONFIG_SCALE_MEM` `rs1` bitfield encoding;
 - FP6 E3M2 codebook bit packing, 8-byte DMA padding, and funct-29 `rs2`.
+- exact FP6 code-to-index mapping for supplied 16-entry codebooks, plus the
+  activation and weight nibble layouts used by the selected DIM16 loop.
 
 Each planned wave fits the first 4 KiB active window for both operands and
 the 9-bit `CONFIG_SCALE_MEM` K bound. This is a layout/capacity plan only:
@@ -31,6 +33,11 @@ claimed executable by this prototype.
 The packer refuses payloads above one active window. A compiler must
 schedule additional uploads and choose scale banks for larger contractions;
 that scheduling and all MX arithmetic lowering remain open.
+The FP6 transform currently accepts one configured spatial window of at most
+128 rows and columns, in multiples of 32. It requires every element code to
+appear in its assigned codebook line. Choosing codebooks or approximating
+missing codes is a numerical policy outside this compiler layout prototype.
+Larger spatial dimensions require further tiling and LUT reload scheduling.
 The selected RTL's `MX_LOAD_LUT` DMA reads through the next 8-byte boundary,
 so callers must use the padded result as the actual source buffer.
 
