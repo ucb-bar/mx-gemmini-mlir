@@ -1,4 +1,4 @@
-# MX Gemmini layout prototype
+# MX Gemmini software contract and MLIR handoff
 
 This out-of-tree compiler prototype is scoped to
 `GemminiMxFPConfigs.standaloneMxFPConfig` at Gemmini
@@ -9,6 +9,13 @@ It has no Merlin runtime backend, matrix lowering, oracle, or certified fact
 bundle. Its layout rules are source-derived; narrow payload-to-RTL
 diagnostics are described below. Other shapes and general command scheduling
 remain unreviewed.
+
+The [quantization handoff](docs/quantization_handoff.md) defines the selected
+software contract, explicit per-site policy, TorchAO adapter, model2MLIR
+manifest, and four-operation MX MLIR dialect. The handoff is a checked
+operation plan. It does not execute an accelerator contraction or certify a
+whole model. The source files below retain their narrow layout and simulator
+diagnostics.
 
 `mx_gemmini_support.layout` implements:
 
@@ -62,12 +69,11 @@ refuses to overwrite an existing output. Compile it with the pinned Gemmini
 headers and bare-metal support using `MX_ROCKET`; the selected source-bound
 simulator, not this generator, supplies the hardware verdict.
 
-model2MLIR's `linear_contraction_operands` returns the logical code and E8M0
-scale tensors in this builder's expected orientations for a rank-2 Linear.
-`mx_gemmini_support.model2mlir.plan_linear_operands` consumes that handoff,
-checks its byte tensor types, and packs it without changing model2MLIR or
-TorchAO. FP6 requires caller-supplied exact codebooks. With the model2MLIR
-branch on `PYTHONPATH` and TorchAO installed, run
+This package's `linear_contraction_operands` returns the logical code and E8M0
+scale tensors in the builder's expected orientations for a rank-2 Linear.
+`mx_gemmini_support.model2mlir.plan_linear_operands` checks the byte tensor
+types and packs them. FP6 requires caller-supplied exact codebooks. With
+TorchAO installed, run
 `python -m pytest tests/test_model2mlir.py -q`: the integration test applies
 the actual TorchAO transform to one 32x32x32 Linear per format with two
 operand cases: distinct row/column magnitudes and an all-zero block. It
@@ -99,7 +105,7 @@ These serial contractions do not establish an attention kernel or its host
 softmax seam.
 `emit_spatial_tiles_baremetal_c` serially checks a complete 32x32 tile grid
 of one rank-2 contraction with output dimensions up to 64x64 and K=32.
-The model2MLIR handoff supplies a 64x32 activation and 32x64 weight with
+The quantizer handoff supplies a 64x32 activation and 32x64 weight with
 distinct output quadrants. Its four-tile C source is hash-pinned in the
 integration test for each format. All twelve tile results across MXFP8,
 MXFP6, and MXFP4 matched BF16 expectations on the source-built Spike core.

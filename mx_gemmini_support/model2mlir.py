@@ -1,7 +1,7 @@
-"""Optional operand handoff from model2MLIR's MX Linear capture.
+"""Logical MX operand handoff from the out-of-tree TorchAO quantizer.
 
-model2MLIR owns TorchAO quantization and logical tensor orientation. This
-target support package owns packing, scale waves, LUT indexing, and commands.
+This support package owns TorchAO quantization, logical tensor orientation,
+packing, scale waves, LUT indexing, and diagnostic commands.
 Copying captured tensors to host lists here is an authoring-time operation;
 it is not an accelerator runtime transfer or numerical certificate.
 """
@@ -21,7 +21,7 @@ def _uint8_tensor(value: Any, name: str) -> Any:
     try:
         import torch
     except ImportError as exc:
-        raise RuntimeError("model2MLIR operand handoff requires PyTorch") from exc
+        raise RuntimeError("MX operand handoff requires PyTorch") from exc
     if not isinstance(value, torch.Tensor) or value.dtype != torch.uint8:
         raise TypeError(f"{name} must be a torch.uint8 tensor")
     if value.requires_grad:
@@ -66,7 +66,7 @@ def plan_rank2_operands(
     """
     fmt = getattr(operands, "format", None)
     if fmt not in ("mxfp8", "mxfp6", "mxfp4"):
-        raise ValueError("model2MLIR handoff needs a selected MX format")
+        raise ValueError("MX handoff needs a selected MX format")
     return plan_mx_contraction_payload(
         fmt,
         _uint8_matrix(getattr(operands, "activation_codes", None), "activation_codes"),
@@ -131,7 +131,7 @@ def iter_spatial_tiles(
 ) -> Iterator[IndexedTiledMxPayload]:
     """Yield independent spatial tiles without packing the entire contraction.
 
-    Input codes/scales use model2MLIR's logical axes. FP6 callers supply one
+    Input codes/scales use the quantizer's logical axes. FP6 callers supply one
     exact source codebook per two global M rows and N columns; each tile takes
     only its own lines. No command order, output assembly, or host work is
     inferred from this buffer plan.

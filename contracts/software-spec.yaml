@@ -1,0 +1,205 @@
+# Software-visible MX declarations for the selected GemminiMxFPConfigs.standaloneMxFPConfig.
+# The RTL source closure is authoritative. A source-bound elaboration and
+# structural lint and narrow RTL simulator checks exist; broader numerical
+# and compiler qualification remain pending.
+schema: merlin.software_spec.v1
+target: mx_gemmini
+status: unreviewed
+evidence:
+  rtl_repository: https://github.com/ucb-bar/gemmini
+  rtl_commit: f0167390b56fb315deea90ac1fc3983772e92d82
+  rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig
+  rtl_config_class: GemminiMxFPStandaloneConfig
+  mxgen_commit: a27ce3cd81513210c21f971ec3977defd13fa21e
+  npu_exploration_commit: 155edd60b2c39892f086d12f1d8d853e87cc367c
+  software_crosscheck_commit: df49519cda76867da5f01864c600ca7946dfb95d
+  libgemmini_commit: 643f4941e6a09d949dac1554b4c36f4914f7a33a
+  source_bound_diagnostic:
+    firrtl_sha256: 15fbf36a96d69f1b7cd379338e760188aa14f6d69378826ec1ca372316e8f352
+    simulator_sha256: a72c7314defed09d8281fab6bfeffcd2eaab7ae851a6c1034f8b06f4eaea9fd9
+  qualification: pending_phase0_capsules_host_and_full_model
+
+# The top-level format is the recipe's default; each additional MX format has
+# its own numerical selection below. A source reference is a proposed L0 oracle,
+# never a substitute for the pinned RTL.
+numerical_semantics: &mx_numerics
+  model: {engine: mx_block_reference, source_root_env: MERLIN_MLC_DIR}
+  operand_dtype: mxfp8
+  accumulator_dtype: bf16
+  readout_dtype: bf16
+  block_size: 32
+  scale_encoding: e8m0
+  operand_rounding: rne
+  subnormal_operand_flush: false
+  # MX element subnormals remain representable; BF16 source subnormals flush.
+  scale_rule: floor_log2_of_bf16_block_max_with_2pow_minus23_floor
+  product_rounding: truncate_significand
+  reduction_order: systolic_16_lane
+  reduction_cadence: per_step
+  internal_arithmetic:
+    product: 16_rows_of_MxFloat_4_4_4_recoded
+    accumulator: 8_rows_MxFloat_4_5_4_then_2_rows_4_6_4_then_5_rows_4_7_4_then_1_row_8_8_4_recoded
+    cross_tile: bf16_rne
+  bf16_source_subnormal_flush: true
+  zero_block_scale_e8m0: 104
+
+operations:
+  contraction_mxfp8:
+    families: [contraction]
+    placement: accelerator
+    operand_dtypes: [mxfp8]
+    accumulator_dtype: bf16
+    ranks: [2, 3, 4]
+    layouts: [row_major_contiguous]
+    tails: [none]
+    broadcasting: [none, independent_batches]
+    aliasing: [disjoint_inputs_outputs]
+    shape_bounds: {M: {min: 16, multiple_of: 16}, N: {min: 16, multiple_of: 16}, K: {min: 32, multiple_of: 32}}
+    numerical_contract:
+      status: unreviewed
+      semantics: {operand_format: mxfp8, block_size: 32, scale_encoding: e8m0, pe_mode: 8, config_ex_format_code: 0, config_ex_output_code: 3, lut_en: false, lut_disable_funct: 30, packing: direct_bytes}
+      evidence: {rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig}
+  contraction_mxfp6:
+    families: [contraction]
+    placement: accelerator
+    operand_dtypes: [mxfp6]
+    accumulator_dtype: bf16
+    ranks: [2, 3, 4]
+    layouts: [row_major_contiguous]
+    tails: [none]
+    broadcasting: [none, independent_batches]
+    aliasing: [disjoint_inputs_outputs]
+    shape_bounds: {M: {min: 32, multiple_of: 32}, N: {min: 32, multiple_of: 32}, K: {min: 32, multiple_of: 32}}
+    numerical_contract:
+      status: unreviewed
+      semantics: {operand_format: mxfp6, block_size: 32, scale_encoding: e8m0, pe_mode: 4, config_ex_format_code: 1, config_ex_output_code: 3, lut_load_funct: 29, packing: lut_indexed_nibbles}
+      evidence: {rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig}
+  contraction_mxfp4:
+    families: [contraction]
+    placement: accelerator
+    operand_dtypes: [mxfp4]
+    accumulator_dtype: bf16
+    ranks: [2, 3, 4]
+    layouts: [row_major_contiguous]
+    tails: [none]
+    broadcasting: [none, independent_batches]
+    aliasing: [disjoint_inputs_outputs]
+    shape_bounds: {M: {min: 32, multiple_of: 32}, N: {min: 32, multiple_of: 32}, K: {min: 32, multiple_of: 32}}
+    numerical_contract:
+      status: unreviewed
+      semantics: {operand_format: mxfp4, block_size: 32, scale_encoding: e8m0, pe_mode: 0, config_ex_format_code: 2, config_ex_output_code: 3, lut_disable_funct: 30, packing: direct_nibbles}
+      evidence: {rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig}
+  movement:
+    placement: accelerator
+    dtypes: [mxfp8, mxfp6, mxfp4, e8m0, bf16]
+    layouts: [row_major_contiguous]
+    aliasing: [disjoint_inputs_outputs]
+  elementwise_map:
+    placement: host
+    # BF16 readout can remain BF16 or be widened for FP32 host computation.
+    # This is software policy; host lowering and numerical behavior are unreviewed.
+    dtypes: [bf16, f32]
+  host_only:
+    # Fused attention stays on the host; exposed QK/PV contractions use the
+    # accelerator contraction contracts above.
+    families: [reduction, normalization, attention, softmax, pooling]
+    placement: host
+    dtypes: [bf16, f32]
+
+quantization:
+  # Numerical format parameters are checked against the selected RTL/MxGen
+  # source when the contract projection is built. They are not inferred from
+  # the element width alone.
+  element_formats:
+    mxfp8: {exponent_bits: 4, fraction_bits: 3, exponent_bias: 7, max_finite: 448, max_positive_code: 126}
+    mxfp6: {exponent_bits: 3, fraction_bits: 2, exponent_bias: 3, max_finite: 28, max_positive_code: 31}
+    mxfp4: {exponent_bits: 2, fraction_bits: 1, exponent_bias: 1, max_finite: 6, max_positive_code: 7}
+    e3m1_intermediate: {exponent_bits: 3, fraction_bits: 1, exponent_bias: 3, max_finite: 24, max_positive_code: 15}
+  output_requantization:
+    status: unreviewed
+    source: accumulator
+    formats: [mxfp8, mxfp6, mxfp4]
+    scale_resident: true
+    bf16_readout_code: 3
+    requires_direct_consumer: true
+  formats:
+    - operand_dtype: mxfp8
+      accumulator_dtype: bf16
+      eligible_operations: [contraction_mxfp8]
+      block_size: 32
+      scale_encoding: e8m0
+      site_modes: &mx_site_modes
+        linear: {lhs: dynamic, rhs: static}
+        functional_matmul: {lhs: dynamic, rhs: dynamic}
+    - operand_dtype: mxfp6
+      accumulator_dtype: bf16
+      eligible_operations: [contraction_mxfp6]
+      block_size: 32
+      scale_encoding: e8m0
+      site_modes: *mx_site_modes
+      numerical_semantics:
+        <<: *mx_numerics
+        operand_dtype: mxfp6
+    - operand_dtype: mxfp4
+      accumulator_dtype: bf16
+      eligible_operations: [contraction_mxfp4]
+      block_size: 32
+      scale_encoding: e8m0
+      site_modes: *mx_site_modes
+      numerical_semantics:
+        <<: *mx_numerics
+        operand_dtype: mxfp4
+
+transfer_contracts:
+  operand_load_mxfp8:
+    from: host
+    to: accelerator
+    signature: {operand_dtype: mxfp8, result_dtype: mxfp8}
+    semantics: {conversion: direct_byte_packing, activation_layout: "[M][K]", weight_layout: "[K][N]", element_bits: 8}
+    evidence: {status: unreviewed, rtl_source: src/main/scala/gemmini/Controller.scala}
+  operand_load_mxfp6:
+    from: host
+    to: accelerator
+    signature: {operand_dtype: mxfp6, result_dtype: mxfp6}
+    semantics: {conversion: codebook_indexing, stored_index_bits: 4, activation_layout: "[M/2][K]", weight_layout: "[K][N/2]", low_nibble: even_activation_row_or_weight_column, codebook_entry_bits: 6, codebook_format: e3m2, entries_per_lut_line: 16, codebook_bytes_per_line: 12, codebook_bit_order: little_endian_lsb_first, codebook_upload: required, upload_funct: 29, upload_selector_activation: 1, upload_selector_weight: 0, max_lines_per_operand: 64, line_for_activation_row: "row >> granularity_shift", line_for_weight_column: "column >> granularity_shift", granularity_shift_field: "CONFIG_SCALE_MEM.rs2[15:0]", max_spatial_extent_per_configured_window: 128, source_address_alignment_bytes: 8, dma_read_bytes: "round_up(12 * num_lines, 8)"}
+    evidence: {status: unreviewed, rtl_source: src/main/scala/gemmini/Controller.scala}
+  operand_load_mxfp4:
+    from: host
+    to: accelerator
+    signature: {operand_dtype: mxfp4, result_dtype: mxfp4}
+    semantics: {conversion: direct_nibble_packing, stored_bits: 4, activation_layout: "[M/2][K]", weight_layout: "[K][N/2]", low_nibble: even_activation_row_or_weight_column}
+    evidence: {status: unreviewed, rtl_source: src/main/scala/gemmini/Controller.scala}
+  scale_load:
+    from: host
+    to: accelerator
+    signature: {operand_dtype: e8m0, result_dtype: e8m0}
+    semantics:
+      conversion: banked_scale_memory_write
+      upload_funct: 27
+      source_address_alignment_bytes: 8
+      length_multiple_bytes: 8
+      operand_banks: separate_activation_and_weight
+      line_bytes: 16
+      rows_per_bank: 128
+      fp8_single_row_bytes: 16
+      fp4_fp6_quad_row_bytes: 32
+      active_buffer_window_bytes_per_operand: 4096
+      compiler_must_tile_scale_uploads_above_window: true
+      logical_activation_scales: "[M][K/32]"
+      logical_weight_scales: ["[N][K/32]", "[K/32][N]"]
+      scale_read_base: zero_only
+      k_wave_boundary: whole_32_element_block
+      k_bound_field_max: 511
+      compiler_max_even_k_tiles_per_wave: 510
+      k_tiles_per_scale_row: 2
+      activation_logical_row: "(k_tile >> 1) * tiles_I + tile_i"
+      weight_logical_row: "(k_tile >> 1) * tiles_J + tile_j"
+      fp8_physical: "bank=(offset >> 11) & 3; row=(offset >> 4) & 127"
+      fp4_fp6_physical: "bank=2*((offset >> 12) & 1)+((offset >> 4) & 1); row=(offset >> 5) & 127"
+      max_upload_bytes_per_operand: 8192
+    evidence: {status: unreviewed, rtl_source: src/main/scala/gemmini/ScaleFactorMem.scala}
+  accumulator_readout:
+    from: accelerator
+    to: host
+    copy: {dtype: bf16, layout: row_major_contiguous}
+    valid_window: required

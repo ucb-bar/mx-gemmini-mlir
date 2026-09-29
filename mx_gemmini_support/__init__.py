@@ -1,4 +1,4 @@
-"""Source-scoped MX Gemmini compiler layout prototype."""
+"""Source-scoped MX Gemmini contract, quantization and layout support."""
 
 from .layout import (
     config_format_code,

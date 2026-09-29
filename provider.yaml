@@ -1,5 +1,5 @@
 schema: merlin.provider.v1
-id: mx-gemmini-standalone-layout-prototype
+id: mx-gemmini-mlir
 target: mx_gemmini
 role: support
 contract: contracts/target_contract.yaml

@@ -1,4 +1,4 @@
-"""Optional Torch tensor handoff keeps model2MLIR's logical axes intact."""
+"""The OOT quantizer's logical axes feed the source-scoped layout tests."""
 
 from hashlib import sha256
 from types import SimpleNamespace
@@ -134,12 +134,7 @@ def test_spatial_tiles_keep_large_linear_scale_windows_bounded():
 def test_torchao_linear_to_rtl_test_source(fmt, zero_block, source_hash):
     """Reproduce the exact C source previously run on the selected RTL simulator."""
     pytest.importorskip("torchao")
-    pytest.importorskip("m2m")
-    from m2m.capture import mx_gemmini_quant
-    from m2m.capture.torchao_pipeline import QuantizationConfig, apply_quantization
-
-    if not hasattr(mx_gemmini_quant, "linear_contraction_operands"):
-        pytest.skip("the installed model2MLIR lacks the rank-2 MX operand handoff")
+    from mx_gemmini_support import torchao_quant as mx_gemmini_quant
 
     class OneLinear(torch.nn.Module):
         def __init__(self):
@@ -156,11 +151,7 @@ def test_torchao_linear_to_rtl_test_source(fmt, zero_block, source_hash):
     activation = torch.zeros(32, 32) if zero_block else torch.ones(32, 32)
     if not zero_block:
         activation[16:].fill_(2.0)
-    captured = apply_quantization(
-        model, QuantizationConfig(scheme=f"mx_gemmini_{fmt[2:]}"),
-        example_inputs=(activation,),
-    )
-    assert captured._m2m_quantization_stats["torchao_linear_modules"] == 1
+    mx_gemmini_quant.apply_mx_gemmini_(model, fmt)
     assert isinstance(model.project, mx_gemmini_quant.MXGemminiLinear)
     operands = mx_gemmini_quant.linear_contraction_operands(model.project, activation)
     code = 0 if zero_block else {"mxfp8": 0x38, "mxfp6": 0x0c, "mxfp4": 0x02}[fmt]
@@ -192,11 +183,7 @@ def test_torchao_linear_to_rtl_test_source(fmt, zero_block, source_hash):
 @pytest.mark.parametrize("fmt,code", [("mxfp8", 0x38), ("mxfp6", 0x0c), ("mxfp4", 0x02)])
 def test_functional_attention_batch_axes_are_packed_independently(fmt, code):
     pytest.importorskip("torchao")
-    pytest.importorskip("m2m")
-    from m2m.capture import mx_gemmini_quant
-
-    if not hasattr(mx_gemmini_quant, "functional_contraction_operands"):
-        pytest.skip("the installed model2MLIR lacks the functional MX operand handoff")
+    from mx_gemmini_support import torchao_quant as mx_gemmini_quant
     lhs = torch.ones(2, 3, 32, 32)
     lhs[1].fill_(2.0)
     rhs = torch.ones(2, 3, 32, 32)
@@ -220,11 +207,7 @@ def test_functional_attention_batch_axes_are_packed_independently(fmt, code):
 ])
 def test_functional_element_subnormal_source_matches_rtl_run(fmt, small, golden, normal_code, source_hash):
     pytest.importorskip("torchao")
-    pytest.importorskip("m2m")
-    from m2m.capture import mx_gemmini_quant
-
-    if not hasattr(mx_gemmini_quant, "functional_contraction_operands"):
-        pytest.skip("the installed model2MLIR lacks the functional MX operand handoff")
+    from mx_gemmini_support import torchao_quant as mx_gemmini_quant
     lhs = torch.zeros(32, 32)
     lhs[:, 0] = 1.0
     lhs[:, 1] = small
@@ -248,8 +231,7 @@ def test_functional_element_subnormal_source_matches_rtl_run(fmt, small, golden,
 ])
 def test_functional_independent_batches_emit_distinct_executions(fmt, code, source_hash):
     pytest.importorskip("torchao")
-    pytest.importorskip("m2m")
-    from m2m.capture.mx_gemmini_quant import functional_contraction_operands
+    from mx_gemmini_support.torchao_quant import functional_contraction_operands
 
     lhs = torch.ones(2, 32, 32)
     lhs[1].fill_(2.0)
@@ -277,8 +259,7 @@ def test_functional_independent_batches_emit_distinct_executions(fmt, code, sour
 ])
 def test_functional_spatial_tiles_emit_four_quadrants(fmt, code, source_hash):
     pytest.importorskip("torchao")
-    pytest.importorskip("m2m")
-    from m2m.capture.mx_gemmini_quant import functional_contraction_operands
+    from mx_gemmini_support.torchao_quant import functional_contraction_operands
 
     lhs = torch.ones(64, 32)
     lhs[32:].fill_(2.0)
