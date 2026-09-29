@@ -94,7 +94,9 @@ rank-3 functional matmul source is pinned for each format; the exact ELFs
 exited zero with both BF16 matrices matching on source-built Spike. A fresh
 RTL check has no verdict: the FP8 batch program and an unchanged prior-passing
 single-program control both exceeded wall-time bounds in the current simulator
-environment. This remains a Spike-only batch diagnostic and does not establish
+environment. A longer FP8 batch attempt then reached the simulator's
+600,001-cycle limit without reaching a BF16 comparison. This remains a
+Spike-only batch diagnostic and does not establish
 batched RTL execution or an attention kernel.
 `emit_spatial_tiles_baremetal_c` serially checks a complete 32x32 tile grid
 of one rank-2 contraction with output dimensions up to 64x64 and K=32.
