@@ -19,6 +19,8 @@ written bytes and command stream.
 - FP6 E3M2 codebook bit packing, 8-byte DMA padding, and funct-29 `rs2`.
 - exact FP6 code-to-index mapping for supplied 16-entry codebooks, plus the
   activation and weight nibble layouts used by the selected DIM16 loop.
+- direct FP8 byte layout and direct FP4 nibble layout for logical A[M][K]
+  and B[K][N] operands.
 
 Each planned wave fits the first 4 KiB active window for both operands and
 the 9-bit `CONFIG_SCALE_MEM` K bound. This is a layout/capacity plan only:
