@@ -82,6 +82,16 @@ payload per rank-2 contraction. Its common FP6 codebook must contain every
 selected code in every batch. This prepares buffers; it does not schedule a
 batched attention kernel or qualify the host softmax seam.
 
+A separate 32x32x32 functional-matmul vector exercises one representable
+element subnormal per output for each of MXFP8, MXFP6, and MXFP4. The test
+pins the emitted C source hashes, including exact FP6 LUT contents. The same
+three compiled programs exited zero with no BF16 mismatches on both the
+selected RTL simulator and a source-built Spike core with the selected
+libgemmini extension. Their local diagnostic receipt is
+`subnormal-source-bound-crosscheck-20260929.json` under the configured
+artifact root. This checks three particular vectors, not all underflow,
+rounding, or nonfinite behavior.
+
 Separate source-bound RTL diagnostics ran FP8, FP4, and FP6 32x32x32
 contractions using this package's packed activation, weight, and E8M0
 buffers. FP6 also used its exact code-to-index mapping and packed LUT

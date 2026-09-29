@@ -134,3 +134,31 @@ def test_functional_attention_batch_axes_are_packed_independently(fmt, code):
     assert packed[0].payload.waves[0].activation_scale_bytes == bytes([127] * 32)
     assert packed[-1].payload.waves[0].activation_scale_bytes == bytes([128] * 32)
     assert packed[-1].payload.waves[0].weight_scale_bytes == bytes([127] * 16 + [128] * 16)
+
+
+@pytest.mark.parametrize("fmt,small,golden,normal_code,source_hash", [
+    ("mxfp8", 2.0**-9, 0x3b00, 0x38, "4c7c7318eacad1e523383643d9fb9c0cad7b731be596d2c6c95bf92c22c902a1"),
+    ("mxfp6", 2.0**-4, 0x3d80, 0x0c, "2899cb226035723ffd9cc52b503333bb22f6c214b7cba236d2873691a99ad767"),
+    ("mxfp4", 2.0**-1, 0x3f00, 0x02, "eac9aaf43f2c30422048c9a614ca0905679ca4fc152e6c11fbc07a020deb6df0"),
+])
+def test_functional_element_subnormal_source_matches_rtl_run(fmt, small, golden, normal_code, source_hash):
+    pytest.importorskip("torchao")
+    pytest.importorskip("m2m")
+    from m2m.capture import mx_gemmini_quant
+
+    if not hasattr(mx_gemmini_quant, "functional_contraction_operands"):
+        pytest.skip("the installed model2MLIR lacks the functional MX operand handoff")
+    lhs = torch.zeros(32, 32)
+    lhs[:, 0] = 1.0
+    lhs[:, 1] = small
+    rhs = torch.zeros(32, 32)
+    rhs[1, :] = 1.0
+    operands = mx_gemmini_quant.functional_contraction_operands(lhs, rhs, fmt)
+    assert set(operands.activation_codes[:, 1].tolist()) == {1}
+    assert set(operands.activation_codes[:, 0].tolist()) == {normal_code}
+    assert set(operands.activation_scales.flatten().tolist()) == {127}
+    assert set(operands.weight_scales.flatten().tolist()) == {127}
+    lut = [list(range(16)) for _ in range(16)] if fmt == "mxfp6" else None
+    payload = plan_rank2_operands(operands, activation_lut=lut, weight_lut=lut)
+    source = emit_single_window_baremetal_c(payload, [[golden] * 32 for _ in range(32)])
+    assert sha256(source.encode()).hexdigest() == source_hash
