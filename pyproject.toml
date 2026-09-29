@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mx-gemmini-mlir"
+version = "0.1.0"
+description = "MX Gemmini software contract, TorchAO adapter and MLIR handoff"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6"]
+
+[project.optional-dependencies]
+capture = ["torch>=2.6", "torchao>=0.12"]
+
+[project.entry-points."m2m.quantization_adapters"]
+mx_gemmini = "mx_gemmini_support.m2m_adapter:apply"
+
+[tool.setuptools.packages.find]
+include = ["mx_gemmini_support*"]
+
+[tool.setuptools.package-data]
+mx_gemmini_support = ["contracts/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

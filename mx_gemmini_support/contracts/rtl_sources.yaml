@@ -1,0 +1,10 @@
+schema: mx_gemmini.rtl_sources.v1
+gemmini_commit: f0167390b56fb315deea90ac1fc3983772e92d82
+mxgen_commit: a27ce3cd81513210c21f971ec3977defd13fa21e
+files:
+  src/main/scala/gemmini/MxRequantizer.scala: 8252887a723875c8eb562d4322306f344f8a3cdacabec1b5a7215e746762a772
+  src/main/scala/gemmini/Controller.scala: e726298f9cd56dc1421bb4eb4ef1c45baca4bd412d5f748ab4a9f2669b6fefcc
+  src/main/scala/gemmini/MxConfigFragments.scala: 82973cf6cbf9a6d017ee8d9c6866f8aae99213d72b5361baa43a4ec0fa259b1a
+  src/main/scala/gemmini/ConfigsFP.scala: f1a13fb2a0449d038676c2d735a9acf464dde2d9b0092cfa0b86e3f336464783
+  mxgen/src/main/scala/mxgen/MxParameters.scala: fb3241b629aeab7e1e63946f1fa914bff034ba9d320b60b3a4eb24ca854d574e
+  mxgen/src/main/scala/mxgen/MxPE.scala: 4face858f94197a8012a3c1696ad7519b7f43db4e824725582075e6e67825b4e

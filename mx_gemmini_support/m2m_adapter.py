@@ -1,0 +1,164 @@
+"""Installed model2MLIR adapter for the selected MX software contract."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import types
+
+import torch
+from torch import nn
+
+from .contract import compile_contract, contract_digest
+from .policy import load_policy
+from .torchao_quant import MXGemminiFakeQuantConfig, quantize_functional_contractions_, verify_kernel_contract
+
+
+def _sha(value) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _freeze_eval(graph_module):
+    try:
+        from torch.ao.quantization import allow_exported_model_train_eval
+        allow_exported_model_train_eval(graph_module)
+    except (ImportError, AttributeError):
+        def train(self, mode=True):
+            if mode:
+                raise ValueError("MX exported graph is inference only")
+            self.training = False
+            return self
+        graph_module.train = types.MethodType(train, graph_module)
+        graph_module.eval = types.MethodType(lambda self: self.train(False), graph_module)
+
+
+def _verify_chain_edges(graph_module, chains):
+    """A resident output may only feed the next contraction directly as A."""
+    nodes = {node.name: node for node in graph_module.graph.nodes}
+    for producer, chain in chains.items():
+        consumer_id = chain["consumer"]
+        if not consumer_id.startswith("functional:"):
+            raise ValueError("resident output chains currently require a visible functional consumer")
+        consumer = nodes.get(consumer_id.removeprefix("functional:"))
+        if consumer is None or not consumer.args:
+            raise ValueError("resident output consumer is absent from exported graph")
+        lhs = consumer.args[1 if consumer.target == torch.ops.aten.addmm.default else 0]
+        if (getattr(lhs, "target", None) == torch.ops.aten.to.dtype
+                and len(lhs.args) >= 2 and lhs.args[1] == torch.float32
+                and getattr(lhs.args[0].meta.get("val"), "dtype", None) == torch.bfloat16):
+            # The fake-quant wrapper widens its BF16 value for host PyTorch.
+            # This exact widening changes no value and need not be a host seam.
+            lhs = lhs.args[0]
+        if producer.startswith("functional:"):
+            source = nodes.get(producer.removeprefix("functional:"))
+            if lhs is not source:
+                raise ValueError("resident output does not directly feed consumer A")
+        elif producer.startswith("module:"):
+            fqn = producer.removeprefix("module:")
+            stack = getattr(lhs, "meta", {}).get("nn_module_stack") or {}
+            matches = any(isinstance(row, (tuple, list)) and row and row[0] == fqn
+                          for row in stack.values())
+            if getattr(lhs, "target", None) != torch.ops.aten.linear.default or not matches:
+                raise ValueError("resident Linear output does not directly feed consumer A")
+        else:
+            raise ValueError("resident output producer has an invalid site ID")
+
+
+def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snapshot=None):
+    """Return a Q/DQ graph and a complete static contraction census.
+
+    The graph is a capture diagnostic. Its BF16 matmuls are not RTL products.
+    """
+    from torchao.quantization import quantize_
+
+    if not isinstance(model, nn.Module):
+        raise TypeError("MX adapter requires a torch.nn.Module")
+    contract = compile_contract(contract_bytes)
+    verify_kernel_contract(contract)
+    policy = load_policy(policy_bytes)
+    if policy.graph_sha256 is not None:
+        if not isinstance(original_frontend_snapshot, dict) or original_frontend_snapshot.get("status") != "complete":
+            raise ValueError("functional overrides require a complete prequantization graph snapshot")
+        if original_frontend_snapshot.get("sha256") != policy.graph_sha256:
+            raise ValueError("functional policy source graph sha256 differs from captured model")
+    census = []
+    modules = [(name, module) for name, module in model.named_modules() if isinstance(module, nn.Linear)]
+    unknown_modules = set(policy.module_overrides) - {name for name, _ in modules}
+    if unknown_modules:
+        raise ValueError(f"MX policy names missing Linear modules: {sorted(unknown_modules)}")
+    selections = []
+    for name, module in modules:
+        fmt = policy.module_format(name)
+        site_id = f"module:{name}"
+        if fmt == "host":
+            census.append({"site_id": site_id, "kind": "linear", "status": "host"})
+            continue
+        bounds = contract["formats"][fmt]["shape_bounds"]
+        n, k = module.out_features, module.in_features
+        if k < bounds["K"]["min"] or k % bounds["K"]["multiple_of"] or n < bounds["N"]["min"] or n % bounds["N"]["multiple_of"]:
+            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
+                           "reason": f"N={n} K={k} outside {fmt} shape bounds"})
+            continue
+        books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
+        selections.append((name, module, fmt, books))
+        census.append({"site_id": site_id, "kind": "linear", "status": "quantized",
+                       "format": fmt, "shape": [n, k],
+                       "fp6_codebook_sha256": _sha(books) if fmt == "mxfp6" else None})
+    for name, module, fmt, books in selections:
+        quantize_(model, MXGemminiFakeQuantConfig(fmt, *books),
+                  filter_fn=lambda candidate, fqn, wanted=name, selected=module:
+                  fqn == wanted and candidate is selected)
+    exported = torch.export.export(model.eval(), tuple(inputs))
+    graph_module = exported.module()
+    _verify_chain_edges(graph_module, policy.output_chains)
+    seen_functional = set()
+
+    def select(site_id):
+        seen_functional.add(site_id)
+        fmt = policy.functional_format(site_id)
+        books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
+        return fmt, books
+
+    functional = quantize_functional_contractions_(
+        graph_module, select, frozenset(name for name, _ in modules))
+    unknown_functional = set(policy.functional_overrides) - seen_functional
+    if unknown_functional:
+        raise ValueError(f"MX policy names missing functional sites: {sorted(unknown_functional)}")
+    for site in functional:
+        if site.get("format") == "mxfp6":
+            site["fp6_codebook_sha256"] = _sha(policy.codebooks(site["site_id"]))
+    census.extend(functional)
+    by_site = {site["site_id"]: site for site in census}
+    for producer, chain in policy.output_chains.items():
+        source = by_site.get(producer)
+        consumer = by_site.get(chain["consumer"])
+        if source is None or consumer is None or source["status"] != "quantized" or consumer["status"] != "quantized":
+            raise ValueError(f"output chain {producer!r} needs quantized producer and consumer")
+        if chain["consumer"] == producer or consumer["format"] != chain["format"]:
+            raise ValueError(f"output chain {producer!r} has incompatible consumer format")
+        source_n = source["shape"][-2]
+        consumer_k = consumer["shape"][-1]
+        if source_n != consumer_k:
+            raise ValueError(f"output chain {producer!r} output N differs from consumer K")
+        if len(source["shape"]) == 3 and source["shape"][0] != consumer["shape"][0]:
+            raise ValueError(f"output chain {producer!r} output M differs from consumer M")
+        if chain["format"] == "mxfp6":
+            output_book = policy.output_codebook(producer)
+            if output_book != policy.codebooks(chain["consumer"])[0]:
+                raise ValueError("resident FP6 output LUT differs from consumer activation LUT")
+            source["output_fp6_codebook_sha256"] = _sha(output_book)
+        source["output_chain"] = chain
+    if not census:
+        raise ValueError("MX adapter found no contraction sites")
+    _freeze_eval(graph_module)
+    manifest = {
+        "schema": "m2m.quantization_manifest.v1",
+        "adapter_id": "mx_gemmini",
+        "contract_sha256": hashlib.sha256(contract_bytes).hexdigest(),
+        "policy_sha256": policy.source_sha256,
+        "compiled_contract_sha256": contract_digest(contract),
+        "source_graph_sha256": (original_frontend_snapshot or {}).get("sha256"),
+        "numeric_status": "operand_fake_quant_only",
+        "sites": census,
+    }
+    return graph_module, manifest

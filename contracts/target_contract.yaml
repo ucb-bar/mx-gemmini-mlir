@@ -1,0 +1,28 @@
+# Explicitly selected Merlin support metadata for the source-scoped layout prototype.
+# There is no executable backend, matrix lowering, oracle, or certified RTL fact bundle.
+name: mx_gemmini
+version: 0.1
+family: tensor_resident
+source:
+  rtl_repository: https://github.com/ucb-bar/gemmini
+  rtl_commit: f0167390b56fb315deea90ac1fc3983772e92d82
+  rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig
+  mxgen_commit: a27ce3cd81513210c21f971ec3977defd13fa21e
+capabilities: {}
+memory_model: {}
+compiler_obligations:
+  - derive a source-bound RTL fact bundle for the selected standalone configuration
+  - review MXFP8, MXFP6, and MXFP4 numerical behavior against its simulator
+  - schedule operand, scale, and LUT transfers against scratchpad and bank capacity
+  - preserve BF16 accumulator state across K waves
+hardware_promises: []
+runtime_promises: []
+legality: []
+certification:
+  status: uncertified
+confidence: low
+requires_human_review: true
+notes: >-
+  Discovery of this provider only identifies the owner of an isolated compiler
+  layout prototype. The source-derived payload packers are not Merlin compiler
+  plugins, executable target capabilities, or hardware verdicts.
