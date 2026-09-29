@@ -1,8 +1,8 @@
 """Emit a deliberately bounded source-bound RTL bringup program.
 
-This is a 32x32x32 diagnostic, not the Merlin backend. Its command order is
-derived from the selected Gemmini bare-metal tests and has been checked only
-for one full scale window per format.
+This is a bounded square-matrix diagnostic, not the Merlin backend. Its command
+order is derived from the selected Gemmini bare-metal tests and has been checked
+only for one full scale window at sizes 32 and 64 for each format.
 """
 
 from __future__ import annotations
@@ -24,9 +24,9 @@ def _c_bytes(name: str, values: bytes) -> str:
     )
 
 
-def _c_expected(values: Sequence[Sequence[int]]) -> str:
-    if len(values) != 32 or any(len(row) != 32 for row in values):
-        raise ValueError("diagnostic BF16 expected matrix must be 32x32")
+def _c_expected(values: Sequence[Sequence[int]], size: int) -> str:
+    if len(values) != size or any(len(row) != size for row in values):
+        raise ValueError(f"diagnostic BF16 expected matrix must be {size}x{size}")
     if any(type(value) is not int or not 0 <= value <= 0xffff for row in values for value in row):
         raise ValueError("diagnostic BF16 expected matrix needs 16-bit bit patterns")
     rows = ["  {" + ", ".join(f"0x{value:04x}" for value in row) + "}" for row in values]
@@ -40,45 +40,48 @@ def emit_single_window_baremetal_c(
 
     The output is for bare-metal RTL diagnostics with the selected Gemmini
     header and ``MX_ROCKET``. No arbitrary shape, tail, batch, or K-wave
-    scheduling is inferred from this one-window program.
+    scheduling is inferred from these two square one-window programs.
     """
     if payload.fmt not in ("mxfp8", "mxfp6", "mxfp4"):
         raise ValueError("selected diagnostic supports MXFP8, MXFP6, MXFP4")
-    if (payload.m, payload.k, payload.n) != (32, 32, 32) or len(payload.waves) != 1:
-        raise ValueError("selected diagnostic requires one 32x32x32 scale window")
+    if payload.m not in (32, 64) or (payload.m, payload.k, payload.n) != (payload.m,) * 3 or len(payload.waves) != 1:
+        raise ValueError("selected diagnostic requires one square 32 or 64 scale window")
     wave = payload.waves[0]
-    expected_operand_bytes = 1024 if payload.fmt == "mxfp8" else 512
+    expected_operand_bytes = payload.m * payload.k if payload.fmt == "mxfp8" else payload.m * payload.k // 2
     if (len(wave.activation_bytes), len(wave.weight_bytes)) != (
         expected_operand_bytes, expected_operand_bytes
     ):
         raise ValueError("packed operand lengths disagree with selected shape")
-    if (len(wave.activation_scale_bytes), len(wave.weight_scale_bytes)) != (32, 32):
+    expected_scale_bytes = payload.m * payload.k // 32
+    if (len(wave.activation_scale_bytes), len(wave.weight_scale_bytes)) != (expected_scale_bytes,) * 2:
         raise ValueError("packed E8M0 lengths disagree with selected shape")
     is_fp6 = payload.fmt == "mxfp6"
     if is_fp6:
-        if payload.lut_lines_per_operand != (16, 16) or payload.lut_granularity_shift != 1:
-            raise ValueError("selected FP6 diagnostic requires 16 LUT lines and shift one")
-        if (len(payload.activation_lut_bytes), len(payload.weight_lut_bytes)) != (192, 192):
-            raise ValueError("selected FP6 diagnostic requires 192 packed LUT bytes per operand")
+        lut_lines = payload.m // 2
+        if payload.lut_lines_per_operand != (lut_lines,) * 2 or payload.lut_granularity_shift != 1:
+            raise ValueError("selected FP6 diagnostic requires half-size LUT lines and shift one")
+        if (len(payload.activation_lut_bytes), len(payload.weight_lut_bytes)) != (12 * lut_lines,) * 2:
+            raise ValueError("selected FP6 diagnostic requires 12 packed bytes per LUT line")
     elif payload.activation_lut_bytes or payload.weight_lut_bytes:
         raise ValueError("direct MX diagnostic must not carry LUT bytes")
 
     format_code = {"mxfp8": 0, "mxfp6": 1, "mxfp4": 2}[payload.fmt]
-    tiles_i = tiles_j = 2 if payload.fmt == "mxfp8" else 1
-    c_base = 64 if payload.fmt == "mxfp8" else 128
+    tiles_i = tiles_j = payload.m // (16 if payload.fmt == "mxfp8" else 32)
+    tiles_k = payload.k // 16
+    c_base = tiles_i * tiles_k * 16 if payload.fmt == "mxfp8" else 128
     arrays = (
         _c_bytes("A_in", wave.activation_bytes)
         + _c_bytes("B_in", wave.weight_bytes)
         + _c_bytes("A_scales", wave.activation_scale_bytes)
         + _c_bytes("B_scales", wave.weight_scale_bytes)
-        + _c_expected(expected_bf16)
+        + _c_expected(expected_bf16, payload.m)
     )
     if is_fp6:
         arrays += _c_bytes("A_lut", payload.activation_lut_bytes)
         arrays += _c_bytes("B_lut", payload.weight_lut_bytes)
     lut_setup = (
-        "  gemmini_mx_load_lut_dt((uint64_t)B_lut, 16, 0, 6);\n"
-        "  gemmini_mx_load_lut_dt((uint64_t)A_lut, 16, 1, 6);\n"
+        f"  gemmini_mx_load_lut_dt((uint64_t)B_lut, {payload.n // 2}, 0, 6);\n"
+        f"  gemmini_mx_load_lut_dt((uint64_t)A_lut, {payload.m // 2}, 1, 6);\n"
         if is_fp6 else "  gemmini_mx_lut_disable();\n"
     )
     b_load = (
@@ -97,12 +100,12 @@ def emit_single_window_baremetal_c(
     return (
         "#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n"
         '#include "include/gemmini_testutils.h"\n'
-        "#define M 32\n#define K 32\n#define N 32\n#define DIM 16\n"
+        + f"#define M {payload.m}\n#define K {payload.k}\n#define N {payload.n}\n#define DIM 16\n"
         + arrays
         + "static uint64_t C_hw[M][N/4] __attribute__((aligned(64)));\n"
         + "static uint32_t output_scales[512] __attribute__((aligned(64)));\n"
         + "int main(void) {\n"
-        + f"  const int tiles_I = {tiles_i}, tiles_J = {tiles_j}, tiles_K = 2;\n"
+        + f"  const int tiles_I = {tiles_i}, tiles_J = {tiles_j}, tiles_K = {tiles_k};\n"
         + "  const uint32_t a_base = 0;\n"
         + "  const uint32_t b_base = BANK_NUM * BANK_ROWS - tiles_K * tiles_J * DIM;\n"
         + f"  const uint32_t c_base = {c_base};\n"
@@ -143,6 +146,6 @@ def emit_single_window_baremetal_c(
         + "        errors++;\n"
         + "      }\n"
         + "    }\n"
-        + f'  printf("generated {payload.fmt.upper()} 32x32x32: %d mismatches\\n", errors);\n'
+        + f'  printf("generated {payload.fmt.upper()} {payload.m}x{payload.k}x{payload.n}: %d mismatches\\n", errors);\n'
         + "  return errors != 0;\n}\n"
     )

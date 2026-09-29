@@ -64,12 +64,12 @@ exactly for each format, and each simulator process exited zero. The command
 sequences were initially hand-written for these diagnostics.
 `mx_gemmini_support.diagnostic_program.emit_single_window_baremetal_c` now
 renders a bounded C command sequence from the coherent payload and a caller's
-BF16 expectation matrix. Its emitted programs also passed the same
-source-bound RTL simulator with zero BF16 mismatches for all three formats.
-The emitter refuses any shape other than 32x32x32, multiple K waves, or an
-FP6 LUT configuration outside the tested 16-line, shift-one case. This is a
-reusable bringup program for one window, not an executable Merlin provider or
-a general DMA/loop schedule.
+BF16 expectation matrix. Its emitted 32x32x32 and 64x64x64 programs passed
+the same source-bound RTL simulator with zero BF16 mismatches for all three
+formats. The 64-case FP6 program uploaded 32 LUT lines per operand. The
+emitter refuses other shapes, multiple K waves, or FP6 LUT granularity other
+than shift one. This is a reusable bringup program for two square one-window
+shapes, not an executable Merlin provider or a general DMA/loop schedule.
 
 Run `python -m pytest tests -q` from this directory.
 

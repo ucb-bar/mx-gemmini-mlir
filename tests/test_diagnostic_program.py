@@ -43,5 +43,20 @@ def test_emitter_fails_closed_for_unqualified_shape_and_oracle():
     weight = [[0x38] * 32 for _ in range(64)]
     scales = [[127, 127] for _ in range(32)]
     larger = plan_mx_contraction_payload("mxfp8", activation, weight, scales, scales)
-    with pytest.raises(ValueError, match="one 32x32x32 scale window"):
+    with pytest.raises(ValueError, match="one square 32 or 64 scale window"):
         emit_single_window_baremetal_c(larger, [[0x4200] * 32 for _ in range(32)])
+
+
+def test_emitter_64_loads_all_fp6_lut_lines():
+    size = 64
+    codes = [[0x0c] * size for _ in range(size)]
+    scales = [[127, 127] for _ in range(size)]
+    lut = [[0, 0x0c] + [0] * 14 for _ in range(size // 2)]
+    payload = plan_mx_contraction_payload(
+        "mxfp6", codes, codes, scales, scales,
+        activation_lut=lut, weight_lut=lut,
+    )
+    source = emit_single_window_baremetal_c(payload, [[0x4280] * size for _ in range(size)])
+    assert "#define M 64" in source
+    assert "gemmini_mx_load_lut_dt((uint64_t)B_lut, 32, 0, 6);" in source
+    assert "gemmini_mx_load_lut_dt((uint64_t)A_lut, 32, 1, 6);" in source
