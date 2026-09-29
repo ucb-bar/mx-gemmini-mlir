@@ -18,5 +18,8 @@ mx_gemmini = "mx_gemmini_support.m2m_adapter:apply"
 [tool.setuptools.packages.find]
 include = ["mx_gemmini_support*"]
 
+[tool.setuptools.package-data]
+mx_gemmini_support = ["contracts/*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

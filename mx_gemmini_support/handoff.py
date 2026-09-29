@@ -116,6 +116,7 @@ def render_handoff(capture, contract_bytes: bytes, policy_bytes: bytes) -> str:
     lines = [f'module attributes {{mx.contract_sha256 = "{contract_sha}", '
              f'mx.policy_sha256 = "{policy_sha}", '
              f'prov.quantization_manifest_sha256 = "{manifest_sha}", '
+             f'prov.quantization = "external:mx_gemmini", '
              f'mx.source_mlir_sha256 = "{source_sha}"}} {{']
     tensor_codes = "tensor<?x?xi8>"
     tensor_scales = "tensor<?x?xi8>"

@@ -9,6 +9,8 @@ a changed source or unsupported semantic change must fail the source check and
 review before the quantizer is updated.
 
 `contracts/rtl_sources.yaml` pins the source files examined for this handoff.
+The provider paths under `contracts/` point to package-owned copies, which
+are also included in the Python distribution.
 `mx_gemmini_support.rtl_check.check_sources` checks both Git revisions, hashes
 the exact files, and derives the format codes, exponent and fraction widths,
 maximum finite values, and BF16 readout code from `MxRequantizer.scala`.
@@ -100,6 +102,11 @@ cmake -S . -B out/build/mlir -G Ninja -DMLIR_DIR=/path/to/mlir/lib/cmake/mlir
 cmake --build out/build/mlir
 out/build/mlir/tools/mx-gemmini-opt /path/to/handoff.mlir -o /path/to/checked.mlir
 ```
+
+For saved files, `python -m mx_gemmini_support.verify_handoff` accepts
+`--source-mlir`, `--handoff-mlir`, `--manifest`, `--contract`, `--policy`, and
+`--mx-opt`. It checks the exact source MLIR bytes, manifest census, selected
+contract and policy digests, and then runs the C++ operation verifiers.
 
 The operation plan is a contract handoff. An executable target lowering,
 transfer scheduling, host fallback execution, complete numerical validation,
