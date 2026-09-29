@@ -93,6 +93,22 @@ def test_mixed_capture_and_resident_chain_handoff(tmp_path):
 
 def test_source_contract_projection_has_output_requantization():
     projection = compile_contract(SPEC.read_bytes())
+    assert projection["rtl_config_class"] == "GemminiMxFPStandaloneConfig"
     assert projection["zero_block_scale_e8m0"] == 104
     assert projection["output_requantization"]["scale_resident"] is True
     assert set(projection["output_requantization"]["formats"]) == {"mxfp8", "mxfp6", "mxfp4"}
+
+
+@pytest.mark.parametrize("field,replacement", [
+    ("rtl_commit", "2029218197f771ce71416f859d975bea47b7aabc"),
+    ("mxgen_commit", "56ef1c6810924e1cb0af07add09156b0e2f53576"),
+    ("rtl_config", "GemminiMxFPConfigs.e4m3SingleNoLutMxFPConfig"),
+    ("rtl_config_class", "GemminiMxFPSingleNoLutConfig"),
+])
+def test_numerical_kernel_refuses_unreviewed_rtl_revision(field, replacement):
+    from mx_gemmini_support.torchao_quant import verify_kernel_contract
+
+    projection = compile_contract(SPEC.read_bytes())
+    projection[field] = replacement
+    with pytest.raises(ValueError, match="needs review"):
+        verify_kernel_contract(projection)

@@ -16,6 +16,7 @@ from torch.nn import functional as F
 
 GROUP = 32
 RTL_COMMIT = "f0167390b56fb315deea90ac1fc3983772e92d82"
+MXGEN_COMMIT = "a27ce3cd81513210c21f971ec3977defd13fa21e"
 RTL_CONFIG = "GemminiMxFPConfigs.standaloneMxFPConfig"
 RTL_CONFIG_CLASS = "GemminiMxFPStandaloneConfig"
 # (exponent bits, fraction bits, exponent bias, highest finite positive code)
@@ -28,6 +29,11 @@ _FORMATS = {
 
 def verify_kernel_contract(contract: dict) -> None:
     """Reject a spec update that this handwritten numerical kernel cannot run."""
+    if (contract.get("rtl_commit") != RTL_COMMIT or
+        contract.get("mxgen_commit") != MXGEN_COMMIT or
+        contract.get("rtl_config") != RTL_CONFIG or
+        contract.get("rtl_config_class") != RTL_CONFIG_CLASS):
+        raise ValueError("MX kernel needs review for the selected RTL and MxGen revisions")
     if contract.get("block_size") != GROUP or contract.get("scale_encoding") != "e8m0":
         raise ValueError("MX kernel does not implement the selected block/scale contract")
     if contract.get("operand_rounding") != "rne" or contract.get("scale_rule") != (

@@ -91,6 +91,7 @@ def compile_contract(raw: bytes) -> dict[str, Any]:
         "source_sha256": _digest(raw),
         "rtl_commit": rtl_commit,
         "rtl_config": evidence.get("rtl_config"),
+        "rtl_config_class": evidence.get("rtl_config_class"),
         "mxgen_commit": mxgen_commit,
         "block_size": numerics["block_size"],
         "scale_encoding": numerics["scale_encoding"],

@@ -7,6 +7,9 @@ Gemmini `f0167390b56fb315deea90ac1fc3983772e92d82` with MxGen
 contract for this package. It remains **unreviewed**. The RTL is authoritative;
 a changed source or unsupported semantic change must fail the source check and
 review before the quantizer is updated.
+The TorchAO kernel rejects a contract with a different Gemmini revision,
+MxGen revision, selected configuration, or configuration class, even if its
+format table is unchanged.
 
 `contracts/rtl_sources.yaml` pins the source files examined for this handoff.
 The provider paths under `contracts/` point to package-owned copies, which

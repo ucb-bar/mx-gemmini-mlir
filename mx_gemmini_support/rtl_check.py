@@ -46,6 +46,9 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
         raise ValueError("selected Gemmini or MxGen revision differs from source record")
     if contract["rtl_commit"] != record["gemmini_commit"] or contract["mxgen_commit"] != record["mxgen_commit"]:
         raise ValueError("software contract revision differs from RTL source record")
+    if (contract["rtl_config"] != "GemminiMxFPConfigs.standaloneMxFPConfig" or
+        contract["rtl_config_class"] != "GemminiMxFPStandaloneConfig"):
+        raise ValueError("software contract selects a different RTL configuration")
     for member, expected in record["files"].items():
         path = (root / member).resolve()
         if not path.is_relative_to(root):
@@ -92,7 +95,9 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
         "roundToMx(scaled_bf16, inputexpWidth, inputsigWidth, format_fp4, (in: UInt) => E3M1Tofp4(in))" not in rounding):
         raise ValueError("operand rounding path differs from selected RTL")
     config = (root / "src/main/scala/gemmini/ConfigsFP.scala").read_text()
-    if "val standaloneMxFPConfig = defaultMxFPConfig.copy(" not in config:
+    if ("val standaloneMxFPConfig = defaultMxFPConfig.copy(" not in config or
+        "class GemminiMxFPStandaloneConfig extends Config" not in config or
+        "LazyModule(new Gemmini(GemminiMxFPConfigs.standaloneMxFPConfig))" not in config):
         raise ValueError("selected standalone config missing")
     if "val scale_resident = Input(Bool())" not in source:
         raise ValueError("selected requantizer lacks resident output-scale path")
