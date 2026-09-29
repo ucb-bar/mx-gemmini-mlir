@@ -16,6 +16,8 @@ manifest, and four-operation MX MLIR dialect. The handoff is a checked
 operation plan. It does not execute an accelerator contraction or certify a
 whole model. The source files below retain their narrow layout and simulator
 diagnostics.
+The [Phase 0 review](docs/phase0_review.md) records the numerical scope checked
+and the inputs still needed before a new Phase 0 run can be admitted.
 
 `mx_gemmini_support.layout` implements:
 
