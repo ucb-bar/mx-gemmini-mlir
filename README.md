@@ -49,6 +49,12 @@ Larger spatial dimensions require further tiling and LUT reload scheduling.
 The selected RTL's `MX_LOAD_LUT` DMA reads through the next 8-byte boundary,
 so callers must use the padded result as the actual source buffer.
 
+model2MLIR's `linear_contraction_operands` returns the logical code and E8M0
+scale tensors in this builder's expected orientations for a rank-2 Linear.
+An isolated cross-repository check passed one 32x64x32 site through all three
+formats; FP6 used caller-supplied exact codebooks. This checks representation
+compatibility only.
+
 Run `python -m pytest tests -q` from this directory.
 
 To inspect the provider through Merlin, set `MERLIN_TARGET_PATH` to this
