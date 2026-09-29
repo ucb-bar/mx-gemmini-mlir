@@ -6,9 +6,8 @@ This out-of-tree compiler prototype is scoped to
 `a27ce3cd81513210c21f971ec3977defd13fa21e`. It carries an explicitly
 selectable Merlin support provider with an empty executable capability claim.
 It has no runtime backend, matrix lowering, oracle, or certified fact bundle.
-Its layout rules are
-source-derived and remain unreviewed until a matching simulator compares the
-written bytes and command stream.
+Its layout rules are source-derived; one narrow payload-to-RTL diagnostic is
+described below. Other shapes and the command stream remain unreviewed.
 
 `mx_gemmini_support.layout` implements:
 
@@ -54,6 +53,14 @@ scale tensors in this builder's expected orientations for a rank-2 Linear.
 An isolated cross-repository check passed one 32x64x32 site through all three
 formats; FP6 used caller-supplied exact codebooks. This checks representation
 compatibility only.
+
+A separate source-bound RTL diagnostic ran one FP8 32x32x32 contraction using
+this package's packed activation, weight, and E8M0 buffers. It used distinct
+values in the upper and lower activation rows and left and right weight
+columns; all four BF16 output quadrants matched exactly and the simulator
+exited zero. The command sequence was hand-written for that diagnostic.
+This establishes one payload-to-RTL path, not an executable provider, a
+general DMA/loop schedule, or FP4/FP6 payload qualification.
 
 Run `python -m pytest tests -q` from this directory.
 
