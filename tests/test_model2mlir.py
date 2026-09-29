@@ -7,7 +7,7 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from mx_gemmini_support.model2mlir import plan_linear_operands
+from mx_gemmini_support.model2mlir import plan_linear_operands, plan_rank2_operands
 from mx_gemmini_support.diagnostic_program import emit_single_window_baremetal_c
 
 
@@ -101,3 +101,8 @@ def test_torchao_linear_to_rtl_test_source(fmt, zero_block, source_hash):
     ]
     source = emit_single_window_baremetal_c(payload, expected)
     assert sha256(source.encode()).hexdigest() == source_hash
+    functional = mx_gemmini_quant.functional_contraction_operands(
+        activation, model.project.weight.T, fmt
+    )
+    functional_payload = plan_rank2_operands(functional, activation_lut=lut, weight_lut=lut)
+    assert functional_payload == payload

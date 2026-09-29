@@ -26,14 +26,14 @@ def _uint8_matrix(value: Any, name: str) -> list[list[int]]:
     return value.detach().cpu().tolist()
 
 
-def plan_linear_operands(
+def plan_rank2_operands(
     operands: Any,
     *,
     activation_lut: Sequence[Sequence[int]] | None = None,
     weight_lut: Sequence[Sequence[int]] | None = None,
     max_blocks_per_wave: int | None = None,
 ) -> MxContractionPayload:
-    """Pack one ``MXGemminiContractionOperands`` rank-2 Linear handoff.
+    """Pack one rank-2 Linear or visible functional-matmul handoff.
 
     The upstream helper presents A[M,K], B[K,N], activation scales [M,K/32],
     and weight scales [N,K/32]. FP6 codebook policy stays with the caller.
@@ -52,3 +52,7 @@ def plan_linear_operands(
         weight_lut=weight_lut,
         max_blocks_per_wave=max_blocks_per_wave,
     )
+
+
+# Preserve the first explicit API name for callers preparing static Linear sites.
+plan_linear_operands = plan_rank2_operands
