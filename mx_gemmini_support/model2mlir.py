@@ -8,7 +8,7 @@ it is not an accelerator runtime transfer or numerical certificate.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from itertools import product
 from types import SimpleNamespace
@@ -39,6 +39,16 @@ def _uint8_matrix(value: Any, name: str) -> list[list[int]]:
 @dataclass(frozen=True)
 class IndexedMxPayload:
     batch_index: tuple[int, ...]
+    payload: MxContractionPayload
+
+
+@dataclass(frozen=True)
+class IndexedTiledMxPayload:
+    batch_index: tuple[int, ...]
+    m_start: int
+    m_stop: int
+    n_start: int
+    n_stop: int
     payload: MxContractionPayload
 
 
@@ -108,3 +118,80 @@ def plan_independent_batches(
         ))
         for index in indices
     )
+
+
+def iter_spatial_tiles(
+    operands: Any,
+    *,
+    tile_m: int = 32,
+    tile_n: int = 32,
+    activation_lut: Sequence[Sequence[int]] | None = None,
+    weight_lut: Sequence[Sequence[int]] | None = None,
+    max_blocks_per_wave: int | None = None,
+) -> Iterator[IndexedTiledMxPayload]:
+    """Yield independent spatial tiles without packing the entire contraction.
+
+    Input codes/scales use model2MLIR's logical axes. FP6 callers supply one
+    exact source codebook per two global M rows and N columns; each tile takes
+    only its own lines. No command order, output assembly, or host work is
+    inferred from this buffer plan.
+    """
+    fmt = getattr(operands, "format", None)
+    unit = {"mxfp8": 16, "mxfp6": 32, "mxfp4": 32}.get(fmt)
+    if unit is None:
+        raise ValueError("spatial tiling needs a selected MX format")
+    if any(type(extent) is not int or extent < unit or extent > 128 or extent % unit
+           for extent in (tile_m, tile_n)):
+        raise ValueError("MX spatial tile extents need aligned values within 128")
+    names = ("activation_codes", "weight_codes", "activation_scales", "weight_scales")
+    values = {name: _uint8_tensor(getattr(operands, name, None), name) for name in names}
+    activation, weight = values["activation_codes"], values["weight_codes"]
+    if activation.ndim not in (2, 3, 4) or weight.ndim != activation.ndim:
+        raise ValueError("MX spatial tiling needs rank-2 to rank-4 operands")
+    batch_shape = tuple(activation.shape[:-2])
+    if any(extent < 1 for extent in batch_shape):
+        raise ValueError("MX independent batch axes must be nonempty")
+    if any(value.ndim != activation.ndim or tuple(value.shape[:-2]) != batch_shape
+           for value in values.values()):
+        raise ValueError("MX operand and E8M0 batch axes must match")
+    m, k = activation.shape[-2:]
+    weight_k, n = weight.shape[-2:]
+    if (k != weight_k or k < 32 or k % 32 or m < unit or n < unit
+            or m % unit or n % unit):
+        raise ValueError("MX spatial tiling needs aligned M/N and matching whole K blocks")
+    if tuple(values["activation_scales"].shape[-2:]) != (m, k // 32):
+        raise ValueError("activation E8M0 axes disagree with A")
+    if tuple(values["weight_scales"].shape[-2:]) != (n, k // 32):
+        raise ValueError("weight E8M0 axes disagree with B")
+    if fmt == "mxfp6":
+        if activation_lut is None or weight_lut is None:
+            raise ValueError("MXFP6 spatial tiles require exact codebooks")
+        if len(activation_lut) != m // 2 or len(weight_lut) != n // 2:
+            raise ValueError("MXFP6 global codebook lines disagree with M/N")
+    elif activation_lut is not None or weight_lut is not None:
+        raise ValueError("direct MX spatial tiles do not use codebooks")
+
+    indices = product(*(range(extent) for extent in batch_shape)) if batch_shape else [()]
+    for index in indices:
+        for m_start in range(0, m, tile_m):
+            m_stop = min(m, m_start + tile_m)
+            for n_start in range(0, n, tile_n):
+                n_stop = min(n, n_start + tile_n)
+                tile = SimpleNamespace(
+                    format=fmt,
+                    activation_codes=activation[index][m_start:m_stop],
+                    weight_codes=weight[index][:, n_start:n_stop],
+                    activation_scales=values["activation_scales"][index][m_start:m_stop],
+                    weight_scales=values["weight_scales"][index][n_start:n_stop],
+                )
+                yield IndexedTiledMxPayload(
+                    index, m_start, m_stop, n_start, n_stop,
+                    plan_rank2_operands(
+                        tile,
+                        activation_lut=(activation_lut[m_start // 2:m_stop // 2]
+                                        if activation_lut is not None else None),
+                        weight_lut=(weight_lut[n_start // 2:n_stop // 2]
+                                    if weight_lut is not None else None),
+                        max_blocks_per_wave=max_blocks_per_wave,
+                    ),
+                )

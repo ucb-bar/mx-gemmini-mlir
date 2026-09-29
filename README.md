@@ -76,6 +76,13 @@ the programs executed on the source-bound RTL simulator. All six tested
 programs exited zero with no BF16 mismatches. The zero blocks produced E8M0
 code 104. The test does not rerun the simulator; these remain narrow
 diagnostics, not whole-model or general lowering.
+`iter_spatial_tiles` slices rank-2 to rank-4 logical operands into aligned
+M/N windows of at most 128 rows and columns without materializing a packed
+whole matrix. Its indexed results retain batch axes and output tile offsets;
+each tile carries the matching A rows, B columns, E8M0 scales, and, for FP6,
+the corresponding exact LUT lines from caller-supplied global codebooks.
+The iterator prepares payloads but does not assemble output tiles, choose
+FP6 codebooks, or schedule accelerator transfers.
 `plan_independent_batches` also slices model2MLIR's visible functional matmul
 handoff along matching rank-3 or rank-4 batch axes and returns one indexed
 payload per rank-2 contraction. Its common FP6 codebook must contain every

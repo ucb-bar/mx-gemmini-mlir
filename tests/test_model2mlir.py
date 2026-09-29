@@ -8,6 +8,7 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from mx_gemmini_support.model2mlir import (
+    iter_spatial_tiles,
     plan_independent_batches,
     plan_linear_operands,
     plan_rank2_operands,
@@ -47,6 +48,78 @@ def test_rank2_linear_handoff_rejects_non_byte_codes():
     )
     with pytest.raises(TypeError, match="activation_codes"):
         plan_linear_operands(operands)
+
+
+@pytest.mark.parametrize("fmt,one,two", [
+    ("mxfp8", 0x38, 0x40), ("mxfp6", 0x0c, 0x10), ("mxfp4", 0x02, 0x04),
+])
+def test_spatial_tiles_preserve_batch_and_global_row_column_axes(fmt, one, two):
+    activation = torch.full((2, 1, 64, 32), one, dtype=torch.uint8)
+    activation[:, :, 32:].fill_(two)
+    weight = torch.full((2, 1, 32, 64), one, dtype=torch.uint8)
+    weight[:, :, :, 32:].fill_(two)
+    activation_scales = torch.full((2, 1, 64, 1), 127, dtype=torch.uint8)
+    activation_scales[1].fill_(128)
+    weight_scales = torch.full((2, 1, 64, 1), 127, dtype=torch.uint8)
+    operands = SimpleNamespace(
+        format=fmt, activation_codes=activation, weight_codes=weight,
+        activation_scales=activation_scales, weight_scales=weight_scales,
+    )
+    first_lut = [[0, one, two] + [0] * 13 for _ in range(16)]
+    second_lut = [[0, two, one] + [0] * 13 for _ in range(16)]
+    lut = first_lut + second_lut if fmt == "mxfp6" else None
+    tiles = list(iter_spatial_tiles(operands, activation_lut=lut, weight_lut=lut))
+    assert [(t.batch_index, t.m_start, t.n_start) for t in tiles] == [
+        (batch, m, n) for batch in ((0, 0), (1, 0)) for m in (0, 32) for n in (0, 32)
+    ]
+    assert all((t.m_stop - t.m_start, t.n_stop - t.n_start) == (32, 32) for t in tiles)
+    assert all((t.payload.m, t.payload.k, t.payload.n) == (32, 32, 32) for t in tiles)
+    assert all(t.payload.waves[0].activation_scale_bytes == bytes([128] * 32)
+               for t in tiles[4:])
+    if fmt == "mxfp6":
+        assert tiles[0].payload.waves[0].activation_bytes == tiles[2].payload.waves[0].activation_bytes
+        assert tiles[0].payload.waves[0].weight_bytes == tiles[1].payload.waves[0].weight_bytes
+        assert tiles[0].payload.activation_lut_bytes != tiles[2].payload.activation_lut_bytes
+        assert tiles[0].payload.weight_lut_bytes != tiles[1].payload.weight_lut_bytes
+    else:
+        assert set(tiles[0].payload.waves[0].activation_bytes) != set(
+            tiles[2].payload.waves[0].activation_bytes)
+        assert set(tiles[0].payload.waves[0].weight_bytes) != set(
+            tiles[1].payload.waves[0].weight_bytes)
+
+
+def test_spatial_tiles_refuse_misaligned_geometry_and_scale_axes():
+    operands = SimpleNamespace(
+        format="mxfp8",
+        activation_codes=torch.ones(32, 32, dtype=torch.uint8),
+        weight_codes=torch.ones(32, 32, dtype=torch.uint8),
+        activation_scales=torch.ones(32, 2, dtype=torch.uint8),
+        weight_scales=torch.ones(32, 1, dtype=torch.uint8),
+    )
+    with pytest.raises(ValueError, match="activation E8M0 axes"):
+        list(iter_spatial_tiles(operands))
+    operands.activation_scales = torch.ones(32, 1, dtype=torch.uint8)
+    with pytest.raises(ValueError, match="aligned values"):
+        list(iter_spatial_tiles(operands, tile_m=24))
+
+
+def test_spatial_tiles_keep_large_linear_scale_windows_bounded():
+    operands = SimpleNamespace(
+        format="mxfp8",
+        activation_codes=torch.full((32, 2048), 0x38, dtype=torch.uint8),
+        weight_codes=torch.full((2048, 2048), 0x38, dtype=torch.uint8),
+        activation_scales=torch.full((32, 64), 127, dtype=torch.uint8),
+        weight_scales=torch.full((2048, 64), 127, dtype=torch.uint8),
+    )
+    tiles = list(iter_spatial_tiles(operands))
+    assert len(tiles) == 64
+    assert [tile.n_start for tile in tiles] == list(range(0, 2048, 32))
+    assert all((tile.payload.m, tile.payload.k, tile.payload.n) == (32, 2048, 32)
+               for tile in tiles)
+    assert all(len(tile.payload.waves) == 1 for tile in tiles)
+    assert all(len(tile.payload.waves[0].activation_scale_bytes) == 2048
+               and len(tile.payload.waves[0].weight_scale_bytes) == 2048
+               for tile in tiles)
 
 
 @pytest.mark.parametrize("fmt,zero_block,source_hash", [
