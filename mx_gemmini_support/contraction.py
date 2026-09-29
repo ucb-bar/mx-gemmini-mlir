@@ -47,12 +47,14 @@ def plan_mx_contraction_payload(
     activation_lut: Sequence[Sequence[int]] | None = None,
     weight_lut: Sequence[Sequence[int]] | None = None,
     lut_granularity_shift: int = 1,
+    max_blocks_per_wave: int | None = None,
 ) -> MxContractionPayload:
     """Slice matching operand and E8M0 bytes into capacity-bounded K waves.
 
     A is [M][K], B is [K][N], and activation scales are [M][K/32].
     Weight scales may be [N][K/32] (``ng``) or [K/32][N] (``gn``).
-    FP6 requires caller-selected exact E3M2 codebooks.
+    FP6 requires caller-selected exact E3M2 codebooks. A smaller explicit
+    ``max_blocks_per_wave`` can force a compiler diagnostic K split.
     """
     bits = {"mxfp8": 8, "mxfp6": 6, "mxfp4": 4}.get(fmt)
     if bits is None:
@@ -69,7 +71,8 @@ def plan_mx_contraction_payload(
         raise ValueError("direct MX formats do not use operand codebooks")
 
     scale_transfers = plan_scale_transfers(
-        fmt, activation_scales, weight_scales, weight_layout=weight_scale_layout
+        fmt, activation_scales, weight_scales, weight_layout=weight_scale_layout,
+        max_blocks_per_wave=max_blocks_per_wave,
     )
     width = 16 if fmt == "mxfp8" else 32
     first = scale_transfers[0].wave

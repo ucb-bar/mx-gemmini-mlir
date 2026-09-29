@@ -53,3 +53,25 @@ def test_payload_rejects_mismatched_scale_shape():
     b_scales = [[104] for _ in range(16)]
     with pytest.raises(ValueError, match="shapes disagree"):
         plan_mx_contraction_payload("mxfp8", a_codes, b_codes, a_scales, b_scales)
+
+
+def test_forced_k_waves_keep_operand_and_scale_blocks_aligned():
+    activation = [[0x38] * 32 + [0x40] * 32 for _ in range(32)]
+    weight = [[0x38] * 32 for _ in range(64)]
+    a_scales = [[127, 128] for _ in range(32)]
+    b_scales = [[127, 129] for _ in range(32)]
+    payload = plan_mx_contraction_payload(
+        "mxfp8", activation, weight, a_scales, b_scales,
+        max_blocks_per_wave=1,
+    )
+    assert [(w.wave.block_start, w.wave.block_stop) for w in payload.waves] == [(0, 1), (1, 2)]
+    assert payload.waves[0].activation_bytes == bytes([0x38]) * 1024
+    assert payload.waves[1].activation_bytes == bytes([0x40]) * 1024
+    assert payload.waves[0].activation_scale_bytes == bytes([127]) * 32
+    assert payload.waves[1].activation_scale_bytes == bytes([128]) * 32
+    assert payload.waves[1].weight_scale_bytes == bytes([129]) * 32
+    with pytest.raises(ValueError, match="positive integer"):
+        plan_mx_contraction_payload(
+            "mxfp8", activation, weight, a_scales, b_scales,
+            max_blocks_per_wave=0,
+        )

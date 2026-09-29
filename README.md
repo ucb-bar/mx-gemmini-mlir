@@ -71,6 +71,16 @@ emitter refuses other shapes, multiple K waves, or FP6 LUT granularity other
 than shift one. This is a reusable bringup program for two square one-window
 shapes, not an executable Merlin provider or a general DMA/loop schedule.
 
+For a separate K-wave diagnostic, `max_blocks_per_wave=1` makes the coherent
+payload builder split a 32x32x64 contraction into two 32-element K waves.
+`emit_two_wave_baremetal_c` reloads both scale banks and operand tiles for
+the second wave, sets the RTL `ex_accumulate` bit, and keeps the FP6 LUT
+resident. One source-bound RTL run per format matched all BF16 values for
+distinct first- and second-wave activation codes. The emitter's compiled
+load images are byte-identical to those tested programs for FP8, FP6, and
+FP4. This qualifies only that two-wave shape and command sequence; larger
+capacity-driven wave plans still need simulator checks.
+
 Run `python -m pytest tests -q` from this directory.
 
 To inspect the provider through Merlin, set `MERLIN_TARGET_PATH` to this

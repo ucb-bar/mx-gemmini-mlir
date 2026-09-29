@@ -3,7 +3,10 @@
 import pytest
 
 from mx_gemmini_support.contraction import plan_mx_contraction_payload
-from mx_gemmini_support.diagnostic_program import emit_single_window_baremetal_c
+from mx_gemmini_support.diagnostic_program import (
+    emit_single_window_baremetal_c,
+    emit_two_wave_baremetal_c,
+)
 
 
 def _payload(fmt):
@@ -60,3 +63,37 @@ def test_emitter_64_loads_all_fp6_lut_lines():
     assert "#define M 64" in source
     assert "gemmini_mx_load_lut_dt((uint64_t)B_lut, 32, 0, 6);" in source
     assert "gemmini_mx_load_lut_dt((uint64_t)A_lut, 32, 1, 6);" in source
+
+
+@pytest.mark.parametrize("fmt,one,two,four", [
+    ("mxfp8", 0x38, 0x40, 0x48),
+    ("mxfp6", 0x0c, 0x10, 0x14),
+    ("mxfp4", 0x02, 0x04, 0x06),
+])
+def test_two_wave_emitter_reloads_scales_and_accumulates(fmt, one, two, four):
+    activation = [
+        [one if row < 16 else two] * 32 + [two if row < 16 else four] * 32
+        for row in range(32)
+    ]
+    weight = [[one if col < 16 else two for col in range(32)] for _ in range(64)]
+    scales = [[127, 127] for _ in range(32)]
+    lut = [[0, one, two, four] + [0] * 12 for _ in range(16)] if fmt == "mxfp6" else None
+    payload = plan_mx_contraction_payload(
+        fmt, activation, weight, scales, scales,
+        activation_lut=lut, weight_lut=lut, max_blocks_per_wave=1,
+    )
+    source = emit_two_wave_baremetal_c(payload, [[0x42c0] * 32 for _ in range(32)])
+    assert source.count("gemmini_loop_ws_spad(") == 2
+    assert source.count("gemmini_mx_load_scales((uint64_t)AS") == 2
+    assert "false, false, false, false, true, NO_ACTIVATION" in source
+    assert "two-wave" in source
+    if fmt == "mxfp6":
+        assert source.count("gemmini_mx_load_lut_dt(") == 2  # one A and one B upload
+    with pytest.raises(ValueError, match="two-wave diagnostic requires"):
+        emit_two_wave_baremetal_c(
+            plan_mx_contraction_payload(
+                fmt, activation, weight, scales, scales,
+                activation_lut=lut, weight_lut=lut,
+            ),
+            [[0x42c0] * 32 for _ in range(32)],
+        )

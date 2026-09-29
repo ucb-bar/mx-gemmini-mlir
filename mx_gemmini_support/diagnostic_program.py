@@ -8,6 +8,7 @@ only for one full scale window at sizes 32 and 64 for each format.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 
 from .contraction import MxContractionPayload
 
@@ -149,3 +150,66 @@ def emit_single_window_baremetal_c(
         + f'  printf("generated {payload.fmt.upper()} {payload.m}x{payload.k}x{payload.n}: %d mismatches\\n", errors);\n'
         + "  return errors != 0;\n}\n"
     )
+
+
+def emit_two_wave_baremetal_c(
+    payload: MxContractionPayload, expected_bf16: Sequence[Sequence[int]]
+) -> str:
+    """Render the pinned 32x32x64 two-wave accumulation diagnostic.
+
+    This reuses the tested one-wave command body twice. The second body reloads
+    both E8M0 banks and operand tiles, then sets ``ex_accumulate`` while keeping
+    the same C destination. FP6 LUT contents remain resident across both waves.
+    """
+    if (payload.m, payload.k, payload.n) != (32, 64, 32) or len(payload.waves) != 2:
+        raise ValueError("two-wave diagnostic requires a 32x32x64 contraction")
+    if [(w.wave.block_start, w.wave.block_stop) for w in payload.waves] != [(0, 1), (1, 2)]:
+        raise ValueError("two-wave diagnostic requires consecutive 32-element K waves")
+    first, second = payload.waves
+    if (len(second.activation_bytes), len(second.weight_bytes)) != (
+        len(first.activation_bytes), len(first.weight_bytes)
+    ) or (len(second.activation_scale_bytes), len(second.weight_scale_bytes)) != (32, 32):
+        raise ValueError("second wave payload lengths disagree with selected shape")
+
+    first_payload = replace(payload, k=32, waves=(first,))
+    source = emit_single_window_baremetal_c(first_payload, expected_bf16)
+    for old, new in (
+        ("A_in", "A0"), ("B_in", "B0"),
+        ("A_scales", "AS0"), ("B_scales", "BS0"),
+    ):
+        source = source.replace(old, new)
+    arrays = (
+        _c_bytes("A1", second.activation_bytes)
+        + _c_bytes("B1", second.weight_bytes)
+        + _c_bytes("AS1", second.activation_scale_bytes)
+        + _c_bytes("BS1", second.weight_scale_bytes)
+    )
+    marker = "static uint64_t C_hw"
+    if source.count(marker) != 1:
+        raise AssertionError("single-window C template changed before second-wave insertion")
+    source = source.replace(marker, arrays + marker, 1)
+    start_marker = "  gemmini_mx_load_scales((uint64_t)AS0"
+    end_marker = "  gemmini_config_st(DIM);"
+    if source.count(start_marker) != 1 or source.count(end_marker) != 1:
+        raise AssertionError("single-window C command template changed")
+    start = source.index(start_marker)
+    end = source.index(end_marker, start)
+    second_commands = source[start:end]
+    for old, new in (("AS0", "AS1"), ("BS0", "BS1"), ("A0", "A1"), ("B0", "B1")):
+        second_commands = second_commands.replace(old, new)
+    accumulation_flag = "false, false, false, false, false, NO_ACTIVATION"
+    if second_commands.count(accumulation_flag) != 1:
+        raise AssertionError("single-window accumulation flag template changed")
+    second_commands = second_commands.replace(
+        accumulation_flag, "false, false, false, false, true, NO_ACTIVATION"
+    )
+    source = (
+        source[:end]
+        + "  // Second K wave accumulates into the same C destination.\n"
+        + second_commands
+        + source[end:]
+    )
+    label = f"generated {payload.fmt.upper()} 32x32x32"
+    if source.count(label) != 1:
+        raise AssertionError("single-window diagnostic label changed")
+    return source.replace(label, f"two-wave {payload.fmt.upper()} 32x32x64")

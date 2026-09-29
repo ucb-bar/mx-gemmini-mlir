@@ -119,11 +119,15 @@ class ScaleWave:
         return (self.block_stop - self.block_start) * self.tiles_j
 
 
-def plan_scale_waves(fmt: str, *, tiles_i: int, tiles_j: int, k_tiles: int) -> tuple[ScaleWave, ...]:
+def plan_scale_waves(
+    fmt: str, *, tiles_i: int, tiles_j: int, k_tiles: int,
+    max_blocks_per_wave: int | None = None,
+) -> tuple[ScaleWave, ...]:
     """Partition K at 32-element MX block boundaries under the 4 KiB windows.
 
     CONFIG_SCALE_MEM has 9-bit I/J/K bounds. Every wave starts its scale
     payload at local offset zero; the selected RTL has no scale read base.
+    An optional smaller block cap forces a K split for compiler diagnostics.
     """
     width = _width(fmt)
     if any(type(n) is not int for n in (tiles_i, tiles_j, k_tiles)):
@@ -132,12 +136,18 @@ def plan_scale_waves(fmt: str, *, tiles_i: int, tiles_j: int, k_tiles: int) -> t
         raise ValueError("I and J scale loop bounds must fit nonzero 9-bit fields")
     if k_tiles <= 0 or k_tiles % 2:
         raise ValueError("K tiles must contain whole 32-element MX blocks")
+    if max_blocks_per_wave is not None and (
+        type(max_blocks_per_wave) is not int or max_blocks_per_wave <= 0
+    ):
+        raise ValueError("max_blocks_per_wave must be a positive integer")
     rows_per_window = _ACTIVE_WINDOW // width
     blocks_per_wave = min(
         rows_per_window // tiles_i,
         rows_per_window // tiles_j,
         _MAX_SCALE_LOOP_BOUND // 2,
     )
+    if max_blocks_per_wave is not None:
+        blocks_per_wave = min(blocks_per_wave, max_blocks_per_wave)
     if blocks_per_wave == 0:
         raise ValueError("one K block exceeds an operand's active scale window")
     total_blocks = k_tiles // 2
@@ -179,13 +189,15 @@ def plan_scale_transfers(
     weight_scales: Sequence[Sequence[int]],
     *,
     weight_layout: str = "ng",
+    max_blocks_per_wave: int | None = None,
 ) -> tuple[ScaleWaveTransfer, ...]:
     """Lay out E8M0 scales from [M][G] and [N][G] or [G][N] matrices.
 
     G is K/32. Each wave's payload is ordered [K block][I/J tile][lane]
     and starts at byte offset zero. ``ng`` is TorchAO Linear's [N][G]
     weight buffer; ``gn`` is a functional B contraction's [G][N] buffer.
-    This plans bytes, not executable DMA.
+    This plans bytes, not executable DMA. ``max_blocks_per_wave`` may force
+    smaller windows without exceeding the physical capacity bound.
     """
     width = _width(fmt)
     if weight_layout not in ("ng", "gn"):
@@ -204,7 +216,10 @@ def plan_scale_transfers(
     if weight_layout == "gn" and (len(weight_scales) != blocks or any(len(row) != n for row in weight_scales)):
         raise ValueError("activation and weight scales must share one K/32 group count")
     tiles_i, tiles_j = m // width, n // width
-    waves = plan_scale_waves(fmt, tiles_i=tiles_i, tiles_j=tiles_j, k_tiles=2 * blocks)
+    waves = plan_scale_waves(
+        fmt, tiles_i=tiles_i, tiles_j=tiles_j, k_tiles=2 * blocks,
+        max_blocks_per_wave=max_blocks_per_wave,
+    )
     a_rows = [
         [activation_scales[tile * width + lane][block] for lane in range(width)]
         for block in range(blocks) for tile in range(tiles_i)
