@@ -64,9 +64,16 @@ simulator, not this generator, supplies the hardware verdict.
 
 model2MLIR's `linear_contraction_operands` returns the logical code and E8M0
 scale tensors in this builder's expected orientations for a rank-2 Linear.
-An isolated cross-repository check passed one 32x64x32 site through all three
-formats; FP6 used caller-supplied exact codebooks. This checks representation
-compatibility only.
+`mx_gemmini_support.model2mlir.plan_linear_operands` consumes that handoff,
+checks its byte tensor types, and packs it without changing model2MLIR or
+TorchAO. FP6 requires caller-supplied exact codebooks. With the model2MLIR
+branch on `PYTHONPATH` and TorchAO installed, run
+`python -m pytest tests/test_model2mlir.py -q`: the integration test applies
+the actual TorchAO transform to one 32x32x32 Linear per format and verifies
+that the resulting C sources have the same SHA-256 digests as the three
+programs executed on the source-bound RTL simulator. Each tested program
+exited zero with no BF16 mismatches. The test does not rerun the simulator;
+this remains a one-site diagnostic, not whole-model or general lowering.
 
 Separate source-bound RTL diagnostics ran FP8, FP4, and FP6 32x32x32
 contractions using this package's packed activation, weight, and E8M0
