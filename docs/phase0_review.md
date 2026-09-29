@@ -71,6 +71,11 @@ revision:
 
 A software encoder for this revision must reject nonzero byte counts that are
 not multiples of eight, rather than silently accepting the RTL's truncation.
+The candidate-only `scale_load_2d_operands` encoder checks the exact source
+pins and declared fields, and rejects unaligned source, pitch, and destination
+values, source address overflow, more than 255 rows, and writes crossing a
+4 KiB destination half. It has boundary tests; no source-bound command run
+has used this encoder yet.
 
 The source audit also finds a shared `GemminiConfigs.scala` change to DMA
 column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The
