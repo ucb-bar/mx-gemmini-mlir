@@ -4,9 +4,11 @@ import pytest
 
 from mx_gemmini_support.contraction import plan_mx_contraction_payload
 from mx_gemmini_support.diagnostic_program import (
+    emit_independent_batches_baremetal_c,
     emit_single_window_baremetal_c,
     emit_two_wave_baremetal_c,
 )
+from mx_gemmini_support.model2mlir import IndexedMxPayload
 
 
 def _payload(fmt):
@@ -97,3 +99,20 @@ def test_two_wave_emitter_reloads_scales_and_accumulates(fmt, one, two, four):
             ),
             [[0x42c0] * 32 for _ in range(32)],
         )
+
+
+def test_independent_batch_emitter_rejects_ambiguous_or_mixed_cases():
+    expected = [[0x4200] * 32 for _ in range(32)]
+    first = (IndexedMxPayload((0,), _payload("mxfp8")), expected)
+    with pytest.raises(ValueError, match="one to four"):
+        emit_independent_batches_baremetal_c([])
+    with pytest.raises(ValueError, match="unique"):
+        emit_independent_batches_baremetal_c([first, first])
+    with pytest.raises(ValueError, match="nonempty"):
+        emit_independent_batches_baremetal_c([
+            (IndexedMxPayload((), _payload("mxfp8")), expected)
+        ])
+    with pytest.raises(ValueError, match="matching formats"):
+        emit_independent_batches_baremetal_c([
+            first, (IndexedMxPayload((1,), _payload("mxfp4")), expected)
+        ])

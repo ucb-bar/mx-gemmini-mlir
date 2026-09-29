@@ -1,8 +1,9 @@
 """Emit a deliberately bounded source-bound RTL bringup program.
 
 This is a bounded square-matrix diagnostic, not the Merlin backend. Its command
-order is derived from the selected Gemmini bare-metal tests and has been checked
-only for one full scale window at sizes 32 and 64 for each format.
+order is derived from the selected Gemmini bare-metal tests. Single-window
+programs at sizes 32 and 64 have RTL checks; the serial independent-batch
+variant currently has a Spike diagnostic only.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from .contraction import MxContractionPayload
+from .model2mlir import IndexedMxPayload
 
 
 def _c_bytes(name: str, values: bytes) -> str:
@@ -213,3 +215,58 @@ def emit_two_wave_baremetal_c(
     if source.count(label) != 1:
         raise AssertionError("single-window diagnostic label changed")
     return source.replace(label, f"two-wave {payload.fmt.upper()} 32x32x64")
+
+
+def emit_independent_batches_baremetal_c(
+    cases: Sequence[tuple[IndexedMxPayload, Sequence[Sequence[int]]]],
+) -> str:
+    """Render independent MX contractions as successive bounded diagnostics.
+
+    Each batch runs the source-checked one-window command sequence with its
+    own buffers and output. This does not schedule a fused attention kernel.
+    """
+    if not cases or len(cases) > 4:
+        raise ValueError("batched diagnostic needs one to four independent contractions")
+    indices = [indexed.batch_index for indexed, _ in cases]
+    if len(set(indices)) != len(indices) or any(not index for index in indices):
+        raise ValueError("batched diagnostic needs unique, nonempty batch indices")
+    shape_and_format = {
+        (indexed.payload.fmt, indexed.payload.m, indexed.payload.k, indexed.payload.n)
+        for indexed, _ in cases
+    }
+    if len(shape_and_format) != 1:
+        raise ValueError("batched diagnostic needs matching formats and shapes")
+
+    header: str | None = None
+    functions: list[str] = []
+    for ordinal, (indexed, expected) in enumerate(cases):
+        source = emit_single_window_baremetal_c(indexed.payload, expected)
+        marker = "static const uint8_t A_in[]"
+        if source.count(marker) != 1 or source.count("int main(void) {") != 1:
+            raise AssertionError("single-window C template changed")
+        prefix, body = source.split(marker, 1)
+        if header is None:
+            header = prefix
+        elif prefix != header:
+            raise ValueError("batched diagnostic needs matching C configuration")
+        body = marker + body
+        for symbol in (
+            "A_in", "B_in", "A_scales", "B_scales", "A_lut", "B_lut",
+            "expected", "C_hw", "output_scales",
+        ):
+            body = body.replace(symbol, f"{symbol}_{ordinal}")
+        body = body.replace("int main(void) {", f"static int run_batch_{ordinal}(void) {{", 1)
+        label = f"generated {indexed.payload.fmt.upper()} {indexed.payload.m}x{indexed.payload.k}x{indexed.payload.n}"
+        if body.count(label) != 1:
+            raise AssertionError("single-window diagnostic label changed")
+        body = body.replace(label, f"batch {indexed.batch_index} {label}", 1)
+        functions.append(body)
+    assert header is not None
+    return (
+        header
+        + "\n".join(functions)
+        + "int main(void) {\n"
+        + "  int errors = 0;\n"
+        + "".join(f"  errors += run_batch_{index}();\n" for index in range(len(cases)))
+        + "  return errors != 0;\n}\n"
+    )

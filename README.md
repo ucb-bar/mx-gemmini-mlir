@@ -81,6 +81,14 @@ handoff along matching rank-3 or rank-4 batch axes and returns one indexed
 payload per rank-2 contraction. Its common FP6 codebook must contain every
 selected code in every batch. This prepares buffers; it does not schedule a
 batched attention kernel or qualify the host softmax seam.
+The bounded `emit_independent_batches_baremetal_c` composes up to four matching
+single-window payloads as successive independent contractions. A two-batch
+rank-3 functional matmul source is pinned for each format; the exact ELFs
+exited zero with both BF16 matrices matching on source-built Spike. A fresh
+RTL check has no verdict: the FP8 batch program and an unchanged prior-passing
+single-program control both exceeded wall-time bounds in the current simulator
+environment. This remains a Spike-only batch diagnostic and does not establish
+batched RTL execution or an attention kernel.
 
 A separate 32x32x32 functional-matmul vector exercises one representable
 element subnormal per output for each of MXFP8, MXFP6, and MXFP4. The test

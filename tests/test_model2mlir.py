@@ -12,7 +12,10 @@ from mx_gemmini_support.model2mlir import (
     plan_linear_operands,
     plan_rank2_operands,
 )
-from mx_gemmini_support.diagnostic_program import emit_single_window_baremetal_c
+from mx_gemmini_support.diagnostic_program import (
+    emit_independent_batches_baremetal_c,
+    emit_single_window_baremetal_c,
+)
 
 
 @pytest.mark.parametrize("fmt,code", [("mxfp8", 0x38), ("mxfp6", 0x0c), ("mxfp4", 0x02)])
@@ -161,4 +164,33 @@ def test_functional_element_subnormal_source_matches_rtl_run(fmt, small, golden,
     lut = [list(range(16)) for _ in range(16)] if fmt == "mxfp6" else None
     payload = plan_rank2_operands(operands, activation_lut=lut, weight_lut=lut)
     source = emit_single_window_baremetal_c(payload, [[golden] * 32 for _ in range(32)])
+    assert sha256(source.encode()).hexdigest() == source_hash
+
+
+@pytest.mark.parametrize("fmt,code,source_hash", [
+    ("mxfp8", 0x38, "6c10f5bf537e5c99346db32acb694d8f045e327bbe50b29a39f9ae715fb39b8e"),
+    ("mxfp6", 0x0c, "f9c187480b1c2c5db2ed5ca2262b3e2999be2e73f3482cc4714d36d749724c77"),
+    ("mxfp4", 0x02, "ac1bf3b30f67667b228f5da9793f52f1170c75019889786c045d870ed2b44437"),
+])
+def test_functional_independent_batches_emit_distinct_executions(fmt, code, source_hash):
+    pytest.importorskip("torchao")
+    pytest.importorskip("m2m")
+    from m2m.capture.mx_gemmini_quant import functional_contraction_operands
+
+    lhs = torch.ones(2, 32, 32)
+    lhs[1].fill_(2.0)
+    rhs = torch.ones(2, 32, 32)
+    operands = functional_contraction_operands(lhs, rhs, fmt)
+    lut = [[0, code] + [0] * 14 for _ in range(16)] if fmt == "mxfp6" else None
+    indexed = plan_independent_batches(operands, activation_lut=lut, weight_lut=lut)
+    assert [row.batch_index for row in indexed] == [(0,), (1,)]
+    assert indexed[0].payload.waves[0].activation_scale_bytes == bytes([127] * 32)
+    assert indexed[1].payload.waves[0].activation_scale_bytes == bytes([128] * 32)
+    source = emit_independent_batches_baremetal_c([
+        (indexed[0], [[0x4200] * 32 for _ in range(32)]),
+        (indexed[1], [[0x4280] * 32 for _ in range(32)]),
+    ])
+    assert source.count("gemmini_loop_ws_spad(") == 2
+    assert source.count("static int run_batch_") == 2
+    assert "batch (0,)" in source and "batch (1,)" in source
     assert sha256(source.encode()).hexdigest() == source_hash
