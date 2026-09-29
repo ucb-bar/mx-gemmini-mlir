@@ -1,0 +1,18 @@
+# Source-only candidate. The active software contract and packers remain pinned to f016739.
+# This record is not an elaboration receipt or a simulator qualification.
+schema: mx_gemmini.rtl_sources.v1
+gemmini_commit: 2029218197f771ce71416f859d975bea47b7aabc
+mxgen_commit: 56ef1c6810924e1cb0af07add09156b0e2f53576
+files:
+  mxgen/src/main/scala/mxgen/MxPE.scala: 4face858f94197a8012a3c1696ad7519b7f43db4e824725582075e6e67825b4e
+  mxgen/src/main/scala/mxgen/MxParameters.scala: 7d9fadd0cfeff7cfbfb25ed4a3a4b40aae5a255e6d9f058135e48ddf02645c88
+  src/main/scala/gemmini/Arithmetic.scala: ccea6a31af085ad7013526eb24b7d35a7572f5755e7361b3c8bcffc705ff6901
+  src/main/scala/gemmini/BF16ScalaRoundToTiny.scala: 917542c3a8c38c4e756855f7373665afd53106ad46ea1bc4aa2fd0fb7db0be9a
+  src/main/scala/gemmini/ConfigsFP.scala: 7e246f5031606cac2259ebf3be7d9dc723b802a2b8f4ae585cc06d27c93d1c1d
+  src/main/scala/gemmini/Controller.scala: 40f0a553f3583128c6296573dc72947f4b5bb4c3f3309336d9813bab6ccf4767
+  src/main/scala/gemmini/ExecuteController.scala: b7268fa3c4d2c5a28ea80b321f1d36b5efdb8bcd80de1ed796c4a64d82247ab2
+  src/main/scala/gemmini/GemminiISA.scala: 4625cf657396db78f281da8681da2a95d5b4d3d8d8e03b6191cb3bd569067c52
+  src/main/scala/gemmini/LoopMatmul.scala: 41dafa8687a0dd4c7d3b575ddf65923586e8c36aef5621d486089501d7d25877
+  src/main/scala/gemmini/MxConfigFragments.scala: 82973cf6cbf9a6d017ee8d9c6866f8aae99213d72b5361baa43a4ec0fa259b1a
+  src/main/scala/gemmini/MxRequantizer.scala: 3005cb28eafeb55ea306263d0b4e61ff09f1479cbe851d1803241550902640bf
+  src/main/scala/gemmini/ScaleFactorMem.scala: ed44c21427c8fd9e0bd74ea072be7dd971a593827ff59dcd97d0ea6acff2b549

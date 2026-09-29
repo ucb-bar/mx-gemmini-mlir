@@ -16,6 +16,11 @@ authority for the selected configuration.
 | Capture handoff | Mixed FP8/FP6/FP4 sites and one resident output chain pass model2MLIR capture and the MX dialect verifier. | This checks identity and operation structure, not executable lowering or whole-model accuracy. |
 | Numerical review | The fake-quant kernel models BF16 operand conversion. | Mesh product truncation, the 16-lane reduction schedule, FP6 LUT choice, nonfinite poisoning, output requantization, host operations, and full-model accuracy still need selected-oracle evidence. |
 
+The available three-stage SmolVLA full-checkpoint diagnostics use synthetic
+inputs and their stage receipts report `source_closure_verified: false`.
+Their materialized files are useful for structural inspection, but they do
+not supply the selected, attributed MX application capture needed below.
+
 The current [`gemmini-mx-cleanup` head at `2029218`](https://github.com/ucb-bar/gemmini/commit/2029218197f771ce71416f859d975bea47b7aabc)
 is seven commits after the selected pin and selects MxGen
 `56ef1c6810924e1cb0af07add09156b0e2f53576`. It adds a separate E4M3
@@ -26,6 +31,41 @@ construction is conditional. The selected standalone configuration still has a
 LUT, but its existing simulator and source-bound diagnostics cannot qualify
 these changed shared paths. The TorchAO kernel now rejects a contract retargeted
 to another Gemmini revision, MxGen revision, or configuration until reviewed.
+
+## Current RTL source audit
+
+The candidate source record is
+[`rtl_candidate_2029218.yaml`](../mx_gemmini_support/contracts/rtl_candidate_2029218.yaml).
+Its 12 file hashes match the checked-out `2029218` Gemmini tree and its
+`56ef1c6` MxGen submodule. This is a scoped source census, not the complete
+elaboration closure. The selected
+`GemminiMxFPConfigs.standaloneMxFPConfig` still has a 16 by 16 weight-stationary
+mesh, 32-element scale blocks, a LUT, 256 KiB scratchpad, 64 KiB accumulator,
+and two accumulator banks. It sets `has_nonlinear_activations = false` and
+`has_normalizations = false`; the current software contract assigns those
+operations to the host. These are source-level findings, not properties of a
+newly elaborated design.
+
+The changed protocol must be part of any candidate software contract for this
+revision:
+
+| Instruction | RTL fields and behavior |
+| --- | --- |
+| `MX_LOAD_SCALES` (funct 27) | `rs1[39:0]` physical source address; `rs1[63:40]` source row pitch; `rs2[31:0]` bytes per row; bit 32 selects A/activation (0) or B/weight (1); bits 45:33 select destination scale-memory byte offset; bits 53:46 give row count; bit 54 gates the load until its destination half is free. Zero row count means one row and zero pitch means contiguous rows. Address, pitch, and destination must be eight-byte aligned. The loader truncates the byte count down to an eight-byte multiple. |
+| `LOOP_WS_CONFIG_SCALES` (funct 31) | `rs1` and `rs2` provide A and B scale source addresses. A zero A address selects the legacy path without loop-managed scale loads. |
+| `LOOP_WS_CONFIG_SCALE_STRIDES` (funct 32) | `rs1` and `rs2` provide A and B scale row pitches. The loop emits gated two-dimensional funct-27 loads into the half indexed by its loop slot. |
+| `CONFIG_SCALE_MEM` (funct 26) | `rs2[16]` waits for selected loads to land; `rs2[17]` waits for loop-managed halves to be ready; `rs2[18]` permits resident A-scale reuse. The execute controller checks these conditions before accepting the config. |
+
+A software encoder for this revision must reject nonzero byte counts that are
+not multiples of eight, rather than silently accepting the RTL's truncation.
+
+The source audit also finds a shared `GemminiConfigs.scala` change to DMA
+column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The
+optional-LUT change does not remove the LUT from the selected standalone
+configuration. It still changes shared source and therefore needs a new
+source-bound elaboration and simulator receipt before the active pin can move.
+The current `scale_load_rs2` packer encodes the older one-dimensional instruction
+and stays tied to the older contract.
 
 [`pi0-quant`](https://github.com/chloe-wong/pi0-quant) and
 [`smolVLA-quant`](https://github.com/chloe-wong/smolVLA-quant) currently describe
