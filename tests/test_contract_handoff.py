@@ -93,5 +93,6 @@ def test_mixed_capture_and_resident_chain_handoff(tmp_path):
 
 def test_source_contract_projection_has_output_requantization():
     projection = compile_contract(SPEC.read_bytes())
+    assert projection["zero_block_scale_e8m0"] == 104
     assert projection["output_requantization"]["scale_resident"] is True
     assert set(projection["output_requantization"]["formats"]) == {"mxfp8", "mxfp6", "mxfp4"}

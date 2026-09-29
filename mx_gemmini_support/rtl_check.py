@@ -7,6 +7,7 @@ MxRequantizer. It is not elaboration, simulation, or numerical qualification.
 from __future__ import annotations
 
 import hashlib
+import re
 import subprocess
 from pathlib import Path
 
@@ -74,6 +75,22 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
             raise ValueError(f"{name} contract differs from selected RTL format table")
     if contract["output_requantization"]["bf16_readout_code"] != codes["BF16"]:
         raise ValueError("BF16 readout code differs from RTL")
+    epsilon = re.search(r"\bval EPS_BIASED_EXP = (\d+)\.U\(8\.W\)", source)
+    if epsilon is None:
+        raise ValueError("selected RTL block-scale floor is missing")
+    if (contract["zero_block_scale_e8m0"] != int(epsilon.group(1)) or
+        contract["scale_rule"] != "floor_log2_of_bf16_block_max_with_2pow_minus23_floor" or
+        "val clamped_exp = Mux(max_biased_exp < EPS_BIASED_EXP, EPS_BIASED_EXP, max_biased_exp)" not in source or
+        "scale_exponent := clamped_exp.zext.asSInt - 127.S - log2_pmax_floor.zext.asSInt" not in source or
+        "val log2_pmax_floor = 0.U" not in source):
+        raise ValueError("block-scale rule differs from selected RTL")
+    rounding = (root / "src/main/scala/gemmini/BF16ScalaRoundToTiny.scala").read_text()
+    if (contract["operand_rounding"] != "rne" or
+        "val fp8_out = Mux(io.mx_fp8_altfmt, BF16ToE5M2(scaled_bf16), BF16ToE4M3(scaled_bf16))" not in rounding or
+        "val fp6_out = Mux(io.mx_fp8_altfmt, BF16ToE2M3(scaled_bf16), BF16ToE3M2(scaled_bf16))" not in rounding or
+        "roundAnyRawFNToRecFN.io.roundingMode  := consts.round_near_even" not in rounding or
+        "roundToMx(scaled_bf16, inputexpWidth, inputsigWidth, format_fp4, (in: UInt) => E3M1Tofp4(in))" not in rounding):
+        raise ValueError("operand rounding path differs from selected RTL")
     config = (root / "src/main/scala/gemmini/ConfigsFP.scala").read_text()
     if "val standaloneMxFPConfig = defaultMxFPConfig.copy(" not in config:
         raise ValueError("selected standalone config missing")
@@ -83,7 +100,8 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
             "rtl_commit": record["gemmini_commit"], "mxgen_commit": record["mxgen_commit"],
             "checked_files": dict(record["files"]),
             "format_codes": codes, "exponent_bits": exp, "fraction_bits": fraction,
-            "max_finite": maximum}
+            "max_finite": maximum, "zero_block_scale_e8m0": int(epsilon.group(1)),
+            "operand_rounding": contract["operand_rounding"]}
 
 
 def main() -> None:

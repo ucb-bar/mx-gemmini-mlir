@@ -14,6 +14,8 @@ are also included in the Python distribution.
 `mx_gemmini_support.rtl_check.check_sources` checks both Git revisions, hashes
 the exact files, and derives the format codes, exponent and fraction widths,
 maximum finite values, and BF16 readout code from `MxRequantizer.scala`.
+It also checks the block-scale floor and the selected BF16 operand-rounding
+paths against `BF16ScalaRoundToTiny.scala`.
 This is a source cross-check. It is not elaboration, simulator execution, or a
 complete numerical oracle.
 

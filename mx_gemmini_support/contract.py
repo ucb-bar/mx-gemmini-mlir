@@ -95,6 +95,7 @@ def compile_contract(raw: bytes) -> dict[str, Any]:
         "block_size": numerics["block_size"],
         "scale_encoding": numerics["scale_encoding"],
         "scale_rule": numerics["scale_rule"],
+        "zero_block_scale_e8m0": numerics["zero_block_scale_e8m0"],
         "operand_rounding": numerics["operand_rounding"],
         "formats": formats,
         "e3m1_intermediate": dict(intermediate),

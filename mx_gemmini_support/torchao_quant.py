@@ -32,7 +32,7 @@ def verify_kernel_contract(contract: dict) -> None:
         raise ValueError("MX kernel does not implement the selected block/scale contract")
     if contract.get("operand_rounding") != "rne" or contract.get("scale_rule") != (
         "floor_log2_of_bf16_block_max_with_2pow_minus23_floor"
-    ):
+    ) or contract.get("zero_block_scale_e8m0") != 104:
         raise ValueError("MX kernel does not implement the selected rounding/scale contract")
     formats = contract.get("formats") or {}
     for name in ("mxfp8", "mxfp6", "mxfp4"):
