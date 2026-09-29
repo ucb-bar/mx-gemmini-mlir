@@ -36,7 +36,15 @@ to another Gemmini revision, MxGen revision, or configuration until reviewed.
 
 The candidate source record is
 [`rtl_candidate_2029218.yaml`](../mx_gemmini_support/contracts/rtl_candidate_2029218.yaml).
-Its 12 file hashes match the checked-out `2029218` Gemmini tree and its
+The corresponding
+[`software-spec-2029218-candidate.yaml`](../mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml)
+pins those revisions and declares the new scale-load and loop-management
+fields. It passes Merlin software-spec validation and the package's source
+hash, format, and rounding cross-check. That checker does not prove the new
+instruction fields. Its status remains `unreviewed`; the package still selects the
+older contract for TorchAO capture. The candidate carries no simulator digest
+from the older revision.
+The source record's 12 file hashes match the checked-out `2029218` Gemmini tree and its
 `56ef1c6` MxGen submodule. This is a scoped source census, not the complete
 elaboration closure. The selected
 `GemminiMxFPConfigs.standaloneMxFPConfig` still has a 16 by 16 weight-stationary

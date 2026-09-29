@@ -1,5 +1,24 @@
 # MX Gemmini quantization and MLIR handoff
 
+## Extension ownership
+
+TorchAO and model2MLIR do not contain an MX Gemmini branch. This out-of-tree
+package defines `MXGemminiFakeQuantConfig(AOBaseConfig)` and registers its
+`nn.Linear` handler with TorchAO's `quantize_` registry. The same package owns
+the exported-graph pass for functional matmuls, which a module handler cannot
+see. model2MLIR loads the installed `m2m.quantization_adapters` entry point
+selected by the caller, passes exact contract and policy bytes, then checks
+the returned site census and digests. The MX dialect verifies the handoff in
+this repository. Other targets can install their own entry points without
+changing either core project.
+
+The current numerical kernel is handwritten and guarded by exact RTL and
+MxGen revisions. The source cross-check derives a limited set of facts, but
+does not generate the TorchAO handler or prove mesh arithmetic. The
+`2029218` software-spec candidate therefore fails that guard until its
+numerical behavior and simulator path are reviewed. This keeps target-specific
+code here while making selection and capture target-neutral.
+
 The selected configuration is `GemminiMxFPConfigs.standaloneMxFPConfig` at
 Gemmini `f0167390b56fb315deea90ac1fc3983772e92d82` with MxGen
 `a27ce3cd81513210c21f971ec3977defd13fa21e`. The authored
