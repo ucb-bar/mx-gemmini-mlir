@@ -16,6 +16,7 @@ from mx_gemmini_support.model2mlir import (
 from mx_gemmini_support.diagnostic_program import (
     emit_independent_batches_baremetal_c,
     emit_single_window_baremetal_c,
+    emit_spatial_tiles_baremetal_c,
 )
 
 
@@ -266,4 +267,33 @@ def test_functional_independent_batches_emit_distinct_executions(fmt, code, sour
     assert source.count("gemmini_loop_ws_spad(") == 2
     assert source.count("static int run_batch_") == 2
     assert "batch (0,)" in source and "batch (1,)" in source
+    assert sha256(source.encode()).hexdigest() == source_hash
+
+
+@pytest.mark.parametrize("fmt,code,source_hash", [
+    ("mxfp8", 0x38, "434dab1e9b110ed50b24d398b4b1d7a556e0a708d241b684ed43fc53dcec31a7"),
+    ("mxfp6", 0x0c, "0e0fcb0f25f633311d229e57c0e14a241c68a24d539f482b3cf0aa1ff37c7fd7"),
+    ("mxfp4", 0x02, "028ad046e5833005e8aad29ef88301590253be6f3b6386c47493fecb61fe951b"),
+])
+def test_functional_spatial_tiles_emit_four_quadrants(fmt, code, source_hash):
+    pytest.importorskip("torchao")
+    pytest.importorskip("m2m")
+    from m2m.capture.mx_gemmini_quant import functional_contraction_operands
+
+    lhs = torch.ones(64, 32)
+    lhs[32:].fill_(2.0)
+    rhs = torch.ones(32, 64)
+    rhs[:, 32:].fill_(2.0)
+    operands = functional_contraction_operands(lhs, rhs, fmt)
+    lut = [[0, code] + [0] * 14 for _ in range(32)] if fmt == "mxfp6" else None
+    tiles = list(iter_spatial_tiles(operands, activation_lut=lut, weight_lut=lut))
+    expected = [
+        [0x4200 if row < 32 and col < 32 else
+         0x4280 if row < 32 or col < 32 else 0x4300
+         for col in range(64)]
+        for row in range(64)
+    ]
+    source = emit_spatial_tiles_baremetal_c(tiles, expected)
+    assert source.count("gemmini_loop_ws_spad(") == 4
+    assert "tile (0, 0)" in source and "tile (32, 32)" in source
     assert sha256(source.encode()).hexdigest() == source_hash

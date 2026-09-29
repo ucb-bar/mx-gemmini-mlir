@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from .contraction import MxContractionPayload
-from .model2mlir import IndexedMxPayload
+from .model2mlir import IndexedMxPayload, IndexedTiledMxPayload
 
 
 def _c_bytes(name: str, values: bytes) -> str:
@@ -270,3 +270,41 @@ def emit_independent_batches_baremetal_c(
         + "".join(f"  errors += run_batch_{index}();\n" for index in range(len(cases)))
         + "  return errors != 0;\n}\n"
     )
+
+
+def emit_spatial_tiles_baremetal_c(
+    tiles: Sequence[IndexedTiledMxPayload],
+    expected_bf16: Sequence[Sequence[int]],
+) -> str:
+    """Check every 32x32 tile of one bounded rank-2 contraction in one ELF.
+
+    The same one-window command body executes each spatial tile successively.
+    This checks tile offsets and expected output slices; it does not implement
+    a general runtime schedule or copy the pieces into a combined output.
+    """
+    if not tiles or len(tiles) > 4 or any(tile.batch_index for tile in tiles):
+        raise ValueError("spatial diagnostic needs one to four rank-2 tiles")
+    m = max(tile.m_stop for tile in tiles)
+    n = max(tile.n_stop for tile in tiles)
+    expected_origins = {(row, col) for row in range(0, m, 32) for col in range(0, n, 32)}
+    origins = {(tile.m_start, tile.n_start) for tile in tiles}
+    if (m not in (32, 64) or n not in (32, 64)
+            or len(origins) != len(tiles) or origins != expected_origins
+            or any((tile.m_stop - tile.m_start, tile.n_stop - tile.n_start) != (32, 32)
+                   or (tile.payload.m, tile.payload.n, tile.payload.k) != (32, 32, 32)
+                   for tile in tiles)):
+        raise ValueError("spatial diagnostic needs a complete 32x32 tile grid")
+    if len(expected_bf16) != m or any(len(row) != n for row in expected_bf16):
+        raise ValueError("spatial diagnostic BF16 expected matrix has wrong shape")
+    cases = [
+        (
+            IndexedMxPayload((tile.m_start, tile.n_start), tile.payload),
+            [row[tile.n_start:tile.n_stop] for row in expected_bf16[tile.m_start:tile.m_stop]],
+        )
+        for tile in sorted(tiles, key=lambda tile: (tile.m_start, tile.n_start))
+    ]
+    source = emit_independent_batches_baremetal_c(cases)
+    label = "batch ("
+    if source.count(label) != len(cases):
+        raise AssertionError("serial C diagnostic label changed")
+    return source.replace(label, "tile (")

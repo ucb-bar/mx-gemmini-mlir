@@ -6,9 +6,10 @@ from mx_gemmini_support.contraction import plan_mx_contraction_payload
 from mx_gemmini_support.diagnostic_program import (
     emit_independent_batches_baremetal_c,
     emit_single_window_baremetal_c,
+    emit_spatial_tiles_baremetal_c,
     emit_two_wave_baremetal_c,
 )
-from mx_gemmini_support.model2mlir import IndexedMxPayload
+from mx_gemmini_support.model2mlir import IndexedMxPayload, IndexedTiledMxPayload
 
 
 def _payload(fmt):
@@ -116,3 +117,11 @@ def test_independent_batch_emitter_rejects_ambiguous_or_mixed_cases():
         emit_independent_batches_baremetal_c([
             first, (IndexedMxPayload((1,), _payload("mxfp4")), expected)
         ])
+
+
+def test_spatial_emitter_refuses_missing_output_tile():
+    expected = [[0x4200] * 64 for _ in range(64)]
+    upper_left = IndexedTiledMxPayload((), 0, 32, 0, 32, _payload("mxfp8"))
+    lower_right = IndexedTiledMxPayload((), 32, 64, 32, 64, _payload("mxfp8"))
+    with pytest.raises(ValueError, match="complete 32x32 tile grid"):
+        emit_spatial_tiles_baremetal_c([upper_left, lower_right], expected)

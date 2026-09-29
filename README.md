@@ -96,6 +96,14 @@ RTL check has no verdict: the FP8 batch program and an unchanged prior-passing
 single-program control both exceeded wall-time bounds in the current simulator
 environment. This remains a Spike-only batch diagnostic and does not establish
 batched RTL execution or an attention kernel.
+`emit_spatial_tiles_baremetal_c` serially checks a complete 32x32 tile grid
+of one rank-2 contraction with output dimensions up to 64x64 and K=32.
+The model2MLIR handoff supplies a 64x32 activation and 32x64 weight with
+distinct output quadrants. Its four-tile C source is hash-pinned in the
+integration test for each format. All twelve tile results across MXFP8,
+MXFP6, and MXFP4 matched BF16 expectations on the source-built Spike core.
+This diagnostic neither assembles a combined output buffer nor establishes
+an RTL verdict or a general tiled runtime schedule.
 
 A separate 32x32x32 functional-matmul vector exercises one representable
 element subnormal per output for each of MXFP8, MXFP6, and MXFP4. The test
