@@ -32,6 +32,27 @@ def _freeze_eval(graph_module):
         graph_module.eval = types.MethodType(lambda self: self.train(False), graph_module)
 
 
+def _linear_call_shapes(model, inputs, module_names):
+    """Observe static Linear calls before TorchAO replaces their modules."""
+    exported = torch.export.export(model.eval(), tuple(inputs))
+    calls = {name: [] for name in module_names}
+    for node in exported.graph_module.graph.nodes:
+        if node.target != torch.ops.aten.linear.default:
+            continue
+        stack = node.meta.get("nn_module_stack") or {}
+        owners = {row[0] for row in stack.values()
+                  if isinstance(row, (tuple, list)) and row and row[0] in calls}
+        if len(owners) > 1:
+            raise ValueError(f"MX Linear call has ambiguous module owners: {sorted(owners)}")
+        if not owners:
+            continue
+        owner = owners.pop()
+        value = node.args[0].meta.get("val") if node.args else None
+        shape = getattr(value, "shape", None)
+        calls[owner].append(tuple(shape) if shape is not None else None)
+    return calls
+
+
 def _verify_chain_edges(graph_module, chains):
     """A resident output may only feed the next contraction directly as A."""
     nodes = {node.name: node for node in graph_module.graph.nodes}
@@ -86,10 +107,18 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
     unknown_modules = set(policy.module_overrides) - {name for name, _ in modules}
     if unknown_modules:
         raise ValueError(f"MX policy names missing Linear modules: {sorted(unknown_modules)}")
+    call_shapes = _linear_call_shapes(model, inputs, {name for name, _ in modules})
     selections = []
     for name, module in modules:
         fmt = policy.module_format(name)
         site_id = f"module:{name}"
+        observed = call_shapes[name]
+        if len(observed) > 1:
+            raise ValueError(f"MX Linear {name!r} has multiple static calls; module site IDs cannot distinguish them")
+        if not observed:
+            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
+                           "reason": "module absent from exported graph"})
+            continue
         if fmt == "host":
             census.append({"site_id": site_id, "kind": "linear", "status": "host"})
             continue
@@ -99,10 +128,23 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
             census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
                            "reason": f"N={n} K={k} outside {fmt} shape bounds"})
             continue
+        shape = observed[0]
+        if (shape is None or len(shape) not in (2, 3, 4)
+                or any(not isinstance(dim, int) for dim in shape[-2:])):
+            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
+                           "reason": "unknown or unsupported activation rank/shape"})
+            continue
+        m, observed_k = shape[-2:]
+        if observed_k != k:
+            raise ValueError(f"MX Linear {name!r} captured K differs from module weight K")
+        if m < bounds["M"]["min"] or m % bounds["M"]["multiple_of"]:
+            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
+                           "reason": f"M={m} outside {fmt} shape bounds"})
+            continue
         books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
         selections.append((name, module, fmt, books))
         census.append({"site_id": site_id, "kind": "linear", "status": "quantized",
-                       "format": fmt, "shape": [n, k],
+                       "format": fmt, "shape": [m, n, k],
                        "fp6_codebook_sha256": _sha(books) if fmt == "mxfp6" else None})
     for name, module, fmt, books in selections:
         quantize_(model, MXGemminiFakeQuantConfig(fmt, *books),

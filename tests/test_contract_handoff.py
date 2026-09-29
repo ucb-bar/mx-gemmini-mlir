@@ -57,6 +57,45 @@ def test_host_module_does_not_reenter_functional_quantization():
     assert graph(torch.randn(32, 32)).shape == (32, 32)
 
 
+@pytest.mark.parametrize("rows,status", [(113, "skipped"), (32, "quantized")])
+def test_linear_selection_checks_captured_activation_rows(rows, status):
+    class OneLinear(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(32, 32)
+
+        def forward(self, value):
+            return self.a(value)
+
+    graph, manifest = apply(
+        OneLinear().eval(), (torch.randn(rows, 32),),
+        contract_bytes=SPEC.read_bytes(),
+        policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n",
+    )
+    assert graph(torch.randn(rows, 32)).shape == (rows, 32)
+    assert len(manifest["sites"]) == 1
+    assert manifest["sites"][0]["status"] == status
+    if status == "quantized":
+        assert manifest["sites"][0]["shape"] == [rows, 32, 32]
+    else:
+        assert "M=113" in manifest["sites"][0]["reason"]
+
+
+def test_reused_linear_requires_distinct_call_site_ids():
+    class Reused(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(32, 32)
+
+        def forward(self, value):
+            return self.a(value) + self.a(value)
+
+    with pytest.raises(ValueError, match="multiple static calls"):
+        apply(Reused().eval(), (torch.randn(32, 32),),
+              contract_bytes=SPEC.read_bytes(),
+              policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n")
+
+
 def test_mixed_capture_and_resident_chain_handoff(tmp_path):
     m2m = pytest.importorskip("m2m")
     from m2m.capture.external_quantization import ExternalQuantizationConfig

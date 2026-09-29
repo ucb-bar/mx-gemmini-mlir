@@ -20,6 +20,11 @@ The available three-stage SmolVLA full-checkpoint diagnostics use synthetic
 inputs and their stage receipts report `source_closure_verified: false`.
 Their materialized files are useful for structural inspection, but they do
 not supply the selected, attributed MX application capture needed below.
+One eager denoise step from the pinned pretrained checkpoint with synthetic
+inputs observed 302 of 303 Linear modules. Under the current static tile rules,
+73 observed sites were eligible for each of FP8, FP6, and FP4; the remaining
+229 failed either activation M/rank or N/K bounds. This is a shape diagnostic,
+not a quantized model capture, accuracy result, or admitted application corpus.
 
 The current [`gemmini-mx-cleanup` head at `2029218`](https://github.com/ucb-bar/gemmini/commit/2029218197f771ce71416f859d975bea47b7aabc)
 is seven commits after the selected pin and selects MxGen
@@ -74,6 +79,11 @@ configuration. It still changes shared source and therefore needs a new
 source-bound elaboration and simulator receipt before the active pin can move.
 The current `scale_load_rs2` packer encodes the older one-dimensional instruction
 and stays tied to the older contract.
+The selected MxGen submodule's `MxFpMul_MxGemmini_BF16Out_Spec` passed its one
+self-checking PE test suite at this revision. That is unit evidence for the PE
+cases in the suite, not a Gemmini integration or simulator verdict. The
+standalone Gemmini Scala test could not compile with the checkout's existing
+build dependencies, so it supplies no additional result.
 
 [`pi0-quant`](https://github.com/chloe-wong/pi0-quant) and
 [`smolVLA-quant`](https://github.com/chloe-wong/smolVLA-quant) currently describe

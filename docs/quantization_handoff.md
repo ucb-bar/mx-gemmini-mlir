@@ -84,6 +84,13 @@ selected contract before capture. The resulting graph uses BF16 operand
 fake quantization followed by PyTorch matmul. It is an operand and coverage
 diagnostic, not a model of the mesh's product or reduction arithmetic.
 
+Before replacing Linear modules, the adapter exports the original graph and
+checks each observed activation rank and M dimension against the selected
+format's tile rule, as well as the module's N and K dimensions. An ineligible
+module is recorded as skipped with a reason. A Linear called from multiple
+static sites currently fails capture because one module ID cannot describe
+those calls separately.
+
 ```python
 from m2m import convert
 from m2m.capture.external_quantization import ExternalQuantizationConfig
