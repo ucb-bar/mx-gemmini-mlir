@@ -5,9 +5,10 @@ This out-of-tree compiler prototype is scoped to
 `f0167390b56fb315deea90ac1fc3983772e92d82` and MxGen
 `a27ce3cd81513210c21f971ec3977defd13fa21e`. It carries an explicitly
 selectable Merlin support provider with an empty executable capability claim.
-It has no runtime backend, matrix lowering, oracle, or certified fact bundle.
-Its layout rules are source-derived; narrow payload-to-RTL diagnostics are
-described below. Other shapes and the command stream remain unreviewed.
+It has no Merlin runtime backend, matrix lowering, oracle, or certified fact
+bundle. Its layout rules are source-derived; narrow payload-to-RTL
+diagnostics are described below. Other shapes and general command scheduling
+remain unreviewed.
 
 `mx_gemmini_support.layout` implements:
 
@@ -60,9 +61,15 @@ buffers. FP6 also used its exact code-to-index mapping and packed LUT
 buffers. Each used distinct values in the upper and lower activation rows
 and left and right weight columns. All four BF16 output quadrants matched
 exactly for each format, and each simulator process exited zero. The command
-sequences were hand-written for these diagnostics. This establishes one
-payload-to-RTL path per format, not an executable provider or a general
-DMA/loop schedule.
+sequences were initially hand-written for these diagnostics.
+`mx_gemmini_support.diagnostic_program.emit_single_window_baremetal_c` now
+renders a bounded C command sequence from the coherent payload and a caller's
+BF16 expectation matrix. Its emitted programs also passed the same
+source-bound RTL simulator with zero BF16 mismatches for all three formats.
+The emitter refuses any shape other than 32x32x32, multiple K waves, or an
+FP6 LUT configuration outside the tested 16-line, shift-one case. This is a
+reusable bringup program for one window, not an executable Merlin provider or
+a general DMA/loop schedule.
 
 Run `python -m pytest tests -q` from this directory.
 
