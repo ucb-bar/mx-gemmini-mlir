@@ -3,10 +3,13 @@
 import pytest
 
 from mx_gemmini_support.layout import (
+    config_scale_mem_rs1,
     config_format_code,
     lut_load_rs2,
     pack_fp6_lut,
     pack_scale_rows,
+    pack_wave_scales,
+    plan_scale_waves,
     scale_load_rs2,
     scale_physical_location,
     scale_row_index,
@@ -58,3 +61,53 @@ def test_fp6_lut_wire_order_and_dma_padding():
         pack_fp6_lut([line] * 65)
     with pytest.raises(ValueError, match="6-bit"):
         pack_fp6_lut([[64] + [0] * 15])
+
+
+def test_fp8_k_wave_plan_obeys_loop_field_before_scale_capacity():
+    one = plan_scale_waves("mxfp8", tiles_i=1, tiles_j=1, k_tiles=510)
+    assert [(w.k_tile_start, w.k_tiles, w.activation_rows, w.weight_rows) for w in one] == [
+        (0, 510, 255, 255)
+    ]
+    split = plan_scale_waves("mxfp8", tiles_i=1, tiles_j=1, k_tiles=512)
+    assert [(w.k_tile_start, w.k_tiles) for w in split] == [(0, 510), (510, 2)]
+    assert all(w.activation_rows * 16 <= 4096 and w.weight_rows * 16 <= 4096 for w in split)
+    with pytest.raises(ValueError, match="whole 32-element"):
+        plan_scale_waves("mxfp8", tiles_i=1, tiles_j=1, k_tiles=3)
+
+
+def test_quad_format_wave_payloads_restart_at_local_row_zero():
+    waves = plan_scale_waves("mxfp6", tiles_i=4, tiles_j=2, k_tiles=66)
+    assert [(w.k_tile_start, w.k_tiles, w.activation_rows, w.weight_rows) for w in waves] == [
+        (0, 64, 128, 64), (64, 2, 4, 2)
+    ]
+    activation = [[block] * 32 for block in range(33) for _ in range(4)]
+    weight = [[block + 50] * 32 for block in range(33) for _ in range(2)]
+    act, wgt = pack_wave_scales(waves[1], activation, weight)
+    assert len(act) == 128 and len(wgt) == 64
+    assert act == bytes([32] * 128) and wgt == bytes([82] * 64)
+    assert scale_physical_location("mxfp6", 0, 0).upload_offset == 0
+    with pytest.raises(ValueError, match="full scale plan"):
+        pack_wave_scales(waves[1], activation[:-1], weight)
+
+
+def test_scale_wave_rejects_axis_that_cannot_fit_one_k_block():
+    with pytest.raises(ValueError, match="active scale window"):
+        plan_scale_waves("mxfp4", tiles_i=129, tiles_j=1, k_tiles=2)
+    with pytest.raises(ValueError, match="9-bit"):
+        plan_scale_waves("mxfp8", tiles_i=512, tiles_j=1, k_tiles=2)
+
+
+def test_scale_mem_config_bitfields_follow_execute_controller():
+    rs1 = config_scale_mem_rs1(
+        tiles_i=3, tiles_j=5, k_tiles=8,
+        activation_buffer=1, weight_buffer=0,
+        reset_requantizer=True, resident=True,
+        output_scale_address=0x1234,
+    )
+    assert rs1 & ((1 << 33) - 1) == 0x1234
+    assert (rs1 >> 33) & 511 == 3
+    assert (rs1 >> 42) & 511 == 5
+    assert (rs1 >> 51) & 511 == 8
+    assert [(rs1 >> bit) & 1 for bit in (60, 61, 62, 63)] == [1, 0, 1, 1]
+    with pytest.raises(ValueError, match="9-bit"):
+        config_scale_mem_rs1(tiles_i=1, tiles_j=1, k_tiles=512)

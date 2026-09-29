@@ -14,6 +14,7 @@ from dataclasses import dataclass
 _FORMAT_CODE = {"mxfp8": 0, "mxfp6": 1, "mxfp4": 2}
 _SCALE_WIDTH = {"mxfp8": 16, "mxfp6": 32, "mxfp4": 32}
 _ACTIVE_WINDOW = 4096
+_MAX_SCALE_LOOP_BOUND = (1 << 9) - 1
 
 
 def _width(fmt: str) -> int:
@@ -82,6 +83,114 @@ def pack_scale_rows(fmt: str, rows: Sequence[Sequence[int]]) -> bytes:
             raise ValueError(f"each {fmt} scale row needs {width} E8M0 bytes")
         payload.extend(row)
     return bytes(payload)
+
+
+@dataclass(frozen=True)
+class ScaleWave:
+    """One K-block range whose scales fit both operand windows.
+
+    This is a capacity/layout plan, not an executable loop schedule. In
+    particular, accumulator lifetime and command ordering need RTL testing.
+    """
+
+    fmt: str
+    tiles_i: int
+    tiles_j: int
+    total_blocks: int
+    block_start: int
+    block_stop: int  # exclusive
+
+    @property
+    def k_tile_start(self) -> int:
+        return 2 * self.block_start
+
+    @property
+    def k_tiles(self) -> int:
+        return 2 * (self.block_stop - self.block_start)
+
+    @property
+    def activation_rows(self) -> int:
+        return (self.block_stop - self.block_start) * self.tiles_i
+
+    @property
+    def weight_rows(self) -> int:
+        return (self.block_stop - self.block_start) * self.tiles_j
+
+
+def plan_scale_waves(fmt: str, *, tiles_i: int, tiles_j: int, k_tiles: int) -> tuple[ScaleWave, ...]:
+    """Partition K at 32-element MX block boundaries under the 4 KiB windows.
+
+    CONFIG_SCALE_MEM has 9-bit I/J/K bounds. Every wave starts its scale
+    payload at local offset zero; the selected RTL has no scale read base.
+    """
+    width = _width(fmt)
+    if any(type(n) is not int for n in (tiles_i, tiles_j, k_tiles)):
+        raise ValueError("scale loop bounds must be integers")
+    if not 1 <= tiles_i <= _MAX_SCALE_LOOP_BOUND or not 1 <= tiles_j <= _MAX_SCALE_LOOP_BOUND:
+        raise ValueError("I and J scale loop bounds must fit nonzero 9-bit fields")
+    if k_tiles <= 0 or k_tiles % 2:
+        raise ValueError("K tiles must contain whole 32-element MX blocks")
+    rows_per_window = _ACTIVE_WINDOW // width
+    blocks_per_wave = min(
+        rows_per_window // tiles_i,
+        rows_per_window // tiles_j,
+        _MAX_SCALE_LOOP_BOUND // 2,
+    )
+    if blocks_per_wave == 0:
+        raise ValueError("one K block exceeds an operand's active scale window")
+    total_blocks = k_tiles // 2
+    return tuple(
+        ScaleWave(fmt, tiles_i, tiles_j, total_blocks, start, min(start + blocks_per_wave, total_blocks))
+        for start in range(0, total_blocks, blocks_per_wave)
+    )
+
+
+def pack_wave_scales(
+    wave: ScaleWave,
+    activation_rows: Sequence[Sequence[int]],
+    weight_rows: Sequence[Sequence[int]],
+) -> tuple[bytes, bytes]:
+    """Slice global [K block][I/J tile] rows into zero-based wave payloads."""
+    if len(activation_rows) != wave.total_blocks * wave.tiles_i:
+        raise ValueError("activation rows do not match the full scale plan")
+    if len(weight_rows) != wave.total_blocks * wave.tiles_j:
+        raise ValueError("weight rows do not match the full scale plan")
+    act = pack_scale_rows(
+        wave.fmt, activation_rows[wave.block_start * wave.tiles_i : wave.block_stop * wave.tiles_i]
+    )
+    wgt = pack_scale_rows(
+        wave.fmt, weight_rows[wave.block_start * wave.tiles_j : wave.block_stop * wave.tiles_j]
+    )
+    return act, wgt
+
+
+def config_scale_mem_rs1(
+    *, tiles_i: int, tiles_j: int, k_tiles: int,
+    activation_buffer: int = 0, weight_buffer: int = 0,
+    reset_requantizer: bool = False, resident: bool = False,
+    output_scale_address: int = 0,
+) -> int:
+    """Encode selected CONFIG_SCALE_MEM rs1, including residency at bit 63.
+
+    Bit 62 is wired to the requantizer counter reset; it does not directly
+    reset ScaleFactorMem's read counters in the pinned RTL.
+    """
+    if any(type(n) is not int or not 1 <= n <= _MAX_SCALE_LOOP_BOUND for n in (tiles_i, tiles_j, k_tiles)):
+        raise ValueError("I/J/K bounds must fit nonzero 9-bit fields")
+    if activation_buffer not in (0, 1) or weight_buffer not in (0, 1):
+        raise ValueError("scale buffer selectors must be 0 or 1")
+    if type(output_scale_address) is not int or not 0 <= output_scale_address < (1 << 33):
+        raise ValueError("output scale address must fit 33 bits")
+    return (
+        output_scale_address
+        | (tiles_i << 33)
+        | (tiles_j << 42)
+        | (k_tiles << 51)
+        | (activation_buffer << 60)
+        | (weight_buffer << 61)
+        | (int(reset_requantizer) << 62)
+        | (int(resident) << 63)
+    )
 
 
 def scale_load_rs2(payload_bytes: int, *, operand: str) -> int:
