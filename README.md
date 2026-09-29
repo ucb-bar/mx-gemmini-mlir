@@ -15,6 +15,8 @@ written bytes and command stream.
   decoding;
 - first-buffer E8M0 scale payloads and funct-27 `rs2`;
 - capacity-bounded K-wave partitioning and zero-based scale payload slicing;
+- conversion of logical E8M0 scale matrices from activation [M][K/32] and
+  weight [N][K/32] or [K/32][N] into those wave payloads;
 - `CONFIG_SCALE_MEM` `rs1` bitfield encoding;
 - FP6 E3M2 codebook bit packing, 8-byte DMA padding, and funct-29 `rs2`.
 - exact FP6 code-to-index mapping for supplied 16-entry codebooks, plus the

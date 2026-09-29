@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from .operands import checked_code_matrix
+
 
 _FORMAT_CODE = {"mxfp8": 0, "mxfp6": 1, "mxfp4": 2}
 _SCALE_WIDTH = {"mxfp8": 16, "mxfp6": 32, "mxfp4": 32}
@@ -162,6 +164,60 @@ def pack_wave_scales(
         wave.fmt, weight_rows[wave.block_start * wave.tiles_j : wave.block_stop * wave.tiles_j]
     )
     return act, wgt
+
+
+@dataclass(frozen=True)
+class ScaleWaveTransfer:
+    wave: ScaleWave
+    activation_bytes: bytes
+    weight_bytes: bytes
+
+
+def plan_scale_transfers(
+    fmt: str,
+    activation_scales: Sequence[Sequence[int]],
+    weight_scales: Sequence[Sequence[int]],
+    *,
+    weight_layout: str = "ng",
+) -> tuple[ScaleWaveTransfer, ...]:
+    """Lay out E8M0 scales from [M][G] and [N][G] or [G][N] matrices.
+
+    G is K/32. Each wave's payload is ordered [K block][I/J tile][lane]
+    and starts at byte offset zero. ``ng`` is TorchAO Linear's [N][G]
+    weight buffer; ``gn`` is a functional B contraction's [G][N] buffer.
+    This plans bytes, not executable DMA.
+    """
+    width = _width(fmt)
+    if weight_layout not in ("ng", "gn"):
+        raise ValueError("weight scale layout must be ng or gn")
+    activation_scales = checked_code_matrix(activation_scales, bits=8, name="activation scales")
+    weight_scales = checked_code_matrix(weight_scales, bits=8, name="weight scales")
+    m = len(activation_scales)
+    blocks = len(activation_scales[0]) if m else 0
+    n = len(weight_scales) if weight_layout == "ng" else (len(weight_scales[0]) if weight_scales else 0)
+    if not m or not n or not blocks or m % width or n % width:
+        raise ValueError(f"{fmt} scales need nonempty M/N multiples of {width} and K/32 groups")
+    if any(len(row) != blocks for row in activation_scales):
+        raise ValueError("activation and weight scales must share one K/32 group count")
+    if weight_layout == "ng" and any(len(row) != blocks for row in weight_scales):
+        raise ValueError("activation and weight scales must share one K/32 group count")
+    if weight_layout == "gn" and (len(weight_scales) != blocks or any(len(row) != n for row in weight_scales)):
+        raise ValueError("activation and weight scales must share one K/32 group count")
+    tiles_i, tiles_j = m // width, n // width
+    waves = plan_scale_waves(fmt, tiles_i=tiles_i, tiles_j=tiles_j, k_tiles=2 * blocks)
+    a_rows = [
+        [activation_scales[tile * width + lane][block] for lane in range(width)]
+        for block in range(blocks) for tile in range(tiles_i)
+    ]
+    b_rows = [
+        [weight_scales[tile * width + lane][block] if weight_layout == "ng"
+         else weight_scales[block][tile * width + lane] for lane in range(width)]
+        for block in range(blocks) for tile in range(tiles_j)
+    ]
+    return tuple(
+        ScaleWaveTransfer(wave, *pack_wave_scales(wave, a_rows, b_rows))
+        for wave in waves
+    )
 
 
 def config_scale_mem_rs1(

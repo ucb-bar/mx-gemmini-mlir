@@ -10,6 +10,7 @@ from mx_gemmini_support.layout import (
     pack_scale_rows,
     pack_wave_scales,
     plan_scale_waves,
+    plan_scale_transfers,
     scale_load_rs2,
     scale_physical_location,
     scale_row_index,
@@ -111,3 +112,32 @@ def test_scale_mem_config_bitfields_follow_execute_controller():
     assert [(rs1 >> bit) & 1 for bit in (60, 61, 62, 63)] == [1, 0, 1, 1]
     with pytest.raises(ValueError, match="9-bit"):
         config_scale_mem_rs1(tiles_i=1, tiles_j=1, k_tiles=512)
+
+
+def test_logical_scales_become_k_block_major_fp8_payloads():
+    # A[M][G] and weight[N][G] match TorchAO's quantizer output axes.
+    activation = [[row, row + 16] for row in range(16)]
+    weight = [[50 + col, 82 + col] for col in range(32)]
+    transfers = plan_scale_transfers("mxfp8", activation, weight)
+    assert len(transfers) == 1
+    wave, act, wgt = transfers[0].wave, transfers[0].activation_bytes, transfers[0].weight_bytes
+    assert (wave.tiles_i, wave.tiles_j, wave.k_tiles) == (1, 2, 4)
+    assert act == bytes(range(32))
+    assert wgt == bytes(range(50, 82)) + bytes(range(82, 114))
+    weight_group_column = [[weight[col][block] for col in range(32)] for block in range(2)]
+    assert plan_scale_transfers("mxfp8", activation, weight_group_column, weight_layout="gn") == transfers
+    with pytest.raises(ValueError, match="ng or gn"):
+        plan_scale_transfers("mxfp8", activation, weight, weight_layout="unknown")
+
+
+def test_logical_quad_scales_split_and_restart_at_zero():
+    activation = [[block + row for block in range(65)] for row in range(64)]
+    weight = [[100 + block + col for block in range(65)] for col in range(32)]
+    transfers = plan_scale_transfers("mxfp4", activation, weight)
+    assert [(t.wave.k_tile_start, t.wave.k_tiles) for t in transfers] == [(0, 128), (128, 2)]
+    assert len(transfers[0].activation_bytes) == 4096
+    assert len(transfers[0].weight_bytes) == 2048
+    assert transfers[1].activation_bytes[:32] == bytes(64 + row for row in range(32))
+    assert transfers[1].weight_bytes == bytes(164 + col for col in range(32))
+    with pytest.raises(ValueError, match="rectangular"):
+        plan_scale_transfers("mxfp4", activation, weight[:-1] + [[100] * 64])

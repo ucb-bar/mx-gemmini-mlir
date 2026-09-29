@@ -4,16 +4,29 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from operator import index
 
 
-def matrix_shape(codes: Sequence[Sequence[int]], *, bits: int, name: str) -> tuple[int, int]:
-    rows = len(codes)
-    cols = len(codes[0]) if rows else 0
-    if rows == 0 or cols == 0 or any(len(row) != cols for row in codes):
+def checked_code_matrix(
+    codes: Sequence[Sequence[int]], *, bits: int, name: str
+) -> tuple[tuple[int, ...], ...]:
+    """Accept Python and integer tensor scalars without importing TorchAO."""
+    def integer_code(code: int) -> int:
+        if isinstance(code, bool):
+            raise TypeError("boolean is not an element code")
+        return index(code)
+
+    try:
+        normalized = tuple(tuple(integer_code(code) for code in row) for row in codes)
+    except TypeError as exc:
+        raise ValueError(f"{name} must contain {bits}-bit element codes") from exc
+    rows = len(normalized)
+    cols = len(normalized[0]) if rows else 0
+    if rows == 0 or cols == 0 or any(len(row) != cols for row in normalized):
         raise ValueError(f"{name} must be a nonempty rectangular matrix")
-    if any(type(code) is not int or not 0 <= code < (1 << bits) for row in codes for code in row):
+    if any(not 0 <= code < (1 << bits) for row in normalized for code in row):
         raise ValueError(f"{name} must contain {bits}-bit element codes")
-    return rows, cols
+    return normalized
 
 
 def pack_nibble_operands(
@@ -57,8 +70,10 @@ def pack_direct_operands(
     if fmt not in ("mxfp8", "mxfp4"):
         raise ValueError("direct operand packing supports selected MXFP8 and MXFP4")
     bits = 8 if fmt == "mxfp8" else 4
-    m, k = matrix_shape(activation_codes, bits=bits, name="activation")
-    weight_k, n = matrix_shape(weight_codes, bits=bits, name="weight")
+    activation_codes = checked_code_matrix(activation_codes, bits=bits, name="activation")
+    weight_codes = checked_code_matrix(weight_codes, bits=bits, name="weight")
+    m, k = len(activation_codes), len(activation_codes[0])
+    weight_k, n = len(weight_codes), len(weight_codes[0])
     if k != weight_k:
         raise ValueError("activation K and weight K must agree")
     spatial_tile = 16 if fmt == "mxfp8" else 32

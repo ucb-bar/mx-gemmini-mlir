@@ -36,6 +36,8 @@ def test_direct_packer_rejects_wrong_format_shape_and_code_width():
         pack_direct_operands("mxfp6", a, b)
     with pytest.raises(ValueError, match="4-bit"):
         pack_direct_operands("mxfp4", [[16] * 32 for _ in range(32)], b)
+    with pytest.raises(ValueError, match="4-bit"):
+        pack_direct_operands("mxfp4", [[True] * 32 for _ in range(32)], b)
     with pytest.raises(ValueError, match="K must agree"):
         pack_direct_operands("mxfp4", a, b[:-1])
     with pytest.raises(ValueError, match="multiples of 32"):

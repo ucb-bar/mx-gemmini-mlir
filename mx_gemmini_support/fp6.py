@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from .layout import pack_fp6_lut
-from .operands import matrix_shape, pack_nibble_operands
+from .operands import checked_code_matrix, pack_nibble_operands
 
 
 @dataclass(frozen=True)
@@ -57,8 +57,12 @@ def pack_fp6_indexed_contraction(
     so a single configured spatial window is restricted to M,N <= 128.
     Missing codes fail instead of silently changing numerical results.
     """
-    m, k = matrix_shape(activation_codes, bits=6, name="activation")
-    weight_k, n = matrix_shape(weight_codes, bits=6, name="weight")
+    activation_codes = checked_code_matrix(activation_codes, bits=6, name="activation")
+    weight_codes = checked_code_matrix(weight_codes, bits=6, name="weight")
+    activation_lut = checked_code_matrix(activation_lut, bits=6, name="activation LUT")
+    weight_lut = checked_code_matrix(weight_lut, bits=6, name="weight LUT")
+    m, k = len(activation_codes), len(activation_codes[0])
+    weight_k, n = len(weight_codes), len(weight_codes[0])
     if k != weight_k:
         raise ValueError("activation K and weight K must agree")
     if m % 32 or n % 32 or k % 32 or m > 128 or n > 128:
