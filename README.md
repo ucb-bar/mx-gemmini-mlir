@@ -3,8 +3,10 @@
 This out-of-tree compiler prototype is scoped to
 `GemminiMxFPConfigs.standaloneMxFPConfig` at Gemmini
 `f0167390b56fb315deea90ac1fc3983772e92d82` and MxGen
-`a27ce3cd81513210c21f971ec3977defd13fa21e`. It carries no
-Merlin provider registration or executable backend. Its layout rules are
+`a27ce3cd81513210c21f971ec3977defd13fa21e`. It carries an explicitly
+selectable Merlin support provider with an empty executable capability claim.
+It has no runtime backend, matrix lowering, oracle, or certified fact bundle.
+Its layout rules are
 source-derived and remain unreviewed until a matching simulator compares the
 written bytes and command stream.
 
@@ -18,11 +20,11 @@ written bytes and command stream.
 - conversion of logical E8M0 scale matrices from activation [M][K/32] and
   weight [N][K/32] or [K/32][N] into those wave payloads;
 - `CONFIG_SCALE_MEM` `rs1` bitfield encoding;
-- FP6 E3M2 codebook bit packing, 8-byte DMA padding, and funct-29 `rs2`.
+- FP6 E3M2 codebook bit packing, 8-byte DMA padding, and funct-29 `rs2`;
 - exact FP6 code-to-index mapping for supplied 16-entry codebooks, plus the
-  activation and weight nibble layouts used by the selected DIM16 loop.
+  activation and weight nibble layouts used by the selected DIM16 loop;
 - direct FP8 byte layout and direct FP4 nibble layout for logical A[M][K]
-  and B[K][N] operands.
+  and B[K][N] operands;
 - a contraction payload builder that checks operand and scale shapes together
   and slices both into matching K waves for all three formats.
 
@@ -48,3 +50,7 @@ The selected RTL's `MX_LOAD_LUT` DMA reads through the next 8-byte boundary,
 so callers must use the padded result as the actual source buffer.
 
 Run `python -m pytest tests -q` from this directory.
+
+To inspect the provider through Merlin, set `MERLIN_TARGET_PATH` to this
+directory and resolve `mx_gemmini`. This selects its metadata only; no
+compiler execution is enabled by selection.
