@@ -69,11 +69,13 @@ checks its byte tensor types, and packs it without changing model2MLIR or
 TorchAO. FP6 requires caller-supplied exact codebooks. With the model2MLIR
 branch on `PYTHONPATH` and TorchAO installed, run
 `python -m pytest tests/test_model2mlir.py -q`: the integration test applies
-the actual TorchAO transform to one 32x32x32 Linear per format and verifies
-that the resulting C sources have the same SHA-256 digests as the three
-programs executed on the source-bound RTL simulator. Each tested program
-exited zero with no BF16 mismatches. The test does not rerun the simulator;
-this remains a one-site diagnostic, not whole-model or general lowering.
+the actual TorchAO transform to one 32x32x32 Linear per format with two
+operand cases: distinct row/column magnitudes and an all-zero block. It
+verifies that the resulting six C sources have the same SHA-256 digests as
+the programs executed on the source-bound RTL simulator. All six tested
+programs exited zero with no BF16 mismatches. The zero blocks produced E8M0
+code 104. The test does not rerun the simulator; these remain narrow
+diagnostics, not whole-model or general lowering.
 
 Separate source-bound RTL diagnostics ran FP8, FP4, and FP6 32x32x32
 contractions using this package's packed activation, weight, and E8M0
