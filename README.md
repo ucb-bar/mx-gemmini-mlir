@@ -91,13 +91,12 @@ batched attention kernel or qualify the host softmax seam.
 The bounded `emit_independent_batches_baremetal_c` composes up to four matching
 single-window payloads as successive independent contractions. A two-batch
 rank-3 functional matmul source is pinned for each format; the exact ELFs
-exited zero with both BF16 matrices matching on source-built Spike. A fresh
-RTL check has no verdict: the FP8 batch program and an unchanged prior-passing
-single-program control both exceeded wall-time bounds in the current simulator
-environment. A longer FP8 batch attempt then reached the simulator's
-600,001-cycle limit without reaching a BF16 comparison. This remains a
-Spike-only batch diagnostic and does not establish
-batched RTL execution or an attention kernel.
+exited zero with both BF16 matrices matching on source-built Spike. The exact
+FP8 batch ELF also exited zero on the selected RTL simulator: both independent
+BF16 matrices matched. Earlier shorter attempts hit wall-time or cycle
+bounds before comparison. FP6 and FP4 batches still have Spike evidence only.
+These serial contractions do not establish an attention kernel or its host
+softmax seam.
 `emit_spatial_tiles_baremetal_c` serially checks a complete 32x32 tile grid
 of one rank-2 contraction with output dimensions up to 64x64 and K=32.
 The model2MLIR handoff supplies a 64x32 activation and 32x64 weight with
