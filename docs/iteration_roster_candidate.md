@@ -53,6 +53,11 @@ captured all 16 candidate contraction sites with the FP8 policy: 2 in
 `linear_seam`, 6 in `decoder_block`, 2 in `vision_patches`, and 6 in
 `policy_fusion`. None was skipped. This does not establish numerical accuracy,
 latest-RTL compatibility, executable MX lowering, or a Phase 0 corpus.
+With model2MLIR `03718cb`, all four also pass FXImporter capture with complete
+frontend traces, zero opaque operations, and an accepted OOT handoff on that
+older contract. The decoder's boolean mask uses model2MLIR's target-neutral
+`logical_and` lowering. These are structural checks on regenerated synthetic
+inputs; the frozen artifacts above still require source-closure review.
 
 ## Held-out claim boundary
 
