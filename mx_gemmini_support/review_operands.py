@@ -45,13 +45,15 @@ def _inputs() -> dict[str, torch.Tensor]:
             "edges": edges.repeat(64, 1)}
 
 
-def review(reference_root: str | Path) -> dict:
+def review(reference_root: str | Path, *, contract_bytes: bytes | None = None) -> dict:
     root = Path(reference_root).resolve()
     if _git(root, "rev-parse", "HEAD") != REFERENCE_COMMIT:
         raise ValueError("microscaling-quant revision differs from the reviewed reference")
     if _git(root, "status", "--porcelain", "--", "mxq"):
         raise ValueError("microscaling-quant source tree has local changes")
-    contract = compile_contract((Path(__file__).parent / "contracts/software-spec.yaml").read_bytes())
+    if contract_bytes is None:
+        contract_bytes = (Path(__file__).parent / "contracts/software-spec.yaml").read_bytes()
+    contract = compile_contract(contract_bytes)
     verify_kernel_contract(contract)
     sys.path.insert(0, str(root))
     try:
@@ -94,8 +96,11 @@ def review(reference_root: str | Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compare selected MX operands with microscaling-quant")
     parser.add_argument("reference_root", type=Path)
+    parser.add_argument("--contract", type=Path,
+                        default=Path(__file__).parent / "contracts/software-spec.yaml")
     args = parser.parse_args()
-    print(json.dumps(review(args.reference_root), indent=2, sort_keys=True))
+    print(json.dumps(review(args.reference_root, contract_bytes=args.contract.read_bytes()),
+                     indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

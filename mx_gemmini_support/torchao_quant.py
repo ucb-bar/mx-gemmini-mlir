@@ -1,7 +1,7 @@
 """MX Gemmini operand preparation and a TorchAO module extension.
 
-The selected RTL revision is f0167390b56fb315deea90ac1fc3983772e92d82.
-This module models its BF16-to-MX *operand* conversion. It does not model the
+This module models BF16-to-MX *operand* conversion for the two pinned
+standalone RTL revisions below. It does not model the
 mesh product, 16-lane reduction, packing/LUT projection, or host transfers.
 Those require separate accelerator-oracle comparison before qualification.
 """
@@ -16,8 +16,12 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 GROUP = 32
-RTL_COMMIT = "f0167390b56fb315deea90ac1fc3983772e92d82"
-MXGEN_COMMIT = "a27ce3cd81513210c21f971ec3977defd13fa21e"
+_OPERAND_REVISIONS = frozenset({
+    ("f0167390b56fb315deea90ac1fc3983772e92d82",
+     "a27ce3cd81513210c21f971ec3977defd13fa21e"),
+    ("2029218197f771ce71416f859d975bea47b7aabc",
+     "56ef1c6810924e1cb0af07add09156b0e2f53576"),
+})
 RTL_CONFIG = "GemminiMxFPConfigs.standaloneMxFPConfig"
 RTL_CONFIG_CLASS = "GemminiMxFPStandaloneConfig"
 # (exponent bits, fraction bits, exponent bias, highest finite positive code)
@@ -30,8 +34,7 @@ _FORMATS = {
 
 def verify_kernel_contract(contract: dict) -> None:
     """Reject a spec update that this handwritten numerical kernel cannot run."""
-    if (contract.get("rtl_commit") != RTL_COMMIT or
-        contract.get("mxgen_commit") != MXGEN_COMMIT or
+    if ((contract.get("rtl_commit"), contract.get("mxgen_commit")) not in _OPERAND_REVISIONS or
         contract.get("rtl_config") != RTL_CONFIG or
         contract.get("rtl_config_class") != RTL_CONFIG_CLASS):
         raise ValueError("MX kernel needs review for the selected RTL and MxGen revisions")

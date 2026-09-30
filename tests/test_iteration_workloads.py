@@ -11,15 +11,20 @@ from mx_gemmini_support.m2m_adapter import apply
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CONTRACTS = (
+    "contracts/software-spec.yaml",
+    "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml",
+)
 
 
+@pytest.mark.parametrize("contract_path", CONTRACTS)
 @pytest.mark.parametrize("name,quantized,functional", [
     ("linear_seam", 2, 0),
     ("decoder_block", 6, 2),
     ("vision_patches", 2, 0),
     ("policy_fusion", 6, 2),
 ])
-def test_candidate_fp8_site_census(name, quantized, functional):
+def test_candidate_fp8_site_census(contract_path, name, quantized, functional):
     model, inputs = make_case(name)
     original = torch.export.export(model, inputs)
     contractions = {torch.ops.aten.linear.default, torch.ops.aten.matmul.default,
@@ -29,7 +34,7 @@ def test_candidate_fp8_site_census(name, quantized, functional):
             assert all(operand.meta["val"].is_contiguous() for operand in node.args[:2])
     graph, manifest = apply(
         model, inputs,
-        contract_bytes=(ROOT / "contracts/software-spec.yaml").read_bytes(),
+        contract_bytes=(ROOT / contract_path).read_bytes(),
         policy_bytes=(ROOT / "examples/default-policy.yaml").read_bytes(),
     )
     sites = manifest["sites"]
@@ -40,18 +45,19 @@ def test_candidate_fp8_site_census(name, quantized, functional):
     assert graph.module()(*inputs).shape == model(*inputs).shape
 
 
+@pytest.mark.parametrize("contract_path", CONTRACTS)
 @pytest.mark.parametrize("name,site_count", [
     ("linear_seam", 2),
     ("decoder_block", 6),
     ("vision_patches", 2),
     ("policy_fusion", 6),
 ])
-def test_candidate_model2mlir_handoff(name, site_count):
+def test_candidate_model2mlir_handoff(contract_path, name, site_count):
     m2m = pytest.importorskip("m2m")
     from m2m.capture.external_quantization import ExternalQuantizationConfig
     from m2m.coverage import opaque_report
 
-    contract = ROOT / "contracts/software-spec.yaml"
+    contract = ROOT / contract_path
     policy = ROOT / "examples/default-policy.yaml"
     model, inputs = make_case(name)
     result = m2m.convert(

@@ -12,6 +12,7 @@ from mx_gemmini_support.m2m_adapter import apply
 
 
 SPEC = Path(__file__).resolve().parents[1] / "contracts/software-spec.yaml"
+CANDIDATE = Path(__file__).resolve().parents[1] / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
 
 
 class _Mixed(nn.Module):
@@ -192,7 +193,8 @@ def test_sdpa_rejects_unreviewed_causal_mode():
         expose_sdpa_contractions(exported)
 
 
-def test_mixed_capture_and_resident_chain_handoff(tmp_path):
+@pytest.mark.parametrize("contract_path", [SPEC, CANDIDATE])
+def test_mixed_capture_and_resident_chain_handoff(tmp_path, contract_path):
     m2m = pytest.importorskip("m2m")
     from m2m.capture.external_quantization import ExternalQuantizationConfig
     from m2m.capture.trace import capture_frontend_snapshot
@@ -209,22 +211,25 @@ def test_mixed_capture_and_resident_chain_handoff(tmp_path):
     policy = tmp_path / "policy.yaml"
     policy.write_text(policy_text)
     result = m2m.convert(model, inputs,
-                         quantization=ExternalQuantizationConfig("mx_gemmini", SPEC, policy),
+                         quantization=ExternalQuantizationConfig("mx_gemmini", contract_path, policy),
                          backend="fx_importer", capture_trace=True,
                          original_frontend_snapshot=original)
     assert result.ok, result.diagnostics
     assert any("0 opaque" in row for row in result.diagnostics)
     assert result.capture_trace["status"] == "complete", result.capture_trace["blockers"]
-    selected = validate_handoff(result, SPEC.read_bytes(), policy.read_bytes())
+    selected = validate_handoff(result, contract_path.read_bytes(), policy.read_bytes())
     assert selected["contract"]["formats"].keys() == {"mxfp8", "mxfp6", "mxfp4"}
     sites = result.quantization_manifest["sites"]
     assert {(row["site_id"], row.get("format")) for row in sites} == {
         ("module:a", "mxfp6"), ("functional:matmul", "mxfp4")}
-    rendered = render_handoff(result, SPEC.read_bytes(), policy.read_bytes())
+    rendered = render_handoff(result, contract_path.read_bytes(), policy.read_bytes())
     assert '"mx_gemmini.requantize"' in rendered
     assert '"mx_gemmini.contract"(%resident, %resident_scales' in rendered
     with pytest.raises(ValueError, match="contract_sha256"):
-        validate_handoff(result, SPEC.read_bytes() + b"\n# altered\n", policy.read_bytes())
+        validate_handoff(result, contract_path.read_bytes() + b"\n# altered\n", policy.read_bytes())
+    other = CANDIDATE if contract_path == SPEC else SPEC
+    with pytest.raises(ValueError, match="contract_sha256"):
+        validate_handoff(result, other.read_bytes(), policy.read_bytes())
 
 
 def test_source_contract_projection_has_output_requantization():
@@ -236,15 +241,26 @@ def test_source_contract_projection_has_output_requantization():
 
 
 @pytest.mark.parametrize("field,replacement", [
-    ("rtl_commit", "2029218197f771ce71416f859d975bea47b7aabc"),
-    ("mxgen_commit", "56ef1c6810924e1cb0af07add09156b0e2f53576"),
+    ("rtl_commit", "0" * 40),
+    ("mxgen_commit", "0" * 40),
     ("rtl_config", "GemminiMxFPConfigs.e4m3SingleNoLutMxFPConfig"),
     ("rtl_config_class", "GemminiMxFPSingleNoLutConfig"),
 ])
-def test_numerical_kernel_refuses_unreviewed_rtl_revision(field, replacement):
+def test_operand_kernel_rejects_unselected_revision_or_config(field, replacement):
     from mx_gemmini_support.torchao_quant import verify_kernel_contract
 
     projection = compile_contract(SPEC.read_bytes())
     projection[field] = replacement
     with pytest.raises(ValueError, match="needs review"):
         verify_kernel_contract(projection)
+
+
+def test_candidate_operand_kernel_requires_exact_revision_pair():
+    from mx_gemmini_support.torchao_quant import verify_kernel_contract
+
+    candidate = compile_contract(CANDIDATE.read_bytes())
+    assert candidate["status"] == "unreviewed"
+    verify_kernel_contract(candidate)
+    candidate["mxgen_commit"] = compile_contract(SPEC.read_bytes())["mxgen_commit"]
+    with pytest.raises(ValueError, match="needs review"):
+        verify_kernel_contract(candidate)
