@@ -9,8 +9,12 @@ import platform
 from pathlib import Path
 
 import torch
+import yaml
 from torch import nn
 from torch.nn import functional as F
+
+from mx_gemmini_support.m2m_adapter import derive_site_inventory
+from mx_gemmini_support.rtl_check import check_sources
 
 
 class LinearSeam(nn.Module):
@@ -93,21 +97,26 @@ def make_case(name: str) -> tuple[nn.Module, tuple[torch.Tensor, ...]]:
     return model, inputs
 
 
-def materialize_roster(root: Path, contract: Path, policy: Path) -> Path:
-    """Freeze the candidate inputs and original exports in a new artifact root."""
+def materialize_roster(root: Path, contract: Path, *, rtl_root: Path, source_record: Path) -> Path:
+    """Freeze inputs and derived eligibility before anyone chooses precision."""
+    contract_bytes = contract.read_bytes()
+    checked = check_sources(rtl_root, contract_bytes, source_record.read_bytes())
     root.mkdir(parents=True, exist_ok=False)
     sha256 = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     manifest = {
-        "schema": "mx_gemmini.iteration_roster_candidate.v1",
+        "schema": "mx_gemmini.iteration_roster_candidate.v2",
         "status": "candidate_not_admitted",
         "source_sha256": sha256(Path(__file__)),
         "torch_version": torch.__version__,
         "python_version": platform.python_version(),
         "contract_sha256": sha256(contract),
-        "policy_sha256": sha256(policy),
+        "rtl_source_record_sha256": sha256(source_record),
+        "rtl_source_check": checked,
         "seed": 0,
         "cases": [],
     }
+    templates = root / "policy_templates"
+    templates.mkdir()
     for name in CASES:
         model, inputs = make_case(name)
         case_dir = root / name
@@ -118,13 +127,29 @@ def materialize_roster(root: Path, contract: Path, policy: Path) -> Path:
         torch.save(model.state_dict(), state_path)
         torch.save(inputs, input_path)
         torch.export.save(torch.export.export(model, inputs), export_path)
+        inventory = derive_site_inventory(model, inputs, contract_bytes=contract_bytes)
+        inventory_path = case_dir / "site-inventory.json"
+        inventory_path.write_text(json.dumps(inventory, indent=2, sort_keys=True) + "\n")
+        (templates / f"{name}.yaml").write_text(yaml.safe_dump({
+            "schema": "mx_gemmini.quantization_policy.v1",
+            "default_format": "host",
+            "source_graph_sha256": inventory["source_graph_sha256"],
+            "module_overrides": {
+                site["site_id"].removeprefix("module:"): "host"
+                for site in inventory["sites"] if site["kind"] == "linear"
+            },
+            "functional_overrides": {
+                site["site_id"]: "host"
+                for site in inventory["sites"] if site["kind"] == "functional"
+            },
+        }, sort_keys=True))
         manifest["cases"].append({
             "name": name,
             "model_class": type(model).__name__,
             "input_shapes": [list(tensor.shape) for tensor in inputs],
             "artifacts": {
                 path.name: sha256(path)
-                for path in (state_path, input_path, export_path)
+                for path in (state_path, input_path, export_path, inventory_path)
             },
         })
     manifest_path = root / "roster.json"
@@ -133,9 +158,15 @@ def materialize_roster(root: Path, contract: Path, policy: Path) -> Path:
 
 
 if __name__ == "__main__":
+    # ``python -m`` otherwise defines model classes under ``__main__`` and
+    # changes the exported graph identity relative to normal package imports.
+    from examples.iteration_workloads import materialize_roster as run_materializer
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--contract", type=Path, required=True)
-    parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--rtl-root", type=Path, required=True)
+    parser.add_argument("--sources", type=Path, required=True)
     args = parser.parse_args()
-    print(materialize_roster(args.output_root, args.contract, args.policy))
+    print(run_materializer(args.output_root, args.contract,
+                           rtl_root=args.rtl_root, source_record=args.sources))

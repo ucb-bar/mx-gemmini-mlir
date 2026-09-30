@@ -1,12 +1,15 @@
 """Candidate capture sites stay visible to the selected FP8 adapter."""
 
 from pathlib import Path
+import json
+import shutil
 
 import pytest
 import torch
 import yaml
 
-from examples.iteration_workloads import make_case
+from examples.iteration_workloads import make_case, materialize_roster
+from examples.select_iteration_workloads import check_policy, select
 from mx_gemmini_support.handoff import validate_handoff
 from mx_gemmini_support.m2m_adapter import apply, derive_site_inventory
 
@@ -65,6 +68,40 @@ def test_site_inventory_requires_eval_model():
         derive_site_inventory(model, inputs,
                               contract_bytes=(ROOT / CONTRACTS[0]).read_bytes())
     assert model.training
+
+
+def test_frozen_roster_derives_inventory_before_explicit_policy(tmp_path, monkeypatch):
+    from examples import iteration_workloads, select_iteration_workloads
+
+    checked = {"schema": "mx_gemmini.rtl_source_check.v1", "status": "source_crosscheck"}
+    monkeypatch.setattr(iteration_workloads, "check_sources", lambda *_: checked)
+    monkeypatch.setattr(select_iteration_workloads, "check_sources", lambda *_: checked)
+    contract = ROOT / CONTRACTS[1]
+    sources = ROOT / "mx_gemmini_support/contracts/rtl_candidate_2029218.yaml"
+    roster_root = tmp_path / "roster"
+    manifest_path = materialize_roster(roster_root, contract, rtl_root=tmp_path,
+                                        source_record=sources)
+    roster = json.loads(manifest_path.read_text())
+    assert roster["schema"] == "mx_gemmini.iteration_roster_candidate.v2"
+    assert "policy_sha256" not in roster
+    policies = tmp_path / "policies"
+    shutil.copytree(roster_root / "policy_templates", policies)
+    decoder = policies / "decoder_block.yaml"
+    policy = yaml.safe_load(decoder.read_text())
+    policy["module_overrides"]["qkv"] = "mxfp8"
+    policy["module_overrides"]["up"] = "mxfp4"
+    decoder.write_text(yaml.safe_dump(policy))
+    selection_path = select(roster_root, contract, policies, tmp_path / "selection.json",
+                            rtl_root=tmp_path, source_record=sources)
+    selection = json.loads(selection_path.read_text())
+    chosen = {case["name"]: case for case in selection["cases"]}
+    assert chosen["decoder_block"]["sites"]["module:qkv"] == "mxfp8"
+    assert chosen["decoder_block"]["sites"]["module:up"] == "mxfp4"
+    assert all(case["source_graph_sha256"] for case in selection["cases"])
+    policy["source_graph_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="source graph digest"):
+        check_policy(json.loads((roster_root / "decoder_block/site-inventory.json").read_text()),
+                     yaml.safe_dump(policy).encode())
 
 
 def test_fp6_attention_and_fp4_fp8_linears_use_exact_sites():
