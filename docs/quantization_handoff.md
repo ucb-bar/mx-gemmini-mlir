@@ -84,6 +84,13 @@ selected contract before capture. The resulting graph uses BF16 operand
 fake quantization followed by PyTorch matmul. It is an operand and coverage
 diagnostic, not a model of the mesh's product or reduction arithmetic.
 
+The adapter exposes rank-4 inference SDPA with matching Q/K/V heads and a
+boolean mask as QK matmul, host safe softmax, and PV matmul before site
+selection. It refuses dropout, causal mode, grouped-query heads, and other
+mask types until their semantics and lowering are checked. This exposes the
+contraction census; the host softmax and changed arithmetic order still need
+numerical review against the model reference.
+
 Before replacing Linear modules, the adapter exports the original graph and
 checks each observed activation rank and M dimension against the selected
 format's tile rule, as well as the module's N and K dimensions. An ineligible
@@ -115,6 +122,10 @@ and skipped contraction sites. Every skipped site has a reason. model2MLIR
 stamps the canonical manifest SHA-256 on its standard MLIR module. The OOT
 handoff validates those digests, site formats, shape bounds, FP6 codebook
 digests, and output chains before emitting MX dialect operations.
+The model2MLIR frontend trace currently reports `original -> quantized
+correspondence incomplete` for the external adapter, including a one-Linear
+capture. The digest-bound manifest and successful MLIR conversion do not prove
+per-node source lineage. This remains a Phase 0 provenance gap.
 
 ## Dialect boundary
 

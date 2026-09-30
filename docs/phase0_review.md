@@ -25,6 +25,20 @@ inputs observed 302 of 303 Linear modules. Under the current static tile rules,
 73 observed sites were eligible for each of FP8, FP6, and FP4; the remaining
 229 failed either activation M/rank or N/K bounds. This is a shape diagnostic,
 not a quantized model capture, accuracy result, or admitted application corpus.
+The FP8-only OOT adapter also completed model2MLIR FX capture of that synthetic
+denoise step on the older active contract: its manifest reports 73 quantized
+Linear sites, 24 quantized QK/PV sites exposed from 12 masked SDPA calls, 230
+skipped Linear modules (including one absent from the exported graph), and 64
+skipped functional sites. The importer reported 9,735 decomposed operations and
+zero opaque operations. This is capture and site coverage only; it has no
+source-closed input corpus, full-model accuracy result, or accelerator execution.
+The full capture's contract and policy digests, 391-site manifest, and source
+MLIR passed the OOT handoff validator; `mx-gemmini-opt` accepted the rendered
+operation plan. This verifies the dialect boundary for the diagnostic capture,
+not executable MX lowering.
+The external adapter's frontend trace is still diagnostic: even a one-Linear
+case reports incomplete original-to-quantized node correspondence. The manifest
+is digest-bound to the MLIR module, but that does not close this lineage gap.
 
 The current [`gemmini-mx-cleanup` head at `2029218`](https://github.com/ucb-bar/gemmini/commit/2029218197f771ce71416f859d975bea47b7aabc)
 is seven commits after the selected pin and selects MxGen

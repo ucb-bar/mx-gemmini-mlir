@@ -9,6 +9,7 @@ Those require separate accelerator-oracle comparison before qualification.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 import torch
 from torch import Tensor, nn
@@ -353,6 +354,33 @@ def _round_grid_arithmetic(value: Tensor, format: str,
         # and uses ops that the generic MLIR importer can lower.
         signed = torch.where(value == 0, value * 0.0, signed)
     return signed
+
+
+def expose_sdpa_contractions(exported: torch.export.ExportedProgram) -> torch.export.ExportedProgram:
+    """Expose supported inference SDPA as QK, host softmax, and PV."""
+    target = torch.ops.aten.scaled_dot_product_attention.default
+    if not any(node.target == target for node in exported.graph_module.graph.nodes):
+        return exported
+
+    def decompose(query, key, value, attn_mask=None, dropout_p=0.0,
+                  is_causal=False, *, scale=None, enable_gqa=False):
+        if dropout_p != 0 or is_causal or enable_gqa:
+            raise ValueError("MX attention capture does not support dropout, causal mode, or grouped heads")
+        if (query.ndim != 4 or key.ndim != 4 or value.ndim != 4 or
+                query.shape[:-2] != key.shape[:-2] or
+                query.shape[:-2] != value.shape[:-2] or
+                key.shape[-2] != value.shape[-2]):
+            raise ValueError("MX attention capture requires matching rank-4 Q/K/V batches and heads")
+        if attn_mask is not None and attn_mask.dtype != torch.bool:
+            raise ValueError("MX attention capture currently requires a boolean mask")
+        factor = scale if scale is not None else 1.0 / math.sqrt(query.shape[-1])
+        scores = torch.matmul(query, key.transpose(-2, -1)) * factor
+        if attn_mask is not None:
+            scores = scores.masked_fill(~attn_mask, float("-inf"))
+        probabilities = torch.ops.aten._safe_softmax.default(scores, -1, None)
+        return torch.matmul(probabilities, value)
+
+    return exported.run_decompositions({target: decompose})
 
 
 def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select,

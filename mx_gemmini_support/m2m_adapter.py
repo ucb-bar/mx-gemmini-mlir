@@ -11,7 +11,8 @@ from torch import nn
 
 from .contract import compile_contract, contract_digest
 from .policy import load_policy
-from .torchao_quant import MXGemminiFakeQuantConfig, quantize_functional_contractions_, verify_kernel_contract
+from .torchao_quant import (MXGemminiFakeQuantConfig, expose_sdpa_contractions,
+                            quantize_functional_contractions_, verify_kernel_contract)
 
 
 def _sha(value) -> str:
@@ -151,6 +152,7 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
                   filter_fn=lambda candidate, fqn, wanted=name, selected=module:
                   fqn == wanted and candidate is selected)
     exported = torch.export.export(model.eval(), tuple(inputs))
+    exported = expose_sdpa_contractions(exported)
     graph_module = exported.module()
     _verify_chain_edges(graph_module, policy.output_chains)
     seen_functional = set()

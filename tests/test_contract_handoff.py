@@ -96,6 +96,66 @@ def test_reused_linear_requires_distinct_call_site_ids():
               policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n")
 
 
+def test_sdpa_exposes_qk_and_pv_with_host_softmax():
+    from mx_gemmini_support.torchao_quant import expose_sdpa_contractions
+
+    class Attention(nn.Module):
+        def forward(self, query, key, value, mask):
+            return torch.nn.functional.scaled_dot_product_attention(
+                query, key, value, mask, scale=0.125)
+
+    model = Attention().eval()
+    query = torch.randn(1, 2, 32, 64)
+    key = torch.randn(1, 2, 32, 64)
+    value = torch.randn(1, 2, 32, 64)
+    mask = torch.ones(1, 1, 32, 32, dtype=torch.bool)
+    mask[..., 0, :] = False
+    inputs = (query, key, value, mask)
+    exposed = expose_sdpa_contractions(torch.export.export(model, inputs))
+    targets = [node.target for node in exposed.graph_module.graph.nodes]
+    assert targets.count(torch.ops.aten.matmul.default) == 2
+    assert torch.ops.aten._safe_softmax.default in targets
+    assert torch.ops.aten.scaled_dot_product_attention.default not in targets
+    torch.testing.assert_close(exposed.module()(*inputs), model(*inputs))
+
+    graph, manifest = apply(
+        model, inputs, contract_bytes=SPEC.read_bytes(),
+        policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n",
+    )
+    assert [site["status"] for site in manifest["sites"]] == ["quantized", "quantized"]
+    assert [site["shape"] for site in manifest["sites"]] == [[32, 32, 64], [32, 64, 32]]
+    assert torch.isfinite(graph(*inputs)).all()
+
+    m2m = pytest.importorskip("m2m")
+    from m2m.capture.external_quantization import ExternalQuantizationConfig
+    result = m2m.convert(
+        Attention().eval(), inputs,
+        quantization=ExternalQuantizationConfig(
+            "mx_gemmini", SPEC, Path(__file__).resolve().parents[1] / "examples/default-policy.yaml"),
+        backend="fx_importer", capture_trace=True,
+    )
+    assert result.ok, result.diagnostics
+    assert any("0 opaque" in row for row in result.diagnostics)
+    assert len(validate_handoff(
+        result, SPEC.read_bytes(),
+        (Path(__file__).resolve().parents[1] / "examples/default-policy.yaml").read_bytes(),
+    )["manifest"]["sites"]) == 2
+
+
+def test_sdpa_rejects_unreviewed_causal_mode():
+    from mx_gemmini_support.torchao_quant import expose_sdpa_contractions
+
+    class Causal(nn.Module):
+        def forward(self, query, key, value):
+            return torch.nn.functional.scaled_dot_product_attention(
+                query, key, value, is_causal=True)
+
+    value = torch.randn(1, 2, 32, 64)
+    exported = torch.export.export(Causal().eval(), (value, value, value))
+    with pytest.raises(ValueError, match="causal mode"):
+        expose_sdpa_contractions(exported)
+
+
 def test_mixed_capture_and_resident_chain_handoff(tmp_path):
     m2m = pytest.importorskip("m2m")
     from m2m.capture.external_quantization import ExternalQuantizationConfig
