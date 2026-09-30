@@ -16,6 +16,10 @@ manifest, and four-operation MX MLIR dialect. The handoff is a checked
 operation plan. It does not execute an accelerator contraction or certify a
 whole model. The source files below retain their narrow layout and simulator
 diagnostics.
+The [derivation record](docs/derivation_status.md) distinguishes source-checked
+facts, authored policy, handwritten algorithms, and Phase 1/2 work. Merlin's
+`examples/mx_gemmini/` owns the experiment recipe and target metadata; this
+repository owns the OOT contract, quantizer, dialect, and handoff.
 The [Phase 0 review](docs/phase0_review.md) records the numerical scope checked
 and the inputs still needed before a new Phase 0 run can be admitted.
 The [latest-RTL diagnostic](docs/latest_rtl_diagnostic.md) records the separate

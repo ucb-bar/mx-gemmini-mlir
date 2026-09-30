@@ -73,6 +73,28 @@ The policy has schema `mx_gemmini.quantization_policy.v1`. It selects one
 `functional:matmul`. Functional overrides and output chains require `source_graph_sha256`
 from the prequantization model2MLIR snapshot. Unknown override names fail.
 There is no accuracy search or implicit fallback to another MX format.
+For selective placement, start with `default_format: host` and name each MX
+site explicitly. `examples/selective-policy.yaml` does this for the candidate
+`LinearSeam` model: its first Linear uses FP8, its second uses FP4, and the
+intervening LayerNorm and GELU remain host operations. An explicitly selected
+MX site now fails capture if its observed shape or layout is ineligible; an
+ineligible site reached only through an MX default remains `skipped` with a
+reason in the census. The selected contract supplies the M/N/K shape rule
+used by both capture and handoff.
+
+The format applies to one contraction's activation and weight operands.
+Attention is a group of sites, not one automatic quantization unit: select
+its projection Linears and exposed QK/PV matmuls separately. The exposed
+softmax remains a host operation. Different sites may select FP8, FP6, and
+FP4 in one model; each FP6 site needs its reviewed activation and weight
+codebooks. A site-ID or graph change invalidates a pinned functional policy.
+`derive_site_inventory(model, inputs, contract_bytes=...)` exports the original
+model, exposes supported attention contractions, and deterministically lists
+each contraction's exact site ID, graph digest, eligible MX formats, and
+per-format refusal reasons. It does not choose precision or mutate the model.
+Use its graph digest for `source_graph_sha256`, then supply reviewed format
+choices in the policy. The inventory describes structural candidates, not
+sites proved executable by a Phase 1 lowerer.
 
 FP6 sites require explicit `fp6_codebooks` with `status: reviewed` and sixteen
 distinct E3M2 element codes for each activation and weight LUT. The current
@@ -148,6 +170,8 @@ and skipped contraction sites. Every skipped site has a reason. model2MLIR
 stamps the canonical manifest SHA-256 on its standard MLIR module. The OOT
 handoff validates those digests, site formats, shape bounds, FP6 codebook
 digests, and output chains before emitting MX dialect operations.
+`lowering_status: operation_plan_only` prevents this capture from being
+mistaken for an executable MX compiler artifact.
 The adapter returns an ExportedProgram with source lineage on the rewritten
 calls and their Q/DQ boundaries. model2MLIR accounts for exact export-added
 metadata guards and reconstructed tuple selectors. An earlier pinned
@@ -186,3 +210,6 @@ The operation plan is a contract handoff. An executable target lowering,
 transfer scheduling, host fallback execution, complete numerical validation,
 and Phase 0–2 qualification require separate evidence. No certificate is
 implied by a successful capture or dialect verification.
+The [derivation and phase ownership record](derivation_status.md) distinguishes
+deterministic contract-driven capture from the remaining handwritten support
+algorithms and the executable Phase 1 compiler.

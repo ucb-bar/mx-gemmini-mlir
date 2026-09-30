@@ -1,0 +1,10 @@
+# Host-default example for examples.iteration_workloads.LinearSeam.
+# The two named Linear sites are selected independently; LayerNorm and GELU
+# remain host operations. This is a capture policy, not executable lowering.
+schema: mx_gemmini.quantization_policy.v1
+default_format: host
+module_overrides:
+  expand: mxfp8
+  project: mxfp4
+functional_overrides: {}
+output_chains: {}
