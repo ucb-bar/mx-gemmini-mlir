@@ -113,6 +113,25 @@ records the source, ELF, simulator, and output hashes. These bounded runs
 support the explicit-load path; they do not qualify other shapes or a general
 compiler schedule.
 
-Repeated half reuse, the changed DMA column sizing, conditional LUT
-construction, and whole-model quantization and host transfers remain untested.
+## Two-wave follow-up
+
+`canonical_bringup_source(format, "split32x64")` forces a 32×32×64
+contraction into two 32-element K waves. The second wave reloads both scale
+operands and accumulates into the first wave's BF16 result. The FP6 command
+stream keeps its LUT resident across the split. All three formats exited zero
+with zero BF16 mismatches on the same latest-RTL simulator.
+
+| Format | C SHA-256 | ELF SHA-256 |
+| --- | --- | --- |
+| MXFP8 | `3244e190f3fc6d86c78ec16e81d313a34ac8a86478ba1b08d26c732eb138cd40` | `1c841e38262e8aaaa93b491a07fa2039077cebb6add6472bd30c509542485972` |
+| MXFP6 | `fb85fc8538dce128ae6d106409359598ddcd49934b44e62f2b8bb17bcf9f78d0` | `a836dc4afd3d9acc8d7342a67b304a6a71d54c929a00c6a9ebf317c33a7570ed` |
+| MXFP4 | `cea3ce74c060bb60c2499b6c9bcc392b9ed21ddffb9d56cd9f36b942bc44c868` | `310ffe3e6adc7524437cd3e495e6d850180424da030722ff458ba330a4d763d9` |
+
+The [two-wave receipt](evidence/latest_rtl_2029218_two_wave.json) pins the
+executed binaries and outputs. This proves only the specified split and
+command order; it does not establish capacity-driven wave scheduling or
+resident activation-scale reuse.
+
+Repeated half reuse, the full widened DMA field range, configurations without
+a LUT, and whole-model quantization and host transfers remain untested.
 The candidate contract remains `unreviewed`.

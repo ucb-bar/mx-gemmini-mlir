@@ -1,0 +1,48 @@
+{
+  "build_receipt_sha256": "ca329dc8dc741b50f49b2ae9889e047b019bd2e43f0798f28ca6dec159b77ff5",
+  "cases": [
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "3244e190f3fc6d86c78ec16e81d313a34ac8a86478ba1b08d26c732eb138cd40",
+      "case": "split32x64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "1c841e38262e8aaaa93b491a07fa2039077cebb6add6472bd30c509542485972",
+      "format": "mxfp8",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "9837b231d141d8c5b56bb8ae5a528298d153d5aacdfc9dc7f32b3f4994aacb75"
+    },
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "fb85fc8538dce128ae6d106409359598ddcd49934b44e62f2b8bb17bcf9f78d0",
+      "case": "split32x64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "a836dc4afd3d9acc8d7342a67b304a6a71d54c929a00c6a9ebf317c33a7570ed",
+      "format": "mxfp6",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "05932db0ac6fad0f2570862610ed1121406bf2945b317b21b666c7f27e3142da"
+    },
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "cea3ce74c060bb60c2499b6c9bcc392b9ed21ddffb9d56cd9f36b942bc44c868",
+      "case": "split32x64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "310ffe3e6adc7524437cd3e495e6d850180424da030722ff458ba330a4d763d9",
+      "format": "mxfp4",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "fc6ee6aff6f40fb68ef5f0b70a7be41b1d2af595b0e91bcb99f6246c1798cfc9"
+    }
+  ],
+  "gemmini_commit": "2029218197f771ce71416f859d975bea47b7aabc",
+  "generated_header_sha256": "f4d98ad4b2a75674366aacb16dd5e87d4c68184f78f0c143704f73b65cc1bd60",
+  "mxgen_commit": "56ef1c6810924e1cb0af07add09156b0e2f53576",
+  "schema": "mx_gemmini.latest_rtl_two_wave_diagnostic.v1",
+  "scope": "three bounded 32x32x64 two-wave explicit-scale runs; no general scheduling or Phase 0 qualification",
+  "simulator_sha256": "1d9130ad0263fe640c6fe3d62b1dd2a3333aa6dde23e3ba8849db52211ec52f2",
+  "software_test_commit": "df49519cda76867da5f01864c600ca7946dfb95d"
+}

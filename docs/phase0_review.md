@@ -114,12 +114,16 @@ loads for FP6/FP4.
 The same latest simulator also passed one 64×64×64 explicit-load program per
 format with zero BF16 mismatches. This strengthens the bounded fallback path;
 the general scheduler and larger shapes remain unqualified.
+It passed a 32×32×64 two-wave explicit-load program per format as well,
+including scale reload and BF16 accumulator continuation. Those bounded runs
+do not establish capacity-driven wave scheduling or activation-scale reuse.
 
 The source audit also finds a shared `GemminiConfigs.scala` change to DMA
 column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The
 optional-LUT change does not remove the LUT from the selected standalone
-configuration. The new build and scale-load checks do not exercise these
-changed shared paths sufficiently to move the active pin.
+configuration. The 64-square and two-wave runs exercise selected LUT and DMA
+paths, but not the full widened field range or configurations without a LUT.
+These checks remain too narrow to move the Merlin support provider pin.
 The current `scale_load_rs2` packer encodes the older one-dimensional instruction
 and stays tied to the older contract.
 The selected MxGen submodule's `MxFpMul_MxGemmini_BF16Out_Spec` passed its one
