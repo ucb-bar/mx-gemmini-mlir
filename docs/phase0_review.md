@@ -63,8 +63,11 @@ The corresponding
 [`software-spec-2029218-candidate.yaml`](../mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml)
 pins those revisions and declares the new scale-load and loop-management
 fields. It passes Merlin software-spec validation and the package's source
-hash, format, and rounding cross-check. That checker does not prove the new
-instruction fields. Its status remains `unreviewed`; the package still selects the
+hash, format, and rounding cross-check. The source check now also compares
+the funct IDs, funct-27 command slices, `CONFIG_SCALE_MEM` bit references,
+and zero/contiguous-row expressions with the candidate declaration. This is
+a source-level check of those fields, not an executed command protocol test.
+Its status remains `unreviewed`; the package still selects the
 older contract for TorchAO capture. The candidate carries no simulator digest
 from the older revision.
 The source record's 12 file hashes match the checked-out `2029218` Gemmini tree and its

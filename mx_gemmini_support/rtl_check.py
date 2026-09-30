@@ -14,6 +14,7 @@ from pathlib import Path
 import yaml
 
 from .contract import compile_contract
+from .candidate_protocol import RTL_COMMIT as CANDIDATE_RTL_COMMIT
 
 
 def _head(root: Path) -> str:
@@ -34,6 +35,66 @@ def _table(text: str, start: str, stop: str) -> dict[str, int]:
     if set(result) != {"FP8", "FP6", "FP4", "BF16"}:
         raise ValueError(f"incomplete RTL format table after {start}")
     return result
+
+
+def _check_candidate_protocol(root: Path, spec_bytes: bytes) -> dict:
+    """Cross-check the candidate's declared command fields against source slices."""
+    fields = yaml.safe_load(spec_bytes)["transfer_contracts"]["scale_load"]["semantics"]
+    controller = (root / "src/main/scala/gemmini/Controller.scala").read_text()
+    assignments = re.findall(
+        r"scale_loader_start\.get\.bits\.(\w+)\s*:=\s*"
+        r"unrolled_cmd\.bits\.cmd\.(rs[12])\((\d+)(?:,\s*(\d+))?\)",
+        controller,
+    )
+    actual = {
+        name: f"{register}[{high}:{low}]" if low else f"{register}[{high}]"
+        for name, register, high, low in assignments
+    }
+    declared = {
+        "addr": fields["source_address_bits"],
+        "pitch": fields["source_row_pitch_bits"],
+        "len": fields["row_bytes_bits"],
+        "sel": fields["operand_select_bit"],
+        "dest": fields["destination_byte_offset_bits"],
+        "rows": fields["row_count_bits"],
+        "gated": fields["gated_load_bit"],
+    }
+    if len(assignments) != len(declared) or actual != declared:
+        raise ValueError("candidate scale-load fields differ from RTL command slices")
+
+    isa = (root / "src/main/scala/gemmini/GemminiISA.scala").read_text()
+    functs = {
+        name: int(value)
+        for name, value in re.findall(r"^\s*val\s+(\w+)\s*=\s*(\d+)\.U\b", isa, re.MULTILINE)
+    }
+    selected_functs = {
+        "MX_LOAD_SCALES": fields["upload_funct"],
+        "LOOP_WS_CONFIG_SCALES": fields["loop_scale_address_funct"],
+        "LOOP_WS_CONFIG_SCALE_STRIDES": fields["loop_scale_stride_funct"],
+    }
+    if any(functs.get(name) != value for name, value in selected_functs.items()):
+        raise ValueError("candidate scale-load functs differ from RTL")
+
+    execute = (root / "src/main/scala/gemmini/ExecuteController.scala").read_text()
+    controls = {
+        "config_scale_mem_wait_landed_bit": 16,
+        "config_scale_mem_wait_managed_ready_bit": 17,
+        "config_scale_mem_activation_reuse_bit": 18,
+    }
+    for key, bit in controls.items():
+        if fields.get(key) != f"rs2[{bit}]" or f"rs2s(0)({bit})" not in execute:
+            raise ValueError(f"candidate {key} differs from RTL")
+    loop = (root / "src/main/scala/gemmini/LoopMatmul.scala").read_text()
+    if (not fields.get("row_count_zero_means_one") or
+        not fields.get("row_pitch_zero_means_contiguous") or
+        not fields.get("loop_scale_address_zero_disables_managed_path") or
+        "rows_left  := Mux(sq.rows === 0.U, 0.U, sq.rows - 1.U)" not in controller or
+        "row_step   := Mux(sq.pitch === 0.U, len8, sq.pitch)" not in controller or
+        "val len8 = Cat(sq.len(31, 3), 0.U(3.W))" not in controller or
+        "when (lrl.a_scale_addr === 0.U)" not in loop):
+        raise ValueError("candidate scale-load zero and truncation rules differ from RTL")
+    return {"command_fields": actual, "functs": selected_functs,
+            "config_scale_mem_bits": {key: f"rs2[{bit}]" for key, bit in controls.items()}}
 
 
 def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes) -> dict:
@@ -101,12 +162,15 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
         raise ValueError("selected standalone config missing")
     if "val scale_resident = Input(Bool())" not in source:
         raise ValueError("selected requantizer lacks resident output-scale path")
-    return {"schema": "mx_gemmini.rtl_source_check.v1", "status": "source_crosscheck",
+    report = {"schema": "mx_gemmini.rtl_source_check.v1", "status": "source_crosscheck",
             "rtl_commit": record["gemmini_commit"], "mxgen_commit": record["mxgen_commit"],
             "checked_files": dict(record["files"]),
             "format_codes": codes, "exponent_bits": exp, "fraction_bits": fraction,
             "max_finite": maximum, "zero_block_scale_e8m0": int(epsilon.group(1)),
             "operand_rounding": contract["operand_rounding"]}
+    if contract["rtl_commit"] == CANDIDATE_RTL_COMMIT:
+        report["candidate_protocol"] = _check_candidate_protocol(root, spec_bytes)
+    return report
 
 
 def main() -> None:
