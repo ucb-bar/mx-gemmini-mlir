@@ -91,12 +91,14 @@ mask types until their semantics and lowering are checked. This exposes the
 contraction census; the host softmax and changed arithmetic order still need
 numerical review against the model reference.
 
-Before replacing Linear modules, the adapter exports the original graph and
-checks each observed activation rank and M dimension against the selected
-format's tile rule, as well as the module's N and K dimensions. An ineligible
-module is recorded as skipped with a reason. A Linear called from multiple
-static sites currently fails capture because one module ID cannot describe
-those calls separately.
+Before replacing Linear modules, the adapter exports and stamps the original
+graph. It checks each observed activation rank and M dimension against the
+selected format's tile rule, as well as the module's N and K dimensions. The
+TorchAO handler supplies static quantized weights; the adapter inserts its
+dynamic activation Q/DQ on the stamped Linear calls and records an ineligible
+module as skipped with a reason. A Linear called from multiple static sites
+currently fails capture because one module ID cannot describe those calls
+separately.
 
 ```python
 from m2m import convert
@@ -122,10 +124,15 @@ and skipped contraction sites. Every skipped site has a reason. model2MLIR
 stamps the canonical manifest SHA-256 on its standard MLIR module. The OOT
 handoff validates those digests, site formats, shape bounds, FP6 codebook
 digests, and output chains before emitting MX dialect operations.
-The model2MLIR frontend trace currently reports `original -> quantized
-correspondence incomplete` for the external adapter, including a one-Linear
-capture. The digest-bound manifest and successful MLIR conversion do not prove
-per-node source lineage. This remains a Phase 0 provenance gap.
+The adapter returns an ExportedProgram with source lineage on the rewritten
+calls and their Q/DQ boundaries. model2MLIR accounts for exact export-added
+metadata guards and reconstructed tuple selectors. A pinned pretrained
+SmolVLA denoise-step capture with synthetic inputs has a complete
+original-to-quantized-to-prepared trace, 391 census sites, zero opaque importer
+operations, and a dialect-verified handoff. This demonstrates structural
+capture and provenance for that diagnostic graph. It does not establish
+numerical equivalence, an attributed application input corpus, or RTL
+execution.
 
 ## Dialect boundary
 

@@ -36,9 +36,13 @@ The full capture's contract and policy digests, 391-site manifest, and source
 MLIR passed the OOT handoff validator; `mx-gemmini-opt` accepted the rendered
 operation plan. This verifies the dialect boundary for the diagnostic capture,
 not executable MX lowering.
-The external adapter's frontend trace is still diagnostic: even a one-Linear
-case reports incomplete original-to-quantized node correspondence. The manifest
-is digest-bound to the MLIR module, but that does not close this lineage gap.
+The graph-first adapter now preserves source lineage through TorchAO Linear
+selection, functional Q/DQ, and re-export. The same synthetic denoise-step
+capture has a complete original-to-quantized-to-prepared frontend trace and
+no trace blockers; its manifest is digest-bound to the MLIR module. This
+closes the structural provenance gap for this capture. The inputs remain
+synthetic, the contract remains on the older RTL pin, and the trace does not
+establish numerical equivalence or accelerator execution.
 
 The current [`gemmini-mx-cleanup` head at `2029218`](https://github.com/ucb-bar/gemmini/commit/2029218197f771ce71416f859d975bea47b7aabc)
 is seven commits after the selected pin and selects MxGen

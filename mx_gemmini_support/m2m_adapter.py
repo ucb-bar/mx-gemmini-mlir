@@ -11,7 +11,8 @@ from torch import nn
 
 from .contract import compile_contract, contract_digest
 from .policy import load_policy
-from .torchao_quant import (MXGemminiFakeQuantConfig, expose_sdpa_contractions,
+from .torchao_quant import (MXGemminiFakeQuantConfig, MXGemminiLinear, _dequant_operand_for_graph,
+                            expose_sdpa_contractions,
                             quantize_functional_contractions_, verify_kernel_contract)
 
 
@@ -33,9 +34,8 @@ def _freeze_eval(graph_module):
         graph_module.eval = types.MethodType(lambda self: self.train(False), graph_module)
 
 
-def _linear_call_shapes(model, inputs, module_names):
+def _linear_call_shapes(exported, module_names):
     """Observe static Linear calls before TorchAO replaces their modules."""
-    exported = torch.export.export(model.eval(), tuple(inputs))
     calls = {name: [] for name in module_names}
     for node in exported.graph_module.graph.nodes:
         if node.target != torch.ops.aten.linear.default:
@@ -52,6 +52,68 @@ def _linear_call_shapes(model, inputs, module_names):
         shape = getattr(value, "shape", None)
         calls[owner].append(tuple(shape) if shape is not None else None)
     return calls
+
+
+def _rewrite_linear_nodes(graph_module, selections, quantized_model):
+    """Apply the TorchAO handler's static weights on source-stamped Linear calls."""
+    selected = {name: (fmt, books) for name, _module, fmt, books in selections}
+    seen = set()
+    graph = graph_module.graph
+    for node in tuple(graph.nodes):
+        if node.target != torch.ops.aten.linear.default:
+            continue
+        stack = node.meta.get("nn_module_stack") or {}
+        owners = {row[0] for row in stack.values()
+                  if isinstance(row, (tuple, list)) and row and row[0] in selected}
+        if not owners:
+            continue
+        if len(owners) != 1:
+            raise ValueError("MX Linear call has ambiguous selected module owners")
+        name = owners.pop()
+        if name in seen:
+            raise ValueError(f"MX Linear {name!r} has multiple static calls")
+        seen.add(name)
+        fmt, books = selected[name]
+        transformed = quantized_model.get_submodule(name)
+        if not isinstance(transformed, MXGemminiLinear):
+            raise TypeError(f"TorchAO did not replace selected Linear {name!r}")
+        activation, weight, *bias = node.args
+        if (not isinstance(weight, torch.fx.Node) or weight.op != "get_attr"
+                or weight.target != f"{name}.weight"):
+            raise ValueError(f"MX Linear {name!r} has an unsupported exported weight binding")
+        parameter = graph_module.get_parameter(weight.target)
+        if parameter.shape != transformed.weight.shape:
+            raise ValueError(f"MX Linear {name!r} weight shape changed during capture")
+        owner_name, _, local_name = weight.target.rpartition(".")
+        owner = graph_module.get_submodule(owner_name) if owner_name else graph_module
+        owner.register_parameter(local_name, nn.Parameter(
+            transformed.weight.detach().clone(), requires_grad=False))
+        dtype = getattr(activation.meta.get("val"), "dtype", None)
+        if dtype is None:
+            raise ValueError(f"MX Linear {name!r} activation dtype is unobserved")
+        lineage = dict(node.meta.get("custom") or {})
+        with graph.inserting_before(node):
+            q_activation = graph.call_function(
+                _dequant_operand_for_graph, args=(activation, fmt, -1, books[0]))
+            bf16_activation = graph.call_function(
+                torch.ops.aten.to.dtype, args=(q_activation, torch.bfloat16))
+            bf16_bias = None
+            if bias and isinstance(bias[0], torch.fx.Node):
+                bf16_bias = graph.call_function(
+                    torch.ops.aten.to.dtype, args=(bias[0], torch.bfloat16))
+        node.args = (bf16_activation, weight, bf16_bias)
+        with graph.inserting_after(node):
+            result = graph.call_function(torch.ops.aten.to.dtype, args=(node, dtype))
+        result.meta["val"] = node.meta.get("val")
+        for inserted in (q_activation, bf16_activation, bf16_bias, result):
+            if inserted is not None:
+                inserted.meta["custom"] = dict(lineage)
+        node.replace_all_uses_with(result)
+        result.args = (node, dtype)
+    if seen != selected.keys():
+        raise ValueError(f"selected MX Linear calls are missing from source graph: {sorted(selected.keys() - seen)}")
+    graph.lint()
+    graph_module.recompile()
 
 
 def _verify_chain_edges(graph_module, chains):
@@ -103,12 +165,24 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
             raise ValueError("functional overrides require a complete prequantization graph snapshot")
         if original_frontend_snapshot.get("sha256") != policy.graph_sha256:
             raise ValueError("functional policy source graph sha256 differs from captured model")
+    from m2m.capture.trace import (attach_original_identity,
+                                   prepare_lifted_constant_lineage,
+                                   snapshot_exported_program)
+
+    exported = torch.export.export(model.eval(), tuple(inputs))
+    if original_frontend_snapshot is not None:
+        actual = snapshot_exported_program(exported, stage="quantization_input")
+        if not attach_original_identity(exported, original_frontend_snapshot, actual):
+            raise ValueError("selected MX source snapshot differs from prequantization export")
+        source_graph_sha256 = original_frontend_snapshot["sha256"]
+    else:
+        source_graph_sha256 = snapshot_exported_program(exported, stage="original")["sha256"]
     census = []
     modules = [(name, module) for name, module in model.named_modules() if isinstance(module, nn.Linear)]
     unknown_modules = set(policy.module_overrides) - {name for name, _ in modules}
     if unknown_modules:
         raise ValueError(f"MX policy names missing Linear modules: {sorted(unknown_modules)}")
-    call_shapes = _linear_call_shapes(model, inputs, {name for name, _ in modules})
+    call_shapes = _linear_call_shapes(exported, {name for name, _ in modules})
     selections = []
     for name, module in modules:
         fmt = policy.module_format(name)
@@ -151,10 +225,10 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
         quantize_(model, MXGemminiFakeQuantConfig(fmt, *books),
                   filter_fn=lambda candidate, fqn, wanted=name, selected=module:
                   fqn == wanted and candidate is selected)
-    exported = torch.export.export(model.eval(), tuple(inputs))
     exported = expose_sdpa_contractions(exported)
     graph_module = exported.module()
     _verify_chain_edges(graph_module, policy.output_chains)
+    _rewrite_linear_nodes(graph_module, selections, model)
     seen_functional = set()
 
     def select(site_id):
@@ -195,14 +269,16 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
     if not census:
         raise ValueError("MX adapter found no contraction sites")
     _freeze_eval(graph_module)
+    prepare_lifted_constant_lineage(graph_module)
+    captured = torch.export.export(graph_module, tuple(inputs))
     manifest = {
         "schema": "m2m.quantization_manifest.v1",
         "adapter_id": "mx_gemmini",
         "contract_sha256": hashlib.sha256(contract_bytes).hexdigest(),
         "policy_sha256": policy.source_sha256,
         "compiled_contract_sha256": contract_digest(contract),
-        "source_graph_sha256": (original_frontend_snapshot or {}).get("sha256"),
+        "source_graph_sha256": source_graph_sha256,
         "numeric_status": "operand_fake_quant_only",
         "sites": census,
     }
-    return graph_module, manifest
+    return captured, manifest

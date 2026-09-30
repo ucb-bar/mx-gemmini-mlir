@@ -54,7 +54,7 @@ def test_host_module_does_not_reenter_functional_quantization():
     )
     assert {row["site_id"]: row["status"] for row in manifest["sites"]} == {
         "module:a": "host", "functional:matmul": "quantized"}
-    assert graph(torch.randn(32, 32)).shape == (32, 32)
+    assert graph.module()(torch.randn(32, 32)).shape == (32, 32)
 
 
 @pytest.mark.parametrize("rows,status", [(113, "skipped"), (32, "quantized")])
@@ -72,7 +72,7 @@ def test_linear_selection_checks_captured_activation_rows(rows, status):
         contract_bytes=SPEC.read_bytes(),
         policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n",
     )
-    assert graph(torch.randn(rows, 32)).shape == (rows, 32)
+    assert graph.module()(torch.randn(rows, 32)).shape == (rows, 32)
     assert len(manifest["sites"]) == 1
     assert manifest["sites"][0]["status"] == status
     if status == "quantized":
@@ -124,7 +124,7 @@ def test_sdpa_exposes_qk_and_pv_with_host_softmax():
     )
     assert [site["status"] for site in manifest["sites"]] == ["quantized", "quantized"]
     assert [site["shape"] for site in manifest["sites"]] == [[32, 32, 64], [32, 64, 32]]
-    assert torch.isfinite(graph(*inputs)).all()
+    assert torch.isfinite(graph.module()(*inputs)).all()
 
     m2m = pytest.importorskip("m2m")
     from m2m.capture.external_quantization import ExternalQuantizationConfig
@@ -136,6 +136,7 @@ def test_sdpa_exposes_qk_and_pv_with_host_softmax():
     )
     assert result.ok, result.diagnostics
     assert any("0 opaque" in row for row in result.diagnostics)
+    assert result.capture_trace["status"] == "complete", result.capture_trace["blockers"]
     assert len(validate_handoff(
         result, SPEC.read_bytes(),
         (Path(__file__).resolve().parents[1] / "examples/default-policy.yaml").read_bytes(),
@@ -178,6 +179,7 @@ def test_mixed_capture_and_resident_chain_handoff(tmp_path):
                          original_frontend_snapshot=original)
     assert result.ok, result.diagnostics
     assert any("0 opaque" in row for row in result.diagnostics)
+    assert result.capture_trace["status"] == "complete", result.capture_trace["blockers"]
     selected = validate_handoff(result, SPEC.read_bytes(), policy.read_bytes())
     assert selected["contract"]["formats"].keys() == {"mxfp8", "mxfp6", "mxfp4"}
     sites = result.quantization_manifest["sites"]

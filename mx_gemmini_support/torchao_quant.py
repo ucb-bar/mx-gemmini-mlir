@@ -458,6 +458,8 @@ def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select
                                                     args=(lhs, format, -1, codebooks[0]))
             qrhs = graph_module.graph.call_function(_dequant_operand_for_graph,
                                                     args=(rhs, format, -1 if is_linear else -2, codebooks[1]))
+        qlhs.meta["custom"] = dict(node.meta.get("custom") or {})
+        qrhs.meta["custom"] = dict(node.meta.get("custom") or {})
         arguments = list(node.args)
         arguments[lhs_index] = qlhs
         arguments[rhs_index] = qrhs
