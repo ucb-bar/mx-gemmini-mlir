@@ -140,7 +140,9 @@ or locally changed `mxq` source and prints per-format, per-case counts.
 2. Select exact MX application captures and a versioned site policy. Review any
    FP6 codebooks, host placement, and accuracy choices with the numerical owners.
    The example FP8-only policy is a bringup policy, not a reviewed whole-model
-   selection.
+   selection. The [candidate iteration roster](iteration_roster_candidate.md)
+   proposes four independent MX-sized captures and gives their artifact
+   materialization command; it has not been admitted.
 3. Derive a new MX-only conformance requirement from those captures. The retained
    synthesis sidecar is `unverified_legacy` and contains BF16/int8 accelerator
    cells outside this three-format contract. Supply a same-target capability
