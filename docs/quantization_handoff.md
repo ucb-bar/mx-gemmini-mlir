@@ -86,15 +86,20 @@ diagnostic, not a model of the mesh's product or reduction arithmetic.
 
 The adapter exposes rank-4 inference SDPA with matching Q/K/V heads and a
 boolean mask as QK matmul, host safe softmax, and PV matmul before site
-selection. It refuses dropout, causal mode, grouped-query heads, and other
-mask types until their semantics and lowering are checked. This exposes the
+selection. It materializes contiguous Q/K/V and transposed K operands before
+the contraction census. The graph makes required copies explicit; their
+placement and transfer costs remain unreviewed. It refuses dropout, causal
+mode, grouped-query heads, and other mask types until their semantics and
+lowering are checked. This exposes the
 contraction census; the host softmax and changed arithmetic order still need
 numerical review against the model reference.
 
 Before replacing Linear modules, the adapter exports and stamps the original
 graph. It checks each observed activation rank and M dimension against the
-selected format's tile rule, as well as the module's N and K dimensions. The
-TorchAO handler supplies static quantized weights; the adapter inserts its
+selected format's tile rule, as well as the module's N and K dimensions.
+Noncontiguous or unobserved Linear operand layouts are skipped. Functional
+contractions also require contiguous observed operands. The TorchAO handler
+supplies static quantized weights; the adapter inserts its
 dynamic activation Q/DQ on the stamped Linear calls and records an ineligible
 module as skipped with a reason. A Linear called from multiple static sites
 currently fails capture because one module ID cannot describe those calls
@@ -126,13 +131,14 @@ handoff validates those digests, site formats, shape bounds, FP6 codebook
 digests, and output chains before emitting MX dialect operations.
 The adapter returns an ExportedProgram with source lineage on the rewritten
 calls and their Q/DQ boundaries. model2MLIR accounts for exact export-added
-metadata guards and reconstructed tuple selectors. A pinned pretrained
-SmolVLA denoise-step capture with synthetic inputs has a complete
+metadata guards and reconstructed tuple selectors. An earlier pinned
+pretrained SmolVLA denoise-step capture with synthetic inputs had a complete
 original-to-quantized-to-prepared trace, 391 census sites, zero opaque importer
 operations, and a dialect-verified handoff. This demonstrates structural
-capture and provenance for that diagnostic graph. It does not establish
-numerical equivalence, an attributed application input corpus, or RTL
-execution.
+capture and provenance for that diagnostic graph. It predates contiguous
+operand enforcement and must be rerun before its site counts guide selection.
+It does not establish numerical equivalence, an attributed application input
+corpus, or RTL execution.
 
 ## Dialect boundary
 

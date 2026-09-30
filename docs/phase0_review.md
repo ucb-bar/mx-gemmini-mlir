@@ -21,21 +21,22 @@ inputs and their stage receipts report `source_closure_verified: false`.
 Their materialized files are useful for structural inspection, but they do
 not supply the selected, attributed MX application capture needed below.
 One eager denoise step from the pinned pretrained checkpoint with synthetic
-inputs observed 302 of 303 Linear modules. Under the current static tile rules,
-73 observed sites were eligible for each of FP8, FP6, and FP4; the remaining
-229 failed either activation M/rank or N/K bounds. This is a shape diagnostic,
+inputs observed 302 of 303 Linear modules. Its dimension-only screen counted
+73 sites within the FP8, FP6, and FP4 tile bounds; 229 failed activation
+M/rank or N/K bounds. This is a shape diagnostic,
 not a quantized model capture, accuracy result, or admitted application corpus.
-The FP8-only OOT adapter also completed model2MLIR FX capture of that synthetic
-denoise step on the older active contract: its manifest reports 73 quantized
-Linear sites, 24 quantized QK/PV sites exposed from 12 masked SDPA calls, 230
-skipped Linear modules (including one absent from the exported graph), and 64
+An earlier FP8-only OOT adapter also completed model2MLIR FX capture of that
+synthetic denoise step on the older active contract: its manifest reports 73
+quantized Linear sites, 24 quantized QK/PV sites exposed from 12 masked SDPA
+calls, 230 skipped Linear modules (including one absent from the exported graph), and 64
 skipped functional sites. The importer reported 9,735 decomposed operations and
 zero opaque operations. This is capture and site coverage only; it has no
 source-closed input corpus, full-model accuracy result, or accelerator execution.
 The full capture's contract and policy digests, 391-site manifest, and source
 MLIR passed the OOT handoff validator; `mx-gemmini-opt` accepted the rendered
 operation plan. This verifies the dialect boundary for the diagnostic capture,
-not executable MX lowering.
+not executable MX lowering. These counts predate contiguous operand enforcement
+and require a fresh capture before they describe the current adapter.
 The graph-first adapter now preserves source lineage through TorchAO Linear
 selection, functional Q/DQ, and re-export. The same synthetic denoise-step
 capture has a complete original-to-quantized-to-prepared frontend trace and
