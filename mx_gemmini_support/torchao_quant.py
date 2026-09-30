@@ -374,7 +374,10 @@ def expose_sdpa_contractions(exported: torch.export.ExportedProgram) -> torch.ex
         if attn_mask is not None and attn_mask.dtype != torch.bool:
             raise ValueError("MX attention capture currently requires a boolean mask")
         factor = scale if scale is not None else 1.0 / math.sqrt(query.shape[-1])
-        scores = torch.matmul(query, key.transpose(-2, -1)) * factor
+        query = query.contiguous()
+        key = key.contiguous()
+        value = value.contiguous()
+        scores = torch.matmul(query, key.transpose(-2, -1).contiguous()) * factor
         if attn_mask is not None:
             scores = scores.masked_fill(~attn_mask, float("-inf"))
         probabilities = torch.ops.aten._safe_softmax.default(scores, -1, None)
@@ -452,6 +455,10 @@ def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select
             continue
         if len(a) > 2 and not is_linear and a[:-2] != b[:-2]:
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "batch broadcasting"})
+            continue
+        if not lhs_val.is_contiguous() or not rhs_val.is_contiguous():
+            census.append({"site_id": site_id, "kind": "functional", "status": "skipped",
+                           "reason": "noncontiguous operand layout"})
             continue
         with graph_module.graph.inserting_before(node):
             qlhs = graph_module.graph.call_function(_dequant_operand_for_graph,

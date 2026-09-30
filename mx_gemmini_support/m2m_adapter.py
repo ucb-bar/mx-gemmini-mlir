@@ -35,7 +35,7 @@ def _freeze_eval(graph_module):
 
 
 def _linear_call_shapes(exported, module_names):
-    """Observe static Linear calls before TorchAO replaces their modules."""
+    """Observe static Linear call shapes and layouts before TorchAO replacement."""
     calls = {name: [] for name in module_names}
     for node in exported.graph_module.graph.nodes:
         if node.target != torch.ops.aten.linear.default:
@@ -50,7 +50,12 @@ def _linear_call_shapes(exported, module_names):
         owner = owners.pop()
         value = node.args[0].meta.get("val") if node.args else None
         shape = getattr(value, "shape", None)
-        calls[owner].append(tuple(shape) if shape is not None else None)
+        operands = [arg.meta.get("val") if isinstance(arg, torch.fx.Node) else None
+                    for arg in node.args[:2]]
+        contiguous = (all(operand.is_contiguous() for operand in operands)
+                      if len(operands) == 2 and all(isinstance(operand, torch.Tensor)
+                                                    for operand in operands) else None)
+        calls[owner].append((tuple(shape) if shape is not None else None, contiguous))
     return calls
 
 
@@ -203,7 +208,7 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
             census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
                            "reason": f"N={n} K={k} outside {fmt} shape bounds"})
             continue
-        shape = observed[0]
+        shape, contiguous = observed[0]
         if (shape is None or len(shape) not in (2, 3, 4)
                 or any(not isinstance(dim, int) for dim in shape[-2:])):
             census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
@@ -215,6 +220,10 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
         if m < bounds["M"]["min"] or m % bounds["M"]["multiple_of"]:
             census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
                            "reason": f"M={m} outside {fmt} shape bounds"})
+            continue
+        if contiguous is not True:
+            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
+                           "reason": "noncontiguous or unknown Linear operand layout"})
             continue
         books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
         selections.append((name, module, fmt, books))

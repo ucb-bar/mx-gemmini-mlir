@@ -96,6 +96,38 @@ def test_reused_linear_requires_distinct_call_site_ids():
               policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n")
 
 
+def test_noncontiguous_linear_is_reported_as_skipped():
+    class StridedLinear(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(32, 32)
+
+        def forward(self, value):
+            return self.a(value.transpose(0, 1))
+
+    _, manifest = apply(
+        StridedLinear().eval(), (torch.randn(32, 32),),
+        contract_bytes=SPEC.read_bytes(),
+        policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n",
+    )
+    assert [(site["status"], site.get("reason")) for site in manifest["sites"]] == [
+        ("skipped", "noncontiguous or unknown Linear operand layout")]
+
+
+def test_noncontiguous_functional_operand_is_reported_as_skipped():
+    class StridedMatmul(nn.Module):
+        def forward(self, value):
+            return value @ value.transpose(0, 1)
+
+    _, manifest = apply(
+        StridedMatmul().eval(), (torch.randn(32, 32),),
+        contract_bytes=SPEC.read_bytes(),
+        policy_bytes=b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n",
+    )
+    assert [(site["status"], site.get("reason")) for site in manifest["sites"]] == [
+        ("skipped", "noncontiguous operand layout")]
+
+
 def test_sdpa_exposes_qk_and_pv_with_host_softmax():
     from mx_gemmini_support.torchao_quant import expose_sdpa_contractions
 
@@ -116,6 +148,9 @@ def test_sdpa_exposes_qk_and_pv_with_host_softmax():
     assert targets.count(torch.ops.aten.matmul.default) == 2
     assert torch.ops.aten._safe_softmax.default in targets
     assert torch.ops.aten.scaled_dot_product_attention.default not in targets
+    for node in exposed.graph_module.graph.nodes:
+        if node.target == torch.ops.aten.matmul.default:
+            assert all(arg.meta["val"].is_contiguous() for arg in node.args[:2])
     torch.testing.assert_close(exposed.module()(*inputs), model(*inputs))
 
     graph, manifest = apply(
