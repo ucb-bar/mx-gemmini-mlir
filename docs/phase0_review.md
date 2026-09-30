@@ -1,6 +1,6 @@
 # MX Gemmini Phase 0 review
 
-Review snapshot: 2026-09-29. The selected software contract remains
+Review snapshot: 2026-09-30. The selected software contract remains
 `unreviewed`. This review applies to the exact Gemmini
 `f0167390b56fb315deea90ac1fc3983772e92d82`, MxGen
 `a27ce3cd81513210c21f971ec3977defd13fa21e`, and
@@ -52,8 +52,9 @@ single-format configuration. It also changes the shared controller and loop
 paths: scale-load funct 27 now has pitch, destination, row-count, and gating
 fields; loop-managed scale commands 31 and 32 were added; requantizer LUT
 construction is conditional. The selected standalone configuration still has a
-LUT, but its existing simulator and source-bound diagnostics cannot qualify
-these changed shared paths. The TorchAO kernel now rejects a contract retargeted
+LUT. The [isolated latest-RTL diagnostic](latest_rtl_diagnostic.md) builds a
+matching simulator and checks four bounded scale-load command streams. The
+TorchAO kernel still rejects a contract retargeted
 to another Gemmini revision, MxGen revision, or configuration until reviewed.
 
 ## Current RTL source audit
@@ -66,11 +67,11 @@ pins those revisions and declares the new scale-load and loop-management
 fields. It passes Merlin software-spec validation and the package's source
 hash, format, and rounding cross-check. The source check now also compares
 the funct IDs, funct-27 command slices, `CONFIG_SCALE_MEM` bit references,
-and zero/contiguous-row expressions with the candidate declaration. This is
-a source-level check of those fields, not an executed command protocol test.
+and zero/contiguous-row expressions with the candidate declaration. The source
+check is separate from the bounded executed command checks linked above.
 Its status remains `unreviewed`; the package still selects the
-older contract for TorchAO capture. The candidate carries no simulator digest
-from the older revision.
+older contract for TorchAO capture. The older simulator digest does not apply
+to this revision.
 The source record's 12 file hashes match the checked-out `2029218` Gemmini tree and its
 `56ef1c6` MxGen submodule. This is a scoped source census, not the complete
 elaboration closure. The selected
@@ -78,8 +79,8 @@ elaboration closure. The selected
 mesh, 32-element scale blocks, a LUT, 256 KiB scratchpad, 64 KiB accumulator,
 and two accumulator banks. It sets `has_nonlinear_activations = false` and
 `has_normalizations = false`; the current software contract assigns those
-operations to the host. These are source-level findings, not properties of a
-newly elaborated design.
+operations to the host. These settings were also used in the isolated
+elaboration; their numerical implications remain unreviewed.
 
 The changed protocol must be part of any candidate software contract for this
 revision:
@@ -96,14 +97,14 @@ not multiples of eight, rather than silently accepting the RTL's truncation.
 The candidate-only `scale_load_2d_operands` encoder checks the exact source
 pins and declared fields, and rejects unaligned source, pitch, and destination
 values, source address overflow, more than 255 rows, and writes crossing a
-4 KiB destination half. It has boundary tests; no source-bound command run
-has used this encoder yet.
+4 KiB destination half. Its emitted fields were used in the four executed
+diagnostics; broader protocol behavior remains untested.
 
 The source audit also finds a shared `GemminiConfigs.scala` change to DMA
 column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The
 optional-LUT change does not remove the LUT from the selected standalone
-configuration. It still changes shared source and therefore needs a new
-source-bound elaboration and simulator receipt before the active pin can move.
+configuration. The new build and scale-load checks do not exercise these
+changed shared paths sufficiently to move the active pin.
 The current `scale_load_rs2` packer encodes the older one-dimensional instruction
 and stays tied to the older contract.
 The selected MxGen submodule's `MxFpMul_MxGemmini_BF16Out_Spec` passed its one
@@ -134,9 +135,9 @@ or locally changed `mxq` source and prints per-format, per-case counts.
 
 ## Phase 0 admission work
 
-1. Freeze the intended RTL revision. For `2029218`, rebuild and bind the
-   standalone elaboration and simulator, audit the new scale-load/loop protocol,
-   update source and toolchain pins, and rerun the format and chain diagnostics.
+1. Freeze the intended RTL revision. For `2029218`, complete the loop-managed
+   scale protocol and changed shared-path checks, review source/toolchain
+   binding, and rerun the full format and chain diagnostics.
    Keep the existing `f016739` receipts attributed to their original revision.
 2. Select exact MX application captures and a versioned site policy. Review any
    FP6 codebooks, host placement, and accuracy choices with the numerical owners.

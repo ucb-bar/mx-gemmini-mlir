@@ -1,6 +1,7 @@
-# Source-only candidate for the current GemminiMxFPConfigs.standaloneMxFPConfig.
-# This file does not select the package's active contract. It has no matching
-# elaboration, simulator, whole-model capture, or Phase 0 admission receipt.
+# Candidate for the current GemminiMxFPConfigs.standaloneMxFPConfig.
+# This file does not select the package's active contract. Isolated elaboration
+# and narrow scale-load simulator checks exist; full protocol, numerical,
+# whole-model, and Phase 0 review remain open.
 schema: merlin.software_spec.v1
 target: mx_gemmini
 status: unreviewed
@@ -11,7 +12,7 @@ evidence:
   rtl_config_class: GemminiMxFPStandaloneConfig
   mxgen_commit: 56ef1c6810924e1cb0af07add09156b0e2f53576
   source_record: rtl_candidate_2029218.yaml
-  qualification: pending_source_bound_elaboration_simulator_phase0_host_and_full_model
+  qualification: pending_full_protocol_numerics_phase0_host_and_full_model
 
 # The top-level format is the recipe's default; each additional MX format has
 # its own numerical selection below. A source reference is a proposed L0 oracle,
