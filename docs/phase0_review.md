@@ -102,6 +102,9 @@ load diagnostics. Loop-managed FP8 passed two tests, but loop-managed FP6 and
 FP4 each produced 768 BF16 mismatches in the 32-square test. The candidate
 therefore restricts loop-managed scales to FP8 and requires explicit funct-27
 loads for FP6/FP4.
+The same latest simulator also passed one 64×64×64 explicit-load program per
+format with zero BF16 mismatches. This strengthens the bounded fallback path;
+the general scheduler and larger shapes remain unqualified.
 
 The source audit also finds a shared `GemminiConfigs.scala` change to DMA
 column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The

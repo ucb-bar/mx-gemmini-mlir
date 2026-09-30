@@ -95,6 +95,24 @@ loop-managed` or, for the tested MXFP8 64-square case, `--variant
 loop-managed-pitched-64`. Its loop command IDs are emitted outside the pinned
 software header, which does not yet define funct 31/32.
 
+## Explicit-load 64-square follow-up
+
+The package's existing `canonical_bringup_source(format, "square64")`
+generated one 64×64×64 contraction per format. Each used explicit contiguous
+funct-27 scale loads, the generated header above, and the same simulator.
+All three programs exited zero with zero BF16 mismatches.
+
+| Format | C SHA-256 | ELF SHA-256 |
+| --- | --- | --- |
+| MXFP8 | `629b9080382d526d79e6c42f2133f4d05ab8814c00bdd9a5636e373d3f25efa7` | `49dd00ee70b7d3a80ac7757b1c191bf1e3dbdd7a783e70893ac8051908b77e0c` |
+| MXFP6 | `dde663622142c4b9ef0c52c10ffd75182bef643d2d854e20fbfe9ced69876c5f` | `1fd23cd53bdd3b634e366ba8923feff36a5b5f30868e4dd36b73ed9faea991ea` |
+| MXFP4 | `96d5d0e2ec4f4afb9458787b567eddde8440169bd40d2965db33fc99eaa74047` | `dc190950fbe8b26e28427c65734ff8fce2c064b60cdf777bdcf9daa3cbbe6b83` |
+
+The [64-square runtime receipt](evidence/latest_rtl_2029218_square64.json)
+records the source, ELF, simulator, and output hashes. These bounded runs
+support the explicit-load path; they do not qualify other shapes or a general
+compiler schedule.
+
 Repeated half reuse, the changed DMA column sizing, conditional LUT
 construction, and whole-model quantization and host transfers remain untested.
 The candidate contract remains `unreviewed`.

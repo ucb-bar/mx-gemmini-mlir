@@ -1,0 +1,48 @@
+{
+  "build_receipt_sha256": "ca329dc8dc741b50f49b2ae9889e047b019bd2e43f0798f28ca6dec159b77ff5",
+  "cases": [
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "629b9080382d526d79e6c42f2133f4d05ab8814c00bdd9a5636e373d3f25efa7",
+      "case": "square64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "49dd00ee70b7d3a80ac7757b1c191bf1e3dbdd7a783e70893ac8051908b77e0c",
+      "format": "mxfp8",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "b1d19560fd1361de9acb3323fea87b431adee84b03ffafe339d255f8f4b65c55"
+    },
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "dde663622142c4b9ef0c52c10ffd75182bef643d2d854e20fbfe9ced69876c5f",
+      "case": "square64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "1fd23cd53bdd3b634e366ba8923feff36a5b5f30868e4dd36b73ed9faea991ea",
+      "format": "mxfp6",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "b8231368412f3bfeeb2fb488dcbc5b893133cdc03c1257e8554cb3c4705c3a7f"
+    },
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "96d5d0e2ec4f4afb9458787b567eddde8440169bd40d2965db33fc99eaa74047",
+      "case": "square64",
+      "compiled_with_mx_rocket": true,
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "dc190950fbe8b26e28427c65734ff8fce2c064b60cdf777bdcf9daa3cbbe6b83",
+      "format": "mxfp4",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "51227c47f90bdc299b9de5d9aba3a29ba99e8a69f40906dfab30ee666e4bc85b"
+    }
+  ],
+  "gemmini_commit": "2029218197f771ce71416f859d975bea47b7aabc",
+  "generated_header_sha256": "f4d98ad4b2a75674366aacb16dd5e87d4c68184f78f0c143704f73b65cc1bd60",
+  "mxgen_commit": "56ef1c6810924e1cb0af07add09156b0e2f53576",
+  "schema": "mx_gemmini.latest_rtl_square64_diagnostic.v1",
+  "scope": "three bounded 64x64x64 explicit-scale one-window runs; no general Phase 0 qualification",
+  "simulator_sha256": "1d9130ad0263fe640c6fe3d62b1dd2a3333aa6dde23e3ba8849db52211ec52f2",
+  "software_test_commit": "df49519cda76867da5f01864c600ca7946dfb95d"
+}
