@@ -29,6 +29,12 @@ Gemmini `f0167390b56fb315deea90ac1fc3983772e92d82` with MxGen
 contract for this package. It remains **unreviewed**. The RTL is authoritative;
 a changed source or unsupported semantic change must fail the source check and
 review before the quantizer is updated.
+
+The contract is an authored input rather than a generated copy of Merlin's
+`examples/mx_gemmini/`. The [authorship and selection record](derivation_status.md#authorship-and-selection)
+explains the separate `2029218` candidate and who selects the contract,
+model inputs, and per-site precision policy.
+
 The TorchAO kernel accepts only the two exact Gemmini/MxGen pairs documented
 here with the selected configuration and numerical fields. A mismatched pair,
 configuration, or format table fails before capture.
@@ -73,6 +79,9 @@ The policy has schema `mx_gemmini.quantization_policy.v1`. It selects one
 `functional:matmul`. Functional overrides and output chains require `source_graph_sha256`
 from the prequantization model2MLIR snapshot. Unknown override names fail.
 There is no accuracy search or implicit fallback to another MX format.
+The user/operator selects the policy after reviewing the derived inventory;
+the numerical team should supply the accuracy rationale and FP6 codebooks.
+
 For selective placement, start with `default_format: host` and name each MX
 site explicitly. `examples/selective-policy.yaml` does this for the candidate
 `LinearSeam` model: its first Linear uses FP8, its second uses FP4, and the

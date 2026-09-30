@@ -7,6 +7,47 @@ remains authoritative for hardware facts. A software contract can declare
 semantics and host policy that RTL extraction does not establish; its presence
 alone is not evidence that those declarations are true.
 
+## Authorship and selection
+
+The `2029218` [candidate software spec](../mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml)
+was first authored in this OOT repository in commit `b24adcb` on 2026-09-29,
+then revised for source and protocol checks. It is not generated from Merlin's
+`examples/mx_gemmini/` directory. That directory owns an experiment definition,
+recipe, and descriptor; it has no copy of this candidate spec. The candidate
+spec combines declared software semantics with fields checked against the
+pinned Gemmini/MxGen source. It remains `unreviewed`. A successful
+`compile_contract` projects its declarations; the separately invoked
+`rtl_check` checks exact source hashes, format and scale fields, selected
+rounding paths, and candidate command fields. It does not derive all shape
+bounds, host operation placement, transfers, or mesh numerical behavior.
+Those are authored claims needing separate review and execution evidence.
+Neither operation approves the spec.
+
+The user or experiment operator explicitly selects the RTL/configuration,
+candidate contract, model and representative inputs, and policy file for a
+run. The responsible hardware and numerical reviewers establish which
+software declarations and FP6 codebooks may be marked reviewed. Nothing
+selects the newest branch or silently promotes this candidate over the older
+active provider contract. Merlin's `examples/mx_gemmini/` is not yet wired to
+consume this candidate contract and its site inventory as one frozen input.
+
+The inventory is **computed**, not hand-picked: `derive_site_inventory`
+exports that selected model with those selected inputs, identifies `nn.Linear`
+modules and visible functional contractions, then evaluates every MX format
+against observed rank, static shape, operand layout, batch compatibility, and
+the selected contract's M/N/K bounds. Its exact site IDs, source-graph digest,
+eligible formats, and refusal reasons are scoped to that export. Different
+input shapes or graph specialization require a new inventory.
+
+The **precision assignment is selected by the user/operator**, normally with
+the numerical team's recommendation and reviewed FP6 codebooks. They provide
+an explicit policy mapping site IDs to FP8, FP6, FP4, or `host`; a policy with
+`default_format: host` is the selective starting point. Capture applies it
+only where the inventory rules admit it, and refuses an ineligible explicit MX site.
+The FP8-everywhere `examples/default-policy.yaml` is a structural bringup
+input, not an approved whole-model precision choice. The policy's bytes and
+the original graph digest are bound into the capture handoff.
+
 | OOT owner | Current mechanism | Remaining boundary |
 | --- | --- | --- |
 | `contracts/` and `contract.py` | YAML input is compiled to one deterministic, digest-bound consumer view. | The software declarations are authored and remain `unreviewed`; compilation does not prove them. |
