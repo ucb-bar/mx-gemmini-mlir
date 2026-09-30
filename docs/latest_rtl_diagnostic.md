@@ -55,11 +55,46 @@ python -m mx_gemmini_support.candidate_bringup \
   --format mxfp8 --variant pitched --output /artifact/mxfp8_pitched_scale_load.c
 ```
 
-Compile it against the pinned test header with `MX_ROCKET`, then run the ELF
-on the recorded executable with `+dramsim`, `+max-cycles=500000`, and
-`+loadmem=<ELF>`. The generator refuses to overwrite an existing source file
-and prints its digest.
+Compile it against the pinned test header with `MX_ROCKET`. From a directory
+containing the pinned `dramsim2_ini` files, run:
 
-These checks do not execute loop-managed funct 31/32, repeated half reuse,
-the changed DMA column sizing, conditional LUT construction, or whole-model
-quantization and host transfers. The candidate contract remains `unreviewed`.
+```sh
+<simulator> <ELF> +dramsim +max-cycles=500000 +loadmem=<ELF>
+```
+
+The ELF must be the first simulator argument. The generator refuses to
+overwrite an existing source file and prints its digest.
+
+## Loop-managed follow-up
+
+The same simulator ran loops configured with funct 31/32. The FP8 64-square
+case placed two 64-byte logical scale rows 128 bytes apart in source memory.
+The FP6/FP4 cases deliberately used the same exact packed payloads that passed
+above with explicit funct-27 loads.
+
+| Format | Loop case | C SHA-256 | ELF SHA-256 | Result |
+| --- | --- | --- | --- | --- |
+| MXFP8 | 32×32×32, one row | `6264b4957cde674ec9f8eeec98eb62ed308689bd1ed9d5426676f4a6695de651` | `ca446f48af30bbdd8f14be58b0be8bebbc12097eb941e6493096d1c7630ad24a` | 0 mismatches, exit 0 |
+| MXFP8 | 64×64×64, two pitched rows | `610fa4d1ac8778fa3d3f7ea6ab39bd0d5db5fabd01bf1525426c60d8db4143b7` | `7e3f092642ec681a50f3970a722b0a9c89d4d3e764dce1579fac2ff65d341394` | 0 mismatches, exit 0 |
+| MXFP6 | 32×32×32, one row | `b9aa22f2788b49fb2119a0cb7a50b40bff90d42b4d527f15375c6650e884bd19` | `3e32f917847f6e6369a1eb82f138072948e8263812613cf06ced7a5c1bacebf6` | 768 mismatches, exit 255 |
+| MXFP4 | 32×32×32, one row | `435f1fd234f436544a365ff5330a9bee0e5de7f16c8d72d2b8bacfc76d7546ae` | `87d95279e6ba5e00cf65e7ffe2493d464728d2ec7dc078ffa0179b09e183eea7` | 768 mismatches, exit 255 |
+
+The [loop runtime receipt](evidence/latest_rtl_2029218_loop.json) records the
+simulator, source, ELF, output hashes, and exact exit results for this rerun.
+
+The failure pattern leaves 256 of 1,024 BF16 outputs correct. In
+`LoopMatmul.scala`, `lds_row_bytes` is `max_i/max_j * block_size`; with this
+configuration, it emits 16 bytes for the FP6/FP4 test's physical 32-byte scale
+row. The underfilled row is a source-and-output inference, not a waveform
+proof. The candidate contract therefore permits loop-managed scales only for
+MXFP8 and requires explicit funct-27 scale loads for MXFP6/FP4. No RTL source
+was changed.
+
+The generator also reproduces these command streams with `--variant
+loop-managed` or, for the tested MXFP8 64-square case, `--variant
+loop-managed-pitched-64`. Its loop command IDs are emitted outside the pinned
+software header, which does not yet define funct 31/32.
+
+Repeated half reuse, the changed DMA column sizing, conditional LUT
+construction, and whole-model quantization and host transfers remain untested.
+The candidate contract remains `unreviewed`.

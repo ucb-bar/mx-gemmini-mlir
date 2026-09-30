@@ -1,0 +1,54 @@
+{
+  "build_receipt_sha256": "ca329dc8dc741b50f49b2ae9889e047b019bd2e43f0798f28ca6dec159b77ff5",
+  "cases": [
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "6264b4957cde674ec9f8eeec98eb62ed308689bd1ed9d5426676f4a6695de651",
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "ca446f48af30bbdd8f14be58b0be8bebbc12097eb941e6493096d1c7630ad24a",
+      "format": "mxfp8",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "32f404a370cef32e1f842576af49d3ff19a34f6867899d96803e3ba10d3215c1",
+      "variant": "loop-managed"
+    },
+    {
+      "bf16_mismatches": 0,
+      "c_sha256": "610fa4d1ac8778fa3d3f7ea6ab39bd0d5db5fabd01bf1525426c60d8db4143b7",
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "7e3f092642ec681a50f3970a722b0a9c89d4d3e764dce1579fac2ff65d341394",
+      "format": "mxfp8",
+      "simulator_exit_code": 0,
+      "stdout_stderr_sha256": "caad8b566ba09cee96960353bc8f90304706c27d2ff1b6f13d268666edc43567",
+      "variant": "loop-managed-pitched-64"
+    },
+    {
+      "bf16_mismatches": 768,
+      "c_sha256": "b9aa22f2788b49fb2119a0cb7a50b40bff90d42b4d527f15375c6650e884bd19",
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "3e32f917847f6e6369a1eb82f138072948e8263812613cf06ced7a5c1bacebf6",
+      "format": "mxfp6",
+      "simulator_exit_code": 255,
+      "stdout_stderr_sha256": "956ec71f3dd5010256a125acf7208003c1e330b3bd96bc61ddaba2f64b887b6b",
+      "variant": "loop-managed"
+    },
+    {
+      "bf16_mismatches": 768,
+      "c_sha256": "435f1fd234f436544a365ff5330a9bee0e5de7f16c8d72d2b8bacfc76d7546ae",
+      "cycle_limit": 500000,
+      "direct_loadmem": true,
+      "elf_sha256": "87d95279e6ba5e00cf65e7ffe2493d464728d2ec7dc078ffa0179b09e183eea7",
+      "format": "mxfp4",
+      "simulator_exit_code": 255,
+      "stdout_stderr_sha256": "6ddda77a8a6cf2fd03348818fdbf2a5dfd1880bc3ab0bda2fa67faa7546ccfa3",
+      "variant": "loop-managed"
+    }
+  ],
+  "gemmini_commit": "2029218197f771ce71416f859d975bea47b7aabc",
+  "mxgen_commit": "56ef1c6810924e1cb0af07add09156b0e2f53576",
+  "schema": "mx_gemmini.latest_rtl_loop_scale_diagnostic.v1",
+  "scope": "four bounded loop-managed scale checks; failures are expected for FP6 and FP4; no full Phase 0 qualification",
+  "simulator_sha256": "1d9130ad0263fe640c6fe3d62b1dd2a3333aa6dde23e3ba8849db52211ec52f2"
+}

@@ -193,6 +193,10 @@ transfer_contracts:
       loop_scale_address_funct: 31
       loop_scale_stride_funct: 32
       loop_scale_address_zero_disables_managed_path: true
+      # The loop emits max_i/max_j * 16 bytes per scale row. That covers FP8,
+      # but only half of an FP6/FP4 physical row in this configuration.
+      loop_managed_formats: [mxfp8]
+      explicit_scale_load_required_formats: [mxfp6, mxfp4]
       config_scale_mem_wait_landed_bit: "rs2[16]"
       config_scale_mem_wait_managed_ready_bit: "rs2[17]"
       config_scale_mem_activation_reuse_bit: "rs2[18]"

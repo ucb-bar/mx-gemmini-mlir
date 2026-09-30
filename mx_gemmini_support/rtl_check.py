@@ -93,6 +93,10 @@ def _check_candidate_protocol(root: Path, spec_bytes: bytes) -> dict:
         "val len8 = Cat(sq.len(31, 3), 0.U(3.W))" not in controller or
         "when (lrl.a_scale_addr === 0.U)" not in loop):
         raise ValueError("candidate scale-load zero and truncation rules differ from RTL")
+    if (fields.get("loop_managed_formats") != ["mxfp8"] or
+        fields.get("explicit_scale_load_required_formats") != ["mxfp6", "mxfp4"] or
+        "val lds_row_bytes = Mux(lds_is_b, lds_loop.max_j, lds_loop.max_i) * block_size.U" not in loop):
+        raise ValueError("candidate loop-managed scale policy differs from RTL diagnostic")
     return {"command_fields": actual, "functs": selected_functs,
             "config_scale_mem_bits": {key: f"rs2[{bit}]" for key, bit in controls.items()}}
 

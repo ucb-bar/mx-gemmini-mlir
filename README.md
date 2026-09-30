@@ -18,6 +18,9 @@ whole model. The source files below retain their narrow layout and simulator
 diagnostics.
 The [Phase 0 review](docs/phase0_review.md) records the numerical scope checked
 and the inputs still needed before a new Phase 0 run can be admitted.
+The [latest-RTL diagnostic](docs/latest_rtl_diagnostic.md) records the separate
+`2029218` candidate build and scale-load checks; it does not change the active
+TorchAO contract.
 The [candidate iteration roster](docs/iteration_roster_candidate.md) gives
 four independent MX-sized capture models and an artifact materializer.
 

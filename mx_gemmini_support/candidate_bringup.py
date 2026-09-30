@@ -12,19 +12,80 @@ from .diagnostic_program import _c_bytes, emit_single_window_baremetal_c
 
 _CONTRACT = Path(__file__).resolve().parent / "contracts/software-spec-2029218-candidate.yaml"
 _CODES = {"mxfp8": 0x38, "mxfp6": 0x0C, "mxfp4": 0x02}
-_VARIANTS = ("pitched", "pitched-gated-alt-half")
+_VARIANTS = (
+    "pitched", "pitched-gated-alt-half", "loop-managed", "loop-managed-pitched-64",
+)
+
+
+def _loop_managed_source(fmt: str, *, size: int) -> str:
+    if size == 64 and fmt != "mxfp8":
+        raise ValueError("the 64-square loop diagnostic is selected only for MXFP8")
+    code = _CODES[fmt]
+    codes = [[code] * size for _ in range(size)]
+    scales = [[127] * (size // 32) for _ in range(size)]
+    lut = [[0, code] + [0] * 14 for _ in range(size // 2)] if fmt == "mxfp6" else None
+    payload = plan_mx_contraction_payload(
+        fmt, codes, codes, scales, scales, activation_lut=lut, weight_lut=lut,
+    )
+    expected = 0x4280 if size == 64 else 0x4200
+    source = emit_single_window_baremetal_c(
+        payload, [[expected] * size for _ in range(size)],
+    )
+    for name, data, operand in (
+        ("A_scales", payload.waves[0].activation_scale_bytes, "activation"),
+        ("B_scales", payload.waves[0].weight_scale_bytes, "weight"),
+    ):
+        if size == 64:
+            if len(data) != 128:
+                raise AssertionError("64-square MXFP8 scale layout changed")
+            old_array = _c_bytes(name, data)
+            if source.count(old_array) != 1:
+                raise AssertionError("bounded diagnostic scale array changed")
+            source = source.replace(
+                old_array, _c_bytes(name, data[:64] + bytes(64) + data[64:]), 1,
+            )
+        old_load = (
+            f"  gemmini_mx_load_scales((uint64_t){name}, sizeof {name}, "
+            f"{int(operand == 'weight')});\n"
+        )
+        if source.count(old_load) != 1:
+            raise AssertionError("bounded diagnostic scale command changed")
+        source = source.replace(old_load, "", 1)
+    marker = "  gemmini_loop_ws_spad("
+    if source.count(marker) != 1:
+        raise AssertionError("bounded diagnostic loop command changed")
+    stride = 128 if size == 64 else 0
+    configure = (
+        "  ROCC_INSTRUCTION_RS1_RS2(XCUSTOM_ACC, "
+        "(uint64_t)(uintptr_t)A_scales, (uint64_t)(uintptr_t)B_scales, 31);\n"
+        f"  ROCC_INSTRUCTION_RS1_RS2(XCUSTOM_ACC, {stride}, {stride}, 32);\n"
+    )
+    source = source.replace(marker, configure + marker, 1)
+    label = f"generated {fmt.upper()} {size}x{size}x{size}:"
+    replacement = (
+        f"{fmt.upper()} loop-managed pitched rows:" if size == 64
+        else f"{fmt.upper()} loop-managed scales:"
+    )
+    if source.count(label) != 1:
+        raise AssertionError("bounded diagnostic result label changed")
+    return source.replace(label, replacement, 1)
 
 
 def canonical_scale_load_source(fmt: str, variant: str = "pitched") -> str:
-    """Render one 32x32x32 exact-BF16 check using two pitched scale rows.
+    """Render one exact-BF16 check of the selected 2029218 scale protocol.
 
-    Each 32-byte logical scale vector is supplied as two 16-byte rows 32 bytes
-    apart. The gap is zero-filled, so ignoring the source pitch changes the
-    result. The gated variant selects the second 4 KiB scale-memory half and
-    waits for its managed load to land. This is a diagnostic, not a scheduler.
+    Explicit-load variants supply two 16-byte scale rows 32 bytes apart. The
+    gated variant selects the second 4 KiB half. Loop variants use funct 31/32;
+    the 64-square FP8 case supplies two 64-byte rows 128 bytes apart. The
+    32-square FP6/FP4 loop cases are expected to fail on this RTL revision.
+    These are diagnostics, not a scheduler or a format-wide qualification.
     """
     if fmt not in _CODES or variant not in _VARIANTS:
         raise ValueError("candidate bringup needs a declared MX format and variant")
+    if variant == "loop-managed":
+        return _loop_managed_source(fmt, size=32)
+    if variant == "loop-managed-pitched-64":
+        return _loop_managed_source(fmt, size=64)
     code = _CODES[fmt]
     codes = [[code] * 32 for _ in range(32)]
     scales = [[127] for _ in range(32)]

@@ -53,7 +53,7 @@ paths: scale-load funct 27 now has pitch, destination, row-count, and gating
 fields; loop-managed scale commands 31 and 32 were added; requantizer LUT
 construction is conditional. The selected standalone configuration still has a
 LUT. The [isolated latest-RTL diagnostic](latest_rtl_diagnostic.md) builds a
-matching simulator and checks four bounded scale-load command streams. The
+matching simulator and checks explicit and loop-managed scale commands. The
 TorchAO kernel still rejects a contract retargeted
 to another Gemmini revision, MxGen revision, or configuration until reviewed.
 
@@ -97,8 +97,11 @@ not multiples of eight, rather than silently accepting the RTL's truncation.
 The candidate-only `scale_load_2d_operands` encoder checks the exact source
 pins and declared fields, and rejects unaligned source, pitch, and destination
 values, source address overflow, more than 255 rows, and writes crossing a
-4 KiB destination half. Its emitted fields were used in the four executed
-diagnostics; broader protocol behavior remains untested.
+4 KiB destination half. Its emitted fields were used in four passing explicit
+load diagnostics. Loop-managed FP8 passed two tests, but loop-managed FP6 and
+FP4 each produced 768 BF16 mismatches in the 32-square test. The candidate
+therefore restricts loop-managed scales to FP8 and requires explicit funct-27
+loads for FP6/FP4.
 
 The source audit also finds a shared `GemminiConfigs.scala` change to DMA
 column-field sizing and optional LUT wiring in `MxRequantizer.scala`. The
@@ -135,9 +138,10 @@ or locally changed `mxq` source and prints per-format, per-case counts.
 
 ## Phase 0 admission work
 
-1. Freeze the intended RTL revision. For `2029218`, complete the loop-managed
-   scale protocol and changed shared-path checks, review source/toolchain
-   binding, and rerun the full format and chain diagnostics.
+1. Freeze the intended RTL revision. For `2029218`, enforce explicit FP6/FP4
+   scale loads or resolve their failed loop-managed path in RTL, check repeated
+   half reuse and changed shared paths, review source/toolchain binding, and
+   rerun the full format and chain diagnostics.
    Keep the existing `f016739` receipts attributed to their original revision.
 2. Select exact MX application captures and a versioned site policy. Review any
    FP6 codebooks, host placement, and accuracy choices with the numerical owners.
