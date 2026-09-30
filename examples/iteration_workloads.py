@@ -35,10 +35,10 @@ class DecoderBlock(nn.Module):
 
     def forward(self, tokens):
         q, k, v = self.qkv(tokens).chunk(3, dim=-1)
-        q = q.reshape(1, 32, 2, 32).transpose(1, 2)
-        k = k.reshape(1, 32, 2, 32).transpose(1, 2)
-        v = v.reshape(1, 32, 2, 32).transpose(1, 2)
-        scores = (q @ k.transpose(-2, -1)) * (32 ** -0.5)
+        q = q.reshape(1, 32, 2, 32).transpose(1, 2).contiguous()
+        k = k.reshape(1, 32, 2, 32).transpose(1, 2).contiguous()
+        v = v.reshape(1, 32, 2, 32).transpose(1, 2).contiguous()
+        scores = (q @ k.transpose(-2, -1).contiguous()) * (32 ** -0.5)
         causal = torch.ones(32, 32, device=tokens.device, dtype=torch.bool).triu(1)
         weights = scores.masked_fill(causal, -10000.0).softmax(dim=-1)
         attention = (weights @ v).transpose(1, 2).reshape(1, 32, 64)
@@ -54,7 +54,7 @@ class VisionPatches(nn.Module):
         self.project = nn.Linear(64, 64)
 
     def forward(self, image):
-        tokens = self.patch(image).flatten(2).transpose(1, 2)
+        tokens = self.patch(image).flatten(2).transpose(1, 2).contiguous()
         return (tokens + self.project(F.gelu(self.mix(tokens)))).mean(dim=1)
 
 
@@ -70,7 +70,7 @@ class PolicyFusion(nn.Module):
     def forward(self, image_tokens, text_tokens, state_tokens):
         context = torch.cat((self.vision(image_tokens), self.language(text_tokens)), dim=1)
         query = self.state(state_tokens)
-        weights = (query @ context.transpose(-2, -1)).softmax(dim=-1)
+        weights = (query @ context.transpose(-2, -1).contiguous()).softmax(dim=-1)
         fused = weights @ context
         return self.action(self.norm(query + fused))
 

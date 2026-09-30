@@ -29,7 +29,8 @@ The candidate policy is [`examples/default-policy.yaml`](../examples/default-pol
 MXFP8 at every eligible contraction, with no overrides or resident output
 chains. This is a structural bringup choice, not a reviewed model accuracy
 policy. All contraction dimensions in this roster meet the candidate contract's
-MXFP8, MXFP6, and MXFP4 tile bounds. FP6 requires reviewed site codebooks
+MXFP8, MXFP6, and MXFP4 tile bounds. The original export has contiguous
+operands at every selected contraction. FP6 requires reviewed site codebooks
 before it can be selected. The host operations above need separate numerical
 and transfer review.
 
@@ -37,7 +38,7 @@ Materialize one candidate input set under an explicit artifact root:
 
 ```sh
 python -m examples.iteration_workloads \
-  --output-root out/mx-iteration-candidate-20260929 \
+  --output-root out/mx-iteration-layout-20260929 \
   --contract mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml \
   --policy examples/default-policy.yaml
 ```
