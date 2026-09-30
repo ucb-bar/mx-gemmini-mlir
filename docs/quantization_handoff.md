@@ -12,12 +12,15 @@ the returned site census and digests. The MX dialect verifies the handoff in
 this repository. Other targets can install their own entry points without
 changing either core project.
 
-The current numerical kernel is handwritten and guarded by exact RTL and
-MxGen revisions. The source cross-check derives a limited set of facts, but
-does not generate the TorchAO handler or prove mesh arithmetic. The
-`2029218` software-spec candidate therefore fails that guard until its
-numerical behavior and simulator path are reviewed. This keeps target-specific
-code here while making selection and capture target-neutral.
+The operand kernel is handwritten and guarded by exact RTL/MxGen revision
+pairs. The `2029218` candidate is now accepted for explicit operand-only
+capture: its selected BF16 conversion and format fields pass the source check,
+and the pinned microscaling reference has zero numerical and E8M0 scale
+mismatches on the finite BF16 comparison. This does not prove mesh arithmetic,
+scale scheduling, host placement, or whole-model accuracy. The candidate
+contract remains `unreviewed`; the older provider contract remains selected
+for Merlin metadata. Target-specific code stays here while selection and
+capture remain target-neutral.
 
 The selected configuration is `GemminiMxFPConfigs.standaloneMxFPConfig` at
 Gemmini `f0167390b56fb315deea90ac1fc3983772e92d82` with MxGen
@@ -26,9 +29,9 @@ Gemmini `f0167390b56fb315deea90ac1fc3983772e92d82` with MxGen
 contract for this package. It remains **unreviewed**. The RTL is authoritative;
 a changed source or unsupported semantic change must fail the source check and
 review before the quantizer is updated.
-The TorchAO kernel rejects a contract with a different Gemmini revision,
-MxGen revision, selected configuration, or configuration class, even if its
-format table is unchanged.
+The TorchAO kernel accepts only the two exact Gemmini/MxGen pairs documented
+here with the selected configuration and numerical fields. A mismatched pair,
+configuration, or format table fails before capture.
 
 `contracts/rtl_sources.yaml` pins the source files examined for this handoff.
 The provider paths under `contracts/` point to package-owned copies, which
@@ -44,6 +47,22 @@ complete numerical oracle.
 ```sh
 python -m mx_gemmini_support.rtl_check /path/to/pinned/gemmini
 ```
+
+For the explicit `2029218` candidate, pass both its contract and source
+record to the check and select that contract in model2MLIR:
+
+```sh
+python -m mx_gemmini_support.rtl_check /path/to/2029218/gemmini \
+  --contract mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml \
+  --sources mx_gemmini_support/contracts/rtl_candidate_2029218.yaml
+python -m mx_gemmini_support.review_operands /path/to/microscaling-quant \
+  --contract mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml
+```
+
+The candidate contract can then replace `contracts/software-spec.yaml` in
+the `ExternalQuantizationConfig` example below. The manifest carries its exact
+digest, so a handoff captured against the older contract cannot be accepted
+against this candidate.
 
 ## Site policy
 

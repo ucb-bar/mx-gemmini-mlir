@@ -1,0 +1,99 @@
+{
+  "formats": {
+    "mxfp4": {
+      "all_finite_bf16": {
+        "elements": 65280,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 288
+      },
+      "edges": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      },
+      "random": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 352
+      },
+      "zero": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      }
+    },
+    "mxfp6": {
+      "all_finite_bf16": {
+        "elements": 65280,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 1
+      },
+      "edges": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 64
+      },
+      "random": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      },
+      "zero": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      }
+    },
+    "mxfp8": {
+      "all_finite_bf16": {
+        "elements": 65280,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 1
+      },
+      "edges": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 64
+      },
+      "random": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      },
+      "zero": {
+        "elements": 2048,
+        "numerical_mismatches": 0,
+        "other_bit_mismatches": 0,
+        "scale_mismatches": 0,
+        "zero_sign_differences": 0
+      }
+    }
+  },
+  "mxgen_commit": "56ef1c6810924e1cb0af07add09156b0e2f53576",
+  "reference_commit": "ea3f5bb4ee274e747ebdc70f463314b104bb45d0",
+  "rtl_commit": "2029218197f771ce71416f859d975bea47b7aabc",
+  "schema": "mx_gemmini.operand_review.v1",
+  "status": "operand_numerics_crosscheck"
+}

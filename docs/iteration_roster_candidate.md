@@ -5,8 +5,8 @@ operation corpus. It is **not admitted**. The selected RTL for the next review
 is Gemmini `2029218197f771ce71416f859d975bea47b7aabc` with MxGen
 `56ef1c6810924e1cb0af07add09156b0e2f53576`, as declared in the
 [candidate software spec](../mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml).
-The existing TorchAO adapter remains guarded to the older selected RTL; its
-capture result cannot qualify the newer revision.
+The OOT TorchAO operand adapter now accepts this exact revision pair for
+explicit candidate capture. Its results do not qualify accelerator execution.
 
 ## Iteration inputs
 
@@ -48,16 +48,32 @@ The output root must not exist. Retain `roster.json`, each `state.pt`,
 source closure before choosing an admitted capture. For later runs, use a new
 artifact root rather than overwriting a previous set.
 
-As a shape check only, the current adapter on its **older** selected contract
-captured all 16 candidate contraction sites with the FP8 policy: 2 in
-`linear_seam`, 6 in `decoder_block`, 2 in `vision_patches`, and 6 in
-`policy_fusion`. None was skipped. This does not establish numerical accuracy,
-latest-RTL compatibility, executable MX lowering, or a Phase 0 corpus.
-With model2MLIR `03718cb`, all four also pass FXImporter capture with complete
-frontend traces, zero opaque operations, and an accepted OOT handoff on that
-older contract. The decoder's boolean mask uses model2MLIR's target-neutral
-`logical_and` lowering. These are structural checks on regenerated synthetic
-inputs; the frozen artifacts above still require source-closure review.
+Replay those exact files through the out-of-tree adapter into a separate
+artifact root:
+
+```sh
+python -m examples.replay_iteration_workloads \
+  --roster-root out/mx-iteration-layout-20260929 \
+  --output-root out/mx-iteration-capture-2029218 \
+  --contract mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml \
+  --policy examples/default-policy.yaml \
+  --mx-opt out/build/mlir/tools/mx-gemmini-opt
+```
+
+The replayer checks every frozen file digest, saved export output, contract and
+policy digest, and a clean model2MLIR source checkout. It records the
+model2MLIR commit, complete frontend trace, zero opaque operations, OOT
+handoff validation and dialect verification, and hashes of the generated MLIR
+and manifests. The
+[frozen roster receipt](evidence/iteration_roster_2029218.json) and
+[capture receipt](evidence/iteration_capture_2029218.json) record one run with
+model2MLIR `03718cb` and the `2029218` candidate. All 16 FP8 sites were
+selected: 2 in `linear_seam`, 6 in `decoder_block`, 2 in `vision_patches`, and
+6 in `policy_fusion`; none was skipped. Each trace was complete with zero
+opaque operations. The decoder's boolean mask uses model2MLIR's
+target-neutral `logical_and` lowering. These are structural results on
+synthetic inputs, not model accuracy, executable MX lowering, or a Phase 0
+corpus.
 
 ## Held-out claim boundary
 
@@ -80,9 +96,8 @@ is the independent MX operand reference used in the
 ## Admission gates
 
 To promote this roster, review exact artifact hashes and source closure,
-select a model-level site/host policy, retarget the TorchAO kernel to the
-source-bound latest RTL, run model2MLIR capture and check every contraction
-site, derive an MX-only conformance profile, and run the required L0–L3
-oracles. Full-model accuracy and executable compiler claims require their own
-evidence after Phase 0. The [Phase 0 review](phase0_review.md) tracks the
-remaining latest-RTL simulator and protocol work.
+select a model-level site/host policy, derive an MX-only conformance profile,
+and run the required L0–L3 oracles. Full-model accuracy and executable
+compiler claims require their own evidence after Phase 0. The
+[Phase 0 review](phase0_review.md) tracks the remaining latest-RTL simulator
+and protocol work.

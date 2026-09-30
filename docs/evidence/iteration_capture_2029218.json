@@ -1,0 +1,70 @@
+{
+  "cases": [
+    {
+      "capture_trace_status": "complete",
+      "dialect_verifier": "passed",
+      "name": "linear_seam",
+      "opaque_operations": 0,
+      "outputs": {
+        "handoff.mlir": "a8cf4520e1e39b72dca6253586ddd3bc0cdf061c40d1ccca2b4d54c9b302b462",
+        "manifest.json": "4442451989281a7aab2aabfba3f152fd88004bddadcf1afff1f21697c83bf141",
+        "source.mlir": "ff5539ddfb57c4f64ddfb218b582dbeb947ecc2c16feb8a104bcc69392fc5967"
+      },
+      "quantized_sites": 2,
+      "sites": 2,
+      "source_graph_sha256": "e08b2a61ba5a38661a3f29fd74778763ca11e97cfb63660c40eb11e2373186ad"
+    },
+    {
+      "capture_trace_status": "complete",
+      "dialect_verifier": "passed",
+      "name": "decoder_block",
+      "opaque_operations": 0,
+      "outputs": {
+        "handoff.mlir": "6eede6eaeb28b48035a625ccb0eae306d0a2da87e004e3346a94296d837710a2",
+        "manifest.json": "a16590d38e0d8e1740b8bb2727a637e48ea6291b5381b070aab6fc626689cb71",
+        "source.mlir": "03ac8dc0b47292dd8bfc2c04fccef1889877de2da100f8989816945bafe63a74"
+      },
+      "quantized_sites": 6,
+      "sites": 6,
+      "source_graph_sha256": "adc824f161b9135cfce67ae31a9440772e305e7750f74da8af423c11222bf148"
+    },
+    {
+      "capture_trace_status": "complete",
+      "dialect_verifier": "passed",
+      "name": "vision_patches",
+      "opaque_operations": 0,
+      "outputs": {
+        "handoff.mlir": "52e2644c492ed8ef9a243a10396b1f13190c096396f962a8394b96e3ea742289",
+        "manifest.json": "51f9a182bf5f7413a6fb6c879915bd28c5634f7288fecef3c846db9e69d91805",
+        "source.mlir": "765fbc6b971e05428214a2abf84e2392f0334da0813ac8d79ae9c00ffb899b94"
+      },
+      "quantized_sites": 2,
+      "sites": 2,
+      "source_graph_sha256": "6a6e598267aa0258f1e40df70b9227117110e385d7b4c3edb5e688d44ee3d2f7"
+    },
+    {
+      "capture_trace_status": "complete",
+      "dialect_verifier": "passed",
+      "name": "policy_fusion",
+      "opaque_operations": 0,
+      "outputs": {
+        "handoff.mlir": "064dc233fb4c22afa3be1814a873aec0d60ab719aa80f207c016913c067bd043",
+        "manifest.json": "5b0fda7cce6ebc173bdd7da1612de92f240099a17500fb22003d1606051fac83",
+        "source.mlir": "77dfad19417d75a6139cdc4d81dd52ead599793f6fdf5f8e6aa21b117dd6a19f"
+      },
+      "quantized_sites": 6,
+      "sites": 6,
+      "source_graph_sha256": "bda61fdd6794334df9e1f55305ffdaecbdca18ace9e59b1d50f17996a95114da"
+    }
+  ],
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "model2mlir_commit": "03718cb46957f71d12986a3d0bb298e9e03100dc",
+  "mx_opt_sha256": "0e40ae9595cb406ad092efed7b6e99e7fd99a581492b889e30674c0c24e08152",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "replay_source_sha256": "bcb426d572f8df23b8c2121b78168e4b9db9d9f3e28f29c678514ad592be9462",
+  "roster_sha256": "a16e830a3a3a97bcc4ca0d7f2dd6e7f31648b56c52b99443b8ec237f3b94532f",
+  "schema": "mx_gemmini.iteration_capture_candidate.v1",
+  "status": "capture_only_not_admitted",
+  "support_commit": "450a8a677f6969bc0e4bc6856ce0f8541e0d9efc",
+  "torchao_version": "0.16.0"
+}

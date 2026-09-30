@@ -54,8 +54,8 @@ fields; loop-managed scale commands 31 and 32 were added; requantizer LUT
 construction is conditional. The selected standalone configuration still has a
 LUT. The [isolated latest-RTL diagnostic](latest_rtl_diagnostic.md) builds a
 matching simulator and checks explicit and loop-managed scale commands. The
-TorchAO kernel still rejects a contract retargeted
-to another Gemmini revision, MxGen revision, or configuration until reviewed.
+TorchAO operand kernel now accepts this exact Gemmini/MxGen pair for explicit
+candidate capture, while rejecting other revision pairs and configurations.
 
 ## Current RTL source audit
 
@@ -69,9 +69,18 @@ hash, format, and rounding cross-check. The source check now also compares
 the funct IDs, funct-27 command slices, `CONFIG_SCALE_MEM` bit references,
 and zero/contiguous-row expressions with the candidate declaration. The source
 check is separate from the bounded executed command checks linked above.
-Its status remains `unreviewed`; the package still selects the
-older contract for TorchAO capture. The older simulator digest does not apply
-to this revision.
+Its status remains `unreviewed`; the Merlin support provider and default
+contract still identify the older revision. The candidate must be selected
+explicitly for TorchAO capture. The older simulator digest does not apply to
+this revision.
+The candidate operand kernel also passed the pinned `microscaling-quant`
+[comparison](evidence/operand_review_2029218.json) for all finite BF16
+patterns and the documented random, zero, and edge blocks: zero numerical or
+E8M0 scale mismatches for each MX format.
+Zero-sign differences remain as described above. Mixed-format handoff and the
+four synthetic candidate workload [captures](evidence/iteration_capture_2029218.json)
+pass with the candidate contract;
+these are structural capture results, not model accuracy or accelerator runs.
 The source record's 12 file hashes match the checked-out `2029218` Gemmini tree and its
 `56ef1c6` MxGen submodule. This is a scoped source census, not the complete
 elaboration closure. The selected

@@ -1,0 +1,86 @@
+{
+  "cases": [
+    {
+      "artifacts": {
+        "inputs.pt": "e75fc3a5a73621caa73506b3c95d2f61c2e6a2303f3744f18bc21b1c85143d90",
+        "original.pt2": "68c50bfe786cd140a205f0fe5496729c67988668fb16ffd68455784351121e8e",
+        "state.pt": "61a2cb9ec69187905927cf7c25e11ae597060cccaf0f51089f5119c546c61eae"
+      },
+      "input_shapes": [
+        [
+          32,
+          64
+        ]
+      ],
+      "model_class": "LinearSeam",
+      "name": "linear_seam"
+    },
+    {
+      "artifacts": {
+        "inputs.pt": "52f7421c9192e1958548576ec53cf81f3ca91853b1feacc075e39219a0f0596d",
+        "original.pt2": "128d96ca91a404843aeba5214840cdfdf9939c69126555e8f5ac1354ca92a661",
+        "state.pt": "6c250b198f5c98fd055bd79a9496d09659e6c4a85873b31a1a02dbfb29997f98"
+      },
+      "input_shapes": [
+        [
+          1,
+          32,
+          64
+        ]
+      ],
+      "model_class": "DecoderBlock",
+      "name": "decoder_block"
+    },
+    {
+      "artifacts": {
+        "inputs.pt": "88cf3f7e829fca6aa3414d5ab32a3ffc35ce74298e96df0b76ff95c64adbd43d",
+        "original.pt2": "8e99fd46013aacb9d044d0bb7a120995a892f96ef1b6ca158b8cc1ad4a3873d4",
+        "state.pt": "4d6f05ee910c727a4b82fdaac8f9aff3957b6b636c2a8f1be3a236ce068288fe"
+      },
+      "input_shapes": [
+        [
+          1,
+          3,
+          16,
+          32
+        ]
+      ],
+      "model_class": "VisionPatches",
+      "name": "vision_patches"
+    },
+    {
+      "artifacts": {
+        "inputs.pt": "39e848e2a8ffba287d79a0561fb6f7994fcc617b7f46195ed0c66576b7efabe6",
+        "original.pt2": "ef7379c5bcf3004fba1bb1099f112dcf8dbb3c5d8f93dfacfb08d7576428072f",
+        "state.pt": "22106396f7c1e965f0873bcc3994505fba4c61f38cc7922c18ae5c1f912d4597"
+      },
+      "input_shapes": [
+        [
+          1,
+          32,
+          64
+        ],
+        [
+          1,
+          32,
+          64
+        ],
+        [
+          1,
+          32,
+          64
+        ]
+      ],
+      "model_class": "PolicyFusion",
+      "name": "policy_fusion"
+    }
+  ],
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "python_version": "3.12.13",
+  "schema": "mx_gemmini.iteration_roster_candidate.v1",
+  "seed": 0,
+  "source_sha256": "0cf99421fe3647ffbfa68e446ee0a0788c58bd2482ca1d4e09e9d2e977d1598e",
+  "status": "candidate_not_admitted",
+  "torch_version": "2.10.0+cu128"
+}
