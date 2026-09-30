@@ -86,7 +86,7 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
                 **check_policy(inventory, policy_bytes),
             }:
                 raise ValueError(f"{name}: policy or inventory differs from frozen selection")
-            frozen_cases[name] = (model, inputs, policy_bytes)
+            frozen_cases[name] = (model, inputs, policy_bytes, selected_policy)
     output_root.mkdir(parents=True, exist_ok=False)
     report = {
         "schema": "mx_gemmini.iteration_capture_candidate.v1",
@@ -108,7 +108,7 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
         name = item["name"]
         source_dir = roster_root / name
         if selection is not None:
-            model, inputs, policy_bytes = frozen_cases[name]
+            model, inputs, policy_bytes, selected_policy = frozen_cases[name]
         else:
             for filename, expected in item["artifacts"].items():
                 if _sha(source_dir / filename) != expected:
@@ -123,12 +123,13 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
             archived = torch.export.load(source_dir / "original.pt2")
             torch.testing.assert_close(archived.module()(*inputs), model(*inputs))
             policy_bytes = policy.read_bytes()
+            selected_policy = policy
         original = capture_frontend_snapshot(model, inputs)
         if original["status"] != "complete":
             raise ValueError(f"frozen {name} original frontend snapshot is incomplete")
         result = convert(
             model, inputs,
-            quantization=ExternalQuantizationConfig("mx_gemmini", contract, policy),
+            quantization=ExternalQuantizationConfig("mx_gemmini", contract, selected_policy),
             backend="fx_importer", capture_trace=True,
             original_frontend_snapshot=original,
         )
