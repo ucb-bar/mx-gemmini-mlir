@@ -28,8 +28,11 @@ candidate contract, model and representative inputs, and policy file for a
 run. The responsible hardware and numerical reviewers establish which
 software declarations and FP6 codebooks may be marked reviewed. Nothing
 selects the newest branch or silently promotes this candidate over the older
-active provider contract. Merlin's `examples/mx_gemmini/` is not yet wired to
-consume this candidate contract and its site inventory as one frozen input.
+active provider contract. Merlin's MX Phase 0 recipe explicitly selects this
+candidate provider resource; its old in-tree snapshot is historical. The OOT
+iteration workflow freezes the same contract and a separate per-model site
+inventory. Merlin's Phase 0 application-capture ingestion does not yet consume
+that inventory or the operator's policy as one reviewed corpus input.
 
 The inventory is **computed**, not hand-picked: `derive_site_inventory`
 exports that selected model with those selected inputs, identifies `nn.Linear`
@@ -38,6 +41,10 @@ against observed rank, static shape, operand layout, batch compatibility, and
 the selected contract's M/N/K bounds. Its exact site IDs, source-graph digest,
 eligible formats, and refusal reasons are scoped to that export. Different
 input shapes or graph specialization require a new inventory.
+The v2 roster materializer records the selected RTL source-check result and
+its source-record digest before exporting models. `select_iteration_workloads`
+rederives the inventory from frozen state, inputs, and contract, then checks
+the operator's exact per-site policy against it. Replay rechecks both inputs.
 
 The **precision assignment is selected by the user/operator**, normally with
 the numerical team's recommendation and reviewed FP6 codebooks. They provide
