@@ -4,11 +4,13 @@ from pathlib import Path
 
 import pytest
 import torch
+import yaml
 from torch import nn
 
 from mx_gemmini_support.contract import compile_contract
 from mx_gemmini_support.handoff import render_handoff, validate_handoff
-from mx_gemmini_support.m2m_adapter import apply
+from mx_gemmini_support.legality import shape_reason
+from mx_gemmini_support.m2m_adapter import apply, derive_site_inventory
 
 
 SPEC = Path(__file__).resolve().parents[1] / "contracts/software-spec.yaml"
@@ -56,6 +58,108 @@ def test_host_module_does_not_reenter_functional_quantization():
     assert {row["site_id"]: row["status"] for row in manifest["sites"]} == {
         "module:a": "host", "functional:matmul": "quantized"}
     assert graph.module()(torch.randn(32, 32)).shape == (32, 32)
+
+
+def test_host_default_selects_only_named_mixed_precision_modules():
+    class FourSites(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fp6 = nn.Linear(32, 32)
+            self.fp4 = nn.Linear(32, 32)
+            self.fp8 = nn.Linear(32, 32)
+            self.host = nn.Linear(32, 32)
+            self.weight = nn.Parameter(torch.randn(32, 32))
+
+        def forward(self, value):
+            return self.host(self.fp8(self.fp4(self.fp6(value)))) @ self.weight
+
+    codes = ", ".join(str(value) for value in range(16))
+    policy = ("schema: mx_gemmini.quantization_policy.v1\n"
+              "default_format: host\n"
+              "module_overrides: {fp6: mxfp6, fp4: mxfp4, fp8: mxfp8}\n"
+              "fp6_codebooks:\n"
+              "  default:\n"
+              "    status: reviewed\n"
+              f"    activation: [{codes}]\n"
+              f"    weight: [{codes}]\n")
+    model = FourSites().eval()
+    graph, manifest = apply(model, (torch.randn(32, 32),),
+                            contract_bytes=SPEC.read_bytes(), policy_bytes=policy.encode())
+    assert [(site["site_id"], site["status"], site.get("format"))
+            for site in manifest["sites"]] == [
+                ("module:fp6", "quantized", "mxfp6"),
+                ("module:fp4", "quantized", "mxfp4"),
+                ("module:fp8", "quantized", "mxfp8"),
+                ("module:host", "host", None),
+                ("functional:matmul", "host", None),
+            ]
+    assert graph.module()(torch.randn(32, 32)).shape == (32, 32)
+
+
+def test_explicit_ineligible_linear_fails_before_torchao_mutation():
+    model = nn.Sequential(nn.Linear(32, 32)).eval()
+    with pytest.raises(ValueError, match="explicit MX site module:0 is ineligible: M=113"):
+        apply(model, (torch.randn(113, 32),), contract_bytes=SPEC.read_bytes(),
+              policy_bytes=(b"schema: mx_gemmini.quantization_policy.v1\n"
+                            b"default_format: host\nmodule_overrides: {'0': mxfp6}\n"))
+    assert isinstance(model[0], nn.Linear)
+
+
+def test_explicit_ineligible_functional_fails_before_torchao_mutation():
+    from m2m.capture.trace import capture_frontend_snapshot
+
+    class Strided(nn.Module):
+        def forward(self, value):
+            return value @ value.transpose(0, 1)
+
+    model = Strided().eval()
+    inputs = (torch.randn(32, 32),)
+    original = capture_frontend_snapshot(model, inputs)
+    policy = ("schema: mx_gemmini.quantization_policy.v1\n"
+              "default_format: host\n"
+              f"source_graph_sha256: {original['sha256']}\n"
+              "functional_overrides: {'functional:matmul': mxfp6}\n")
+    with pytest.raises(ValueError, match="explicit MX site functional:matmul is ineligible: noncontiguous"):
+        apply(model, inputs, contract_bytes=SPEC.read_bytes(),
+              policy_bytes=policy.encode(), original_frontend_snapshot=original)
+
+
+def test_shape_rule_comes_from_selected_contract():
+    contract = compile_contract(SPEC.read_bytes())
+    assert shape_reason(contract, "mxfp8", 32, 32, 32) is None
+    contract["formats"]["mxfp8"]["shape_bounds"]["M"]["min"] = 64
+    assert shape_reason(contract, "mxfp8", 32, 32, 32) == "M=32 outside mxfp8 shape bounds"
+
+
+def test_torchao_handler_uses_selected_contract_shape_rule():
+    source = yaml.safe_load(SPEC.read_bytes())
+    bounds = source["operations"]["contraction_mxfp8"]["shape_bounds"]["M"]
+    bounds.update(min=64, multiple_of=64)
+    contract = yaml.safe_dump(source).encode()
+    policy = b"schema: mx_gemmini.quantization_policy.v1\ndefault_format: mxfp8\n"
+    small = nn.Sequential(nn.Linear(32, 32)).eval()
+    _, skipped = apply(small, (torch.randn(32, 32),),
+                       contract_bytes=contract, policy_bytes=policy)
+    assert skipped["sites"][0]["status"] == "skipped"
+    large = nn.Sequential(nn.Linear(32, 32)).eval()
+    graph, selected = apply(large, (torch.randn(64, 32),),
+                            contract_bytes=contract, policy_bytes=policy)
+    assert selected["sites"][0]["status"] == "quantized"
+    assert large[0].m_rule == (64, 64)
+    assert graph.module()(torch.randn(64, 32)).shape == (64, 32)
+
+
+def test_inventory_reports_fp8_only_shape():
+    model = nn.Sequential(nn.Linear(32, 16)).eval()
+    inventory = derive_site_inventory(model, (torch.randn(16, 32),),
+                                      contract_bytes=SPEC.read_bytes())
+    assert inventory["sites"] == [{
+        "site_id": "module:0", "kind": "linear", "eligible_formats": ["mxfp8"],
+        "refusals": {
+            "mxfp4": "N=16 outside mxfp4 shape bounds",
+            "mxfp6": "N=16 outside mxfp6 shape bounds",
+        },
+    }]
 
 
 @pytest.mark.parametrize("rows,status", [(113, "skipped"), (32, "quantized")])

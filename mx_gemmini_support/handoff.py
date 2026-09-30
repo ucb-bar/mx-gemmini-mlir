@@ -10,6 +10,7 @@ import hashlib
 import json
 
 from .contract import compile_contract, contract_digest
+from .legality import require_shape
 from .policy import load_policy
 
 
@@ -43,10 +44,16 @@ def validate_handoff(capture, contract_bytes: bytes, policy_bytes: bytes) -> dic
         "policy_sha256": policy.source_sha256,
         "compiled_contract_sha256": contract_digest(contract),
         "numeric_status": "operand_fake_quant_only",
+        "lowering_status": "operation_plan_only",
     }
     for key, value in required.items():
         if manifest.get(key) != value:
             raise ValueError(f"MX handoff manifest {key} differs from selected input")
+    source_graph_sha = manifest.get("source_graph_sha256")
+    if (not isinstance(source_graph_sha, str) or len(source_graph_sha) != 64
+            or any(char not in "0123456789abcdef" for char in source_graph_sha)
+            or (policy.graph_sha256 is not None and source_graph_sha != policy.graph_sha256)):
+        raise ValueError("MX handoff source graph differs from selected policy")
     digest = _digest(manifest)
     if _string_attribute(module, "prov.quantization_manifest_sha256") != digest:
         raise ValueError("MLIR module is not bound to selected quantization manifest")
@@ -63,26 +70,45 @@ def validate_handoff(capture, contract_bytes: bytes, policy_bytes: bytes) -> dic
         if site_id in by_site:
             raise ValueError("duplicate MX handoff site ID")
         by_site[site_id] = site
+        if site_id.startswith("module:") and site.get("kind") == "linear":
+            selected = policy.module_format(site_id.removeprefix("module:"))
+            explicit = site_id.removeprefix("module:") in policy.module_overrides
+        elif site_id.startswith("functional:") and site.get("kind") == "functional":
+            selected = policy.functional_format(site_id)
+            explicit = site_id in policy.functional_overrides
+        else:
+            raise ValueError(f"{site_id}: site kind or ID is invalid")
         if site.get("status") == "quantized":
             fmt = site.get("format")
             if fmt not in contract["formats"]:
                 raise ValueError(f"{site_id}: format absent from selected RTL contract")
             shape = site.get("shape")
-            if not isinstance(shape, list) or len(shape) not in (2, 3):
+            if not isinstance(shape, list) or len(shape) != 3:
                 raise ValueError(f"{site_id}: missing selected site shape")
-            bounds = contract["formats"][fmt]["shape_bounds"]
-            axes = ("N", "K") if len(shape) == 2 else ("M", "N", "K")
-            for axis, dim in zip(axes, shape):
-                rule = bounds[axis]
-                if type(dim) is not int or dim < rule["min"] or dim % rule["multiple_of"]:
-                    raise ValueError(f"{site_id}: {axis} outside selected MX shape bounds")
+            try:
+                require_shape(contract, fmt, *shape)
+            except ValueError as exc:
+                raise ValueError(f"{site_id}: {exc}") from exc
+            if selected != fmt:
+                raise ValueError(f"{site_id}: selected format differs from policy")
             if fmt == "mxfp6" and site.get("fp6_codebook_sha256") != _digest(policy.codebooks(site_id)):
                 raise ValueError(f"{site_id}: reviewed FP6 codebook binding differs")
         elif site.get("status") == "skipped":
             if not site.get("reason"):
                 raise ValueError(f"{site_id}: skipped site lacks reason")
-        elif site.get("status") != "host":
+            if explicit and selected != "host":
+                raise ValueError(f"{site_id}: explicitly selected MX site was skipped")
+        elif site.get("status") == "host":
+            if selected != "host":
+                raise ValueError(f"{site_id}: host disposition differs from policy")
+        else:
             raise ValueError(f"{site_id}: missing explicit site disposition")
+    for name in policy.module_overrides:
+        if f"module:{name}" not in by_site:
+            raise ValueError(f"MX policy module {name!r} is absent from census")
+    for site_id in policy.functional_overrides:
+        if site_id not in by_site:
+            raise ValueError(f"MX policy functional site {site_id!r} is absent from census")
     for source, chain in policy.output_chains.items():
         producer, consumer = by_site.get(source), by_site.get(chain["consumer"])
         if not producer or not consumer or producer.get("status") != "quantized" or consumer.get("status") != "quantized":

@@ -15,6 +15,8 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from .legality import shape_reason
+
 GROUP = 32
 _OPERAND_REVISIONS = frozenset({
     ("f0167390b56fb315deea90ac1fc3983772e92d82",
@@ -169,9 +171,11 @@ class MXGemminiLinear(nn.Module):
 
     def __init__(self, source: nn.Linear, format: str,
                  activation_codebook: tuple[int, ...] | None = None,
-                 weight_codebook: tuple[int, ...] | None = None) -> None:
+                 weight_codebook: tuple[int, ...] | None = None,
+                 m_rule: tuple[int, int] | None = None) -> None:
         super().__init__()
         self.format = format
+        self.m_rule = m_rule or ((16, 16) if format == "mxfp8" else (32, 32))
         self.activation_codebook = activation_codebook
         self.weight_codebook = weight_codebook
         with torch.no_grad():
@@ -183,9 +187,9 @@ class MXGemminiLinear(nn.Module):
         self.bias = source.bias
 
     def forward(self, x: Tensor) -> Tensor:
-        tile = 16 if self.format == "mxfp8" else 32
-        if x.ndim < 2 or x.shape[-2] < tile or x.shape[-2] % tile:
-            raise ValueError(f"MX {self.format} Linear M must contain a full tile of {tile}")
+        minimum, multiple = self.m_rule
+        if x.ndim < 2 or x.shape[-2] < minimum or x.shape[-2] % multiple:
+            raise ValueError(f"MX {self.format} Linear M must be >= {minimum} and a multiple of {multiple}")
         activation = _dequant_operand_for_graph(
             x, self.format, -1, self.activation_codebook).to(torch.bfloat16)
         bias = self.bias.to(torch.bfloat16) if self.bias is not None else None
@@ -219,9 +223,9 @@ def linear_contraction_operands(module: MXGemminiLinear, activation: Tensor) -> 
     """
     if not isinstance(module, MXGemminiLinear):
         raise TypeError("expected an MXGemminiLinear module")
-    tile = 16 if module.format == "mxfp8" else 32
-    if activation.ndim != 2 or activation.shape[0] < tile or activation.shape[0] % tile:
-        raise ValueError(f"MX {module.format} Linear activation M must contain a full tile of {tile}")
+    minimum, multiple = module.m_rule
+    if activation.ndim != 2 or activation.shape[0] < minimum or activation.shape[0] % multiple:
+        raise ValueError(f"MX {module.format} Linear activation M must be >= {minimum} and a multiple of {multiple}")
     if activation.shape[1] != module.weight_codes.shape[1]:
         raise ValueError("Linear activation K differs from the static weight K")
     _, activation_codes, activation_scales = quantize_mx_gemmini(
@@ -281,6 +285,9 @@ class MXGemminiFakeQuantConfig(AOBaseConfig):
     format: str = "mxfp8"
     activation_codebook: tuple[int, ...] | None = None
     weight_codebook: tuple[int, ...] | None = None
+    m_rule: tuple[int, int] | None = None
+    n_rule: tuple[int, int] | None = None
+    k_rule: tuple[int, int] | None = None
 
     def __post_init__(self) -> None:
         if self.format not in ("mxfp8", "mxfp6", "mxfp4"):
@@ -291,17 +298,23 @@ class MXGemminiFakeQuantConfig(AOBaseConfig):
 def _mx_gemmini_transform(module: nn.Module, config: MXGemminiFakeQuantConfig) -> nn.Module:
     if not isinstance(module, nn.Linear):
         raise TypeError("MXGemminiFakeQuantConfig applies only to nn.Linear")
-    if module.in_features % GROUP:
-        raise ValueError(f"{module.in_features} is not divisible by MX block size {GROUP}")
-    tile = 16 if config.format == "mxfp8" else 32
-    if module.out_features % tile:
-        raise ValueError(f"{module.out_features} is not divisible by MX N tile {tile}")
+    k_min, k_multiple = config.k_rule or (GROUP, GROUP)
+    n_min, n_multiple = config.n_rule or ((16, 16) if config.format == "mxfp8" else (32, 32))
+    if module.in_features < k_min or module.in_features % k_multiple:
+        raise ValueError(f"MX K must be >= {k_min} and a multiple of {k_multiple}")
+    if module.out_features < n_min or module.out_features % n_multiple:
+        raise ValueError(f"MX N must be >= {n_min} and a multiple of {n_multiple}")
     return MXGemminiLinear(module, config.format,
-                           config.activation_codebook, config.weight_codebook)
+                           config.activation_codebook, config.weight_codebook,
+                           config.m_rule)
 
 
 def apply_mx_gemmini_(model: nn.Module, format: str = "mxfp8") -> nn.Module:
-    """Apply the registered TorchAO transform, preserving its native API."""
+    """Transform every Linear for isolated operand diagnostics.
+
+    Whole-model capture must use the policy-driven model2MLIR adapter so host
+    sites and contract legality are decided before any module is transformed.
+    """
     try:
         from torchao.quantization import quantize_
     except ImportError as exc:
@@ -390,7 +403,9 @@ def expose_sdpa_contractions(exported: torch.export.ExportedProgram) -> torch.ex
 
 
 def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select,
-                                      module_fqns: frozenset[str] = frozenset()) -> list[dict]:
+                                      module_fqns: frozenset[str] = frozenset(), *,
+                                      contract: dict, insert: bool = True,
+                                      codebooks_for=None) -> list[dict]:
     """Insert MX Q/DQ on eligible functional matmul edges of an exported graph.
 
     TorchAO's module handler covers ``nn.Linear``. This pass covers matmul and
@@ -422,13 +437,12 @@ def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select
             # module census entry and must keep that disposition.
             continue
         site_id = f"functional:{node.name}"
-        format, codebooks = select(site_id)
+        format = select(site_id)
         if format == "host":
             census.append({"site_id": site_id, "kind": "functional", "status": "host"})
             continue
         if format not in ("mxfp8", "mxfp6", "mxfp4"):
             raise ValueError(f"unsupported MX format: {format}")
-        tile = 16 if format == "mxfp8" else 32
         # The TorchAO handler already inserted dynamic activation quantization
         # and materialized static weight codes for this Linear.
         if any("MXGemminiLinear" in str(value) for value in stack.values()):
@@ -444,39 +458,47 @@ def quantize_functional_contractions_(graph_module: torch.fx.GraphModule, select
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "unobserved shape"})
             continue
         a, b = tuple(lhs_val.shape), tuple(rhs_val.shape)
-        if len(a) < 2 or len(b) != 2 and len(b) != len(a):
+        if (len(a) not in (2, 3, 4) or
+                (len(b) != 2 if is_linear else len(b) != len(a))):
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "rank or broadcasting"})
             continue
         m, k = a[-2:]
         n = b[-2] if is_linear else b[-1]
         rhs_k = b[-1] if is_linear else b[-2]
-        if not all(isinstance(dim, int) for dim in (m, n, k, rhs_k)):
+        if not all(type(dim) is int for dim in (*a, *b)):
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "symbolic dimensions"})
             continue
-        if k != rhs_k or k % GROUP or m % tile or n % tile:
-            census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": f"shape M={m} N={n} K={k} outside MX tile"})
+        if k != rhs_k:
+            census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "mismatched K"})
             continue
-        if len(a) > 2 and not is_linear and a[:-2] != b[:-2]:
+        reason = shape_reason(contract, format, m, n, k)
+        if reason:
+            census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": reason})
+            continue
+        if not is_linear and a[:-2] != b[:-2]:
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped", "reason": "batch broadcasting"})
             continue
         if not lhs_val.is_contiguous() or not rhs_val.is_contiguous():
             census.append({"site_id": site_id, "kind": "functional", "status": "skipped",
                            "reason": "noncontiguous operand layout"})
             continue
-        with graph_module.graph.inserting_before(node):
-            qlhs = graph_module.graph.call_function(_dequant_operand_for_graph,
-                                                    args=(lhs, format, -1, codebooks[0]))
-            qrhs = graph_module.graph.call_function(_dequant_operand_for_graph,
-                                                    args=(rhs, format, -1 if is_linear else -2, codebooks[1]))
-        qlhs.meta["custom"] = dict(node.meta.get("custom") or {})
-        qrhs.meta["custom"] = dict(node.meta.get("custom") or {})
-        arguments = list(node.args)
-        arguments[lhs_index] = qlhs
-        arguments[rhs_index] = qrhs
-        node.args = tuple(arguments)
+        if insert:
+            codebooks = codebooks_for(site_id) if format == "mxfp6" else (None, None)
+            with graph_module.graph.inserting_before(node):
+                qlhs = graph_module.graph.call_function(_dequant_operand_for_graph,
+                                                        args=(lhs, format, -1, codebooks[0]))
+                qrhs = graph_module.graph.call_function(_dequant_operand_for_graph,
+                                                        args=(rhs, format, -1 if is_linear else -2, codebooks[1]))
+            qlhs.meta["custom"] = dict(node.meta.get("custom") or {})
+            qrhs.meta["custom"] = dict(node.meta.get("custom") or {})
+            arguments = list(node.args)
+            arguments[lhs_index] = qlhs
+            arguments[rhs_index] = qrhs
+            node.args = tuple(arguments)
         census.append({"site_id": site_id, "kind": "functional", "status": "quantized",
                        "format": format, "shape": [int(m), int(n), int(k)],
                        "fp6_codebook_sha256": None})
-    graph_module.graph.lint()
-    graph_module.recompile()
+    if insert:
+        graph_module.graph.lint()
+        graph_module.recompile()
     return census

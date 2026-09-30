@@ -10,6 +10,7 @@ import torch
 from torch import nn
 
 from .contract import compile_contract, contract_digest
+from .legality import shape_reason
 from .policy import load_policy
 from .torchao_quant import (MXGemminiFakeQuantConfig, MXGemminiLinear, _dequant_operand_for_graph,
                             expose_sdpa_contractions,
@@ -153,6 +154,86 @@ def _verify_chain_edges(graph_module, chains):
             raise ValueError("resident output producer has an invalid site ID")
 
 
+def _linear_site(name, module, observed, fmt, contract):
+    """Classify one Linear with the same source and RTL rules used by capture."""
+    site_id = f"module:{name}"
+    if len(observed) > 1:
+        raise ValueError(f"MX Linear {name!r} has multiple static calls; module site IDs cannot distinguish them")
+    if not observed:
+        return {"site_id": site_id, "kind": "linear", "status": "skipped",
+                "reason": "module absent from exported graph"}
+    if fmt == "host":
+        return {"site_id": site_id, "kind": "linear", "status": "host"}
+    n, k = module.out_features, module.in_features
+    bounds = contract["formats"][fmt]["shape_bounds"]
+    if (n < bounds["N"]["min"] or n % bounds["N"]["multiple_of"]
+            or k < bounds["K"]["min"] or k % bounds["K"]["multiple_of"]):
+        reason = shape_reason(contract, fmt, bounds["M"]["min"], n, k)
+        return {"site_id": site_id, "kind": "linear", "status": "skipped", "reason": reason}
+    shape, contiguous = observed[0]
+    if (shape is None or len(shape) not in (2, 3, 4)
+            or any(type(dim) is not int for dim in shape)):
+        return {"site_id": site_id, "kind": "linear", "status": "skipped",
+                "reason": "unknown or unsupported activation rank/shape"}
+    m, observed_k = shape[-2:]
+    if observed_k != k:
+        raise ValueError(f"MX Linear {name!r} captured K differs from module weight K")
+    reason = shape_reason(contract, fmt, m, n, k)
+    if reason:
+        return {"site_id": site_id, "kind": "linear", "status": "skipped", "reason": reason}
+    if contiguous is not True:
+        return {"site_id": site_id, "kind": "linear", "status": "skipped",
+                "reason": "noncontiguous or unknown Linear operand layout"}
+    return {"site_id": site_id, "kind": "linear", "status": "quantized",
+            "format": fmt, "shape": [m, n, k]}
+
+
+def derive_site_inventory(model, inputs, *, contract_bytes):
+    """Deterministically screen every captured contraction for every MX format.
+
+    This is a Phase 0 structural candidate inventory. It does not select
+    numerical precision or claim that an executable MX lowering exists.
+    """
+    from m2m.capture.trace import snapshot_exported_program
+
+    if not isinstance(model, nn.Module) or any(module.training for module in model.modules()):
+        raise ValueError("MX site inventory requires an eval torch.nn.Module")
+    contract = compile_contract(contract_bytes)
+    verify_kernel_contract(contract)
+    exported = torch.export.export(model, tuple(inputs))
+    source_sha = snapshot_exported_program(exported, stage="original")["sha256"]
+    modules = [(name, module) for name, module in model.named_modules() if isinstance(module, nn.Linear)]
+    names = frozenset(name for name, _ in modules)
+    observed = _linear_call_shapes(exported, names)
+    formats = tuple(sorted(contract["formats"]))
+    sites = []
+    for name, module in modules:
+        choices = {fmt: _linear_site(name, module, observed[name], fmt, contract)
+                   for fmt in formats}
+        sites.append({"site_id": f"module:{name}", "kind": "linear",
+                      "eligible_formats": [fmt for fmt in formats if choices[fmt]["status"] == "quantized"],
+                      "refusals": {fmt: choices[fmt]["reason"] for fmt in formats
+                                   if choices[fmt]["status"] != "quantized"}})
+    exposed = expose_sdpa_contractions(exported)
+    graph_module = exposed.module()
+    by_format = {fmt: quantize_functional_contractions_(
+        graph_module, lambda _site, selected=fmt: selected, names,
+        contract=contract, insert=False) for fmt in formats}
+    expected_ids = [site["site_id"] for site in by_format[formats[0]]]
+    if any([site["site_id"] for site in by_format[fmt]] != expected_ids for fmt in formats):
+        raise ValueError("MX functional site IDs changed during format inventory")
+    for index, site_id in enumerate(expected_ids):
+        choices = {fmt: by_format[fmt][index] for fmt in formats}
+        sites.append({"site_id": site_id, "kind": "functional",
+                      "eligible_formats": [fmt for fmt in formats
+                                           if choices[fmt]["status"] == "quantized"],
+                      "refusals": {fmt: choices[fmt]["reason"] for fmt in formats
+                                   if choices[fmt]["status"] != "quantized"}})
+    return {"schema": "mx_gemmini.site_inventory.v1", "status": "structural_candidates_only",
+            "contract_sha256": hashlib.sha256(contract_bytes).hexdigest(),
+            "source_graph_sha256": source_sha, "sites": sites}
+
+
 def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snapshot=None):
     """Return a Q/DQ graph and a complete static contraction census.
 
@@ -191,69 +272,50 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
     selections = []
     for name, module in modules:
         fmt = policy.module_format(name)
-        site_id = f"module:{name}"
-        observed = call_shapes[name]
-        if len(observed) > 1:
-            raise ValueError(f"MX Linear {name!r} has multiple static calls; module site IDs cannot distinguish them")
-        if not observed:
-            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
-                           "reason": "module absent from exported graph"})
+        site = _linear_site(name, module, call_shapes[name], fmt, contract)
+        census.append(site)
+        if site["status"] != "quantized":
             continue
-        if fmt == "host":
-            census.append({"site_id": site_id, "kind": "linear", "status": "host"})
-            continue
-        bounds = contract["formats"][fmt]["shape_bounds"]
-        n, k = module.out_features, module.in_features
-        if k < bounds["K"]["min"] or k % bounds["K"]["multiple_of"] or n < bounds["N"]["min"] or n % bounds["N"]["multiple_of"]:
-            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
-                           "reason": f"N={n} K={k} outside {fmt} shape bounds"})
-            continue
-        shape, contiguous = observed[0]
-        if (shape is None or len(shape) not in (2, 3, 4)
-                or any(not isinstance(dim, int) for dim in shape[-2:])):
-            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
-                           "reason": "unknown or unsupported activation rank/shape"})
-            continue
-        m, observed_k = shape[-2:]
-        if observed_k != k:
-            raise ValueError(f"MX Linear {name!r} captured K differs from module weight K")
-        if m < bounds["M"]["min"] or m % bounds["M"]["multiple_of"]:
-            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
-                           "reason": f"M={m} outside {fmt} shape bounds"})
-            continue
-        if contiguous is not True:
-            census.append({"site_id": site_id, "kind": "linear", "status": "skipped",
-                           "reason": "noncontiguous or unknown Linear operand layout"})
-            continue
-        books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
+        books = policy.codebooks(site["site_id"]) if fmt == "mxfp6" else (None, None)
         selections.append((name, module, fmt, books))
-        census.append({"site_id": site_id, "kind": "linear", "status": "quantized",
-                       "format": fmt, "shape": [m, n, k],
-                       "fp6_codebook_sha256": _sha(books) if fmt == "mxfp6" else None})
-    for name, module, fmt, books in selections:
-        quantize_(model, MXGemminiFakeQuantConfig(fmt, *books),
-                  filter_fn=lambda candidate, fqn, wanted=name, selected=module:
-                  fqn == wanted and candidate is selected)
+        site["fp6_codebook_sha256"] = _sha(books) if fmt == "mxfp6" else None
+    for site in census:
+        name = site["site_id"].removeprefix("module:")
+        if (name in policy.module_overrides and policy.module_overrides[name] != "host"
+                and site["status"] != "quantized"):
+            raise ValueError(f"explicit MX site {site['site_id']} is ineligible: {site['reason']}")
     exported = expose_sdpa_contractions(exported)
     graph_module = exported.module()
     _verify_chain_edges(graph_module, policy.output_chains)
-    _rewrite_linear_nodes(graph_module, selections, model)
     seen_functional = set()
 
     def select(site_id):
         seen_functional.add(site_id)
-        fmt = policy.functional_format(site_id)
-        books = policy.codebooks(site_id) if fmt == "mxfp6" else (None, None)
-        return fmt, books
+        return policy.functional_format(site_id)
 
     functional = quantize_functional_contractions_(
-        graph_module, select, frozenset(name for name, _ in modules))
+        graph_module, select, frozenset(name for name, _ in modules),
+        contract=contract, codebooks_for=policy.codebooks)
     unknown_functional = set(policy.functional_overrides) - seen_functional
     if unknown_functional:
         raise ValueError(f"MX policy names missing functional sites: {sorted(unknown_functional)}")
     for site in functional:
+        site_id = site["site_id"]
+        if (site_id in policy.functional_overrides
+                and policy.functional_overrides[site_id] != "host"
+                and site["status"] != "quantized"):
+            raise ValueError(f"explicit MX site {site_id} is ineligible: {site['reason']}")
+    for site in functional:
         if site.get("format") == "mxfp6":
             site["fp6_codebook_sha256"] = _sha(policy.codebooks(site["site_id"]))
+    for name, module, fmt, books in selections:
+        bounds = contract["formats"][fmt]["shape_bounds"]
+        rules = tuple((bounds[axis]["min"], bounds[axis]["multiple_of"])
+                      for axis in ("M", "N", "K"))
+        quantize_(model, MXGemminiFakeQuantConfig(fmt, *books, *rules),
+                  filter_fn=lambda candidate, fqn, wanted=name, selected=module:
+                  fqn == wanted and candidate is selected)
+    _rewrite_linear_nodes(graph_module, selections, model)
     census.extend(functional)
     by_site = {site["site_id"]: site for site in census}
     for producer, chain in policy.output_chains.items():
@@ -288,6 +350,7 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
         "compiled_contract_sha256": contract_digest(contract),
         "source_graph_sha256": source_graph_sha256,
         "numeric_status": "operand_fake_quant_only",
+        "lowering_status": "operation_plan_only",
         "sites": census,
     }
     return captured, manifest
