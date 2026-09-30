@@ -6,6 +6,8 @@ import argparse
 import hashlib
 import json
 import platform
+import subprocess
+from importlib.metadata import version
 from pathlib import Path
 
 import torch
@@ -97,6 +99,29 @@ def make_case(name: str) -> tuple[nn.Module, tuple[torch.Tensor, ...]]:
     return model, inputs
 
 
+def tool_identity() -> dict:
+    """Fingerprint the code and installed tools used to derive site eligibility."""
+    import m2m
+
+    support_root = Path(__file__).resolve().parents[1]
+    source_paths = tuple(sorted((support_root / "mx_gemmini_support").rglob("*.py"))) + (
+        support_root / "examples/iteration_workloads.py",
+        support_root / "examples/select_iteration_workloads.py",
+        support_root / "examples/replay_iteration_workloads.py",
+    )
+    sources = {
+        str(path.relative_to(support_root)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in source_paths
+    }
+    m2m_root = Path(m2m.__file__).resolve().parents[1]
+    git = lambda *args: subprocess.check_output(
+        ["git", "-C", str(m2m_root), *args], text=True).strip()
+    if git("status", "--porcelain", "--", "m2m"):
+        raise ValueError("model2MLIR source checkout has local changes")
+    return {"support_sources": sources, "model2mlir_commit": git("rev-parse", "HEAD"),
+            "torchao_version": version("torchao")}
+
+
 def materialize_roster(root: Path, contract: Path, *, rtl_root: Path, source_record: Path) -> Path:
     """Freeze inputs and derived eligibility before anyone chooses precision."""
     contract_bytes = contract.read_bytes()
@@ -109,6 +134,7 @@ def materialize_roster(root: Path, contract: Path, *, rtl_root: Path, source_rec
         "source_sha256": sha256(Path(__file__)),
         "torch_version": torch.__version__,
         "python_version": platform.python_version(),
+        "tool_identity": tool_identity(),
         "contract_sha256": sha256(contract),
         "rtl_source_record_sha256": sha256(source_record),
         "rtl_source_check": checked,

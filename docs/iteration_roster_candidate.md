@@ -14,8 +14,9 @@ All four models and their synthetic FP32 inputs are defined in
 [`examples/iteration_workloads.py`](../examples/iteration_workloads.py).
 `make_case(name)` initializes parameters and generates inputs with CPU seed 0.
 The materializer checks the selected RTL source record against the pinned
-Gemmini and MxGen checkouts, then records that source check, its own source
-hash, PyTorch and Python versions, the contract hash, and SHA-256 hashes for
+Gemmini and MxGen checkouts, then records that source check, exact OOT
+support-code hashes, the model2MLIR commit, TorchAO/PyTorch/Python versions,
+the contract hash, and SHA-256 hashes for
 each state file, input file, original `torch.export` file, and derived site
 inventory. It does **not** choose a precision policy. These files are candidate capture inputs;
 their generated hashes, rather than a mutable branch name, identify a run.
@@ -52,7 +53,8 @@ They are starting files for the operator, not reviewed numerical decisions.
 Copy them into a separate policy directory and change exact site choices only
 after reviewing their eligible formats, refusals, accuracy, and any FP6 codebooks.
 Every policy must keep the inventory's `source_graph_sha256`. The selection
-command checks every choice, rederives every inventory from frozen inputs,
+command checks every choice, rederives every inventory from frozen inputs and
+the same tool identity,
 and writes one digest-bound selection:
 
 ```sh

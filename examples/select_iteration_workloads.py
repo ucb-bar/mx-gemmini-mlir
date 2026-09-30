@@ -56,6 +56,7 @@ def verify_roster(roster_root: Path, contract: Path, *, rtl_root: Path, source_r
     if (roster.get("schema") != "mx_gemmini.iteration_roster_candidate.v2"
             or roster.get("status") != "candidate_not_admitted"
             or roster.get("source_sha256") != sha256(Path(iteration_workloads.__file__))
+            or roster.get("tool_identity") != iteration_workloads.tool_identity()
             or roster.get("contract_sha256") != sha256(contract)
             or roster.get("rtl_source_record_sha256") != sha256(source_record)
             or roster.get("rtl_source_check") !=
