@@ -47,8 +47,13 @@ header. Following each selected tile's elaborated instances reaches one
 `PE`, one `MacUnit`, one `MxFpMul`, and four `MxMulAddRecFN` instances per
 tile. The 256 paths have manifest SHA-256
 `40379d7e74c2ad7bb505ccee3d070b727fc05e29f37b85b6f5ffd90fa835bbbd`.
-Instance containment does not prove connected arithmetic dataflow or numerical
-behavior. This is an elaborated structural fact; the generic Merlin census
+The selected PE, MacUnit, and MxFpMul modules also expose activation, weight,
+accumulator, and result port links for all 256 tile paths; their witness
+manifest SHA-256 is
+`75c85ab74c85840a724acffba0f19befb9e2bdb10540fe661967ada1c95eafdb`.
+These are bounded port connections. They do not prove the complete dependency
+through the multiplier core, every mode's selected path, or numerical behavior.
+This is an elaborated structural fact; the generic Merlin census
 currently leaves its array field empty because these tiles have distinct
 specialized module names.
 Reproduce this read only check with:

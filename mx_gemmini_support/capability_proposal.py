@@ -54,6 +54,7 @@ def derive_proposal(facts_bytes: bytes, software_spec_bytes: bytes) -> dict:
     mesh = observations[0]
     rows, cols, instances = (mesh.get(key) for key in ("rows", "cols", "instances"))
     hierarchy = mesh.get("multiplier_hierarchy") or {}
+    wiring = hierarchy.get("port_wiring") or {}
     if (mesh.get("kind") != "mesh_tile_grid" or mesh.get("source") != "selected_firrtl"
             or mesh.get("firrtl_sha256") != fir_sha
             or mesh.get("compute_engine_established") is not False
@@ -63,6 +64,8 @@ def derive_proposal(facts_bytes: bytes, software_spec_bytes: bytes) -> dict:
             or type(hierarchy.get("fused_units_per_tile")) is not int
             or hierarchy["fused_units_per_tile"] < 1
             or not _digest(hierarchy.get("path_manifest_sha256"))
+            or wiring.get("tiles_with_witnesses") != instances
+            or not _digest(wiring.get("witness_manifest_sha256"))
             or hierarchy.get("connected_arithmetic_verified") is not False):
         raise ValueError("selected structural observation is not an uncorroborated mesh grid")
     features = mesh.get("selected_config_features") or {}

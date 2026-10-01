@@ -33,6 +33,8 @@ def _inputs():
                                                    "tiles_with_hierarchy": 256,
                                                    "fused_units_per_tile": 4,
                                                    "path_manifest_sha256": "d" * 64,
+                                                   "port_wiring": {"tiles_with_witnesses": 256,
+                                                                   "witness_manifest_sha256": "e" * 64},
                                                    "connected_arithmetic_verified": False,
                                                },
                                                "selected_config_features": {

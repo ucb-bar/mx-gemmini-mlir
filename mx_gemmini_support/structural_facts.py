@@ -63,11 +63,15 @@ def attach_mesh_observation(
         rows < 1 or columns < 1 or rows * columns != tiles):
         raise ValueError("build audit has no complete selected mesh grid")
     hierarchy = audit.get("mesh_compute_hierarchy") or {}
+    port_wiring = hierarchy.get("port_wiring") or {}
     if (hierarchy.get("tiles_with_hierarchy") != tiles or
         type(hierarchy.get("fused_units_per_tile")) is not int or
         hierarchy["fused_units_per_tile"] < 1 or
         not isinstance(hierarchy.get("path_manifest_sha256"), str) or
         len(hierarchy["path_manifest_sha256"]) != 64 or
+        port_wiring.get("tiles_with_witnesses") != tiles or
+        not isinstance(port_wiring.get("witness_manifest_sha256"), str) or
+        len(port_wiring["witness_manifest_sha256"]) != 64 or
         hierarchy.get("connected_arithmetic_verified") is not False):
         raise ValueError("build audit has no bounded selected multiplier hierarchy")
     config_features = audit.get("selected_config_features") or {}

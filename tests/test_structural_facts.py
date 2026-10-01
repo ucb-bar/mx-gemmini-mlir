@@ -25,6 +25,8 @@ def _sample():
              "elaborated_mesh": {"rows": 16, "columns": 16, "tiles": 256},
              "mesh_compute_hierarchy": {"tiles_with_hierarchy": 256, "fused_units_per_tile": 4,
                                         "path_manifest_sha256": "a" * 64,
+                                        "port_wiring": {"tiles_with_witnesses": 256,
+                                                        "witness_manifest_sha256": "b" * 64},
                                         "connected_arithmetic_verified": False},
              "selected_config_features": {
                  name: {"value": value, "origin": "standalone"}
@@ -43,6 +45,7 @@ def test_structural_observation_does_not_create_compute_array():
     assert output["facts"]["arrays"] == []
     assert output["facts"]["structural_observations"][0]["instances"] == 256
     assert output["facts"]["structural_observations"][0]["multiplier_hierarchy"]["fused_units_per_tile"] == 4
+    assert output["facts"]["structural_observations"][0]["multiplier_hierarchy"]["port_wiring"]["tiles_with_witnesses"] == 256
     assert output["facts"]["structural_observations"][0]["selected_config_features"]["has_normalizations"]["value"] is False
     assert output["facts"]["structural_observations"][0]["compute_engine_established"] is False
     assert output["structural_observation_provenance"]["phase0_admitted"] is False

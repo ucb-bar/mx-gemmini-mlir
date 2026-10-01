@@ -65,10 +65,24 @@ def test_selected_mesh_multiplier_hierarchy_refuses_missing_link(tmp_path):
     inst tile_0_0 of PE_1
   module PE_1 :
     inst mac_unit of MacUnit
+    connect mac_unit.io.in_a.bits, io.in_a.bits
+    connect mac_unit.io.in_b.bits, io.in_b.bits
+    connect mac_unit.io.in_c.bits, io.in_c.bits
+    connect io.out_b, mac_unit.io.out_d
   module MacUnit :
     inst io_out_d_macc of MxFpMul
+    connect io_out_d_macc.io.in_activation, io.in_a.bits
+    connect io_out_d_macc.io.in_weights, io.in_b.bits
+    connect io_out_d_macc.io.rec_c, io.in_c.bits
+    connect result, io_out_d_macc.io.out
+    connect io.out_d, result
   module MxFpMul :
+    inst core of MxFpMulCore
     inst fma of MxMulAddRecFN
+    connect core.io.in_activation, io.in_activation
+    connect core.io.in_weights, io.in_weights
+    connect outputs[0], fma.io.out
+    connect io.out, outputs[0]
   module MxMulAddRecFN :
 """
     fir.write_text(text)
@@ -76,7 +90,11 @@ def test_selected_mesh_multiplier_hierarchy_refuses_missing_link(tmp_path):
     hierarchy = _mesh_compute_hierarchy(fir, mesh)
     assert hierarchy["tiles_with_hierarchy"] == 1
     assert hierarchy["fused_units_per_tile"] == 1
+    assert hierarchy["port_wiring"]["tiles_with_witnesses"] == 1
     assert hierarchy["connected_arithmetic_verified"] is False
     fir.write_text(text.replace("inst fma of MxMulAddRecFN", "inst fma of Other"))
     with pytest.raises(ValueError, match="no elaborated fused"):
+        _mesh_compute_hierarchy(fir, mesh)
+    fir.write_text(text.replace("connect core.io.in_weights, io.in_weights", "connect core.io.in_weights, UInt<8>(0)"))
+    with pytest.raises(ValueError, match="weight input port wiring"):
         _mesh_compute_hierarchy(fir, mesh)

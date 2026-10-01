@@ -103,6 +103,7 @@ def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
     arithmetic path or a numerical contract.
     """
     children: dict[str, list[tuple[str, str]]] = {}
+    wiring: dict[str, set[str]] = {}
     module = None
     with firrtl.open(encoding="utf-8") as stream:
         for line in stream:
@@ -115,7 +116,12 @@ def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
                     if module in children:
                         raise ValueError(f"duplicate selected FIRRTL module {module}")
                     children[module] = []
+                    if any(module == stem or module.startswith(stem + "_")
+                           for stem in ("PE", "MacUnit", "MxFpMul")):
+                        wiring[module] = set()
                 continue
+            if module in wiring and line.lstrip().startswith("connect "):
+                wiring[module].add(line.strip().split(" @[", 1)[0])
             if module not in children or not line.startswith("    inst "):
                 continue
             parts = line.split()
@@ -141,6 +147,7 @@ def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
         return matches[0]
 
     paths = []
+    port_witnesses = []
     fused_counts = set()
     for name in sorted(selected):
         tile = tiles[name]
@@ -153,8 +160,45 @@ def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
                        if child == "MxMulAddRecFN" or child.startswith("MxMulAddRecFN_"))
         if not fused:
             raise ValueError(f"{mul}: no elaborated fused multiply-add child")
+        def require(module: str, label: str, matches) -> str:
+            found = sorted(line for line in wiring[module] if matches(line))
+            if not found:
+                raise ValueError(f"{name}: selected {module} lacks {label} port wiring")
+            return found[0]
+
+        pe_links = [
+            require(pe, "activation input", lambda line: line == "connect mac_unit.io.in_a.bits, io.in_a.bits"),
+            require(pe, "weight input", lambda line: line.startswith("connect mac_unit.io.in_b.bits,")),
+            require(pe, "accumulator input", lambda line: line.startswith("connect mac_unit.io.in_c.bits,")),
+            require(pe, "MAC output", lambda line: line == "connect io.out_b, mac_unit.io.out_d"),
+        ]
+        mac_links = [
+            require(mac, "activation input", lambda line: line ==
+                    "connect io_out_d_macc.io.in_activation, io.in_a.bits"),
+            require(mac, "weight input", lambda line: line ==
+                    "connect io_out_d_macc.io.in_weights, io.in_b.bits"),
+            require(mac, "accumulator input", lambda line: line ==
+                    "connect io_out_d_macc.io.rec_c, io.in_c.bits"),
+            require(mac, "multiplier output", lambda line: line.endswith(", io_out_d_macc.io.out")),
+            require(mac, "module output", lambda line: line.startswith("connect io.out_d,")),
+        ]
+        mul_links = [
+            require(mul, "activation input", lambda line: line ==
+                    "connect core.io.in_activation, io.in_activation"),
+            require(mul, "weight input", lambda line: line ==
+                    "connect core.io.in_weights, io.in_weights"),
+            require(mul, "module output", lambda line: line.startswith("connect io.out,")),
+        ]
+        if not any(child == "MxFpMulCore" or child.startswith("MxFpMulCore_")
+                   for _, child in children[mul]):
+            raise ValueError(f"{mul}: no elaborated multiplier core child")
+        for instance, child in children[mul]:
+            if child in fused:
+                mul_links.append(require(mul, "fused output", lambda line, instance=instance:
+                                         line.endswith(f", {instance}.io.out")))
         fused_counts.add(len(fused))
         paths.append((name, tile, pe, mac, mul, fused))
+        port_witnesses.append("|".join((name, *pe_links, *mac_links, *mul_links)) + "\n")
     if len(fused_counts) != 1:
         raise ValueError("selected tiles have nonuniform fused multiplier hierarchy")
     manifest = "".join(" ".join((name, tile, pe, mac, mul, *fused)) + "\n"
@@ -163,6 +207,11 @@ def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
         "tiles_with_hierarchy": len(paths),
         "fused_units_per_tile": fused_counts.pop(),
         "path_manifest_sha256": hashlib.sha256(manifest.encode()).hexdigest(),
+        "port_wiring": {
+            "tiles_with_witnesses": len(port_witnesses),
+            "witness_manifest_sha256": hashlib.sha256("".join(port_witnesses).encode()).hexdigest(),
+            "qualification": "selected port links only; complete arithmetic dependency unverified",
+        },
         "basis": "FIRRTL Mesh→Tile→PE→MacUnit→MxFpMul→MxMulAddRecFN instances",
         "connected_arithmetic_verified": False,
     }

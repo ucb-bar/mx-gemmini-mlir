@@ -88,6 +88,8 @@ elaboration closure. A separate read only audit now matches the present
 receipt. This is current-byte consistency, not proof of the historical build's
 complete input closure. The pinned FIRRTL also contains a dense 16×16
 `Mesh` tile grid, checked against the Scala config and generated header;
+bounded activation, weight, accumulator, and result port links were observed
+for all 256 selected tile paths, without proving complete arithmetic dependency;
 the generic same-module census does not recover that grid because the tile
 modules are specialized. The selected
 `GemminiMxFPConfigs.standaloneMxFPConfig` still has a 16 by 16 weight-stationary
