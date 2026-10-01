@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 from importlib.metadata import version
 import json
@@ -27,6 +28,8 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
     import m2m
     from m2m import convert
     from m2m.capture.external_quantization import ExternalQuantizationConfig
+    from m2m.capture.external_quantization import manifest_digest
+    from m2m.capture.bundle import write_bundle
     from m2m.capture.trace import capture_frontend_snapshot
     from m2m.coverage import opaque_report
 
@@ -127,9 +130,11 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
         original = capture_frontend_snapshot(model, inputs)
         if original["status"] != "complete":
             raise ValueError(f"frozen {name} original frontend snapshot is incomplete")
+        bundle_model = copy.deepcopy(model)
+        selected_config = ExternalQuantizationConfig("mx_gemmini", contract, selected_policy)
         result = convert(
             model, inputs,
-            quantization=ExternalQuantizationConfig("mx_gemmini", contract, selected_policy),
+            quantization=selected_config,
             backend="fx_importer", capture_trace=True,
             original_frontend_snapshot=original,
         )
@@ -143,6 +148,28 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
         validate_handoff(result, contract_bytes, policy_bytes)
         case_dir = output_root / name
         case_dir.mkdir()
+        bundle_dir = case_dir / "materialized"
+        write_bundle(
+            bundle_model, inputs, bundle_dir, quant=selected_config,
+            capture_regions=False, capture_trace=True,
+            original_frontend_snapshot=original,
+            source_path=source_dir / "original.pt2",
+            metadata={"mx_selection": {
+                "contract_sha256": _sha(contract),
+                "policy_sha256": hashlib.sha256(policy_bytes).hexdigest(),
+                "source_graph_sha256": original["sha256"],
+                "manifest_sha256": manifest_digest(result.quantization_manifest),
+                **({"selection_sha256": _sha(selection)} if selection is not None else {}),
+            }},
+        )
+        bundle_mlir = (bundle_dir / "model.mlir").read_text()
+        manifest_sha = manifest_digest(result.quantization_manifest)
+        if f'prov.quantization_manifest_sha256 = "{manifest_sha}"' not in bundle_mlir:
+            raise ValueError(f"{name}: materialized capture differs from checked quantization manifest")
+        bundle_trace = json.loads((bundle_dir / "frontend-trace.json").read_text())
+        if (bundle_trace.get("status") != "complete"
+                or bundle_trace.get("graphs", {}).get("original", {}).get("sha256") != original["sha256"]):
+            raise ValueError(f"{name}: materialized capture lacks the selected original graph")
         (case_dir / "source.mlir").write_text(result.mlir_text)
         (case_dir / "manifest.json").write_text(
             json.dumps(result.quantization_manifest, indent=2, sort_keys=True) + "\n")
@@ -163,6 +190,11 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
                                    for site in result.quantization_manifest["sites"]),
             "outputs": {path.name: _sha(path) for path in (
                 case_dir / "source.mlir", case_dir / "manifest.json", case_dir / "handoff.mlir")},
+            "materialized_capture": {
+                "model_mlir_sha256": _sha(bundle_dir / "model.mlir"),
+                "capture_receipt_sha256": _sha(bundle_dir / "capture_receipt.json"),
+                "manifest_sha256": manifest_sha,
+            },
         })
     receipt = output_root / "capture-receipt.json"
     receipt.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
