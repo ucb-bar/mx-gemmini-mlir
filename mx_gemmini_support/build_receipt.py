@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
 
+from .config_facts import selected_config_facts
 from .contract import compile_contract
 
 
@@ -60,6 +62,47 @@ def _source_census(gemmini: Path, census: dict) -> str:
     return manifest
 
 
+def _mesh_grid(firrtl: Path) -> dict:
+    """Derive the selected MX tile coordinates from elaborated FIRRTL instances."""
+    mesh_modules = 0
+    inside = False
+    coordinates = set()
+    with firrtl.open(encoding="utf-8") as stream:
+        for line in stream:
+            module = re.match(r"^  module (\S+)\s*:", line)
+            if module:
+                inside = module.group(1) == "Mesh"
+                mesh_modules += int(inside)
+                continue
+            if not inside or not line.startswith("    inst mesh_"):
+                continue
+            tile = re.match(r"^    inst mesh_(\d+)_(\d+) of Tile(?:_\d+)?\b", line)
+            if tile is None:
+                raise ValueError("unparsed selected Mesh tile instance")
+            coordinate = int(tile.group(1)), int(tile.group(2))
+            if coordinate in coordinates:
+                raise ValueError("duplicate selected Mesh tile coordinate")
+            coordinates.add(coordinate)
+    if mesh_modules != 1 or not coordinates:
+        raise ValueError("selected FIRRTL lacks one populated Mesh module")
+    rows = max(row for row, _ in coordinates) + 1
+    columns = max(column for _, column in coordinates) + 1
+    if len(coordinates) != rows * columns or any(
+        (row, column) not in coordinates
+        for row in range(rows) for column in range(columns)
+    ):
+        raise ValueError("selected FIRRTL Mesh tile coordinates are not a dense grid")
+    return {"rows": rows, "columns": columns, "tiles": len(coordinates),
+            "basis": "FIRRTL Mesh mesh_row_column Tile instances"}
+
+
+def _header_integer(header: Path, name: str) -> int:
+    matches = re.findall(rf"^#define {re.escape(name)}\s+(\d+)\s*$", header.read_text(), re.MULTILINE)
+    if len(matches) != 1:
+        raise ValueError(f"generated header lacks one literal {name}")
+    return int(matches[0])
+
+
 def verify_build_receipt(
     chipyard_root: str | Path, receipt_bytes: bytes, contract_bytes: bytes,
 ) -> dict:
@@ -96,6 +139,14 @@ def verify_build_receipt(
         if digest != row["sha256"] or size != row["bytes"]:
             raise ValueError(f"{name} differs from build receipt")
         checked[name] = {"sha256": digest, "bytes": size}
+    mesh = _mesh_grid(_contained(root, artifacts["firrtl"]["relative_path"]))
+    config = selected_config_facts((gemmini / "src/main/scala/gemmini/ConfigsFP.scala").read_text())
+    header = _contained(root, artifacts["gemmini_header"]["relative_path"])
+    if (mesh["rows"] != config["meshRows"]["value"] or
+        mesh["columns"] != config["meshColumns"]["value"] or
+        mesh["rows"] != _header_integer(header, "DIM") or
+        config["sp_banks"]["value"] != _header_integer(header, "BANK_NUM")):
+        raise ValueError("elaborated Mesh, selected Scala config, and generated header disagree")
     return {
         "schema": "mx_gemmini.build_receipt_audit.v1",
         "status": "observed_consistency",
@@ -104,6 +155,7 @@ def verify_build_receipt(
         "scala_files": receipt["source_census"]["scala_files"],
         "scala_manifest_sha256": manifest,
         "artifacts": checked,
+        "elaborated_mesh": mesh,
         "historical_build_provenance_verified": False,
         "phase0_admitted": False,
     }

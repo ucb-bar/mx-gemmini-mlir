@@ -4,7 +4,7 @@ import hashlib
 
 import pytest
 
-from mx_gemmini_support.build_receipt import _source_census
+from mx_gemmini_support.build_receipt import _mesh_grid, _source_census
 
 
 def _receipt_census(root):
@@ -34,3 +34,24 @@ def test_source_census_refuses_changed_and_extra_scala_files(tmp_path):
     (source.parent / "Added.scala").write_text("object Added {}\n")
     with pytest.raises(ValueError, match="omits or adds"):
         _source_census(tmp_path, census)
+
+
+def test_elaborated_mesh_requires_dense_tile_coordinates(tmp_path):
+    fir = tmp_path / "design.fir"
+    tiles = """  module Mesh : @[generators/gemmini/src/main/scala/gemmini/Mesh.scala 18:7]
+    inst mesh_0_0 of Tile
+    inst mesh_0_1 of Tile_1
+    inst mesh_1_0 of Tile_2
+    inst mesh_1_1 of Tile_3
+  module Host :
+    inst mesh_9_9 of Unrelated
+"""
+    fir.write_text(tiles)
+    assert _mesh_grid(fir)["rows"] == 2
+    assert _mesh_grid(fir)["columns"] == 2
+    fir.write_text(tiles.replace("    inst mesh_1_0 of Tile_2\n", ""))
+    with pytest.raises(ValueError, match="not a dense grid"):
+        _mesh_grid(fir)
+    fir.write_text(tiles.replace("mesh_1_0", "mesh_1_1"))
+    with pytest.raises(ValueError, match="duplicate"):
+        _mesh_grid(fir)
