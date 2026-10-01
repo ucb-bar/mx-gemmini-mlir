@@ -70,6 +70,15 @@ def attach_mesh_observation(
         len(hierarchy["path_manifest_sha256"]) != 64 or
         hierarchy.get("connected_arithmetic_verified") is not False):
         raise ValueError("build audit has no bounded selected multiplier hierarchy")
+    config_features = audit.get("selected_config_features") or {}
+    expected_features = {"has_nonlinear_activations", "has_normalizations", "has_max_pool",
+                         "enable_lut", "lut_present"}
+    if (set(config_features) != expected_features or any(
+        not isinstance(row, dict) or type(row.get("value")) is not bool
+        or row.get("origin") not in {"default", "standalone"}
+        for row in config_features.values()
+    )):
+        raise ValueError("build audit has no selected built-in feature switches")
     body["structural_observations"] = [{
         "kind": "mesh_tile_grid",
         "name": "mesh",
@@ -81,6 +90,7 @@ def attach_mesh_observation(
         "source": "selected_firrtl",
         "firrtl_sha256": fir_sha,
         "multiplier_hierarchy": hierarchy,
+        "selected_config_features": config_features,
         "corroborated": False,
         "compute_engine_established": False,
     }]

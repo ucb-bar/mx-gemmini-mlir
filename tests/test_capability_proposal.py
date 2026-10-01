@@ -34,6 +34,16 @@ def _inputs():
                                                    "fused_units_per_tile": 4,
                                                    "path_manifest_sha256": "d" * 64,
                                                    "connected_arithmetic_verified": False,
+                                               },
+                                               "selected_config_features": {
+                                                   name: {"value": value, "origin": "standalone"}
+                                                   for name, value in {
+                                                       "has_nonlinear_activations": False,
+                                                       "has_normalizations": False,
+                                                       "has_max_pool": False,
+                                                       "enable_lut": True,
+                                                       "lut_present": True,
+                                                   }.items()
                                                }}]},
     }
     return facts, spec
@@ -43,6 +53,7 @@ def test_proposal_separates_rtl_geometry_and_authored_formats():
     facts, spec = _inputs()
     result = derive_proposal(json.dumps(facts).encode(), spec)
     assert result["rtl_geometry"]["tiles"] == 256
+    assert result["rtl_builtin_features"]["has_nonlinear_activations"]["value"] is False
     assert [row["format"] for row in result["authored_accelerator_intent"]] == ["mxfp4", "mxfp6", "mxfp8"]
     assert result["authored_accelerator_intent"][0]["site_modes"]["functional_matmul"]["lhs"] == "dynamic"
     assert "normalization" in result["authored_host_families"]
@@ -59,6 +70,10 @@ def test_proposal_refuses_mismatched_source_or_unsupported_claim():
     changed = deepcopy(facts)
     changed["facts"]["structural_observations"][0]["instances"] = 255
     with pytest.raises(ValueError, match="uncorroborated mesh grid"):
+        derive_proposal(json.dumps(changed).encode(), spec)
+    changed = deepcopy(facts)
+    del changed["facts"]["structural_observations"][0]["selected_config_features"]["has_max_pool"]
+    with pytest.raises(ValueError, match="features are incomplete"):
         derive_proposal(json.dumps(changed).encode(), spec)
     changed = yaml.safe_load(spec)
     del changed["operations"]["contraction_mxfp6"]

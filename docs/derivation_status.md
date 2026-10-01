@@ -64,8 +64,8 @@ the original graph digest are bound into the capture handoff.
 | --- | --- | --- |
 | `contracts/` and `contract.py` | YAML input is compiled to one deterministic, digest-bound consumer view. | The software declarations are authored and remain `unreviewed`; compilation does not prove them. |
 | `rtl_check.py`, `config_facts.py`, and source records | Selected source hashes, format/protocol fields, and effective standalone config scalars are checked against pinned RTL/MxGen bytes. Disabled nonlinear, normalization, and max-pool operations cannot be declared accelerator operations. | This is not complete elaboration closure or extraction of all runtime behavior. The config switches describe built-in Gemmini units, not every possible host or compiler implementation. |
-| `build_receipt.py`, `structural_facts.py`, and Merlin's generic FIRRTL source selection | Present Scala/artifact bytes and commits are rechecked; exact FIRRTL is converted to SoC and Gemmini HW, and its hierarchy is cross-checked. The OOT adapter binds a dense 16×16 tile grid and its per-tile multiplier instance hierarchy to the exact selected Merlin fact bundle as a structural observation. | The build receipt was authored after elaboration, so historical Scala-to-FIRRTL input closure is still unproven. Instance containment is not connected arithmetic proof and does not enter `facts.arrays`; the candidate is not an admitted Phase 0 fact bundle. |
-| `capability_proposal.py` | Projects the selected grid and the software spec's per-format contraction and host intent into a digest-bound review artifact. | Its `candidate_not_admitted` output is not a Merlin target contract; the format, shape, and host rules remain authored and unreviewed. |
+| `build_receipt.py`, `structural_facts.py`, and Merlin's generic FIRRTL source selection | Present Scala/artifact bytes and commits are rechecked; exact FIRRTL is converted to SoC and Gemmini HW, and its hierarchy is cross-checked. The OOT adapter binds a dense 16×16 tile grid, per-tile multiplier hierarchy, and selected built-in feature switches to the exact Merlin fact bundle as structural observations. | The build receipt was authored after elaboration, so historical Scala-to-FIRRTL input closure is still unproven. Instance containment is not connected arithmetic proof and does not enter `facts.arrays`; the candidate is not an admitted Phase 0 fact bundle. |
+| `capability_proposal.py` | Projects the selected grid and built-in switches separately from the software spec's per-format contraction and host intent into a digest-bound review artifact. | Its `candidate_not_admitted` output is not a Merlin target contract; the format, shape, and host rules remain authored and unreviewed. |
 | `policy.py`, `legality.py`, `m2m_adapter.py` | Exact site choices and M/N/K bounds come from the selected policy and compiled contract. A source-bound inventory derives every site's eligible formats and refusal reasons; capture records selected, host, and skipped sites. | Format choices and FP6 codebooks are numerical policy inputs. Shape/layout eligibility is not proof of executable lowering. |
 | `torchao_quant.py` | A reusable TorchAO handler and graph pass apply the chosen site format. The operand kernel is checked against selected format constants and narrow independent/RTL diagnostics. | Quantization arithmetic and graph rewrites are handwritten algorithms; mesh arithmetic and whole-model numerical agreement are not modeled here. |
 | `layout.py`, `contraction.py`, `candidate_protocol.py` | Source-scoped packing and command fields are checked by narrow payload and simulator diagnostics. | General transfer scheduling, capacity planning, and executable model lowering remain open. |
@@ -79,8 +79,10 @@ materialized capture receipts. Their exact, operator-selectable policy files
 currently choose `host` for every contraction. This is a diagnostic selection;
 no mixed-precision choice has been approved for these models.
 
-The selected `2029218` fact bundle records a source-bound 16×16 mesh grid and
-multiplier instance hierarchy, while `facts.arrays` remains empty. Merlin can
+The selected `2029218` fact bundle records a source-bound 16×16 mesh grid,
+multiplier instance hierarchy, and configuration switches: built-in nonlinear
+activation, normalization, and max-pool are disabled, while the LUT is present
+and enabled. `facts.arrays` remains empty. Merlin can
 use the grid to size tile-edge probes without declaring a compute engine. A
 fresh deterministic Phase 0 derivation inventoried 674 MLIR operations and
 generated ten diagnostic entries: four saved model captures and six host or
@@ -98,8 +100,9 @@ python -m mx_gemmini_support.capability_proposal \
   /artifact/capability-proposal.json
 ```
 
-It records the RTL-derived grid separately from the authored FP8, FP6, and
-FP4 ranks, layout and M/N/K bounds, accumulator dtype, and host families. It
+It records the RTL-derived grid and built-in switches separately from the
+authored FP8, FP6, and FP4 ranks, layout and M/N/K bounds, accumulator dtype,
+and host families. It
 refuses a changed spec digest or mismatched FIRRTL identity. The next
 capability step is to corroborate the connected arithmetic datapath and
 review a compute-unit contract before selecting one for accelerator corpus

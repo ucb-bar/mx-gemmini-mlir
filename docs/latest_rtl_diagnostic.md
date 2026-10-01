@@ -95,7 +95,11 @@ The adapter rechecks the selected build receipt, contract, FIRRTL digest, and
 Merlin's FIRRTL-to-HW source-consistency record. It also derives the selected
 multiplier hierarchy above. It writes a new artifact and
 refuses to overwrite an existing one. Its `facts.structural_observations`
-records the 16×16 grid and source hashes. `facts.arrays` stays empty: tile
+records the 16×16 grid, source hashes, and selected Scala configuration
+switches. Built-in nonlinear activation, normalization, and max-pool are
+disabled; LUT enable and presence are true. Each Boolean retains whether it
+came from the default or standalone override. These switches do not establish
+reviewed host lowering. `facts.arrays` stays empty: tile
 instance containment does not prove a multiply-accumulate datapath, and several
 Merlin readers treat an array entry as executable compute evidence. Pass the
 new artifact via `--rtl-facts` to `merlin experiment corpus derive`, or as the

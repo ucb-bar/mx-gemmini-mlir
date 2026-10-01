@@ -65,6 +65,15 @@ def derive_proposal(facts_bytes: bytes, software_spec_bytes: bytes) -> dict:
             or not _digest(hierarchy.get("path_manifest_sha256"))
             or hierarchy.get("connected_arithmetic_verified") is not False):
         raise ValueError("selected structural observation is not an uncorroborated mesh grid")
+    features = mesh.get("selected_config_features") or {}
+    expected_features = {"has_nonlinear_activations", "has_normalizations", "has_max_pool",
+                         "enable_lut", "lut_present"}
+    if set(features) != expected_features or any(
+        not isinstance(row, dict) or type(row.get("value")) is not bool
+        or row.get("origin") not in {"default", "standalone"}
+        for row in features.values()
+    ):
+        raise ValueError("selected RTL configuration features are incomplete")
 
     formats = []
     host_families = set()
@@ -123,6 +132,7 @@ def derive_proposal(facts_bytes: bytes, software_spec_bytes: bytes) -> dict:
         "rtl_geometry": {"rows": rows, "cols": cols, "tiles": instances,
                          "multiplier_hierarchy": hierarchy,
                          "basis": "selected FIRRTL tile grid; not compute corroboration"},
+        "rtl_builtin_features": features,
         "authored_accelerator_intent": formats,
         "authored_host_families": sorted(host_families),
         "review_obligations": [

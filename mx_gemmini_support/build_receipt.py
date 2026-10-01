@@ -231,6 +231,11 @@ def verify_build_receipt(
         "artifacts": checked,
         "elaborated_mesh": mesh,
         "mesh_compute_hierarchy": hierarchy,
+        "selected_config_features": {
+            name: config[name]
+            for name in ("has_nonlinear_activations", "has_normalizations", "has_max_pool",
+                         "enable_lut", "lut_present")
+        },
         "historical_build_provenance_verified": False,
         "phase0_admitted": False,
     }
