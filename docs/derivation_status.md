@@ -35,8 +35,9 @@ selects the newest branch or silently promotes this candidate over the older
 active provider contract. Merlin's MX Phase 0 recipe explicitly selects this
 candidate provider resource; its old in-tree snapshot is historical. The OOT
 iteration workflow freezes the same contract and a separate per-model site
-inventory. Merlin's Phase 0 application-capture ingestion does not yet consume
-that inventory or the operator's policy as one reviewed corpus input.
+inventory. Merlin's Phase 0 derivation now checks the exact policy digest
+against each materialized quantization manifest. This is byte selection,
+not approval of the numerical policy or application corpus.
 
 The inventory is **computed**, not hand-picked: `derive_site_inventory`
 exports that selected model with those selected inputs, identifies `nn.Linear`
@@ -68,6 +69,33 @@ the original graph digest are bound into the capture handoff.
 | `torchao_quant.py` | A reusable TorchAO handler and graph pass apply the chosen site format. The operand kernel is checked against selected format constants and narrow independent/RTL diagnostics. | Quantization arithmetic and graph rewrites are handwritten algorithms; mesh arithmetic and whole-model numerical agreement are not modeled here. |
 | `layout.py`, `contraction.py`, `candidate_protocol.py` | Source-scoped packing and command fields are checked by narrow payload and simulator diagnostics. | General transfer scheduling, capacity planning, and executable model lowering remain open. |
 | `handoff.py` and `lib/MxOps.cpp` | Digests, census, policy format, contract shape, FP6 codebook, and selected chains gate a verifier-readable MX operation plan. | The plan is not an executable replacement for the source MLIR. |
+
+## Latest candidate derivation
+
+Four synthetic iteration captures (`linear_seam`, `decoder_block`,
+`vision_patches`, and `policy_fusion`) have complete source traces and
+materialized capture receipts. Their exact, operator-selectable policy files
+currently choose `host` for every contraction. This is a diagnostic selection;
+no mixed-precision choice has been approved for these models.
+
+The selected `2029218` fact bundle records a source-bound 16×16 mesh grid and
+multiplier instance hierarchy, while `facts.arrays` remains empty. Merlin can
+use the grid to size tile-edge probes without declaring a compute engine. A
+fresh deterministic Phase 0 derivation inventoried 674 MLIR operations and
+generated ten diagnostic entries: four saved model captures and six host or
+composition probes. It has **zero admitted accelerator cells** because the
+active OOT capability contract intentionally declares no compute unit. The
+host capability screens are also `unknown`. The synthesis profile is a
+candidate artifact, not a Phase 0 admission or a functional compiler result.
+
+The next capability step is to corroborate the connected arithmetic datapath
+and derive a candidate compute-unit contract from the selected RTL facts plus
+the separately authored software intent. Geometry, operand formats, shape
+bounds, host placement, and numerical rules must retain separate provenance;
+an instance hierarchy alone cannot authorize contraction lowering. The
+source-build receipt also does not prove historical Scala-to-FIRRTL input
+closure. Numerical review, mixed-site policy selection, host semantics, and
+L0–L3 execution remain open.
 
 The aim is one generic implementation consuming derived facts and explicit
 reviewed policies, with source checks that fail when a pin or declaration
