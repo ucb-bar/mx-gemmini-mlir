@@ -86,7 +86,10 @@ The source record's 12 file hashes match the checked-out `2029218` Gemmini tree 
 elaboration closure. A separate read only audit now matches the present
 99 Scala source files and nine build artifacts to the isolated elaboration
 receipt. This is current-byte consistency, not proof of the historical build's
-complete input closure. The selected
+complete input closure. The pinned FIRRTL also contains a dense 16×16
+`Mesh` tile grid, checked against the Scala config and generated header;
+the generic same-module census does not recover that grid because the tile
+modules are specialized. The selected
 `GemminiMxFPConfigs.standaloneMxFPConfig` still has a 16 by 16 weight-stationary
 mesh, 32-element scale blocks, a LUT, 256 KiB scratchpad, 64 KiB accumulator,
 and two accumulator banks. It sets `has_nonlinear_activations = false` and

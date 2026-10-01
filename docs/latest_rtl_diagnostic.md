@@ -40,6 +40,12 @@ The OOT `build_receipt` audit independently rehashed the present 99 Scala
 files and all nine listed build artifacts. Their bytes and the Chipyard,
 Gemmini, MxGen, and gitlink commits match the diagnostic receipt at SHA-256
 `ca329dc8dc741b50f49b2ae9889e047b019bd2e43f0798f28ca6dec159b77ff5`.
+The same audit reads the receipt-pinned FIRRTL `Mesh` instances: their
+`mesh_row_column` tile coordinates form a dense 16×16 grid of 256 tiles.
+The dimensions agree with the pinned standalone Scala config and generated
+header. This is an elaborated structural fact; the generic Merlin census
+currently leaves its array field empty because these tiles have distinct
+specialized module names.
 Reproduce this read only check with:
 
 ```sh
