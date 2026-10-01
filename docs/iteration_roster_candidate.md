@@ -96,7 +96,10 @@ model2MLIR bundle under `materialized/` with weights, inputs, goldens, the
 quantization manifest, and a byte-bound capture receipt. The replay checks the
 saved manifest against the MX handoff; Merlin can independently verify its
 receipt and inventory its `model.mlir`. This checks saved bytes and structure,
-not source closure or corpus admission. The
+not source closure or corpus admission. When supplying these bundles to
+`merlin experiment corpus derive`, also pass each exact selected policy as
+`--application-quant-policy LABEL=PATH@SHA256`; Merlin checks those bytes
+against the manifest and its selected software spec. The
 [historical v1 frozen roster receipt](evidence/iteration_roster_2029218.json) and
 [capture receipt](evidence/iteration_capture_2029218.json) record one run with
 model2MLIR `03718cb` and the `2029218` candidate. This earlier v1 run can
