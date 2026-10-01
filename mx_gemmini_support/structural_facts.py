@@ -62,6 +62,14 @@ def attach_mesh_observation(
     if (type(rows) is not int or type(columns) is not int or type(tiles) is not int or
         rows < 1 or columns < 1 or rows * columns != tiles):
         raise ValueError("build audit has no complete selected mesh grid")
+    hierarchy = audit.get("mesh_compute_hierarchy") or {}
+    if (hierarchy.get("tiles_with_hierarchy") != tiles or
+        type(hierarchy.get("fused_units_per_tile")) is not int or
+        hierarchy["fused_units_per_tile"] < 1 or
+        not isinstance(hierarchy.get("path_manifest_sha256"), str) or
+        len(hierarchy["path_manifest_sha256"]) != 64 or
+        hierarchy.get("connected_arithmetic_verified") is not False):
+        raise ValueError("build audit has no bounded selected multiplier hierarchy")
     body["structural_observations"] = [{
         "kind": "mesh_tile_grid",
         "name": "mesh",
@@ -72,6 +80,7 @@ def attach_mesh_observation(
         "instances": tiles,
         "source": "selected_firrtl",
         "firrtl_sha256": fir_sha,
+        "multiplier_hierarchy": hierarchy,
         "corroborated": False,
         "compute_engine_established": False,
     }]

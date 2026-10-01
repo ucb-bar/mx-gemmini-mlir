@@ -23,6 +23,9 @@ def _sample():
              "gemmini_commit": selected["rtl_commit"], "mxgen_commit": selected["mxgen_commit"],
              "artifacts": {"firrtl": {"sha256": fir}},
              "elaborated_mesh": {"rows": 16, "columns": 16, "tiles": 256},
+             "mesh_compute_hierarchy": {"tiles_with_hierarchy": 256, "fused_units_per_tile": 4,
+                                        "path_manifest_sha256": "a" * 64,
+                                        "connected_arithmetic_verified": False},
              "phase0_admitted": False, "historical_build_provenance_verified": False}
     return facts, audit, json.dumps(receipt).encode(), contract
 
@@ -32,6 +35,7 @@ def test_structural_observation_does_not_create_compute_array():
     output = attach_mesh_observation(json.dumps(facts).encode(), audit, receipt, contract)
     assert output["facts"]["arrays"] == []
     assert output["facts"]["structural_observations"][0]["instances"] == 256
+    assert output["facts"]["structural_observations"][0]["multiplier_hierarchy"]["fused_units_per_tile"] == 4
     assert output["facts"]["structural_observations"][0]["compute_engine_established"] is False
     assert output["structural_observation_provenance"]["phase0_admitted"] is False
 
@@ -44,4 +48,8 @@ def test_structural_observation_refuses_other_firrtl_or_existing_array():
     facts["inputs"]["fir_sha256"] = "f" * 64
     facts["facts"]["arrays"] = [{"name": "mesh"}]
     with pytest.raises(ValueError, match="already contain"):
+        attach_mesh_observation(json.dumps(facts).encode(), audit, receipt, contract)
+    facts["facts"]["arrays"] = []
+    del audit["mesh_compute_hierarchy"]
+    with pytest.raises(ValueError, match="multiplier hierarchy"):
         attach_mesh_observation(json.dumps(facts).encode(), audit, receipt, contract)

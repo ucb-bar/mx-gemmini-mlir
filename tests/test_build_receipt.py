@@ -4,7 +4,7 @@ import hashlib
 
 import pytest
 
-from mx_gemmini_support.build_receipt import _mesh_grid, _source_census
+from mx_gemmini_support.build_receipt import _mesh_compute_hierarchy, _mesh_grid, _source_census
 
 
 def _receipt_census(root):
@@ -55,3 +55,28 @@ def test_elaborated_mesh_requires_dense_tile_coordinates(tmp_path):
     fir.write_text(tiles.replace("mesh_1_0", "mesh_1_1"))
     with pytest.raises(ValueError, match="duplicate"):
         _mesh_grid(fir)
+
+
+def test_selected_mesh_multiplier_hierarchy_refuses_missing_link(tmp_path):
+    fir = tmp_path / "design.fir"
+    text = """  module Mesh :
+    inst mesh_0_0 of Tile
+  module Tile :
+    inst tile_0_0 of PE_1
+  module PE_1 :
+    inst mac_unit of MacUnit
+  module MacUnit :
+    inst io_out_d_macc of MxFpMul
+  module MxFpMul :
+    inst fma of MxMulAddRecFN
+  module MxMulAddRecFN :
+"""
+    fir.write_text(text)
+    mesh = _mesh_grid(fir)
+    hierarchy = _mesh_compute_hierarchy(fir, mesh)
+    assert hierarchy["tiles_with_hierarchy"] == 1
+    assert hierarchy["fused_units_per_tile"] == 1
+    assert hierarchy["connected_arithmetic_verified"] is False
+    fir.write_text(text.replace("inst fma of MxMulAddRecFN", "inst fma of Other"))
+    with pytest.raises(ValueError, match="no elaborated fused"):
+        _mesh_compute_hierarchy(fir, mesh)

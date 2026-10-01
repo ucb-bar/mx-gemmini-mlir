@@ -96,6 +96,78 @@ def _mesh_grid(firrtl: Path) -> dict:
             "basis": "FIRRTL Mesh mesh_row_column Tile instances"}
 
 
+def _mesh_compute_hierarchy(firrtl: Path, mesh: dict) -> dict:
+    """Follow each selected tile through the elaborated multiplier hierarchy.
+
+    Module names and instance containment establish structure, not a connected
+    arithmetic path or a numerical contract.
+    """
+    children: dict[str, list[tuple[str, str]]] = {}
+    module = None
+    with firrtl.open(encoding="utf-8") as stream:
+        for line in stream:
+            if line.startswith("  module "):
+                module = line.split()[1]
+                if module == "Mesh" or any(
+                    module == stem or module.startswith(stem + "_")
+                    for stem in ("Tile", "PE", "MacUnit", "MxFpMul")
+                ):
+                    if module in children:
+                        raise ValueError(f"duplicate selected FIRRTL module {module}")
+                    children[module] = []
+                continue
+            if module not in children or not line.startswith("    inst "):
+                continue
+            parts = line.split()
+            if len(parts) < 4 or parts[2] != "of":
+                raise ValueError(f"unparsed instance in {module}")
+            children[module].append((parts[1], parts[3]))
+    selected = {
+        f"mesh_{row}_{column}" for row in range(mesh["rows"])
+        for column in range(mesh["columns"])
+    }
+    mesh_children = children.get("Mesh", [])
+    tiles = {name: child for name, child in mesh_children if name in selected}
+    if len(tiles) != mesh["tiles"] or set(tiles) != selected:
+        raise ValueError("selected Mesh tile instances differ from grid")
+    if any(name.startswith("mesh_") and name not in selected for name, _ in mesh_children):
+        raise ValueError("selected Mesh has unexpected tile coordinates")
+
+    def one_child(parent: str, stem: str) -> str:
+        matches = [child for _, child in children.get(parent, [])
+                   if child == stem or child.startswith(stem + "_")]
+        if len(matches) != 1 or matches[0] not in children:
+            raise ValueError(f"{parent}: expected one elaborated {stem} child")
+        return matches[0]
+
+    paths = []
+    fused_counts = set()
+    for name in sorted(selected):
+        tile = tiles[name]
+        if tile != "Tile" and not re.fullmatch(r"Tile_\d+", tile):
+            raise ValueError(f"{name}: selected Mesh child is not a Tile")
+        pe = one_child(tile, "PE")
+        mac = one_child(pe, "MacUnit")
+        mul = one_child(mac, "MxFpMul")
+        fused = sorted(child for _, child in children[mul]
+                       if child == "MxMulAddRecFN" or child.startswith("MxMulAddRecFN_"))
+        if not fused:
+            raise ValueError(f"{mul}: no elaborated fused multiply-add child")
+        fused_counts.add(len(fused))
+        paths.append((name, tile, pe, mac, mul, fused))
+    if len(fused_counts) != 1:
+        raise ValueError("selected tiles have nonuniform fused multiplier hierarchy")
+    manifest = "".join(" ".join((name, tile, pe, mac, mul, *fused)) + "\n"
+                       for name, tile, pe, mac, mul, fused in paths)
+    return {
+        "tiles_with_hierarchy": len(paths),
+        "fused_units_per_tile": fused_counts.pop(),
+        "path_manifest_sha256": hashlib.sha256(manifest.encode()).hexdigest(),
+        "basis": "FIRRTL Mesh→Tile→PE→MacUnit→MxFpMul→MxMulAddRecFN instances",
+        "connected_arithmetic_verified": False,
+    }
+
+
 def _header_integer(header: Path, name: str) -> int:
     matches = re.findall(rf"^#define {re.escape(name)}\s+(\d+)\s*$", header.read_text(), re.MULTILINE)
     if len(matches) != 1:
@@ -139,7 +211,9 @@ def verify_build_receipt(
         if digest != row["sha256"] or size != row["bytes"]:
             raise ValueError(f"{name} differs from build receipt")
         checked[name] = {"sha256": digest, "bytes": size}
-    mesh = _mesh_grid(_contained(root, artifacts["firrtl"]["relative_path"]))
+    selected_firrtl = _contained(root, artifacts["firrtl"]["relative_path"])
+    mesh = _mesh_grid(selected_firrtl)
+    hierarchy = _mesh_compute_hierarchy(selected_firrtl, mesh)
     config = selected_config_facts((gemmini / "src/main/scala/gemmini/ConfigsFP.scala").read_text())
     header = _contained(root, artifacts["gemmini_header"]["relative_path"])
     if (mesh["rows"] != config["meshRows"]["value"] or
@@ -156,6 +230,7 @@ def verify_build_receipt(
         "scala_manifest_sha256": manifest,
         "artifacts": checked,
         "elaborated_mesh": mesh,
+        "mesh_compute_hierarchy": hierarchy,
         "historical_build_provenance_verified": False,
         "phase0_admitted": False,
     }
