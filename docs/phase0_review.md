@@ -1,6 +1,6 @@
 # MX Gemmini Phase 0 review
 
-Review snapshot: 2026-09-30. The selected software contract remains
+Review snapshot: 2026-10-01. The selected software contract remains
 `unreviewed`. This review applies to the exact Gemmini
 `f0167390b56fb315deea90ac1fc3983772e92d82`, MxGen
 `a27ce3cd81513210c21f971ec3977defd13fa21e`, and
@@ -83,13 +83,18 @@ pass with the candidate contract;
 these are structural capture results, not model accuracy or accelerator runs.
 The source record's 12 file hashes match the checked-out `2029218` Gemmini tree and its
 `56ef1c6` MxGen submodule. This is a scoped source census, not the complete
-elaboration closure. The selected
+elaboration closure. A separate read only audit now matches the present
+99 Scala source files and nine build artifacts to the isolated elaboration
+receipt. This is current-byte consistency, not proof of the historical build's
+complete input closure. The selected
 `GemminiMxFPConfigs.standaloneMxFPConfig` still has a 16 by 16 weight-stationary
 mesh, 32-element scale blocks, a LUT, 256 KiB scratchpad, 64 KiB accumulator,
 and two accumulator banks. It sets `has_nonlinear_activations = false` and
-`has_normalizations = false`; the current software contract assigns those
-operations to the host. These settings were also used in the isolated
-elaboration; their numerical implications remain unreviewed.
+`has_normalizations = false`, and `has_max_pool = false`; the candidate
+software contract assigns those operations to the host. The OOT source check
+now extracts these effective standalone config fields and rejects accelerator
+placement for the disabled families. These settings were also used in the
+isolated elaboration; their numerical implications remain unreviewed.
 
 The changed protocol must be part of any candidate software contract for this
 revision:

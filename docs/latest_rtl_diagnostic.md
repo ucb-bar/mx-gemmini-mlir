@@ -36,6 +36,23 @@ JDK 17, firtool 1.75.0, and Verilator 5.022 produced the following artifacts:
 | Verilator executable | `1d9130ad0263fe640c6fe3d62b1dd2a3333aa6dde23e3ba8849db52211ec52f2` |
 | Generated `gemmini_params.h` | `f4d98ad4b2a75674366aacb16dd5e87d4c68184f78f0c143704f73b65cc1bd60` |
 
+The OOT `build_receipt` audit independently rehashed the present 99 Scala
+files and all nine listed build artifacts. Their bytes and the Chipyard,
+Gemmini, MxGen, and gitlink commits match the diagnostic receipt at SHA-256
+`ca329dc8dc741b50f49b2ae9889e047b019bd2e43f0798f28ca6dec159b77ff5`.
+Reproduce this read only check with:
+
+```sh
+python -m mx_gemmini_support.build_receipt /path/to/chipyard \
+  /path/to/build-receipt.json \
+  mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml
+```
+
+This establishes current-byte consistency with a receipt authored after the
+build. It does not prove the historical compiler process consumed precisely
+those bytes, or close Chipyard's complete build inputs. The candidate remains
+unreviewed.
+
 Elaboration exited zero with 49 Chisel warnings. The build used the pinned
 Boot ROM image and DRAMSim2 `44322e2f935d7dac83b7adf8dd270b41a54c6acb`.
 The C programs used `gemmini-rocc-tests`
