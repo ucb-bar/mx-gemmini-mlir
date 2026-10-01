@@ -43,7 +43,12 @@ Gemmini, MxGen, and gitlink commits match the diagnostic receipt at SHA-256
 The same audit reads the receipt-pinned FIRRTL `Mesh` instances: their
 `mesh_row_column` tile coordinates form a dense 16×16 grid of 256 tiles.
 The dimensions agree with the pinned standalone Scala config and generated
-header. This is an elaborated structural fact; the generic Merlin census
+header. Following each selected tile's elaborated instances reaches one
+`PE`, one `MacUnit`, one `MxFpMul`, and four `MxMulAddRecFN` instances per
+tile. The 256 paths have manifest SHA-256
+`40379d7e74c2ad7bb505ccee3d070b727fc05e29f37b85b6f5ffd90fa835bbbd`.
+Instance containment does not prove connected arithmetic dataflow or numerical
+behavior. This is an elaborated structural fact; the generic Merlin census
 currently leaves its array field empty because these tiles have distinct
 specialized module names.
 Reproduce this read only check with:
@@ -87,10 +92,11 @@ python -m mx_gemmini_support.structural_facts /path/to/chipyard \
 ```
 
 The adapter rechecks the selected build receipt, contract, FIRRTL digest, and
-Merlin's FIRRTL-to-HW source-consistency record. It writes a new artifact and
+Merlin's FIRRTL-to-HW source-consistency record. It also derives the selected
+multiplier hierarchy above. It writes a new artifact and
 refuses to overwrite an existing one. Its `facts.structural_observations`
 records the 16×16 grid and source hashes. `facts.arrays` stays empty: tile
-coordinates do not alone prove a multiply-accumulate datapath, and several
+instance containment does not prove a multiply-accumulate datapath, and several
 Merlin readers treat an array entry as executable compute evidence. Pass the
 new artifact via `--rtl-facts` to `merlin experiment corpus derive`, or as the
 explicit `facts_path` to Phase 0 evidence selection.
