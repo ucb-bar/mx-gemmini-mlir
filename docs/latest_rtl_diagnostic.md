@@ -76,6 +76,26 @@ The OOT grid check above supplies a separate structural diagnostic. Neither
 check proves the historical Scala-to-FIRRTL build input closure or admits the
 fact bundle for Phase 0.
 
+To bind that grid to the exact Merlin FIRRTL fact bundle for a candidate Phase 0
+read, run the OOT structural adapter with explicit input and output paths:
+
+```sh
+python -m mx_gemmini_support.structural_facts /path/to/chipyard \
+  /path/to/build-receipt.json \
+  mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml \
+  /path/to/merlin-facts.json /path/to/artifacts/facts-with-mesh.json
+```
+
+The adapter rechecks the selected build receipt, contract, FIRRTL digest, and
+Merlin's FIRRTL-to-HW source-consistency record. It writes a new artifact and
+refuses to overwrite an existing one. Its `facts.structural_observations`
+records the 16×16 grid and source hashes. `facts.arrays` stays empty: tile
+coordinates do not alone prove a multiply-accumulate datapath, and several
+Merlin readers treat an array entry as executable compute evidence. Pass the
+new artifact as the explicit `facts_path` to Phase 0 evidence selection.
+This binds the observation to the selected inputs without admitting the
+candidate or enabling contraction lowering.
+
 Elaboration exited zero with 49 Chisel warnings. The build used the pinned
 Boot ROM image and DRAMSim2 `44322e2f935d7dac83b7adf8dd270b41a54c6acb`.
 The C programs used `gemmini-rocc-tests`
