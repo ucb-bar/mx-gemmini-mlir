@@ -59,6 +59,23 @@ build. It does not prove the historical compiler process consumed precisely
 those bytes, or close Chipyard's complete build inputs. The candidate remains
 unreviewed.
 
+Merlin's generic source-selection producer also converted this exact FIRRTL
+with firtool 1.75.0 into SoC HW dialect SHA-256
+`61f9bbdb5802384a5d0dffe5c9f92e04bf8e2536d1853d18d1f74eb35c3558b1`
+and extracted the Gemmini module closure SHA-256
+`52d639f0202257878c45acd524305b7e6fa2b7f1d86512702097d7bc2455f4ab`.
+Its source-selection receipt has SHA-256
+`0c2e2f10a7b20d9abcf91894ab62f2b565f347da1582447ffc07497b653d3dd2`;
+the resulting fact bundle has SHA-256
+`a851ffcd86435413bdbe73eb377dee664922768e7285776ee0c8b310b8177560`.
+The generic source-consistency check is `verified` for FIRRTL-to-HW production,
+the exact module closure, and FIRRTL-to-hierarchy correspondence. Its census
+finds 16 KiB scale RAM, 256 KiB scratchpad, and two 32 KiB accumulator stores,
+but no array: specialized tile modules defeat its same-module sibling rule.
+The OOT grid check above supplies a separate structural diagnostic. Neither
+check proves the historical Scala-to-FIRRTL build input closure or admits the
+fact bundle for Phase 0.
+
 Elaboration exited zero with 49 Chisel warnings. The build used the pinned
 Boot ROM image and DRAMSim2 `44322e2f935d7dac83b7adf8dd270b41a54c6acb`.
 The C programs used `gemmini-rocc-tests`
