@@ -15,6 +15,7 @@ import yaml
 
 from .contract import compile_contract
 from .candidate_protocol import RTL_COMMIT as CANDIDATE_RTL_COMMIT
+from .config_facts import check_selected_config, selected_config_facts
 
 
 def _head(root: Path) -> str:
@@ -164,6 +165,8 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
         "class GemminiMxFPStandaloneConfig extends Config" not in config or
         "LazyModule(new Gemmini(GemminiMxFPConfigs.standaloneMxFPConfig))" not in config):
         raise ValueError("selected standalone config missing")
+    selected_config = selected_config_facts(config)
+    check_selected_config(yaml.safe_load(spec_bytes), contract, selected_config)
     if "val scale_resident = Input(Bool())" not in source:
         raise ValueError("selected requantizer lacks resident output-scale path")
     report = {"schema": "mx_gemmini.rtl_source_check.v1", "status": "source_crosscheck",
@@ -171,7 +174,8 @@ def check_sources(rtl_root: str | Path, spec_bytes: bytes, source_record: bytes)
             "checked_files": dict(record["files"]),
             "format_codes": codes, "exponent_bits": exp, "fraction_bits": fraction,
             "max_finite": maximum, "zero_block_scale_e8m0": int(epsilon.group(1)),
-            "operand_rounding": contract["operand_rounding"]}
+            "operand_rounding": contract["operand_rounding"],
+            "selected_config": selected_config}
     if contract["rtl_commit"] == CANDIDATE_RTL_COMMIT:
         report["candidate_protocol"] = _check_candidate_protocol(root, spec_bytes)
     return report
