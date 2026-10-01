@@ -2,8 +2,9 @@
 
 This is a bounded RTL diagnostic for the unreviewed
 [`2029218` software-contract candidate](../mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml).
-The selected TorchAO contract remains pinned to `f016739`. These results do
-not admit a Phase 0 corpus or qualify full-model behavior.
+The default Merlin provider remains pinned to `f016739`; an explicit
+candidate selection can use TorchAO for operand-only capture. These results
+do not admit a Phase 0 corpus or qualify full-model behavior.
 
 ## Build identity
 
@@ -16,6 +17,16 @@ explicit detached Gemmini checkout and recorded the actual revisions. Its
 99-file Gemmini/MxGen Scala source census has SHA-256
 `b16352e8f9d78b3f689154f4403b8b416fdab4394540ef7965f22d37ffc8a627`.
 No Chipyard tooling or RTL source was edited.
+
+The OOT source check resolves `defaultMxFPConfig` plus the standalone
+overrides in the pinned `ConfigsFP.scala`. The selected fields are a 16×16
+mesh, four scratchpad banks, two accumulator banks, 256 KiB scratchpad,
+64 KiB accumulator, 32-element scale blocks, MX scaling enabled, and a
+present LUT. The built-in nonlinear activation, normalization, and max-pool
+switches are all false; the candidate software spec places those operation
+families on the host. The check rejects an accelerator placement for a
+disabled family. These are source-config facts, not evidence of host lowering
+or complete elaboration closure.
 
 JDK 17, firtool 1.75.0, and Verilator 5.022 produced the following artifacts:
 

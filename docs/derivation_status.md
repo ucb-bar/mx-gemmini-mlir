@@ -18,7 +18,11 @@ spec combines declared software semantics with fields checked against the
 pinned Gemmini/MxGen source. It remains `unreviewed`. A successful
 `compile_contract` projects its declarations; the separately invoked
 `rtl_check` checks exact source hashes, format and scale fields, selected
-rounding paths, and candidate command fields. It does not derive all shape
+rounding paths, candidate command fields, and the standalone config's literal
+mesh, capacity, latency, LUT, and activation switches. The check resolves
+the default config and its standalone overrides, then refuses contract claims
+that contradict its mesh, scale block, LUT, or disabled built-in operations.
+It does not derive all shape
 bounds, host operation placement, transfers, or mesh numerical behavior.
 Those are authored claims needing separate review and execution evidence.
 Neither operation approves the spec.
@@ -58,7 +62,7 @@ the original graph digest are bound into the capture handoff.
 | OOT owner | Current mechanism | Remaining boundary |
 | --- | --- | --- |
 | `contracts/` and `contract.py` | YAML input is compiled to one deterministic, digest-bound consumer view. | The software declarations are authored and remain `unreviewed`; compilation does not prove them. |
-| `rtl_check.py` and source records | Selected source hashes and scoped fields are checked against pinned RTL/MxGen bytes. | This is not complete elaboration closure or extraction of all runtime behavior. |
+| `rtl_check.py`, `config_facts.py`, and source records | Selected source hashes, format/protocol fields, and effective standalone config scalars are checked against pinned RTL/MxGen bytes. Disabled nonlinear, normalization, and max-pool operations cannot be declared accelerator operations. | This is not complete elaboration closure or extraction of all runtime behavior. The config switches describe built-in Gemmini units, not every possible host or compiler implementation. |
 | `policy.py`, `legality.py`, `m2m_adapter.py` | Exact site choices and M/N/K bounds come from the selected policy and compiled contract. A source-bound inventory derives every site's eligible formats and refusal reasons; capture records selected, host, and skipped sites. | Format choices and FP6 codebooks are numerical policy inputs. Shape/layout eligibility is not proof of executable lowering. |
 | `torchao_quant.py` | A reusable TorchAO handler and graph pass apply the chosen site format. The operand kernel is checked against selected format constants and narrow independent/RTL diagnostics. | Quantization arithmetic and graph rewrites are handwritten algorithms; mesh arithmetic and whole-model numerical agreement are not modeled here. |
 | `layout.py`, `contraction.py`, `candidate_protocol.py` | Source-scoped packing and command fields are checked by narrow payload and simulator diagnostics. | General transfer scheduling, capacity planning, and executable model lowering remain open. |
