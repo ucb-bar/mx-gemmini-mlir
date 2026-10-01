@@ -65,6 +65,7 @@ the original graph digest are bound into the capture handoff.
 | `contracts/` and `contract.py` | YAML input is compiled to one deterministic, digest-bound consumer view. | The software declarations are authored and remain `unreviewed`; compilation does not prove them. |
 | `rtl_check.py`, `config_facts.py`, and source records | Selected source hashes, format/protocol fields, and effective standalone config scalars are checked against pinned RTL/MxGen bytes. Disabled nonlinear, normalization, and max-pool operations cannot be declared accelerator operations. | This is not complete elaboration closure or extraction of all runtime behavior. The config switches describe built-in Gemmini units, not every possible host or compiler implementation. |
 | `build_receipt.py`, `structural_facts.py`, and Merlin's generic FIRRTL source selection | Present Scala/artifact bytes and commits are rechecked; exact FIRRTL is converted to SoC and Gemmini HW, and its hierarchy is cross-checked. The OOT adapter binds a dense 16×16 tile grid and its per-tile multiplier instance hierarchy to the exact selected Merlin fact bundle as a structural observation. | The build receipt was authored after elaboration, so historical Scala-to-FIRRTL input closure is still unproven. Instance containment is not connected arithmetic proof and does not enter `facts.arrays`; the candidate is not an admitted Phase 0 fact bundle. |
+| `capability_proposal.py` | Projects the selected grid and the software spec's per-format contraction and host intent into a digest-bound review artifact. | Its `candidate_not_admitted` output is not a Merlin target contract; the format, shape, and host rules remain authored and unreviewed. |
 | `policy.py`, `legality.py`, `m2m_adapter.py` | Exact site choices and M/N/K bounds come from the selected policy and compiled contract. A source-bound inventory derives every site's eligible formats and refusal reasons; capture records selected, host, and skipped sites. | Format choices and FP6 codebooks are numerical policy inputs. Shape/layout eligibility is not proof of executable lowering. |
 | `torchao_quant.py` | A reusable TorchAO handler and graph pass apply the chosen site format. The operand kernel is checked against selected format constants and narrow independent/RTL diagnostics. | Quantization arithmetic and graph rewrites are handwritten algorithms; mesh arithmetic and whole-model numerical agreement are not modeled here. |
 | `layout.py`, `contraction.py`, `candidate_protocol.py` | Source-scoped packing and command fields are checked by narrow payload and simulator diagnostics. | General transfer scheduling, capacity planning, and executable model lowering remain open. |
@@ -88,11 +89,23 @@ active OOT capability contract intentionally declares no compute unit. The
 host capability screens are also `unknown`. The synthesis profile is a
 candidate artifact, not a Phase 0 admission or a functional compiler result.
 
-The next capability step is to corroborate the connected arithmetic datapath
-and derive a candidate compute-unit contract from the selected RTL facts plus
-the separately authored software intent. Geometry, operand formats, shape
-bounds, host placement, and numerical rules must retain separate provenance;
-an instance hierarchy alone cannot authorize contraction lowering. The
+The OOT proposal can be reproduced from explicit inputs without an agent:
+
+```sh
+python -m mx_gemmini_support.capability_proposal \
+  /artifact/facts-with-mesh.json \
+  mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml \
+  /artifact/capability-proposal.json
+```
+
+It records the RTL-derived grid separately from the authored FP8, FP6, and
+FP4 ranks, layout and M/N/K bounds, accumulator dtype, and host families. It
+refuses a changed spec digest or mismatched FIRRTL identity. The next
+capability step is to corroborate the connected arithmetic datapath and
+review a compute-unit contract before selecting one for accelerator corpus
+generation. Geometry, operand formats, shape bounds, host placement, and
+numerical rules retain separate provenance; an instance hierarchy alone
+cannot authorize contraction lowering. The
 source-build receipt also does not prove historical Scala-to-FIRRTL input
 closure. Numerical review, mixed-site policy selection, host semantics, and
 L0–L3 execution remain open.
