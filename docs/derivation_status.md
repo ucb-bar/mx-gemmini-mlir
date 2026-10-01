@@ -90,7 +90,7 @@ optimize an admitted policy's schedule. Changing a site's format or codebook
 changes numerical semantics, so it requires renewed functional qualification
 before its performance can be compared or claimed.
 
-The current OOT package ends at a Phase 0 capture/handoff diagnostic plus
+The current OOT package ends at a materialized Phase 0 capture/handoff diagnostic plus
 bounded RTL bringup programs. It has no executable general MX lowering, host
 runtime, or Phase 1 certificate. The default Merlin provider still selects the
 older RTL pin; the `2029218` candidate is opt-in and `unreviewed`.

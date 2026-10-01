@@ -164,6 +164,9 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
         )
         bundle_mlir = (bundle_dir / "model.mlir").read_text()
         manifest_sha = manifest_digest(result.quantization_manifest)
+        saved_manifest = json.loads((bundle_dir / "quantization-manifest.json").read_text())
+        if manifest_digest(saved_manifest) != manifest_sha:
+            raise ValueError(f"{name}: materialized manifest differs from checked handoff")
         if f'prov.quantization_manifest_sha256 = "{manifest_sha}"' not in bundle_mlir:
             raise ValueError(f"{name}: materialized capture differs from checked quantization manifest")
         bundle_trace = json.loads((bundle_dir / "frontend-trace.json").read_text())
@@ -194,6 +197,7 @@ def replay(roster_root: Path, output_root: Path, contract: Path, policy: Path | 
                 "model_mlir_sha256": _sha(bundle_dir / "model.mlir"),
                 "capture_receipt_sha256": _sha(bundle_dir / "capture_receipt.json"),
                 "manifest_sha256": manifest_sha,
+                "manifest_file_sha256": _sha(bundle_dir / "quantization-manifest.json"),
             },
         })
     receipt = output_root / "capture-receipt.json"

@@ -91,8 +91,12 @@ python -m examples.replay_iteration_workloads \
 The replayer checks every frozen file digest, saved export output, RTL source
 record, contract, selected per-case policies, and a clean model2MLIR source checkout. It records the
 model2MLIR commit, complete frontend trace, zero opaque operations, OOT
-handoff validation and dialect verification, and hashes of the generated MLIR
-and manifests. The
+handoff validation and dialect verification. Each case also gets a materialized
+model2MLIR bundle under `materialized/` with weights, inputs, goldens, the
+quantization manifest, and a byte-bound capture receipt. The replay checks the
+saved manifest against the MX handoff; Merlin can independently verify its
+receipt and inventory its `model.mlir`. This checks saved bytes and structure,
+not source closure or corpus admission. The
 [historical v1 frozen roster receipt](evidence/iteration_roster_2029218.json) and
 [capture receipt](evidence/iteration_capture_2029218.json) record one run with
 model2MLIR `03718cb` and the `2029218` candidate. This earlier v1 run can
