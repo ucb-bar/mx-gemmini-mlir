@@ -162,27 +162,40 @@ or locally changed `mxq` source and prints per-format, per-case counts.
 
 ## Phase 0 admission work
 
+The four synthetic iteration captures now have complete source traces and
+byte-bound model, weight, input, and golden artifacts. An explicit all-host
+policy selects all 16 contraction sites for a diagnostic replay; every site
+passes the candidate FP8, FP6, and FP4 shape/layout screen, but those formats
+are not a numerical assignment. The source-bound derivation inventories 674
+MLIR operations and writes ten diagnostic entries: four full captures and six
+host or composition probes. It records zero admitted accelerator cells and
+zero declared compute units. Six host capability screens remain `unknown`.
+The [derivation record](derivation_status.md) explains the RTL versus authored
+sources of these fields. This is no MX accelerator corpus admission.
+
 1. Freeze the intended RTL revision. For `2029218`, enforce explicit FP6/FP4
    scale loads or resolve their failed loop-managed path in RTL, check repeated
    half reuse and changed shared paths, review source/toolchain binding, and
    rerun the full format and chain diagnostics.
    Keep the existing `f016739` receipts attributed to their original revision.
-2. Select exact MX application captures and a versioned site policy. Review any
+2. Review the selected candidate captures and choose a versioned site policy. Review any
    FP6 codebooks, host placement, and accuracy choices with the numerical owners.
    The example FP8-only policy is a bringup policy, not a reviewed whole-model
    selection. The [candidate iteration roster](iteration_roster_candidate.md)
    proposes four independent MX-sized captures and gives their artifact
-   materialization command; it has not been admitted.
-3. Derive a new MX-only conformance requirement from those captures. The retained
+   materialization command; they have not been admitted.
+3. Complete the new MX-only conformance requirement from those captures. The retained
    synthesis sidecar is `unverified_legacy` and contains BF16/int8 accelerator
-   cells outside this three-format contract. Supply a same-target capability
-   contract and selected RTL facts, then regenerate and review a digest-bound
+   cells outside this three-format contract. The new diagnostic uses the
+   selected RTL facts, but the active OOT contract declares no compute unit.
+   Corroborate the connected arithmetic datapath, review a same-target
+   capability contract, then regenerate and review a digest-bound MX
    synthesis profile under the run artifact root.
 4. Run Merlin Phase 0 preflight on those selected inputs, then generate capsules
    and check independent L0/L1 numerics plus source-bound Spike L2 and Verilator
    L3. Review host transfers and the complete census before admitting a corpus.
 
-The current `mx-gemmini-functional --phase 0` preflight reports
-`configuration_ready: false` because the selected synthesis profile is
-`unverified_legacy`. No Phase 0 admission or functional compiler certificate is
-claimed by this review.
+The retained `mx-gemmini-functional --phase 0` preflight reports
+`configuration_ready: false` because its synthesis profile is
+`unverified_legacy`. The new profile is diagnostic and has zero accelerator
+cells. Neither is an admitted corpus or functional compiler certificate.
