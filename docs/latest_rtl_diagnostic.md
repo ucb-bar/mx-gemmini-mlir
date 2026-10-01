@@ -92,7 +92,8 @@ refuses to overwrite an existing one. Its `facts.structural_observations`
 records the 16×16 grid and source hashes. `facts.arrays` stays empty: tile
 coordinates do not alone prove a multiply-accumulate datapath, and several
 Merlin readers treat an array entry as executable compute evidence. Pass the
-new artifact as the explicit `facts_path` to Phase 0 evidence selection.
+new artifact via `--rtl-facts` to `merlin experiment corpus derive`, or as the
+explicit `facts_path` to Phase 0 evidence selection.
 This binds the observation to the selected inputs without admitting the
 candidate or enabling contraction lowering.
 
