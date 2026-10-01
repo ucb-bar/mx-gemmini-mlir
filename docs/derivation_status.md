@@ -39,6 +39,13 @@ inventory. Merlin's Phase 0 derivation now checks the exact policy digest
 against each materialized quantization manifest. This is byte selection,
 not approval of the numerical policy or application corpus.
 
+For the declared `mx_block_reference` engine, Merlin inventories the exact
+`mlc/validate/mx_ref.py` file loaded by both numerical consumers. Frozen
+replay preserves its path relative to the selected MLC root. The rest of that
+checkout, including generated runs and third-party data, is outside this
+numerical reference selection. The captured bytes establish source identity;
+they do not certify agreement with the selected RTL.
+
 The inventory is **computed**, not hand-picked: `derive_site_inventory`
 exports that selected model with those selected inputs, identifies `nn.Linear`
 modules and visible functional contractions, then evaluates every MX format
