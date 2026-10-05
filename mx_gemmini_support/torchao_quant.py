@@ -14,6 +14,7 @@ from mxq.nn.operand_capture import (
     linear_contraction_operands,
     quantize_functional_contractions_ as _quantize_functional_contractions_,
     quantize_mx_operand as quantize_mx_gemmini,
+    quantize_selected_linear_modules_,
 )
 
 from .legality import shape_reason

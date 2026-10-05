@@ -14,7 +14,8 @@ from .legality import shape_reason
 from .policy import load_policy
 from .torchao_quant import (MXGemminiFakeQuantConfig, MXGemminiLinear, _dequant_operand_for_graph,
                             expose_sdpa_contractions,
-                            quantize_functional_contractions_, verify_kernel_contract)
+                            quantize_functional_contractions_, quantize_selected_linear_modules_,
+                            verify_kernel_contract)
 
 
 def _sha(value) -> str:
@@ -239,8 +240,6 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
 
     The graph is a capture diagnostic. Its BF16 matmuls are not RTL products.
     """
-    from torchao.quantization import quantize_
-
     if not isinstance(model, nn.Module):
         raise TypeError("MX adapter requires a torch.nn.Module")
     contract = compile_contract(contract_bytes)
@@ -308,13 +307,13 @@ def apply(model, inputs, *, contract_bytes, policy_bytes, original_frontend_snap
     for site in functional:
         if site.get("format") == "mxfp6":
             site["fp6_codebook_sha256"] = _sha(policy.codebooks(site["site_id"]))
+    selected_configs = {}
     for name, module, fmt, books in selections:
         bounds = contract["formats"][fmt]["shape_bounds"]
         rules = tuple((bounds[axis]["min"], bounds[axis]["multiple_of"])
                       for axis in ("M", "N", "K"))
-        quantize_(model, MXGemminiFakeQuantConfig(fmt, *books, *rules),
-                  filter_fn=lambda candidate, fqn, wanted=name, selected=module:
-                  fqn == wanted and candidate is selected)
+        selected_configs[name] = MXGemminiFakeQuantConfig(fmt, *books, *rules)
+    quantize_selected_linear_modules_(model, selected_configs)
     _rewrite_linear_nodes(graph_module, selections, model)
     census.extend(functional)
     by_site = {site["site_id"]: site for site in census}

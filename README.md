@@ -19,12 +19,13 @@ diagnostics.
 The [derivation record](docs/derivation_status.md) distinguishes source-checked
 facts, authored policy, handwritten algorithms, and Phase 1/2 work. Merlin's
 `examples/mx_gemmini/` owns the experiment recipe and target metadata; this
-repository owns the OOT contract, quantizer, dialect, and handoff.
+repository owns the OOT contract, RTL gate, dialect, and handoff. The reusable
+TorchAO operand capture code lives in `microscaling-quant`.
 The [Phase 0 review](docs/phase0_review.md) records the numerical scope checked
 and the inputs still needed before a new Phase 0 run can be admitted.
 The [latest-RTL diagnostic](docs/latest_rtl_diagnostic.md) records the separate
 `2029218` candidate build and scale-load checks; it does not change the active
-Merlin provider contract. The OOT TorchAO handler accepts that exact candidate
+Merlin provider contract. The OOT contract gate accepts that exact candidate
 for explicit operand-only capture, with its `unreviewed` status preserved.
 The [candidate iteration roster](docs/iteration_roster_candidate.md) gives
 four independent MX-sized capture models and an artifact materializer.

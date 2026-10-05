@@ -10,7 +10,11 @@ requires-python = ">=3.10"
 dependencies = ["PyYAML>=6"]
 
 [project.optional-dependencies]
-capture = ["torch>=2.6", "torchao>=0.12"]
+capture = [
+  "torch>=2.6",
+  "torchao>=0.16",
+  "microscaling-quant @ git+https://github.com/copparihollmann/microscaling-quant.git@b4af5430bac147f4a16126931cc0177367cc3982",
+]
 
 [project.entry-points."m2m.quantization_adapters"]
 mx_gemmini = "mx_gemmini_support.m2m_adapter:apply"

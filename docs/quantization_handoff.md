@@ -2,11 +2,12 @@
 
 ## Extension ownership
 
-TorchAO and model2MLIR do not contain an MX Gemmini branch. This out-of-tree
-package defines `MXGemminiFakeQuantConfig(AOBaseConfig)` and registers its
-`nn.Linear` handler with TorchAO's `quantize_` registry. The same package owns
-the exported-graph pass for functional matmuls, which a module handler cannot
-see. model2MLIR loads the installed `m2m.quantization_adapters` entry point
+TorchAO and model2MLIR do not contain an MX Gemmini branch.
+`microscaling-quant` defines the reusable `MXOperandFakeQuantConfig(AOBaseConfig)`
+TorchAO handler, the exact-site Linear selection helper, and the exported-graph
+pass for functional matmuls, which a module handler cannot see. This package
+checks the selected MX Gemmini RTL and software contract before calling those
+shared transforms. model2MLIR loads the installed `m2m.quantization_adapters` entry point
 selected by the caller, passes exact contract and policy bytes, then checks
 the returned site census and digests. The MX dialect verifies the handoff in
 this repository. Other targets can install their own entry points without
@@ -35,7 +36,7 @@ The contract is an authored input rather than a generated copy of Merlin's
 explains the separate `2029218` candidate and who selects the contract,
 model inputs, and per-site precision policy.
 
-The TorchAO kernel accepts only the two exact Gemmini/MxGen pairs documented
+The target contract gate accepts only the two exact Gemmini/MxGen pairs documented
 here with the selected configuration and numerical fields. A mismatched pair,
 configuration, or format table fails before capture.
 
@@ -133,6 +134,11 @@ functional matmuls. It compares its numerical kernel assumptions with the
 selected contract before capture. The resulting graph uses BF16 operand
 fake quantization followed by PyTorch matmul. It is an operand and coverage
 diagnostic, not a model of the mesh's product or reduction arithmetic.
+
+The `capture` extra currently pins the shared `microscaling-quant` implementation
+to the commit on [its upstream PR](https://github.com/chloe-wong/microscaling-quant/pull/3).
+Update that pin to the upstream merge commit after the PR is accepted; do not
+replace it with an unverified package of the same version.
 
 The adapter exposes rank-4 inference SDPA with matching Q/K/V heads and a
 boolean mask as QK matmul, host safe softmax, and PV matmul before site
