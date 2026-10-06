@@ -36,6 +36,19 @@ def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
   let results = (outs AnyTensor:$value);
 }
 
+def Mx_ReadoutToSmemOp : Mx_Op<"readout_to_smem"> {
+  let summary = "Write BF16 accumulator values to a shared-memory view";
+  let arguments = (ins AnyTensor:$accumulator, AnyMemRef:$destination,
+                   StrAttr:$site_id, StrAttr:$contract_sha256,
+                   StrAttr:$policy_sha256, StrAttr:$manifest_sha256);
+}
+
+def Mx_WaitOp : Mx_Op<"wait"> {
+  let summary = "Wait for previously issued MX commands before a Muon consumer";
+  let arguments = (ins StrAttr:$site_id, StrAttr:$contract_sha256,
+                   StrAttr:$policy_sha256, StrAttr:$manifest_sha256);
+}
+
 def Mx_RequantizeOp : Mx_Op<"requantize"> {
   let summary = "Requantize accumulator output for an on-chip consumer";
   let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id, StrAttr:$format,

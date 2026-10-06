@@ -30,6 +30,8 @@ static LogicalResult verifyBinding(Operation *op, bool requiresFormat) {
 LogicalResult EncodeOp::verify() { return verifyBinding(*this, true); }
 LogicalResult ContractOp::verify() { return verifyBinding(*this, true); }
 LogicalResult ReadoutBF16Op::verify() { return verifyBinding(*this, false); }
+LogicalResult ReadoutToSmemOp::verify() { return verifyBinding(*this, false); }
+LogicalResult WaitOp::verify() { return verifyBinding(*this, false); }
 LogicalResult RequantizeOp::verify() { return verifyBinding(*this, true); }
 
 #define GET_OP_CLASSES
