@@ -1,5 +1,11 @@
 # MX Gemmini software contract and MLIR handoff
 
+The MLIR dialect now includes `readout_to_smem` and `wait` operations for
+an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
+package verifies their ordering with Muon fences and barriers against a
+selected SoC profile. These operations are contract IR only; executable MX
+command lowering still needs to be implemented and qualified.
+
 This out-of-tree compiler prototype is scoped to
 `GemminiMxFPConfigs.standaloneMxFPConfig` at Gemmini
 `f0167390b56fb315deea90ac1fc3983772e92d82` and MxGen
@@ -12,7 +18,7 @@ remain unreviewed.
 
 The [quantization handoff](docs/quantization_handoff.md) defines the selected
 software contract, explicit per-site policy, TorchAO adapter, model2MLIR
-manifest, and four-operation MX MLIR dialect. The handoff is a checked
+manifest, and MX MLIR dialect. The handoff is a checked
 operation plan. It does not execute an accelerator contraction or certify a
 whole model. The source files below retain their narrow layout and simulator
 diagnostics.

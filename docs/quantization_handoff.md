@@ -203,6 +203,11 @@ corpus, or RTL execution.
 The OOT dialect defines `mx_gemmini.encode`, `mx_gemmini.contract`,
 `mx_gemmini.readout_bf16`, and `mx_gemmini.requantize`. The latter keeps MX
 codes and E8M0 scales resident for a following contraction. Operation
+verifiers also cover `mx_gemmini.readout_to_smem` and `mx_gemmini.wait` for
+the Radiance MX-to-Muon shared-memory handoff. The Radiance composition pass
+requires a same-site wait, Muon shared-memory fence, and Muon barrier after
+that readout. These two operations have no executable MX lowering yet.
+Operation
 verifiers require the selected contract, policy, and manifest digests to
 match the enclosing module. `render_handoff` emits a verifier-readable
 operation plan and, for an output chain, a function in which the next
