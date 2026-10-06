@@ -1,0 +1,35 @@
+{
+  "schema": "mx_gemmini_model2mlir_radiance_gemm_capture.v1",
+  "status": "source_shape_frontend_handoff_only",
+  "source_revision": "a27f6abd24830fdc7999d872d170ab778f1e662e",
+  "source_generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
+  "source_shape": [
+    64,
+    64,
+    64
+  ],
+  "model2mlir_revision": "1224a05f66bee0e296f2cccc292e7d0a70b74bf6",
+  "model2mlir_source_tree_sha256": "07f6f1094893f1eebaf2b269f11afb7c9488e843d37d62f6aa06d17f392fb096",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "mxq_source_tree_sha256": "42638564df20ab9347ebaf36dd541f78ea402ddedce6aab12c3190533bb51f9d",
+  "mx_support_revision": "dc3dd616a6de534a64a1f45e5396ef0bbd466111",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "source_mlir_sha256": "00cc3cab18c52aa05eb3a1a9818932fcd2ce6d848be6c5a21499071e62880ac0",
+  "handoff_mlir_sha256": "010c0530053d7b85959b15acdbce009142d2206f7aa9a6a8de0cafda28d796fc",
+  "quantization_manifest_sha256": "631d7df8d1ceff6f7ca904f0e4876d43b50475182077ca5151322b73d61e3f76",
+  "selected_site": {
+    "site_id": "functional:matmul",
+    "kind": "functional",
+    "status": "quantized",
+    "format": "mxfp8",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "fp6_codebook_sha256": null
+  },
+  "opaque_calls": {},
+  "numerical_scope": "PyTorch inputs are not source FP8 blobs; no MX numerical parity claimed"
+}

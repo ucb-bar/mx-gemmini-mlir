@@ -1,0 +1,19 @@
+{
+  "schema": "mx_gemmini.target_profile.v1",
+  "name": "mx-gemmini-rocket-2029218",
+  "config": "MxGemminiRocketConfig",
+  "gemmini_revision": "2029218197f771ce71416f859d975bea47b7aabc",
+  "mxgen_revision": "56ef1c6810924e1cb0af07add09156b0e2f53576",
+  "source_files": {
+    "generators/gemmini/chipyard/GemminiConfigs.scala": "9b13c8b4ca78ec9e1e733a7c35fe35d8b5500bd720be072913946ba23add0893",
+    "generators/gemmini/src/main/scala/gemmini/ConfigsFP.scala": "7e246f5031606cac2259ebf3be7d9dc723b802a2b8f4ae585cc06d27c93d1c1d"
+  },
+  "mx": {
+    "formats": ["mxfp8", "mxfp6", "mxfp4"],
+    "mesh_rows": 16,
+    "mesh_columns": 16,
+    "scratchpad": "internal",
+    "requant_interface": "mmio"
+  },
+  "qualification": "candidate source-bound isolation config; executable MLIR lowering pending"
+}

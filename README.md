@@ -36,6 +36,22 @@ for explicit operand-only capture, with its `unreviewed` status preserved.
 The [candidate iteration roster](docs/iteration_roster_candidate.md) gives
 four independent MX-sized capture models and an artifact materializer.
 
+`profiles/mx-gemmini-rocket-2029218.json` identifies the standalone
+`MxGemminiRocketConfig` candidate and binds its two Chipyard source files by
+SHA-256. `tests/capture_radiance_mx_gemm.py` uses the latest model2MLIR
+`main` plus the OOT quantization adapter to capture the source-defined
+64×64×64 FP8 GEMM shape, select its functional matmul site, and render a
+verified MX dialect handoff. The pinned receipt and handoff are under
+`docs/evidence/model2mlir_radiance_mx_gemm_20261006.*`. The PyTorch inputs
+are not the handwritten FP8 code and scale blobs; this capture verifies
+frontend structure and operation selection, not numerical output parity or
+executable MX command lowering.
+
+Verify the standalone source binding with
+`python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json
+--chipyard /path/to/chipyard`. This checks the selected config chain and
+refuses drift in either hashed Scala source.
+
 `mx_gemmini_support.layout` implements:
 
 - `CONFIG_EX` activation/weight format codes;
