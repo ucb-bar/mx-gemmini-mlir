@@ -46,8 +46,8 @@ four independent MX-sized capture models and an artifact materializer.
 
 `profiles/mx-gemmini-rocket-2029218.json` identifies the standalone
 `MxGemminiRocketConfig` candidate and binds its two Chipyard source files by
-SHA-256. `tests/capture_radiance_mx_gemm.py` uses the latest model2MLIR
-`main` plus the OOT quantization adapter to capture the source-defined
+SHA-256. `tests/capture_radiance_mx_gemm.py` uses a pinned model2MLIR
+`main` revision plus the OOT quantization adapter to capture the source-defined
 64×64×64 FP8 GEMM shape, select its functional matmul site, and render a
 verified MX dialect handoff. The pinned receipt and handoff are under
 `docs/evidence/model2mlir_radiance_mx_gemm_20261006.*`. The PyTorch inputs
