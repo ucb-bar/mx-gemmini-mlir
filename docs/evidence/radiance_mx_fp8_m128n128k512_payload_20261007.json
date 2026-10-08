@@ -1,0 +1,33 @@
+{
+  "schema": "mx_gemmini.source_payload_check.v1",
+  "status": "analytical_byte_parity_not_executed",
+  "source_revision": "a27f6abd24830fdc7999d872d170ab778f1e662e",
+  "source_header": "kernels/gemm_mxgemmini/mxgemm.data.fp8.m128n128k512.h",
+  "source_header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+  "profile_name": "u250-e4m3",
+  "profile_sha256": "2acc27561a647e54a91828d443e4bad8f0859527ad066b5613225803c6f343b6",
+  "format": "mxfp8",
+  "shape": [
+    128,
+    512,
+    128
+  ],
+  "waves": [
+    {
+      "k_block_start": 0,
+      "k_block_stop": 16,
+      "activation_sha256": "c60cca00dd0e4e82da9333513dfa4a301b0b05025ad76575f9851fba37d7e4e8",
+      "weight_sha256": "53593767143c89709310f332bc88a2265e218cd6ef5ef9e55982ec09fa0c4c66",
+      "activation_scales_sha256": "7b90ea5e51e7bb3b31d95ada304a486dc71f1224bf6912006590d4ae83956e64",
+      "weight_scales_sha256": "91d5b36288d1e37990669713914c8fd46249017dd3def5df43be133fad3e9e3f",
+      "upload_functs": [
+        27,
+        27
+      ],
+      "upload_rs2": [
+        2048,
+        4294969344
+      ]
+    }
+  ]
+}

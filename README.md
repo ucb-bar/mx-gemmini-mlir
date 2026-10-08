@@ -97,6 +97,14 @@ claimed executable by this prototype.
 The packer refuses payloads above one active window. A compiler must
 schedule additional uploads and choose scale banks for larger contractions;
 that scheduling and all MX arithmetic lowering remain open.
+`tools/check_radiance_header.py` compares a caller-selected source FP8 data
+header with this OOT planner. For the checked-in Radiance
+`m128n128k512` header, every A/B code and E8M0 scale byte matches exactly,
+and the selected U250 profile admits the planned funct-27 uploads. The
+[receipt](docs/evidence/radiance_mx_fp8_m128n128k512_payload_20261007.json)
+records source/profile hashes, per-wave payload hashes, and command fields.
+This is analytical byte parity; it does not issue the contraction or compare
+the source hardware golden output.
 The FP6 transform currently accepts one configured spatial window of at most
 128 rows and columns, in multiples of 32. It requires every element code to
 appear in its assigned codebook line. Choosing codebooks or approximating
