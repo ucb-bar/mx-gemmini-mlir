@@ -3,8 +3,16 @@
 The MLIR dialect now includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a
-selected SoC profile. These operations are contract IR only; executable MX
-command lowering still needs to be implemented and qualified.
+selected SoC profile. These operations are contract IR only.
+`mx_gemmini_support.command_ir` represents checked physical command fields
+and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
+gateway. `transfer_ir.plan_uploads` binds scale and optional LUT uploads to a
+selected MX profile and materializes one command list per K wave. Operand
+tile movement, compute scheduling, readout, and numerical qualification are
+still required before the MLIR contraction is executable. The physical
+`WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
+the standalone Rocket path has no proven equivalent completion endpoint and
+refuses that primitive.
 
 This out-of-tree compiler prototype is scoped to
 `GemminiMxFPConfigs.standaloneMxFPConfig` at Gemmini
