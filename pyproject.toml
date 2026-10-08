@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "mx-gemmini-mlir"
 version = "0.1.0"
 description = "MX Gemmini software contract, TorchAO adapter and MLIR handoff"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6"]
 

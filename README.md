@@ -1,5 +1,7 @@
 # MX Gemmini software contract and MLIR handoff
 
+Licensed under Apache-2.0; see [LICENSE](LICENSE).
+
 The MLIR dialect now includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a
