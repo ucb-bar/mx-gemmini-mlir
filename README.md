@@ -54,6 +54,12 @@ verified MX dialect handoff. The pinned receipt and handoff are under
 are not the handwritten FP8 code and scale blobs; this capture verifies
 frontend structure and operation selection, not numerical output parity or
 executable MX command lowering.
+The [October 7 recapture](docs/evidence/model2mlir_radiance_mx_gemm_20261007.json)
+used the newest locally fetched model2MLIR `main` revision `7915e23` and the
+current MX issuer commit `0153e66`. It produced the same source MLIR and
+handoff SHA-256 values as the October 6 receipt, with no opaque calls. The
+GitHub head could not be refreshed in this environment, so `7915e23` is a
+local checkout identity rather than a claim about the live remote head.
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json
