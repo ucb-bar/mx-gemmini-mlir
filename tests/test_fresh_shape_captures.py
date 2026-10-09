@@ -25,6 +25,10 @@ def _sha(path: Path) -> str:
     ("fp4", FP4_SOURCE, (128, 128, 128)),
     ("fp8", SOURCE, (128, 128, 256)),
     ("fp4", FP4_SOURCE, (128, 128, 256)),
+    ("fp8", SOURCE, (128, 128, 2048)),
+    ("fp4", FP4_SOURCE, (128, 128, 2048)),
+    ("fp8", SOURCE, (128, 128, 5632)),
+    ("fp4", FP4_SOURCE, (128, 128, 5632)),
     ("fp8", SOURCE, (256, 256, 256)),
 ])
 def test_fresh_capture_binds_source_and_typed_ir(precision, source_root, shape):
@@ -53,3 +57,23 @@ def test_fresh_capture_binds_source_and_typed_ir(precision, source_root, shape):
     header = source_root / f"kernels/gemm_mxgemmini/mxgemm.data.{precision}.m{m}n{n}k{k}.h"
     if header.is_file():
         assert capture["source_data_header_sha256"] == _sha(header)
+
+
+@pytest.mark.parametrize("precision,k", [
+    ("fp8", 2048), ("fp4", 2048), ("fp8", 5632), ("fp4", 5632),
+])
+def test_long_k_source_capture_matches_executed_spike_receipt(precision, k):
+    stem = f"model2mlir_radiance_mx_{precision}_128x128x{k}"
+    capture = json.loads((EVIDENCE / f"{stem}_capture_receipt.json").read_text())
+    executed = json.loads((EVIDENCE / f"compiled_mx_{precision}_128x128x{k}_20261009.json").read_text())
+    assert executed["status"] == "source_golden_matched_on_pinned_spike"
+    assert executed["spike_exit_code"] == 0
+    assert executed["compared_bf16_outputs"] == 16384
+    assert executed["source_driver_sha256"] == capture["source_driver_sha256"]
+    assert executed["source_header_sha256"] == capture["source_data_header_sha256"]
+    assert executed["profile_sha256"] == capture["target_binding"]["profile_sha256"]
+    payload = EVIDENCE / f"{stem}_payload_bound.mlir"
+    assert executed["bound_mlir_sha256"] == _sha(payload)
+    payload_text = payload.read_text()
+    assert capture["source_mlir_sha256"] in payload_text
+    assert executed["payload_manifest_sha256"] in payload_text

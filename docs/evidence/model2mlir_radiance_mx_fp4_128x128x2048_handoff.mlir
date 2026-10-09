@@ -1,0 +1,7 @@
+module attributes {mx.contract_sha256 = "9aed93eb5784b455d01c10838ac6960857ea4d10db876fb7b218b8e34d842e0e", mx.policy_sha256 = "817bd66f35edc1f4e3fb4729e7439a0387ed6e780b445ec375d260a35d98a6ab", prov.quantization_manifest_sha256 = "445026cbc8c815915a65cabab0136ee9e72bef71373f606c2971a25b71b8ef5f", prov.quantization = "external:mx_gemmini", mx.source_mlir_sha256 = "433bf6f4b02e5f511ec566796cb1a7fcb1893bddbbb75810a74f06dfea475c12"} {
+  func.func @site_0(%a: tensor<?x?xi8>, %as: tensor<?x?xi8>, %b: tensor<?x?xi8>, %bs: tensor<?x?xi8>) -> tensor<?x?xbf16> {
+    %acc = "mx_gemmini.contract"(%a, %as, %b, %bs) {site_id = "functional:matmul", format = "mxfp4", contract_sha256 = "9aed93eb5784b455d01c10838ac6960857ea4d10db876fb7b218b8e34d842e0e", policy_sha256 = "817bd66f35edc1f4e3fb4729e7439a0387ed6e780b445ec375d260a35d98a6ab", manifest_sha256 = "445026cbc8c815915a65cabab0136ee9e72bef71373f606c2971a25b71b8ef5f"} : (tensor<?x?xi8>, tensor<?x?xi8>, tensor<?x?xi8>, tensor<?x?xi8>) -> tensor<?x?xbf16>
+    %out = "mx_gemmini.readout_bf16"(%acc) {site_id = "functional:matmul", contract_sha256 = "9aed93eb5784b455d01c10838ac6960857ea4d10db876fb7b218b8e34d842e0e", policy_sha256 = "817bd66f35edc1f4e3fb4729e7439a0387ed6e780b445ec375d260a35d98a6ab", manifest_sha256 = "445026cbc8c815915a65cabab0136ee9e72bef71373f606c2971a25b71b8ef5f"} : (tensor<?x?xbf16>) -> tensor<?x?xbf16>
+    func.return %out : tensor<?x?xbf16>
+  }
+}

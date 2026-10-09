@@ -84,9 +84,13 @@ generator, not execution of the original driver at that size.
 | FP8 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp8_64x64x128_20261009.json) |
 | FP8 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x256_20261009.json) |
 | FP8 256×256×256, four 128×128 output tiles | MX+VPU E4M3/FP4 | 65,536 | [receipt](evidence/compiled_mx_fp8_256x256x256_20261009.json) |
+| FP8 128×128×2048, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x2048_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x2048_20261009.json) |
+| FP8 128×128×5632, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x5632_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x5632_20261009.json) |
 | FP4 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp4_64x64x128_20261009.json) |
 | FP4 128×128×128, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp4_128x128x128_20261009.json) |
 | FP4 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp4_128x128x256_20261009.json) |
+| FP4 128×128×2048, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x2048_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x2048_20261009.json) |
+| FP4 128×128×5632, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x5632_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x5632_20261009.json) |
 | FP6 128×128×2048, K tile 128 | E3M2 LUT, no VPU | 16,384 | [receipt](evidence/compiled_mx_fp6_128x128x2048_20261009.json) |
 
 Each receipt records a zero-mismatch pinned Spike run. Independent output
@@ -96,6 +100,14 @@ K tile sizes and FP4 64×64×128.
 The FP8 K tile 256 run tests a distinct schedule over the same source data;
 the 256-deep runs use fresh PyTorch/model2MLIR captures and generated source
 headers.
+The 2048- and 5632-deep FP8/FP4 runs likewise use fresh captures and headers
+generated at Radiance revision `94ba7ca8afe213b92fa2428689fa64800c8eeca9`
+with `gen_mxgemm_data.py <fp8|fp4> 128 128 <2048|5632>`. Each Spike run
+matches all 16,384 BF16 values from its generated header. The capture receipt
+records the generator and header hashes, while the payload-bound MLIR and
+Spike receipt bind those bytes to the physical command stream. These checks
+cover long K schedules of 16 and 44 waves; they do not imply the handwritten
+source C driver was itself run on this Spike build.
 For FP6, the selected Spike LUT path ignores the alternating scale selector;
 the compiler's explicitly named `spike_serial` mode reloads scale half zero.
 `rtl_alternating` plans the target's intended halves but is not a numerical
