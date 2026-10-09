@@ -263,6 +263,20 @@ The next full-chain gate is to lower MM1 from the two-site PyTorch/model2MLIR
 capture, bind its source A1/B1 payload, and feed its resident BF16 result to
 the VPU in the same compiled program.
 
+The new `tools.capture_nicolas_chain` command captures
+`torch.matmul(torch.matmul(A, B1), B2)` with model2MLIR
+`7485a829c0195af0ec42820837d609e62e466564`. It selects two distinct
+64×64×64 MX FP8 sites, produces a profile-bound handoff accepted by
+`mx-gemmini-opt`, and reports no opaque frontend operations. Independent
+captures reproduce the source MLIR, handoff, bound MLIR, and quantization
+manifest hashes ([receipt](evidence/model2mlir_nicolas_chain_two_site_capture_20261009.json),
+[reproduction](evidence/model2mlir_nicolas_chain_two_site_capture_repro_20261009.json),
+[bound MLIR](evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir)).
+The PyTorch examples supply contraction structure; Nicolas's header supplies
+the actual packed bytes and scales. The two-site frontend artifact does not
+yet produce the first matrix's BF16 tile or connect the two sites to the
+resident VPU chain. Those are the next executable lowering steps.
+
 Reproduce the seam with:
 
 ```sh
