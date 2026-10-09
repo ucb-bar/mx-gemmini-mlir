@@ -80,7 +80,9 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
     return tuple(commands)
 
 
-def lower_resident_chain_commands(mlir_text: str, profile: dict) -> tuple[Command | Fence, ...]:
+def lower_resident_chain_commands(mlir_text: str, profile: dict, *,
+                                  expected_sites: tuple[str, str] | None = None
+                                  ) -> tuple[Command | Fence, ...]:
     """Require an ordered typed VPU, resident requant, and second contract."""
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
@@ -103,6 +105,10 @@ def lower_resident_chain_commands(mlir_text: str, profile: dict) -> tuple[Comman
             "mx_gemmini.resident_contract"]:
         raise ValueError("resident chain operation order differs")
     vpu, requant, contract = ops
+    if expected_sites is not None and [
+            _text_attr(op, "site_id") for op in ops] != [
+                expected_sites[0], expected_sites[0], expected_sites[1]]:
+        raise ValueError("resident chain sites differ from frontend contractions")
     if (_int_attr(vpu, "dst_row") != _int_attr(requant, "source_row") or
             _int_attr(requant, "destination_row") != _int_attr(contract, "activation_row") or
             not _bool_attr(requant, "resident") or not _bool_attr(requant, "tiled") or

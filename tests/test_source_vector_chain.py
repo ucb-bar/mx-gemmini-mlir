@@ -140,3 +140,31 @@ def test_resident_chain_refuses_broken_handoff_and_source_drift(tmp_path):
     with pytest.raises(ValueError, match="resident second contraction changed"):
         capture_nicolas_vpu_requant(source, HEADER, profile,
                                     include_resident_matmul=True)
+
+
+def test_two_site_frontend_lowers_full_matrix_vpu_requant_matrix_chain(tmp_path):
+    if not SOURCE.is_file() or not HEADER.is_file():
+        pytest.skip("requires Nicolas's pinned chain source and header")
+    profile = _profile()
+    first_source = RTL / "software/gemmini-rocc-tests/bareMetalC/matmul_tiled_fp8_64x64_chain.c"
+    frontend = (ROOT / "docs/evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir").read_text()
+    mlir, resources, facts = capture_nicolas_vpu_requant(
+        SOURCE, HEADER, profile, include_resident_matmul=True,
+        first_source_path=first_source)
+    assert len(resources["a1_activation"]) == len(resources["b1_weight"]) == 4096
+    assert len(resources["a1_scales"]) == len(resources["b1_scales"]) == 128
+    assert "functional:matmul_1" in mlir
+    assert "excludes first matmul" not in facts["source_scope"]
+    receipt = write_resident_chain_sources(tmp_path / "full", mlir, profile,
+                                            resources, facts, frontend_mlir=frontend)
+    assert receipt["schema"] == "mx_gemmini.full_chain_sources.v1"
+    issuer = (tmp_path / "full/mx_issue.c").read_text()
+    driver = (tmp_path / "full/mx_driver.c").read_text()
+    assert "a1_activation" in issuer and "b1_weight" in issuer
+    assert "c1_bf16_observed" in issuer
+    assert "lowered full chain: C1 BF16" in driver
+    assert "matmul_fp8_64x64_chain.h" not in issuer + driver
+    with pytest.raises(ValueError, match="sites differ"):
+        write_resident_chain_sources(tmp_path / "bad", mlir.replace(
+            'site_id = "functional:matmul_1"', 'site_id = "wrong"'), profile,
+            resources, facts, frontend_mlir=frontend)

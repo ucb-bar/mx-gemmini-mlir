@@ -9,7 +9,7 @@ import shutil
 import subprocess
 
 from mx_gemmini_support.source_vector_chain import capture_nicolas_vpu_requant
-from mx_gemmini_support.target_profile import load_profile
+from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.vector_standalone import (write_resident_chain_sources,
                                                    write_vector_requant_sources)
 from tools.compile_mx import _git_revision, _require_gitlink, _run, _sha, _source_closure
@@ -24,9 +24,17 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--with-resident-matmul", action="store_true",
                         help="continue the typed VPU/requant chain through resident MM2")
+    parser.add_argument("--frontend-bound-mlir", type=Path,
+                        help="two-site model2MLIR profile-bound handoff for MM1")
+    parser.add_argument("--frontend-receipt", type=Path,
+                        help="capture receipt binding the frontend handoff to Nicolas's source")
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
+    if bool(args.frontend_bound_mlir) != bool(args.frontend_receipt):
+        parser.error("--frontend-bound-mlir and --frontend-receipt are required together")
+    if args.frontend_bound_mlir and not args.with_resident_matmul:
+        parser.error("the frontend chain requires --with-resident-matmul")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     software = args.rtl_root / "software/gemmini-rocc-tests"
     extension = args.rtl_root / "software/libgemmini"
@@ -34,18 +42,38 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/libgemmini")
     source = software / "bareMetalC/chain_vpu_spad_requant.c"
     header = software / "include/matmul_fp8_64x64_chain.h"
+    frontend_mlir = None
+    if args.frontend_bound_mlir:
+        frontend_mlir = args.frontend_bound_mlir.read_text()
+        frontend_receipt = json.loads(args.frontend_receipt.read_text())
+        if (frontend_receipt.get("status") != "two_site_frontend_handoff_only" or
+                frontend_receipt.get("bound_mlir_sha256") !=
+                _sha(args.frontend_bound_mlir) or
+                frontend_receipt.get("source_sha256") != _sha(source) or
+                frontend_receipt.get("header_sha256") != _sha(header) or
+                frontend_receipt.get("profile_sha256") != profile_sha256(profile)):
+            raise ValueError("frontend capture receipt differs from selected source or profile")
+    first_source = (software / "bareMetalC/matmul_tiled_fp8_64x64_chain.c"
+                    if frontend_mlir is not None else None)
     mlir, resources, facts = capture_nicolas_vpu_requant(
-        source, header, profile, include_resident_matmul=args.with_resident_matmul)
+        source, header, profile, include_resident_matmul=args.with_resident_matmul,
+        first_source_path=first_source)
     args.out_dir.mkdir(parents=True)
     mlir_path = args.out_dir / "source_bound.mlir"
     mlir_path.write_text(mlir)
+    if frontend_mlir is not None:
+        (args.out_dir / "frontend_bound.mlir").write_text(frontend_mlir)
     if args.mx_opt is not None:
         _run([str(args.mx_opt.resolve()), str(mlir_path), "-o", "/dev/null"],
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
     build = args.out_dir / "build"
     writer = (write_resident_chain_sources if args.with_resident_matmul else
               write_vector_requant_sources)
-    receipt = writer(build, mlir, profile, resources, facts)
+    if frontend_mlir is None:
+        receipt = writer(build, mlir, profile, resources, facts)
+    else:
+        receipt = writer(build, mlir, profile, resources, facts,
+                         frontend_mlir=frontend_mlir)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -84,16 +112,19 @@ def main() -> None:
                             stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    marker = ("lowered resident chain: C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
-              if args.with_resident_matmul else
-              "lowered VPU requant 64x64: 0 FP8 code mismatches, 0 E8M0 scale mismatches")
+    if frontend_mlir is not None:
+        scope = "source_full_chain"
+        marker = "lowered full chain: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
+    elif args.with_resident_matmul:
+        scope = "source_resident_chain"
+        marker = "lowered resident chain: C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
+    else:
+        scope = "source_vector_seam"
+        marker = "lowered VPU requant 64x64: 0 FP8 code mismatches, 0 E8M0 scale mismatches"
     passed = result.returncode == 0 and marker in result.stdout
     compiler_root = Path(__file__).resolve().parents[1]
     receipt.update({
-        "status": ("source_resident_chain_matched_on_pinned_spike" if passed else
-                   "source_resident_chain_failed_on_pinned_spike") if args.with_resident_matmul else
-                  ("source_vector_seam_matched_on_pinned_spike" if passed else
-                   "source_vector_seam_failed_on_pinned_spike"),
+        "status": f"{scope}_{'matched' if passed else 'failed'}_on_pinned_spike",
         "source_revision": _git_revision(software),
         "rtl_revision": _git_revision(args.rtl_root),
         "gemmini_extension_revision": _git_revision(extension),
@@ -108,6 +139,10 @@ def main() -> None:
         "compared_fp8_codes": 8192 if args.with_resident_matmul else 4096,
         "compared_e8m0_scales": 256 if args.with_resident_matmul else 128,
     })
+    if frontend_mlir is not None:
+        receipt["compared_bf16_values"] = 4096
+        receipt["frontend_bound_mlir_sha256"] = _sha(args.out_dir / "frontend_bound.mlir")
+        receipt["frontend_capture_receipt_sha256"] = _sha(args.frontend_receipt)
     (build / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
     if not passed:
