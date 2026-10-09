@@ -36,6 +36,11 @@ All 81 configurations exported from Nicolas's current `gemmini-mx-cleanup`
 source have 256 KiB scratchpads. None is an exact 128 KiB hardware match for
 the checked-in handwritten library; the trace below applies that library's
 command formulas to a separately selected 256 KiB target layout.
+The source MMIO header also places alternate E8M0 scale buffers 2 KiB apart.
+The selected target has a 16 KiB scale memory split into 4 KiB halves. The
+funct-27 2-D DMA plan loads each 512-byte A/B K-wave slice to destination 0 or
+4096, matching the target controller's half-selection bit. It skips the
+handwritten loop's unused upload after the final K wave.
 
 Capture the feasible source shape from PyTorch with the selected model2MLIR
 checkout, then bind its typed MX handoff to the RTL profile:
@@ -55,8 +60,8 @@ python tests/capture_radiance_mx_gemm.py \
 The capture receipt records the source driver, data header, latest model2MLIR
 revision, quantization site, source tile schedule, target placement, and bound
 MLIR digest. The captured PyTorch values differ from the handwritten FP8 code
-and E8M0 scale arrays. This checks operation and schedule structure; matrix
-command lowering and numerical parity against the source golden remain open.
+and E8M0 scale arrays. This capture checks operation and schedule structure;
+the separate diagnostic below loads the source's actual values.
 
 The checked-in [source ladder audit](evidence/source_gemm_ladder_20261009.json)
 records each driver and its source and target layout. The representative
@@ -83,7 +88,35 @@ python -m tools.trace_source_gemm_loops \
 The [checked-in trace](evidence/model2mlir_radiance_mx_gemm_loop_trace_20261009.json)
 contains four prefetch packets and four compute packets, each expanded to the
 source macro's bounds (funct 9), scratchpad A/B (funct 24), and loop launch
-(funct 8) fields. Four scale-selector packets use funct 26. It checks the
+(funct 8) fields. Four scale-selector packets use funct 26. Eight target
+funct-27 packets describe the A/B scale uploads for the four waves. It checks the
 Gemmini software header against the RTL repo's pinned submodule and the
-Radiance MMIO skip-bit macro. It leaves configuration, E8M0/LUT writes,
-fences, address translation, and C move-out to subsequent lowering stages.
+Radiance MMIO skip-bit macro. Configuration, Muon shared-memory writes,
+fences, address translation, and C move-out remain outside this symbolic trace.
+
+The bounded [source-data diagnostic](evidence/source_fp8_128x128x512_20261009.c)
+uses that bound MLIR contract, the checked-in FP8 operand, E8M0, and BF16
+golden arrays, and the target's scratchpad and scale-buffer addresses. It
+serializes four K waves, moves A/B tiles explicitly, uses funct 27 for E8M0
+uploads, and checks all 16,384 BF16 outputs. Generate, build, and run it with:
+
+```sh
+python -m tools.run_source_fp8_spike \
+  --mlir docs/evidence/model2mlir_radiance_mx_gemm_bound_20261009.mlir \
+  --capture-receipt docs/evidence/model2mlir_radiance_mx_gemm_receipt_20261009.json \
+  --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp \
+  --source-root /path/to/radiance-kernels \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/mx-source-fp8-spike
+```
+
+The runner requires Nicolas's pinned `gemmini-rocc-tests`, `libgemmini`, and
+nested `riscv-tests/env` submodules. It builds the extension in the output
+directory, compiles the generated C to RV64, and runs that ELF on Spike. The
+[execution receipt](evidence/source_fp8_128x128x512_spike_20261009.json)
+records **zero BF16 mismatches** and the C, ELF, extension, input, profile,
+and tool revisions and digests. This qualifies one serial standalone Rocket
+diagnostic. A reusable MLIR matrix lowering, source-equivalent Muon MMIO issue
+schedule, mixed Radiance artifact, and RTL output check remain to be built.

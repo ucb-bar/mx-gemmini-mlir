@@ -72,6 +72,11 @@ model2MLIR checkout. Its default is the feasible 128×128×512 FP8 GEMM with
 handoff to the selected current RTL profile and records both source and target
 scratchpad placement in the receipt. `tools/match_source_gemm.py` audits the
 entire source shape ladder. See [source kernel matching](docs/source_kernel_matching.md).
+The October 9 source-bound capture uses model2MLIR revision `7485a829`.
+Its four-wave FP8 diagnostic generated from the bound MLIR and checked-in
+source data matched all 16,384 BF16 golden outputs on Nicolas's pinned Spike
+extension. The selected 256 KiB MX profile requires different scratchpad and
+scale-buffer addresses from the handwritten 128 KiB library.
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json
