@@ -17,8 +17,10 @@ scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
 operand movement, K-wave compute, and BF16 readout for one output tile.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
 output on Nicolas's pinned Spike extension. Four source schedules pass; see
-[compiled source parity](docs/compiled_mx_pipeline.md). General matrix and
-mixed VPU lowering remain open. The physical
+[compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
+executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
+goldens. General matrix and arbitrary mixed VPU/SPAD lowering remain open.
+The physical
 `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.

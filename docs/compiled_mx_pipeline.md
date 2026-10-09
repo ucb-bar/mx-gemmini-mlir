@@ -73,22 +73,38 @@ the compiler's explicitly named `spike_serial` mode reloads scale half zero.
 `rtl_alternating` plans the target's intended halves but is not a numerical
 qualification for RTL or FPGA.
 
+The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
+`mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
+Two checked [FP8](../examples/mx_fp8_vpu_x2_profile_bound.mlir) and
+[FP4](../examples/mx_fp4_vpu_x2_profile_bound.mlir) programs add an in-place
+VPU `MULS` by BF16 2.0. The expected outputs are derived independently by
+exact BF16 exponent shifts from the source BF16 golden; the checker refuses
+values for which that derivation is invalid. On Nicolas's Spike extension,
+both compiler-generated mixed command streams matched every derived output:
+[FP8 receipt](evidence/compiled_mx_fp8_vpu_x2_20261009.json) and
+[FP4 receipt](evidence/compiled_mx_fp4_vpu_x2_20261009.json). These epilogues
+were explicitly added to the model2MLIR contraction captures; they are a
+compiler composition test, not a claim that the Radiance source GEMM contains
+those VPU operations. Other VPU or SPAD_REQUANT operations lower to physical
+commands but the standalone source-golden checker rejects them until their
+result golden is bound.
+
 Nicolas's reference `vpu_ops`, `vpu_softmax`, and
 `chain_vpu_spad_requant` programs were also built and run directly against
 the pinned Spike extension. They passed all reference comparisons, including
 the fused VPU cases and the VPU→requant→matmul chain. That is model capability
 evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.json)
 records source, ELF, tool, and log hashes. The dialect's physical
-VPU/SPAD_REQUANT command lowerer is checked
-separately; a single compiler-generated mixed matrix/VPU workload and its
-golden comparison remain to be implemented.
+VPU/SPAD_REQUANT command lowerer is checked separately. The x2 epilogues above
+establish one compiler-generated matrix/VPU composition; the full
+VPU→requant→matmul chain still needs compiler output and numerical parity.
 
 ## Remaining gates
 
 1. Lower multiple output tiles, quantized readout, asymmetric legal modes,
    and the remaining source shapes from model2MLIR captures.
-2. Compose matrix, VPU, and SPAD_REQUANT operations in one MLIR program with
-   explicit scratchpad lifetimes and source numerical goldens.
+2. Compose the full matrix→VPU→SPAD_REQUANT→matrix chain in one MLIR program
+   with explicit scratchpad lifetimes and source numerical goldens.
 3. Qualify every legal mode class on the matching Spike/RTL configuration,
    and keep unsupported profile combinations rejected. FP6+VPU requires a
    new RTL configuration and profile before it can be advertised.

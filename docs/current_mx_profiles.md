@@ -29,7 +29,10 @@ before emitting a Rocket RoCC C issuer. A separate source-bound BF16 matrix
 lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
 profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
-Mixed matrix/VPU scheduling and Radiance MMIO composition remain open.
+The source-bound compiler also orders one in-place BF16 VPU epilogue after
+the matrix K waves; FP8 and FP4 ×2 runs match their exact derived goldens on
+Spike. General matrix/VPU/SPAD scheduling and Radiance MMIO composition remain
+open.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config
