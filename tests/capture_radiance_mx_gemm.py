@@ -1,7 +1,7 @@
 """Capture a Radiance MX GEMM shape through current model2MLIR and the MX adapter.
 
 This is a structural frontend/handoff test. The PyTorch inputs do not reproduce
-the handwritten FP8 code and scale blobs; native MX output must later be
+the handwritten MX code and scale blobs; native MX output must later be
 checked against radiance-kernels' mx_golden rather than ideal torch.matmul.
 """
 from __future__ import annotations
@@ -42,6 +42,7 @@ def main() -> None:
     parser.add_argument("--radiance-opt", type=Path, required=True)
     parser.add_argument("--profile", type=Path)
     parser.add_argument("--rtl-root", type=Path)
+    parser.add_argument("--policy", type=Path)
     args = parser.parse_args()
     if bool(args.profile) != bool(args.rtl_root):
         parser.error("--profile and --rtl-root must be supplied together")
@@ -59,8 +60,8 @@ def main() -> None:
     if not driver.is_relative_to(source_root):
         parser.error("source driver must be inside the selected radiance-kernels checkout")
     kernel = read_source_gemm(driver)
-    if kernel.datatype != "FP8" or not kernel.data_header_present:
-        parser.error("this capture requires a source FP8 driver with checked-in data")
+    if kernel.datatype not in ("FP8", "FP4") or not kernel.data_header_present:
+        parser.error("this capture requires a source FP8/FP4 driver with data")
     source_plan = plan_source_gemm(
         kernel, scratchpad_bytes=source_scratchpad_bytes(
             source_root / "lib/mxgemm/mxgemm_lib.hpp"))
@@ -86,8 +87,9 @@ def main() -> None:
     assert spec and spec.loader
     source_data = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(source_data)
-    if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in source_data.MISSING_FP8:
-        raise RuntimeError("the chosen FP8 GEMM shape is absent from source generator")
+    generated_shapes = source_data.MISSING_FP8 if kernel.datatype == "FP8" else source_data.MISSING_FP4
+    if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in generated_shapes:
+        raise RuntimeError("the chosen GEMM shape is absent from source generator")
 
     class Gemm(torch.nn.Module):
         def forward(self, lhs: torch.Tensor, rhs: torch.Tensor) -> torch.Tensor:
@@ -98,7 +100,9 @@ def main() -> None:
         lhs = torch.randn((shape[0], shape[1]), dtype=torch.float32)
         rhs = torch.randn((shape[1], shape[2]), dtype=torch.float32)
     contract = support_root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
-    policy = support_root / "examples/default-policy.yaml"
+    policy = args.policy or support_root / ("examples/fp4-policy.yaml" if kernel.datatype == "FP4"
+                                           else "examples/default-policy.yaml")
+    policy = policy.resolve()
     result = m2m.convert(
         Gemm().eval(), (lhs, rhs),
         quantization=ExternalQuantizationConfig("mx_gemmini", contract, policy),
@@ -112,7 +116,8 @@ def main() -> None:
     sites = result.quantization_manifest["sites"]
     if len(sites) != 1 or any(sites[0].get(key) != value for key, value in {
             "site_id": "functional:matmul", "status": "quantized",
-            "format": "mxfp8", "shape": list(kernel.shape)}.items()):
+            "format": "mxfp8" if kernel.datatype == "FP8" else "mxfp4",
+            "shape": list(kernel.shape)}.items()):
         raise RuntimeError(f"MX contraction site was not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -157,6 +162,11 @@ def main() -> None:
         "source_driver": str(driver.relative_to(source_root)),
         "source_driver_sha256": sha(driver),
         "source_data_header_sha256": sha(kernel.data_header),
+        "source_data_header_origin": "tracked" if subprocess.run(
+            ["git", "-C", str(source_root), "ls-files", "--error-unmatch",
+             str(kernel.data_header.relative_to(source_root))],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+            else "generated_or_untracked",
         "source_shape": list(kernel.shape),
         "source_tile": list(kernel.tile),
         "source_layout": {key: source_plan[key] for key in (
@@ -173,7 +183,7 @@ def main() -> None:
         "quantization_manifest_sha256": sha(out / "quantization_manifest.json"),
         "selected_site": sites[0], "opaque_calls": opaque,
         "target_binding": target_receipt,
-        "numerical_scope": "PyTorch inputs are not source FP8 blobs; no MX numerical parity claimed",
+        "numerical_scope": "PyTorch inputs are not source MX blobs; no MX numerical parity claimed",
         "lowering_scope": "source-derived tile schedule and typed MX handoff; matrix command lowering absent",
     }
     destination = out / "receipt.json"

@@ -1,0 +1,5 @@
+schema: mx_gemmini.quantization_policy.v1
+default_format: mxfp4
+module_overrides: {}
+functional_overrides: {}
+output_chains: {}
