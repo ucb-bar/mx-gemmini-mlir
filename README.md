@@ -2,10 +2,13 @@
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE).
 
-The MLIR dialect now includes `readout_to_smem` and `wait` operations for
+The MLIR dialect includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a
-selected SoC profile. These operations are contract IR only.
+selected SoC profile. Matrix contraction and handoff operations are contract IR.
+The new physical `vpu_execute` and `spad_requant` operations lower to Rocket
+RoCC commands for source-bound DIM16 MX+VPU profiles; see
+[current MX profiles and VPU lowering](docs/current_mx_profiles.md).
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. `transfer_ir.plan_uploads` binds scale and optional LUT uploads to a
@@ -16,7 +19,7 @@ still required before the MLIR contraction is executable. The physical
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.
 
-This out-of-tree compiler prototype is scoped to
+The existing quantization contract and numeric diagnostics are scoped to
 `GemminiMxFPConfigs.standaloneMxFPConfig` at Gemmini
 `f0167390b56fb315deea90ac1fc3983772e92d82` and MxGen
 `a27ce3cd81513210c21f971ec3977defd13fa21e`. It carries an explicitly
@@ -24,7 +27,9 @@ selectable Merlin support provider with an empty executable capability claim.
 It has no Merlin runtime backend, matrix lowering, oracle, or certified fact
 bundle. Its layout rules are source-derived; narrow payload-to-RTL
 diagnostics are described below. Other shapes and general command scheduling
-remain unreviewed.
+remain unreviewed. Separate structural profiles now cover 41 Gemmini fragments
+and 40 Chipyard wrappers at Gemmini `266c593` and MxGen `dba3e7e`; those profiles
+do not inherit the older contract's numerical qualification.
 
 The [quantization handoff](docs/quantization_handoff.md) defines the selected
 software contract, explicit per-site policy, TorchAO adapter, model2MLIR

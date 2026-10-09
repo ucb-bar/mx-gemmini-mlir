@@ -12,7 +12,11 @@ class Mx_Op<string mnemonic> : Op<MxGemmini_Dialect, mnemonic> {
 
 def Mx_EncodeOp : Mx_Op<"encode"> {
   let summary = "Prepare packed operand codes and E8M0 scales";
-  let arguments = (ins AnyTensor:$source, StrAttr:$site_id, StrAttr:$format,
+  let arguments = (ins AnyTensor:$source, StrAttr:$site_id,
+                   OptionalAttr<StrAttr>:$format,
+                   OptionalAttr<StrAttr>:$element_format,
+                   OptionalAttr<StrAttr>:$projection,
+                   OptionalAttr<StrAttr>:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
   let results = (outs AnyTensor:$codes, AnyTensor:$scales);
@@ -22,7 +26,13 @@ def Mx_ContractOp : Mx_Op<"contract"> {
   let summary = "Accumulate an MX contraction in the selected mesh";
   let arguments = (ins AnyTensor:$lhs_codes, AnyTensor:$lhs_scales,
                    AnyTensor:$rhs_codes, AnyTensor:$rhs_scales,
-                   StrAttr:$site_id, StrAttr:$format,
+                   StrAttr:$site_id, OptionalAttr<StrAttr>:$format,
+                   OptionalAttr<StrAttr>:$activation_format,
+                   OptionalAttr<StrAttr>:$weight_format,
+                   OptionalAttr<StrAttr>:$activation_projection,
+                   OptionalAttr<StrAttr>:$weight_projection,
+                   OptionalAttr<I32Attr>:$pe_mode,
+                   OptionalAttr<StrAttr>:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
   let results = (outs AnyTensor:$accumulator);
@@ -31,6 +41,7 @@ def Mx_ContractOp : Mx_Op<"contract"> {
 def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
   let summary = "Read BF16 from the accumulator";
   let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id,
+                   OptionalAttr<StrAttr>:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
   let results = (outs AnyTensor:$value);
@@ -39,20 +50,49 @@ def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
 def Mx_ReadoutToSmemOp : Mx_Op<"readout_to_smem"> {
   let summary = "Write BF16 accumulator values to a shared-memory view";
   let arguments = (ins AnyTensor:$accumulator, AnyMemRef:$destination,
-                   StrAttr:$site_id, StrAttr:$contract_sha256,
+                   StrAttr:$site_id, OptionalAttr<StrAttr>:$profile_sha256,
+                   StrAttr:$contract_sha256,
                    StrAttr:$policy_sha256, StrAttr:$manifest_sha256);
 }
 
 def Mx_WaitOp : Mx_Op<"wait"> {
   let summary = "Wait for previously issued MX commands before a Muon consumer";
-  let arguments = (ins StrAttr:$site_id, StrAttr:$contract_sha256,
+  let arguments = (ins StrAttr:$site_id, OptionalAttr<StrAttr>:$profile_sha256,
+                   StrAttr:$contract_sha256,
                    StrAttr:$policy_sha256, StrAttr:$manifest_sha256);
 }
 
 def Mx_RequantizeOp : Mx_Op<"requantize"> {
   let summary = "Requantize accumulator output for an on-chip consumer";
-  let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id, StrAttr:$format,
+  let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id,
+                   OptionalAttr<StrAttr>:$format,
+                   OptionalAttr<StrAttr>:$output_format,
+                   OptionalAttr<StrAttr>:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
   let results = (outs AnyTensor:$codes, AnyTensor:$scales);
+}
+
+def Mx_VpuExecuteOp : Mx_Op<"vpu_execute"> {
+  let summary = "Issue a source-bound BF16 scratchpad VPU command";
+  let arguments = (ins StrAttr:$site_id, StrAttr:$kind,
+                   I32Attr:$src1_row, I32Attr:$src2_row, I32Attr:$dst_row,
+                   I32Attr:$rows, I32Attr:$reduction_length,
+                   BoolAttr:$broadcast, I32Attr:$immediate_bf16,
+                   OptionalAttr<I32Attr>:$second_dst_row,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+}
+
+def Mx_SpadRequantOp : Mx_Op<"spad_requant"> {
+  let summary = "Requantize BF16 scratchpad rows into resident MX operand A";
+  let arguments = (ins StrAttr:$site_id,
+                   I32Attr:$source_row, I32Attr:$destination_row,
+                   I32Attr:$m, I32Attr:$n, StrAttr:$output_format,
+                   BoolAttr:$tiled, BoolAttr:$resident,
+                   I64Attr:$scale_dram_address,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
 }
