@@ -1,4 +1,4 @@
-"""Independent BF16-to-MXFP8 output reference for Nicolas's current convention."""
+"""Independent BF16-to-MX output references for Nicolas's current convention."""
 
 from __future__ import annotations
 
@@ -17,6 +17,10 @@ _VALUES = tuple(value for _, value in _POSITIVE_E4M3)
 _E3M1_VALUES = (0.0, 0.125, 0.25, 0.375, 0.5, 0.75,
                 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0)
 _E3M1_TO_E2M1 = (0, 0, 0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 7, 7)
+_E3M2_VALUES = tuple(
+    (mantissa * 0.0625 if exponent == 0 else
+     (1.0 + mantissa * 0.25) * 2.0 ** (exponent - 3))
+    for exponent in range(8) for mantissa in range(4))
 
 
 def _e4m3_rne(value: float) -> int:
@@ -106,4 +110,75 @@ def quantize_bf16_fp4_output(bf16_bytes: bytes, m: int, n: int) -> tuple[bytes, 
                 code = _e2m1_via_e3m1_rne(value / scale)
                 position = (row // 2) * n + col
                 packed[position] |= code << (4 if row & 1 else 0)
+    return bytes(packed), bytes(scales)
+
+
+def _bf16_rne(value: float) -> float:
+    """Round an FP32 value exactly as the Spike FP6 postpass rounds to BF16."""
+    bits = struct.unpack("<I", struct.pack("<f", value))[0]
+    rounded = ((bits + 0x7fff + ((bits >> 16) & 1)) >> 16) & 0xffff
+    return struct.unpack("<f", (rounded << 16).to_bytes(4, "little"))[0]
+
+
+def _e3m2_rne(value: float) -> int:
+    sign = 0x20 if math.copysign(1.0, value) < 0 else 0
+    magnitude = abs(value)
+    if not math.isfinite(magnitude):
+        raise ValueError("FP6 output reference requires finite BF16 values")
+    if magnitude >= _E3M2_VALUES[-1]:
+        return sign | 31
+    upper = bisect_left(_E3M2_VALUES, magnitude)
+    if upper == 0:
+        return sign
+    lower = upper - 1
+    low_gap, high_gap = magnitude - _E3M2_VALUES[lower], _E3M2_VALUES[upper] - magnitude
+    chosen = lower if low_gap < high_gap or (low_gap == high_gap and lower % 2 == 0) else upper
+    return sign | chosen
+
+
+def _e3m2_fixed(code: int) -> int:
+    exponent, mantissa = (code >> 2) & 7, code & 3
+    if exponent == 0 and mantissa == 0:
+        return 0
+    signed_exponent = -2 if exponent == 0 else exponent - 3
+    significand = (0 if exponent == 0 else 4) | mantissa
+    magnitude = (significand << ((signed_exponent + 2) & 7)) & 0xff
+    return -magnitude if code & 0x20 else magnitude
+
+
+def quantize_bf16_fp6_lut_output(bf16_bytes: bytes, m: int, n: int,
+                                  output_lut_bytes: bytes) -> tuple[bytes, bytes]:
+    """Project each row pair onto its C LUT and pack indices along M.
+
+    The finder measures distance in Nicolas's 9-bit fixed representation and
+    resolves ties by the lowest LUT index. Output E8M0 scales are row-major.
+    """
+    if (m <= 0 or m % 2 or m > 128 or n <= 0 or n % 32 or
+            len(bf16_bytes) != 2 * m * n or len(output_lut_bytes) != 64 * 12):
+        raise ValueError("BF16 FP6 output reference shape or LUT byte count is invalid")
+    lines = []
+    for pair in range(64):
+        packed = int.from_bytes(output_lut_bytes[pair * 12:(pair + 1) * 12], "little")
+        lines.append(tuple((packed >> (6 * index)) & 0x3f for index in range(16)))
+    values = [struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
+              for (word,) in struct.iter_unpack("<H", bf16_bytes)]
+    packed = bytearray(m * n // 2)
+    scales = bytearray(m * n // 32)
+    for row in range(m):
+        fixed_line = tuple(_e3m2_fixed(code) for code in lines[row // 2])
+        for group in range(n // 32):
+            begin = row * n + group * 32
+            block = values[begin:begin + 32]
+            if any(not math.isfinite(value) for value in block):
+                raise ValueError("FP6 output reference requires finite BF16 values")
+            maximum = max(abs(value) for value in block)
+            scale_code = (0 if maximum == 0 else
+                          max(0, min(254, math.frexp(maximum)[1] - 1 + 127)))
+            scale = math.ldexp(1.0, scale_code - 127)
+            scales[row * (n // 32) + group] = scale_code
+            for col, value in enumerate(block, group * 32):
+                code = _e3m2_rne(_bf16_rne(value / scale))
+                fixed = _e3m2_fixed(code)
+                index = min(range(16), key=lambda i: abs(fixed - fixed_line[i]) & 0x1ff)
+                packed[(row // 2) * n + col] |= index << (4 if row & 1 else 0)
     return bytes(packed), bytes(scales)

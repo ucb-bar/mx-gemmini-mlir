@@ -66,7 +66,7 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
     if manifest.get("output_format") is not None:
-        if manifest["output_format"] not in {"fp8_e4m3", "fp4_e2m1"}:
+        if manifest["output_format"] not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
             raise ValueError("source quantized output has an unsupported format")
         readout = readouts[0]
         function = readout.parent_op()
@@ -78,7 +78,7 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
         block = readout.parent
         assert block is not None
         m, n, _ = manifest["shape_mnk"]
-        codes_type = TensorType(i8, [m // 2 if precision == "FP4" else m, n])
+        codes_type = TensorType(i8, [m // 2 if precision in {"FP4", "FP6"} else m, n])
         scales_type = TensorType(i8, [m, n // 32])
         quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
             operands=readout.operands, result_types=[codes_type, scales_type],
@@ -90,6 +90,7 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
         block.erase_op(readout)
         function.update_function_type()
         module.attributes["mx.output_specialization"] = StringAttr(
+            "source_bf16_fp6_lut_quantized" if precision == "FP6" else
             "source_header_quantized")
     output = StringIO()
     Printer(stream=output).print_op(module)

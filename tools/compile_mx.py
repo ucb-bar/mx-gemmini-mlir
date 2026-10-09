@@ -137,9 +137,11 @@ def main() -> None:
                     if program.output_format == "fp8_e4m3" else
                     prefix + "0 FP4 packed-code mismatches, 0 E8M0 scale mismatches"
                     if program.output_format == "fp4_e2m1" else
+                    prefix + "0 FP6 packed-index mismatches, 0 E8M0 scale mismatches"
+                    if program.output_format == "fp6_e3m2" else
                     prefix + "0 BF16 mismatches")
         passed = result.returncode == 0 and expected in result.stdout
-        qualifier = ("nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1"} else
+        qualifier = ("nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
                      "derived_vpu_golden" if program.derived_expected_bf16 is not None else
                      "source_golden")
         receipt.update({
@@ -159,6 +161,9 @@ def main() -> None:
             receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
         elif program.output_format == "fp4_e2m1":
             receipt["compared_fp4_packed_bytes"] = program.shape[0] * program.shape[1] // 2
+            receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+        elif program.output_format == "fp6_e3m2":
+            receipt["compared_fp6_packed_bytes"] = program.shape[0] * program.shape[1] // 2
             receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
         else:
             receipt["compared_bf16_outputs"] = program.shape[0] * program.shape[1]

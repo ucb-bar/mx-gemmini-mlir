@@ -177,7 +177,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     output_format = manifest.get("output_format", "bf16")
     if (precision, output_format) not in {("FP8", "bf16"), ("FP4", "bf16"),
                                           ("FP6", "bf16"), ("FP8", "fp8_e4m3"),
-                                          ("FP4", "fp4_e2m1")}:
+                                          ("FP4", "fp4_e2m1"), ("FP6", "fp6_e3m2")}:
         raise ValueError("physical MX source precision and output format differ")
     quant_output = output_format != "bf16"
     plan = plan_mx_gemm(shape=shape, tile=tile, datatype=precision,
@@ -202,13 +202,16 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
             len(resources["weight"]) != b_stride * k or
             len(resources["golden_bf16"]) != m * n * 2):
         raise ValueError("physical source resources differ from packed tensor shapes")
-    quant_name = "nicolas_fp4" if precision == "FP4" else "nicolas_fp8"
-    expected_quant_bytes = m * n // (2 if precision == "FP4" else 1)
-    if quant_output and (len(resources["golden_fp8"]) != m * n or
-                         len(resources["golden_output_scales"]) != m * n // 32 or
+    quant_name = {"FP8": "nicolas_fp8", "FP4": "nicolas_fp4", "FP6": "nicolas_fp6"}[precision]
+    expected_quant_bytes = m * n // (2 if precision in {"FP4", "FP6"} else 1)
+    if quant_output and (len(resources["golden_output_scales"]) != m * n // 32 or
                          len(resources[quant_name]) != expected_quant_bytes or
                          len(resources["nicolas_output_scales"]) != m * n // 32):
         raise ValueError("physical source quantized golden differs from output shape")
+    if quant_output and precision == "FP6" and len(resources["source_fp6_packed"]) != expected_quant_bytes:
+        raise ValueError("physical FP6 source projection differs from output shape")
+    if quant_output and precision != "FP6" and len(resources["golden_fp8"]) != m * n:
+        raise ValueError("physical FP8/FP4 source golden differs from output shape")
 
     steps: list[PhysicalStep] = []
 
@@ -217,8 +220,13 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
 
     # gemmini_extended3_config_ex(..., WS, formats, BF16 output, LUT).
     fmt = {"FP8": 0, "FP6": 1, "FP4": 2}[precision]
-    config_ex = (1 << 16) | ((fmt if quant_output else 3) << 14) | (fmt << 12) | (fmt << 10) | \
-                (int(precision == "FP6") << 5) | (1 << 2)
+    config_base = (1 << 16) | (fmt << 12) | (fmt << 10) | \
+                  (int(precision == "FP6") << 5) | (1 << 2)
+    # A requant postpass modifies the accumulator storage. Keep intermediate
+    # K waves in BF16 and select the requested output encoding for the final
+    # wave only, as the handwritten last_k schedule does.
+    config_ex = config_base | ((3 if quant_output and len(plan["waves"]) > 1
+                                else fmt if quant_output else 3) << 14)
     issue("configure", _cmd(7, 0, 0))
     issue("configure", _cmd(0, config_ex, 1 << 48))
     issue("configure", _config_ld(a_stride))
@@ -243,6 +251,10 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         m_start, n_start = output_tile["m_start"], output_tile["n_start"]
         for wave in plan["waves"]:
             index = wave["index"]
+            if quant_output and index == len(plan["waves"]) - 1 and index > 0:
+                issue("configure_final_output", _cmd(0, config_base | (fmt << 14),
+                                                       1 << 48), index)
+                issue("configure_final_output", Fence(), index)
             group = wave["k_start"] // 32
             groups = tk // 32
             # The pinned Spike LUT compute path ignores selector 1; keep that
@@ -307,7 +319,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
 
         issue("readout", _config_st(dim))
         output_tile_base = output_tile["index"] * (
-            tm * tn // (2 if precision == "FP4" else 1)
+            tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
             if quant_output else tm * tn * 2)
         for row in range(0, plan["c_rows"], dim):
             offset = output_tile_base + row * dim

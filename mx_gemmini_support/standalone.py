@@ -19,11 +19,11 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     """Write a source-independent command issuer, data object, and receipt."""
     if program.mode != "spike_serial":
         raise ValueError("standalone execution is qualified only for the serial Spike mode")
-    if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1"}:
+    if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
         raise ValueError("standalone MX output format is not qualified")
     if (not program.source_golden_preserving and
             program.derived_expected_bf16 is None and
-            program.output_format not in {"fp8_e4m3", "fp4_e2m1"}):
+            program.output_format not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}):
         raise ValueError("source BF16 golden does not cover these MX VPU/requant operations")
     if any(name not in resources for name in ("activation", "weight", "activation_scales",
                                               "weight_scales", "golden_bf16")):
@@ -37,13 +37,15 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     names = tuple(sorted(referenced))
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
-    quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1"}
+    quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}
     packed_fp4 = program.output_format == "fp4_e2m1"
-    quant_name = "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
-    quant_bytes = m * n // (2 if packed_fp4 else 1)
+    packed_fp6 = program.output_format == "fp6_e3m2"
+    quant_name = "nicolas_fp6" if packed_fp6 else "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
+    quant_bytes = m * n // (2 if packed_fp4 or packed_fp6 else 1)
     if quantized:
         if (quant_name not in resources or "nicolas_output_scales" not in resources or
-                "golden_fp8" not in resources or "golden_output_scales" not in resources or
+                ("source_fp6_packed" if packed_fp6 else "golden_fp8") not in resources or
+                "golden_output_scales" not in resources or
                 m * n // 32 > 2048):
             raise ValueError("quantized output needs code and scale goldens within runtime capacity")
         runtime_declarations = (
@@ -101,7 +103,8 @@ int main(void) {{
 }}
 '''
     if quantized:
-        quant_label = "FP4 packed-code" if packed_fp4 else "FP8 code"
+        quant_label = ("FP6 packed-index" if packed_fp6 else
+                       "FP4 packed-code" if packed_fp4 else "FP8 code")
         driver = f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
@@ -159,9 +162,15 @@ int main(void) {{
         receipt["golden_basis"] = "derived_bf16_x2"
     if quantized:
         receipt["golden_basis"] = (
+            "nicolas_fp6_e3m2_lut_from_source_bf16" if packed_fp6 else
             "nicolas_fp4_e3m1_e2m1_from_source_bf16" if packed_fp4 else
             "nicolas_mxquant_po2_rne_from_source_bf16")
-        if packed_fp4:
+        if packed_fp6:
+            receipt["source_quant_code_format"] = "packed_fp6_lut_index"
+            receipt["target_quant_code_format"] = "packed_fp6_lut_index"
+            receipt["source_quant_code_differences"] = sum(
+                a != b for a, b in zip(resources["source_fp6_packed"], resources["nicolas_fp6"]))
+        elif packed_fp4:
             receipt["source_quant_code_format"] = "fp8_e4m3"
             receipt["target_quant_code_format"] = "packed_fp4_e2m1"
         else:

@@ -16,7 +16,8 @@ from pathlib import Path
 
 from .source_fp6 import _array, _bytes, read_source_fp6_payload
 from .source_gemm import SourceGemm
-from .quant_reference import quantize_bf16_fp4_output, quantize_bf16_fp8_output
+from .quant_reference import (quantize_bf16_fp4_output, quantize_bf16_fp8_output,
+                              quantize_bf16_fp6_lut_output)
 
 
 SCHEMA = "mx_gemmini.source_payload.v1"
@@ -55,7 +56,8 @@ def _product(shape: tuple[int, ...]) -> int:
     return result
 
 
-def read_source_payload(kernel: SourceGemm) -> dict[str, Resource]:
+def read_source_payload(kernel: SourceGemm, *,
+                        fp6_quantized_specialization: bool = False) -> dict[str, Resource]:
     """Read checked FP8/FP4/FP6 packed operands, scales, LUTs, and goldens."""
     if not kernel.data_header_present:
         raise ValueError("source MX payload requires a data header")
@@ -66,6 +68,8 @@ def read_source_payload(kernel: SourceGemm) -> dict[str, Resource]:
     packed = kernel.datatype != "FP8"
     if kernel.datatype not in {"FP8", "FP4", "FP6"}:
         raise ValueError("unknown source MX payload precision")
+    if fp6_quantized_specialization and (kernel.datatype != "FP6" or kernel.quant_output):
+        raise ValueError("FP6 quantized specialization requires the checked-in fullout driver")
     if kernel.datatype == "FP6":
         fp6 = read_source_fp6_payload(kernel)
         resources = {
@@ -108,6 +112,23 @@ def read_source_payload(kernel: SourceGemm) -> dict[str, Resource]:
         source, name="C_scales_row", ctype="uint8_t",
         dimensions="[MATMUL_GN][MATMUL_M]", count=n // 32 * m, maximum=255)),
         (n // 32, m), 8, "n_group_row_e8m0")
+    if fp6_quantized_specialization:
+        source_codes = bytes(_array(source, name="C_proj_hw", ctype="uint8_t",
+                                    dimensions="[64][128]", count=m * n // 2,
+                                    maximum=255))
+        current_codes, current_scales = quantize_bf16_fp6_lut_output(
+            resources["golden_bf16"].data, m, n, resources["output_lut"].data)
+        resources["source_fp6_packed"] = Resource(
+            source_codes, (m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
+        resources["nicolas_fp6"] = Resource(
+            current_codes, (m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
+        resources["nicolas_output_scales"] = Resource(
+            current_scales, (m, n // 32), 8, "row_major_n_group_e8m0")
+        source_scales = resources["output_scales"].data
+        resources["golden_output_scales"] = Resource(
+            bytes(source_scales[group * m + row]
+                  for row in range(m) for group in range(n // 32)),
+            (m, n // 32), 8, "row_major_n_group_e8m0")
     if kernel.quant_output:
         if kernel.datatype not in {"FP8", "FP4"}:
             raise ValueError("source quantized-output golden is qualified only for FP8/FP4")
@@ -139,7 +160,8 @@ def read_source_payload(kernel: SourceGemm) -> dict[str, Resource]:
 
 
 def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
-                  site_id: str, profile_sha256: str) -> dict:
+                  site_id: str, profile_sha256: str,
+                  fp6_quantized_specialization: bool = False) -> dict:
     if not site_id or len(profile_sha256) != 64:
         raise ValueError("payload needs a site ID and target profile digest")
     manifest = {
@@ -160,14 +182,27 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
         manifest["source_quant_golden_convention"] = "source_header"
         if kernel.datatype == "FP4":
             manifest["source_quant_header_format"] = "fp8_e4m3"
+    if fp6_quantized_specialization:
+        if kernel.datatype != "FP6" or kernel.quant_output:
+            raise ValueError("FP6 output specialization requires a fullout source driver")
+        manifest.update({
+            "output_format": "fp6_e3m2",
+            "output_oracle": "nicolas_fp6_e3m2_lut_po2_rne_v1",
+            "source_quant_golden_convention": "source_header_projected",
+            "source_quant_header_format": "packed_fp6_lut_index",
+            "output_specialization": "bf16_fullout_to_fp6_lut_quantized",
+        })
     return manifest
 
 
 def write_bundle(directory: Path, kernel: SourceGemm, *, site_id: str,
-                 profile_sha256: str) -> dict:
-    resources = read_source_payload(kernel)
+                 profile_sha256: str,
+                 fp6_quantized_specialization: bool = False) -> dict:
+    resources = read_source_payload(
+        kernel, fp6_quantized_specialization=fp6_quantized_specialization)
     manifest = make_manifest(kernel, resources, site_id=site_id,
-                             profile_sha256=profile_sha256)
+                             profile_sha256=profile_sha256,
+                             fp6_quantized_specialization=fp6_quantized_specialization)
     directory.mkdir(parents=True, exist_ok=False)
     for name, resource in resources.items():
         (directory / f"{name}.bin").write_bytes(resource.data)
@@ -212,20 +247,32 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         valid = ((precision == "FP8" and output_format == "fp8_e4m3" and
                   manifest.get("output_oracle") == "nicolas_mxquant_po2_rne_v1") or
                  (precision == "FP4" and output_format == "fp4_e2m1" and
-                  manifest.get("output_oracle") == "nicolas_fp4_e3m1_e2m1_v1"))
-        if (not valid or manifest.get("source_quant_golden_convention") != "source_header" or
+                  manifest.get("output_oracle") == "nicolas_fp4_e3m1_e2m1_v1") or
+                 (precision == "FP6" and output_format == "fp6_e3m2" and
+                  manifest.get("output_oracle") == "nicolas_fp6_e3m2_lut_po2_rne_v1" and
+                  manifest.get("output_specialization") == "bf16_fullout_to_fp6_lut_quantized"))
+        expected_convention = ("source_header_projected" if precision == "FP6"
+                               else "source_header")
+        if (not valid or manifest.get("source_quant_golden_convention") != expected_convention or
                 (precision == "FP4" and
-                 manifest.get("source_quant_header_format") != "fp8_e4m3")):
+                 manifest.get("source_quant_header_format") != "fp8_e4m3") or
+                (precision == "FP6" and
+                 manifest.get("source_quant_header_format") != "packed_fp6_lut_index")):
             raise ValueError("source quantized-output golden has an unsupported format")
         expected.update({
-            "golden_fp8": ((m, n), 8, "row_major_fp8_e4m3"),
             "golden_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
             "nicolas_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
         })
+        if precision != "FP6":
+            expected["golden_fp8"] = ((m, n), 8, "row_major_fp8_e4m3")
         if precision == "FP8":
             expected["nicolas_fp8"] = ((m, n), 8, "row_major_fp8_e4m3")
         else:
-            expected["nicolas_fp4"] = ((m // 2, n), 8, "packed_even_odd_m_fp4_e2m1")
+            if precision == "FP4":
+                expected["nicolas_fp4"] = ((m // 2, n), 8, "packed_even_odd_m_fp4_e2m1")
+            else:
+                expected["source_fp6_packed"] = ((m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
+                expected["nicolas_fp6"] = ((m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
     if set(manifest["resources"]) != set(expected):
         raise ValueError("MX payload resource set differs from precision requirements")
     resources = {}
@@ -233,7 +280,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         if (name not in {"activation", "weight", "activation_scales", "weight_scales",
                          "output_scales", "activation_lut", "weight_lut", "output_lut",
                          "golden_bf16", "golden_fp8", "golden_output_scales",
-                         "nicolas_fp8", "nicolas_fp4", "nicolas_output_scales"} or
+                         "nicolas_fp8", "nicolas_fp4", "nicolas_fp6",
+                         "source_fp6_packed", "nicolas_output_scales"} or
                 descriptor.get("file") != f"{name}.bin"):
             raise ValueError("MX payload bundle has an unknown resource or unsafe file")
         data = (directory / descriptor["file"]).read_bytes()
@@ -246,11 +294,15 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
             raise ValueError(f"MX payload resource {name} storage contract differs")
         Resource(data, *spec).descriptor(name)
         resources[name] = data
-    if output_format in {"fp8_e4m3", "fp4_e2m1"}:
+    if output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
         codes, scales = (quantize_bf16_fp8_output(resources["golden_bf16"], m, n)
                          if output_format == "fp8_e4m3" else
-                         quantize_bf16_fp4_output(resources["golden_bf16"], m, n))
-        name = "nicolas_fp8" if output_format == "fp8_e4m3" else "nicolas_fp4"
+                         quantize_bf16_fp4_output(resources["golden_bf16"], m, n)
+                         if output_format == "fp4_e2m1" else
+                         quantize_bf16_fp6_lut_output(
+                             resources["golden_bf16"], m, n, resources["output_lut"]))
+        name = {"fp8_e4m3": "nicolas_fp8", "fp4_e2m1": "nicolas_fp4",
+                "fp6_e3m2": "nicolas_fp6"}[output_format]
         if (resources[name] != codes or resources["nicolas_output_scales"] != scales):
             raise ValueError("Nicolas output oracle differs from bound BF16 source golden")
     return manifest, resources
