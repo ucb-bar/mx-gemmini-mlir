@@ -43,11 +43,13 @@ def _source_command_abi(header: Path, mmio: Path) -> dict[str, str]:
     h = header.read_text()
     m = mmio.read_text()
     for name, value in (("k_LOOP_WS", 8), ("k_LOOP_WS_CONFIG_BOUNDS", 9),
-                        ("k_LOOP_WS_CONFIG_SPAD_AB", 24), ("CONFIG_SCALE_MEM", 26)):
+                        ("k_LOOP_WS_CONFIG_SPAD_AB", 24), ("CONFIG_SCALE_MEM", 26),
+                        ("k_MX_LOAD_SCALES", 27)):
         if not re.search(rf'^#define {name} {value}\s*$', h, re.MULTILINE):
             raise ValueError(f"Gemmini command ABI changed: {name}")
     loop = _macro(h, "gemmini_loop_ws_spad")
     scale = _macro(h, "gemmini_mxquant_config_mvout")
+    scale_dma = _macro(h, "gemmini_mx_load_scales_2d")
     skips = _macro(m, "loop_matmul_skips")
     for fragment in (
         '((uint64_t)(K) << 32) | ((uint64_t)(J) << 16) | (uint64_t)(I)',
@@ -63,6 +65,13 @@ def _source_command_abi(header: Path, mmio: Path) -> dict[str, str]:
     ):
         if fragment not in scale:
             raise ValueError("Gemmini scale macro differs from traced command ABI")
+    for fragment in (
+        '((uint64_t)(dram_addr) & 0xFFFFFFFFFFULL) | ((uint64_t)(pitch) << 40)',
+        '((uint64_t)(rows) << 46) | ((uint64_t)(dest) << 33) | ((uint64_t)(sel) << 32)',
+        '((uint64_t)(row_bytes) & 0xFFFFFFFFu)',
+    ):
+        if fragment not in scale_dma:
+            raise ValueError("Gemmini 2-D scale DMA macro differs from traced command ABI")
     if ('(((skip_lda) | ((skip_ldb) << 1) | ((skip_ldd) << 2) | '
             '((skip_ex) << 3) | ((skip_stc) << 4)) << 3)') not in skips:
         raise ValueError("Radiance MX loop skip encoding changed")
@@ -84,6 +93,57 @@ def _software_geometry(params: Path, profile: dict) -> dict[str, int | str]:
             profile["resources"]["scratchpad_bytes"] or values["ADDR_LEN"] != 32):
         raise ValueError("Gemmini software geometry differs from selected MX profile")
     return {**values, "gemmini_params_sha256": _sha(params)}
+
+
+def _scale_half_bytes(mmio: Path, profile: dict, rtl_root: Path) -> tuple[int, int, dict]:
+    source = mmio.read_text()
+    size = re.search(r'^#define GEMMINI_SF_MEM_SIZE\s+0x([0-9a-fA-F]+)$', source, re.M)
+    if size is None or re.search(
+            r'^#define GEMMINI_SF_MEM_BUFFER_OFFSET\s+\(GEMMINI_SF_MEM_SIZE / 4\)$',
+            source, re.M) is None:
+        raise ValueError("source MX scale buffer allocation changed")
+    source_half = int(size.group(1), 16) // 4
+    config = profile["resources"].get("scale_mem_config")
+    if not isinstance(config, dict) or config.get("banks") != 8 or config.get("size_bytes") != 16384:
+        raise ValueError("target MX scale buffer geometry needs separate derivation")
+    target_half = config["size_bytes"] // 4
+    controller = rtl_root / "src/main/scala/gemmini/Controller.scala"
+    rtl = controller.read_text()
+    if ('val sq_x = Cat(sq.sel, sq.dest(12))' not in rtl or
+            'scale_loader_start.get.bits.dest  := unrolled_cmd.bits.cmd.rs2(45, 33)' not in rtl or
+            'w_out.valid       := head_rdy && sel_r' not in rtl or
+            'act_out.valid     := head_rdy && !sel_r' not in rtl):
+        raise ValueError("target MX scale DMA half-selection decode changed")
+    return source_half, target_half, {"controller_sha256": _sha(controller)}
+
+
+def _scale_dma_packets(plan: dict, *, half_bytes: int) -> list[dict]:
+    """Plan target funct-27 2-D DMA loads from source E8M0 matrix slices."""
+    m, n, _ = plan["shape"]
+    _, _, tk = plan["tile"]
+    rows = tk // 32
+    if rows <= 0 or rows > 255 or half_bytes != 4096:
+        raise ValueError("MX scale DMA row count or selected half size is unsupported")
+    packets = []
+    for wave in plan["waves"]:
+        group = wave["k_start"] // 32
+        dest = (wave["index"] & 1) * half_bytes
+        for side, columns, sel in (("A", m, 0), ("B", n, 1)):
+            if (columns % 8 or columns * rows > half_bytes or columns >= 1 << 24 or
+                    dest >= 1 << 13):
+                raise ValueError("MX E8M0 scale slice exceeds one target buffer half")
+            packets.append({
+                "phase": "prologue_scale_dma" if wave["index"] == 0 else "next_scale_dma",
+                "wave": wave["index"], "side": side, "funct": 27,
+                "rs1_dram_address": f"&{side}_scales_{'row' if side == 'A' else 'col'}[{group}][0]",
+                "rs1_static_high_bits": columns << 40,
+                "rs2": (rows << 46) | (dest << 33) | (sel << 32) | columns,
+                "row_bytes": columns, "rows": rows, "pitch_bytes": columns,
+                "destination_byte": dest,
+                "source_byte_offset": group * columns,
+                "byte_count": rows * columns,
+            })
+    return packets
 
 
 def _bound_contract(mlir_text: str, profile: dict, kernel: SourceGemm) -> str:
@@ -162,11 +222,13 @@ def trace_bound_source_gemm_loops(mlir_text: str, kernel: SourceGemm, *,
     if checked_out != pinned:
         raise ValueError("Gemmini software header differs from the selected RTL gitlink")
     site = _bound_contract(mlir_text, profile, kernel)
+    mmio = source_root / "lib/include/mxgemmini_mmio.h"
     abi = _source_command_abi(
-        rtl_root / "software/gemmini-rocc-tests/include/gemmini.h",
-        source_root / "lib/include/mxgemmini_mmio.h")
+        rtl_root / "software/gemmini-rocc-tests/include/gemmini.h", mmio)
     geometry = _software_geometry(
         rtl_root / "software/gemmini-rocc-tests/include/gemmini_params.h", profile)
+    source_scale_half, target_scale_half, scale_abi = _scale_half_bytes(
+        mmio, profile, rtl_root)
     source_bytes = source_scratchpad_bytes(source_root / "lib/mxgemm/mxgemm_lib.hpp")
     source_plan = plan_source_gemm(kernel, scratchpad_bytes=source_bytes)
     target_plan = plan_source_gemm(
@@ -198,9 +260,16 @@ def trace_bound_source_gemm_loops(mlir_text: str, kernel: SourceGemm, *,
         "wave_count": len(waves),
         "abi": abi,
         "software_geometry": geometry,
+        "scale_memory": {
+            "source_half_bytes": source_scale_half,
+            "target_half_bytes": target_scale_half,
+            "abi": scale_abi,
+            "source_trailing_upload_suppressed": True,
+        },
+        "scale_dma_packets": _scale_dma_packets(target_plan, half_bytes=target_scale_half),
         "gemmini_software_revision": checked_out,
         "packets": packets,
-        "omitted": ["configuration commands", "Muon E8M0/LUT shared-memory writes, including the source's trailing upload",
+        "omitted": ["configuration commands", "Muon E8M0/LUT shared-memory writes (target uses symbolic funct-27 E8M0 DMA instead)",
                     "Muon memory fences and busy waits", "SIMT or accumulator move-out",
                     "GPU-to-host buffer address translation"],
     }

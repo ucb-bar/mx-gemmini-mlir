@@ -6,7 +6,7 @@
   "gemmini_software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
   "omitted": [
     "configuration commands",
-    "Muon E8M0/LUT shared-memory writes, including the source's trailing upload",
+    "Muon E8M0/LUT shared-memory writes (target uses symbolic funct-27 E8M0 DMA instead)",
     "Muon memory fences and busy waits",
     "SIMT or accumulator move-out",
     "GPU-to-host buffer address translation"
@@ -213,6 +213,136 @@
       "wave": 3
     }
   ],
+  "scale_dma_packets": [
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[0][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[0][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[4][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 512,
+      "wave": 1
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[4][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 512,
+      "wave": 1
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[8][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 1024,
+      "wave": 2
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[8][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 1024,
+      "wave": 2
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[12][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 1536,
+      "wave": 3
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[12][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 1536,
+      "wave": 3
+    }
+  ],
+  "scale_memory": {
+    "abi": {
+      "controller_sha256": "5237331d09b2daf42f8f64a5336c08a7dc086d6c947a20dbfd255db3f67a634c"
+    },
+    "source_half_bytes": 2048,
+    "source_trailing_upload_suppressed": true,
+    "target_half_bytes": 4096
+  },
   "schema": "mx_gemmini.source_loop_trace.v1",
   "site_id": "functional:matmul",
   "software_geometry": {

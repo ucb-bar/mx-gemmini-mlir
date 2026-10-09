@@ -31,6 +31,19 @@ def test_four_wave_bound_handoff_traces_source_loop_packets():
     assert result["status"] == "symbolic_matrix_loop_trace_only"
     assert (result["source_layout_c_row"], result["target_layout_c_row"]) == (3072, 1024)
     assert result["wave_count"] == 4
+    assert result["scale_memory"]["source_half_bytes"] == 2048
+    assert result["scale_memory"]["target_half_bytes"] == 4096
+    scale_loads = result["scale_dma_packets"]
+    assert len(scale_loads) == 8
+    assert [(p["wave"], p["side"], p["destination_byte"]) for p in scale_loads] == [
+        (wave, side, (wave & 1) * 4096) for wave in range(4) for side in ("A", "B")]
+    assert [(p["rs1_dram_address"], p["source_byte_offset"]) for p in scale_loads[:4]] == [
+        ("&A_scales_row[0][0]", 0), ("&B_scales_col[0][0]", 0),
+        ("&A_scales_row[4][0]", 512), ("&B_scales_col[4][0]", 512)]
+    assert [p["rs2"] & (1 << 32) for p in scale_loads] == [
+        0, 1 << 32] * 4
+    assert all((p["row_bytes"], p["rows"], p["byte_count"]) == (128, 4, 512)
+               for p in scale_loads)
     packets = result["packets"]
     assert len(packets) == 28  # 4 prefetches + 4 computes, each 3 commands, and 4 scale selects.
     assert [(p["phase"], p["wave"]) for p in packets if p["funct"] == 26] == [
