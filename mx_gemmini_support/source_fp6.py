@@ -45,17 +45,17 @@ def _array(source: str, *, name: str, ctype: str, dimensions: str,
     declaration = rf"static const {ctype} {name}{re.escape(dimensions)}\s*=\s*\{{(.*?)\n\}};"
     found = re.search(declaration, source, re.DOTALL)
     if found is None:
-        raise ValueError(f"source FP6 header lacks expected {name} declaration")
+        raise ValueError(f"source header lacks expected {name} declaration")
     body = found.group(1)
     # The checked-in header uses integer literals only. Reject expressions,
     # identifiers, and malformed separators instead of interpreting C here.
     values = re.findall(r"0[xX][0-9a-fA-F]+|\d+", body)
     residue = re.sub(r"0[xX][0-9a-fA-F]+|\d+|[{},\s]", "", body)
     if residue or len(values) != count:
-        raise ValueError(f"source FP6 {name} contains nonliteral or wrong-sized data")
+        raise ValueError(f"source {name} contains nonliteral or wrong-sized data")
     decoded = tuple(int(value, 0) for value in values)
     if any(value < 0 or value > maximum for value in decoded):
-        raise ValueError(f"source FP6 {name} exceeds its declared element width")
+        raise ValueError(f"source {name} exceeds its declared element width")
     return decoded
 
 

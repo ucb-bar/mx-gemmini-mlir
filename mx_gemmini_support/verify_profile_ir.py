@@ -58,6 +58,10 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     digest = profile_sha256(profile)
     if _text_attr(module, "mx.profile_sha256") != digest:
         raise ValueError("MX module profile digest differs from selected target profile")
+    payload_digest = _text_attr(module, "mx.payload_manifest_sha256")
+    if payload_digest is not None and (len(payload_digest) != 64 or
+                                       any(c not in "0123456789abcdef" for c in payload_digest)):
+        raise ValueError("MX module payload manifest digest is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = 0
     for op in module.walk():
         name = _operation_name(op)
@@ -73,6 +77,13 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         if _text_attr(op, "profile_sha256") != digest:
             raise ValueError(f"{name}: profile digest differs from selected target profile")
         if name == "mx_gemmini.contract":
+            local_payload = _text_attr(op, "payload_manifest_sha256")
+            if payload_digest is not None:
+                if local_payload != payload_digest or _text_attr(op, "payload_origin") != \
+                        "radiance_source_header_specialization":
+                    raise ValueError("MX contract payload differs from selected source bundle")
+            elif local_payload is not None or _text_attr(op, "payload_origin") is not None:
+                raise ValueError("MX contract has a payload without module binding")
             attributes = {name: _text_attr(op, name) for name in (
                 "activation_format", "weight_format", "activation_projection", "weight_projection")}
             if any(value is None for value in attributes.values()):

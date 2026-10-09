@@ -59,6 +59,17 @@ LogicalResult EncodeOp::verify() {
 
 LogicalResult ContractOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
+  auto module = (*this)->getParentOfType<ModuleOp>();
+  auto modulePayload = module->getAttrOfType<StringAttr>("mx.payload_manifest_sha256");
+  auto localPayload = (*this)->getAttrOfType<StringAttr>("payload_manifest_sha256");
+  auto origin = (*this)->getAttrOfType<StringAttr>("payload_origin");
+  if (modulePayload || localPayload || origin) {
+    if (!modulePayload || !localPayload || !origin ||
+        modulePayload.getValue() != localPayload.getValue() ||
+        localPayload.getValue().size() != 64 ||
+        origin.getValue() != "radiance_source_header_specialization")
+      return emitOpError("source payload differs from module binding");
+  }
   auto legacy = (*this)->getAttrOfType<StringAttr>("format");
   auto act = (*this)->getAttrOfType<StringAttr>("activation_format");
   auto weight = (*this)->getAttrOfType<StringAttr>("weight_format");
