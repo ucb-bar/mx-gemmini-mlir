@@ -53,3 +53,13 @@ revision, quantization site, source tile schedule, target placement, and bound
 MLIR digest. The captured PyTorch values differ from the handwritten FP8 code
 and E8M0 scale arrays. This checks operation and schedule structure; matrix
 command lowering and numerical parity against the source golden remain open.
+
+The checked-in [source ladder audit](evidence/source_gemm_ladder_20261009.json)
+records each driver and its source and target layout. The representative
+[capture receipt](evidence/model2mlir_radiance_mx_gemm_receipt_20261009.json)
+links the [frontend MLIR](evidence/model2mlir_radiance_mx_gemm_source_20261009.mlir),
+[quantization manifest](evidence/model2mlir_radiance_mx_gemm_manifest_20261009.json),
+[MX handoff](evidence/model2mlir_radiance_mx_gemm_handoff_20261009.mlir), and
+[profile-bound MLIR](evidence/model2mlir_radiance_mx_gemm_bound_20261009.mlir)
+by SHA-256 digest. The receipt is a structural capture, not an executable
+matrix-command or numerical-parity result.
