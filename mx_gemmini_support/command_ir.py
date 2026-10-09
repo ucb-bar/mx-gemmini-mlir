@@ -25,21 +25,35 @@ class Operand:
     immediate: int | None = None
     buffer: str | None = None
     byte_offset: int = 0
+    address_mask: int | None = None
+    or_bits: int = 0
 
     def __post_init__(self) -> None:
         if (self.immediate is None) == (self.buffer is None):
             raise ValueError("MX operand needs exactly one immediate or buffer")
         if self.immediate is not None:
-            if type(self.immediate) is not int or not 0 <= self.immediate < 1 << 64 or self.byte_offset:
+            if (type(self.immediate) is not int or not 0 <= self.immediate < 1 << 64 or
+                    self.byte_offset or self.address_mask is not None or self.or_bits):
                 raise ValueError("MX immediate must fit 64 bits and have no offset")
         elif (not isinstance(self.buffer, str) or not _NAME.fullmatch(self.buffer) or
               type(self.byte_offset) is not int or self.byte_offset < 0):
             raise ValueError("MX buffer address needs a safe name and nonnegative byte offset")
+        if self.buffer is not None:
+            if (type(self.or_bits) is not int or not 0 <= self.or_bits < 1 << 64 or
+                    (self.address_mask is not None and
+                     (type(self.address_mask) is not int or
+                      self.address_mask not in ((1 << 33) - 1, (1 << 40) - 1) or
+                      self.or_bits & self.address_mask)) or
+                    (self.address_mask is None and self.or_bits)):
+                raise ValueError("MX pointer field mask or command bits are invalid")
 
     def c_expr(self) -> str:
         if self.immediate is not None:
             return f"UINT64_C(0x{self.immediate:016x})"
-        return f"((uint64_t)(uintptr_t){self.buffer} + UINT64_C({self.byte_offset}))"
+        address = f"((uint64_t)(uintptr_t){self.buffer} + UINT64_C({self.byte_offset}))"
+        if self.address_mask is None:
+            return address
+        return f"(({address} & UINT64_C(0x{self.address_mask:x})) | UINT64_C(0x{self.or_bits:x}))"
 
 
 @dataclass(frozen=True)
@@ -61,6 +75,11 @@ class Command:
 @dataclass(frozen=True)
 class WaitIdle:
     """Muon gateway busy-register completion check from gemmini_mmio.h."""
+
+
+@dataclass(frozen=True)
+class Fence:
+    """Order earlier DMA and accelerator work before dependent commands."""
 
 
 VPU_OPCODES = {
@@ -167,7 +186,8 @@ def spad_requant_command(profile: Mapping, *, source_row: int, destination_row: 
     return Command(34, Operand(immediate=rs1), Operand(immediate=rs2))
 
 
-def emit_c(commands: list[Command | WaitIdle], *, transport: str, buffers: tuple[str, ...]) -> str:
+def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
+           buffers: tuple[str, ...]) -> str:
     """Emit a freestanding command issuer with explicit runtime pointer inputs.
 
     `mx_control_base` is the selected Radiance tile's Gemmini control-register
@@ -192,7 +212,24 @@ def emit_c(commands: list[Command | WaitIdle], *, transport: str, buffers: tuple
     if transport == "rocket_rocc":
         lines.extend(("_Static_assert(sizeof(uintptr_t) == 8, \"MX Rocket commands require RV64\");", ""))
     lines.append(f"void mx_issue({', '.join(parameters) or 'void'}) {{")
+    checked = set()
     for command in commands:
+        if not isinstance(command, Command):
+            continue
+        for operand in (command.rs1, command.rs2):
+            if operand.address_mask is None:
+                continue
+            key = (operand.buffer, operand.byte_offset, operand.address_mask)
+            if key in checked:
+                continue
+            checked.add(key)
+            address = f"((uint64_t)(uintptr_t){operand.buffer} + UINT64_C({operand.byte_offset}))"
+            lines.append(f"  if ({address} & ~UINT64_C(0x{operand.address_mask:x})) __builtin_trap();")
+    for command in commands:
+        if isinstance(command, Fence):
+            lines.append('  __asm__ volatile ("fence" ::: "memory");' if transport == "rocket_rocc"
+                         else "  __sync_synchronize();")
+            continue
         if isinstance(command, WaitIdle):
             lines.append("  while (*(volatile uint32_t *)(mx_control_base + 0x20)) {}")
             continue

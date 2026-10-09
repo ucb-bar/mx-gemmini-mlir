@@ -137,12 +137,13 @@ def _destination(rows: int, a: int, b: int, c: int) -> int:
     return 0
 
 
-def plan_source_gemm(kernel: SourceGemm, *, scratchpad_bytes: int,
-                     profile: dict | None = None) -> dict:
-    """Apply GemmConfig's allocation and K-loop rules to one source driver."""
-    m, n, k = kernel.shape
-    tm, tn, tk = kernel.tile
-    named, projection, pe, values_per_byte = _DATATYPES[kernel.datatype]
+def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
+                 datatype: str, quant_output: bool, acc_to_gmem: bool,
+                 scratchpad_bytes: int, profile: dict | None = None) -> dict:
+    """Plan a physical MX tile from typed dimensions and target resources."""
+    m, n, k = shape
+    tm, tn, tk = tile
+    named, projection, pe, values_per_byte = _DATATYPES[datatype]
     dim = 16
     if (scratchpad_bytes <= 0 or scratchpad_bytes % (4 * dim) or
             tm <= 0 or tn <= 0 or tk < 32 or tm % pe or tn % pe or tk % 32 or
@@ -160,20 +161,20 @@ def plan_source_gemm(kernel: SourceGemm, *, scratchpad_bytes: int,
                     for cell in profile["legal_compute"])
         if not legal:
             raise ValueError(f"selected MX profile has no {named}/{projection} compute mode")
-        if kernel.quant_output and named not in profile["candidate_output_modes"]:
+        if quant_output and named not in profile["candidate_output_modes"]:
             raise ValueError("selected MX profile lacks the source output format")
     if m != tm or n != tn:
         raise ValueError("source mxgemm_single_output_tile does not cover multiple output tiles")
     a = tm * tk // values_per_byte // dim
     b = tk * tn // values_per_byte // dim
-    out_size = 1 if kernel.quant_output else 2
-    out_m = tm // values_per_byte if kernel.quant_output else tm
+    out_size = 1 if quant_output else 2
+    out_m = tm // values_per_byte if quant_output else tm
     c = out_m * tn * out_size // dim
     if any(size <= 0 or size * dim > scratchpad_bytes for size in (a, b, c)):
         raise ValueError("MX operand or output exceeds scratchpad")
     rows = scratchpad_bytes // dim
     dest = _destination(rows, a, b, c)
-    if dest == 0 and not kernel.acc_to_gmem:
+    if dest == 0 and not acc_to_gmem:
         raise ValueError("C does not fit beside double-buffered A/B tiles")
     quarter = rows // 4
     waves = []
@@ -189,30 +190,39 @@ def plan_source_gemm(kernel: SourceGemm, *, scratchpad_bytes: int,
             "b_scale_buffer": odd,
             "prefetch_next": index + 1 < k // tk,
             "accumulate": index > 0,
-            "move_acc_to_spad": index == k // tk - 1 and not kernel.acc_to_gmem,
+            "move_acc_to_spad": index == k // tk - 1 and not acc_to_gmem,
         })
     return {
         "schema": "mx_gemmini.source_gemm_plan.v1",
-        "driver": kernel.driver.name,
-        "driver_sha256": _sha(kernel.driver),
-        "data_header": kernel.data_header.name,
-        "data_header_sha256": _sha(kernel.data_header) if kernel.data_header_present else None,
-        "data_header_present": kernel.data_header_present,
-        "shape": list(kernel.shape), "tile": list(kernel.tile),
+        "shape": list(shape), "tile": list(tile),
         "format": named, "projection": projection,
-        "quant_output": kernel.quant_output, "acc_to_gmem": kernel.acc_to_gmem,
+        "quant_output": quant_output, "acc_to_gmem": acc_to_gmem,
         "scratchpad_bytes": scratchpad_bytes,
         "scratchpad_rows": rows,
         "a_rows": a, "b_rows": b, "c_rows": c,
         "c_spad_dest": dest,
         "a_scale_bytes_per_wave": tm * tk // 32,
         "b_scale_bytes_per_wave": tn * tk // 32,
-        "lut_once": kernel.datatype == "FP6",
-        "move_out": "acc_dma" if kernel.acc_to_gmem else "spad_simt",
+        "lut_once": datatype == "FP6",
+        "move_out": "acc_dma" if acc_to_gmem else "spad_simt",
         "prologue_order": ["configure", "prefetch_0", "upload_scales_0",
-                           "upload_lut_once" if kernel.datatype == "FP6" else "skip_lut",
+                           "upload_lut_once" if datatype == "FP6" else "skip_lut",
                            "fence_smem", "wait_idle"],
         "per_wave_order": ["configure_scale_buffers", "prefetch_next_if_any",
                            "compute", "upload_next_scales", "fence_smem", "wait_idle"],
         "waves": waves,
     }
+
+
+def plan_source_gemm(kernel: SourceGemm, *, scratchpad_bytes: int,
+                     profile: dict | None = None) -> dict:
+    """Apply the physical planner to one committed Radiance source driver."""
+    plan = plan_mx_gemm(shape=kernel.shape, tile=kernel.tile,
+                        datatype=kernel.datatype, quant_output=kernel.quant_output,
+                        acc_to_gmem=kernel.acc_to_gmem,
+                        scratchpad_bytes=scratchpad_bytes, profile=profile)
+    return {**plan, "driver": kernel.driver.name,
+            "driver_sha256": _sha(kernel.driver),
+            "data_header": kernel.data_header.name,
+            "data_header_sha256": _sha(kernel.data_header) if kernel.data_header_present else None,
+            "data_header_present": kernel.data_header_present}

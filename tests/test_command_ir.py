@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from mx_gemmini_support.command_ir import Command, Operand, WaitIdle, emit_c
+from mx_gemmini_support.command_ir import Command, Fence, Operand, WaitIdle, emit_c
 
 
 def test_rocket_and_muon_issue_same_command_fields():
@@ -32,3 +32,15 @@ def test_wait_uses_only_selected_muon_gateway_busy_register():
     assert "mx_control_base + 0x20" in source
     with pytest.raises(ValueError, match="no selected busy-register"):
         emit_c([WaitIdle()], transport="rocket_rocc", buffers=())
+
+
+def test_pointer_fields_check_high_bits_and_fence_orders_the_stream():
+    pointer = Operand(buffer="scales", byte_offset=128,
+                      address_mask=(1 << 40) - 1, or_bits=64 << 40)
+    source = emit_c([Command(27, pointer, Operand(immediate=1)), Fence()],
+                    transport="rocket_rocc", buffers=("scales",))
+    assert "~UINT64_C(0xffffffffff)" in source
+    assert "UINT64_C(0x400000000000)" in source
+    assert '__asm__ volatile ("fence" ::: "memory")' in source
+    with pytest.raises(ValueError, match="pointer field mask"):
+        Operand(buffer="scales", address_mask=(1 << 40) - 1, or_bits=1)
