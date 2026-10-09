@@ -53,10 +53,7 @@ four independent MX-sized capture models and an artifact materializer.
 
 `profiles/mx-gemmini-rocket-2029218.json` identifies the standalone
 `MxGemminiRocketConfig` candidate and binds its two Chipyard source files by
-SHA-256. `tests/capture_radiance_mx_gemm.py` uses a pinned model2MLIR
-`main` revision plus the OOT quantization adapter to capture the source-defined
-64×64×64 FP8 GEMM shape, select its functional matmul site, and render a
-verified MX dialect handoff. The pinned receipt and handoff are under
+SHA-256. The historical 64×64×64 FP8 capture receipt and handoff are under
 `docs/evidence/model2mlir_radiance_mx_gemm_20261006.*`. The PyTorch inputs
 are not the handwritten FP8 code and scale blobs; this capture verifies
 frontend structure and operation selection, not numerical output parity or
@@ -67,6 +64,14 @@ current MX issuer commit `0153e66`. It produced the same source MLIR and
 handoff SHA-256 values as the October 6 receipt, with no opaque calls. The
 GitHub head could not be refreshed in this environment, so `7915e23` is a
 local checkout identity rather than a claim about the live remote head.
+
+`tests/capture_radiance_mx_gemm.py` now reads a selected source driver and
+data header and captures that driver's dimensions through the supplied
+model2MLIR checkout. Its default is the feasible 128×128×512 FP8 GEMM with
+128-wide K tiles. With `--profile` and `--rtl-root`, it binds the typed MX
+handoff to the selected current RTL profile and records both source and target
+scratchpad placement in the receipt. `tools/match_source_gemm.py` audits the
+entire source shape ladder. See [source kernel matching](docs/source_kernel_matching.md).
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json
