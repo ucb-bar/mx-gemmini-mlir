@@ -168,6 +168,18 @@ LogicalResult SpadRequantOp::verify() {
   auto scale = row("scale_dram_address");
   if (scale < 0 || scale >= (int64_t{1} << 33))
     return emitOpError("SPAD_REQUANT scale address must fit 33 bits");
+  if (auto buffer = (*this)->getAttrOfType<StringAttr>("scale_buffer")) {
+    StringRef name = buffer.getValue();
+    if (scale != 0 || name.empty())
+      return emitOpError("SPAD_REQUANT scale buffer requires zero fixed address and a name");
+    for (size_t i = 0; i < name.size(); ++i) {
+      char c = name[i];
+      bool alpha = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+      bool digit = c >= '0' && c <= '9';
+      if (!alpha && (i == 0 || !digit))
+        return emitOpError("SPAD_REQUANT scale buffer name must be a C identifier");
+    }
+  }
   return success();
 }
 

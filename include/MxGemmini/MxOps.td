@@ -104,6 +104,7 @@ def Mx_SpadRequantOp : Mx_Op<"spad_requant"> {
                    I32Attr:$m, I32Attr:$n, StrAttr:$output_format,
                    BoolAttr:$tiled, BoolAttr:$resident,
                    I64Attr:$scale_dram_address,
+                   OptionalAttr<StrAttr>:$scale_buffer,
                    StrAttr:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);

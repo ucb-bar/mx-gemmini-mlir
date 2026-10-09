@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.command_ir import spad_requant_command, vpu_command
+from mx_gemmini_support.command_ir import Operand, emit_c, spad_requant_command, vpu_command
 from mx_gemmini_support.target_profile import load_profile
 
 
@@ -55,3 +55,28 @@ def test_spad_requant_packs_radiance_p_feed_fields():
         spad_requant_command(profile, source_row=4096, destination_row=3072,
                              m=7, n=128, output_format="fp8_e4m3", tiled=True,
                              resident=True, scale_dram_address=0x10000000)
+
+
+def test_spad_requant_runtime_scale_pointer_is_shifted_into_rtl_field():
+    profile = _profile("MxE4M3Fp4VpuGemminiRocketConfig")
+    command = spad_requant_command(
+        profile, source_row=4096, destination_row=3072, m=64, n=128,
+        output_format="fp8_e4m3", tiled=True, resident=True,
+        scale_dram_address=0, scale_buffer="c1_scales")
+    assert command.rs1 == Operand(
+        buffer="c1_scales", address_mask=(1 << 33) - 1, address_shift=30,
+        or_bits=4096 | (3072 << 14) | (1 << 28) | (1 << 29))
+    source = emit_c([command], transport="rocket_rocc", buffers=("c1_scales",))
+    assert "const void *c1_scales" in source
+    assert "<< 30" in source
+    assert "__builtin_trap" in source
+    with pytest.raises(ValueError, match="safe name and zero fixed address"):
+        spad_requant_command(profile, source_row=4096, destination_row=3072,
+                             m=64, n=128, output_format="fp8_e4m3", tiled=True,
+                             resident=True, scale_dram_address=1,
+                             scale_buffer="c1_scales")
+    with pytest.raises(ValueError, match="safe name and zero fixed address"):
+        spad_requant_command(profile, source_row=4096, destination_row=3072,
+                             m=64, n=128, output_format="fp8_e4m3", tiled=True,
+                             resident=True, scale_dram_address=0,
+                             scale_buffer="unsafe-name")

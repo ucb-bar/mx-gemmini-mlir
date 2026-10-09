@@ -43,7 +43,8 @@ def lower_vector_commands(mlir_text: str, profile: dict) -> tuple[Command, ...]:
                 m=_int_attr(op, "m"), n=_int_attr(op, "n"),
                 output_format=_text_attr(op, "output_format"),
                 tiled=_bool_attr(op, "tiled"), resident=_bool_attr(op, "resident"),
-                scale_dram_address=_int_attr(op, "scale_dram_address")))
+                scale_dram_address=_int_attr(op, "scale_dram_address"),
+                scale_buffer=_text_attr(op, "scale_buffer")))
         elif name.startswith("mx_gemmini."):
             raise ValueError(f"MX operation {name} has no physical vector lowering")
     return tuple(commands)
@@ -52,8 +53,11 @@ def lower_vector_commands(mlir_text: str, profile: dict) -> tuple[Command, ...]:
 def lower_vector_c(mlir_text: str, profile: dict) -> str:
     if profile.get("transport") != "rocket_rocc":
         raise ValueError("selected MX profile does not describe a Rocket RoCC endpoint")
-    return emit_c(list(lower_vector_commands(mlir_text, profile)),
-                  transport="rocket_rocc", buffers=())
+    commands = lower_vector_commands(mlir_text, profile)
+    buffers = tuple(sorted({operand.buffer for command in commands
+                            for operand in (command.rs1, command.rs2)
+                            if operand.buffer is not None}))
+    return emit_c(list(commands), transport="rocket_rocc", buffers=buffers)
 
 
 def main() -> None:

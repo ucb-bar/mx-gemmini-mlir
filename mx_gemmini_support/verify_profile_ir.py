@@ -132,7 +132,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                                  output_format=_text_attr(op, "output_format"),
                                  tiled=_bool_attr(op, "tiled"),
                                  resident=_bool_attr(op, "resident"),
-                                 scale_dram_address=_int_attr(op, "scale_dram_address"))
+                                 scale_dram_address=_int_attr(op, "scale_dram_address"),
+                                 scale_buffer=_text_attr(op, "scale_buffer"))
             spad_requants += 1
         elif name not in {"mx_gemmini.readout_bf16", "mx_gemmini.readout_to_smem", "mx_gemmini.wait"}:
             raise ValueError(f"unknown MX operation {name}")

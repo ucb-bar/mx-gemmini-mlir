@@ -40,12 +40,22 @@ class PhysicalProgram:
     output_format: str = "bf16"
 
     def receipt(self) -> dict:
+        steps = []
+        for step in self.steps:
+            serialized = asdict(step)
+            for field in ("rs1", "rs2"):
+                operand = serialized["command"].get(field)
+                if operand is not None and operand.get("address_shift") == 0:
+                    # Preserve v1 receipt hashes for commands that predate
+                    # buffered, shifted runtime pointers.
+                    del operand["address_shift"]
+            steps.append(serialized)
         receipt = {"schema": "mx_gemmini.physical_program.v1",
                 "profile_sha256": self.profile_sha256,
                 "payload_manifest_sha256": self.payload_manifest_sha256,
                 "mode": self.mode, "shape_mnk": list(self.shape),
                 "plan": self.plan,
-                "steps": [asdict(step) for step in self.steps]}
+                "steps": steps}
         if any(step.phase in {"vpu", "spad_requant"} for step in self.steps):
             receipt["source_golden_preserving"] = self.source_golden_preserving
         if self.derived_expected_bf16 is not None:
@@ -158,6 +168,7 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[
                 "tiled": _bool_attr(op, "tiled"),
                 "resident": _bool_attr(op, "resident"),
                 "scale_dram_address": _int_attr(op, "scale_dram_address"),
+                "scale_buffer": _text_attr(op, "scale_buffer"),
             }))
     return vector_ops
 

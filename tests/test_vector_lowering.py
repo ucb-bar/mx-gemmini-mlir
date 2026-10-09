@@ -78,3 +78,21 @@ def test_vector_mlir_refuses_illegal_row_count(tmp_path):
                                 text=True, capture_output=True)
         assert result.returncode != 0
         assert "VPU address, row count" in result.stderr
+
+
+def test_spad_requant_mlir_binds_runtime_scale_buffer(tmp_path):
+    profile = _profile("MxE4M3Fp4VpuGemminiRocketConfig")
+    ir = _vector_ir(profile).replace("scale_dram_address = 268435456 : i64",
+                                     'scale_dram_address = 0 : i64, scale_buffer = "c1_scales"')
+    commands = lower_vector_commands(ir, profile)
+    assert commands[-1].rs1.buffer == "c1_scales"
+    source = lower_vector_c(ir, profile)
+    assert "const void *c1_scales" in source
+    path = tmp_path / "buffered.c"
+    path.write_text(source)
+    subprocess.run(["cc", "-fsyntax-only", str(path)], check=True)
+    executable = Path(os.getenv("MX_GEMMINI_OPT", "build/tools/mx-gemmini-opt"))
+    if executable.exists():
+        mlir = tmp_path / "buffered.mlir"
+        mlir.write_text(ir)
+        subprocess.run([str(executable.resolve()), str(mlir), "-o", "/dev/null"], check=True)

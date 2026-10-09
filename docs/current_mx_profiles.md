@@ -25,8 +25,16 @@ VPUs with `EXPSUB` and `EXPSUM`, plus `SPAD_REQUANT`. The latter config also
 builds FP4×FP4 mode 0 beside direct E4M3 mode 8. The dialect exposes
 `mx_gemmini.vpu_execute` and `mx_gemmini.spad_requant`; the physical command
 lowerer checks profile gates, row bounds, and the RTL's funct 33/34 bitfields
-before emitting a Rocket RoCC C issuer. A separate source-bound BF16 matrix
-lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
+before emitting a Rocket RoCC C issuer.
+`spad_requant` may bind its E8M0 output destination as
+`scale_buffer = "name"` with `scale_dram_address = 0`. The issuer then takes `name` as a
+runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it
+into funct 34, and keeps the source/destination scratchpad fields separate.
+The fixed-address form remains available for known baremetal mappings.
+This pointer binding is command-level support; a compiler-generated numerical
+VPU→requant→matmul chain is still pending.
+
+A separate source-bound BF16 matrix lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
 profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
 The source-bound compiler also orders one in-place BF16 VPU epilogue after

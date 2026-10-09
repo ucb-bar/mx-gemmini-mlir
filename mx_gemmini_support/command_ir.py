@@ -26,6 +26,7 @@ class Operand:
     buffer: str | None = None
     byte_offset: int = 0
     address_mask: int | None = None
+    address_shift: int = 0
     or_bits: int = 0
 
     def __post_init__(self) -> None:
@@ -33,18 +34,21 @@ class Operand:
             raise ValueError("MX operand needs exactly one immediate or buffer")
         if self.immediate is not None:
             if (type(self.immediate) is not int or not 0 <= self.immediate < 1 << 64 or
-                    self.byte_offset or self.address_mask is not None or self.or_bits):
+                    self.byte_offset or self.address_mask is not None or
+                    self.address_shift or self.or_bits):
                 raise ValueError("MX immediate must fit 64 bits and have no offset")
         elif (not isinstance(self.buffer, str) or not _NAME.fullmatch(self.buffer) or
               type(self.byte_offset) is not int or self.byte_offset < 0):
             raise ValueError("MX buffer address needs a safe name and nonnegative byte offset")
         if self.buffer is not None:
             if (type(self.or_bits) is not int or not 0 <= self.or_bits < 1 << 64 or
+                    type(self.address_shift) is not int or not 0 <= self.address_shift < 64 or
                     (self.address_mask is not None and
                      (type(self.address_mask) is not int or
                       self.address_mask not in ((1 << 33) - 1, (1 << 40) - 1) or
-                      self.or_bits & self.address_mask)) or
-                    (self.address_mask is None and self.or_bits)):
+                      self.address_mask << self.address_shift >= 1 << 64 or
+                      self.or_bits & (self.address_mask << self.address_shift))) or
+                    (self.address_mask is None and (self.or_bits or self.address_shift))):
                 raise ValueError("MX pointer field mask or command bits are invalid")
 
     def c_expr(self) -> str:
@@ -53,7 +57,10 @@ class Operand:
         address = f"((uint64_t)(uintptr_t){self.buffer} + UINT64_C({self.byte_offset}))"
         if self.address_mask is None:
             return address
-        return f"(({address} & UINT64_C(0x{self.address_mask:x})) | UINT64_C(0x{self.or_bits:x}))"
+        masked = f"({address} & UINT64_C(0x{self.address_mask:x}))"
+        if self.address_shift:
+            masked = f"({masked} << {self.address_shift})"
+        return f"({masked} | UINT64_C(0x{self.or_bits:x}))"
 
 
 @dataclass(frozen=True)
@@ -158,7 +165,8 @@ def vpu_command(profile: Mapping, *, kind: str, src1_row: int, src2_row: int,
 
 def spad_requant_command(profile: Mapping, *, source_row: int, destination_row: int,
                          m: int, n: int, output_format: str, tiled: bool,
-                         resident: bool, scale_dram_address: int) -> Command:
+                         resident: bool, scale_dram_address: int,
+                         scale_buffer: str | None = None) -> Command:
     """Encode RTL funct 34 for the selected DIM16 VPU/SPAD_REQUANT build."""
     limit = _mx_rows(profile)
     resources = profile["resources"]
@@ -175,15 +183,22 @@ def spad_requant_command(profile: Mapping, *, source_row: int, destination_row: 
         raise ValueError("MX SPAD_REQUANT layout and residency must be Boolean")
     if type(scale_dram_address) is not int or not 0 <= scale_dram_address < 1 << 33:
         raise ValueError("MX SPAD_REQUANT scale DRAM address must fit 33 bits")
+    if scale_buffer is not None:
+        if (not isinstance(scale_buffer, str) or not _NAME.fullmatch(scale_buffer) or
+                scale_dram_address != 0):
+            raise ValueError("MX SPAD_REQUANT scale buffer requires a safe name and zero fixed address")
     _row_span("SPAD_REQUANT source", source_row, 4 * blocks, limit)
     _row_span("SPAD_REQUANT destination", destination_row,
               blocks if output_format == "fp4_e2m1" else 2 * blocks, limit)
     if source_row > 0x3fff or destination_row > 0x3fff:
         raise ValueError("MX SPAD_REQUANT address must fit 14 bits")
-    rs1 = (source_row | (destination_row << 14) | (int(tiled) << 28) |
-           (int(resident) << 29) | (scale_dram_address << 30))
+    control = source_row | (destination_row << 14) | (int(tiled) << 28) | (int(resident) << 29)
+    rs1 = (Operand(immediate=control | (scale_dram_address << 30))
+           if scale_buffer is None else
+           Operand(buffer=scale_buffer, address_mask=(1 << 33) - 1,
+                   address_shift=30, or_bits=control))
     rs2 = m | (n << 16) | (int(output_format == "fp4_e2m1") << 32)
-    return Command(34, Operand(immediate=rs1), Operand(immediate=rs2))
+    return Command(34, rs1, Operand(immediate=rs2))
 
 
 def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
