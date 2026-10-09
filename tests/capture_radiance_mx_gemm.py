@@ -15,10 +15,6 @@ import sys
 from pathlib import Path
 
 
-SOURCE_REVISION = "a27f6abd24830fdc7999d872d170ab778f1e662e"
-SHAPE = (64, 64, 64)
-
-
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -38,19 +34,38 @@ def main() -> None:
     parser.add_argument("--model2mlir-root", type=Path, required=True)
     parser.add_argument("--mxq-root", type=Path, required=True)
     parser.add_argument("--source-root", type=Path, required=True)
+    parser.add_argument("--driver", type=Path,
+                        default=Path("kernels/gemm_mxgemmini/"
+                                     "mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp"))
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--mx-opt", type=Path, required=True)
     parser.add_argument("--radiance-opt", type=Path, required=True)
+    parser.add_argument("--profile", type=Path)
+    parser.add_argument("--rtl-root", type=Path)
     args = parser.parse_args()
+    if bool(args.profile) != bool(args.rtl_root):
+        parser.error("--profile and --rtl-root must be supplied together")
     m2m_root = args.model2mlir_root.resolve()
     mxq_root = args.mxq_root.resolve()
     source_root = args.source_root.resolve()
     support_root = Path(__file__).resolve().parents[1]
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
-    if git(source_root, "rev-parse", "HEAD") != SOURCE_REVISION:
-        parser.error("radiance-kernels source differs from the pinned baseline")
-    for root in (m2m_root, mxq_root, support_root):
+    sys.path.insert(0, str(support_root))
+    from mx_gemmini_support.source_gemm import (plan_source_gemm, read_source_gemm,
+                                                source_scratchpad_bytes)
+    driver = args.driver if args.driver.is_absolute() else source_root / args.driver
+    driver = driver.resolve()
+    if not driver.is_relative_to(source_root):
+        parser.error("source driver must be inside the selected radiance-kernels checkout")
+    kernel = read_source_gemm(driver)
+    if kernel.datatype != "FP8" or not kernel.data_header_present:
+        parser.error("this capture requires a source FP8 driver with checked-in data")
+    source_plan = plan_source_gemm(
+        kernel, scratchpad_bytes=source_scratchpad_bytes(
+            source_root / "lib/mxgemm/mxgemm_lib.hpp"))
+    shape = (kernel.shape[0], kernel.shape[2], kernel.shape[1])
+    for root in (m2m_root, mxq_root):
         sys.path.insert(0, str(root))
     import m2m
     import mxq
@@ -58,6 +73,9 @@ def main() -> None:
     from m2m.capture.external_quantization import ExternalQuantizationConfig
     from m2m.coverage import opaque_report
     from mx_gemmini_support.handoff import render_handoff, validate_handoff
+    from mx_gemmini_support.bind_profile import bind_handoff
+    from mx_gemmini_support.target_profile import load_profile, profile_sha256
+    from mx_gemmini_support.verify_profile_ir import verify_ir
 
     if Path(m2m.__file__).resolve().parents[1] != m2m_root:
         raise RuntimeError("model2MLIR resolved to a different checkout")
@@ -68,7 +86,7 @@ def main() -> None:
     assert spec and spec.loader
     source_data = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(source_data)
-    if SHAPE not in source_data.MISSING_FP8:
+    if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in source_data.MISSING_FP8:
         raise RuntimeError("the chosen FP8 GEMM shape is absent from source generator")
 
     class Gemm(torch.nn.Module):
@@ -77,8 +95,8 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        lhs = torch.randn((SHAPE[0], SHAPE[2]), dtype=torch.float32)
-        rhs = torch.randn((SHAPE[2], SHAPE[1]), dtype=torch.float32)
+        lhs = torch.randn((shape[0], shape[1]), dtype=torch.float32)
+        rhs = torch.randn((shape[1], shape[2]), dtype=torch.float32)
     contract = support_root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = support_root / "examples/default-policy.yaml"
     result = m2m.convert(
@@ -94,7 +112,7 @@ def main() -> None:
     sites = result.quantization_manifest["sites"]
     if len(sites) != 1 or any(sites[0].get(key) != value for key, value in {
             "site_id": "functional:matmul", "status": "quantized",
-            "format": "mxfp8", "shape": list(SHAPE)}.items()):
+            "format": "mxfp8", "shape": list(kernel.shape)}.items()):
         raise RuntimeError(f"MX contraction site was not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -108,14 +126,43 @@ def main() -> None:
         (out / f"{name}_parse.log").write_text(completed.stdout + completed.stderr)
         if completed.returncode:
             raise RuntimeError(f"{name} dialect rejected handoff; see {name}_parse.log")
+    target_receipt = None
+    if args.profile:
+        profile = load_profile(args.profile, rtl_root=args.rtl_root)
+        target_plan = plan_source_gemm(
+            kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+            profile=profile)
+        bound = out / "mx_gemm.profile_bound.mlir"
+        bound.write_text(bind_handoff(handoff.read_text(), profile))
+        verify_ir(bound.read_text(), profile)
+        subprocess.run([str(args.mx_opt.resolve()), str(bound), "-o", "/dev/null"], check=True)
+        target_receipt = {
+            "profile_name": profile["name"],
+            "profile_sha256": profile_sha256(profile),
+            "bound_mlir_sha256": sha(bound),
+            "scratchpad_geometry_matches_source":
+                target_plan["scratchpad_bytes"] == source_plan["scratchpad_bytes"],
+            "target_layout": {key: target_plan[key] for key in (
+                "scratchpad_bytes", "a_rows", "b_rows", "c_rows", "c_spad_dest",
+                "a_scale_bytes_per_wave", "b_scale_bytes_per_wave", "lut_once", "move_out")},
+            "qualification": profile["qualification"],
+        }
     (out / "quantization_manifest.json").write_text(
         json.dumps(result.quantization_manifest, indent=2) + "\n")
     receipt = {
         "schema": "mx_gemmini_model2mlir_radiance_gemm_capture.v1",
         "status": "source_shape_frontend_handoff_only",
-        "source_revision": SOURCE_REVISION,
+        "source_revision": git(source_root, "rev-parse", "HEAD"),
         "source_generator_sha256": sha(generator),
-        "source_shape": list(SHAPE),
+        "source_driver": str(driver.relative_to(source_root)),
+        "source_driver_sha256": sha(driver),
+        "source_data_header_sha256": sha(kernel.data_header),
+        "source_shape": list(kernel.shape),
+        "source_tile": list(kernel.tile),
+        "source_layout": {key: source_plan[key] for key in (
+            "scratchpad_bytes", "a_rows", "b_rows", "c_rows", "c_spad_dest",
+            "a_scale_bytes_per_wave", "b_scale_bytes_per_wave", "lut_once", "move_out")},
+        "source_k_waves": len(source_plan["waves"]),
         "model2mlir_revision": git(m2m_root, "rev-parse", "HEAD"),
         "model2mlir_source_tree_sha256": tree_sha(m2m_root, "m2m"),
         "mxq_revision": git(mxq_root, "rev-parse", "HEAD"),
@@ -125,7 +172,9 @@ def main() -> None:
         "source_mlir_sha256": sha(source_mlir), "handoff_mlir_sha256": sha(handoff),
         "quantization_manifest_sha256": sha(out / "quantization_manifest.json"),
         "selected_site": sites[0], "opaque_calls": opaque,
+        "target_binding": target_receipt,
         "numerical_scope": "PyTorch inputs are not source FP8 blobs; no MX numerical parity claimed",
+        "lowering_scope": "source-derived tile schedule and typed MX handoff; matrix command lowering absent",
     }
     destination = out / "receipt.json"
     destination.write_text(json.dumps(receipt, indent=2) + "\n")
