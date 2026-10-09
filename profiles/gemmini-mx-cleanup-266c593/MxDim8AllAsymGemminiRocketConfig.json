@@ -1,0 +1,344 @@
+{
+  "candidate_output_modes": [
+    "bf16",
+    "fp4_e2m1",
+    "fp6_e3m2",
+    "fp8_e4m3"
+  ],
+  "chipyard_config": "MxDim8AllAsymGemminiRocketConfig",
+  "chipyard_overrides": {
+    "l2_banks": null,
+    "l2_outer_latency_cycles": null,
+    "rocket_cores": 1,
+    "serial_tl_sink_bits": null,
+    "system_bus_width_bits": 128
+  },
+  "gemmini_config": "dim8AllAsymMxFPConfig",
+  "gemmini_fragment": "GemminiMxFPDim8AllAsymStandaloneConfig",
+  "geometry": {
+    "mesh_columns": 8,
+    "mesh_rows": 8,
+    "tile_columns": 1,
+    "tile_rows": 1
+  },
+  "legal_compute": [
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 0,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 11,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 1,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 2,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 11,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 1,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 9,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 9,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 3,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 11,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 4,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 5,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 11,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp6_e3m2",
+      "activation_projection": "lut",
+      "pe_mode": 4,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 6,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 9,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 7,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 9,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 7,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 3,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 11,
+      "weight_format": "fp6_e2m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 4,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 5,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 11,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 4,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    }
+  ],
+  "name": "MxDim8AllAsymGemminiRocketConfig",
+  "pe_config": "allAsym",
+  "qualification": "structural_unqualified",
+  "resources": {
+    "accumulator_banks": 1,
+    "accumulator_bytes": 65536,
+    "dma_bus_width_bits": 512,
+    "dma_max_bytes": 64,
+    "execute_queue_entries": 8,
+    "has_loop_retire_counter": false,
+    "has_mx_mmio_requant": true,
+    "load_queue_entries": 8,
+    "lut": true,
+    "lut_config": {
+      "activation_code_bits": 8,
+      "address_bits": 4,
+      "projection_format": "LutFP8E4M3",
+      "read_data_bits": 8,
+      "weight_code_bits": 8
+    },
+    "max_in_flight_mem_reqs": 32,
+    "max_spad_writer_bytes": 64,
+    "mx_mmio_base": 536936448,
+    "performance_counters": 8,
+    "requantizer": true,
+    "requantizer_config": {
+      "base_address": 268435456,
+      "gpu_input_lanes": 8,
+      "input_lanes": 64,
+      "max_output_bits": 8,
+      "min_output_bits": 4,
+      "output_lanes": 32
+    },
+    "scale_block_elements": 32,
+    "scale_mem_config": {
+      "banks": 8,
+      "base_address": 536870912,
+      "size_bytes": 16384,
+      "subbank_line_bytes": 8,
+      "subbanks_per_bank": 2
+    },
+    "scratchpad_banks": 4,
+    "scratchpad_bytes": 262144,
+    "spad_requant": false,
+    "store_queue_entries": 2,
+    "vpu": false,
+    "vpu_config": null
+  },
+  "schema": "mx_gemmini.target_profile.v2",
+  "source": {
+    "gemmini_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+    "mxgen_revision": "dba3e7e706efa156d96efe595cd9935c825ea14d",
+    "sha256": {
+      "chipyard/GemminiConfigs.scala": "6daa7877515063a4d2239a209ead9d7d9bebd15893ef8a2434f58b0c14446ec4",
+      "mxgen/src/main/scala/mxgen/Classifier.scala": "0c3d7ad5565ba726936b589e347503ba9ac5432421f442f2d9700793aea99187",
+      "mxgen/src/main/scala/mxgen/MxParameters.scala": "7043e8bab83d6a0c02352b3699ba6f0e891fbf3fb76727fa060480f771bbe870",
+      "src/main/scala/gemmini/Arithmetic.scala": "2260ecb6eeaab448d15b04cba6b8c9d17f5ac683daf5e407851606d2dc2b0fe0",
+      "src/main/scala/gemmini/ConfigsFP.scala": "a374da3c0b060c8bd301f7abfe3a2e2aa35861766340d53e936e00b2e4b75505",
+      "src/main/scala/gemmini/GemminiConfigs.scala": "6e1163b58f471315ec0a03802d88dc6a2cf1ab622dcddaeb7d422c38e25f82cf",
+      "src/main/scala/gemmini/GemminiISA.scala": "1c6e57b665de06e1be04f01791ea8edb6641d0d44cde2e0e3fbd0830f074d262",
+      "src/main/scala/gemmini/MxConfigFragments.scala": "4fa439ea860da11e61d2e389ee628dc769600c3a7b44f22be465b7dd21d498ce",
+      "src/main/scala/gemmini/SpadRequant.scala": "c823950ec4feaba439786e6408a8a9636a521a50328ef370681a656d41e0e287",
+      "src/main/scala/gemmini/vpu/Vpu.scala": "deda04dad155421ce0aae04344e1b701f6ad5bddf2aebdb4adf2be8c3f2d5689"
+    }
+  },
+  "transport": "rocket_rocc"
+}
