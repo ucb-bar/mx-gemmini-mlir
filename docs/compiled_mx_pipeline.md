@@ -21,7 +21,7 @@ origin to the typed `mx_gemmini.contract`. It does not claim that the captured
 PyTorch tensor generated those source bytes.
 
 `physical_program.py` verifies the MLIR, manifest, and profile together. It
-plans scratchpad placement and lowers one BF16 output tile into ordered Rocket
+plans scratchpad placement and lowers complete BF16 output tiles into ordered Rocket
 commands: configuration, LUT and E8M0 DMA, operand mvin, scale selection,
 K-wave loop compute, and BF16 mvout. `command_ir.py` checks pointer fields and
 emits the physical RoCC instruction stream. `standalone.py` embeds the bundle
@@ -54,6 +54,18 @@ Spike-log digests.
 For FP4, the Radiance tree generates the 64×64×128 data header on demand.
 The exact source revision and generation command are in
 [source kernel matching](source_kernel_matching.md#generated-source-fp4-kernel).
+The 128×128×256 FP8 and FP4 headers are generated at the same source revision
+with `python kernels/gemm_mxgemmini/gen_mxgemm_data.py fp8 128 128 256` and
+the corresponding `fp4` command after building `lib/golden/mx_golden`.
+Their [FP8 capture](evidence/model2mlir_radiance_mx_fp8_128x128x256_capture_receipt.json)
+and [FP4 capture](evidence/model2mlir_radiance_mx_fp4_128x128x256_capture_receipt.json)
+record the generator, model2MLIR, policy, source, and profile identities.
+The 256×256×256 FP8 header uses the same generator; its
+[capture](evidence/model2mlir_radiance_mx_fp8_256x256x256_capture_receipt.json)
+records that the original 128 KiB source scratchpad cannot place the C tile
+beside double-buffered operands, while the selected Nicolas MX+VPU profile's
+256 KiB scratchpad can. Its numerical reference comes from the source golden
+generator, not execution of the original driver at that size.
 
 ## Full-output Spike evidence
 
@@ -61,13 +73,19 @@ The exact source revision and generation command are in
 |---|---|---:|---|
 | FP8 128×128×512, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk128_20261009.json) |
 | FP8 128×128×512, K tile 256 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk256_20261009.json) |
+| FP8 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x256_20261009.json) |
+| FP8 256×256×256, four 128×128 output tiles | MX+VPU E4M3/FP4 | 65,536 | [receipt](evidence/compiled_mx_fp8_256x256x256_20261009.json) |
 | FP4 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp4_64x64x128_20261009.json) |
+| FP4 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp4_128x128x256_20261009.json) |
 | FP6 128×128×2048, K tile 128 | E3M2 LUT, no VPU | 16,384 | [receipt](evidence/compiled_mx_fp6_128x128x2048_20261009.json) |
 
 Each receipt records a zero-mismatch pinned Spike run. Independent output
 directories reproduced identical payload-bound MLIR, physical source files,
-objects, ELF, extension, and Spike log hashes for the first three entries.
-The FP8 K tile 256 run tests a distinct schedule over the same source data.
+objects, ELF, extension, and Spike log hashes for FP8 128×128×512 with both
+K tile sizes and FP4 64×64×128.
+The FP8 K tile 256 run tests a distinct schedule over the same source data;
+the 256-deep runs use fresh PyTorch/model2MLIR captures and generated source
+headers.
 For FP6, the selected Spike LUT path ignores the alternating scale selector;
 the compiler's explicitly named `spike_serial` mode reloads scale half zero.
 `rtl_alternating` plans the target's intended halves but is not a numerical
@@ -101,8 +119,9 @@ VPU→requant→matmul chain still needs compiler output and numerical parity.
 
 ## Remaining gates
 
-1. Lower multiple output tiles, quantized readout, asymmetric legal modes,
-   and the remaining source shapes from model2MLIR captures.
+1. Lower quantized readout, asymmetric legal modes, and the remaining source
+   shapes from model2MLIR captures; extend multi-output tiling beyond the
+   qualified FP8 shape and its current BF16 readout.
 2. Compose the full matrix→VPU→SPAD_REQUANT→matrix chain in one MLIR program
    with explicit scratchpad lifetimes and source numerical goldens.
 3. Qualify every legal mode class on the matching Spike/RTL configuration,

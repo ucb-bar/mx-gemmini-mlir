@@ -30,9 +30,21 @@ PROFILE_DIR = ROOT / "profiles/gemmini-mx-cleanup-266c593"
     ("FP8", SOURCE, "mxgemm.fp8.m128n128k512.tm128tn128tk256.fullout.cpp",
      "MxE4M3Fp4VpuGemminiRocketConfig", "gemm",
      "compiled_mx_fp8_128x128x512_tk256_20261009.json"),
+    ("FP8", SOURCE, "mxgemm.fp8.m128n128k256.tm128tn128tk128.fullout.cpp",
+     "MxE4M3Fp4VpuGemminiRocketConfig",
+     "docs/evidence/model2mlir_radiance_mx_fp8_128x128x256_bound.mlir",
+     "compiled_mx_fp8_128x128x256_20261009.json"),
+    ("FP8", SOURCE, "mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp",
+     "MxE4M3Fp4VpuGemminiRocketConfig",
+     "docs/evidence/model2mlir_radiance_mx_fp8_256x256x256_bound.mlir",
+     "compiled_mx_fp8_256x256x256_20261009.json"),
     ("FP4", FP4_SOURCE, "mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp",
      "MxE4M3Fp4VpuGemminiRocketConfig", "fp4",
      "compiled_mx_fp4_64x64x128_20261009.json"),
+    ("FP4", FP4_SOURCE, "mxgemm.fp4.m128n128k256.tm128tn128tk128.fullout.cpp",
+     "MxE4M3Fp4VpuGemminiRocketConfig",
+     "docs/evidence/model2mlir_radiance_mx_fp4_128x128x256_bound.mlir",
+     "compiled_mx_fp4_128x128x256_20261009.json"),
     ("FP6", SOURCE, "mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp",
      "MxE3M2OnlyGemminiRocketConfig", "fp6",
      "compiled_mx_fp6_128x128x2048_20261009.json"),
@@ -40,14 +52,19 @@ PROFILE_DIR = ROOT / "profiles/gemmini-mx-cleanup-266c593"
 def test_compiler_regenerates_numerically_qualified_physical_stream(
         tmp_path, precision, source_root, driver, profile_name, capture, evidence):
     selected = source_root / "kernels/gemm_mxgemmini" / driver
-    if not selected.is_file() or not read_source_gemm(selected).data_header_present:
+    if not selected.is_file():
+        pytest.skip("requires Radiance source driver")
+    kernel = read_source_gemm(selected)
+    if not kernel.data_header_present:
         pytest.skip("requires Radiance source data header")
     profile = load_profile(PROFILE_DIR / f"{profile_name}.json")
-    manifest = write_bundle(tmp_path / "bundle", read_source_gemm(selected),
+    manifest = write_bundle(tmp_path / "bundle", kernel,
                             site_id="functional:matmul",
                             profile_sha256=profile_sha256(profile))
     _, resources = load_bundle(tmp_path / "bundle")
-    mlir = (ROOT / f"docs/evidence/model2mlir_radiance_mx_{capture}_bound_20261009.mlir").read_text()
+    capture_file = (ROOT / capture if capture.endswith(".mlir") else
+                    ROOT / f"docs/evidence/model2mlir_radiance_mx_{capture}_bound_20261009.mlir")
+    mlir = capture_file.read_text()
     bound = bind_payload(mlir, profile, manifest)
     program = lower_bound_source(bound, profile, manifest, resources)
     receipt = write_standalone_sources(tmp_path / "artifact", program, resources)
@@ -63,3 +80,5 @@ def test_compiler_regenerates_numerically_qualified_physical_stream(
     assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
     assert '#include "mxgemm.data.' not in (tmp_path / "artifact/mx_issue.c").read_text()
     assert saved["fp6_spike_scale_selector_workaround"] == (precision == "FP6")
+    if kernel.shape[0] != kernel.tile[0] or kernel.shape[1] != kernel.tile[1]:
+        assert len(program.plan["output_tiles"]) == 4

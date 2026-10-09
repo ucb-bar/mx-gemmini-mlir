@@ -42,6 +42,32 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
         golden_name = "derived_expected_bf16"
     externs = "".join(f"extern const uint8_t {name}[];\n" for name in sorted(resource_files))
     arguments = ", ".join(names)
+    if "output_tiles" in program.plan:
+        tm, tn, _ = program.plan["tile"]
+        comparison = f'''  for (uint32_t row = 0; row < {m}; ++row)
+    for (uint32_t col = 0; col < {n}; ++col) {{
+      uint32_t tile = (row / {tm}) * {n // tn} + col / {tn};
+      uint32_t local = (row % {tm}) * {tn} + col % {tn};
+      uint32_t got_index = tile * {tm * tn} + local;
+      uint32_t expected_index = row * {n} + col;
+      if (got[got_index] != expected[expected_index]) {{
+        if (errors < 8)
+          printf("MISMATCH (%u,%u): got=0x%04x expected=0x%04x\\n",
+                 row, col, got[got_index], expected[expected_index]);
+        ++errors;
+      }}
+    }}
+'''
+    else:
+        comparison = f'''  for (uint32_t i = 0; i < {m * n}; ++i) {{
+    if (got[i] != expected[i]) {{
+      if (errors < 8)
+        printf("MISMATCH %u: got=0x%04x expected=0x%04x\\n",
+               i, got[i], expected[i]);
+      ++errors;
+    }}
+  }}
+'''
     driver = f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
@@ -53,15 +79,7 @@ int main(void) {{
   const uint16_t *got = (const uint16_t *)output_bf16;
   const uint16_t *expected = (const uint16_t *){golden_name};
   int errors = 0;
-  for (uint32_t i = 0; i < {m * n}; ++i) {{
-    if (got[i] != expected[i]) {{
-      if (errors < 8)
-        printf("MISMATCH %u: got=0x%04x expected=0x%04x\\n",
-               i, got[i], expected[i]);
-      ++errors;
-    }}
-  }}
-  printf("lowered MX {m}x{n}x{k}: %d BF16 mismatches\\n", errors);
+{comparison}  printf("lowered MX {m}x{n}x{k}: %d BF16 mismatches\\n", errors);
   return errors != 0;
 }}
 '''

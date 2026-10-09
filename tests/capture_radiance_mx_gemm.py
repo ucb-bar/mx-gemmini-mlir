@@ -64,9 +64,15 @@ def main() -> None:
         parser.error("this capture requires a source FP8/FP6/FP4 driver with data")
     if kernel.datatype == "FP6" and args.policy is None:
         parser.error("source FP6 capture requires an explicit structural codebook policy")
-    source_plan = plan_source_gemm(
-        kernel, scratchpad_bytes=source_scratchpad_bytes(
-            source_root / "lib/mxgemm/mxgemm_lib.hpp"))
+    source_bytes = source_scratchpad_bytes(source_root / "lib/mxgemm/mxgemm_lib.hpp")
+    source_plan_error = None
+    try:
+        source_plan = plan_source_gemm(kernel, scratchpad_bytes=source_bytes)
+    except ValueError as error:
+        if str(error) != "C does not fit beside double-buffered A/B tiles":
+            raise
+        source_plan = None
+        source_plan_error = str(error)
     shape = (kernel.shape[0], kernel.shape[2], kernel.shape[1])
     for root in (m2m_root, mxq_root):
         sys.path.insert(0, str(root))
@@ -149,7 +155,7 @@ def main() -> None:
             "profile_sha256": profile_sha256(profile),
             "bound_mlir_sha256": sha(bound),
             "scratchpad_geometry_matches_source":
-                target_plan["scratchpad_bytes"] == source_plan["scratchpad_bytes"],
+                target_plan["scratchpad_bytes"] == source_bytes,
             "target_layout": {key: target_plan[key] for key in (
                 "scratchpad_bytes", "a_rows", "b_rows", "c_rows", "c_spad_dest",
                 "a_scale_bytes_per_wave", "b_scale_bytes_per_wave", "lut_once", "move_out")},
@@ -174,8 +180,11 @@ def main() -> None:
         "source_tile": list(kernel.tile),
         "source_layout": {key: source_plan[key] for key in (
             "scratchpad_bytes", "a_rows", "b_rows", "c_rows", "c_spad_dest",
-            "a_scale_bytes_per_wave", "b_scale_bytes_per_wave", "lut_once", "move_out")},
-        "source_k_waves": len(source_plan["waves"]),
+            "a_scale_bytes_per_wave", "b_scale_bytes_per_wave", "lut_once", "move_out")}
+            if source_plan is not None else None,
+        "source_plan_error": source_plan_error,
+        "source_k_waves": len(source_plan["waves"]) if source_plan is not None
+                          else kernel.shape[2] // kernel.tile[2],
         "model2mlir_revision": git(m2m_root, "rev-parse", "HEAD"),
         "model2mlir_source_tree_sha256": tree_sha(m2m_root, "m2m"),
         "mxq_revision": git(mxq_root, "rev-parse", "HEAD"),
@@ -187,7 +196,8 @@ def main() -> None:
         "selected_site": sites[0], "opaque_calls": opaque,
         "target_binding": target_receipt,
         "numerical_scope": "PyTorch inputs are not source MX blobs; no MX numerical parity claimed",
-        "lowering_scope": "source-derived tile schedule and typed MX handoff; matrix command lowering absent",
+        "lowering_scope": ("frontend capture and profile-bound MX handoff; "
+                           "the source-specialized physical compiler is qualified separately"),
     }
     destination = out / "receipt.json"
     destination.write_text(json.dumps(receipt, indent=2) + "\n")

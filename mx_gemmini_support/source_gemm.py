@@ -163,8 +163,8 @@ def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
             raise ValueError(f"selected MX profile has no {named}/{projection} compute mode")
         if quant_output and named not in profile["candidate_output_modes"]:
             raise ValueError("selected MX profile lacks the source output format")
-    if m != tm or n != tn:
-        raise ValueError("source mxgemm_single_output_tile does not cover multiple output tiles")
+    if m % tm or n % tn:
+        raise ValueError("MX output dimensions must divide into complete tiles")
     a = tm * tk // values_per_byte // dim
     b = tk * tn // values_per_byte // dim
     out_size = 1 if quant_output else 2
@@ -192,7 +192,7 @@ def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
             "accumulate": index > 0,
             "move_acc_to_spad": index == k // tk - 1 and not acc_to_gmem,
         })
-    return {
+    plan = {
         "schema": "mx_gemmini.source_gemm_plan.v1",
         "shape": list(shape), "tile": list(tile),
         "format": named, "projection": projection,
@@ -212,6 +212,12 @@ def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
                            "compute", "upload_next_scales", "fence_smem", "wait_idle"],
         "waves": waves,
     }
+    if m != tm or n != tn:
+        plan["output_tiles"] = [
+            {"index": i * (n // tn) + j,
+             "m_start": i * tm, "n_start": j * tn}
+            for i in range(m // tm) for j in range(n // tn)]
+    return plan
 
 
 def plan_source_gemm(kernel: SourceGemm, *, scratchpad_bytes: int,

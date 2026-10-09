@@ -233,6 +233,8 @@ def trace_bound_source_gemm_loops(mlir_text: str, kernel: SourceGemm, *,
     source_plan = plan_source_gemm(kernel, scratchpad_bytes=source_bytes)
     target_plan = plan_source_gemm(
         kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"], profile=profile)
+    if "output_tiles" in target_plan:
+        raise ValueError("source loop trace models one output tile only")
     waves = target_plan["waves"]
     packets = _loop_packet(target_plan, waves[0], phase="prefetch")
     for wave in waves:
