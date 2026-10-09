@@ -114,3 +114,48 @@ def test_nicolas_oracle_agrees_with_pinned_mxquant_for_full_source_output():
     mxq_scales = bytes((torch.log2(scales).to(torch.int16) + 127).flatten().tolist())
     assert ours_codes == mxq_codes
     assert ours_scales == mxq_scales
+
+
+@pytest.mark.parametrize("m,n,k", [(64, 64, 64), (128, 128, 128)])
+def test_fp4_quantized_capture_and_packed_spike_receipt(tmp_path, m, n, k):
+    evidence = ROOT / "docs/evidence"
+    stem = f"model2mlir_radiance_mx_fp4_{m}x{n}x{k}_quant"
+    capture = json.loads((evidence / f"{stem}_capture_receipt.json").read_text())
+    assert capture["source_quant_output"] is True
+    assert capture["mx_support_revision"] == "19cf6cfdc1553c1f05927e5dbf661792829cee98"
+    assert capture["model2mlir_revision"] == "7485a829c0195af0ec42820837d609e62e466564"
+    assert capture["source_shape"] == [m, n, k]
+    assert capture["opaque_calls"] == {}
+    for field, suffix in (("source_mlir_sha256", "source.mlir"),
+                          ("handoff_mlir_sha256", "handoff.mlir"),
+                          ("quantization_manifest_sha256", "manifest.json")):
+        assert capture[field] == hashlib.sha256(
+            (evidence / f"{stem}_{suffix}").read_bytes()).hexdigest()
+    driver = SOURCE / ("kernels/gemm_mxgemmini/"
+                       f"mxgemm.fp4.singletile.tm{m}tn{n}tk{k}.requant.cpp")
+    header = SOURCE / f"kernels/gemm_mxgemmini/mxgemm.data.fp4.m{m}n{n}k{k}.h"
+    if not driver.is_file() or not header.is_file() or not RTL.is_dir():
+        pytest.skip("requires generated Radiance FP4 header and Nicolas RTL")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json",
+        rtl_root=RTL)
+    manifest = write_bundle(tmp_path / "bundle", read_source_gemm(driver),
+                            site_id="functional:matmul",
+                            profile_sha256=profile_sha256(profile))
+    _, resources = load_bundle(tmp_path / "bundle")
+    bound = bind_payload((evidence / f"{stem}_bound.mlir").read_text(), profile, manifest)
+    assert bound == (evidence / f"{stem}_payload_bound.mlir").read_text()
+    assert '"mx_gemmini.readout_quantized"' in bound
+    program = lower_bound_source(bound, profile, manifest, resources)
+    assert program.output_format == "fp4_e2m1"
+    generated = write_standalone_sources(tmp_path / "artifact", program, resources)
+    saved = json.loads((evidence / f"compiled_mx_fp4_{m}x{n}x{k}_quant_20261009.json").read_text())
+    assert saved["files_sha256"] == generated["files_sha256"]
+    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    assert saved["compiler_revision"] == "19cf6cfdc1553c1f05927e5dbf661792829cee98"
+    assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
+    assert saved["compared_fp4_packed_bytes"] == m * n // 2
+    assert saved["compared_e8m0_scales"] == m * n // 32
+    assert saved["source_quant_code_format"] == "fp8_e4m3"
+    assert saved["target_quant_code_format"] == "packed_fp4_e2m1"
+    assert saved["source_quant_scale_differences"] == m * n // 32
