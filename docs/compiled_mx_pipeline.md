@@ -1,0 +1,96 @@
+# MX Gemmini compiler path and qualification
+
+This repository targets Nicolas's `gemmini-mx-cleanup` revision
+`266c593f2cb51d7e3fe83fc0317072b585ac3c52`. The profile exporter covers
+its 41 MX fragments and 40 Chipyard wrappers. The first executable lowering
+uses `MxE4M3Fp4VpuGemminiRocketConfig` for FP8 and FP4, and
+`MxE3M2OnlyGemminiRocketConfig` for FP6. The former has two 8-lane BF16 VPUs,
+the fused `EXPSUB`/`EXPSUM` operations, and `SPAD_REQUANT`. Nicolas's current
+branch has no single profile combining that VPU with FP6 E3M2 LUT compute.
+
+## Compiler inputs and output
+
+`tests/capture_radiance_mx_gemm.py` captures the selected PyTorch shape through
+model2MLIR `7485a829c0195af0ec42820837d609e62e466564`, then
+`bind_profile.py` selects an RTL-derived legal PE mode. The capture specifies
+the contraction structure. Source numerical data is an **explicit
+specialization**: `source_payload.py` reads the Radiance header's packed A/B
+bytes, E8M0 scales, BF16 golden, and all three 64-line FP6 LUT banks into
+hashed binary resources. `bind_payload.py` attaches their manifest digest and
+origin to the typed `mx_gemmini.contract`. It does not claim that the captured
+PyTorch tensor generated those source bytes.
+
+`physical_program.py` verifies the MLIR, manifest, and profile together. It
+plans scratchpad placement and lowers one BF16 output tile into ordered Rocket
+commands: configuration, LUT and E8M0 DMA, operand mvin, scale selection,
+K-wave loop compute, and BF16 mvout. `command_ir.py` checks pointer fields and
+emits the physical RoCC instruction stream. `standalone.py` embeds the bundle
+as binary data in an assembly object and emits a generic full-output checker.
+The generated program never includes the handwritten source data header or a
+shape-specific replacement C kernel.
+
+From this repository, run one command after the source driver and adjacent
+data header are available:
+
+```sh
+python -m tools.qualify_source_mx \
+  --mlir docs/evidence/model2mlir_radiance_mx_gemm_bound_20261009.mlir \
+  --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /new/output-directory
+```
+
+The command validates the source/profile, writes `bundle/`,
+`payload_bound.mlir`, `build/physical_program.json`, `build/mx_issue.c`,
+`build/mx_data.S`, `build/mx_program.elf`, and
+`build/artifact_manifest.json`, then runs the ELF against the selected RTL
+checkout's pinned `libgemmini` Spike extension. It refuses an existing output
+directory and rejects profile, resource, MLIR, or gitlink drift. The artifact
+manifest records source, profile, tool, program, object, ELF, extension, and
+Spike-log digests.
+
+For FP4, the Radiance tree generates the 64×64×128 data header on demand.
+The exact source revision and generation command are in
+[source kernel matching](source_kernel_matching.md#generated-source-fp4-kernel).
+
+## Full-output Spike evidence
+
+| Precision and source tile | MX profile | BF16 outputs matched | Receipt |
+|---|---|---:|---|
+| FP8 128×128×512, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk128_20261009.json) |
+| FP8 128×128×512, K tile 256 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk256_20261009.json) |
+| FP4 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp4_64x64x128_20261009.json) |
+| FP6 128×128×2048, K tile 128 | E3M2 LUT, no VPU | 16,384 | [receipt](evidence/compiled_mx_fp6_128x128x2048_20261009.json) |
+
+Each receipt records a zero-mismatch pinned Spike run. Independent output
+directories reproduced identical payload-bound MLIR, physical source files,
+objects, ELF, extension, and Spike log hashes for the first three entries.
+The FP8 K tile 256 run tests a distinct schedule over the same source data.
+For FP6, the selected Spike LUT path ignores the alternating scale selector;
+the compiler's explicitly named `spike_serial` mode reloads scale half zero.
+`rtl_alternating` plans the target's intended halves but is not a numerical
+qualification for RTL or FPGA.
+
+Nicolas's reference `vpu_ops`, `vpu_softmax`, and
+`chain_vpu_spad_requant` programs were also built and run directly against
+the pinned Spike extension. They passed all reference comparisons, including
+the fused VPU cases and the VPU→requant→matmul chain. That is model capability
+evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.json)
+records source, ELF, tool, and log hashes. The dialect's physical
+VPU/SPAD_REQUANT command lowerer is checked
+separately; a single compiler-generated mixed matrix/VPU workload and its
+golden comparison remain to be implemented.
+
+## Remaining gates
+
+1. Lower multiple output tiles, quantized readout, asymmetric legal modes,
+   and the remaining source shapes from model2MLIR captures.
+2. Compose matrix, VPU, and SPAD_REQUANT operations in one MLIR program with
+   explicit scratchpad lifetimes and source numerical goldens.
+3. Qualify every legal mode class on the matching Spike/RTL configuration,
+   and keep unsupported profile combinations rejected. FP6+VPU requires a
+   new RTL configuration and profile before it can be advertised.
+4. Validate the alternating FP6 scale path against RTL, then qualify the
+   Radiance MMIO/FPGA issue path separately from Rocket RoCC.

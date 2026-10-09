@@ -5,16 +5,20 @@ Licensed under Apache-2.0; see [LICENSE](LICENSE).
 The MLIR dialect includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a
-selected SoC profile. Matrix contraction and handoff operations are contract IR.
+selected SoC profile. Matrix contraction and handoff operations remain contract IR.
 The new physical `vpu_execute` and `spad_requant` operations lower to Rocket
 RoCC commands for source-bound DIM16 MX+VPU profiles; see
 [current MX profiles and VPU lowering](docs/current_mx_profiles.md).
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
-gateway. `transfer_ir.plan_uploads` binds scale and optional LUT uploads to a
-selected MX profile and materializes one command list per K wave. Operand
-tile movement, compute scheduling, readout, and numerical qualification are
-still required before the MLIR contraction is executable. The physical
+gateway. The source specialization path binds packed operand bytes, E8M0
+scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
+`physical_program.lower_bound_source` schedules configuration, scale/LUT DMA,
+operand movement, K-wave compute, and BF16 readout for one output tile.
+`tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
+output on Nicolas's pinned Spike extension. Four source schedules pass; see
+[compiled source parity](docs/compiled_mx_pipeline.md). General matrix and
+mixed VPU lowering remain open. The physical
 `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.
@@ -73,10 +77,10 @@ handoff to the selected current RTL profile and records both source and target
 scratchpad placement in the receipt. `tools/match_source_gemm.py` audits the
 entire source shape ladder. See [source kernel matching](docs/source_kernel_matching.md).
 The October 9 source-bound capture uses model2MLIR revision `7485a829`.
-Its four-wave FP8 diagnostic generated from the bound MLIR and checked-in
-source data matched all 16,384 BF16 golden outputs on Nicolas's pinned Spike
-extension. The selected 256 KiB MX profile requires different scratchpad and
-scale-buffer addresses from the handwritten 128 KiB library.
+The selected 256 KiB MX profile requires different scratchpad and scale-buffer
+addresses from the handwritten 128 KiB library. The earlier source-data C
+diagnostics matched the source goldens; the compiler-generated command path
+independently matches them for FP8, FP4, and FP6.
 The generated source FP4 64×64×128 driver follows the same capture and
 profile binding path. Its two-wave diagnostic matched all 4,096 BF16 golden
 outputs on the pinned Spike extension. The checked-in FP6 128×128×2048 source
@@ -110,18 +114,16 @@ refuses drift in either hashed Scala source.
   and slices both into matching K waves for all three formats.
 
 Each planned wave fits the first 4 KiB active window for both operands and
-the 9-bit `CONFIG_SCALE_MEM` K bound. This is a layout/capacity plan only:
-the caller still must order scale uploads, configure the wave's loop bounds,
-execute the corresponding operand tiles, and preserve the BF16 accumulator
-across K waves. The pinned `ScaleFactorMem` counters wrap after a complete
-configured loop; rs1 bit 62 resets requantizer counters but is not wired to
-the scale read counters. Correct command scheduling and K-wave arithmetic
-still require matching RTL simulator evidence. No larger contraction is
-claimed executable by this prototype.
+the 9-bit `CONFIG_SCALE_MEM` K bound. This older builder is a layout/capacity
+plan; the separate `physical_program` lowering schedules the source-bound BF16
+subset. The pinned `ScaleFactorMem` counters wrap after a complete configured
+loop; rs1 bit 62 resets requantizer counters but is not wired to the scale read
+counters. RTL evidence for alternating FP6 scales remains outstanding.
 
-The packer refuses payloads above one active window. A compiler must
-schedule additional uploads and choose scale banks for larger contractions;
-that scheduling and all MX arithmetic lowering remain open.
+The older packer refuses payloads above one active window. The source-bound
+physical lowering issues separate scale uploads per K wave and has executed a
+2048-wide FP6 contraction on Spike. General multi-output-tile and quantized
+output lowering remain open.
 `tools/check_radiance_header.py` compares a caller-selected source FP8 data
 header with this OOT planner. For the checked-in Radiance
 `m128n128k512` header, every A/B code and E8M0 scale byte matches exactly,

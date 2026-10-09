@@ -1,0 +1,36 @@
+{
+  "libgemmini_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_vpu_spike_reference.v1",
+  "scope": "direct Nicolas reference C, not compiler-generated mixed MLIR",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "tests": {
+    "chain_vpu_spad_requant": {
+      "build_log_sha256": "b075a48ec713893d95da696403a775ee765165dd2e1e378c7107853d7d29cedc",
+      "elf_sha256": "d2fc65584e4b47da94f8d0b959447802239a46733be6f85a6b426801cea5e04c",
+      "passed_marker": "chain_vpu_spad_requant PASSED",
+      "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+      "spike_log_sha256": "e22650aa7e503e9a625fd966cf6d15ef3e26999f8998b42ff5c5eb9b370e23e8",
+      "zero_mismatch_reference": true
+    },
+    "vpu_ops": {
+      "build_log_sha256": "384dad7565cf230a2e217a47ef2c4f56bd0ee547ada147535314e028420bfb2c",
+      "elf_sha256": "f5500bb48768a1da841f8e87e2742f1dcdd60f42e858e6fd9fa4bc4f3fe6dd98",
+      "passed_marker": "vpu_ops PASSED",
+      "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569",
+      "spike_log_sha256": "3703ac2f40db99a834cd6c69c90c55934e02e8e7a33ddbc86093eb314538f39c",
+      "zero_mismatch_reference": true
+    },
+    "vpu_softmax": {
+      "build_log_sha256": "b2955698380339c4ed873a4c2e68150bb304f78bccc9cff74c0e9e9d1914d24f",
+      "elf_sha256": "3b1cbf8b3607e3c40c5e1c00020cdcc7cac928dcd53e507ce7e872039afa56df",
+      "passed_marker": "vpu_softmax PASSED",
+      "source_sha256": "cfb112304eb23e4e950b337fe7e2307a48520c62b58e2042321caf66bd505d51",
+      "spike_log_sha256": "d817046ede8b0eee236e7f5178ddb80302291702d68777c05af4a590bc162e18",
+      "zero_mismatch_reference": true
+    }
+  }
+}

@@ -118,8 +118,11 @@ directory, compiles the generated C to RV64, and runs that ELF on Spike. The
 [execution receipt](evidence/source_fp8_128x128x512_spike_20261009.json)
 records **zero BF16 mismatches** and the C, ELF, extension, input, profile,
 and tool revisions and digests. This qualifies one serial standalone Rocket
-diagnostic. A reusable MLIR matrix lowering, source-equivalent Muon MMIO issue
-schedule, mixed Radiance artifact, and RTL output check remain to be built.
+diagnostic. The later [payload-bound compiler path](compiled_mx_pipeline.md)
+now lowers the typed contraction to a standalone Rocket ELF and matches the
+same source golden without including this handwritten header in generated C.
+A source-equivalent Muon MMIO issue schedule, mixed Radiance artifact, and RTL
+output check remain to be built.
 
 ## Generated source FP4 kernel
 

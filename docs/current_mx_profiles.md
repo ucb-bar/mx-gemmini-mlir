@@ -25,8 +25,11 @@ VPUs with `EXPSUB` and `EXPSUM`, plus `SPAD_REQUANT`. The latter config also
 builds FP4×FP4 mode 0 beside direct E4M3 mode 8. The dialect exposes
 `mx_gemmini.vpu_execute` and `mx_gemmini.spad_requant`; the physical command
 lowerer checks profile gates, row bounds, and the RTL's funct 33/34 bitfields
-before emitting a Rocket RoCC C issuer. The matrix contraction lowering and
-Radiance MMIO composition remain separate work.
+before emitting a Rocket RoCC C issuer. A separate source-bound BF16 matrix
+lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
+standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
+profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
+Mixed matrix/VPU scheduling and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config
