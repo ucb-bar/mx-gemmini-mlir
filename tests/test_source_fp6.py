@@ -1,0 +1,39 @@
+"""Source FP6 packed payload and per-row LUT validation."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import pytest
+
+from mx_gemmini_support.source_fp6 import _array, read_source_fp6_payload
+from mx_gemmini_support.source_gemm import read_source_gemm
+
+
+SOURCE = Path(os.environ.get("RADIANCE_FP6_SOURCE_ROOT", "/nonexistent"))
+DRIVER = SOURCE / "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp"
+
+
+def test_header_reader_rejects_nonliteral_and_wrong_sized_arrays():
+    with pytest.raises(ValueError, match="nonliteral"):
+        _array("static const uint8_t A[2][2] = {{1, 2}, {x, 4}\n};",
+               name="A", ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
+    with pytest.raises(ValueError, match="wrong-sized"):
+        _array("static const uint8_t A[2][2] = {{1, 2}, {3}\n};",
+               name="A", ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
+
+
+@pytest.mark.skipif(not DRIVER.is_file() or
+                    not DRIVER.with_name("mxgemm.data.fp6.m128n128k2048.h").is_file(),
+                    reason="requires the checked-in FP6 Radiance source header")
+def test_real_source_fp6_indices_and_all_lut_banks_roundtrip():
+    payload = read_source_fp6_payload(read_source_gemm(DRIVER))
+    assert len(payload.activation_bytes) == len(payload.weight_bytes) == 131072
+    assert len(payload.activation_lut_bytes) == 768
+    assert len(payload.weight_lut_bytes) == 768
+    assert len(payload.output_lut_bytes) == 768
+    assert len(payload.activation_scale_bytes) == len(payload.weight_scale_bytes) == 8192
+    assert len(payload.golden_bf16_bytes) == 32768
+    assert len(set(payload.activation_lut_line0)) == 16
+    assert len(set(payload.weight_lut_line0)) == 16

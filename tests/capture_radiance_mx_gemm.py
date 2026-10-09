@@ -60,8 +60,10 @@ def main() -> None:
     if not driver.is_relative_to(source_root):
         parser.error("source driver must be inside the selected radiance-kernels checkout")
     kernel = read_source_gemm(driver)
-    if kernel.datatype not in ("FP8", "FP4") or not kernel.data_header_present:
-        parser.error("this capture requires a source FP8/FP4 driver with data")
+    if kernel.datatype not in ("FP8", "FP6", "FP4") or not kernel.data_header_present:
+        parser.error("this capture requires a source FP8/FP6/FP4 driver with data")
+    if kernel.datatype == "FP6" and args.policy is None:
+        parser.error("source FP6 capture requires an explicit structural codebook policy")
     source_plan = plan_source_gemm(
         kernel, scratchpad_bytes=source_scratchpad_bytes(
             source_root / "lib/mxgemm/mxgemm_lib.hpp"))
@@ -87,9 +89,10 @@ def main() -> None:
     assert spec and spec.loader
     source_data = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(source_data)
-    generated_shapes = source_data.MISSING_FP8 if kernel.datatype == "FP8" else source_data.MISSING_FP4
-    if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in generated_shapes:
-        raise RuntimeError("the chosen GEMM shape is absent from source generator")
+    if kernel.datatype != "FP6":
+        generated_shapes = source_data.MISSING_FP8 if kernel.datatype == "FP8" else source_data.MISSING_FP4
+        if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in generated_shapes:
+            raise RuntimeError("the chosen GEMM shape is absent from source generator")
 
     class Gemm(torch.nn.Module):
         def forward(self, lhs: torch.Tensor, rhs: torch.Tensor) -> torch.Tensor:
@@ -116,7 +119,7 @@ def main() -> None:
     sites = result.quantization_manifest["sites"]
     if len(sites) != 1 or any(sites[0].get(key) != value for key, value in {
             "site_id": "functional:matmul", "status": "quantized",
-            "format": "mxfp8" if kernel.datatype == "FP8" else "mxfp4",
+            "format": {"FP8": "mxfp8", "FP6": "mxfp6", "FP4": "mxfp4"}[kernel.datatype],
             "shape": list(kernel.shape)}.items()):
         raise RuntimeError(f"MX contraction site was not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()

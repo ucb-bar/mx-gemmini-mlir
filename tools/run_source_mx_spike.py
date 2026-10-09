@@ -14,6 +14,7 @@ import shutil
 import subprocess
 
 from mx_gemmini_support.source_baremetal import (emit_source_fp4_baremetal,
+                                                 emit_source_fp6_baremetal,
                                                  emit_source_fp8_baremetal)
 from mx_gemmini_support.source_gemm import read_source_gemm
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -84,8 +85,10 @@ def main() -> None:
         emit = emit_source_fp8_baremetal
     elif kernel.datatype == "FP4":
         emit = emit_source_fp4_baremetal
+    elif kernel.datatype == "FP6":
+        emit = emit_source_fp6_baremetal
     else:
-        parser.error("the source-data Spike diagnostic supports FP8 and FP4")
+        parser.error("the source-data Spike diagnostic supports FP8, FP6, and FP4")
     source = emit(
         args.mlir.read_text(), kernel, profile=profile,
         source_root=args.source_root, rtl_root=args.rtl_root)
@@ -176,7 +179,13 @@ def main() -> None:
         "spike_exit_code": result.returncode,
         "compared_bf16_outputs": kernel.shape[0] * kernel.shape[1],
         "spike_output": result.stdout.strip(),
-        "scope": f"one serial Rocket {kernel.datatype} source-data diagnostic; not the Muon MMIO schedule or RTL",
+        "spike_lut_scale_selector_workaround": kernel.datatype == "FP6",
+        "scope": (f"one serial Rocket {kernel.datatype} source-data diagnostic; "
+                  "FP6 reloads scale buffer zero because pinned Spike LUT compute ignores "
+                  "the alternate selector; not the Muon MMIO schedule or RTL"
+                  if kernel.datatype == "FP6" else
+                  f"one serial Rocket {kernel.datatype} source-data diagnostic; "
+                  "not the Muon MMIO schedule or RTL"),
     }
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {receipt['compared_bf16_outputs']} BF16 outputs")
