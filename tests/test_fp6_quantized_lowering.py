@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -75,6 +77,29 @@ def test_fp6_fullout_source_specialization_delays_quantization_to_final_wave(tmp
     assert receipt["source_quant_code_differences"] > 0
     assert receipt["source_quant_scale_differences"] == 512
     assert "FP6 packed-index mismatches" in (tmp_path / "artifact/mx_driver.c").read_text()
+    evidence = ROOT / "docs/evidence"
+    stem = "model2mlir_radiance_mx_fp6_128x128x2048_quant"
+    assert manifest == json.loads((evidence / f"{stem}_payload_manifest.json").read_text())
+    assert bound == (evidence / f"{stem}_payload_bound.mlir").read_text()
+    saved = json.loads((evidence / "compiled_mx_fp6_128x128x2048_quant_20261009.json").read_text())
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    assert saved["compiler_revision"].startswith("e40120b")
+    assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
+    assert saved["compared_fp6_packed_bytes"] == 8192
+    assert saved["compared_e8m0_scales"] == 512
+    assert saved["source_quant_code_differences"] == receipt["source_quant_code_differences"]
+    assert saved["source_quant_scale_differences"] == 512
+    qualification = json.loads((evidence / f"{stem}_qualification.json").read_text())
+    assert qualification["source_driver_quant_output"] is False
+    assert qualification["model2mlir_revision"] == "7485a829c0195af0ec42820837d609e62e466564"
+    assert qualification["artifact_manifest_sha256"] == hashlib.sha256(
+        (evidence / "compiled_mx_fp6_128x128x2048_quant_20261009.json").read_bytes()).hexdigest()
+    reproduced = json.loads((evidence / "compiled_mx_fp6_128x128x2048_quant_repro_20261009.json").read_text())
+    for field in qualification["reproducibility"]["exactly_matched_fields"]:
+        assert saved[field] == reproduced[field]
+    assert qualification["reproducibility"]["second_artifact_manifest_sha256"] == hashlib.sha256(
+        (evidence / "compiled_mx_fp6_128x128x2048_quant_repro_20261009.json").read_bytes()).hexdigest()
 
 
 def test_fp6_quantized_bundle_rejects_modified_lut(tmp_path):

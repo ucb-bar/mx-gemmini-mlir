@@ -135,8 +135,42 @@ cannot stage its C tile in the original 128 KiB scratchpad; its generated
 golden is still usable, and Nicolas's 256 KiB profile admits the tile.
 The Radiance generator's `C_out` currently uses FP8 output even for generated
 FP4 headers. The compiler qualifies FP4 against the separately named current
-reference and records this source format mismatch. FP6 quantized output remains
-unqualified.
+reference and records this source format mismatch.
+
+## FP6 LUT-indexed quantized readout on Nicolas's Spike
+
+The checked-in FP6 128×128×2048 header contains packed operands, three LUT
+banks, BF16 `C_out_bf16`, projected `C_proj_hw`, and output scales. The
+matching checked-in driver is **fullout**, while the FP6 requant drivers in
+Radiance refer to 128 and 512-deep headers that are absent from this source
+revision. The `--fp6-quantized-specialization` option explicitly reuses the
+PyTorch/model2MLIR fullout contraction and source operands and changes its
+terminal readout to typed `mx_gemmini.readout_quantized` with FP6 E3M2 LUT
+indices. It does not claim to have captured the absent FP6 requant header.
+
+For a 16-wave K loop, the physical lowering keeps intermediate outputs in
+BF16, then selects FP6 output on the final wave. The initial attempt to select
+FP6 on every wave failed Spike because requantization overwrote intermediate
+accumulator values. The final program now matches an independent BF16→E3M2→C
+LUT reference on Nicolas's pinned Spike: **8,192 packed index bytes and 512
+E8M0 scales, all exact**. The header's `C_proj_hw` differs in 8,175 bytes and
+its 512 output scales all differ from the current target convention. This is
+target-convention parity, with the source discrepancy recorded explicitly in
+the [qualification](evidence/model2mlir_radiance_mx_fp6_128x128x2048_quant_qualification.json)
+and [Spike receipt](evidence/compiled_mx_fp6_128x128x2048_quant_20261009.json).
+An independent output directory reproduced the same payload-bound MLIR,
+generated source files, objects, ELF, extension, and Spike log hashes; its
+[second receipt](evidence/compiled_mx_fp6_128x128x2048_quant_repro_20261009.json)
+records the check. The linker diagnostic log includes the output directory
+path, so that log's hash differs.
+The FP6 output path uses the E3M2-only profile; Nicolas's current MX+VPU
+profile has no E3M2 LUT compute mode.
+
+Reproduce it with the same profile, RTL, toolchain, and fullout driver as the
+BF16 row above, adding `--fp6-quantized-specialization` to
+`python -m tools.qualify_source_mx`. The command emits the
+[payload-bound MLIR](evidence/model2mlir_radiance_mx_fp6_128x128x2048_quant_payload_bound.mlir)
+and a standalone RV64 ELF, then checks both codes and scales on Spike.
 
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
