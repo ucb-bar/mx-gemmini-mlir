@@ -26,7 +26,10 @@ header as an explicit quantized output specialization; its 16-wave schedule
 selects FP6 output only on the final K wave. Source header output goldens use
 older or different conventions, so
 [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
-General matrix and arbitrary mixed VPU/SPAD lowering remain open.
+The source-audited Nicolas C1 VPU×2→tiled resident SPAD_REQUANT seam also
+compiles from typed MLIR and matches all 4,096 codes and 128 scales on Spike.
+The full matrix→VPU→requant→matrix program and general mixed lowering remain
+open.
 The physical
 `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and

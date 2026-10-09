@@ -194,9 +194,32 @@ the pinned Spike extension. They passed all reference comparisons, including
 the fused VPU cases and the VPU→requant→matmul chain. That is model capability
 evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.json)
 records source, ELF, tool, and log hashes. The dialect's physical
-VPU/SPAD_REQUANT command lowerer is checked separately. The x2 epilogues above
-establish one compiler-generated matrix/VPU composition; the full
-VPU→requant→matmul chain still needs compiler output and numerical parity.
+VPU/SPAD_REQUANT command lowerer now has a source-audited executable seam:
+`source_vector_chain.py` checks the exact `VPU_MULS` and tiled, resident
+`SPAD_REQUANT` calls in Nicolas's `chain_vpu_spad_requant.c`, then emits
+[typed MLIR](evidence/nicolas_chain_vpu_requant_64x64_source_bound.mlir).
+The compiler binds the E8M0 scale destination as a checked runtime pointer,
+issues generic BF16 input and tiled FP8 output transfers around those typed
+commands, and builds a standalone RV64 ELF. Its independent BF16×2→FP8
+reference equals the source header's 4,096 C1 codes and 128 source scales
+incremented by one. The compiler ELF matches all 4,096 codes and 128 scales
+on pinned Spike ([receipt](evidence/compiled_nicolas_chain_vpu_requant_64x64_20261009.json));
+a second output directory reproduced the MLIR, generated sources, objects,
+ELF, extension, and Spike log hashes
+([second receipt](evidence/compiled_nicolas_chain_vpu_requant_64x64_repro_20261009.json)).
+This qualification begins with the source C1 BF16 tile and ends at the C1
+requantized tile. The x2 epilogues above establish one compiler-generated
+matrix/VPU composition; the full matrix→VPU→requant→matrix chain still needs
+one compiler program and numerical parity.
+
+Reproduce the seam with:
+
+```sh
+python -m tools.qualify_nicolas_vector_requant \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/output-directory
+```
 
 ## Remaining gates
 

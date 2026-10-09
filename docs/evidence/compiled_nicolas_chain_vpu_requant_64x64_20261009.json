@@ -1,0 +1,56 @@
+{
+  "command_count": 53,
+  "compared_e8m0_scales": 128,
+  "compared_fp8_codes": 4096,
+  "compiler_revision": "c642bbf697fa1cbdf0561d4a47c9e46ef5152076",
+  "compiler_source_closure_sha256": "33bc8916d536dbdcad207708b5a0831694f935d42e669cc9b38ac34c1110d799",
+  "elf_sha256": "db01a141730bea5338fc94bd7c9808155e1a0bc4ee88bf3d33e20693a4b5888c",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "c1_bf16.bin": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref.bin": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref.bin": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "mx_data.S": "e993ad5e42ffe1e7b64093be781508a9f963272b4f04f66914afb8c1cc222df0",
+    "mx_driver.c": "aae1ade90863bc2bd9829c9578843ad784de1bf94d95a515cc53b4a94b15af2f",
+    "mx_issue.c": "bf8e679be885a3cc6448e5849bc59a787c2204218f1c4201e7d7f07d86083a17",
+    "physical_program.json": "4b83013b5ac7e217d395b2d1fdc16a3eee674bd412e6e13b72e44608c9547a7a"
+  },
+  "gemmini_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "object_sha256": {
+    "mx_0.o": "e7e7512e30d5a41267d8a7994213f7be333aa55c2e3f934710495b2630ff04ab",
+    "mx_1.o": "c637dbe53a322d8d66e466535e1a45b5a4686584cdb154dd85d192be8b2f3d0e",
+    "mx_2.o": "d0540928ef1cb4648eda8cde43f579d3325669d908c3117667e82ee9de35a38e",
+    "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vector_requant_sources.v1",
+  "source_facts": {
+    "bf16_scalar": 16384,
+    "contract_sha256": "5cc1f35b4e5d91efc3e0ef8e26040fb0be0a06832eec5b1091927a76687a6b85",
+    "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+    "policy_sha256": "04dc8f73257310f916ed8d6b0d48e49d57d32c928a561a08d42da1594317b186",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "resource_sha256": {
+      "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+      "c1_codes_ref": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+      "c1_scales_ref": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c"
+    },
+    "shape_mn": [
+      64,
+      64
+    ],
+    "source_scope": "BF16 C1 preload, VPU x2, tiled resident FP8 requant; excludes both matmuls",
+    "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+    "sp_bf16": 4096,
+    "sp_c1": 128,
+    "typed_mlir_sha256": "db1b5f8681e2cd3f630da6b51cbdebbf3487a3c5ce3780baef71766979db8f27"
+  },
+  "source_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "4ce0aa99e2b613b261ac2056b4fd7a04b80f5a6920d512e9b05e2a5451ee0373",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_vector_seam_matched_on_pinned_spike",
+  "typed_mlir_sha256": "db1b5f8681e2cd3f630da6b51cbdebbf3487a3c5ce3780baef71766979db8f27"
+}

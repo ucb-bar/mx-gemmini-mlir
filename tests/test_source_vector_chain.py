@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -46,6 +48,19 @@ def test_checked_source_captures_runtime_buffered_vector_mlir(tmp_path):
     assert ".insn r 0x7b, 3, 34" in issuer
     assert "<< 30" in issuer
     assert "#include \"include/matmul_fp8_64x64_chain.h\"" not in issuer
+    evidence = ROOT / "docs/evidence"
+    assert mlir == (evidence / "nicolas_chain_vpu_requant_64x64_source_bound.mlir").read_text()
+    saved = json.loads((evidence / "compiled_nicolas_chain_vpu_requant_64x64_20261009.json").read_text())
+    assert saved["status"] == "source_vector_seam_matched_on_pinned_spike"
+    assert saved["compiler_revision"].startswith("c642bbf")
+    assert saved["typed_mlir_sha256"] == hashlib.sha256(mlir.encode()).hexdigest()
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["compared_fp8_codes"] == 4096
+    assert saved["compared_e8m0_scales"] == 128
+    reproduced = json.loads((evidence / "compiled_nicolas_chain_vpu_requant_64x64_repro_20261009.json").read_text())
+    for field in ("typed_mlir_sha256", "files_sha256", "object_sha256", "elf_sha256",
+                  "extension_sha256", "spike_log_sha256", "compiler_source_closure_sha256"):
+        assert saved[field] == reproduced[field]
     opt = ROOT / "build/tools/mx-gemmini-opt"
     if opt.is_file():
         path = tmp_path / "source_bound.mlir"
