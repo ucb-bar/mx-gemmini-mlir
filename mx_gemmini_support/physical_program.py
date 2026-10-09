@@ -1,4 +1,4 @@
-"""Lower one payload-bound MX contraction to a physical Rocket command stream.
+"""Lower a payload-bound MX contraction to a physical Rocket command stream.
 
 The stream is source-independent after payload export. The Spike serial mode
 uses explicit operand DMA because the pinned Spike model does not execute the
@@ -37,6 +37,7 @@ class PhysicalProgram:
     steps: tuple[PhysicalStep, ...]
     source_golden_preserving: bool = True
     derived_expected_bf16: bytes | None = None
+    output_format: str = "bf16"
 
     def receipt(self) -> dict:
         receipt = {"schema": "mx_gemmini.physical_program.v1",
@@ -51,6 +52,9 @@ class PhysicalProgram:
             receipt["golden_derivation"] = "bf16_exact_multiply_by_two"
             receipt["derived_expected_bf16_sha256"] = hashlib.sha256(
                 self.derived_expected_bf16).hexdigest()
+        if self.output_format != "bf16":
+            receipt["output_format"] = self.output_format
+            receipt["source_golden_preserving"] = self.source_golden_preserving
         return receipt
 
 
@@ -112,18 +116,23 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[
         raise ValueError("physical MX lowering payload or target digest differs")
     ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
     contract = [op for op in ops if _operation_name(op) == "mx_gemmini.contract"]
-    readout = [op for op in ops if _operation_name(op) == "mx_gemmini.readout_bf16"]
+    output_format = manifest.get("output_format", "bf16")
+    readout_name = ("mx_gemmini.readout_bf16" if output_format == "bf16"
+                    else "mx_gemmini.readout_quantized")
+    readout = [op for op in ops if _operation_name(op) == readout_name]
     names = [_operation_name(op) for op in ops]
     if (len(contract) != 1 or len(readout) != 1 or
             names[0] != "mx_gemmini.contract" or
-            names[-1] != "mx_gemmini.readout_bf16" or
+            names[-1] != readout_name or
             any(name not in {"mx_gemmini.vpu_execute", "mx_gemmini.spad_requant"}
                 for name in names[1:-1])):
-        raise ValueError("physical MX lowering requires a matching BF16 readout")
+        raise ValueError("physical MX lowering requires a matching output readout")
     if (manifest.get("site_id") != _text_attr(contract[0], "site_id") or
             manifest.get("site_id") != _text_attr(readout[0], "site_id") or
             _text_attr(contract[0], "payload_manifest_sha256") != digest):
         raise ValueError("physical MX lowering site or payload binding differs")
+    if output_format != "bf16" and _text_attr(readout[0], "output_format") != output_format:
+        raise ValueError("physical MX output format differs from source specialization")
     vector_ops = []
     for op in ops[1:-1]:
         if _text_attr(op, "site_id") != manifest["site_id"]:
@@ -165,8 +174,9 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     precision = manifest["precision"]
     shape = tuple(manifest["shape_mnk"])
     tile = tuple(manifest["tile_mnk"])
+    quant_output = manifest.get("output_format") == "fp8_e4m3"
     plan = plan_mx_gemm(shape=shape, tile=tile, datatype=precision,
-                        quant_output=False, acc_to_gmem=False,
+                        quant_output=quant_output, acc_to_gmem=False,
                         scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
                         profile=profile)
     m, n, k = shape
@@ -177,6 +187,8 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
     if len(output_tiles) != 1 and vector_ops:
         raise ValueError("physical MX vector epilogues need a single output tile")
+    if quant_output and (precision != "FP8" or len(output_tiles) != 1 or vector_ops):
+        raise ValueError("physical quantized output needs one FP8 tile without vector epilogues")
     pe = 16 if precision == "FP8" else 32
     ti, tj, tki = tm // pe, tn // pe, tk // 16
     a_stride = k
@@ -185,6 +197,11 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
             len(resources["weight"]) != b_stride * k or
             len(resources["golden_bf16"]) != m * n * 2):
         raise ValueError("physical source resources differ from packed tensor shapes")
+    if quant_output and (len(resources["golden_fp8"]) != m * n or
+                         len(resources["golden_output_scales"]) != m * n // 32 or
+                         len(resources["nicolas_fp8"]) != m * n or
+                         len(resources["nicolas_output_scales"]) != m * n // 32):
+        raise ValueError("physical source quantized golden differs from output shape")
 
     steps: list[PhysicalStep] = []
 
@@ -193,13 +210,13 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
 
     # gemmini_extended3_config_ex(..., WS, formats, BF16 output, LUT).
     fmt = {"FP8": 0, "FP6": 1, "FP4": 2}[precision]
-    config_ex = (1 << 16) | (3 << 14) | (fmt << 12) | (fmt << 10) | \
+    config_ex = (1 << 16) | ((0 if quant_output else 3) << 14) | (fmt << 12) | (fmt << 10) | \
                 (int(precision == "FP6") << 5) | (1 << 2)
     issue("configure", _cmd(7, 0, 0))
     issue("configure", _cmd(0, config_ex, 1 << 48))
     issue("configure", _config_ld(a_stride))
     issue("configure", _config_ld(b_stride, id=1))
-    issue("configure", _config_st(n * 2))
+    issue("configure", _config_st(dim if quant_output else n * 2))
     issue("configure", Fence())
 
     if precision == "FP6":
@@ -282,19 +299,19 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
             issue("vpu_sync", Fence())
 
         issue("readout", _config_st(dim))
-        output_tile_base = output_tile["index"] * tm * tn * 2
+        output_tile_base = output_tile["index"] * tm * tn * (1 if quant_output else 2)
         for row in range(0, plan["c_rows"], dim):
             offset = output_tile_base + row * dim
-            if offset + dim * dim > m * n * 2:
-                raise ValueError("physical MX BF16 readout exceeds output shape")
-            issue("readout", _transfer(3, "output_bf16", offset,
+            if offset + dim * dim > m * n * (1 if quant_output else 2):
+                raise ValueError("physical MX readout exceeds output shape")
+            issue("readout", _transfer(3, "output_quantized" if quant_output else "output_bf16", offset,
                                        plan["c_spad_dest"] + row))
         issue("readout", Fence())
 
     for output_tile in output_tiles:
         lower_output_tile(output_tile)
 
-    source_golden_preserving = not vector_ops
+    source_golden_preserving = not vector_ops and not quant_output
     derived_expected_bf16 = None
     if len(vector_ops) == 1 and vector_ops[0][0] == "vpu":
         vpu = vector_ops[0][1]
@@ -315,4 +332,4 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
 
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),
                            mode, shape, plan, tuple(steps), source_golden_preserving,
-                           derived_expected_bf16)
+                           derived_expected_bf16, manifest.get("output_format", "bf16"))

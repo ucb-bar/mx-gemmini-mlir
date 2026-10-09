@@ -49,6 +49,16 @@ def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
   let results = (outs AnyTensor:$value);
 }
 
+def Mx_ReadoutQuantizedOp : Mx_Op<"readout_quantized"> {
+  let summary = "Read packed MX output codes and E8M0 output scales";
+  let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id,
+                   StrAttr:$output_format,
+                   OptionalAttr<StrAttr>:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+  let results = (outs AnyTensor:$codes, AnyTensor:$scales);
+}
+
 def Mx_ReadoutToSmemOp : Mx_Op<"readout_to_smem"> {
   let summary = "Write BF16 accumulator values to a shared-memory view";
   let arguments = (ins AnyTensor:$accumulator, AnyMemRef:$destination,

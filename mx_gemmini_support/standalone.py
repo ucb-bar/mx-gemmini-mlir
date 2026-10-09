@@ -19,7 +19,9 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     """Write a source-independent command issuer, data object, and receipt."""
     if program.mode != "spike_serial":
         raise ValueError("standalone execution is qualified only for the serial Spike mode")
-    if not program.source_golden_preserving and program.derived_expected_bf16 is None:
+    if (not program.source_golden_preserving and
+            program.derived_expected_bf16 is None and
+            program.output_format != "fp8_e4m3"):
         raise ValueError("source BF16 golden does not cover these MX VPU/requant operations")
     if any(name not in resources for name in ("activation", "weight", "activation_scales",
                                               "weight_scales", "golden_bf16")):
@@ -27,14 +29,23 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     commands = [step.command for step in program.steps]
     referenced = {operand.buffer for command in commands if isinstance(command, Command)
                   for operand in (command.rs1, command.rs2) if operand.buffer is not None}
-    runtime = {"output_bf16", "scratch_output_scales"}
+    runtime = {"output_bf16", "output_quantized", "scratch_output_scales"}
     if referenced - set(resources) - runtime:
         raise ValueError("standalone MX command has an unbound payload resource")
     names = tuple(sorted(referenced))
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
-    runtime_declarations = (f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
-                            "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
+    if program.output_format == "fp8_e4m3":
+        if ("nicolas_fp8" not in resources or "nicolas_output_scales" not in resources or
+                "golden_fp8" not in resources or "golden_output_scales" not in resources or
+                m * n // 32 > 2048):
+            raise ValueError("FP8 output needs code and scale goldens within runtime capacity")
+        runtime_declarations = (
+            f"static uint8_t output_quantized[{m * n}] __attribute__((aligned(64)));\n"
+            "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
+    else:
+        runtime_declarations = (f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
+                                "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
     resource_files = dict(resources)
     golden_name = "golden_bf16"
     if program.derived_expected_bf16 is not None:
@@ -83,6 +94,38 @@ int main(void) {{
   return errors != 0;
 }}
 '''
+    if program.output_format == "fp8_e4m3":
+        driver = f'''#include <stdint.h>
+#include <stdio.h>
+{externs}
+{runtime_declarations}
+void mx_issue({", ".join(f"const void *{name}" for name in names)});
+
+int main(void) {{
+  mx_issue({arguments});
+  int code_errors = 0;
+  int scale_errors = 0;
+  for (uint32_t i = 0; i < {m * n}; ++i) {{
+    if (output_quantized[i] != nicolas_fp8[i]) {{
+      if (code_errors < 8)
+        printf("CODE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
+               i, output_quantized[i], nicolas_fp8[i]);
+      ++code_errors;
+    }}
+  }}
+  for (uint32_t i = 0; i < {m * n // 32}; ++i) {{
+    if (scratch_output_scales[i] != nicolas_output_scales[i]) {{
+      if (scale_errors < 8)
+        printf("SCALE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
+               i, scratch_output_scales[i], nicolas_output_scales[i]);
+      ++scale_errors;
+    }}
+  }}
+  printf("lowered MX {m}x{n}x{k}: %d FP8 code mismatches, %d E8M0 scale mismatches\\n",
+         code_errors, scale_errors);
+  return code_errors != 0 || scale_errors != 0;
+}}
+'''
     assembly = [".section .rodata", ".balign 64"]
     for name in sorted(resource_files):
         assembly.extend((f".globl {name}", f"{name}:",
@@ -107,5 +150,12 @@ int main(void) {{
                                 for path in sorted(directory.iterdir()) if path.is_file()}}
     if program.derived_expected_bf16 is not None:
         receipt["golden_basis"] = "derived_bf16_x2"
+    if program.output_format == "fp8_e4m3":
+        receipt["golden_basis"] = "nicolas_mxquant_po2_rne_from_source_bf16"
+        receipt["source_quant_code_differences"] = sum(
+            a != b for a, b in zip(resources["golden_fp8"], resources["nicolas_fp8"]))
+        receipt["source_quant_scale_differences"] = sum(
+            a != b for a, b in zip(resources["golden_output_scales"],
+                                   resources["nicolas_output_scales"]))
     (directory / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt

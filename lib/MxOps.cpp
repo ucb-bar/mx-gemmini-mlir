@@ -90,6 +90,25 @@ LogicalResult ContractOp::verify() {
 }
 
 LogicalResult ReadoutBF16Op::verify() { return verifyBinding(*this); }
+LogicalResult ReadoutQuantizedOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto output = (*this)->getAttrOfType<StringAttr>("output_format");
+  if (!output || !isNamedFormat(output.getValue()) ||
+      !(*this)->hasAttr("profile_sha256"))
+    return emitOpError("requires a profile-bound named output format");
+  auto codes = dyn_cast<RankedTensorType>(getCodes().getType());
+  auto scales = dyn_cast<RankedTensorType>(getScales().getType());
+  if (!codes || !scales || codes.getRank() != 2 || scales.getRank() != 2 ||
+      !codes.getElementType().isInteger(8) ||
+      !scales.getElementType().isInteger(8))
+    return emitOpError("requires rank-two i8 code and scale tensors");
+  if (codes.hasStaticShape() && scales.hasStaticShape() &&
+      (codes.getDimSize(0) != scales.getDimSize(0) ||
+       codes.getDimSize(1) % 32 != 0 ||
+       codes.getDimSize(1) / 32 != scales.getDimSize(1)))
+    return emitOpError("code and E8M0 scale tensor shapes differ");
+  return success();
+}
 LogicalResult ReadoutToSmemOp::verify() { return verifyBinding(*this); }
 LogicalResult WaitOp::verify() { return verifyBinding(*this); }
 

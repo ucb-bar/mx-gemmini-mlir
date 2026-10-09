@@ -24,8 +24,8 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
     operands came from the selected source header bundle.
     """
     from xdsl.context import Context
-    from xdsl.dialects.builtin import Builtin, StringAttr
-    from xdsl.dialects.func import Func
+    from xdsl.dialects.builtin import Builtin, StringAttr, TensorType, UnregisteredOp, i8
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
     from xdsl.printer import Printer
 
@@ -57,12 +57,40 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
         if (_text_attr(contract, f"{side}_format") != fmt or
                 _text_attr(contract, f"{side}_projection") != projection):
             raise ValueError("source payload precision/projection differs from MLIR contract")
-    if not any(_operation_name(op) == "mx_gemmini.readout_bf16" and
-               _text_attr(op, "site_id") == site for op in module.walk()):
+    readouts = [op for op in module.walk()
+                if _operation_name(op) == "mx_gemmini.readout_bf16" and
+                _text_attr(op, "site_id") == site]
+    if len(readouts) != 1:
         raise ValueError("source BF16 payload needs a matching MLIR readout")
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
+    if manifest.get("output_format") is not None:
+        if manifest["output_format"] != "fp8_e4m3":
+            raise ValueError("source quantized output has an unsupported format")
+        readout = readouts[0]
+        function = readout.parent_op()
+        if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
+            raise ValueError("source quantized output requires a returning function")
+        old_return = function.get_return_op()
+        if list(old_return.operands) != list(readout.results):
+            raise ValueError("source BF16 readout must be the returned value")
+        block = readout.parent
+        assert block is not None
+        m, n, _ = manifest["shape_mnk"]
+        codes_type = TensorType(i8, [m, n])
+        scales_type = TensorType(i8, [m, n // 32])
+        quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
+            operands=readout.operands, result_types=[codes_type, scales_type],
+            attributes={**readout.attributes,
+                        "output_format": StringAttr(manifest["output_format"])})
+        block.insert_op_before(quant, readout)
+        block.insert_op_before(ReturnOp(*quant.results), old_return)
+        block.erase_op(old_return)
+        block.erase_op(readout)
+        function.update_function_type()
+        module.attributes["mx.output_specialization"] = StringAttr(
+            "source_header_quantized")
     output = StringIO()
     Printer(stream=output).print_op(module)
     rendered = output.getvalue() + "\n"

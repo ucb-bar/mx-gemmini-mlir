@@ -112,6 +112,10 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
                 raise ValueError("MX requantize output is absent from selected profile")
             requants += 1
+        elif name == "mx_gemmini.readout_quantized":
+            output = _text_attr(op, "output_format")
+            if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
+                raise ValueError("MX quantized readout output is absent from selected profile")
         elif name == "mx_gemmini.vpu_execute":
             vpu_command(profile, kind=_text_attr(op, "kind"),
                         src1_row=_int_attr(op, "src1_row"), src2_row=_int_attr(op, "src2_row"),

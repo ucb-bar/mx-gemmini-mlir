@@ -16,6 +16,7 @@ from pathlib import Path
 
 from .source_fp6 import _array, _bytes, read_source_fp6_payload
 from .source_gemm import SourceGemm
+from .quant_reference import quantize_bf16_fp8_output
 
 
 SCHEMA = "mx_gemmini.source_payload.v1"
@@ -107,6 +108,25 @@ def read_source_payload(kernel: SourceGemm) -> dict[str, Resource]:
         source, name="C_scales_row", ctype="uint8_t",
         dimensions="[MATMUL_GN][MATMUL_M]", count=n // 32 * m, maximum=255)),
         (n // 32, m), 8, "n_group_row_e8m0")
+    if kernel.quant_output:
+        if kernel.datatype != "FP8":
+            raise ValueError("source quantized-output golden is qualified only for FP8")
+        codes = bytes(_array(source, name="C_out", ctype="uint8_t",
+                             dimensions="[MATMUL_M][MATMUL_N]", count=m * n,
+                             maximum=255))
+        groups = n // 32
+        scales = resources["output_scales"].data
+        row_major_scales = bytes(scales[group * m + row]
+                                 for row in range(m) for group in range(groups))
+        resources["golden_fp8"] = Resource(codes, (m, n), 8, "row_major_fp8_e4m3")
+        resources["golden_output_scales"] = Resource(
+            row_major_scales, (m, groups), 8, "row_major_n_group_e8m0")
+        current_codes, current_scales = quantize_bf16_fp8_output(
+            resources["golden_bf16"].data, m, n)
+        resources["nicolas_fp8"] = Resource(
+            current_codes, (m, n), 8, "row_major_fp8_e4m3")
+        resources["nicolas_output_scales"] = Resource(
+            current_scales, (m, groups), 8, "row_major_n_group_e8m0")
     for name, resource in resources.items():
         resource.descriptor(name)
     return resources
@@ -116,7 +136,7 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
                   site_id: str, profile_sha256: str) -> dict:
     if not site_id or len(profile_sha256) != 64:
         raise ValueError("payload needs a site ID and target profile digest")
-    return {
+    manifest = {
         "schema": SCHEMA, "site_id": site_id, "precision": kernel.datatype,
         "shape_mnk": list(kernel.shape), "tile_mnk": list(kernel.tile),
         "source_driver_sha256": _sha(kernel.driver.read_bytes()),
@@ -126,6 +146,11 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
         "resources": {name: resource.descriptor(name)
                       for name, resource in sorted(resources.items())},
     }
+    if kernel.quant_output:
+        manifest["output_format"] = "fp8_e4m3"
+        manifest["output_oracle"] = "nicolas_mxquant_po2_rne_v1"
+        manifest["source_quant_golden_convention"] = "source_header"
+    return manifest
 
 
 def write_bundle(directory: Path, kernel: SourceGemm, *, site_id: str,
@@ -172,13 +197,27 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
             "weight_lut": ((64, 3), 32, "column_pair_lut_6bit"),
             "output_lut": ((64, 3), 32, "output_pair_lut_6bit"),
         })
+    output_format = manifest.get("output_format")
+    if output_format is not None:
+        if (precision != "FP8" or output_format != "fp8_e4m3" or
+                manifest.get("output_oracle") != "nicolas_mxquant_po2_rne_v1" or
+                manifest.get("source_quant_golden_convention") != "source_header"):
+            raise ValueError("source quantized-output golden has an unsupported format")
+        expected.update({
+            "golden_fp8": ((m, n), 8, "row_major_fp8_e4m3"),
+            "golden_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
+            "nicolas_fp8": ((m, n), 8, "row_major_fp8_e4m3"),
+            "nicolas_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
+        })
     if set(manifest["resources"]) != set(expected):
         raise ValueError("MX payload resource set differs from precision requirements")
     resources = {}
     for name, descriptor in manifest["resources"].items():
-        if name not in {"activation", "weight", "activation_scales", "weight_scales",
-                        "output_scales", "activation_lut", "weight_lut", "output_lut",
-                        "golden_bf16"} or descriptor.get("file") != f"{name}.bin":
+        if (name not in {"activation", "weight", "activation_scales", "weight_scales",
+                         "output_scales", "activation_lut", "weight_lut", "output_lut",
+                         "golden_bf16", "golden_fp8", "golden_output_scales",
+                         "nicolas_fp8", "nicolas_output_scales"} or
+                descriptor.get("file") != f"{name}.bin"):
             raise ValueError("MX payload bundle has an unknown resource or unsafe file")
         data = (directory / descriptor["file"]).read_bytes()
         if descriptor.get("sha256") != _sha(data) or descriptor.get("bytes") != len(data):
@@ -190,4 +229,9 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
             raise ValueError(f"MX payload resource {name} storage contract differs")
         Resource(data, *spec).descriptor(name)
         resources[name] = data
+    if output_format == "fp8_e4m3":
+        codes, scales = quantize_bf16_fp8_output(resources["golden_bf16"], m, n)
+        if (resources["nicolas_fp8"] != codes or
+                resources["nicolas_output_scales"] != scales):
+            raise ValueError("Nicolas output oracle differs from bound BF16 source golden")
     return manifest, resources

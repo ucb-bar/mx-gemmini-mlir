@@ -75,6 +75,7 @@ def main() -> None:
     if not riscv_cc.is_file():
         parser.error("selected RISC-V toolchain lacks riscv64-unknown-elf-gcc")
     receipt = write_standalone_sources(args.out_dir, program, resources)
+    compiler_root = Path(__file__).resolve().parents[1]
     flags = ["-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DMX_ROCKET", "-DBAREMETAL=1",
              "-mcmodel=medany", "-std=gnu99", "-O2", "-ffast-math", "-fno-common",
              "-fno-builtin-printf", "-fno-tree-loop-distribute-patterns",
@@ -97,6 +98,10 @@ def main() -> None:
           "-o", str(elf)], cwd=args.out_dir, log=args.out_dir / "link.log")
     receipt.update({
         "status": "rv64_elf_built", "bound_mlir_sha256": _sha(args.mlir),
+        "compiler_revision": _git_revision(compiler_root),
+        "compiler_source_closure_sha256": _source_closure(
+            compiler_root, sorted((compiler_root / "mx_gemmini_support").glob("*.py")) +
+            sorted((compiler_root / "tools").glob("*.py"))),
         "source_driver_sha256": manifest["source_driver_sha256"],
         "source_header_sha256": manifest["source_header_sha256"],
         "rtl_revision": _git_revision(args.rtl_root),
@@ -127,9 +132,14 @@ def main() -> None:
                                 cwd=args.out_dir, text=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, check=False)
         (args.out_dir / "spike.log").write_text(result.stdout)
-        expected = f"lowered MX {'x'.join(map(str, program.shape))}: 0 BF16 mismatches"
+        prefix = f"lowered MX {'x'.join(map(str, program.shape))}: "
+        expected = (prefix + "0 FP8 code mismatches, 0 E8M0 scale mismatches"
+                    if program.output_format == "fp8_e4m3" else
+                    prefix + "0 BF16 mismatches")
         passed = result.returncode == 0 and expected in result.stdout
-        qualifier = "derived_vpu_golden" if program.derived_expected_bf16 is not None else "source_golden"
+        qualifier = ("nicolas_oracle" if program.output_format == "fp8_e4m3" else
+                     "derived_vpu_golden" if program.derived_expected_bf16 is not None else
+                     "source_golden")
         receipt.update({
             "status": f"{qualifier}_matched_on_pinned_spike" if passed else
                       f"{qualifier}_failed_on_pinned_spike",
@@ -140,9 +150,13 @@ def main() -> None:
             "spike_sha256": _sha(spike), "extension_sha256": _sha(so),
             "spike_exit_code": result.returncode,
             "spike_log_sha256": _sha(args.out_dir / "spike.log"),
-            "compared_bf16_outputs": program.shape[0] * program.shape[1],
             "fp6_spike_scale_selector_workaround": manifest["precision"] == "FP6",
         })
+        if program.output_format == "fp8_e4m3":
+            receipt["compared_fp8_codes"] = program.shape[0] * program.shape[1]
+            receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+        else:
+            receipt["compared_bf16_outputs"] = program.shape[0] * program.shape[1]
     (args.out_dir / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")

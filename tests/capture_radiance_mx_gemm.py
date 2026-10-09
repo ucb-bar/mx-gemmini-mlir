@@ -1,8 +1,8 @@
 """Capture a Radiance MX GEMM shape through current model2MLIR and the MX adapter.
 
 This is a structural frontend/handoff test. The PyTorch inputs do not reproduce
-the handwritten MX code and scale blobs; native MX output must later be
-checked against radiance-kernels' mx_golden rather than ideal torch.matmul.
+the handwritten MX code and scale blobs. Native output is checked separately
+against the source BF16 golden or a named, profile-specific quantized oracle.
 """
 from __future__ import annotations
 
@@ -199,6 +199,13 @@ def main() -> None:
         "lowering_scope": ("frontend capture and profile-bound MX handoff; "
                            "the source-specialized physical compiler is qualified separately"),
     }
+    if kernel.quant_output:
+        receipt["source_quant_output"] = True
+        receipt["mx_support_source_tree_sha256"] = tree_sha(support_root, "mx_gemmini_support")
+        receipt["capture_script_sha256"] = sha(Path(__file__))
+        receipt["frontend_output_scope"] = (
+            "PyTorch captures BF16 matmul structure; the source-bound payload "
+            "specializes the terminal readout to source quantized output")
     destination = out / "receipt.json"
     destination.write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps({"site": sites[0]["site_id"], "handoff": str(handoff),
