@@ -1,0 +1,203 @@
+{
+  "abi": {
+    "gemmini_header_sha256": "af18755e3175561540e394e5065cf6e7e42e9e67a4e2f0ec9cff8b20bf1a1457",
+    "radiance_mmio_header_sha256": "c5abe6407ce252047f1e4666bc809b84380a4667f5b7a1739461ceafe70b8e9d"
+  },
+  "gemmini_software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "omitted": [
+    "configuration commands",
+    "Muon E8M0/LUT shared-memory writes (target uses symbolic funct-27 E8M0 DMA instead)",
+    "Muon memory fences and busy waits",
+    "SIMT or accumulator move-out",
+    "GPU-to-host buffer address translation"
+  ],
+  "packets": [
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 17180000258,
+      "wave": 0
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 0
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 0
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 9016012527632384,
+      "rs2": 1,
+      "wave": 0
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 17180000258,
+      "wave": 1
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 1
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 1
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 17180000258,
+      "wave": 0
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 0
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 549755814584,
+      "wave": 0
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3467780526348173312,
+      "rs2": 1,
+      "wave": 1
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 17180000258,
+      "wave": 1
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 1
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 549755814456,
+      "wave": 1
+    }
+  ],
+  "scale_dma_packets": [
+    {
+      "byte_count": 128,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 64,
+      "row_bytes": 64,
+      "rows": 2,
+      "rs1_dram_address": "&A_scales_row[0][0]",
+      "rs1_static_high_bits": 70368744177664,
+      "rs2": 140737488355392,
+      "side": "A",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 128,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 64,
+      "row_bytes": 64,
+      "rows": 2,
+      "rs1_dram_address": "&B_scales_col[0][0]",
+      "rs1_static_high_bits": 70368744177664,
+      "rs2": 140741783322688,
+      "side": "B",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 128,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 64,
+      "row_bytes": 64,
+      "rows": 2,
+      "rs1_dram_address": "&A_scales_row[2][0]",
+      "rs1_static_high_bits": 70368744177664,
+      "rs2": 175921860444224,
+      "side": "A",
+      "source_byte_offset": 128,
+      "wave": 1
+    },
+    {
+      "byte_count": 128,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 64,
+      "row_bytes": 64,
+      "rows": 2,
+      "rs1_dram_address": "&B_scales_col[2][0]",
+      "rs1_static_high_bits": 70368744177664,
+      "rs2": 175926155411520,
+      "side": "B",
+      "source_byte_offset": 128,
+      "wave": 1
+    }
+  ],
+  "scale_memory": {
+    "abi": {
+      "controller_sha256": "5237331d09b2daf42f8f64a5336c08a7dc086d6c947a20dbfd255db3f67a634c"
+    },
+    "source_half_bytes": 2048,
+    "source_trailing_upload_suppressed": true,
+    "target_half_bytes": 4096
+  },
+  "schema": "mx_gemmini.source_loop_trace.v1",
+  "site_id": "functional:matmul",
+  "software_geometry": {
+    "ADDR_LEN": 32,
+    "BANK_NUM": 4,
+    "BANK_ROWS": 4096,
+    "DIM": 16,
+    "gemmini_params_sha256": "39c2d32a3938f10e8cff29773a8b443526d6c38af1520fe0449db3dd7edc939c"
+  },
+  "source_driver": "mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp",
+  "source_driver_sha256": "8781fddbff19c5a17a0e671e8cc4787526ddecbb5daf9528b1106872c30667d0",
+  "source_layout_c_row": 128,
+  "source_library_sha256": "003302c019de637a02b285a90ca40f114a53341f6ee22bec774fd20310a7177d",
+  "status": "symbolic_matrix_loop_trace_only",
+  "target_layout_c_row": 128,
+  "target_profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "wave_count": 2
+}

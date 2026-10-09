@@ -120,3 +120,41 @@ records **zero BF16 mismatches** and the C, ELF, extension, input, profile,
 and tool revisions and digests. This qualifies one serial standalone Rocket
 diagnostic. A reusable MLIR matrix lowering, source-equivalent Muon MMIO issue
 schedule, mixed Radiance artifact, and RTL output check remain to be built.
+
+## Generated source FP4 kernel
+
+The Radiance tree tracks the FP4 64×64×128 driver but generates its data header
+on demand. The saved [header](evidence/mxgemm.data.fp4.m64n64k128_20261009.h)
+was produced from `gen_mxgemm_data.py` and `lib/golden/mx_golden` at the same
+source revision. Its SHA-256 is bound in the capture and execution receipts.
+To regenerate it without changing the active Radiance checkout:
+
+```sh
+git -C /path/to/radiance-kernels worktree add --detach /tmp/radiance-fp4-data 94ba7ca8afe213b92fa2428689fa64800c8eeca9
+make -C /tmp/radiance-fp4-data/lib/golden mx_golden
+python /tmp/radiance-fp4-data/kernels/gemm_mxgemmini/gen_mxgemm_data.py fp4 64 64 128
+```
+
+Use that worktree as `--source-root` and its
+`kernels/gemm_mxgemmini/mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp`
+as `--driver` in the capture command above. The capture chooses
+`examples/fp4-policy.yaml`, so the model2MLIR matmul becomes an MXFP4 typed
+contract. The [FP4 capture receipt](evidence/model2mlir_radiance_mx_fp4_receipt_20261009.json)
+binds the [source MLIR](evidence/model2mlir_radiance_mx_fp4_source_20261009.mlir),
+[handoff](evidence/model2mlir_radiance_mx_fp4_handoff_20261009.mlir), and
+[profile-bound MLIR](evidence/model2mlir_radiance_mx_fp4_bound_20261009.mlir).
+The [two-wave trace](evidence/model2mlir_radiance_mx_fp4_loop_trace_20261009.json)
+contains four E8M0 DMA packets. `tools.run_source_mx_spike` accepts the same
+capture, driver, source, profile, RTL, and RISC-V arguments as the FP8 command
+above. Its [generated C](evidence/source_fp4_64x64x128_20261009.c) uses the
+source's nibble-packed operands and target-derived scratchpad addresses. The
+[execution receipt](evidence/source_fp4_64x64x128_spike_20261009.json)
+records **zero mismatches across 4,096 BF16 outputs** on the pinned Spike
+extension. Two independent builds produced identical C, extension, ELF, and
+Spike-log digests.
+
+The checked-in FP6 128×128×2048 header has row-specific A, B, and C LUTs
+(`64×3` words each). The current frontend policy selects one codebook per
+site, so it cannot describe that exact source quantization. FP6 source parity
+requires per-row LUT binding and a profile with FP6 LUT compute before a
+source-golden execution claim is possible.
