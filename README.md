@@ -5,7 +5,7 @@ Licensed under Apache-2.0; see [LICENSE](LICENSE).
 The MLIR dialect includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a
-selected SoC profile. Matrix contraction and handoff operations remain contract IR.
+selected SoC profile. General matrix and handoff lowering remains in progress.
 The new physical `vpu_execute` and `spad_requant` operations lower to Rocket
 RoCC commands for source-bound DIM16 MX+VPU profiles; see
 [current MX profiles and VPU lowering](docs/current_mx_profiles.md).
@@ -14,14 +14,17 @@ and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0
 scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
 `physical_program.lower_bound_source` schedules configuration, scale/LUT DMA,
-operand movement, K-wave compute, and BF16 readout for complete output tiles.
+operand movement, K-wave compute, and BF16 or supported quantized readout for
+complete output tiles.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
 output on Nicolas's pinned Spike extension. Nine source schedules pass; see
 [compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
-goldens. Typed FP8 and FP4 quantized readouts also match Nicolas's current
-Spike convention for codes and scales; the source header output goldens use
-older or different formats, so
+goldens. Typed FP8, FP4, and FP6 quantized readouts also match Nicolas's current
+Spike convention for codes and scales. The FP6 path uses the checked-in fullout
+header as an explicit quantized output specialization; its 16-wave schedule
+selects FP6 output only on the final K wave. Source header output goldens use
+older or different conventions, so
 [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
 General matrix and arbitrary mixed VPU/SPAD lowering remain open.
 The physical
@@ -128,8 +131,9 @@ counters. RTL evidence for alternating FP6 scales remains outstanding.
 
 The older packer refuses payloads above one active window. The source-bound
 physical lowering issues separate scale uploads per K wave and has executed a
-2048-wide FP6 contraction on Spike. General multi-output-tile and quantized
-output lowering remain open.
+2048-wide FP6 contraction on Spike. BF16 multi-output tiling is qualified for
+one FP8 shape; quantized readout is qualified for selected single-output FP8,
+FP4, and FP6 shapes. Further shapes and legal mode classes remain open.
 `tools/check_radiance_header.py` compares a caller-selected source FP8 data
 header with this OOT planner. For the checked-in Radiance
 `m128n128k512` header, every A/B code and E8M0 scale byte matches exactly,

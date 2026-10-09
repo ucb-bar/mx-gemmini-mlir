@@ -201,9 +201,9 @@ VPU→requant→matmul chain still needs compiler output and numerical parity.
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
-   then qualify FP6 quantized output, asymmetric legal modes, and the
-   remaining source shapes. Extend multi-output tiling beyond the qualified
-   FP8 BF16 shape.
+   then qualify the actual FP6 requant source drivers once their missing data
+   headers are available, asymmetric legal modes, and the remaining source
+   shapes. Extend multi-output tiling beyond the qualified FP8 BF16 shape.
 2. Compose the full matrix→VPU→SPAD_REQUANT→matrix chain in one MLIR program
    with explicit scratchpad lifetimes and source numerical goldens.
 3. Qualify every legal mode class on the matching Spike/RTL configuration,
