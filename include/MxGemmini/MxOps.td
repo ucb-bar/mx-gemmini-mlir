@@ -109,3 +109,17 @@ def Mx_SpadRequantOp : Mx_Op<"spad_requant"> {
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
 }
+
+def Mx_ResidentContractOp : Mx_Op<"resident_contract"> {
+  let summary = "Consume a resident MX activation tile and scales in a second contraction";
+  let arguments = (ins StrAttr:$site_id,
+                   I32Attr:$activation_row, I32Attr:$weight_row,
+                   I32Attr:$output_row, I32Attr:$m, I32Attr:$n, I32Attr:$k,
+                   StrAttr:$activation_format, StrAttr:$weight_format,
+                   StrAttr:$output_format,
+                   StrAttr:$weight_buffer, StrAttr:$weight_scales_buffer,
+                   StrAttr:$output_scales_buffer,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+}

@@ -31,8 +31,9 @@ def _define(source: str, name: str) -> int:
 
 
 def capture_nicolas_vpu_requant(source_path: Path, header_path: Path,
-                                profile: dict) -> tuple[str, dict[str, bytes], dict]:
-    """Audit two source commands and independently check their output golden."""
+                                profile: dict, *, include_resident_matmul: bool = False
+                                ) -> tuple[str, dict[str, bytes], dict]:
+    """Audit Nicolas's chain and check its source-derived output goldens."""
     source_bytes, header_bytes = source_path.read_bytes(), header_path.read_bytes()
     source, header = source_bytes.decode("ascii"), header_bytes.decode("ascii")
     if (source_path.name != "chain_vpu_spad_requant.c" or
@@ -69,17 +70,74 @@ def capture_nicolas_vpu_requant(source_path: Path, header_path: Path,
         raise ValueError("Nicolas VPU x2/requant reference differs from source golden")
     resources = {"c1_bf16": bf16, "c1_codes_ref": codes,
                  "c1_scales_ref": scales}
+    resident_op = ""
+    if include_resident_matmul:
+        from .resident_lowering import validate_resident_contract
+        k = _define(header, "MATMUL_K")
+        sp_c2 = _define(source, "SP_C2")
+        attrs = {"activation_row": sp_c1,
+                 "weight_row": profile["resources"]["scratchpad_bytes"] // 16 - k * n // 16,
+                 "output_row": sp_c2, "m": m, "n": n, "k": k,
+                 "activation_format": "fp8_e4m3", "weight_format": "fp8_e4m3",
+                 "output_format": "fp8_e4m3", "weight_buffer": "b2_weight",
+                 "weight_scales_buffer": "b2_scales",
+                 "output_scales_buffer": "c2_scales"}
+        validate_resident_contract(profile, attrs)
+        for marker in (
+                "gemmini_mx_load_scales((uint64_t)&B2_scales_col, sizeof(B2_scales_col), 1);",
+                "gemmini_config_ld(N * sizeof(uint8_t));",
+                "gemmini_extended_mvin((uint8_t *)B2_in + j * DIM * N + k * DIM, b_base + (j * tiles_K + k) * DIM, DIM, DIM);",
+                "gemmini_mxquant_config_mvout_resident((uint64_t)c2_scales, tiles_I, tiles_J, tiles_K, 0, 0, 1);",
+                "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K, 0, 0, 0, SP_C1, BANK_NUM * BANK_ROWS, 0, SP_C2,",
+                "false, false, false, false, false, NO_ACTIVATION, 0, 0, false, CHAIN_FLAGS);",
+                "#define CHAIN_FLAGS (0x38 | LOOP_WS_REQUANT_TILED)"):
+            if marker not in source:
+                raise ValueError("Nicolas resident second contraction changed")
+        b2 = bytes(_array(header, name="B2_in", ctype="uint8_t",
+                          dimensions="[MATMUL_K][MATMUL_N]", count=k * n, maximum=255))
+        b2_scales = bytes(_array(header, name="B2_scales_col", ctype="uint8_t",
+                                 dimensions="[MATMUL_GK][MATMUL_N]", count=k * n // 32,
+                                 maximum=255))
+        c2_bf16 = _bytes(_array(header, name="C2_out_bf16", ctype="uint16_t",
+                                dimensions="[MATMUL_M][MATMUL_N]", count=m * n,
+                                maximum=65535), 2)
+        c2_source_codes = bytes(_array(header, name="C2_out", ctype="uint8_t",
+                                       dimensions="[MATMUL_M][MATMUL_N]", count=m * n,
+                                       maximum=255))
+        c2_source_scales = bytes(_array(header, name="C2_scales_out", ctype="uint8_t",
+                                        dimensions="[MATMUL_M][MATMUL_GN]", count=m * n // 32,
+                                        maximum=255))
+        c2_codes, c2_scales = quantize_bf16_fp8_output(
+            exact_bf16_x2(c2_bf16), m, n)
+        if c2_codes != c2_source_codes or c2_scales != bytes(
+                min(value + 1, 255) for value in c2_source_scales):
+            raise ValueError("Nicolas second contraction golden differs from x2 source")
+        resources.update({"b2_weight": b2, "b2_scales": b2_scales,
+                          "c2_codes_ref": c2_codes, "c2_scales_ref": c2_scales})
     facts = {"shape_mn": [m, n], "sp_bf16": sp_bf16,
              "sp_c1": sp_c1, "bf16_scalar": two,
              "source_sha256": _sha(source_bytes), "header_sha256": _sha(header_bytes),
              "profile_sha256": profile_sha256(profile),
              "resource_sha256": {name: _sha(data) for name, data in resources.items()},
-             "source_scope": "BF16 C1 preload, VPU x2, tiled resident FP8 requant; excludes both matmuls"}
+             "source_scope": ("BF16 C1 preload, VPU x2, tiled resident FP8 requant, "
+                              "resident FP8 second matmul; excludes first matmul"
+                              if include_resident_matmul else
+                              "BF16 C1 preload, VPU x2, tiled resident FP8 requant; excludes both matmuls")}
     contract = _sha(json.dumps(facts, sort_keys=True, separators=(",", ":")).encode())
     policy = _sha(b"bf16_exact_x2;fp8_e4m3_po2_rne;spad_requant_tiled_resident")
     manifest = _sha(header_bytes)
     binding = (f'contract_sha256 = "{contract}", policy_sha256 = "{policy}", '
                f'manifest_sha256 = "{manifest}", profile_sha256 = "{facts["profile_sha256"]}"')
+    if include_resident_matmul:
+        resident_op = f'''    "mx_gemmini.resident_contract"() {{site_id = "nicolas:chain:c2",
+      activation_row = {attrs["activation_row"]} : i32,
+      weight_row = {attrs["weight_row"]} : i32, output_row = {attrs["output_row"]} : i32,
+      m = {m} : i32, n = {n} : i32, k = {k} : i32,
+      activation_format = "fp8_e4m3", weight_format = "fp8_e4m3",
+      output_format = "fp8_e4m3", weight_buffer = "b2_weight",
+      weight_scales_buffer = "b2_scales", output_scales_buffer = "c2_scales",
+      {binding}}} : () -> ()
+'''
     mlir = f'''module attributes {{mx.contract_sha256 = "{contract}",
   mx.policy_sha256 = "{policy}", prov.quantization_manifest_sha256 = "{manifest}",
   mx.profile_sha256 = "{facts["profile_sha256"]}"}} {{
@@ -93,12 +151,13 @@ def capture_nicolas_vpu_requant(source_path: Path, header_path: Path,
       m = {m} : i32, n = {n} : i32, output_format = "fp8_e4m3",
       tiled = true, resident = true, scale_dram_address = 0 : i64,
       scale_buffer = "c1_scales", {binding}}} : () -> ()
-    func.return
+{resident_op}    func.return
   }}
 }}
 '''
     checked = verify_ir(mlir, profile)
-    if (checked["contracts"], checked["vpu_commands"], checked["spad_requants"]) != (0, 1, 1):
+    if (checked["contracts"], checked["vpu_commands"], checked["spad_requants"],
+            checked["resident_contracts"]) != (0, 1, 1, int(include_resident_matmul)):
         raise ValueError("Nicolas vector chain capture has unexpected target operations")
     facts["typed_mlir_sha256"] = _sha(mlir.encode())
     facts["contract_sha256"] = contract

@@ -10,7 +10,8 @@ import subprocess
 
 from mx_gemmini_support.source_vector_chain import capture_nicolas_vpu_requant
 from mx_gemmini_support.target_profile import load_profile
-from mx_gemmini_support.vector_standalone import write_vector_requant_sources
+from mx_gemmini_support.vector_standalone import (write_resident_chain_sources,
+                                                   write_vector_requant_sources)
 from tools.compile_mx import _git_revision, _require_gitlink, _run, _sha, _source_closure
 
 
@@ -21,6 +22,8 @@ def main() -> None:
     parser.add_argument("--riscv-root", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--mx-opt", type=Path)
+    parser.add_argument("--with-resident-matmul", action="store_true",
+                        help="continue the typed VPU/requant chain through resident MM2")
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -31,7 +34,8 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/libgemmini")
     source = software / "bareMetalC/chain_vpu_spad_requant.c"
     header = software / "include/matmul_fp8_64x64_chain.h"
-    mlir, resources, facts = capture_nicolas_vpu_requant(source, header, profile)
+    mlir, resources, facts = capture_nicolas_vpu_requant(
+        source, header, profile, include_resident_matmul=args.with_resident_matmul)
     args.out_dir.mkdir(parents=True)
     mlir_path = args.out_dir / "source_bound.mlir"
     mlir_path.write_text(mlir)
@@ -39,7 +43,9 @@ def main() -> None:
         _run([str(args.mx_opt.resolve()), str(mlir_path), "-o", "/dev/null"],
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
     build = args.out_dir / "build"
-    receipt = write_vector_requant_sources(build, mlir, profile, resources, facts)
+    writer = (write_resident_chain_sources if args.with_resident_matmul else
+              write_vector_requant_sources)
+    receipt = writer(build, mlir, profile, resources, facts)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -78,13 +84,16 @@ def main() -> None:
                             stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    passed = (result.returncode == 0 and
-              "lowered VPU requant 64x64: 0 FP8 code mismatches, 0 E8M0 scale mismatches"
-              in result.stdout)
+    marker = ("lowered resident chain: C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
+              if args.with_resident_matmul else
+              "lowered VPU requant 64x64: 0 FP8 code mismatches, 0 E8M0 scale mismatches")
+    passed = result.returncode == 0 and marker in result.stdout
     compiler_root = Path(__file__).resolve().parents[1]
     receipt.update({
-        "status": "source_vector_seam_matched_on_pinned_spike" if passed else
-                  "source_vector_seam_failed_on_pinned_spike",
+        "status": ("source_resident_chain_matched_on_pinned_spike" if passed else
+                   "source_resident_chain_failed_on_pinned_spike") if args.with_resident_matmul else
+                  ("source_vector_seam_matched_on_pinned_spike" if passed else
+                   "source_vector_seam_failed_on_pinned_spike"),
         "source_revision": _git_revision(software),
         "rtl_revision": _git_revision(args.rtl_root),
         "gemmini_extension_revision": _git_revision(extension),
@@ -96,7 +105,8 @@ def main() -> None:
         "elf_sha256": _sha(elf), "extension_sha256": _sha(so),
         "object_sha256": {path.name: _sha(path) for path in objects},
         "spike_log_sha256": _sha(log), "spike_exit_code": result.returncode,
-        "compared_fp8_codes": 4096, "compared_e8m0_scales": 128,
+        "compared_fp8_codes": 8192 if args.with_resident_matmul else 4096,
+        "compared_e8m0_scales": 256 if args.with_resident_matmul else 128,
     })
     (build / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")

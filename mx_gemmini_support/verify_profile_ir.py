@@ -62,7 +62,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     if payload_digest is not None and (len(payload_digest) != 64 or
                                        any(c not in "0123456789abcdef" for c in payload_digest)):
         raise ValueError("MX module payload manifest digest is malformed")
-    contracts = encodes = requants = vpu_commands = spad_requants = 0
+    contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
     for op in module.walk():
         name = _operation_name(op)
         if not name.startswith("mx_gemmini."):
@@ -135,14 +135,26 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                                  scale_dram_address=_int_attr(op, "scale_dram_address"),
                                  scale_buffer=_text_attr(op, "scale_buffer"))
             spad_requants += 1
+        elif name == "mx_gemmini.resident_contract":
+            from .resident_lowering import validate_resident_contract
+            validate_resident_contract(profile, {
+                key: _int_attr(op, key) for key in
+                ("activation_row", "weight_row", "output_row", "m", "n", "k")
+            } | {
+                key: _text_attr(op, key) for key in
+                ("activation_format", "weight_format", "output_format",
+                 "weight_buffer", "weight_scales_buffer", "output_scales_buffer")
+            })
+            resident_contracts += 1
         elif name not in {"mx_gemmini.readout_bf16", "mx_gemmini.readout_to_smem", "mx_gemmini.wait"}:
             raise ValueError(f"unknown MX operation {name}")
-    if not (contracts or vpu_commands or spad_requants):
+    if not (contracts or vpu_commands or spad_requants or resident_contracts):
         raise ValueError("MX profile-bound IR has no executable or contraction operation")
     return {"schema": "mx_gemmini.profile_ir_check.v1",
             "status": profile["qualification"], "profile_sha256": digest,
             "contracts": contracts, "encodes": encodes, "requantizes": requants,
-            "vpu_commands": vpu_commands, "spad_requants": spad_requants}
+            "vpu_commands": vpu_commands, "spad_requants": spad_requants,
+            "resident_contracts": resident_contracts}
 
 
 def main() -> None:

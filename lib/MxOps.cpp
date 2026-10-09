@@ -183,5 +183,35 @@ LogicalResult SpadRequantOp::verify() {
   return success();
 }
 
+LogicalResult ResidentContractOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto row = [this](StringRef name) { return (*this)->getAttrOfType<IntegerAttr>(name).getInt(); };
+  if (row("activation_row") < 0 || row("activation_row") > 0x3fff ||
+      row("weight_row") < 0 || row("weight_row") > 0x3fff ||
+      row("output_row") < 0 || row("output_row") > 0x3fff ||
+      row("m") <= 0 || row("n") <= 0 || row("k") <= 0 ||
+      row("m") % 16 || row("n") % 16 || row("k") % 16)
+    return emitOpError("resident contraction needs 14-bit rows and complete DIM16 tiles");
+  auto format = [this](StringRef name) {
+    return (*this)->getAttrOfType<StringAttr>(name).getValue();
+  };
+  if (format("activation_format") != "fp8_e4m3" ||
+      format("weight_format") != "fp8_e4m3" ||
+      format("output_format") != "fp8_e4m3")
+    return emitOpError("resident contraction currently requires E4M3 inputs and output");
+  for (StringRef attr : {"weight_buffer", "weight_scales_buffer", "output_scales_buffer"}) {
+    StringRef name = format(attr);
+    if (name.empty()) return emitOpError("resident contraction buffer name is empty");
+    for (size_t i = 0; i < name.size(); ++i) {
+      char c = name[i];
+      bool alpha = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+      bool digit = (c >= '0' && c <= '9');
+      if (!alpha && (i == 0 || !digit))
+        return emitOpError("resident contraction buffer name must be a C identifier");
+    }
+  }
+  return success();
+}
+
 #define GET_OP_CLASSES
 #include "MxGemmini/MxOps.cpp.inc"
