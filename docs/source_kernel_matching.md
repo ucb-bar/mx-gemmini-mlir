@@ -32,6 +32,10 @@ at row 1024. A target compiler must use the selected profile's address; copying
 the handwritten row constant would corrupt the intended layout. The selected
 VPU profile admits direct E4M3 and FP4 compute; it has no FP6 LUT path, so FP6
 drivers require a different MX profile.
+All 81 configurations exported from Nicolas's current `gemmini-mx-cleanup`
+source have 256 KiB scratchpads. None is an exact 128 KiB hardware match for
+the checked-in handwritten library; the trace below applies that library's
+command formulas to a separately selected 256 KiB target layout.
 
 Capture the feasible source shape from PyTorch with the selected model2MLIR
 checkout, then bind its typed MX handoff to the RTL profile:
@@ -63,3 +67,23 @@ links the [frontend MLIR](evidence/model2mlir_radiance_mx_gemm_source_20261009.m
 [profile-bound MLIR](evidence/model2mlir_radiance_mx_gemm_bound_20261009.mlir)
 by SHA-256 digest. The receipt is a structural capture, not an executable
 matrix-command or numerical-parity result.
+
+For the same bound MLIR, trace the handwritten library's MX loop-FSM packets:
+
+```sh
+python -m tools.trace_source_gemm_loops \
+  --mlir docs/evidence/model2mlir_radiance_mx_gemm_bound_20261009.mlir \
+  --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp \
+  --source-root /path/to/radiance-kernels \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini \
+  --out /tmp/mx-gemm-loop-trace.json
+```
+
+The [checked-in trace](evidence/model2mlir_radiance_mx_gemm_loop_trace_20261009.json)
+contains four prefetch packets and four compute packets, each expanded to the
+source macro's bounds (funct 9), scratchpad A/B (funct 24), and loop launch
+(funct 8) fields. Four scale-selector packets use funct 26. It checks the
+Gemmini software header against the RTL repo's pinned submodule and the
+Radiance MMIO skip-bit macro. It leaves configuration, E8M0/LUT writes,
+fences, address translation, and C move-out to subsequent lowering stages.
