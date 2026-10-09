@@ -164,6 +164,21 @@ def test_two_site_frontend_lowers_full_matrix_vpu_requant_matrix_chain(tmp_path)
     assert "c1_bf16_observed" in issuer
     assert "lowered full chain: C1 BF16" in driver
     assert "matmul_fp8_64x64_chain.h" not in issuer + driver
+    evidence = ROOT / "docs/evidence"
+    assert mlir == (evidence / "nicolas_full_chain_source_bound_20261009.mlir").read_text()
+    saved = json.loads((evidence / "compiled_nicolas_full_chain_20261009.json").read_text())
+    reproduced = json.loads((evidence / "compiled_nicolas_full_chain_repro_20261009.json").read_text())
+    assert saved["status"] == "source_full_chain_matched_on_pinned_spike"
+    assert saved["compiler_revision"].startswith("374a4c5")
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["compared_bf16_values"] == 4096
+    assert saved["compared_fp8_codes"] == 8192
+    assert saved["compared_e8m0_scales"] == 256
+    for field in ("typed_mlir_sha256", "frontend_bound_mlir_sha256",
+                  "files_sha256", "object_sha256", "elf_sha256",
+                  "extension_sha256", "spike_log_sha256",
+                  "compiler_source_closure_sha256"):
+        assert saved[field] == reproduced[field]
     with pytest.raises(ValueError, match="sites differ"):
         write_resident_chain_sources(tmp_path / "bad", mlir.replace(
             'site_id = "functional:matmul_1"', 'site_id = "wrong"'), profile,

@@ -213,8 +213,9 @@ and [second receipt](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_repro_20
 The source header's unscaled quantized output differs in 4,094 codes and
 all 128 scales; it is retained as a separate source reference. This is an
 explicit target composition test, not a claim that the handwritten Radiance
-GEMM contains VPU operations. The next full-chain gate is to consume the
-resident tile as a second matrix operand in the same compiler program.
+GEMM contains VPU operations. The Nicolas source chain below qualifies the
+resident second matrix operand separately and then in a single program with
+the first matrix.
 
 Reproduce with the normal `tools.qualify_source_mx` command above, selecting
 the FP8 64×64×128 fullout driver and its matching model2MLIR bound capture,
@@ -241,8 +242,7 @@ ELF, extension, and Spike log hashes
 ([second receipt](evidence/compiled_nicolas_chain_vpu_requant_64x64_repro_20261009.json)).
 This qualification begins with the source C1 BF16 tile and ends at the C1
 requantized tile. The x2 epilogues above establish one compiler-generated
-matrix/VPU composition; the full matrix→VPU→requant→matrix chain still needs
-one compiler program and numerical parity.
+matrix/VPU composition. The following stages extend it through MM2 and MM1.
 
 The `--with-resident-matmul` option now continues that same typed seam through
 `mx_gemmini.resident_contract`. The operation names the resident C1 tile, B2
@@ -259,9 +259,6 @@ hashes. See the [typed MLIR](evidence/nicolas_chain_vpu_requant_resident_64x64_s
 [Spike receipt](evidence/compiled_nicolas_resident_chain_64x64_20261009.json),
 and [reproduction](evidence/compiled_nicolas_resident_chain_64x64_repro_20261009.json).
 This path starts from Nicolas's C1 BF16 source tile, so it still excludes MM1.
-The next full-chain gate is to lower MM1 from the two-site PyTorch/model2MLIR
-capture, bind its source A1/B1 payload, and feed its resident BF16 result to
-the VPU in the same compiled program.
 
 The new `tools.capture_nicolas_chain` command captures
 `torch.matmul(torch.matmul(A, B1), B2)` with model2MLIR
@@ -273,9 +270,27 @@ manifest hashes ([receipt](evidence/model2mlir_nicolas_chain_two_site_capture_20
 [reproduction](evidence/model2mlir_nicolas_chain_two_site_capture_repro_20261009.json),
 [bound MLIR](evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir)).
 The PyTorch examples supply contraction structure; Nicolas's header supplies
-the actual packed bytes and scales. The two-site frontend artifact does not
-yet produce the first matrix's BF16 tile or connect the two sites to the
-resident VPU chain. Those are the next executable lowering steps.
+the actual packed bytes and scales.
+
+With both frontend artifacts, the compiler now emits **one ordered RV64
+program** for MM1→VPU×2→SPAD_REQUANT→resident MM2. MM1 loads Nicolas's
+A1/B1 codes and scales and writes BF16 C1 to a live scratchpad tile; VPU and
+requant consume it there; MM2 consumes tiled C1 codes and resident activation
+scales without a DRAM reload. A diagnostic mvout copies MM1's BF16 C1 for
+comparison while the chain continues to use the on-chip tile. The program
+compares all **4,096 C1 BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 4,096
+C2 FP8 codes, and 128 C2 scales** against Nicolas's source header and its
+independent exact ×2 oracle. Every comparison matches on the pinned Spike
+extension. Two independent builds reproduce the typed MLIR, generated
+source, objects, ELF, extension, and Spike log hashes. See the
+[source-bound typed chain](evidence/nicolas_full_chain_source_bound_20261009.mlir),
+[Spike receipt](evidence/compiled_nicolas_full_chain_20261009.json), and
+[reproduction](evidence/compiled_nicolas_full_chain_repro_20261009.json).
+This is the qualified 64×64×64 E4M3 MX+VPU mode; the two-site frontend MLIR
+and the typed source specialization are separate checked compiler inputs.
+They are bound by site IDs and hashed source/profile receipts, and the
+physical lowering produces one program. A connected SSA-level chain and
+generalization across shapes and mode classes remain to be implemented.
 
 Reproduce the seam with:
 
@@ -287,7 +302,11 @@ python -m tools.qualify_nicolas_vector_requant \
 ```
 
 Add `--with-resident-matmul` to this command to reproduce the second-matmul
-program. The output directory must be new.
+program. To reproduce the full chain, also supply
+`--frontend-bound-mlir docs/evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir`
+and
+`--frontend-receipt docs/evidence/model2mlir_nicolas_chain_two_site_capture_20261009.json`.
+The output directory must be new.
 
 ## Remaining gates
 
@@ -295,8 +314,9 @@ program. The output directory must be new.
    then qualify the actual FP6 requant source drivers once their missing data
    headers are available, asymmetric legal modes, and the remaining source
    shapes. Extend multi-output tiling beyond the qualified FP8 BF16 shape.
-2. Compose the full matrix→VPU→SPAD_REQUANT→matrix chain in one MLIR program
-   with explicit scratchpad lifetimes and source numerical goldens.
+2. Consolidate the two checked MLIR inputs into one connected chain, then
+   generalize its explicit scratchpad lifetimes beyond the qualified 64³
+   Nicolas source case.
 3. Qualify every legal mode class on the matching Spike/RTL configuration,
    and keep unsupported profile combinations rejected. FP6+VPU requires a
    new RTL configuration and profile before it can be advertised.
