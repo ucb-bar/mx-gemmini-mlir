@@ -23,6 +23,24 @@ _E3M2_VALUES = tuple(
     for exponent in range(8) for mantissa in range(4))
 
 
+def exact_bf16_x2(source: bytes) -> bytes:
+    """Shift finite BF16 normals by one exponent, preserving signed zero."""
+    if len(source) % 2:
+        raise ValueError("BF16 x2 reference requires complete 16-bit values")
+    output = bytearray()
+    for offset in range(0, len(source), 2):
+        word = int.from_bytes(source[offset:offset + 2], "little")
+        exponent = (word >> 7) & 255
+        if exponent == 0 and word & 0x7fff == 0:
+            doubled = word
+        elif 1 <= exponent <= 253:
+            doubled = word + 0x80
+        else:
+            raise ValueError("exact BF16 x2 golden needs finite normal or zero source values")
+        output.extend(doubled.to_bytes(2, "little"))
+    return bytes(output)
+
+
 def _e4m3_rne(value: float) -> int:
     sign = 0x80 if math.copysign(1.0, value) < 0 else 0
     magnitude = abs(value)

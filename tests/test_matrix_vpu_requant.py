@@ -1,0 +1,99 @@
+"""One typed matrix→VPU→resident SPAD_REQUANT compiler program."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import subprocess
+
+import pytest
+
+from mx_gemmini_support.bind_payload import append_vpu_spad_requant_x2, bind_payload
+from mx_gemmini_support.command_ir import Command
+from mx_gemmini_support.physical_program import lower_bound_source
+from mx_gemmini_support.source_gemm import read_source_gemm
+from mx_gemmini_support.source_payload import load_bundle, write_bundle
+from mx_gemmini_support.standalone import write_standalone_sources
+from mx_gemmini_support.target_profile import load_profile, profile_sha256
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = Path(os.environ.get("RADIANCE_KERNELS_ROOT", "/nonexistent"))
+RTL = Path(os.environ.get("MX_GEMMINI_RTL_ROOT", "/nonexistent"))
+DRIVER = SOURCE / ("kernels/gemm_mxgemmini/"
+                   "mxgemm.fp8.m64n64k128.tm64tn64tk64.fullout.cpp")
+
+
+def _case(tmp_path):
+    if not DRIVER.is_file() or not DRIVER.with_name(
+            "mxgemm.data.fp8.m64n64k128.h").is_file() or not RTL.is_dir():
+        pytest.skip("requires generated Radiance FP8 header and Nicolas RTL")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json",
+        rtl_root=RTL)
+    manifest = write_bundle(
+        tmp_path / "bundle", read_source_gemm(DRIVER),
+        site_id="functional:matmul", profile_sha256=profile_sha256(profile),
+        vpu_spad_requant_x2=True)
+    checked, resources = load_bundle(tmp_path / "bundle")
+    assert checked == manifest
+    frontend = (ROOT / "docs/evidence/model2mlir_radiance_mx_fp8_64x64x128_bound.mlir").read_text()
+    bound = append_vpu_spad_requant_x2(bind_payload(frontend, profile, manifest),
+                                        profile, manifest)
+    return profile, manifest, resources, bound
+
+
+def test_compiler_orders_matrix_vpu_requant_and_reuses_dead_operand_rows(tmp_path):
+    profile, manifest, resources, bound = _case(tmp_path)
+    assert '"mx_gemmini.contract"' in bound
+    assert '"mx_gemmini.vpu_execute"' in bound
+    assert '"mx_gemmini.spad_requant"' in bound
+    assert '"mx_gemmini.readout_quantized"' in bound
+    opt = ROOT / "build/tools/mx-gemmini-opt"
+    if opt.is_file():
+        path = tmp_path / "bound.mlir"
+        path.write_text(bound)
+        subprocess.run([str(opt), str(path), "-o", "/dev/null"], check=True)
+    program = lower_bound_source(bound, profile, manifest, resources)
+    assert program.tiled_quant_readout
+    assert program.plan["c_spad_dest"] == 256
+    assert program.plan["c_rows"] == 512
+    phases = [step.phase for step in program.steps]
+    assert phases.index("compute") < phases.index("vpu") < phases.index("spad_requant") < phases.index("readout")
+    requant = next(step.command for step in program.steps if step.phase == "spad_requant")
+    assert isinstance(requant, Command)
+    assert requant.rs1.buffer == "scratch_output_scales"
+    assert requant.rs1.address_shift == 30
+    readout = next(step.command for step in program.steps
+                   if step.phase == "readout" and isinstance(step.command, Command) and
+                   step.command.funct == 3)
+    assert readout.rs2.immediate & 0xffffffff == 1024
+    receipt = write_standalone_sources(tmp_path / "artifact", program, resources)
+    assert receipt["golden_basis"] == "nicolas_vpu_x2_spad_requant_from_source_bf16"
+    assert receipt["source_quant_code_differences"] > 0
+    assert receipt["source_quant_scale_differences"] == 128
+    driver = (tmp_path / "artifact/mx_driver.c").read_text()
+    assert "uint32_t tiled" in driver
+    assert "FP8 code mismatches" in driver
+
+
+def test_matrix_vpu_requant_rejects_changed_residency_or_pointer(tmp_path):
+    profile, manifest, resources, bound = _case(tmp_path)
+    with pytest.raises(ValueError, match="scratchpad lifetime or operation differs"):
+        lower_bound_source(bound.replace("resident = true", "resident = false"),
+                           profile, manifest, resources)
+    with pytest.raises(ValueError, match="scratchpad lifetime or operation differs"):
+        lower_bound_source(bound.replace('scale_buffer = "scratch_output_scales"',
+                                         'scale_buffer = "other_scales"'),
+                           profile, manifest, resources)
+
+
+def test_matrix_vpu_requant_bundle_rejects_oracle_downgrade(tmp_path):
+    _case(tmp_path)
+    path = tmp_path / "bundle/manifest.json"
+    manifest = json.loads(path.read_text())
+    manifest["output_oracle"] = "nicolas_mxquant_po2_rne_v1"
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="unsupported format"):
+        load_bundle(tmp_path / "bundle")

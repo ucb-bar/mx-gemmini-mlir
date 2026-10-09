@@ -105,6 +105,30 @@ int main(void) {{
     if quantized:
         quant_label = ("FP6 packed-index" if packed_fp6 else
                        "FP4 packed-code" if packed_fp4 else "FP8 code")
+        code_loop = f'''  for (uint32_t i = 0; i < {quant_bytes}; ++i) {{
+    if (output_quantized[i] != {quant_name}[i]) {{
+      if (code_errors < 8)
+        printf("CODE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
+               i, output_quantized[i], {quant_name}[i]);
+      ++code_errors;
+    }}
+  }}
+'''
+        if program.tiled_quant_readout:
+            if packed_fp4 or packed_fp6 or m % 16 or n % 16:
+                raise ValueError("tiled quant readout requires complete FP8 DIM16 tiles")
+            code_loop = f'''  for (uint32_t row = 0; row < {m}; ++row)
+    for (uint32_t col = 0; col < {n}; ++col) {{
+      uint32_t tiled = (((row / 16) * ({n} / 16) + col / 16) * 16 + row % 16) * 16 + col % 16;
+      uint32_t linear = row * {n} + col;
+      if (output_quantized[tiled] != {quant_name}[linear]) {{
+        if (code_errors < 8)
+          printf("CODE MISMATCH (%u,%u): got=0x%02x expected=0x%02x\\n",
+                 row, col, output_quantized[tiled], {quant_name}[linear]);
+        ++code_errors;
+      }}
+    }}
+'''
         driver = f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
@@ -115,15 +139,7 @@ int main(void) {{
   mx_issue({arguments});
   int code_errors = 0;
   int scale_errors = 0;
-  for (uint32_t i = 0; i < {quant_bytes}; ++i) {{
-    if (output_quantized[i] != {quant_name}[i]) {{
-      if (code_errors < 8)
-        printf("CODE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
-               i, output_quantized[i], {quant_name}[i]);
-      ++code_errors;
-    }}
-  }}
-  for (uint32_t i = 0; i < {m * n // 32}; ++i) {{
+{code_loop}  for (uint32_t i = 0; i < {m * n // 32}; ++i) {{
     if (scratch_output_scales[i] != nicolas_output_scales[i]) {{
       if (scale_errors < 8)
         printf("SCALE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
@@ -162,6 +178,7 @@ int main(void) {{
         receipt["golden_basis"] = "derived_bf16_x2"
     if quantized:
         receipt["golden_basis"] = (
+            "nicolas_vpu_x2_spad_requant_from_source_bf16" if program.tiled_quant_readout else
             "nicolas_fp6_e3m2_lut_from_source_bf16" if packed_fp6 else
             "nicolas_fp4_e3m1_e2m1_from_source_bf16" if packed_fp4 else
             "nicolas_mxquant_po2_rne_from_source_bf16")

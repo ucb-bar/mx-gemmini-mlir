@@ -14,6 +14,7 @@ import hashlib
 from typing import Mapping
 
 from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
+from .quant_reference import exact_bf16_x2
 from .source_gemm import plan_mx_gemm
 from .source_payload import manifest_sha256
 from .target_profile import profile_sha256
@@ -38,6 +39,7 @@ class PhysicalProgram:
     source_golden_preserving: bool = True
     derived_expected_bf16: bytes | None = None
     output_format: str = "bf16"
+    tiled_quant_readout: bool = False
 
     def receipt(self) -> dict:
         steps = []
@@ -65,6 +67,8 @@ class PhysicalProgram:
         if self.output_format != "bf16":
             receipt["output_format"] = self.output_format
             receipt["source_golden_preserving"] = self.source_golden_preserving
+        if self.tiled_quant_readout:
+            receipt["tiled_quant_readout"] = True
         return receipt
 
 
@@ -92,19 +96,7 @@ def _transfer(funct: int, buffer: str, offset: int, row: int) -> Command:
 
 
 def _exact_bf16_x2(source: bytes) -> bytes:
-    """Independent exact exponent shift for finite normals and signed zero."""
-    output = bytearray()
-    for offset in range(0, len(source), 2):
-        word = int.from_bytes(source[offset:offset + 2], "little")
-        exponent = (word >> 7) & 255
-        if exponent == 0 and word & 0x7fff == 0:
-            doubled = word
-        elif 1 <= exponent <= 253:
-            doubled = word + 0x80
-        else:
-            raise ValueError("exact BF16 x2 golden needs finite normal or zero source values")
-        output.extend(doubled.to_bytes(2, "little"))
-    return bytes(output)
+    return exact_bf16_x2(source)
 
 
 def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[str, dict]]:
@@ -186,13 +178,15 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     shape = tuple(manifest["shape_mnk"])
     tile = tuple(manifest["tile_mnk"])
     output_format = manifest.get("output_format", "bf16")
+    vector_requant = manifest.get("output_specialization") == "matrix_vpu_x2_spad_requant_fp8"
     if (precision, output_format) not in {("FP8", "bf16"), ("FP4", "bf16"),
                                           ("FP6", "bf16"), ("FP8", "fp8_e4m3"),
                                           ("FP4", "fp4_e2m1"), ("FP6", "fp6_e3m2")}:
         raise ValueError("physical MX source precision and output format differ")
     quant_output = output_format != "bf16"
+    matrix_quant_output = quant_output and not vector_requant
     plan = plan_mx_gemm(shape=shape, tile=tile, datatype=precision,
-                        quant_output=quant_output, acc_to_gmem=False,
+                        quant_output=matrix_quant_output, acc_to_gmem=False,
                         scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
                         profile=profile)
     m, n, k = shape
@@ -203,8 +197,27 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
     if len(output_tiles) != 1 and vector_ops:
         raise ValueError("physical MX vector epilogues need a single output tile")
-    if quant_output and (len(output_tiles) != 1 or vector_ops):
+    if quant_output and (len(output_tiles) != 1 or vector_ops and not vector_requant):
         raise ValueError("physical quantized output needs one tile without vector epilogues")
+    if vector_requant:
+        if (precision != "FP8" or shape != (64, 64, 128) or len(vector_ops) != 2 or
+                vector_ops[0][0] != "vpu" or vector_ops[1][0] != "spad_requant"):
+            raise ValueError("physical VPU/SPAD composition requires selected FP8 source shape and ops")
+        vpu, requant = vector_ops[0][1], vector_ops[1][1]
+        expected_destination = plan["c_spad_dest"] + plan["c_rows"] + 256
+        if (vpu != {"kind": "muls", "src1_row": plan["c_spad_dest"],
+                    "src2_row": 0, "dst_row": plan["c_spad_dest"],
+                    "rows": plan["c_rows"], "reduction_length": 1,
+                    "broadcast": False, "immediate_bf16": 0x4000,
+                    "second_dst_row": None} or
+                requant != {"source_row": plan["c_spad_dest"],
+                            "destination_row": expected_destination,
+                            "m": m, "n": n, "output_format": "fp8_e4m3",
+                            "tiled": True, "resident": True,
+                            "scale_dram_address": 0,
+                            "scale_buffer": "scratch_output_scales"} or
+                expected_destination + m * n // dim > plan["scratchpad_rows"]):
+            raise ValueError("physical VPU/SPAD scratchpad lifetime or operation differs")
     pe = 16 if precision == "FP8" else 32
     ti, tj, tki = tm // pe, tn // pe, tk // 16
     a_stride = k
@@ -236,13 +249,13 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     # A requant postpass modifies the accumulator storage. Keep intermediate
     # K waves in BF16 and select the requested output encoding for the final
     # wave only, as the handwritten last_k schedule does.
-    config_ex = config_base | ((3 if quant_output and len(plan["waves"]) > 1
-                                else fmt if quant_output else 3) << 14)
+    config_ex = config_base | ((3 if matrix_quant_output and len(plan["waves"]) > 1
+                                else fmt if matrix_quant_output else 3) << 14)
     issue("configure", _cmd(7, 0, 0))
     issue("configure", _cmd(0, config_ex, 1 << 48))
     issue("configure", _config_ld(a_stride))
     issue("configure", _config_ld(b_stride, id=1))
-    issue("configure", _config_st(dim if quant_output else n * 2))
+    issue("configure", _config_st(dim if matrix_quant_output else n * 2))
     issue("configure", Fence())
 
     if precision == "FP6":
@@ -262,7 +275,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         m_start, n_start = output_tile["m_start"], output_tile["n_start"]
         for wave in plan["waves"]:
             index = wave["index"]
-            if quant_output and index == len(plan["waves"]) - 1 and index > 0:
+            if matrix_quant_output and index == len(plan["waves"]) - 1 and index > 0:
                 issue("configure_final_output", _cmd(0, config_base | (fmt << 14),
                                                        1 << 48), index)
                 issue("configure_final_output", Fence(), index)
@@ -332,12 +345,15 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         output_tile_base = output_tile["index"] * (
             tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
             if quant_output else tm * tn * 2)
-        for row in range(0, plan["c_rows"], dim):
+        readout_rows = m * n // dim if vector_requant else plan["c_rows"]
+        readout_source = (vector_ops[1][1]["destination_row"] if vector_requant
+                          else plan["c_spad_dest"])
+        for row in range(0, readout_rows, dim):
             offset = output_tile_base + row * dim
             if offset + dim * dim > (expected_quant_bytes if quant_output else m * n * 2):
                 raise ValueError("physical MX readout exceeds output shape")
             issue("readout", _transfer(3, "output_quantized" if quant_output else "output_bf16", offset,
-                                       plan["c_spad_dest"] + row))
+                                       readout_source + row))
         issue("readout", Fence())
 
     for output_tile in output_tiles:
@@ -364,4 +380,4 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
 
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),
                            mode, shape, plan, tuple(steps), source_golden_preserving,
-                           derived_expected_bf16, output_format)
+                           derived_expected_bf16, output_format, vector_requant)

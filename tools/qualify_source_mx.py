@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from mx_gemmini_support.bind_payload import bind_payload
+from mx_gemmini_support.bind_payload import append_vpu_spad_requant_x2, bind_payload
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -26,6 +26,8 @@ def main() -> None:
     parser.add_argument("--site-id", default="functional:matmul")
     parser.add_argument("--fp6-quantized-specialization", action="store_true",
                         help="project the checked-in FP6 fullout BF16 result onto its C LUT")
+    parser.add_argument("--vpu-spad-requant-x2", action="store_true",
+                        help="compose BF16 matrix, VPU x2, and tiled resident FP8 requant")
     args = parser.parse_args()
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     kernel = read_source_gemm(args.driver)
@@ -37,9 +39,13 @@ def main() -> None:
     bundle = args.out_dir / "bundle"
     manifest = write_bundle(bundle, kernel, site_id=args.site_id,
                             profile_sha256=profile_sha256(profile),
-                            fp6_quantized_specialization=args.fp6_quantized_specialization)
+                            fp6_quantized_specialization=args.fp6_quantized_specialization,
+                            vpu_spad_requant_x2=args.vpu_spad_requant_x2)
     mlir = args.out_dir / "payload_bound.mlir"
-    mlir.write_text(bind_payload(args.mlir.read_text(), profile, manifest))
+    bound = bind_payload(args.mlir.read_text(), profile, manifest)
+    if args.vpu_spad_requant_x2:
+        bound = append_vpu_spad_requant_x2(bound, profile, manifest)
+    mlir.write_text(bound)
     subprocess.run([sys.executable, "-m", "tools.compile_mx",
                     "--mlir", str(mlir.resolve()), "--bundle", str(bundle.resolve()),
                     "--profile", str(args.profile.resolve()),

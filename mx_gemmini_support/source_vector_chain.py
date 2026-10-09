@@ -12,8 +12,7 @@ import json
 from pathlib import Path
 import re
 
-from .physical_program import _exact_bf16_x2
-from .quant_reference import quantize_bf16_fp8_output
+from .quant_reference import exact_bf16_x2, quantize_bf16_fp8_output
 from .source_fp6 import _array, _bytes
 from .target_profile import profile_sha256
 from .verify_profile_ir import verify_ir
@@ -64,7 +63,7 @@ def capture_nicolas_vpu_requant(source_path: Path, header_path: Path,
     source_scales = bytes(_array(header, name="C1_scales_out", ctype="uint8_t",
                                  dimensions="[MATMUL_M][MATMUL_GN]", count=m * n // 32,
                                  maximum=255))
-    codes, scales = quantize_bf16_fp8_output(_exact_bf16_x2(bf16), m, n)
+    codes, scales = quantize_bf16_fp8_output(exact_bf16_x2(bf16), m, n)
     if codes != source_codes or any(got != original + 1
                                     for got, original in zip(scales, source_scales)):
         raise ValueError("Nicolas VPU x2/requant reference differs from source golden")
