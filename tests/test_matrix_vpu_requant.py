@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -76,6 +77,25 @@ def test_compiler_orders_matrix_vpu_requant_and_reuses_dead_operand_rows(tmp_pat
     driver = (tmp_path / "artifact/mx_driver.c").read_text()
     assert "uint32_t tiled" in driver
     assert "FP8 code mismatches" in driver
+    evidence = ROOT / "docs/evidence"
+    assert manifest == json.loads((evidence / "matrix_vpu_requant_fp8_64x64x128_payload_manifest.json").read_text())
+    assert bound == (evidence / "matrix_vpu_requant_fp8_64x64x128_payload_bound.mlir").read_text()
+    saved = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json").read_text())
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    assert saved["compiler_revision"].startswith("9ebbb07")
+    assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
+    assert saved["compared_fp8_codes"] == 4096
+    assert saved["compared_e8m0_scales"] == 128
+    assert saved["source_quant_code_differences"] == 4094
+    assert saved["source_quant_scale_differences"] == 128
+    qualification = json.loads((evidence / "matrix_vpu_requant_fp8_64x64x128_qualification.json").read_text())
+    assert qualification["model2mlir_revision"] == "7485a829c0195af0ec42820837d609e62e466564"
+    assert qualification["artifact_manifest_sha256"] == hashlib.sha256(
+        (evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json").read_bytes()).hexdigest()
+    reproduced = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_repro_20261009.json").read_text())
+    for field in qualification["reproducible_fields"]:
+        assert saved[field] == reproduced[field]
 
 
 def test_matrix_vpu_requant_rejects_changed_residency_or_pointer(tmp_path):

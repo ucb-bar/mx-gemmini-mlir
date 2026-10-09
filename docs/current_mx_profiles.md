@@ -39,8 +39,9 @@ standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
 profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
 The source-bound compiler also orders one in-place BF16 VPU epilogue after
 the matrix K waves; FP8 and FP4 ×2 runs match their exact derived goldens on
-Spike. General matrix/VPU/SPAD scheduling and Radiance MMIO composition remain
-open.
+Spike. A 64×64×128 FP8 program now composes the matrix, VPU×2, and tiled
+resident SPAD_REQUANT with numerical parity on Spike. The following resident
+matrix stage, general scheduling, and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config

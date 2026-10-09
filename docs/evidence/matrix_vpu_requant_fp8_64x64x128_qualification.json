@@ -1,0 +1,36 @@
+{
+  "artifact_manifest_sha256": "3044d76fb6fe0896df2246977c497ad6f8db2876aff067f0e3f84c3e084f42bc",
+  "compiler_revision": "9ebbb0723fa9e79f708a7150180bb299c6daf4c6",
+  "frontend_capture_sha256": "859013ea36744f117aa8fc6d55649bd59b0fd0497874d6070173a1491d9ab3ba",
+  "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
+  "payload_manifest_sha256": "ae4ac6ffa0558cba6d6eb088df63cb24d00cf6b5928629b04bec6a45a3298284",
+  "repro_manifest_sha256": "2a43be3feb9425fb8c4a160455dbe23e02522fed24b4405bab0605bda3521690",
+  "reproducible_fields": [
+    "bound_mlir_sha256",
+    "files_sha256",
+    "object_sha256",
+    "elf_sha256",
+    "extension_sha256",
+    "spike_log_sha256",
+    "compiler_source_closure_sha256"
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.matrix_vpu_requant_qualification.v1",
+  "scope": "PyTorch/model2MLIR first-matrix structure plus explicit Radiance source operand binding, compiler-added VPU BF16 x2 and tiled resident SPAD_REQUANT; no second matmul and no claim that the handwritten Radiance GEMM has VPU ops.",
+  "scratchpad_bf16_source_rows": [
+    256,
+    768
+  ],
+  "scratchpad_quant_destination_rows": [
+    1024,
+    1280
+  ],
+  "source_driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m64n64k128.tm64tn64tk64.fullout.cpp",
+  "source_revision": "94ba7ca8afe213b92fa2428689fa64800c8eeca9",
+  "source_unscaled_code_differences": 4094,
+  "source_unscaled_scale_differences": 128,
+  "spike_compared_e8m0_scales": 128,
+  "spike_compared_fp8_codes": 4096,
+  "status": "nicolas_oracle_matched_on_pinned_spike",
+  "typed_mlir_sha256": "30c444f5e7bb8332a21d92e76f5f41951c755cddd5959ea390bd50571f333b71"
+}

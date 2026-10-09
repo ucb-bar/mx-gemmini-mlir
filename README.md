@@ -28,8 +28,10 @@ older or different conventions, so
 [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
 The source-audited Nicolas C1 VPU×2→tiled resident SPAD_REQUANT seam also
 compiles from typed MLIR and matches all 4,096 codes and 128 scales on Spike.
-The full matrix→VPU→requant→matrix program and general mixed lowering remain
-open.
+A separate source-bound FP8 program composes the first matrix, VPU×2, and
+tiled resident SPAD_REQUANT in one typed MLIR module; its compiler-generated
+ELF matches all 4,096 codes and 128 scales on Spike. The second resident
+matrix stage and general mixed lowering remain open.
 The physical
 `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and

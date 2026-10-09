@@ -188,6 +188,38 @@ those VPU operations. Other VPU or SPAD_REQUANT operations lower to physical
 commands but the standalone source-golden checker rejects them until their
 result golden is bound.
 
+### Compiler-generated matrix→VPU→requant program
+
+The FP8 64×64×128 Radiance fullout driver has a fresh
+PyTorch→model2MLIR contraction capture and generated source header. The
+`--vpu-spad-requant-x2` specialization binds those exact source operand bytes,
+then appends typed `mx_gemmini.vpu_execute` and
+`mx_gemmini.spad_requant` operations. The physical program computes both
+K waves in BF16, multiplies the complete BF16 C tile by 2.0 on the VPU, and
+requantizes it to tiled FP8 codes with resident E8M0 scales. The BF16 C
+scratchpad rows are `[256,768)` and the packed destination is `[1024,1280)`;
+the latter reuses space only after the input matrix operands are dead. The
+SPAD_REQUANT scale destination is a runtime pointer whose 33-bit field is
+checked before issue.
+
+An independent exact BF16 exponent shift followed by the current FP8 output
+reference supplies the expected codes and scales. The compiler-generated
+RV64 ELF matched **4,096 FP8 codes and 128 E8M0 scales** on Nicolas's pinned
+Spike. Separate output directories reproduced the generated source, objects,
+ELF, extension, and Spike log hashes. See the [typed MLIR](evidence/matrix_vpu_requant_fp8_64x64x128_payload_bound.mlir),
+[qualification](evidence/matrix_vpu_requant_fp8_64x64x128_qualification.json),
+[Spike receipt](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json),
+and [second receipt](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_repro_20261009.json).
+The source header's unscaled quantized output differs in 4,094 codes and
+all 128 scales; it is retained as a separate source reference. This is an
+explicit target composition test, not a claim that the handwritten Radiance
+GEMM contains VPU operations. The next full-chain gate is to consume the
+resident tile as a second matrix operand in the same compiler program.
+
+Reproduce with the normal `tools.qualify_source_mx` command above, selecting
+the FP8 64×64×128 fullout driver and its matching model2MLIR bound capture,
+and adding `--vpu-spad-requant-x2`.
+
 Nicolas's reference `vpu_ops`, `vpu_softmax`, and
 `chain_vpu_spad_requant` programs were also built and run directly against
 the pinned Spike extension. They passed all reference comparisons, including
