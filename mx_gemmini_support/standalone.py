@@ -19,6 +19,8 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     """Write a source-independent command issuer, data object, and receipt."""
     if program.mode != "spike_serial":
         raise ValueError("standalone execution is qualified only for the serial Spike mode")
+    if not program.source_golden_preserving and program.derived_expected_bf16 is None:
+        raise ValueError("source BF16 golden does not cover these MX VPU/requant operations")
     if any(name not in resources for name in ("activation", "weight", "activation_scales",
                                               "weight_scales", "golden_bf16")):
         raise ValueError("standalone MX program lacks operand or golden resources")
@@ -33,7 +35,12 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     m, n, k = program.shape
     runtime_declarations = (f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
                             "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
-    externs = "".join(f"extern const uint8_t {name}[];\n" for name in sorted(resources))
+    resource_files = dict(resources)
+    golden_name = "golden_bf16"
+    if program.derived_expected_bf16 is not None:
+        resource_files["derived_expected_bf16"] = program.derived_expected_bf16
+        golden_name = "derived_expected_bf16"
+    externs = "".join(f"extern const uint8_t {name}[];\n" for name in sorted(resource_files))
     arguments = ", ".join(names)
     driver = f'''#include <stdint.h>
 #include <stdio.h>
@@ -44,7 +51,7 @@ void mx_issue({", ".join(f"const void *{name}" for name in names)});
 int main(void) {{
   mx_issue({arguments});
   const uint16_t *got = (const uint16_t *)output_bf16;
-  const uint16_t *expected = (const uint16_t *)golden_bf16;
+  const uint16_t *expected = (const uint16_t *){golden_name};
   int errors = 0;
   for (uint32_t i = 0; i < {m * n}; ++i) {{
     if (got[i] != expected[i]) {{
@@ -59,12 +66,12 @@ int main(void) {{
 }}
 '''
     assembly = [".section .rodata", ".balign 64"]
-    for name in sorted(resources):
+    for name in sorted(resource_files):
         assembly.extend((f".globl {name}", f"{name}:",
                          f'.incbin "{name}.bin"', ".balign 64"))
     assembly.append('.section .note.GNU-stack,"",@progbits')
     directory.mkdir(parents=True, exist_ok=False)
-    for name, data in resources.items():
+    for name, data in resource_files.items():
         (directory / f"{name}.bin").write_bytes(data)
     (directory / "mx_issue.c").write_text(issuer)
     (directory / "mx_driver.c").write_text(driver)
@@ -80,5 +87,7 @@ int main(void) {{
                "fence_count": len(commands) - sum(isinstance(item, Command) for item in commands),
                "files_sha256": {path.name: _sha(path.read_bytes())
                                 for path in sorted(directory.iterdir()) if path.is_file()}}
+    if program.derived_expected_bf16 is not None:
+        receipt["golden_basis"] = "derived_bf16_x2"
     (directory / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt

@@ -129,9 +129,10 @@ def main() -> None:
         (args.out_dir / "spike.log").write_text(result.stdout)
         expected = f"lowered MX {'x'.join(map(str, program.shape))}: 0 BF16 mismatches"
         passed = result.returncode == 0 and expected in result.stdout
+        qualifier = "derived_vpu_golden" if program.derived_expected_bf16 is not None else "source_golden"
         receipt.update({
-            "status": "source_golden_matched_on_pinned_spike" if passed else
-                      "source_golden_failed_on_pinned_spike",
+            "status": f"{qualifier}_matched_on_pinned_spike" if passed else
+                      f"{qualifier}_failed_on_pinned_spike",
             "gemmini_extension_revision": _git_revision(extension),
             "gemmini_extension_source_closure_sha256": _source_closure(
                 extension, extension_sources + sorted(extension.rglob("*.h"))),
@@ -145,7 +146,7 @@ def main() -> None:
     (args.out_dir / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
-    if receipt["status"] == "source_golden_failed_on_pinned_spike":
+    if receipt["status"].endswith("_failed_on_pinned_spike"):
         raise SystemExit(1)
 
 

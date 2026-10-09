@@ -10,13 +10,14 @@ mode keeps alternating halves and is structurally checked, not yet qualified.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 from typing import Mapping
 
-from .command_ir import Command, Fence, Operand
+from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
 from .source_gemm import plan_mx_gemm
 from .source_payload import manifest_sha256
 from .target_profile import profile_sha256
-from .verify_profile_ir import _operation_name, _text_attr, verify_ir
+from .verify_profile_ir import _bool_attr, _int_attr, _operation_name, _text_attr, verify_ir
 
 
 @dataclass(frozen=True)
@@ -34,14 +35,23 @@ class PhysicalProgram:
     shape: tuple[int, int, int]
     plan: dict
     steps: tuple[PhysicalStep, ...]
+    source_golden_preserving: bool = True
+    derived_expected_bf16: bytes | None = None
 
     def receipt(self) -> dict:
-        return {"schema": "mx_gemmini.physical_program.v1",
+        receipt = {"schema": "mx_gemmini.physical_program.v1",
                 "profile_sha256": self.profile_sha256,
                 "payload_manifest_sha256": self.payload_manifest_sha256,
                 "mode": self.mode, "shape_mnk": list(self.shape),
                 "plan": self.plan,
                 "steps": [asdict(step) for step in self.steps]}
+        if any(step.phase in {"vpu", "spad_requant"} for step in self.steps):
+            receipt["source_golden_preserving"] = self.source_golden_preserving
+        if self.derived_expected_bf16 is not None:
+            receipt["golden_derivation"] = "bf16_exact_multiply_by_two"
+            receipt["derived_expected_bf16_sha256"] = hashlib.sha256(
+                self.derived_expected_bf16).hexdigest()
+        return receipt
 
 
 def _imm(value: int) -> Operand:
@@ -67,15 +77,30 @@ def _transfer(funct: int, buffer: str, offset: int, row: int) -> Command:
                 (16 << 48) | (16 << 32) | row)
 
 
-def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> None:
+def _exact_bf16_x2(source: bytes) -> bytes:
+    """Independent exact exponent shift for finite normals and signed zero."""
+    output = bytearray()
+    for offset in range(0, len(source), 2):
+        word = int.from_bytes(source[offset:offset + 2], "little")
+        exponent = (word >> 7) & 255
+        if exponent == 0 and word & 0x7fff == 0:
+            doubled = word
+        elif 1 <= exponent <= 253:
+            doubled = word + 0x80
+        else:
+            raise ValueError("exact BF16 x2 golden needs finite normal or zero source values")
+        output.extend(doubled.to_bytes(2, "little"))
+    return bytes(output)
+
+
+def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[str, dict]]:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func
     from xdsl.parser import Parser
 
     checked = verify_ir(mlir_text, profile)
-    if (checked["contracts"], checked["encodes"], checked["requantizes"],
-            checked["vpu_commands"], checked["spad_requants"]) != (1, 0, 0, 0, 0):
+    if (checked["contracts"], checked["encodes"], checked["requantizes"]) != (1, 0, 0):
         raise ValueError("physical MX source lowering needs exactly one BF16 contraction")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
@@ -88,19 +113,51 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> None:
     ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
     contract = [op for op in ops if _operation_name(op) == "mx_gemmini.contract"]
     readout = [op for op in ops if _operation_name(op) == "mx_gemmini.readout_bf16"]
-    if len(ops) != 2 or len(contract) != 1 or len(readout) != 1:
+    names = [_operation_name(op) for op in ops]
+    if (len(contract) != 1 or len(readout) != 1 or
+            names[0] != "mx_gemmini.contract" or
+            names[-1] != "mx_gemmini.readout_bf16" or
+            any(name not in {"mx_gemmini.vpu_execute", "mx_gemmini.spad_requant"}
+                for name in names[1:-1])):
         raise ValueError("physical MX lowering requires a matching BF16 readout")
     if (manifest.get("site_id") != _text_attr(contract[0], "site_id") or
             manifest.get("site_id") != _text_attr(readout[0], "site_id") or
             _text_attr(contract[0], "payload_manifest_sha256") != digest):
         raise ValueError("physical MX lowering site or payload binding differs")
+    vector_ops = []
+    for op in ops[1:-1]:
+        if _text_attr(op, "site_id") != manifest["site_id"]:
+            raise ValueError("physical MX vector operation belongs to another contraction site")
+        if _operation_name(op) == "mx_gemmini.vpu_execute":
+            vector_ops.append(("vpu", {
+                "kind": _text_attr(op, "kind"),
+                "src1_row": _int_attr(op, "src1_row"),
+                "src2_row": _int_attr(op, "src2_row"),
+                "dst_row": _int_attr(op, "dst_row"),
+                "rows": _int_attr(op, "rows"),
+                "reduction_length": _int_attr(op, "reduction_length"),
+                "broadcast": _bool_attr(op, "broadcast"),
+                "immediate_bf16": _int_attr(op, "immediate_bf16"),
+                "second_dst_row": _int_attr(op, "second_dst_row"),
+            }))
+        else:
+            vector_ops.append(("spad_requant", {
+                "source_row": _int_attr(op, "source_row"),
+                "destination_row": _int_attr(op, "destination_row"),
+                "m": _int_attr(op, "m"), "n": _int_attr(op, "n"),
+                "output_format": _text_attr(op, "output_format"),
+                "tiled": _bool_attr(op, "tiled"),
+                "resident": _bool_attr(op, "resident"),
+                "scale_dram_address": _int_attr(op, "scale_dram_address"),
+            }))
+    return vector_ops
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
-    _check_binding(mlir_text, profile, manifest)
+    vector_ops = _check_binding(mlir_text, profile, manifest)
     if mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown MX physical scheduling mode")
     if profile.get("transport") != "rocket_rocc":
@@ -205,6 +262,33 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                               (plan["c_spad_dest"] << 32) | 0x200 | skips), index)
         issue("compute", Fence(), index)
 
+    for kind, kwargs in vector_ops:
+        if kind == "vpu":
+            issue("vpu", vpu_command(profile, **kwargs))
+        else:
+            issue("spad_requant", spad_requant_command(profile, **kwargs))
+    if vector_ops:
+        issue("vpu_sync", Fence())
+
+    source_golden_preserving = not vector_ops
+    derived_expected_bf16 = None
+    if len(vector_ops) == 1 and vector_ops[0][0] == "vpu":
+        vpu = vector_ops[0][1]
+        in_place_full_output = (
+            vpu["src1_row"] == plan["c_spad_dest"] and
+            vpu["dst_row"] == plan["c_spad_dest"] and
+            vpu["rows"] == plan["c_rows"] and vpu["src2_row"] == 0 and
+            vpu["reduction_length"] == 1 and not vpu["broadcast"] and
+            vpu["second_dst_row"] is None)
+        source_golden_preserving = (
+            in_place_full_output and vpu["kind"] == "adds" and
+            vpu["immediate_bf16"] == 0 and
+            all((word == 0 or 0 < (word & 0x7f80) < 0x7f80)
+                for word in (int.from_bytes(resources["golden_bf16"][i:i + 2], "little")
+                             for i in range(0, len(resources["golden_bf16"]), 2))))
+        if in_place_full_output and vpu["kind"] == "muls" and vpu["immediate_bf16"] == 0x4000:
+            derived_expected_bf16 = _exact_bf16_x2(resources["golden_bf16"])
+
     issue("readout", _config_st(dim))
     for row in range(0, plan["c_rows"], dim):
         offset = row * dim
@@ -214,4 +298,5 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                                    plan["c_spad_dest"] + row))
     issue("readout", Fence())
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),
-                           mode, shape, plan, tuple(steps))
+                           mode, shape, plan, tuple(steps), source_golden_preserving,
+                           derived_expected_bf16)
