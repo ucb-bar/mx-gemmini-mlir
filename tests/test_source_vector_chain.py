@@ -103,6 +103,19 @@ def test_source_bound_resident_second_matmul_lowers_and_checks_source(tmp_path):
     assert ".insn r 0x7b, 3, 8" in issuer
     assert ".insn r 0x7b, 3, 34" in issuer
     assert "matmul_fp8_64x64_chain.h" not in issuer
+    evidence = ROOT / "docs/evidence"
+    assert mlir == (evidence / "nicolas_chain_vpu_requant_resident_64x64_source_bound.mlir").read_text()
+    saved = json.loads((evidence / "compiled_nicolas_resident_chain_64x64_20261009.json").read_text())
+    reproduced = json.loads((evidence / "compiled_nicolas_resident_chain_64x64_repro_20261009.json").read_text())
+    assert saved["status"] == "source_resident_chain_matched_on_pinned_spike"
+    assert saved["compiler_revision"].startswith("f4128ce")
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["compared_fp8_codes"] == 8192
+    assert saved["compared_e8m0_scales"] == 256
+    for field in ("typed_mlir_sha256", "files_sha256", "object_sha256",
+                  "elf_sha256", "extension_sha256", "spike_log_sha256",
+                  "compiler_source_closure_sha256"):
+        assert saved[field] == reproduced[field]
     opt = ROOT / "build/tools/mx-gemmini-opt"
     if opt.is_file():
         path = tmp_path / "resident.mlir"

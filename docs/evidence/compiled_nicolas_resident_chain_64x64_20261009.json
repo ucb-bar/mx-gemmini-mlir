@@ -1,0 +1,64 @@
+{
+  "command_count": 93,
+  "compared_e8m0_scales": 256,
+  "compared_fp8_codes": 8192,
+  "compiler_revision": "f4128ce9a89aea112f390b941b03d8dfba49d8e0",
+  "compiler_source_closure_sha256": "70a2f448189bbf4b8b6da7b82b496c282abde19d0395602203469a922b6e3097",
+  "elf_sha256": "2cb62f45a588f625cbcde12c9081e15c7f9b7d89453429d611c819fd365d81b3",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "b2_scales.bin": "97fd68ad074bffabc0d0c3efebca90af795f296debc05bfcf5a9f84090f5d88c",
+    "b2_weight.bin": "e4471ea8b48af4268064b6a3651c06f56d75378babb9158d03fc0bdf3a943c5b",
+    "c1_bf16.bin": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref.bin": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref.bin": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "c2_codes_ref.bin": "6b7d9efd916edb1946da28efcea10c7e1ad70b92bbc0a54c2f185fca8ef914b4",
+    "c2_scales_ref.bin": "40b6d52fecfb33e8731f64f3a2f1ad320a79bc3df46866b805f4d5583c21581e",
+    "mx_data.S": "166ab248349985360b69fcdb4b4efc7c0033ec6a0d17fbaa65c8394f89afead5",
+    "mx_driver.c": "e296694fc15c742c1fc29a3f52b1b04e1a8565fc42c1585ae14b8aadaf2949ff",
+    "mx_issue.c": "f7c94cb5fc0b50e259f103d21d36bc9e4d03a25535e07337a0fd381f2763d0d7",
+    "physical_program.json": "bd21877e312d8c628e30d85a11a0e57662b6082c732b67f1f0df0564c0f37ac3"
+  },
+  "gemmini_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "object_sha256": {
+    "mx_0.o": "4fbe3309f8ae7d496b6d2e2d7b4e037cd5c3429f6f28e1a4ec8a62e2a272eeab",
+    "mx_1.o": "be475b2938db596e706375e49853e590c423d7874edbba8995b516d67d1e30b5",
+    "mx_2.o": "42ebbaed03954244013613e9a6ebc64c3296bd6049312aeddf6d73f764362a12",
+    "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.resident_chain_sources.v1",
+  "source_facts": {
+    "bf16_scalar": 16384,
+    "contract_sha256": "76c9438e10badaa146b80f070c05cae74da2356ea1cf2826ce14af9486a554e5",
+    "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+    "policy_sha256": "04dc8f73257310f916ed8d6b0d48e49d57d32c928a561a08d42da1594317b186",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "resource_sha256": {
+      "b2_scales": "97fd68ad074bffabc0d0c3efebca90af795f296debc05bfcf5a9f84090f5d88c",
+      "b2_weight": "e4471ea8b48af4268064b6a3651c06f56d75378babb9158d03fc0bdf3a943c5b",
+      "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+      "c1_codes_ref": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+      "c1_scales_ref": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+      "c2_codes_ref": "6b7d9efd916edb1946da28efcea10c7e1ad70b92bbc0a54c2f185fca8ef914b4",
+      "c2_scales_ref": "40b6d52fecfb33e8731f64f3a2f1ad320a79bc3df46866b805f4d5583c21581e"
+    },
+    "shape_mn": [
+      64,
+      64
+    ],
+    "source_scope": "BF16 C1 preload, VPU x2, tiled resident FP8 requant, resident FP8 second matmul; excludes first matmul",
+    "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+    "sp_bf16": 4096,
+    "sp_c1": 128,
+    "typed_mlir_sha256": "bad861bf131f0d99bd072b0f8a6e31f26353a8d7cd881a7b9337f2eb8d209274"
+  },
+  "source_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "59c72f0cdbdcc58be5bcf7786600f63cafbd6f18ddb9711baba3688275be756d",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_resident_chain_matched_on_pinned_spike",
+  "typed_mlir_sha256": "bad861bf131f0d99bd072b0f8a6e31f26353a8d7cd881a7b9337f2eb8d209274"
+}

@@ -244,6 +244,25 @@ requantized tile. The x2 epilogues above establish one compiler-generated
 matrix/VPU composition; the full matrix→VPU→requant→matrix chain still needs
 one compiler program and numerical parity.
 
+The `--with-resident-matmul` option now continues that same typed seam through
+`mx_gemmini.resident_contract`. The operation names the resident C1 tile, B2
+source buffers, C2 destination, and E4M3 format. The profile verifier checks
+the 64×64×64 DIM16 geometry, scratchpad lifetimes, and output mode; the
+physical lowerer emits B2 scale and weight transfers, a resident output-scale
+configuration, and `LOOP_WS_SPAD` without reloading C1 or its scales. Its
+source audit checks Nicolas's B2 transfer and second-matmul calls, and an
+independent exact BF16×2 output oracle matches his C2 header. The generated
+ELF compares **4,096 C1 codes, 128 C1 scales, 4,096 C2 codes, and 128 C2
+scales**; all match on pinned Spike. Two clean output directories reproduce
+the typed MLIR, generated source, objects, ELF, extension, and Spike log
+hashes. See the [typed MLIR](evidence/nicolas_chain_vpu_requant_resident_64x64_source_bound.mlir),
+[Spike receipt](evidence/compiled_nicolas_resident_chain_64x64_20261009.json),
+and [reproduction](evidence/compiled_nicolas_resident_chain_64x64_repro_20261009.json).
+This path starts from Nicolas's C1 BF16 source tile, so it still excludes MM1.
+The next full-chain gate is to lower MM1 from the two-site PyTorch/model2MLIR
+capture, bind its source A1/B1 payload, and feed its resident BF16 result to
+the VPU in the same compiled program.
+
 Reproduce the seam with:
 
 ```sh
@@ -252,6 +271,9 @@ python -m tools.qualify_nicolas_vector_requant \
   --rtl-root /path/to/gemmini-mx-cleanup --riscv-root /path/to/riscv-tools \
   --mx-opt build/tools/mx-gemmini-opt --out-dir /new/output-directory
 ```
+
+Add `--with-resident-matmul` to this command to reproduce the second-matmul
+program. The output directory must be new.
 
 ## Remaining gates
 
