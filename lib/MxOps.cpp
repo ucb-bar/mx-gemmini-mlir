@@ -103,7 +103,10 @@ LogicalResult ReadoutQuantizedOp::verify() {
       !scales.getElementType().isInteger(8))
     return emitOpError("requires rank-two i8 code and scale tensors");
   if (codes.hasStaticShape() && scales.hasStaticShape() &&
-      (codes.getDimSize(0) != scales.getDimSize(0) ||
+      (((output.getValue() == "fp4_e2m1" ||
+         output.getValue() == "fp6_e3m2" || output.getValue() == "fp6_e2m3")
+            ? codes.getDimSize(0) * 2 != scales.getDimSize(0)
+            : codes.getDimSize(0) != scales.getDimSize(0)) ||
        codes.getDimSize(1) % 32 != 0 ||
        codes.getDimSize(1) / 32 != scales.getDimSize(1)))
     return emitOpError("code and E8M0 scale tensor shapes differ");
