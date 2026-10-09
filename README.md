@@ -16,7 +16,7 @@ scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
 `physical_program.lower_bound_source` schedules configuration, scale/LUT DMA,
 operand movement, K-wave compute, and BF16 readout for complete output tiles.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
-output on Nicolas's pinned Spike extension. Seven source schedules pass; see
+output on Nicolas's pinned Spike extension. Nine source schedules pass; see
 [compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. General matrix and arbitrary mixed VPU/SPAD lowering remain open.

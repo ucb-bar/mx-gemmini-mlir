@@ -1,4 +1,4 @@
-"""New 256-deep source runs retain their model2MLIR capture provenance."""
+"""Fresh source runs retain their model2MLIR capture provenance."""
 
 from __future__ import annotations
 
@@ -21,11 +21,13 @@ def _sha(path: Path) -> str:
 
 
 @pytest.mark.parametrize("precision,source_root,shape", [
+    ("fp8", SOURCE, (64, 64, 128)),
+    ("fp4", FP4_SOURCE, (128, 128, 128)),
     ("fp8", SOURCE, (128, 128, 256)),
     ("fp4", FP4_SOURCE, (128, 128, 256)),
     ("fp8", SOURCE, (256, 256, 256)),
 ])
-def test_fresh_256_deep_capture_binds_source_and_typed_ir(precision, source_root, shape):
+def test_fresh_capture_binds_source_and_typed_ir(precision, source_root, shape):
     m, n, k = shape
     stem = f"model2mlir_radiance_mx_{precision}_{m}x{n}x{k}"
     capture = json.loads((EVIDENCE / f"{stem}_capture_receipt.json").read_text())
