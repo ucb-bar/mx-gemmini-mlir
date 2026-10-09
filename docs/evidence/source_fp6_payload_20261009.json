@@ -1,0 +1,53 @@
+{
+  "bound_mlir_sha256": "655286922d1290c0abe38628b70168b1880996a13d1f7aec7bcaae9ed5cf5f9a",
+  "k_waves": 16,
+  "lut_granularity_shift": 1,
+  "lut_lines_per_bank": 64,
+  "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
+  "payload_digests": {
+    "activation_bytes_sha256": "c823e0c2bb74a6f0a9e65310891d519269f245c45c036c2f707dfb9785734b0f",
+    "activation_lut_bytes_sha256": "17198b4bc2b08e148dc514081295700246b6231dbe291489961a152de0d99a03",
+    "activation_scale_bytes_sha256": "1c520deb502e29146b4ace6178a2519561ff396d863b806675c38f03e734e767",
+    "golden_bf16_bytes_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+    "output_lut_bytes_sha256": "933df9147277278bbce96d799ab8f6ce133ed0cb06a1d9acccd380600e2b45e1",
+    "weight_bytes_sha256": "aa0d1452ab2552e093c1b65c8f9071a3ebf7f54e455e9e87a486e5b9e42eb313",
+    "weight_lut_bytes_sha256": "e37aec2f3b634810541da65b54605943841593a749a291c82abb4ad78c3b678c",
+    "weight_scale_bytes_sha256": "817a48a3f5f181020c43fe3e2ba9718786c85f3be2312c2fcc394b64f44c8008"
+  },
+  "payload_lengths": {
+    "activation_bytes": 131072,
+    "activation_lut_bytes": 768,
+    "activation_scale_bytes": 8192,
+    "golden_bf16_bytes": 32768,
+    "output_lut_bytes": 768,
+    "weight_bytes": 131072,
+    "weight_lut_bytes": 768,
+    "weight_scale_bytes": 8192
+  },
+  "schema": "mx_gemmini.source_fp6_payload.v1",
+  "scope": "source FP6 payload bound to typed MLIR and selected RTL; no MX execution or numerical parity",
+  "site_id": "functional:matmul",
+  "source_c_row": 2560,
+  "source_driver": "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp",
+  "source_driver_sha256": "18bfc5d0af4687bd965f546508d945adcfbfee5d242e6269ec442889888e02ed",
+  "source_header_sha256": "b57ef75fc634acd21750db45202bf12ced04569701f74e0607e0f06c974da93e",
+  "source_revision": "94ba7ca8afe213b92fa2428689fa64800c8eeca9",
+  "source_scratchpad_bytes": 131072,
+  "source_shape": [
+    128,
+    128,
+    2048
+  ],
+  "source_tile": [
+    128,
+    128,
+    128
+  ],
+  "status": "bound_source_packed_data_and_lut_roundtrip_only",
+  "structural_policy_role": "PyTorch capture uses source LUT line zero as a sample; source payload retains all 64 lines per bank",
+  "structural_policy_sha256": "a48c45bb38ccbdeef0e87a1ba7d23e889fd22e470f05c6e3e6bd3b914e13bba2",
+  "target_c_row": 512,
+  "target_profile_name": "MxE3M2OnlyGemminiRocketConfig",
+  "target_profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+  "target_scratchpad_bytes": 262144
+}

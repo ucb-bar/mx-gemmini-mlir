@@ -77,11 +77,14 @@ Its four-wave FP8 diagnostic generated from the bound MLIR and checked-in
 source data matched all 16,384 BF16 golden outputs on Nicolas's pinned Spike
 extension. The selected 256 KiB MX profile requires different scratchpad and
 scale-buffer addresses from the handwritten 128 KiB library.
-The generated source FP4 64×64×128 driver now follows the same capture and
+The generated source FP4 64×64×128 driver follows the same capture and
 profile binding path. Its two-wave diagnostic matched all 4,096 BF16 golden
-outputs on the pinned Spike extension; the generated header and digests are
-saved under `docs/evidence`. The checked-in FP6 data uses row-specific LUTs
-that still need exact frontend binding.
+outputs on the pinned Spike extension. The checked-in FP6 128×128×2048 source
+now binds all row-specific LUTs and packed operands to a typed MX contract;
+its serial diagnostic matched all 16,384 BF16 golden outputs. The FP6 frontend
+policy captures structure with only the source's first LUT line, while the
+source payload supplies the actual per-row data. The pinned Spike LUT path
+needs a documented serial scale-buffer workaround.
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json

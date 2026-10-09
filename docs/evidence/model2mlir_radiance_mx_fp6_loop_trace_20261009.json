@@ -1,0 +1,1323 @@
+{
+  "abi": {
+    "gemmini_header_sha256": "af18755e3175561540e394e5065cf6e7e42e9e67a4e2f0ec9cff8b20bf1a1457",
+    "radiance_mmio_header_sha256": "c5abe6407ce252047f1e4666bc809b84380a4667f5b7a1739461ceafe70b8e9d"
+  },
+  "gemmini_software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "omitted": [
+    "configuration commands",
+    "Muon E8M0/LUT shared-memory writes (target uses symbolic funct-27 E8M0 DMA instead)",
+    "Muon memory fences and busy waits",
+    "SIMT or accumulator move-out",
+    "GPU-to-host buffer address translation"
+  ],
+  "packets": [
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 0
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 0
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 0
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 0
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 1
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 1
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 1
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 0
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 0
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 2199023256248,
+      "wave": 0
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 1
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 2
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 2
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 2
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 1
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 1
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 1
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 2
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 3
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 3
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 3
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 2
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 2
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 2
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 3
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 4
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 4
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 4
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 3
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 3
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 3
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 4
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 5
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 5
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 5
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 4
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 4
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 4
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 5
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 6
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 6
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 6
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 5
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 5
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 5
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 6
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 7
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 7
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 7
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 6
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 6
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 6
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 7
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 8
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 8
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 8
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 7
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 7
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 7
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 8
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 9
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 9
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 9
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 8
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 8
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 8
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 9
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 10
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 10
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 10
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 9
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 9
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 9
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 10
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 11
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 11
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 11
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 10
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 10
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 10
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 11
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 12
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 12
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 12
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 11
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 11
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 11
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 12
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 13
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 13
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 13
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 12
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 12
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 12
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 13
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 14
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 14
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 14
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 13
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 13
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 13
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 18032025055264768,
+      "rs2": 1,
+      "wave": 14
+    },
+    {
+      "funct": 9,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 15
+    },
+    {
+      "funct": 24,
+      "phase": "prefetch",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 15
+    },
+    {
+      "funct": 8,
+      "phase": "prefetch",
+      "rs1": 0,
+      "rs2": 736,
+      "wave": 15
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 14
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 16384,
+      "wave": 14
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256248,
+      "wave": 14
+    },
+    {
+      "funct": 26,
+      "phase": "select_scales",
+      "rs1_host_address": "C_scale_factors",
+      "rs1_static_high_bits": 3476796538875805696,
+      "rs2": 1,
+      "wave": 15
+    },
+    {
+      "funct": 9,
+      "phase": "compute",
+      "rs1": 0,
+      "rs2": 34360000516,
+      "wave": 15
+    },
+    {
+      "funct": 24,
+      "phase": "compute",
+      "rs1": 4096,
+      "rs2": 12288,
+      "wave": 15
+    },
+    {
+      "funct": 8,
+      "phase": "compute",
+      "rs1": 1,
+      "rs2": 2199023256120,
+      "wave": 15
+    }
+  ],
+  "scale_dma_packets": [
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[0][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "prologue_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[0][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 0,
+      "wave": 0
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[4][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 512,
+      "wave": 1
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[4][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 512,
+      "wave": 1
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[8][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 1024,
+      "wave": 2
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[8][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 1024,
+      "wave": 2
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[12][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 1536,
+      "wave": 3
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[12][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 1536,
+      "wave": 3
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[16][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 2048,
+      "wave": 4
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[16][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 2048,
+      "wave": 4
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[20][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 2560,
+      "wave": 5
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[20][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 2560,
+      "wave": 5
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[24][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 3072,
+      "wave": 6
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[24][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 3072,
+      "wave": 6
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[28][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 3584,
+      "wave": 7
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[28][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 3584,
+      "wave": 7
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[32][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 4096,
+      "wave": 8
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[32][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 4096,
+      "wave": 8
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[36][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 4608,
+      "wave": 9
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[36][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 4608,
+      "wave": 9
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[40][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 5120,
+      "wave": 10
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[40][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 5120,
+      "wave": 10
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[44][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 5632,
+      "wave": 11
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[44][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 5632,
+      "wave": 11
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[48][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 6144,
+      "wave": 12
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[48][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 6144,
+      "wave": 12
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[52][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 6656,
+      "wave": 13
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[52][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 6656,
+      "wave": 13
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[56][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281474976710784,
+      "side": "A",
+      "source_byte_offset": 7168,
+      "wave": 14
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 0,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[56][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 281479271678080,
+      "side": "B",
+      "source_byte_offset": 7168,
+      "wave": 14
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&A_scales_row[60][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316659348799616,
+      "side": "A",
+      "source_byte_offset": 7680,
+      "wave": 15
+    },
+    {
+      "byte_count": 512,
+      "destination_byte": 4096,
+      "funct": 27,
+      "phase": "next_scale_dma",
+      "pitch_bytes": 128,
+      "row_bytes": 128,
+      "rows": 4,
+      "rs1_dram_address": "&B_scales_col[60][0]",
+      "rs1_static_high_bits": 140737488355328,
+      "rs2": 316663643766912,
+      "side": "B",
+      "source_byte_offset": 7680,
+      "wave": 15
+    }
+  ],
+  "scale_memory": {
+    "abi": {
+      "controller_sha256": "5237331d09b2daf42f8f64a5336c08a7dc086d6c947a20dbfd255db3f67a634c"
+    },
+    "source_half_bytes": 2048,
+    "source_trailing_upload_suppressed": true,
+    "target_half_bytes": 4096
+  },
+  "schema": "mx_gemmini.source_loop_trace.v1",
+  "site_id": "functional:matmul",
+  "software_geometry": {
+    "ADDR_LEN": 32,
+    "BANK_NUM": 4,
+    "BANK_ROWS": 4096,
+    "DIM": 16,
+    "gemmini_params_sha256": "39c2d32a3938f10e8cff29773a8b443526d6c38af1520fe0449db3dd7edc939c"
+  },
+  "source_driver": "mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp",
+  "source_driver_sha256": "18bfc5d0af4687bd965f546508d945adcfbfee5d242e6269ec442889888e02ed",
+  "source_layout_c_row": 2560,
+  "source_library_sha256": "003302c019de637a02b285a90ca40f114a53341f6ee22bec774fd20310a7177d",
+  "status": "symbolic_matrix_loop_trace_only",
+  "target_layout_c_row": 512,
+  "target_profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+  "wave_count": 16
+}

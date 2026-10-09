@@ -153,8 +153,44 @@ records **zero mismatches across 4,096 BF16 outputs** on the pinned Spike
 extension. Two independent builds produced identical C, extension, ELF, and
 Spike-log digests.
 
+## Checked-in source FP6 kernel
+
 The checked-in FP6 128×128×2048 header has row-specific A, B, and C LUTs
-(`64×3` words each). The current frontend policy selects one codebook per
-site, so it cannot describe that exact source quantization. FP6 source parity
-requires per-row LUT binding and a profile with FP6 LUT compute before a
-source-golden execution claim is possible.
+(`64×3` words each). `source_fp6.py` reads the packed A/B indices, E8M0
+scales, LUT banks, and BF16 golden data. It decodes the first two LUT banks and
+re-encodes all A/B indices to prove their byte-for-byte layout. The
+[payload receipt](evidence/source_fp6_payload_20261009.json) binds these
+component digests to the source revision, typed MX contract, and
+`MxE3M2OnlyGemminiRocketConfig` profile. That target has 256 KiB of scratchpad,
+so C moves from source row 2560 to target row 512.
+
+Capture the FP6 driver with `tests/capture_radiance_mx_gemm.py` as above, using
+`--driver kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp`,
+`--policy examples/fp6-source-line0-policy.yaml`, and
+`--profile profiles/gemmini-mx-cleanup-266c593/MxE3M2OnlyGemminiRocketConfig.json`.
+The policy uses **only the source's first A/B LUT line** for structural PyTorch
+quantization. The separate source payload retains all 64 A/B/C lines and the
+actual packed operands; PyTorch values are still different from the source
+blobs. The [capture receipt](evidence/model2mlir_radiance_mx_fp6_receipt_20261009.json)
+links the [typed handoff](evidence/model2mlir_radiance_mx_fp6_handoff_20261009.mlir)
+and [bound MLIR](evidence/model2mlir_radiance_mx_fp6_bound_20261009.mlir).
+The [source trace](evidence/model2mlir_radiance_mx_fp6_loop_trace_20261009.json)
+has 16 K waves and 112 loop packets, with alternate E8M0 scale buffers.
+
+Run `tools.inspect_source_fp6` with the capture's `--mlir`,
+`--capture-receipt`, and `--policy`, plus the same source, driver, profile, and
+RTL paths. `tools.run_source_mx_spike` accepts the same arguments as the FP8
+diagnostic and builds the FP6 C and RV64 ELF. Its
+[execution receipt](evidence/source_fp6_128x128x2048_spike_20261009.json)
+records **zero mismatches across 16,384 BF16 outputs** against the checked-in
+source golden. The source's own `mx_golden` also reproduced that golden exactly.
+
+The [emitted C](evidence/source_fp6_128x128x2048_20261009.c) serially reloads
+FP6 scales into buffer zero. In Nicolas's pinned Spike extension, the LUT
+compute branch reads scale offsets without applying the alternate selector;
+the [alternating-buffer trial](evidence/source_fp6_alternating_scales_failed_20261009.json)
+yielded 16,368 mismatches. The direct
+FP8/FP4 branch applies the selector and their diagnostics keep alternation.
+This FP6 workaround is only for the standalone Spike numerical diagnostic.
+The source trace retains the target's alternate-buffer commands. RTL and
+mixed Radiance execution still require separate validation.
