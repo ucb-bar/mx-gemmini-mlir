@@ -19,6 +19,10 @@ bytes, E8M0 scales, BF16 golden, and all three 64-line FP6 LUT banks into
 hashed binary resources. `bind_payload.py` attaches their manifest digest and
 origin to the typed `mx_gemmini.contract`. It does not claim that the captured
 PyTorch tensor generated those source bytes.
+For an FP8 source driver with quantized output, the same binding specializes
+the terminal BF16 readout into typed `mx_gemmini.readout_quantized`, returning
+FP8 codes and E8M0 scales. The capture receipt identifies this output
+specialization separately from the PyTorch matmul capture.
 
 `physical_program.py` verifies the MLIR, manifest, and profile together. It
 plans scratchpad placement and lowers complete BF16 output tiles into ordered Rocket
@@ -97,6 +101,35 @@ the compiler's explicitly named `spike_serial` mode reloads scale half zero.
 `rtl_alternating` plans the target's intended halves but is not a numerical
 qualification for RTL or FPGA.
 
+## FP8 quantized readout
+
+The compiler now emits quantized FP8 readout commands from a source-bound
+model2MLIR contraction. The payload contains both the Radiance header's
+`C_out`/`C_scales_row` and a separately named Nicolas reference computed from
+the source BF16 golden using the current MXQuant power-of-two scale, hardware
+2^-23 floor, and round-to-nearest-even E4M3 grid. The reference code is
+independent of Spike; its 16,384 codes and 512 scales for the larger run also
+matched the pinned MXQuant implementation exactly in
+[the full-output oracle check](../tests/test_quantized_lowering.py). The standalone checker
+compares *both* codes and scales on Nicolas's pinned Spike.
+
+| Source shape and tile | Spike vs Nicolas reference | Radiance header differences | Evidence |
+|---|---:|---:|---|
+| FP8 64×64×64, one 64×64 tile | 4,096 codes + 128 scales exact | 4,091 codes + 128 scales | [capture](evidence/model2mlir_radiance_mx_fp8_64x64x64_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_64x64x64_quant_20261009.json) |
+| FP8 128×128×256, one 128×128 tile | 16,384 codes + 512 scales exact | 16,376 codes + 512 scales | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x256_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x256_quant_20261009.json) |
+
+The discrepancy is an upstream convention change, not a passing source-golden
+test: `radiance-kernels/lib/golden/mx_golden.cpp` uses `log2_pmax = 8` for FP8
+requant output, whereas Nicolas's current
+`src/main/scala/gemmini/MxRequantizer.scala` and pinned Spike use
+`log2_pmax_floor = 0`. The generated Radiance codes and scales therefore
+cannot match this MX+VPU configuration until that source golden is updated or
+the selected hardware convention changes. The 128×128×256 source driver also
+cannot stage its C tile in the original 128 KiB scratchpad; its generated
+golden is still usable, and Nicolas's 256 KiB profile admits the tile.
+FP4 and FP6 quantized outputs remain unqualified; the Radiance generator's
+`C_out` currently uses FP8 output even for generated FP4 headers.
+
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
 Two checked [FP8](../examples/mx_fp8_vpu_x2_profile_bound.mlir) and
@@ -125,9 +158,10 @@ VPU→requant→matmul chain still needs compiler output and numerical parity.
 
 ## Remaining gates
 
-1. Lower quantized readout, asymmetric legal modes, and the remaining source
-   shapes from model2MLIR captures; extend multi-output tiling beyond the
-   qualified FP8 shape and its current BF16 readout.
+1. Reconcile the FP8 source requant golden with Nicolas's current convention,
+   then qualify FP4/FP6 quantized output, asymmetric legal modes, and the
+   remaining source shapes. Extend multi-output tiling beyond the qualified
+   FP8 BF16 shape.
 2. Compose the full matrix→VPU→SPAD_REQUANT→matrix chain in one MLIR program
    with explicit scratchpad lifetimes and source numerical goldens.
 3. Qualify every legal mode class on the matching Spike/RTL configuration,

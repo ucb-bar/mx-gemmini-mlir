@@ -19,7 +19,10 @@ operand movement, K-wave compute, and BF16 readout for complete output tiles.
 output on Nicolas's pinned Spike extension. Nine source schedules pass; see
 [compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
-goldens. General matrix and arbitrary mixed VPU/SPAD lowering remain open.
+goldens. A typed FP8 quantized readout also matches Nicolas's current Spike
+convention for codes and scales; its source header goldens use an older scale
+rule, so [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-quantized-readout).
+General matrix and arbitrary mixed VPU/SPAD lowering remain open.
 The physical
 `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
