@@ -17,6 +17,12 @@ ELF, manifest, generated C file, and Spike log were byte-identical. The
 Compressed files use deterministic gzip; their recorded digest refers to
 the decompressed content.
 
+A second replay used a new shallow clone at published revision `6975623`.
+It configured and rebuilt `mx-gemmini-opt` from source, reproduced the native
+verifier's hash, and generated a byte-identical eight-case index. The
+[clone receipt](published_clone_replay.json), [configure log](published_clone_configure.log),
+and [build log](published_clone_build.log) record that check.
+
 The source roster is produced by `tools.reproduce_radiance_roster`. Given its
 `spike/` directory, replay and archive these objects with:
 

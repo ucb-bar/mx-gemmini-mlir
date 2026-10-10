@@ -32,6 +32,19 @@ def test_all_source_host_requant_objects_match_on_pinned_spike():
     assert index["compared_scales"] == 3328
     assert archive["status"] == "fresh_checkout_reproduced_all_8_host_objects_and_spike_logs"
     assert archive["index_sha256"] == archive["fresh_index_sha256"] == _sha(index_bytes)
+    clone = json.loads((EVIDENCE / "published_clone_replay.json").read_text())
+    assert clone["status"] == "published_clone_rebuilt_and_reproduced_all_8_objects"
+    assert clone["branch"] == "handwritten-implementation"
+    assert clone["archived_index_sha256"] == clone["new_clone_index_sha256"] == _sha(index_bytes)
+    assert clone["native_verifier_sha256"] == index["native_verifier_sha256"]
+    assert clone["cases"] == 8
+    assert clone["compared_codes"] == 90112
+    assert clone["compared_scales"] == 3328
+    for key, file in (("configure_log_sha256", "published_clone_configure.log"),
+                      ("build_log_sha256", "published_clone_build.log")):
+        assert _sha((EVIDENCE / file).read_bytes()) == clone[key]
+    assert b"Linking CXX executable tools/mx-gemmini-opt" in (
+        EVIDENCE / "published_clone_build.log").read_bytes()
     assert len(archive["files"]) == 8 * 12
     for file in archive["files"]:
         assert _sha(_read(EVIDENCE / file["path"])) == file["raw_sha256"]

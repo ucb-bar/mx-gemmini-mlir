@@ -1,0 +1,14 @@
+{
+  "archived_index_sha256": "3f09c2144fdfb604a8ff91cb08b46b3ad3062170834a518151ab9b02550f062e",
+  "branch": "handwritten-implementation",
+  "build_log_sha256": "d74bd9aa10815ee73a253e9b0204556c5c647e4c3db7d514a1eeff8c95a377cb",
+  "cases": 8,
+  "compared_codes": 90112,
+  "compared_scales": 3328,
+  "compiler_revision": "6975623f5eb7889f11f3ef0cecc92bff3e782376",
+  "configure_log_sha256": "b807001374f42dbd07033df601c6923a1b58a1fde21f3ff84db963d90595c3a3",
+  "native_verifier_sha256": "e597ca35e3bff1bf8cb82ba84c363c83b589504679e31365c23498a841734123",
+  "new_clone_index_sha256": "3f09c2144fdfb604a8ff91cb08b46b3ad3062170834a518151ab9b02550f062e",
+  "schema": "mx_gemmini.published_clone_host_object_replay.v1",
+  "status": "published_clone_rebuilt_and_reproduced_all_8_objects"
+}
