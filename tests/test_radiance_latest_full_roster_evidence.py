@@ -119,3 +119,56 @@ def test_latest_full_radiance_mx_roster_reproduces() -> None:
                          "mx_data.S"):
             assert _sha(base / "build" / filename) == (
                 manifests[0]["files_sha256"][filename])
+
+
+def test_one_command_reproduces_archived_radiance_mx_roster() -> None:
+    run = EVIDENCE / "one_command_66df445"
+    report = _read(run / "reproduction.json")
+    assert report["schema"] == "mx_gemmini.radiance_mx_gemm_reproduction.v1"
+    assert report["status"] == "all_31_source_goldens_reproduced_on_pinned_spike"
+    assert report["compiler_revision"] == "66df445cfa0d1fb1e4a6fdc9cca3721681e6af5a"
+    assert (report["covered_drivers"], report["fullout_drivers"],
+            report["requant_drivers"]) == (31, 23, 8)
+    assert report["baseline_frontend_index_sha256"] == _sha(
+        EVIDENCE / "frontend/index.json")
+    assert report["baseline_spike_index_sha256"] == _sha(
+        EVIDENCE / "spike/index.json")
+    assert report["frontend_index_sha256"] == _sha(run / "frontend/index.json")
+    assert report["spike_index_sha256"] == _sha(run / "spike/index.json")
+    headers = _read(run / "headers.json")
+    assert headers["drivers"] == 31
+    assert len(headers["rows"]) == 31
+    assert headers["generated_headers"] == []
+    frontend, spike = (_read(run / f"{section}/index.json") for section in
+                       ("frontend", "spike"))
+    expected_front, expected_spike = (_read(EVIDENCE / f"{section}/index.json")
+                                      for section in ("frontend", "spike"))
+    assert len(frontend["rows"]) == len(spike["rows"]) == 31
+    assert frontend["compiler_revision"] == spike["compiler_revision"] == (
+        report["compiler_revision"])
+    assert spike["frontend_index_sha256"] == report["frontend_index_sha256"]
+    for row, expected, header in zip(frontend["rows"], expected_front["rows"],
+                                     headers["rows"]):
+        assert row["driver"] == expected["driver"] == header["driver"]
+        assert header["driver_sha256"] == row["driver_sha256"]
+        assert header["header_sha256"] == row["header_sha256"]
+        for key in ("source_mlir_sha256", "bound_mlir_sha256", "profile_sha256",
+                    "shape_mnk", "tile_mnk", "quant_output"):
+            assert row[key] == expected[key]
+        receipt_path = run / "frontend" / row["receipt"]
+        assert _sha(receipt_path) == row["receipt_sha256"]
+        assert _read(receipt_path)["mx_support_revision"] == report["compiler_revision"]
+    for row, expected in zip(spike["rows"], expected_spike["rows"]):
+        assert row["driver"] == expected["driver"]
+        for key in ("profile_bound_mlir_sha256", "payload_bound_mlir_sha256",
+                    "elf_sha256", "spike_log_sha256", "comparison",
+                    "compared_count", "status"):
+            assert row[key] == expected[key]
+        receipt_path = run / "spike" / row["receipt"]
+        assert _sha(receipt_path) == row["receipt_sha256"]
+        receipt = _read(receipt_path)
+        baseline = _read(EVIDENCE / "spike" / expected["receipt"])
+        assert receipt["compiler_revision"] == report["compiler_revision"]
+        for key in ("files_sha256", "object_sha256", "extension_sha256",
+                    "elf_sha256", "spike_log_sha256", "bound_mlir_sha256"):
+            assert receipt[key] == baseline[key]

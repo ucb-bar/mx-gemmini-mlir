@@ -26,7 +26,9 @@ output on Nicolas's pinned Spike extension. The latest
 [complete MX GEMM source roster](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
 23 drivers with BF16 output and 8 with requantized output match their source
-goldens. The same stream also
+goldens. The [one-command reproduction](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
+rebuilds and checks those captures and Spike results against archived hashes.
+The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike
 convention for codes and scales. The FP6 path uses the checked-in source header

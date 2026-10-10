@@ -1125,6 +1125,24 @@ python -m tools.requalify_radiance_roster \
   --riscv-root "$RISCV_ROOT" --out-dir /new/mx-spike-roster --jobs 2
 ```
 
+For one guarded command that runs all three steps and compares the new MLIR,
+physical artifacts, ELFs, and Spike logs with the archived baseline:
+
+```sh
+python -m tools.reproduce_radiance_roster \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --source-root "$RADIANCE_KERNELS_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --riscv-root "$RISCV_ROOT" --mx-opt build/tools/mx-gemmini-opt \
+  --radiance-opt "$RADIANCE_OPT" --out-dir /new/mx-reproduction --jobs 2
+```
+
+A third run used that command at compiler `66df445`. Its
+[reproduction receipt](evidence/radiance_mx_gemm_latest_e9ded36_ee22/one_command_66df445/reproduction.json)
+and per-driver receipts show the same captured MLIR, physical source files,
+objects, ELFs, extensions, and Spike logs as the archived baseline for all
+31 drivers. The command refuses a changed source/tool revision or artifact
+digest before writing a success receipt.
+
 Repeat the capture and Spike commands with fresh output directories, then run
 `tools.archive_radiance_roster` with both pairs and the header materialization
 report. It rejects changed frontend artifacts, generated sources, objects,
