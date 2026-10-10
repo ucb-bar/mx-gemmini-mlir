@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "capture_receipt_sha256": "002aa4ec77a1c1637db84bd2264761332d7c2d9816dbd1b2139a90754136f04d",
+      "compared_e8m0_scales": 128,
+      "compared_fp8_codes": 4096,
+      "elf_sha256": "d707d9f73c50abdfad3ffa3d1c185f449208b75631dd3b09dbc663551a0b1d33",
+      "model2mlir_mlir_sha256": "6ab8e640eb50e089902f5645f08a24ad7afbf79275a618764df2bfcaec1e9eb0",
+      "payload_bound_mlir_sha256": "c3b3741888e63848ee41e2b785143560777950bedba78d2669430df6a6559b1a",
+      "profile_bound_mlir_sha256": "77912844a0368da27da8c9b6b5bb3ab69897797299c0fc656e2780b240659ee1",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "source_driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm64tn64tk64.fullout.cpp",
+      "source_driver_sha256": "0213626ce8e37bdcb59dd7be7d1457b1267e233f8ef3bf81e3cdb93fc0b20453",
+      "source_header_sha256": "7a11af40d2dacc4c462086c3a820de440eb4958b1d1f872e360b7d3eab4bd9c6",
+      "spike_log_sha256": "c962dd36f84a4e6c213d400f4383b924a1f0b292913a51db5c384553e1afce28",
+      "spike_receipt_sha256": "4b95db65e5edf2935000bf488a0b488d7363768f26ba78b00553f625e6d0563a",
+      "spike_repro_receipt_sha256": "9284aa647bd551282aa283f0ddeea28dac42cc4d0f4cf74ce3b23b388365642e",
+      "status": "nicolas_oracle_matched_on_pinned_spike"
+    },
+    {
+      "capture_receipt_sha256": "c5ae31cbea5ea6d6a46cf4825974f68d962db10bcd85261c56abc2948c2064c9",
+      "compared_e8m0_scales": 512,
+      "compared_fp8_codes": 16384,
+      "elf_sha256": "f3fc7588056b023a7f76eb9a42da69f35083a67289d8ae800251d19a92640fd9",
+      "model2mlir_mlir_sha256": "ba5847cc206cbb1ef0425a05f4d97019f60cf8968a3004bd6cf062caead07c35",
+      "payload_bound_mlir_sha256": "0f54f6cfdb71501538ada2c7c6ab92f77bbd8b69d2f90679a593a472cea798ff",
+      "profile_bound_mlir_sha256": "0605d83d373e71e4a64ad5674f6c726a0f39c2c47e6bf76f3bb1662141c8312e",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "source_driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout.cpp",
+      "source_driver_sha256": "64568f62f9686c7497d205dd9a434d5efd424dc339190f022af16c8caeaf31e4",
+      "source_header_sha256": "5cb6ca13479a3d56ec3e493a3000009d1dbd869594bf52bda4bcb7ef6d7aec0f",
+      "spike_log_sha256": "582ac611a743406730f95673b92737629f86601d927c9dc9c7f1f458162da67f",
+      "spike_receipt_sha256": "0e22c45e50eb81b7908ee6c1107d9d62cfcaa5f21e297438d84f15dc349b83e9",
+      "spike_repro_receipt_sha256": "794b2c92102ea6744385d67ba9288fb91f177a63fe096af7f7c8f79a78521455",
+      "status": "nicolas_oracle_matched_on_pinned_spike"
+    }
+  ],
+  "compiler_revision": "d44c5de15e16eaee8c5e0a18f70d1ad6510489ed",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "radiance_source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fp8_vpu_requant_shapes.v1",
+  "scope": "Single-tile FP8 source GEMM followed by compiler-added BF16 VPU x2 and resident FP8 SPAD_REQUANT; compared against exact derived golden on pinned Spike."
+}

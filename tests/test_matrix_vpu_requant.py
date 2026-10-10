@@ -141,9 +141,9 @@ def test_matrix_vpu_requant_bundle_rejects_oracle_downgrade(tmp_path):
 
 @pytest.mark.parametrize(("driver", "capture", "shape"), [
     ("mxgemm.fp8.singletile.tm64tn64tk64.fullout.cpp",
-     "model2mlir_radiance_mx_fp8_64x64x64_tk64_fullout_bound.mlir", (64, 64, 64)),
+     "fp8_vpu_requant_shapes_e9ded36/64x64x64/profile_bound.mlir", (64, 64, 64)),
     ("mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout.cpp",
-     "model2mlir_radiance_mx_fp8_128x128x128_tk128_fullout_bound.mlir", (128, 128, 128)),
+     "fp8_vpu_requant_shapes_e9ded36/128x128x128/profile_bound.mlir", (128, 128, 128)),
 ])
 def test_single_tile_vpu_requant_shape_lowering(tmp_path, driver, capture, shape):
     source = SOURCE / "kernels/gemm_mxgemmini" / driver
@@ -168,6 +168,23 @@ def test_single_tile_vpu_requant_shape_lowering(tmp_path, driver, capture, shape
     assert f"tensor<{shape[0]}x{shape[1]}xbf16>" in bound
     assert f"tensor<{shape[0]}x{shape[1] // 32}xi8>" in bound
     assert len([step for step in program.steps if step.phase == "spad_requant"]) == 1
+    evidence = ROOT / "docs/evidence/fp8_vpu_requant_shapes_e9ded36"
+    case = evidence / f"{shape[0]}x{shape[1]}x{shape[2]}"
+    assert bound == (case / "payload_bound.mlir").read_text()
+    capture_receipt = json.loads((case / "capture_receipt.json").read_text())
+    spike_receipt = json.loads((case / "spike_receipt.json").read_text())
+    spike_repro = json.loads((case / "spike_repro_receipt.json").read_text())
+    assert capture_receipt["model2mlir_revision"].startswith("e9ded36")
+    assert capture_receipt["source_revision"].startswith("ee22e0b")
+    assert spike_receipt["status"] == "nicolas_oracle_matched_on_pinned_spike"
+    assert spike_receipt["compared_fp8_codes"] == shape[0] * shape[1]
+    assert spike_receipt["compared_e8m0_scales"] == shape[0] * shape[1] // 32
+    assert spike_receipt["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    for field in ("bound_mlir_sha256", "files_sha256", "object_sha256", "elf_sha256",
+                  "extension_sha256", "spike_log_sha256", "compiler_source_closure_sha256"):
+        assert spike_receipt[field] == spike_repro[field]
+    emitted = write_standalone_sources(tmp_path / "artifact", program, resources)
+    assert emitted["files_sha256"] == spike_receipt["files_sha256"]
     opt = ROOT / "build/tools/mx-gemmini-opt"
     if opt.is_file():
         path = tmp_path / "bound.mlir"
@@ -178,3 +195,23 @@ def test_single_tile_vpu_requant_shape_lowering(tmp_path, driver, capture, shape
 def test_vpu_requant_rejects_multiple_output_tiles_and_excessive_blocks():
     assert not vpu_requant_shape_is_legal((128, 128, 128), (64, 64, 64))
     assert not vpu_requant_shape_is_legal((256, 288, 256), (256, 288, 256))
+
+
+def test_latest_vpu_requant_roster_binds_frontend_and_spike_evidence():
+    root = ROOT / "docs/evidence/fp8_vpu_requant_shapes_e9ded36"
+    index = json.loads((root / "index.json").read_text())
+    assert index["model2mlir_revision"].startswith("e9ded36")
+    assert index["radiance_source_revision"].startswith("ee22e0b")
+    assert {tuple(row["shape_mnk"]) for row in index["cases"]} == {
+        (64, 64, 64), (128, 128, 128)}
+    for row in index["cases"]:
+        m, n, k = row["shape_mnk"]
+        case = root / f"{m}x{n}x{k}"
+        assert row["capture_receipt_sha256"] == hashlib.sha256(
+            (case / "capture_receipt.json").read_bytes()).hexdigest()
+        assert row["spike_receipt_sha256"] == hashlib.sha256(
+            (case / "spike_receipt.json").read_bytes()).hexdigest()
+        assert row["spike_log_sha256"] == hashlib.sha256(
+            (case / "spike.log").read_bytes()).hexdigest()
+        assert row["compared_fp8_codes"] == m * n
+        assert row["compared_e8m0_scales"] == m * n // 32

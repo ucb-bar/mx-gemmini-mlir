@@ -397,6 +397,20 @@ Reproduce with the normal `tools.qualify_source_mx` command above, selecting
 the FP8 64×64×128 fullout driver and its matching model2MLIR bound capture,
 and adding `--vpu-spad-requant-x2`.
 
+The same SSA-connected specialization now derives its tensor types, output
+tile placement, and requantized readout size from a checked single-tile FP8
+source shape. Fresh PyTorch captures with model2MLIR `e9ded36` and Radiance
+source `ee22e0b` qualified **64×64×64** (4,096 codes, 128 scales) and
+**128×128×128** (16,384 codes, 512 scales) on the pinned MX+VPU Spike
+extension. Both captures selected one contraction with zero opaque calls;
+two independent captures and two RV64 builds per shape reproduced their
+respective MLIR, object, ELF, extension, and Spike log hashes. The generated
+source headers were rebuilt with Radiance's current data generator and match
+the earlier headers byte for byte. See the [shape evidence index](evidence/fp8_vpu_requant_shapes_e9ded36/index.json).
+This composition adds VPU×2 to the source GEMM; it does not claim that the
+handwritten fullout GEMM uses VPU. Multiple output tiles and requant blocks
+outside the selected hardware range remain rejected.
+
 Nicolas's reference `vpu_ops`, `vpu_softmax`, and
 `chain_vpu_spad_requant` programs were also built and run directly against
 the pinned Spike extension. They passed all reference comparisons, including
