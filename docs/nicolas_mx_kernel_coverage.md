@@ -12,7 +12,7 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **93 programs have at least one direct source-hash reference; 78
+exact hash. **94 programs have at least one direct source-hash reference; 77
 have none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
@@ -28,6 +28,7 @@ with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 | Irregular Nicolas FP8 through public object compiler | [96×96×64 replay](evidence/nicolas_plain_fp8_96x96x64_object_52dcc4d_266c593/README.md) | The checked-in source arrays and all 9,216 BF16 goldens match on pinned Spike. This qualifies one non-square geometry, not all rectangular programs. |
 | Nicolas FP8 quantized readout through public object compiler | [128³ requant replay](evidence/nicolas_fp8_requant_typed_object_fa5ec73_266c593/README.md) | The checked-in `matmul_tiled_fp8_128x128_requant` source codes and scales match exactly: 16,384 FP8 codes and 512 E8M0 scales on pinned Spike. Other source quantization conventions require separate checks. |
 | Direct Nicolas FP4 source through public object compiler | [64³ typed object replay](evidence/nicolas_plain_fp4_typed_object_97b0913_266c593/README.md) | The checked-in `matmul_tiled_fp4_64x64` direct packed arrays and all 4,096 BF16 source goldens match on pinned Spike. This qualifies the matrix result only. |
+| Nicolas packed FP4 requantized readout through public object compiler | [64³ requant replay](evidence/nicolas_fp4_requant_typed_object_5657fb6_266c593/README.md) | The checked-in `matmul_tiled_fp4_64x64_requant` packed source output and scales match exactly: 2,048 packed bytes and 128 E8M0 scales on pinned Spike. Other FP4 requant variants still need qualification. |
 | Direct Nicolas FP6 source through public object compiler | [128×128×512 typed object replay](evidence/nicolas_plain_fp6_typed_object_95fc6d5_266c593/README.md) | The checked-in `matmul_tiled_fp6_128x128x512` packed arrays, all 64 LUT lines for A/B/C, and all 16,384 BF16 source goldens match on pinned Spike in serial mode. The alternating-buffer RTL schedule is not qualified by this result. |
 | VPU | [29 source checks](compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations), [compiler-issued operations](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations), [public softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md) | All named VPU checks have compiler-issued counterparts, and softmax runs through the public object CLI. The entire `vpu_ops.c` control flow is not compiled as one MLIR program. |
 | Connected MX/VPU/requant | [Full connected chain](compiled_mx_pipeline.md#matrixvpurequant-source-chain), [pipelined source](compiled_mx_pipeline.md#source-preloaded-pipelined-issue-on-nicolass-spike) | Specific checked graphs run; arbitrary source control flow and scheduling are not supported. |

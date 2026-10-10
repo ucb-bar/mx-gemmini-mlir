@@ -3420,7 +3420,22 @@
       "source_sha256": "58ebb708907ccd61989b8a22a37578ece4005b33e1af69f4564f3af3dbc5829c"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp4_requant_typed_object_5657fb6_266c593/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "e90493e557ab05d99b9eecbb62f4fc9a18c1ddce00df5ad6891e5948098e072f",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp4_requant_typed_object_5657fb6_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "e7dc23f87ba42c3fca2c9cf3a847f14c158b542c8f8378acaa570f2e90de156f",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp4_64x64_requant",
       "source_sha256": "7bc43a4aa97b15834114c9de1c52bbb21a83328daed462c03d18f1350cfcebbc"
@@ -5390,6 +5405,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 93,
-  "without_direct_hash_reference": 78
+  "with_direct_hash_reference": 94,
+  "without_direct_hash_reference": 77
 }
