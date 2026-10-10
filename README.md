@@ -81,6 +81,9 @@ and compiler-issued MM1→resident MM2 commands on Nicolas's stock Spike.
 All 16,384 FP8 codes and 512 scales match at each site. The independent
 [MM2 check](docs/evidence/nicolas_resident_mm2_128_266c593/index.json)
 starts from source C1 data to isolate the resident second contraction.
+A [source-derived 64×128×128 row-prefix chain](docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2/index.json)
+also compiles and runs on the same Spike model, matching 8,192 FP8 codes and
+256 scales at each site from two independent builds.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
 rebuilds the native verifier and reproduces the connected program and Spike log.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)

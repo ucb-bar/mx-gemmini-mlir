@@ -25,6 +25,7 @@ FRONTEND = ROOT / "docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36"
 CONNECTED = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_266c593"
 FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0"
 PAIR_PLAN = ROOT / "docs/evidence/nicolas_resident_pair_plan_b1b5882"
+ROW_PREFIX = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -38,6 +39,69 @@ def _read(name: str) -> bytes:
 
 def _connected(name: str) -> bytes:
     return gzip.decompress((CONNECTED / f"{name}.gz").read_bytes())
+
+
+def _row_prefix(name: str) -> bytes:
+    return gzip.decompress((ROW_PREFIX / f"{name}.gz").read_bytes())
+
+
+def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:
+    index = json.loads((ROW_PREFIX / "index.json").read_text())
+    first = json.loads((ROW_PREFIX / "artifact_manifest.json").read_text())
+    second = json.loads((ROW_PREFIX / "reproduction_manifest.json").read_text())
+    capture = json.loads((ROW_PREFIX / "capture_receipt.json").read_text())
+    assert first == second
+    assert first["status"] == index["status"] == (
+        "source_prefix_connected_chain_matched_on_pinned_spike")
+    assert first["schema"] == "mx_gemmini.nicolas_connected_plain_chain_64x128.v1"
+    assert first["spike_exit_code"] == 0
+    assert first["compiler_revision"] == index["compiler_revision"] == (
+        "d512fc2491ab67ed2b822c39d7897fb0d2976bcf")
+    assert capture["model2mlir_revision"] == index["model2mlir_revision"] == (
+        "e9ded36eb85abf2d9097ac4dc11457c825853388")
+    assert capture["output_rows"] == 64
+    assert [site["shape"] for site in capture["sites"]] == [
+        [64, 128, 128], [64, 128, 128]]
+    assert (first["compared_c1_fp8_codes"], first["compared_c1_e8m0_scales"],
+            first["compared_fp8_codes"], first["compared_e8m0_scales"]) == (
+            8192, 256, 8192, 256)
+    for name, digest in index["files_sha256"].items():
+        data = ((ROW_PREFIX / name).read_bytes() if (ROW_PREFIX / name).exists()
+                else _row_prefix(name))
+        assert _sha(data) == digest, name
+    assert (b"lowered connected 64x128: C1 0 codes 0 scales; "
+            b"C2 0 codes 0 scales") in _row_prefix("spike.log")
+    assert _row_prefix("a1_activation.bin") == _connected("a1_activation.bin")[:8192]
+    full_scales = _connected("a1_scales.bin")
+    assert _row_prefix("a1_scales.bin") == b"".join(
+        full_scales[group * 128:group * 128 + 64] for group in range(4))
+    for name in ("c1_codes_ref", "c2_codes_ref"):
+        assert _row_prefix(f"{name}.bin") == _connected(f"{name}.bin")[:8192]
+    for name in ("c1_scales_ref", "c2_scales_ref"):
+        assert _row_prefix(f"{name}.bin") == _connected(f"{name}.bin")[:256]
+    frontend = _row_prefix("nicolas_chain.profile_bound.mlir").decode()
+    manifest = json.loads(_row_prefix("quantization_manifest.json"))
+    resources = {path.name.removesuffix(".bin.gz"):
+                 _row_prefix(path.name.removesuffix(".gz"))
+                 for path in ROW_PREFIX.glob("*.bin.gz")}
+    commands = lower_plain_chain_128(
+        _row_prefix("connected_chain.mlir").decode(), frontend, manifest,
+        load_profile(PROFILE), resources,
+        source_sha256=index["source_sha256"],
+        header_sha256=index["header_sha256"])
+    buffers = tuple(sorted({operand.buffer for command in commands
+                            if isinstance(command, Command)
+                            for operand in (command.rs1, command.rs2)
+                            if operand.buffer is not None}))
+    assert emit_c(commands, transport="rocket_rocc", buffers=buffers).encode() == (
+        _row_prefix("mx_issue.c"))
+    uploads = [command.rs1.buffer for command in commands
+               if isinstance(command, Command) and command.funct == 2]
+    assert uploads.count("a1_activation") == 32
+    assert uploads.count("b1_weight") == uploads.count("b2_weight") == 64
+    readouts = [command.rs1.buffer for command in commands
+                if isinstance(command, Command) and command.funct == 3]
+    assert readouts == ["c1_tiled_observed"] * 32 + ["c2_tiled"] * 32
 
 
 def test_archived_typed_mm2_and_spike_result_match_source() -> None:

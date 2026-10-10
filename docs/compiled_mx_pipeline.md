@@ -730,12 +730,43 @@ determine A, B, C1, and C2 row spans, transfer counts, scale bytes, and loop
 dimensions; the profile determines scratchpad, scale, and accumulator
 capacity. The planner rejects overlapping live ranges, misaligned rows, and
 insufficient memory. Its source weight layout emitter remains scoped to
-square tiles, and 128³ is the numerically qualified plain-MX case. The plan
+square N/K weights. The plan
 emits the same 128³ command bytes as the archived Spike run.
 The [published planner rerun](evidence/nicolas_resident_pair_plan_b1b5882/index.json)
 checks this from commit `b1b5882` on Nicolas's stock Spike: the generated
 MLIR, physical program, objects, ELF, and log hashes remain equal to the
 connected-chain baseline, with every C1 and C2 output matched.
+
+The [64×128×128 connected chain archive](evidence/nicolas_connected_plain_chain_64x128_d512fc2/index.json)
+qualifies a second output shape with the same plain MX profile and Nicolas's
+stock Spike extension. Current model2MLIR `e9ded36` captures two PyTorch
+matmul sites with `A` shaped 64×128 and both weight matrices shaped 128×128.
+The compiler binds them to the first 64 independent rows of Nicolas's
+checked-in 128³ packed inputs and C1/C2 goldens. A1's four E8M0 scale groups
+are cropped per group; B1 and B2 stay complete. The derived plan emits 32
+A1 tile transfers, 64 each for B1/B2, and 32 tile readouts for each result.
+MM2 consumes C1 directly from scratchpad. Two captures and two independent
+RV64 builds reproduce identical manifests, objects, ELF, and Spike log. Both
+runs match **8,192 FP8 codes and 256 E8M0 scales at each site**. The archive
+includes the typed MLIR, physical C issuer, source bytes, ELF, hashes, and
+full-output Spike result. This qualifies a source row-prefix specialization;
+it does not assert that Nicolas checked in a separate 64×128×128 C driver.
+
+```sh
+python -m tools.capture_nicolas_chain \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQ_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --matrix-dim 128 --output-rows 64 \
+  --out-dir /new/mx-front-64x128
+python -m tools.qualify_nicolas_resident_128 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --connected-frontend-dir /new/mx-front-64x128 --source-rows 64 \
+  --out-dir /new/mx-connected-64x128 \
+  --baseline-manifest docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2/artifact_manifest.json
+```
 
 ```sh
 python -m tools.qualify_nicolas_resident_128 \
