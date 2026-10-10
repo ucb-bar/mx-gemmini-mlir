@@ -1,0 +1,76 @@
+{
+  "schema": "mx_gemmini_model2mlir_radiance_gemm_capture.v1",
+  "status": "source_shape_frontend_handoff_only",
+  "source_revision": "d4732fb41c2d55088050c0399a4c6243b53e5fbd",
+  "source_generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
+  "source_driver": "kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk128.fullout.cpp",
+  "source_driver_sha256": "75b0101dff29076e8e72e4290c18a7df17929bb7ca935896b1a8722883866ee9",
+  "source_data_header_sha256": "21a82706853dedd25cf3a53fda59a16c45a5a72faed72bc58a0004910046afda",
+  "source_data_header_origin": "generated_or_untracked",
+  "source_shape": [
+    128,
+    128,
+    128
+  ],
+  "source_tile": [
+    128,
+    128,
+    128
+  ],
+  "source_layout": {
+    "scratchpad_bytes": 131072,
+    "a_rows": 512,
+    "b_rows": 512,
+    "c_rows": 2048,
+    "c_spad_dest": 2560,
+    "a_scale_bytes_per_wave": 512,
+    "b_scale_bytes_per_wave": 512,
+    "lut_once": true,
+    "move_out": "spad_simt"
+  },
+  "source_plan_error": null,
+  "source_k_waves": 1,
+  "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
+  "model2mlir_source_tree_sha256": "452e6f4e5932f5c8a66541d09e5e52d3afaff045e7385b058b964fb4650e2b27",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "mxq_source_tree_sha256": "42638564df20ab9347ebaf36dd541f78ea402ddedce6aab12c3190533bb51f9d",
+  "mx_support_revision": "2c73efbabfc8c0a26498966013975ffa3a912485",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "a48c45bb38ccbdeef0e87a1ba7d23e889fd22e470f05c6e3e6bd3b914e13bba2",
+  "source_mlir_sha256": "292e1edbe696fb63ba4f41961768f7907976d0906d136a13628e08faa99e47d4",
+  "handoff_mlir_sha256": "026c8ebd0370da80b272c93984b8247d09f5a042f006e4c3764f2c1ef4b24e7e",
+  "quantization_manifest_sha256": "ca08a19c077dcaa615a2cc7ce0bbca982edd4e71e0040ce7fb37a1c0484067b3",
+  "selected_site": {
+    "site_id": "functional:matmul",
+    "kind": "functional",
+    "status": "quantized",
+    "format": "mxfp6",
+    "shape": [
+      128,
+      128,
+      128
+    ],
+    "fp6_codebook_sha256": "db785d339bc4991ea98ec25dcdbc67d5a7ad10b2b9a11ac715121ba1262a802e"
+  },
+  "opaque_calls": {},
+  "target_binding": {
+    "profile_name": "MxE3M2OnlyGemminiRocketConfig",
+    "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+    "bound_mlir_sha256": "14b77a890c6cb63316f31eee755067d6a66250d2c69faf53a32f719207b5aa7c",
+    "scratchpad_geometry_matches_source": false,
+    "target_layout": {
+      "scratchpad_bytes": 262144,
+      "a_rows": 512,
+      "b_rows": 512,
+      "c_rows": 2048,
+      "c_spad_dest": 512,
+      "a_scale_bytes_per_wave": 512,
+      "b_scale_bytes_per_wave": 512,
+      "lut_once": true,
+      "move_out": "spad_simt"
+    },
+    "qualification": "structural_unqualified"
+  },
+  "numerical_scope": "PyTorch inputs are not source MX blobs; no MX numerical parity claimed",
+  "lowering_scope": "frontend capture and profile-bound MX handoff; the source-specialized physical compiler is qualified separately"
+}

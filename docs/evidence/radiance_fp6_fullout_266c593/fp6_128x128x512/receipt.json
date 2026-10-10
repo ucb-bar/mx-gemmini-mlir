@@ -1,0 +1,63 @@
+{
+  "bound_mlir_sha256": "5bb4d4947ad2841121e2364269ee00b95d91be92c62214269bbea6fc2e275cde",
+  "build_log_sha256": {
+    "compile_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "link.log": "bead055d6c1a1d5a7e692b79792136c0a9f7e5224ae10a74e98bed8bfbe1f9a5"
+  },
+  "command_count": 401,
+  "compared_bf16_outputs": 16384,
+  "compiler_revision": "8fa68223732a4bd3f946a400be8248699e41ddbe",
+  "compiler_source_closure_sha256": "18b58d84fa2294a3b6cc6fd1d4281ad95a599ff4457ded18bf7c6f125776068d",
+  "elf_sha256": "c5a7958b9119f771bb81af3723a1dd0ba1c94d38bfd6a8143ebecfceb3c633fb",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "fence_count": 6,
+  "files_sha256": {
+    "activation.bin": "4b0d4252e3e3dfac964ca22f9a83a8b2526fe029ab0a63d813b9d50260f84894",
+    "activation_lut.bin": "17198b4bc2b08e148dc514081295700246b6231dbe291489961a152de0d99a03",
+    "activation_scales.bin": "85375af625ce4d5f4cc1fcf21f16a7f8cc37a7cf9342586ffde29150fd79ca2e",
+    "golden_bf16.bin": "cac55d3a964a8efe0fb07772ba2aff38bd0029f83b4ab0c1ce35f625bbf431e4",
+    "mx_data.S": "85522153febd09f768fcc9959981c78c4e5378e368d89da91cb5af6ad42edb1e",
+    "mx_driver.c": "2e14663e114166fe939746edb1da1ae6a5abf2fa1094b4f3b8bb0212a608866b",
+    "mx_issue.c": "03384f942e764f9efd751d6092743573fb0724553820e44e97fb91666988bc0f",
+    "output_lut.bin": "933df9147277278bbce96d799ab8f6ce133ed0cb06a1d9acccd380600e2b45e1",
+    "output_scales.bin": "32e5026eb31174e72da65102603f862df04423fe2eb9cb9c12777c852d0d0b5d",
+    "physical_program.json": "9a5be0ee6421fa365c72fd4d2eaa7861de150e8e618aafb588349510ff4cf78a",
+    "weight.bin": "28e82985d1f94c9dfd1a2bd951bdfc6dade974ab6b2f2127a76ca0dd4031dd06",
+    "weight_lut.bin": "e37aec2f3b634810541da65b54605943841593a749a291c82abb4ad78c3b678c",
+    "weight_scales.bin": "8ab99d8b49e0b9c1d70f1586991494b074454250c5143dcf4bff2bf41f0ca2f5"
+  },
+  "fp6_spike_scale_selector_workaround": true,
+  "gemmini_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "gemmini_extension_source_closure_sha256": "dbbc62171a9393691c575ec278dfdd75ca20fd6a2c9b52825380dad4e5d0af3f",
+  "gemmini_software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "gemmini_software_source_closure_sha256": "d3c030e2caaaf01edcd8af1a5bc5eea1de18d26cd2be89d8bf4c164def3e2218",
+  "host_cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+  "mode": "spike_serial",
+  "object_sha256": {
+    "mx_0.o": "a308565e9fd787cdd0ab9cca2f86b9523c2c1cf3b3c97d30949d01029913dcad",
+    "mx_1.o": "f89b8a6538bb2addae8f70e7df3b38c3194eafa45fb3338166306c9031f40239",
+    "mx_2.o": "50b9238e491941deb9ba312147dfdd63cabfcacd8db9b2f77b45ed473ea28722",
+    "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "payload_manifest_sha256": "4061b398bea225b3a46cf29685502e468fa5cb8fb8a6a00536e9f7d1d703f99d",
+  "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.standalone_sources.v1",
+  "shape_mnk": [
+    128,
+    128,
+    512
+  ],
+  "source_driver_sha256": "e9ffb31e8792ba282aa670f99288d5ac175513e728737a64d9f4d64d3025da25",
+  "source_header_sha256": "8528beef2d4fded29c9023876d62490568707b4db69f3d33fe08d16f5ecc4bc7",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "1029e8ac1af6b1c7128dbcc1a7fbe0d569d32302e31d01169aa88fadd50304a4",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_golden_matched_on_pinned_spike"
+}
