@@ -82,6 +82,8 @@ generator, not execution of the original driver at that size.
 | FP8 128×128×512, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk128_20261009.json) |
 | FP8 128×128×512, K tile 256 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x512_tk256_20261009.json) |
 | FP8 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp8_64x64x128_20261009.json) |
+| FP8 64×64×64, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [capture](evidence/model2mlir_radiance_mx_fp8_64x64x64_tk64_fullout_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_64x64x64_tk64_fullout_20261009.json) |
+| FP8 64×64×512, K tile 64, MX stage of SIMT contention | MX+VPU E4M3/FP4 | 4,096 | [capture](evidence/model2mlir_radiance_mx_fp8_64x64x512_tk64_simt_contention_mx_stage_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_64x64x512_tk64_simt_contention_mx_stage_20261009.json) |
 | FP8 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp8_128x128x256_20261009.json) |
 | FP8 128×128×128, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x128_tk128_fullout_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x128_tk128_fullout_20261009.json) |
 | FP8 128×128×256, K tile 256 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x256_tk256_fullout_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x256_tk256_fullout_20261009.json) |
@@ -89,6 +91,7 @@ generator, not execution of the original driver at that size.
 | FP8 128×128×2048, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x2048_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x2048_20261009.json) |
 | FP8 128×128×5632, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x5632_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x5632_20261009.json) |
 | FP4 64×64×128, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [receipt](evidence/compiled_mx_fp4_64x64x128_20261009.json) |
+| FP4 64×64×64, K tile 64 | MX+VPU E4M3/FP4 | 4,096 | [capture](evidence/model2mlir_radiance_mx_fp4_64x64x64_tk64_fullout_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_64x64x64_tk64_fullout_20261009.json) |
 | FP4 128×128×128, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp4_128x128x128_20261009.json) |
 | FP4 128×128×256, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [receipt](evidence/compiled_mx_fp4_128x128x256_20261009.json) |
 | FP4 128×128×512, K tile 512 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x512_tk512_fullout_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x512_tk512_fullout_20261009.json) |
@@ -112,6 +115,11 @@ records the generator and header hashes, while the payload-bound MLIR and
 Spike receipt bind those bytes to the physical command stream. These checks
 cover long K schedules of 16 and 44 waves; they do not imply the handwritten
 source C driver was itself run on this Spike build.
+The 64×64×64 FP8 and FP4 single-tile fullout drivers also match their
+generated BF16 goldens. The `mxgemm.simt_contention.cpp` capture checks its
+64×64×512 **MX GEMM stage** against the source golden; the driver's Muon warp
+traffic and MX↔SIMT contention timing are outside this standalone Rocket
+Spike test and remain a Radiance integration gate.
 The 128-deep FP8 and 512/1024-deep FP4 headers were generated at the same
 source revision. Their respective K tiles of 128, 512, and 512 all match the
 source BF16 goldens. The FP8 256-deep K tile 256 run also matches, using the

@@ -101,6 +101,15 @@ def test_long_k_source_capture_matches_executed_spike_receipt(precision, k):
     ("fp8_128x128x256_tk256_fullout",
      "mxgemm.fp8.singletile.tm128tn128tk256.fullout.cpp",
      (128, 128, 256), "source_golden_matched_on_pinned_spike"),
+    ("fp8_64x64x64_tk64_fullout",
+     "mxgemm.fp8.singletile.tm64tn64tk64.fullout.cpp",
+     (64, 64, 64), "source_golden_matched_on_pinned_spike"),
+    ("fp4_64x64x64_tk64_fullout",
+     "mxgemm.fp4.singletile.tm64tn64tk64.fullout.cpp",
+     (64, 64, 64), "source_golden_matched_on_pinned_spike"),
+    ("fp8_64x64x512_tk64_simt_contention_mx_stage",
+     "mxgemm.simt_contention.cpp",
+     (64, 64, 512), "source_golden_matched_on_pinned_spike"),
 ])
 def test_generated_source_variants_bind_capture_to_spike(case, driver, shape,
                                                          expected_status):
