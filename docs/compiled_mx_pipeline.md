@@ -1993,6 +1993,51 @@ python -m tools.qualify_radiance_tilewise_vpu_x2 \
   --out-dir /tmp/radiance-tilewise-vpu-x2
 ```
 
+## Captured BF16 scalar MULS across four MX output tiles
+
+The same four-tile FP8 source matrix can now take a finite BF16 scalar from a
+captured PyTorch `torch.matmul(lhs, rhs) * scalar` graph. The selected scalar is
+checked against model2MLIR's original trace and typed frontend MLIR. The binder
+records its 16-bit value on the `mx_gemmini.vpu_execute` operation and as a
+module policy attribute; physical lowering rejects a mismatch. It issues one
+in-place MULS command after the final K wave of each output tile and before
+readout. `tools.qualify_source_mx` exposes the same lowering with
+`--tilewise-vpu-muls-bf16-bits`.
+
+For scalar **1.5** (`0x3fc0`), the [archived capture and two-run
+receipt](evidence/radiance_tilewise_vpu_scalar_266c593/index.json) use current
+model2MLIR `e9ded36`, Radiance source/header `80f84ca`, compiler `082c47e`,
+and Nicolas RTL/Spike `266c593`. Both runs matched **65,536 / 65,536 BF16
+values** on Nicolas's pinned Spike, including the four VPU commands. The
+[regression test](../tests/test_tilewise_vpu_scalar_evidence.py) rechecks the
+captured graph, source bytes, MLIR binding, physical stream, generated C,
+derived reference, and simulator receipts. A host comparison also matched
+Nicolas's `vpu_ref.h` multiplication for all 65,280 finite BF16 inputs for each
+of six scalar values (`0x3f00`, `0x3fc0`, `0x4000`, `0xbf80`, `0x0001`,
+`0x7f7f`). The ×2 path retains its existing bytes and receipts.
+
+The Radiance C driver supplies the GEMM operands and BF16 matrix golden; its
+source does not contain the scalar epilogue. The 1.5 result is therefore parity
+with the captured graph's derived BF16 output on the selected source operands,
+not parity with a source-built Radiance ELF. The current binder recognizes one
+scalar MULS epilogue after one contraction. General graph-level epilogue
+lowering and scratchpad lifetime planning remain open.
+
+Reproduce with the same pinned checkouts and generated source header as the ×2
+case above:
+
+```sh
+python -m tools.qualify_radiance_tilewise_vpu_x2 \
+  --model2mlir-root /path/to/model2MLIR-e9ded36 \
+  --mxq-root /path/to/microscaling-quant-b4af543 \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --scalar-bits 0x3fc0 \
+  --out-dir /tmp/radiance-tilewise-vpu-scalar-1p5
+```
+
 ## Generated four-tile FP4 GEMM with tilewise VPU epilogue
 
 The [FP4 qualifier](../tools/qualify_radiance_fp4_derived_tilewise_vpu_x2.py)
