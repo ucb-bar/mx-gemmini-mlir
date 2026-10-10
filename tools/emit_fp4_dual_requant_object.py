@@ -1,0 +1,106 @@
+"""Emit Nicolas's verified dual-layout FP4 SPAD_REQUANT as a public RV64 object.
+
+The typed graph has one BF16 input and two output layouts. This emitter owns
+only the fixed runtime ABI; command semantics come from the existing physical
+lowerer. It embeds neither inputs nor source goldens.
+"""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict
+import hashlib
+import json
+from pathlib import Path
+
+from mx_gemmini_support.command_ir import Command, emit_c
+from mx_gemmini_support.fp4_dual_requant import BUFFERS, M, N, lower_fp4_dual_requant
+from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from tools.compile_mx import _git_revision, _source_closure
+from tools.emit_resident_pair_object import _compile_object, _file_sha, _load_mlir
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("mlir", "profile", "rtl-root", "riscv-root", "out-dir"):
+        parser.add_argument(f"--{name}", required=True, type=Path)
+    args = parser.parse_args()
+    for name in ("mlir", "profile", "rtl_root", "riscv_root", "out_dir"):
+        setattr(args, name, getattr(args, name).resolve())
+    if args.out_dir.exists():
+        parser.error(f"refusing to overwrite {args.out_dir}")
+    profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    if profile.get("transport") != "rocket_rocc":
+        raise ValueError("dual FP4 requant object needs Rocket RoCC transport")
+    mlir_bytes = _load_mlir(args.mlir)
+    commands = lower_fp4_dual_requant(mlir_bytes.decode(), profile)
+    referenced = {operand.buffer for command in commands if isinstance(command, Command)
+                  for operand in (command.rs1, command.rs2) if operand.buffer is not None}
+    if referenced != set(BUFFERS):
+        raise ValueError("dual FP4 requant command buffers differ from the fixed ABI")
+    args.out_dir.mkdir(parents=True)
+    issuer = args.out_dir / "mx_issue.c"
+    issuer.write_text(emit_c(commands, transport="rocket_rocc", buffers=BUFFERS))
+    header = args.out_dir / "mx_issue.h"
+    header.write_text(
+        "#ifndef MX_ISSUE_H\n#define MX_ISSUE_H\n\n"
+        "/* Buffer order and sizes are in object_manifest.json. */\n"
+        "void mx_issue(const void *X, const void *scales_hw, "
+        "const void *scales_hw2, const void *codes_flat_hw, "
+        "const void *codes_tiled_hw);\n\n"
+        "#endif\n")
+    physical = args.out_dir / "physical_program.json"
+    physical.write_text(json.dumps({
+        "schema": "mx_gemmini.fp4_dual_spad_requant_physical.v1",
+        "profile_sha256": profile_sha256(profile),
+        "bound_mlir_sha256": hashlib.sha256(mlir_bytes).hexdigest(),
+        "commands": [({"kind": "command", **asdict(item)} if isinstance(item, Command)
+                      else {"kind": "fence"}) for item in commands],
+    }, indent=2, sort_keys=True) + "\n")
+    obj, data_bytes = _compile_object(args.out_dir, args.riscv_root)
+    slots = (
+        ("X", "read", M * N * 2, "row_major_bf16_64x128"),
+        ("scales_hw", "write", M * N // 32, "row_major_e8m0_scales"),
+        ("scales_hw2", "write", M * N // 32, "row_major_e8m0_scales"),
+        ("codes_flat_hw", "write", M * N // 2, "packed_even_odd_m_fp4_e2m1"),
+        ("codes_tiled_hw", "write", M * N // 2, "operand_a_tiled_fp4_e2m1"),
+    )
+    manifest = {
+        "schema": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
+        "status": "rv64_rocc_fp4_dual_requant_object_built",
+        "transport": "rocket_rocc",
+        "buffer_abi": [
+            {"name": name, "position": position, "role": role,
+             "minimum_bytes": length, "alignment_bytes": 64, "layout": layout}
+            for position, (name, role, length, layout) in enumerate(slots)
+        ],
+        "command_count": sum(isinstance(item, Command) for item in commands),
+        "fence_count": len(commands) - sum(isinstance(item, Command) for item in commands),
+        "embedded_operand_bytes": 0, "embedded_golden_bytes": 0,
+        "allocated_data_section_bytes": data_bytes,
+        "profile_sha256": profile_sha256(profile),
+        "bound_mlir_sha256": hashlib.sha256(mlir_bytes).hexdigest(),
+        "mlir_container_sha256": _file_sha(args.mlir),
+        "physical_program_sha256": _file_sha(physical),
+        "issuer_c_sha256": _file_sha(issuer),
+        "issuer_h_sha256": _file_sha(header),
+        "object_sha256": _file_sha(obj),
+        "object_emitter_sha256": _file_sha(Path(__file__)),
+        "compiler_revision": _git_revision(ROOT),
+        "compiler_source_closure_sha256": _source_closure(
+            ROOT, sorted((ROOT / "mx_gemmini_support").glob("*.py")) +
+            sorted((ROOT / "tools").glob("*.py"))),
+        "rtl_revision": _git_revision(args.rtl_root),
+        "riscv_gcc_sha256": _file_sha(args.riscv_root / "bin/riscv64-unknown-elf-gcc"),
+        "defined_symbol": "mx_issue", "undefined_symbols": [],
+    }
+    (args.out_dir / "object_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    print(f"linkable FP4 dual requant object: {obj}")
+
+
+if __name__ == "__main__":
+    main()

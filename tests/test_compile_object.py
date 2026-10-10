@@ -74,3 +74,16 @@ def test_compiler_rejects_ambiguous_or_unsupported_binding():
     vpu_profile = load_profile(PROFILES / "MxE4M3Fp4VpuGemminiRocketConfig.json")
     with pytest.raises(ValueError, match="no qualified lowering|exactly one payload binding"):
         classify(frontend, vpu_profile)
+
+
+def test_compiler_selects_exact_dual_fp4_requant_graph():
+    graph = (ROOT / "docs/evidence/nicolas_spad_requant_fp4_266c593/"
+             "fp4_capable/connected.mlir").read_text()
+    profile = load_profile(PROFILES / "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    family, report = classify(graph, profile)
+    assert family == "fp4_dual_requant"
+    assert report["spad_requants"] == 2
+    altered = graph.replace('scale_buffer = "scales_hw2"',
+                            'scale_buffer = "scales_hw"')
+    with pytest.raises(ValueError, match="output binding differs"):
+        classify(altered, profile)

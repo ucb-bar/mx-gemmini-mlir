@@ -28,6 +28,7 @@ EMITTERS = {
     "resident_vpu_pair": "tools.emit_resident_vpu_object",
     "full_vpu_branch": "tools.emit_full_vpu_branch_object",
     "vpu_softmax": "tools.emit_vpu_softmax_object",
+    "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
 }
 MANIFEST_SCHEMAS = {
     "source_contract": "mx_gemmini.linkable_object.v1",
@@ -35,6 +36,7 @@ MANIFEST_SCHEMAS = {
     "resident_vpu_pair": "mx_gemmini.resident_vpu_linkable_object.v1",
     "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
     "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
+    "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
 }
 
 
@@ -60,6 +62,10 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
               report["vpu_commands"], report["spad_requants"])
     if not source and not runtime and counts == (0, 0, 6, 0):
         return "vpu_softmax", report
+    if not source and not runtime and counts == (0, 0, 0, 2):
+        from mx_gemmini_support.fp4_dual_requant import lower_fp4_dual_requant
+        lower_fp4_dual_requant(mlir_text, profile)
+        return "fp4_dual_requant", report
     if source == runtime:
         raise ValueError("MX object needs exactly one payload binding scheme")
     if source and counts[0] == 1 and counts[1] == 0 and report["source_resources"]:
@@ -139,6 +145,10 @@ def main() -> None:
         if args.bundle or args.resources_dir or args.abi_json is None:
             raise ValueError("VPU softmax object needs --abi-json only")
         extra = ["--abi-json", str(args.abi_json.resolve())]
+    elif family == "fp4_dual_requant":
+        if args.bundle or args.resources_dir or args.abi_json:
+            raise ValueError("typed FP4 dual requant object has a fixed five-buffer ABI")
+        extra = []
     else:
         if args.bundle or args.resources_dir is None or args.abi_json is None:
             raise ValueError("connected MX object needs --resources-dir and --abi-json only")
