@@ -67,6 +67,8 @@ def _compiler_driver(source: str) -> str:
     modified = source[:start] + '''  gemmini_flush(0);
   memset(scales_hw, 0xa5, sizeof(scales_hw));
   memset(scales_hw2, 0xa5, sizeof(scales_hw2));
+  memset(codes_flat_hw, 0xa5, sizeof(codes_flat_hw));
+  memset(codes_tiled_hw, 0xa5, sizeof(codes_tiled_hw));
   uint64_t t0 = read_cycles();
   mx_issue(X, scales_hw, scales_hw2, codes_flat_hw, codes_tiled_hw);
   gemmini_fence();

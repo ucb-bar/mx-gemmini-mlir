@@ -61,6 +61,8 @@ def test_compiler_driver_keeps_source_oracle_but_removes_issue_calls() -> None:
     assert "gemmini_extended_mvin(" not in modified
     assert "gemmini_extended_mvout(" not in modified
     assert modified.count("mx_issue(") == 2
+    assert "memset(codes_flat_hw, 0xa5, sizeof(codes_flat_hw));" in modified
+    assert "memset(codes_tiled_hw, 0xa5, sizeof(codes_tiled_hw));" in modified
     with pytest.raises(ValueError, match="anchor changed"):
         _compiler_driver(original.replace("  gemmini_flush(0);", "  gemmini_flush(1);"))
     with pytest.raises(ValueError, match="geometry or reference changed"):
