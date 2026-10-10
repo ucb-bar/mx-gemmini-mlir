@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import subprocess
 
-from mx_gemmini_support.command_ir import Fence, WaitIdle, emit_c
+from mx_gemmini_support.command_ir import Command, Fence, WaitIdle, emit_c
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -23,10 +23,11 @@ from tools.emit_mx_object import _referenced_buffers
 
 
 _GATEWAY_DEFINES = {
-    "GEMMINI_RS1_ADDR": "0x10",
-    "GEMMINI_RS2_ADDR": "0x18",
-    "GEMMINI_INST_ADDR": "0x0",
-    "GEMMINI_BUSY_ADDR": "0x20",
+    "GEMMINI_CTRL": "0x00084000",
+    "GEMMINI_RS1_OFFSET": "0x10",
+    "GEMMINI_RS2_OFFSET": "0x18",
+    "GEMMINI_INST_OFFSET": "0x0",
+    "GEMMINI_BUSY_OFFSET": "0x20",
 }
 
 
@@ -42,10 +43,15 @@ def _revision(path: Path) -> str:
 def _verify_gateway_header(path: Path) -> None:
     source = path.read_text()
     for name, offset in _GATEWAY_DEFINES.items():
-        definition = (rf"^#define\s+{name}\s+\(GEMMINI_CTRL\s*\+\s*"
-                      rf"{offset}\)\s*$")
+        definition = rf"^#define\s+{name}\s+{offset}\s*$"
         if re.search(definition, source, re.MULTILINE) is None:
             raise ValueError(f"Radiance MX gateway {name} register differs")
+    for fragment in ("store64_shared(GEMMINI_CTRL, GEMMINI_RS1_OFFSET",
+                     "store64_shared(GEMMINI_CTRL, GEMMINI_RS2_OFFSET",
+                     "store_shared  (GEMMINI_CTRL, GEMMINI_INST_OFFSET",
+                     "load32_shared(GEMMINI_BUSY_ADDR)"):
+        if fragment not in source:
+            raise ValueError("Radiance MX gateway shared-memory transaction differs")
     for fragment in ("(0x7B)", "(3 << 12)", "((funct) << 25)"):
         if fragment not in source:
             raise ValueError("Radiance MX gateway instruction encoding differs")
@@ -64,7 +70,7 @@ def main() -> None:
         parser.error(f"refusing to overwrite {args.out_dir}")
     if not args.muon_clang.is_file():
         parser.error("selected Muon compiler does not exist")
-    gateway = args.radiance_root / "lib/include/gemmini_mmio.h"
+    gateway = args.radiance_root / "lib/include/mxgemmini_mmio.h"
     _verify_gateway_header(gateway)
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
@@ -103,8 +109,9 @@ def main() -> None:
     bin_dir = args.muon_clang.parent
     nm = bin_dir / "llvm-nm"
     readelf = bin_dir / "llvm-readelf"
-    if not nm.is_file() or not readelf.is_file():
-        parser.error("selected Muon toolchain lacks llvm-nm or llvm-readelf")
+    objdump = bin_dir / "llvm-objdump"
+    if not all(tool.is_file() for tool in (nm, readelf, objdump)):
+        parser.error("selected Muon toolchain lacks llvm-nm, llvm-readelf, or llvm-objdump")
     defined = subprocess.check_output([str(nm), "-g", "--defined-only", str(obj)],
                                       text=True).splitlines()
     undefined = subprocess.check_output([str(nm), "-u", str(obj)],
@@ -123,6 +130,16 @@ def main() -> None:
             allocated_data += int(found.group(2), 16)
     if allocated_data:
         raise ValueError("Muon issuer embeds operand or golden data")
+    disassembly = args.out_dir / "disassembly.txt"
+    disassembly.write_text(subprocess.check_output(
+        [str(objdump), "-d", str(obj)], text=True).replace(str(obj), obj.name, 1))
+    assembly = disassembly.read_text()
+    shared_stores = len(re.findall(r"\bsw\.shared\b", assembly))
+    shared_loads = len(re.findall(r"\blw\.shared\b", assembly))
+    physical_commands = sum(isinstance(item, Command) for item in commands)
+    busy_waits = sum(isinstance(item, WaitIdle) for item in commands)
+    if shared_stores != 5 * physical_commands or shared_loads < busy_waits:
+        raise ValueError("Muon gateway was not lowered to the expected shared-memory instructions")
     receipt = {
         "schema": "mx_gemmini.muon_mmio_object.v1",
         "status": "muon_rv32_mmio_issuer_built_unqualified",
@@ -132,6 +149,8 @@ def main() -> None:
         "completion_fences": sum(isinstance(step.command, Fence)
                                  for step in program.steps),
         "gateway_busy_waits": sum(isinstance(item, WaitIdle) for item in commands),
+        "shared_gateway_stores": shared_stores,
+        "shared_gateway_loads": shared_loads,
         "command_count": len(program.steps),
         "allocated_data_section_bytes": allocated_data,
         "embedded_operand_bytes": 0, "embedded_golden_bytes": 0,
@@ -140,10 +159,12 @@ def main() -> None:
         "bound_mlir_sha256": _sha(args.mlir),
         "source_bundle_manifest_sha256": _sha(args.bundle / "manifest.json"),
         "physical_program_sha256": _sha(physical),
+        "disassembly_sha256": _sha(disassembly),
         "issuer_c_sha256": _sha(source), "issuer_h_sha256": _sha(header),
         "object_emitter_sha256": _sha(Path(__file__)),
         "object_sha256": _sha(obj), "muon_clang_sha256": _sha(args.muon_clang),
         "radiance_gateway_header_sha256": _sha(gateway),
+        "radiance_gateway_control_base": 0x00084000,
         "radiance_revision": _revision(args.radiance_root),
         "rtl_revision": _revision(args.rtl_root),
         "defined_symbol": "mx_issue", "undefined_symbols": [],

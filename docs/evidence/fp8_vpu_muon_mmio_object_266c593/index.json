@@ -1,14 +1,15 @@
 {
   "files_sha256": {
-    "mx_issue.c.gz": "f6cbae30a1d5826dcc60b44b0ad4fef41e4df8f3b14c9736b32c1cf80bbb7e77",
+    "disassembly.txt.gz": "1fc8f3b3b0e63b0b54ab5b121a9abe686ec079a4d7f3cdab815d79fc84f72e12",
+    "mx_issue.c.gz": "173287f20cd12c8848633ad5bf9d7b590ef835e6daf19fff7fa6f8914cb08455",
     "mx_issue.h": "13adb5c83be05883e230c6650f2fcf9a5dcecb9a4b349de6f35825bf7e7db050",
-    "mx_issue.o": "ef1f5f5e134ee5ef9c4f8fb650b4e28ef25dc1d3176fefdd7601fdecdf5fe2fc",
-    "object_manifest.json": "f9a75decb87654612496a619e7ea8208e56c40269f3eba886dd1b40d5111bc95",
-    "object_manifest_repro.json": "f9a75decb87654612496a619e7ea8208e56c40269f3eba886dd1b40d5111bc95",
+    "mx_issue.o": "4b52e3df497da687eb6178c4d3023b6009d5dc3de49adfc0aa7e54a0532189b9",
+    "object_manifest.json": "51b264c61af1ac7a843af8f1b39c53d3707190515b5560936c0e98c6c0ca40de",
+    "object_manifest_repro.json": "51b264c61af1ac7a843af8f1b39c53d3707190515b5560936c0e98c6c0ca40de",
     "physical_program.json.gz": "bd8a0f46ab3f53cedf848b3e52ae8559ac69aca97949ef27cd3eaf16fc077f16"
   },
   "schema": "mx_gemmini.fp8_vpu_muon_mmio_object_archive.v1",
-  "scope": "Muon RV32 MX MMIO issuer from the same checked FP8+VPU physical program; no Radiance VPU SoC image binding, linked kernel, MMIO numerical execution, RTL, or FPGA parity.",
+  "scope": "Muon RV32 MX MMIO issuer from the same checked FP8+VPU physical program; shared-memory gateway instructions verified in disassembly. No Radiance VPU SoC image binding, linked kernel, MMIO numerical execution, RTL, or FPGA parity.",
   "source_bundle": "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle",
   "source_mlir": "docs/evidence/bf16_row_major_readout_266c593/fp8_tilewise_vpu/bound.mlir",
   "status": "structural_object_only"

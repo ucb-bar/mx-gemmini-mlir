@@ -75,13 +75,13 @@ class Command:
 
     @property
     def instruction_word(self) -> int:
-        # Source: radiance-kernels/lib/include/gemmini_mmio.h.
+        # Source: radiance-kernels/lib/include/mxgemmini_mmio.h.
         return _OPCODE | (_FUNCT3 << 12) | (1 << 15) | (2 << 20) | (self.funct << 25)
 
 
 @dataclass(frozen=True)
 class WaitIdle:
-    """Muon gateway busy-register completion check from gemmini_mmio.h."""
+    """Muon gateway busy-register completion check from mxgemmini_mmio.h."""
 
 
 @dataclass(frozen=True)
@@ -226,6 +226,15 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
     lines = ["#include <stdint.h>", ""]
     if transport == "rocket_rocc":
         lines.extend(("_Static_assert(sizeof(uintptr_t) == 8, \"MX Rocket commands require RV64\");", ""))
+    else:
+        lines.extend((
+            "_Static_assert(sizeof(uintptr_t) == 4, \"MX Muon MMIO commands require RV32\");",
+            "/* Muon MX registers live in local shared memory, not global memory. */",
+            '#define MX_STORE_SHARED(base, offset, value) __asm__ volatile ('
+            '"sw.shared %2, %1(%0)" : : "r"((uint32_t)(base)), '
+            '"I"(offset), "r"((uint32_t)(value)) : "memory")',
+            "",
+        ))
     lines.append(f"void mx_issue({', '.join(parameters) or 'void'}) {{")
     checked = set()
     for command in commands:
@@ -243,10 +252,18 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
     for command in commands:
         if isinstance(command, Fence):
             lines.append('  __asm__ volatile ("fence" ::: "memory");' if transport == "rocket_rocc"
-                         else "  __sync_synchronize();")
+                         else '  __sync_synchronize();\n  __asm__ volatile ("fence.s" ::: "memory");')
             continue
         if isinstance(command, WaitIdle):
-            lines.append("  while (*(volatile uint32_t *)(mx_control_base + 0x20)) {}")
+            lines.extend((
+                "  for (;;) {",
+                "    uint32_t mx_busy;",
+                '    __asm__ volatile ("lw.shared %0, %1(%2)" : "=r"(mx_busy) :',
+                '                      "I"(0), "r"((uint32_t)(mx_control_base + 0x20)) : "memory");',
+                "    if (!mx_busy) break;",
+                '    __asm__ volatile ("nop");',
+                "  }",
+            ))
             continue
         if not isinstance(command, Command):
             raise ValueError("unknown MX command stream item")
@@ -257,9 +274,15 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
             )
         else:
             lines.extend((
-                f"  *(volatile uint64_t *)(mx_control_base + 0x10) = {command.rs1.c_expr()};",
-                f"  *(volatile uint64_t *)(mx_control_base + 0x18) = {command.rs2.c_expr()};",
-                f"  *(volatile uint32_t *)(mx_control_base + 0x00) = UINT32_C(0x{command.instruction_word:08x});",
+                "  {",
+                f"    uint64_t mx_rs1 = {command.rs1.c_expr()};",
+                f"    uint64_t mx_rs2 = {command.rs2.c_expr()};",
+                "    MX_STORE_SHARED(mx_control_base, 0x10, mx_rs1);",
+                "    MX_STORE_SHARED(mx_control_base, 0x14, mx_rs1 >> 32);",
+                "    MX_STORE_SHARED(mx_control_base, 0x18, mx_rs2);",
+                "    MX_STORE_SHARED(mx_control_base, 0x1c, mx_rs2 >> 32);",
+                f"    MX_STORE_SHARED(mx_control_base, 0x00, UINT32_C(0x{command.instruction_word:08x}));",
+                "  }",
             ))
     lines.extend(("}", ""))
     return "\n".join(lines)

@@ -10,8 +10,10 @@ def test_rocket_and_muon_issue_same_command_fields():
     rocket = emit_c([command], transport="rocket_rocc", buffers=("scales",))
     muon = emit_c([command], transport="muon_mmio", buffers=("scales",))
     assert ".insn r 0x7b, 3, 27" in rocket
-    assert "mx_control_base + 0x10" in muon
-    assert "mx_control_base + 0x18" in muon
+    assert muon.count("MX_STORE_SHARED(mx_control_base,") == 5
+    assert "MX_STORE_SHARED(mx_control_base, 0x10, mx_rs1)" in muon
+    assert "MX_STORE_SHARED(mx_control_base, 0x18, mx_rs2)" in muon
+    assert "sw.shared" in muon and "sw.global" not in muon
     assert f"0x{command.instruction_word:08x}" in muon
     assert "(uintptr_t)scales + UINT64_C(64)" in rocket
     assert "(uintptr_t)scales + UINT64_C(64)" in muon
@@ -30,6 +32,7 @@ def test_issuer_refuses_unbound_or_truncated_operands():
 def test_wait_uses_only_selected_muon_gateway_busy_register():
     source = emit_c([WaitIdle()], transport="muon_mmio", buffers=())
     assert "mx_control_base + 0x20" in source
+    assert "lw.shared" in source and "lw.global" not in source
     with pytest.raises(ValueError, match="no selected busy-register"):
         emit_c([WaitIdle()], transport="rocket_rocc", buffers=())
 

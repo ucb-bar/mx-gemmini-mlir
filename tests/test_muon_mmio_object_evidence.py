@@ -33,7 +33,7 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     index = json.loads((EVIDENCE / "index.json").read_text())
     assert index["schema"] == "mx_gemmini.fp8_vpu_muon_mmio_object_archive.v1"
     assert index["status"] == "structural_object_only"
-    assert "no Radiance VPU SoC image binding" in index["scope"]
+    assert "no radiance vpu soc image binding" in index["scope"].lower()
     for name, digest in index["files_sha256"].items():
         assert _sha((EVIDENCE / name).read_bytes()) == digest
     receipt = json.loads((EVIDENCE / "object_manifest.json").read_text())
@@ -43,6 +43,7 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert receipt["qualification"] == "structural_object_only"
     assert receipt["transport"] == "muon_mmio"
     assert receipt["physical_mode"] == "rtl_alternating"
+    assert receipt["radiance_gateway_control_base"] == 0x00084000
     assert receipt["rtl_revision"] == "266c593f2cb51d7e3fe83fc0317072b585ac3c52"
     assert receipt["object_emitter_sha256"] == _sha((
         ROOT / "tools/emit_mx_mmio_object.py").read_bytes())
@@ -54,6 +55,10 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert obj[:4] == b"\x7fELF" and obj[4] == 1
     assert int.from_bytes(obj[18:20], "little") == 243
     assert receipt["object_sha256"] == _sha(obj)
+    disassembly = gzip.decompress((EVIDENCE / "disassembly.txt.gz").read_bytes())
+    assert receipt["disassembly_sha256"] == _sha(disassembly)
+    assert receipt["shared_gateway_stores"] == disassembly.count(b"sw.shared")
+    assert receipt["shared_gateway_loads"] == disassembly.count(b"lw.shared")
 
     mlir = (ROOT / index["source_mlir"]).read_text()
     manifest, resources = load_bundle(ROOT / index["source_bundle"])
@@ -86,8 +91,13 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert receipt["issuer_c_sha256"] == _sha(source.encode())
     assert source.count("mx_control_base + 0x20") == physical_fences
     assert source.count("__sync_synchronize();") == physical_fences
-    assert source.count("mx_control_base + 0x10") == sum(
+    assert source.count("MX_STORE_SHARED(mx_control_base, 0x10, mx_rs1)") == sum(
         isinstance(item, Command) for item in commands)
+    assert receipt["shared_gateway_stores"] == 5 * sum(
+        isinstance(item, Command) for item in commands)
+    assert receipt["shared_gateway_loads"] >= physical_fences
+    assert "sw.shared" in source and "lw.shared" in source
+    assert "sw.global" not in source and "lw.global" not in source
     assert "uintptr_t mx_control_base" in (
         EVIDENCE / "mx_issue.h").read_text()
 
@@ -98,16 +108,21 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
 
 
 def test_gateway_header_must_match_radiance_register_protocol(tmp_path):
-    header = tmp_path / "gemmini_mmio.h"
+    header = tmp_path / "mxgemmini_mmio.h"
     header.write_text("\n".join([
-        "#define GEMMINI_RS1_ADDR (GEMMINI_CTRL + 0x10)",
-        "#define GEMMINI_RS2_ADDR (GEMMINI_CTRL + 0x18)",
-        "#define GEMMINI_INST_ADDR (GEMMINI_CTRL + 0x0)",
-        "#define GEMMINI_BUSY_ADDR (GEMMINI_CTRL + 0x20)",
+        "#define GEMMINI_CTRL 0x00084000",
+        "#define GEMMINI_RS1_OFFSET 0x10",
+        "#define GEMMINI_RS2_OFFSET 0x18",
+        "#define GEMMINI_INST_OFFSET 0x0",
+        "#define GEMMINI_BUSY_OFFSET 0x20",
+        "store64_shared(GEMMINI_CTRL, GEMMINI_RS1_OFFSET",
+        "store64_shared(GEMMINI_CTRL, GEMMINI_RS2_OFFSET",
+        "store_shared  (GEMMINI_CTRL, GEMMINI_INST_OFFSET",
+        "load32_shared(GEMMINI_BUSY_ADDR)",
         "(0x7B) (3 << 12) ((funct) << 25)",
     ]))
     _verify_gateway_header(header)
-    header.write_text(header.read_text().replace("GEMMINI_BUSY_ADDR (GEMMINI_CTRL + 0x20)",
-                                                "GEMMINI_BUSY_ADDR (GEMMINI_CTRL + 0x24)"))
-    with pytest.raises(ValueError, match="GEMMINI_BUSY_ADDR"):
+    header.write_text(header.read_text().replace("GEMMINI_BUSY_OFFSET 0x20",
+                                                "GEMMINI_BUSY_OFFSET 0x24"))
+    with pytest.raises(ValueError, match="GEMMINI_BUSY_OFFSET"):
         _verify_gateway_header(header)
