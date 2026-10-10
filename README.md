@@ -52,6 +52,9 @@ from Radiance's 128 KiB build; this test uses Nicolas's 256 KiB MX+VPU profile.
 A [current-source rerun](docs/evidence/radiance_mx_vpu_80f84ca_upstream_repro_20261010/README.md)
 also reproduces the FP8 and derived FP4 four-tile MX+VPU programs byte for
 byte on Nicolas's Spike extension, with 65,536 matching outputs in each case.
+The [connected two-matmul MX+VPU chain](docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
+also runs from current upstream model2MLIR `e9ded36`; its objects, ELF, and
+Spike log match the earlier frontend run byte for byte.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
 writes four output tiles directly into one logical matrix. Pinned Spike matches
 65,536 FP4 and FP8 outputs with VPU ×2 and 16,384 FP8 outputs retiled to

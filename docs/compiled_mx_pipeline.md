@@ -677,6 +677,14 @@ byte for byte. See the [connected MLIR](evidence/nicolas_connected_chain_266c593
 This remains a source-bound 64³ specialization. General shape scheduling and
 independent lowering of arbitrary `mx_gemmini.contract` graphs remain open.
 
+A [current upstream frontend rerun](evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
+recaptured the two-site graph with model2MLIR `e9ded36` and executed the
+connected SSA chain on the same pinned Spike model. The new frontend and
+connected MLIR hashes differ from the earlier `7485a829` capture, while the
+issued objects, ELF, extension, and numerical log remain byte-identical.
+The [receipt test](../tests/test_current_nicolas_connected_chain.py) checks
+both quantized sites, the connected artifacts, and all output counts.
+
 Reproduce the seam with:
 
 ```sh
