@@ -42,6 +42,11 @@ finds that the current attention generator's Q/K bytes overflow Nicolas's
 reduced-precision MX path. An explicitly requantized first-tile candidate
 matches 4,096 BF16 outputs on Spike; unchanged attention source parity remains
 open.
+The [linkable QK object](docs/compiled_mx_pipeline.md#linkable-qk-object-with-runtime-buffers)
+uses runtime operand pointers. One compiler-emitted RoCC object matches two
+different source-derived QK payloads on Nicolas's Spike, with 8,192 BF16
+outputs checked. The Muon-produced P handoff and mixed attention execution
+remain separate qualification gates.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike

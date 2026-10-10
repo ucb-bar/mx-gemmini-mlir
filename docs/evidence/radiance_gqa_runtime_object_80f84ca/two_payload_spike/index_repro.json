@@ -1,0 +1,34 @@
+{
+  "compared_bf16_outputs": 8192,
+  "elf_sha256": "45ee24a0e4f20ab75217590f36b5f7c393437daa258957f27e73f3d1e7f6a11e",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "object_manifest_sha256": "a93c346d8e72903eefc884ae18f47259f2d3f04777df1a7c16c7e80a1b73547b",
+  "object_sha256": "1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab",
+  "payloads": [
+    {
+      "activation_sha256": "d817aaeddeabce2b0be280695ab528413eb01d4f0d93bcbd43d14105fb056fb6",
+      "golden_bf16_sha256": "b6fb2085456ce8cce2354163c84c204bf57e594acf528414e3098118629a5f38",
+      "manifest_sha256": "d745f3635f966fb8f0f16cf56e8bfcfa3def70ebde71220425fa0f3acbfafef2",
+      "stage": "gqa_qk_head0_block0",
+      "weight_sha256": "5b1bafbecfca2ffc01b021eb623f5b952b27d87c004273c3068ed4dd235886d2"
+    },
+    {
+      "activation_sha256": "c291e805f999f35428b7dde8c7c2b50ef15e5edc06a45d1678544eebe326e4ea",
+      "golden_bf16_sha256": "9e58469545a50b50a750481e8e2ea3a75a669651e6198722483698a6789ee0cc",
+      "manifest_sha256": "00226efceb0135992e3d5ce015cecee9c0f2052abfc050d3315dbfc39ac3983c",
+      "stage": "gqa_qk_head7_block1",
+      "weight_sha256": "aafa33684812b87dd34af6e5f956c02761cfff94be722afe4be3b64690dd479e"
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "qualifier_sha256": "50890d83d552f0dcfc05b01ec59166933f0eb45d6b36d2f36333bfc0f3db4663",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.runtime_qk_object_spike.v1",
+  "scope": "one RV64 RoCC issuer object rebound to two distinct QK payloads; no Muon execution",
+  "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "6483f75e75983792c7d1a31e2c35951fa0b8cebb1566a60bfa7485d84b7c1cdb",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "two_runtime_qk_payloads_matched_on_pinned_spike"
+}

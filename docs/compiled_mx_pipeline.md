@@ -1406,6 +1406,49 @@ This covers the MX QK contractions for the source's used blocks. The causal
 mask, Muon online softmax and P requantization, MX PV contractions, and final
 attention output are separate stages and remain to be qualified together.
 
+#### Linkable QK object with runtime buffers
+
+The [runtime object receipt](evidence/radiance_gqa_runtime_object_80f84ca/two_payload_spike/index.json)
+binds the typed head 0, block 0 QK program to Nicolas's Rocket profile and
+emits `mx_issue.o` with six pointer arguments: activation codes and scales,
+BF16 output, scale scratch, and weight codes and scales. The object defines
+only `mx_issue`, imports no symbols, and has zero allocated data-section bytes.
+The head 7, block 1 bound program emits the **same object SHA-256**
+(`1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab`)
+despite distinct Q and K payloads. One RV64 ELF links that object once and
+calls it twice with distinct runtime pointers. Nicolas's stock Spike reports
+**0 / 8,192 BF16 mismatches**, and an independent build matches the receipt's
+ELF, extension, and Spike log hashes. The [object manifest](evidence/radiance_gqa_runtime_object_80f84ca/head0_object/object_manifest.json),
+[generated command issuer](evidence/radiance_gqa_runtime_object_80f84ca/head0_object/mx_issue.c),
+and [linked ELF](evidence/radiance_gqa_runtime_object_80f84ca/two_payload_spike/mx_runtime_qk.elf)
+are archived alongside the source bundles in the QK roster above.
+
+From this repository checkout, with the pinned Gemmini RTL checkout and
+initialized `software/libgemmini` and `software/gemmini-rocc-tests` submodules:
+
+```sh
+export PYTHONPATH="$MODEL2MLIR_ROOT:$MXQUANT_ROOT"
+QK=docs/evidence/radiance_gqa_qk_roster_80f84ca
+python -m tools.emit_mx_object \
+  --mlir "$QK/head0_block0/payload_bound.mlir" \
+  --bundle "$QK/head0_block0/bundle" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --out-dir /new/mx-qk-object
+python -m tools.qualify_runtime_qk_object \
+  --object-dir /new/mx-qk-object \
+  --first-bundle "$QK/head0_block0/bundle" \
+  --second-bundle "$QK/head7_block1/bundle" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --out-dir /new/mx-qk-runtime \
+  --baseline-index docs/evidence/radiance_gqa_runtime_object_80f84ca/two_payload_spike/index.json
+```
+
+This qualifies pointer rebinding for two source-derived MX QK contractions.
+The source fixture still uses its documented Q/K overflow correction. It does
+not execute Muon or establish a shared-memory PV handoff; those require the
+source Muon requantization and ordering work described below.
+
 The [PV handoff diagnostic](evidence/radiance_gqa_pv_handoff_80f84ca/diagnostic.json)
 pinpoints the next numerical mismatch. Given the **same BF16 P values** for
 head 0, block 0, the experimental Python golden's general MX quantizer and a
