@@ -50,7 +50,7 @@ SOURCE_HASHES = {
     "lib/golden/mx_golden.cpp":
         "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
 }
-DRIVER_SHA256 = "27b25a5a5d4eb8cb0748cc6cda244b71443af0afdff0fb6c84f5150159a682fd"
+DRIVER_SHA256 = "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb"
 HEADER_SHA256 = "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25"
 
 
@@ -71,9 +71,13 @@ def _stage_fixture(source: Path, out: Path) -> tuple[Path, dict]:
     derived = (base.replace("mxgemm.data.fp8.m256n256k256.h", HEADER)
                .replace(".TILE_K = 256,", ".TILE_K = 128,")
                .replace(".DATATYPE = GemmDatatype::FP8,",
-                        ".DATATYPE = GemmDatatype::FP4,"))
+                        ".DATATYPE = GemmDatatype::FP4,")
+               .replace('\n\n#include "mxgemm_lib.hpp"',
+                        '\nstatic const uint8_t *A_in = &A_in_hw[0][0];\n\n'
+                        '#include "mxgemm_lib.hpp"'))
     if (derived == base or derived.count(HEADER) != 1 or
-            derived.count("GemmDatatype::FP4") != 1):
+            derived.count("GemmDatatype::FP4") != 1 or
+            derived.count("static const uint8_t *A_in = &A_in_hw[0][0];") != 1):
         raise ValueError("Radiance driver template no longer has the selected transformation")
     driver = kernel_dir / DRIVER
     driver.write_text(derived)
@@ -87,7 +91,7 @@ def _stage_fixture(source: Path, out: Path) -> tuple[Path, dict]:
         raise ValueError("generated FP4 header differs from pinned Radiance golden")
     derivation = {
         "schema": "mx_gemmini.radiance_generated_fp4_gemm_fixture.v1",
-        "transformation": "fp8_m256n256k256_tk256_to_fp4_tk128_v1",
+        "transformation": "fp8_m256n256k256_tk256_to_fp4_tk128_with_activation_alias_v2",
         "source_revision": SOURCE_REVISION,
         "base_driver_sha256": SOURCE_HASHES["kernels/gemm_mxgemmini/" + BASE],
         "source_generator_sha256": SOURCE_HASHES["kernels/gemm_mxgemmini/gen_mxgemm_data.py"],

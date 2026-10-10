@@ -1950,7 +1950,8 @@ The [FP4 qualifier](../tools/qualify_radiance_fp4_derived_tilewise_vpu_x2.py)
 extends the same typed `matmul * 2.0` path to four 128×128 FP4 output tiles.
 Radiance has no committed 256×256 FP4 driver. The qualifier copies the pinned
 Radiance FP8 256×256 driver into an isolated fixture, changes its precision to
-FP4 and K tile to 128, and runs Radiance's `gen_mxgemm_data.py fp4 256 256 256`
+FP4 and K tile to 128, inserts the `A_in_hw` to `A_in` activation alias used
+by Radiance's FP4 drivers, and runs Radiance's `gen_mxgemm_data.py fp4 256 256 256`
 against a freshly built copy of its `mx_golden`. It checks the base driver,
 generator, golden sources, derived driver, and generated header hashes. The
 bundle uses `radiance_source_derived_gemm_fixture` and an explicit derivation

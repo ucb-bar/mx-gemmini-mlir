@@ -41,7 +41,8 @@ def validate_derived_gemm_fixture(manifest: dict) -> None:
                             "golden_model_sha256", "golden_cpp_sha256",
                             "derived_driver_sha256", "generated_header_sha256"} or
             policy.get("schema") != "mx_gemmini.radiance_generated_fp4_gemm_fixture.v1" or
-            policy.get("transformation") != "fp8_m256n256k256_tk256_to_fp4_tk128_v1" or
+            policy.get("transformation") !=
+            "fp8_m256n256k256_tk256_to_fp4_tk128_with_activation_alias_v2" or
             policy.get("derived_driver_sha256") != manifest.get("source_driver_sha256") or
             policy.get("generated_header_sha256") != manifest.get("source_header_sha256")):
         raise ValueError("derived FP4 GEMM fixture lacks its explicit source transformation")
