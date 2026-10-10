@@ -1,0 +1,3 @@
+runtime source FP6: 0/32768 BF16 mismatches
+Gemmini extension configured with:
+    dim = 16

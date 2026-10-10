@@ -2097,6 +2097,45 @@ python -m tools.qualify_runtime_fp8_source_object \
   --out-dir /tmp/fp8-runtime-run
 ```
 
+### Reusable two-wave FP6 object with runtime LUTs on Spike
+
+The [FP6 object](evidence/radiance_fp6_runtime_source_object_266c593/mx_issue.o)
+comes from the source-bound generated Radiance 128×128×1024 FP6 fixture's
+typed MLIR. Its [manifest](evidence/radiance_fp6_runtime_source_object_266c593/object_manifest.json)
+declares pointers for packed A/B codes, E8M0 scales, **all three 64-line
+A/B/C LUT banks**, BF16 output, and scratch. It embeds no operand or golden
+bytes. The [qualifier](../tools/qualify_runtime_fp6_source_object.py) calls
+the same object twice, first with the source fixture and then with a valid
+M-row/N-column permutation of codes, scales, LUT banks, and the independent
+BF16 golden. Both calls match **32,768 / 32,768 BF16 outputs** on Nicolas's
+pinned stock Spike extension; the first output is still intact after the
+second call. The [receipt](evidence/radiance_fp6_runtime_source_object_266c593/index.json)
+matches the [repeat](evidence/radiance_fp6_runtime_source_object_266c593/index_repro.json)
+byte for byte. The [driver](evidence/radiance_fp6_runtime_source_object_266c593/mx_runtime_driver.c),
+[ELF](evidence/radiance_fp6_runtime_source_object_266c593/mx_runtime_fp6_source.elf.gz),
+and [Spike log](evidence/radiance_fp6_runtime_source_object_266c593/spike.log)
+are archived. A fresh object emission reproduced the issuer and
+[manifest](evidence/radiance_fp6_runtime_source_object_266c593/object_manifest_repro.json)
+byte for byte. This uses the compiler's `spike_serial` two-wave schedule because
+the pinned Spike FP6 path ignores the alternating scale-bank selector. The
+RTL-alternating path has its separate, isolated model-correction experiment
+above. This run does not qualify Muon, RTL, or FPGA execution.
+
+```sh
+python -m tools.emit_mx_object \
+  --mlir docs/evidence/radiance_fp6_fullout_266c593/fp6_128x128x1024/bound.mlir \
+  --bundle docs/evidence/radiance_fp6_fullout_266c593/fp6_128x128x1024/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE3M2OnlyGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp6-runtime-object
+python -m tools.qualify_runtime_fp6_source_object \
+  --object-dir /tmp/fp6-runtime-object \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp6-runtime-run
+```
+
 Reproduce from a clean Radiance `80f84ca` checkout, its `6fc8ec7` MX software
 submodule, the pinned Cyclotron overwrite-model worktree, and the Muon toolchain:
 
