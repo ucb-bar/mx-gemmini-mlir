@@ -1,0 +1,211 @@
+{
+  "abi_json_sha256": "b4be64547e4a9b2abb0265ac0ff0d70bea9d9f57dbdcfc7e26243497ef533702",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "0dc945a744a1c9ed0e37cc76604dc65659a72fd0428a10ea349ce83e37398863",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "a1_activation",
+      "position": 0,
+      "role": "read",
+      "slot": "a1_activation"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "a1_scales",
+      "position": 1,
+      "role": "read",
+      "slot": "a1_scales"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "b1_scales",
+      "position": 2,
+      "role": "read",
+      "slot": "b1_scales"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "b1_weight",
+      "position": 3,
+      "role": "read",
+      "slot": "b1_weight"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "b2_scales",
+      "position": 4,
+      "role": "read",
+      "slot": "b2_scales"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "b2_weight",
+      "position": 5,
+      "role": "read",
+      "slot": "b2_weight"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 7936,
+      "minimum_bytes": 8192,
+      "name": "c1_bf16_observed",
+      "position": 6,
+      "role": "write",
+      "slot": "c1_bf16_observed"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "c1_scales_0",
+      "position": 7,
+      "role": "write",
+      "slot": "c1_scales_0"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "c1_scales_1",
+      "position": 8,
+      "role": "write",
+      "slot": "c1_scales_1"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "c1_scales_mm1",
+      "position": 9,
+      "role": "write",
+      "slot": "c1_scales_mm1"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3840,
+      "minimum_bytes": 4096,
+      "name": "c1_tiled_0",
+      "position": 10,
+      "role": "write",
+      "slot": "c1_tiled_0"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3840,
+      "minimum_bytes": 4096,
+      "name": "c1_tiled_1",
+      "position": 11,
+      "role": "write",
+      "slot": "c1_tiled_1"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "c2_scales_0",
+      "position": 12,
+      "role": "write",
+      "slot": "c2_scales_0"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "c2_scales_1",
+      "position": 13,
+      "role": "write",
+      "slot": "c2_scales_1"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3840,
+      "minimum_bytes": 4096,
+      "name": "c2_tiled_0",
+      "position": 14,
+      "role": "write",
+      "slot": "c2_tiled_0"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "maximum_byte_offset": 3840,
+      "minimum_bytes": 4096,
+      "name": "c2_tiled_1",
+      "position": 15,
+      "role": "write",
+      "slot": "c2_tiled_1"
+    }
+  ],
+  "compiler_revision": "3619043b875c1efc5d92f92b918e02838a3441d4",
+  "compiler_source_closure_sha256": "58e0923185cc7a87df2330b135042ccf20db8c8a1c18eb0aae8f4df1ec5fd2ad",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "input_sha256": {
+    "a1_activation": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905",
+    "a1_scales": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6",
+    "b1_scales": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f",
+    "b1_weight": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40",
+    "b2_scales": "97fd68ad074bffabc0d0c3efebca90af795f296debc05bfcf5a9f84090f5d88c",
+    "b2_weight": "e4471ea8b48af4268064b6a3651c06f56d75378babb9158d03fc0bdf3a943c5b"
+  },
+  "issue_schedule": "program_order_with_dependency_fences",
+  "issuer_c_sha256": "6d51200ffad2c7ffbb9cc1f324da82e5005a2f62c2632c2dcf2422cffddde15b",
+  "issuer_h_sha256": "4fe78e90d514535094a35fa16673f1ef30be8b5bdbf346ea909fd49b9ba49808",
+  "mlir_container_sha256": "0dc945a744a1c9ed0e37cc76604dc65659a72fd0428a10ea349ce83e37398863",
+  "object_emitter_sha256": "a2f8dd507ca05fa154182f40a79764257bc17574fdd95ac41f2200d10a7d924b",
+  "object_sha256": "f33bd6e110b6f08834d1a077b7304a875a012502b5a6f8ab1ecc9123dccec87b",
+  "physical_program_sha256": "60de4b10158a18f1ddb2f8666654f1ab7e9d4eac5e2dbe7424f14fefccd8bc50",
+  "preloaded_container_sha256": "77aaf20dbaa5a382c8303d30ba6c877d861a504da3b69fb947bc2b087f7d064c",
+  "preloaded_mlir_sha256": "77aaf20dbaa5a382c8303d30ba6c877d861a504da3b69fb947bc2b087f7d064c",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.full_vpu_branch_linkable_object.v1",
+  "sites": [
+    "functional:matmul_1",
+    "functional:matmul_2"
+  ],
+  "source_reference_sha256": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+  "status": "rv64_rocc_full_vpu_branch_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

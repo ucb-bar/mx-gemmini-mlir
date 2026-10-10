@@ -1,0 +1,25 @@
+{
+  "bound_mlir_sha256": "579aef661d6ed18de7b20ad6f62ce00bf3f8ea38eb5847deaec87af9d244e908",
+  "compiler_revision": "3619043b875c1efc5d92f92b918e02838a3441d4",
+  "compiler_source_closure_sha256": "58e0923185cc7a87df2330b135042ccf20db8c8a1c18eb0aae8f4df1ec5fd2ad",
+  "emitter": "tools.emit_full_vpu_branch_object",
+  "issue_schedule": "program_order_with_dependency_fences",
+  "lowering_family": "full_vpu_branch",
+  "native_verifier_sha256": "e597ca35e3bff1bf8cb82ba84c363c83b589504679e31365c23498a841734123",
+  "object_manifest_sha256": "4f9d560abcc32634654377ae148ac26495c99f4904b5fca44ada8706b040e1be",
+  "object_sha256": "f33bd6e110b6f08834d1a077b7304a875a012502b5a6f8ab1ecc9123dccec87b",
+  "physical_program_sha256": "a01490dd5855ef76ef9a78a22dc6950de281bd53287d516bf26d0be4d340992b",
+  "preloaded_mlir_sha256": "6af0ebcca2ad55d879a81614f8b3d3f2aed99eef756479e8fd45f7c2cc5edac6",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.compiler_object_dispatch.v1",
+  "status": "rv64_rocc_object_built",
+  "verified_graph_counts": {
+    "contracts": 1,
+    "lut_uploads": 0,
+    "resident_contracts": 2,
+    "runtime_luts": 0,
+    "source_resources": 0,
+    "spad_requants": 2,
+    "vpu_commands": 2
+  }
+}

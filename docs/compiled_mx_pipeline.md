@@ -3523,6 +3523,12 @@ python -m tools.replay_full_vpu_branch_dispatch \
 This integration covers Nicolas's 64×64 three-site, two-branch FP8 graph and
 the two named VPU profiles. Broader graph shapes and branch structures still
 need the lowerer's scratchpad lifetime rules generalized.
+The [published-checkout replay](evidence/mx_full_vpu_branch_public_3619043/index.json)
+records four public objects, their exact matches to the earlier source-bound
+issuers, and fresh pinned Spike runs. Across the four runs, the source
+comparisons cover **16,384 first-matrix BF16 values, 65,536 FP8 codes, and
+2,048 E8M0 scales**, with no mismatches. The archive includes the actual
+input and golden bytes, objects, physical streams, ELFs, and simulator logs.
 
 Nicolas's `chain_pipelined.c` starts from a preloaded 64×64 BF16 C1 tile,
 shares one B2 weight tile, and issues two resident VPU→requant→MM2 chains

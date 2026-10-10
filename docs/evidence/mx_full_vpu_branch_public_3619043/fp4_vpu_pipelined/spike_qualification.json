@@ -1,0 +1,12 @@
+{
+  "compared_c1_bf16_values": 4096,
+  "compared_e8m0_scales": 512,
+  "compared_fp8_codes": 16384,
+  "elf_sha256": "5263f8c4900d2a9884b49f64e92d51e6e765c80dab5fa345ce28eae8bc558c03",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "b573befac16b7d9173155f385cbbd0b27c874963eaa32b49717147efad12de09",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "full_three_site_chain_matched_on_pinned_spike"
+}
