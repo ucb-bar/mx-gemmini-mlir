@@ -44,6 +44,10 @@ before each tile readout. All 65,536 BF16 outputs match
 the source-derived ×2 reference on pinned Spike; this selected epilogue is not
 yet a general graph lowering. The selected source `tk256` driver is excluded
 from Radiance's 128 KiB build; this test uses Nicolas's 256 KiB MX+VPU profile.
+The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4-gemm-with-tilewise-vpu-epilogue)
+also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
+generator and golden model to create a new 256×256 FP4 fixture; Radiance has
+no committed driver for this case, so this result does not claim source ELF parity.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

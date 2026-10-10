@@ -1,0 +1,1 @@
+wrote mxgemm.data.fp4.m256n256k256.h  (M=256 N=256 K=256 GK=8 GN=8)

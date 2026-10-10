@@ -78,6 +78,10 @@ connects contraction, VPU, and BF16 readout with typed SSA, repeats the
 in-place VPU ×2 after each tile's final K wave, and matches all 65,536
 source-derived BF16 values on pinned Spike. This uses the selected DIM16
 MX+VPU profile and an explicit tilewise policy.
+A [four-output-tile FP4 case](compiled_mx_pipeline.md#generated-four-tile-fp4-gemm-with-tilewise-vpu-epilogue)
+uses the same typed path and checks all 65,536 BF16 values on Spike with the
+FP4+VPU profile. Its 256×256 driver and header are explicitly generated from
+pinned Radiance sources because no matching driver is committed upstream.
 General scheduling and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An

@@ -1944,6 +1944,45 @@ python -m tools.qualify_radiance_tilewise_vpu_x2 \
   --out-dir /tmp/radiance-tilewise-vpu-x2
 ```
 
+## Generated four-tile FP4 GEMM with tilewise VPU epilogue
+
+The [FP4 qualifier](../tools/qualify_radiance_fp4_derived_tilewise_vpu_x2.py)
+extends the same typed `matmul * 2.0` path to four 128×128 FP4 output tiles.
+Radiance has no committed 256×256 FP4 driver. The qualifier copies the pinned
+Radiance FP8 256×256 driver into an isolated fixture, changes its precision to
+FP4 and K tile to 128, and runs Radiance's `gen_mxgemm_data.py fp4 256 256 256`
+against a freshly built copy of its `mx_golden`. It checks the base driver,
+generator, golden sources, derived driver, and generated header hashes. The
+bundle uses `radiance_source_derived_gemm_fixture` and an explicit derivation
+record; the binder, Python MLIR verifier, and bundle loader reject a missing
+or disguised origin, while the native dialect accepts the declared origin.
+This is compiler execution against a generated
+fixture, not parity with a committed Radiance source ELF.
+
+The [two-run receipt](evidence/radiance_fp4_generated_tilewise_vpu_266c593/index.json)
+records four compiler-issued VPU commands and **65,536 / 65,536 BF16 outputs**
+matching the generated matrix golden after exact BF16 ×2 on pinned Spike.
+The [bound MLIR](evidence/radiance_fp4_generated_tilewise_vpu_266c593/tilewise_bound.mlir),
+[physical program](evidence/radiance_fp4_generated_tilewise_vpu_266c593/build/physical_program.json.gz),
+and [Spike log](evidence/radiance_fp4_generated_tilewise_vpu_266c593/build/spike.log)
+are archived. Source, frontend, command, object, ELF, extension, and numerical
+hashes reproduce. The two raw artifact manifests differ only in the linker
+warning's build path.
+
+Reproduce from a checkout of Radiance `80f84ca`, model2MLIR `e9ded36`, and
+Nicolas Gemmini `266c593`:
+
+```sh
+python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
+  --model2mlir-root /path/to/model2MLIR-e9ded36 \
+  --mxq-root /path/to/microscaling-quant-b4af543 \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /tmp/radiance-fp4-generated-tilewise-vpu-x2
+```
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
@@ -1951,7 +1990,8 @@ python -m tools.qualify_radiance_tilewise_vpu_x2 \
    fixtures because the corresponding headers are absent upstream; check
    future committed headers against them. Qualify remaining configuration
    families and source shapes without receipts, and extend multi-output
-   vector tiling beyond the qualified FP8 BF16 ×2 epilogue. For GQA, reconcile the
+   vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2 epilogues.
+   For GQA, reconcile the
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
