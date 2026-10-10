@@ -239,6 +239,18 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _source_lut_fits(profile: dict, variant: dict) -> bool:
+    """A direct mode needs no LUT RAM, regardless of a profile's LUT width."""
+    bits = variant["lut_entry_bits"]
+    if not variant["use_lut"]:
+        return bits == 0
+    config = profile["resources"].get("lut_config")
+    return (isinstance(config, dict) and isinstance(bits, int) and bits > 0 and
+            config.get("address_bits") == 4 and
+            isinstance(config.get("read_data_bits"), int) and
+            config["read_data_bits"] >= bits)
+
+
 def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     """Bind one checked-in Nicolas test and its data to a legal profile mode."""
     if not source.is_file() or not header.is_file():
@@ -255,9 +267,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     if (profile["geometry"] != {"mesh_rows": mesh_dim, "mesh_columns": mesh_dim,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
-            profile["resources"]["lut_config"]["read_data_bits"] <
-            (variant["lut_entry_bits"] or 8) or
-            profile["resources"]["lut_config"]["address_bits"] != 4):
+            not _source_lut_fits(profile, variant)):
         raise ValueError("selected asymmetric source mesh, scratchpad, or LUT differs from profile")
     if mesh_dim in (8, 32) and f"#define DIM {mesh_dim}" not in source_text:
         raise ValueError("Nicolas source mesh dimension differs from selected profile")
@@ -395,8 +405,7 @@ def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dic
     if (profile["geometry"] != {"mesh_rows": dim, "mesh_columns": dim,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
-            profile["resources"]["lut_config"]["read_data_bits"] <
-            variant["lut_entry_bits"]):
+            not _source_lut_fits(profile, variant)):
         raise ValueError("generated MX header differs from selected mesh or LUT")
     text = header.read_text()
     for marker in ("#define MATMUL_M   64", "#define MATMUL_K   64",

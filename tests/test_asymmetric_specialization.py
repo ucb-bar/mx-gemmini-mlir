@@ -127,6 +127,31 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     assert "gemmini_mx_load_lut_dt" not in emitted
 
 
+@pytest.mark.parametrize("profile_name", [
+    "TestMxGemminiRocketConfig", "TestRequantizerLutMxGemminiRocketConfig",
+])
+def test_direct_fp4_source_needs_no_lut_width(profile_name, tmp_path):
+    source = tmp_path / "matmul_tiled_fp4_64x64.c"
+    header = tmp_path / "matmul_fp4_64x64.h"
+    source.write_text("\n".join((
+        '#include "include/matmul_fp4_64x64.h"',
+        "gemmini_extended3_config_ex(WEIGHT_STATIONARY, 0, 0, "
+        "ACC_SCALE_IDENTITY, 1, 1, 0, 0, false, 2, 2, 3, 0)",
+        "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K)",
+    )))
+    header.write_text("\n".join((
+        "#define MATMUL_M   64", "#define MATMUL_K   64", "#define MATMUL_N   64",
+        "A_in_hw[32][64]", "B_in[64][32]", "A_scales_row[2][64]",
+        "B_scales_col[2][64]", "C_out_bf16[64][64]",
+    )))
+    recipe = source_recipe(source, header, _profile(profile_name))
+    assert recipe["compute"] == {
+        "activation_format": "fp4_e2m1", "activation_projection": "direct",
+        "weight_format": "fp4_e2m1", "weight_projection": "direct", "pe_mode": 0,
+    }
+    assert recipe["source_layout"]["use_lut"] is False
+
+
 @pytest.mark.parametrize("variant,activation_bytes,mode,lut_loads,profile_name,lut_words", [
     ("e4m3_fp4", 2048, 10, 3, "MxAsymE4M3Fp4GemminiRocketConfig", 4),
     ("e4m3s_fp4", 4096, 6, 0, "MxAsymE4M3Fp4GemminiRocketConfig", 0),
