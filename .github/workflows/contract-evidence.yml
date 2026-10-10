@@ -35,6 +35,7 @@ jobs:
             tests/test_nicolas_e4m3_lut_pe_evidence.py \
             tests/test_spike_weight_lut_candidate_all_modes_evidence.py \
             tests/test_mx_profile_qualification_catalog.py \
+            tests/test_mx_rocket_wrapper_matrix_evidence.py \
             tests/test_selected_mx_profiles_evidence.py \
             tests/test_radiance_fullout_mesh_roster_evidence.py \
             tests/test_radiance_requant_mesh_roster_evidence.py \

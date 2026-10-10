@@ -160,6 +160,21 @@ def _archive(args: argparse.Namespace, rows: list[dict], index: dict) -> None:
     (archive / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
 
 
+def _output_identity(index: dict) -> dict:
+    """Compare produced code and source bytes across compiler bookkeeping commits."""
+    fields = ("slug", "profile_name", "mesh_dim", "source_selection",
+              "profile_sha256", "model2mlir_revision", "rtl_revision",
+              "source_driver_sha256", "source_generation_manifest_sha256",
+              "source_header_sha256", "compared_bf16_outputs_per_run",
+              "artifact_sha256")
+    return {
+        "schema": index["schema"], "rtl_revision": index["rtl_revision"],
+        "profile_count": index["profile_count"],
+        "compared_bf16_outputs_per_run": index["compared_bf16_outputs_per_run"],
+        "rows": [{key: row[key] for key in fields} for row in index["rows"]],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "riscv-root",
@@ -192,8 +207,9 @@ def main() -> None:
         "profile_count": 8, "compared_bf16_outputs_per_run": 32768,
         "rows": rows,
     }
-    if args.baseline_index and _read(args.baseline_index) != index:
-        raise ValueError("Rocket wrapper matrix differs from pinned baseline")
+    if args.baseline_index and _output_identity(_read(args.baseline_index)) != (
+            _output_identity(index)):
+        raise ValueError("Rocket wrapper output differs from pinned baseline")
     (args.out_dir / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
     if args.archive_dir:
         _archive(args, rows, index)

@@ -89,13 +89,16 @@ joins all 81 exported profiles to the three geometry-specific 36-mode stock
 Spike matrices. It records 35 / 36 passing mode-class probes per geometry;
 16 named profiles expose the one failing direct-E4M3 activation × E4M3-LUT
 weight cell. An isolated patched Spike run passes that cell, but the catalog
-keeps its candidate result separate from stock evidence. Thirty-two named
-profiles have receipts in the catalog's indexed execution sets: the three
-all-asymmetric mesh profiles, 20 dedicated asymmetric profiles, the plain MX
-profile, six selected Rocket profiles, and both Rocket VPU profiles. All 81
-profile JSONs remain structural descriptions, and 49 have no direct receipts
-in this catalog. A matching PE mode on another profile does not qualify its
-memory system or VPU. The FP8/FP4
+keeps its candidate result separate from stock evidence. All **40 Chipyard
+Rocket wrappers** now have direct named-profile Spike receipts in the catalog:
+the three all-asymmetric mesh profiles, 20 dedicated asymmetric profiles, the
+plain MX profile, six selected Rocket profiles, both Rocket VPU profiles, and
+the [eight-wrapper sweep](evidence/nicolas_rocket_wrapper_matrix_266c593/index.json).
+That sweep compiles one source-derived legal mode per wrapper twice and checks
+32,768 / 32,768 BF16 outputs in each run. The other 41 JSON files describe
+Gemmini fragments rather than Chipyard wrappers. All 81 profile JSONs remain
+structural descriptions. A matching PE mode on another profile does not
+qualify its memory system or VPU. The FP8/FP4
 VPU-profile GEMM roster does not issue vector instructions; the base VPU
 profile's compiled source-op receipts cover those separately.
 Regenerate or check the catalog with

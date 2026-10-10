@@ -16,10 +16,16 @@ def test_catalog_rederives_from_pinned_profiles_and_receipts() -> None:
     archived = json.loads(CATALOG.read_text())
     assert archived == build_report()
     assert archived["profile_count"] == 81
-    assert archived["named_profiles_with_indexed_spike_evidence"] == 32
+    assert archived["named_profiles_with_indexed_spike_evidence"] == 40
+    assert archived["chipyard_wrapper_count"] == 40
+    assert archived["chipyard_wrappers_with_indexed_spike_evidence"] == 40
     assert {row["mesh_dim"] for row in archived["profiles"]} == {8, 16, 32}
     assert all(row["profile_qualification"] == "structural_unqualified"
                for row in archived["profiles"])
+    assert all(row["named_profile_spike_evidence"] for row in archived["profiles"]
+               if row["chipyard_wrapper"])
+    assert all(not row["named_profile_spike_evidence"] for row in archived["profiles"]
+               if not row["chipyard_wrapper"])
 
 
 def test_stock_failure_and_candidate_patch_stay_separate() -> None:
@@ -66,3 +72,18 @@ def test_dedicated_asymmetric_profiles_have_direct_mode_receipts() -> None:
             "passing_modes": row["legal_mode_count"],
             "compared_bf16_outputs": 4096 * row["legal_mode_count"],
         }]
+
+
+def test_eight_other_wrappers_are_bound_to_their_source_modes() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    selected = [row for row in profiles if any(
+        receipt["kind"] == "source_mode_spike_reproduced"
+        for receipt in row["named_profile_spike_evidence"])]
+    assert len(selected) == 8
+    for row in selected:
+        assert row["chipyard_wrapper"]
+        receipt = row["named_profile_spike_evidence"][0]
+        assert receipt["evidence"] == (
+            "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json")
+        assert (receipt["runs"], receipt["compared_bf16_outputs_per_run"]) == (
+            2, 4096)

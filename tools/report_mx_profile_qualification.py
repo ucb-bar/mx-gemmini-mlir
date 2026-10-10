@@ -9,6 +9,7 @@ or command schedule. This report preserves that distinction.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -134,6 +135,8 @@ def build_report() -> dict:
     vector_paths = [
         f"docs/evidence/nicolas_vpu_{kind}_compiled_266c593/index.json"
         for kind in ("elementwise", "fused", "variants", "ordering")]
+    wrapper_path = "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json"
+    wrappers = _read(wrapper_path)
     direct_receipts: dict[str, list[dict]] = {}
     for dim in (8, 16, 32):
         name = ("MxAllAsymGemminiRocketConfig" if dim == 16 else
@@ -193,6 +196,29 @@ def build_report() -> dict:
             "kind": "compiled_vpu_source_spike", "evidence": path,
             "cases": len(index["rows"]),
         })
+    if (wrappers["profile_count"], wrappers["compared_bf16_outputs_per_run"],
+            len(wrappers["rows"])) != (8, 32768, 8):
+        raise ValueError("Rocket wrapper Spike matrix changed")
+    for row in wrappers["rows"]:
+        name = row["profile_name"]
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        recipe_path = ROOT / "docs/evidence/nicolas_rocket_wrapper_matrix_266c593" / (
+            row["slug"] + "/recipe.json.gz")
+        recipe_bytes = gzip.decompress(recipe_path.read_bytes())
+        recipe = json.loads(recipe_bytes)
+        if (profile["chipyard_config"] is None or
+                profile_sha256(profile) != row["profile_sha256"] or
+                hashlib.sha256(recipe_bytes).hexdigest() != row["artifact_sha256"]["recipe.json"] or
+                recipe["profile_sha256"] != row["profile_sha256"] or
+                recipe["source_header_sha256"] != row["source_header_sha256"] or
+                _key(recipe["compute"]) not in {
+                    _key(cell) for cell in profile["legal_compute"]}):
+            raise ValueError(f"Rocket wrapper evidence differs from profile: {name}")
+        direct_receipts.setdefault(name, []).append({
+            "kind": "source_mode_spike_reproduced", "evidence": wrapper_path,
+            "source_selection": row["source_selection"],
+            "runs": 2, "compared_bf16_outputs_per_run": 4096,
+        })
     if vpu["profile_name"] != "MxE4M3Fp4VpuGemminiRocketConfig":
         raise ValueError("VPU roster profile changed")
     vpu_profile = load_profile(PROFILE_DIR / f"{vpu['profile_name']}.json")
@@ -217,6 +243,7 @@ def build_report() -> dict:
         profiles.append({
             "name": profile["name"], "profile_sha256": profile_sha256(profile),
             "mesh_dim": dim, "vpu": profile["resources"]["vpu"],
+            "chipyard_wrapper": profile["chipyard_config"] is not None,
             "legal_mode_count": len(cells),
             "mode_class_stock_spike_passes": sum(
                 modes[dim][cell]["status"] == "passed" for cell in cells),
@@ -228,14 +255,22 @@ def build_report() -> dict:
         })
     if len(profiles) != 81 or set(direct_receipts) - {row["name"] for row in profiles}:
         raise ValueError("named RTL profile census changed")
+    wrappers_with_receipts = [row for row in profiles if row["chipyard_wrapper"] and
+                              row["named_profile_spike_evidence"]]
+    if sum(row["chipyard_wrapper"] for row in profiles) != 40 or len(
+            wrappers_with_receipts) != 40:
+        raise ValueError("a Chipyard Rocket wrapper lacks direct Spike evidence")
     return {
         "schema": "mx_gemmini.profile_qualification_catalog.v1",
         "scope": "selected indexed evidence; mode-class probes do not qualify other named profiles",
         "rtl_revision": candidate["rtl_revision"],
         "sources_sha256": {path: _digest(path) for path in sorted(
             set(stock_paths.values()) | {candidate_path, selected_path, vpu_path,
-                                         dedicated_path, plain_path, *vector_paths})},
+                                         dedicated_path, plain_path, wrapper_path,
+                                         *vector_paths})},
         "profile_count": len(profiles),
+        "chipyard_wrapper_count": 40,
+        "chipyard_wrappers_with_indexed_spike_evidence": len(wrappers_with_receipts),
         "named_profiles_with_indexed_spike_evidence": sum(
             bool(row["named_profile_spike_evidence"]) for row in profiles),
         "profiles": profiles,

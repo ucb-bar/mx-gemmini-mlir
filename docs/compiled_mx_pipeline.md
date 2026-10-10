@@ -2847,14 +2847,55 @@ separate VPU command and captured graph qualifications above exercise vector
 execution. FP6+VPU remains a hardware configuration gap in Nicolas's pinned
 branch.
 
+### Direct Spike receipts for the remaining Rocket wrappers
+
+The [eight-wrapper archive](evidence/nicolas_rocket_wrapper_matrix_266c593/index.json)
+adds a direct named-profile run for each Chipyard Rocket wrapper previously
+represented only by a mode-class probe. The selected DIM8 and DIM32 all-format
+wrappers run E4M3-LUT × E2M3-LUT; the DIM32 base wrapper runs generated
+FP4×FP4; the E2M3, E3M2, and E5M2 single-format wrappers run their matching
+symmetric modes; and the two test wrappers run direct FP4×FP4. Latest pinned
+model2MLIR `e9ded36` captures each contraction. The compiler binds the
+source or Nicolas-generated packed data, emits physical commands and RV64
+ELFs, then compares every output on Nicolas's stock Spike extension. Each of
+the eight cases passes **4,096 / 4,096 BF16 outputs in two independent runs**,
+or **65,536 checked outputs** in total. The archive keeps the captures,
+bound MLIR, resource manifests, generated issuers, ELFs, logs, and both
+receipts. A direct FP4 mode needs no LUT memory: the recipe validator now
+accepts the no-LUT `TestMxGemminiRocketConfig` and the narrower LUT memory in
+`TestRequantizerLutMxGemminiRocketConfig` for that mode. The latter test checks
+its matrix path; its requantizer remains a separate qualification.
+
+On a fresh pinned Gemmini checkout with initialized software submodules,
+materialize the two generated-header sets, then reproduce the eight runs:
+
+```sh
+python -m tools.generate_nicolas_missing_headers \
+  --rtl-root "$MX_RTL_ROOT" --microxcaling-root "$MXQUANT_ROOT"
+python -m tools.generate_nicolas_mesh_headers --mesh-dim 32 \
+  --rtl-root "$MX_RTL_ROOT" --microxcaling-root "$MXQUANT_ROOT"
+"$MODEL2MLIR_PYTHON" -m tools.qualify_mx_rocket_wrapper_matrix \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --jobs 3 \
+  --out-dir /new/mx-rocket-wrapper-matrix \
+  --baseline-index docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json
+```
+
+The [profile catalog](evidence/mx_profile_qualification_catalog_266c593/index.json)
+now indexes direct Spike evidence for all 40 Chipyard Rocket MX wrappers.
+Its other 41 profiles are Gemmini fragments without a Chipyard wrapper. The
+catalog keeps the three all-asymmetric 36-mode matrices as separate
+mode-class probes and retains the stock Spike weight-LUT failure explicitly.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
    if those paths are needed there. The FP6 requant receipts use generated
    fixtures because the corresponding headers are absent upstream; check
    future committed headers against them. Qualify the quantized-output
-   epilogues on RTL or FPGA where required, remaining configuration families
-   without receipts, and extend multi-output
+   epilogues on RTL or FPGA where required, remaining mode and memory
+   configuration combinations without direct receipts, and extend multi-output
    vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2, scalar
    ADDS, and ordered affine epilogues.
    For GQA, reconcile the
