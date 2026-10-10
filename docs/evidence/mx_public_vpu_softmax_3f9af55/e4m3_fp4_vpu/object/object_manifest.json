@@ -1,0 +1,44 @@
+{
+  "abi_json_sha256": "3dd8b8b6b1b326a83efe4c924dd6ae3ad229d4490624b2098b313c28430fc71f",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "cd2f69c9764420b4bb7af80bcd49ab9626cf37944a176e909190f059ca2399cf",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_16x32",
+      "minimum_bytes": 1024,
+      "name": "score",
+      "position": 0,
+      "role": "read",
+      "slot": "score"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_16x32",
+      "minimum_bytes": 1024,
+      "name": "output",
+      "position": 1,
+      "role": "write",
+      "slot": "output"
+    }
+  ],
+  "command_count": 17,
+  "compiler_revision": "3f9af556cb6b25046f0ba896c8db6a1576723d41",
+  "compiler_source_closure_sha256": "2245df2ba32a72f0720e3d333ad162f3bd778087287c7b562e4d2120062424c7",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "a580f370d9d64e732635a92c08748fc9a0d243b29a5ce5533ac7b050a59712b3",
+  "issuer_h_sha256": "38e15a1044e886ce3fe894ff748fea7c17794b86c15bc3c6b7c70f0e4ecadf0f",
+  "mlir_container_sha256": "cd2f69c9764420b4bb7af80bcd49ab9626cf37944a176e909190f059ca2399cf",
+  "object_emitter_sha256": "6339997b0964a049dedbca8fc6bfd47ed479a8f5a99703bbf52bfd2a130c94a0",
+  "object_sha256": "05309fa0733bbe0ea405d8b58bbd9a9ead66b0e37deac6d4d020eada3d496567",
+  "physical_program_sha256": "db26b79f676f6a86dea86683d8d5a977249c9ad1211e1daa06d0b94073169b70",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vpu_softmax_linkable_object.v1",
+  "status": "rv64_rocc_vpu_softmax_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

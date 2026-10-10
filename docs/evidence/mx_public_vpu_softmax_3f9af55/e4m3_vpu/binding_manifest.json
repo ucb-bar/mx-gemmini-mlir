@@ -1,0 +1,74 @@
+{
+  "bound_mlir_sha256": "354240bd5328146c35e1777cf7e352a18e800dfc1883a2969ca5eb9b02c0365c",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "4815acd95b6bfe554901827f4139a969a435e5475842e482ac2f8efaaf3c517f",
+  "manifest_sha256": "1716892ca7d0aa221169f37bd5ffba045042bec3c083e1d7798827c7d421d82b",
+  "plan": {
+    "logical_shape": [
+      16,
+      32
+    ],
+    "rounding": "BF16 after each VPU operation",
+    "scratchpad_rows": 64,
+    "steps": [
+      [
+        "rmax",
+        0,
+        0,
+        4096,
+        64,
+        4,
+        false
+      ],
+      [
+        "sub",
+        0,
+        4096,
+        8192,
+        64,
+        4,
+        true
+      ],
+      [
+        "exp",
+        8192,
+        0,
+        8192,
+        64,
+        1,
+        false
+      ],
+      [
+        "rsum",
+        8192,
+        0,
+        12288,
+        64,
+        4,
+        false
+      ],
+      [
+        "rcp",
+        12288,
+        0,
+        12288,
+        16,
+        1,
+        false
+      ],
+      [
+        "mul",
+        8192,
+        12288,
+        1024,
+        64,
+        4,
+        true
+      ]
+    ]
+  },
+  "policy_sha256": "f2497212f6aef5bd34485c8537e2a0a2cb81df080e66eac807f29a7af6013b14",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.nicolas_vpu_softmax_binding.v1",
+  "source_sha256": "cfb112304eb23e4e950b337fe7e2307a48520c62b58e2042321caf66bd505d51"
+}
