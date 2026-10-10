@@ -1,0 +1,57 @@
+{
+  "schema": "mx_gemmini.nicolas_narrow_vpu_chain_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "9cd918c851b246a8a884bde8e2a225966e6c58f1",
+  "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "source_mlir_sha256": "a554cb5437f2ff698fdf8e5f83c688099f9137d1f613b1104a078adb1aa2aff4",
+  "handoff_mlir_sha256": "812ffc00ae5029069714f8c052c37f5b6c5ea17ff253aee7bf81be776a57c3ee",
+  "bound_mlir_sha256": "850021bb47cf0104c740642bdb2f19c7e83706a687a7d01ce746b53c28090955",
+  "manifest_sha256": "071e99d1e3bde94a14b0f74b298bbc077320242d27af4c4f3cbe2fc06494df6f",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        32,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "MM1 and VPU use Nicolas's checked 64\u00b3 source; MM2 uses its first 32 weight columns and the corresponding first output block",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "first_shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "second_shape_mnk": [
+    64,
+    32,
+    64
+  ]
+}

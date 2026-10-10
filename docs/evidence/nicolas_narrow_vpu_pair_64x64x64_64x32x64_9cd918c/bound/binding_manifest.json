@@ -1,0 +1,37 @@
+{
+  "bound_mlir_sha256": "31ed66d86fc82b0e6edbbc21012fbbc5706aa598ee18b435a89b6e9f1f755af4",
+  "capture_receipt_sha256": "fe87b64fe3c0ab3e4ab291ad8a1119bfad66fa3cab148a54c7cc4b3ee0261ccd",
+  "compiler_revision": "9cd918c851b246a8a884bde8e2a225966e6c58f1",
+  "compiler_source_closure_sha256": "b008d950ad299189cc1787a2e07fda889a2419e031d77096342ca5e6993e4ff4",
+  "first_shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "first_source_sha256": "54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "reference_kind": "unchanged_nicolas_vpu_chain_left_output_block",
+  "resources_sha256": {
+    "a1_activation": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905",
+    "a1_scales": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6",
+    "b1_scales": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f",
+    "b1_weight": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40",
+    "b2_scales": "833ece6c467608242389533021c61aa7f2fbb9c4dbf8017c483f983f3417b57c",
+    "b2_weight": "f3db2f7e94b8bf3d5987a76be56c897d4d44e815160ac214fa06b7dc8907afff",
+    "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "c2_codes_ref": "cf0f72ed358c74cf8d66922eb5f4663d79a98ff29428ed440d1d422bc7d076fb",
+    "c2_scales_ref": "8fd4627017d9ae183af47313f9aef97af4102a504f94e1c8032b1c6313c6bfae"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_narrow_vpu_chain_binding.v1",
+  "second_shape_mnk": [
+    64,
+    32,
+    64
+  ],
+  "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+  "status": "source_mx_vpu_requant_and_narrow_mm2_bound_to_typed_graph"
+}

@@ -944,6 +944,25 @@ E8M0 scales on Nicolas's stock Spike for
 data. This numerical qualification covers the 64³ scalar ×2 chain; other
 VPU operations, shapes, and precisions need their own tests.
 
+The [narrow MX+VPU archive](evidence/nicolas_narrow_vpu_pair_64x64x64_64x32x64_9cd918c/index.json)
+adds a captured 64×64×64 MM1 followed by VPU ×2, resident requant, and a
+64×32×64 MM2. It uses Nicolas's unchanged 64³ chain source and its first
+32 B2 columns. The first output block is checked twice: against the source
+codes/scales and against independently requantized source BF16. From a fresh
+`9cd918c` checkout, the typed graph compiled to a data-free RoCC object and
+stock Spike matched **4,096 C1 BF16 values, 4,096 C1 codes, 128 C1 scales,
+2,048 C2 codes, and 64 C2 scales**. The captured MLIR, bound payloads,
+physical program, object, ELF, and Spike log matched the first run byte for
+byte. The archived compressed MLIR and inputs also recompile to the same
+object, issuer, and physical program.
+
+To reproduce, capture with `--matrix-dim 64 --first-k 64 --second-width 32
+--output-rows 64` and the VPU profile, then use `tools.bind_narrow_vpu_chain`,
+`tools.compile_object` with `examples/resident-vpu-abi.json`, and
+`tools.qualify_narrow_vpu_object`. Each command requires a new output
+directory. The bind and Spike qualifiers check the source, profile,
+model2MLIR receipt, runtime payloads, and object hashes.
+
 To reproduce from a checked-out compiler and Nicolas's source tree, first
 run `tools.qualify_nicolas_vector_requant` with `--connected-ssa` and the
 archived two-site frontend receipt to materialize checked input `.bin` files.
@@ -3363,7 +3382,7 @@ cases with:
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
-   qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
+   qualified 64³ and 64×32×64 MX+VPU cases and the plain MX 16-row prefix ladder of
    Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
    MX cases.
    Two rectangular 64×96×64 → 64×{32,64}×96 pairs are now qualified on
