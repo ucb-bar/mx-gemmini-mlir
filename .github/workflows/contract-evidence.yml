@@ -73,6 +73,7 @@ jobs:
             tests/test_host_requant_object_evidence.py \
             tests/test_current_radiance_roster_evidence.py \
             tests/test_current_radiance_f193c8f_replay.py \
+            tests/test_nicolas_mx_source_inventory.py \
             tests/test_bf16_row_major_readout.py \
             tests/test_bf16_row_major_spike_evidence.py \
             tests/test_fp4_row_major_runtime_object_evidence.py \
@@ -101,4 +102,8 @@ jobs:
       - name: Check all profiles, VPU softmax binding, and negative selections
         env:
           MX_GEMMINI_RTL_ROOT: /tmp/gemmini-mx-pinned
-        run: python -m pytest -q tests/test_target_profile.py tests/test_source_softmax.py
+        run: |
+          python -m tools.audit_nicolas_mx_roster \
+            --rtl-root "$MX_GEMMINI_RTL_ROOT" \
+            --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check
+          python -m pytest -q tests/test_target_profile.py tests/test_source_softmax.py

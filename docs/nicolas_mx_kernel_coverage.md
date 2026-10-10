@@ -10,6 +10,15 @@ All 171 listed names resolve to C files in that checkout. The roster has 74
 The separate default Gemmini tests include convolution and other operations;
 they are not in this MX roster.
 
+The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
+pins every listed C file's SHA-256 and searches archived receipts for that
+exact hash. **88 programs have at least one direct source-hash reference; 83
+have none.** A matching hash establishes provenance only. Some referenced
+receipts are source-oracle runs or frontend captures, so neither group should
+be read as a count of compiler-regenerated programs. Rebuild the inventory
+with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
+--out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
+
 | Source family | Compiler evidence | Coverage boundary |
 |---|---|---|
 | Asymmetric matrix modes | [DIM8/16/32 mode matrices](compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix) and [stock-model gap](compiled_mx_pipeline.md#isolated-weight-lut-spike-correction-across-all-legal-modes) | Mode-class tests pass 35 of 36 legal cells on stock Spike per mesh. This does not regenerate every named C program or variant. |
