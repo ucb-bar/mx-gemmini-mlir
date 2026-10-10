@@ -23,6 +23,18 @@ ASYM_CELL = {
     "weight_projection": "direct",
     "pe_mode": 10,
 }
+DIRECT_CELL = {**ASYM_CELL, "activation_projection": "direct", "pe_mode": 6}
+
+_VARIANTS = {
+    "matmul_tiled_asym_e4m3_fp4_64x64.c": {
+        "header": "matmul_data_asym_e4m3_fp4.h", "cell": ASYM_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+    },
+    "matmul_tiled_asym_e4m3s_fp4_64x64.c": {
+        "header": "matmul_data_asym_e4m3s_fp4.h", "cell": DIRECT_CELL,
+        "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
+    },
+}
 
 
 def sha256(path: Path) -> str:
@@ -31,15 +43,16 @@ def sha256(path: Path) -> str:
 
 def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     """Bind one checked-in Nicolas test and its data to a legal profile mode."""
-    if source.name != "matmul_tiled_asym_e4m3_fp4_64x64.c" or \
-            header.name != "matmul_data_asym_e4m3_fp4.h":
-        raise ValueError("selected asymmetric specialization needs Nicolas's 64-cubed test")
+    variant = _VARIANTS.get(source.name)
+    if variant is None or header.name != variant["header"]:
+        raise ValueError("selected asymmetric specialization needs a named Nicolas 64-cubed test")
     if not source.is_file() or not header.is_file():
         raise ValueError("selected asymmetric source or data header is absent")
-    require_compute(profile, ASYM_CELL["activation_format"], ASYM_CELL["weight_format"],
-                    pe_mode=ASYM_CELL["pe_mode"],
-                    activation_projection=ASYM_CELL["activation_projection"],
-                    weight_projection=ASYM_CELL["weight_projection"])
+    cell = variant["cell"]
+    require_compute(profile, cell["activation_format"], cell["weight_format"],
+                    pe_mode=cell["pe_mode"],
+                    activation_projection=cell["activation_projection"],
+                    weight_projection=cell["weight_projection"])
     if (profile["geometry"] != {"mesh_rows": 16, "mesh_columns": 16,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
@@ -47,25 +60,27 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             profile["resources"]["lut_config"]["address_bits"] != 4):
         raise ValueError("selected asymmetric source requires DIM16, 256 KiB SPAD, 4-bit LUT indices")
     source_text, header_text = source.read_text(), header.read_text()
-    for marker in ("#include \"include/matmul_data_asym_e4m3_fp4.h\"",
-                   "#define USE_LUT 1", "#define MX_ALTFMT 0",
+    for marker in (f'#include "include/{header.name}"',
+                   f'#define USE_LUT {int(variant["use_lut"])}', "#define MX_ALTFMT 0",
                    "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K"):
         if marker not in source_text:
             raise ValueError(f"Nicolas source command contract changed: {marker}")
     for marker in ("#define MATMUL_M   64", "#define MATMUL_K   64",
-                   "#define MATMUL_N   64", "A_in_hw[32][64]",
-                   "B_in[MATMUL_K][MATMUL_N / 2]", "A_lut[32][4]",
+                   "#define MATMUL_N   64", variant["activation_array"],
+                   "B_in[MATMUL_K][MATMUL_N / 2]",
                    "A_scales_row[MATMUL_GK][MATMUL_M]",
                    "B_scales_col[MATMUL_GK][MATMUL_N]",
                    "C_out_bf16[MATMUL_M][MATMUL_N]"):
         if marker not in header_text:
             raise ValueError(f"Nicolas source data contract changed: {marker}")
+    if variant["use_lut"] and "A_lut[32][4]" not in header_text:
+        raise ValueError("Nicolas source activation LUT changed")
     return {"schema": "mx_gemmini.asymmetric_source_recipe.v1",
             "site_id": "functional:matmul", "shape": [64, 64, 64],
             "frontend_capture_format": "mxfp8",
             "source_driver_sha256": sha256(source),
             "source_header_sha256": sha256(header),
-            "profile_sha256": profile_sha256(profile), "compute": ASYM_CELL.copy()}
+            "profile_sha256": profile_sha256(profile), "compute": cell.copy()}
 
 
 def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
@@ -81,15 +96,16 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             recipe.get("shape") != [64, 64, 64] or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
-            recipe.get("compute") != ASYM_CELL or
+            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
                 for key in ("source_driver_sha256", "source_header_sha256"))):
         raise ValueError("asymmetric recipe does not identify the selected source and profile")
-    require_compute(profile, ASYM_CELL["activation_format"], ASYM_CELL["weight_format"],
-                    pe_mode=ASYM_CELL["pe_mode"],
-                    activation_projection=ASYM_CELL["activation_projection"],
-                    weight_projection=ASYM_CELL["weight_projection"])
+    cell = recipe["compute"]
+    require_compute(profile, cell["activation_format"], cell["weight_format"],
+                    pe_mode=cell["pe_mode"],
+                    activation_projection=cell["activation_projection"],
+                    weight_projection=cell["weight_projection"])
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
     context.load_dialect(Func)
@@ -111,7 +127,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     module.attributes["mx.source_driver_sha256"] = StringAttr(recipe["source_driver_sha256"])
     module.attributes["mx.source_header_sha256"] = StringAttr(recipe["source_header_sha256"])
     del contract.attributes["format"]
-    for key, value in ASYM_CELL.items():
+    for key, value in cell.items():
         contract.attributes[key] = IntegerAttr(value, 32) if key == "pe_mode" else StringAttr(value)
     for op in operations:
         op.attributes["profile_sha256"] = StringAttr(digest)
@@ -145,13 +161,23 @@ def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
             _text_attr(module, "mx.source_header_sha256") != recipe["source_header_sha256"]):
         raise ValueError("profile-bound MLIR lacks matching asymmetric source provenance")
     operations = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
+    cell = recipe["compute"]
     if ([_operation_name(op) for op in operations] !=
             ["mx_gemmini.contract", "mx_gemmini.readout_bf16"] or
             any(_text_attr(op, "site_id") != recipe["site_id"] for op in operations) or
-            any(_text_attr(operations[0], key) != value for key, value in ASYM_CELL.items()
+            any(_text_attr(operations[0], key) != value for key, value in cell.items()
                 if key != "pe_mode") or
-            _int_attr(operations[0], "pe_mode") != ASYM_CELL["pe_mode"]):
+            _int_attr(operations[0], "pe_mode") != cell["pe_mode"]):
         raise ValueError("bound asymmetric MLIR compute tuple or site differs from recipe")
+    use_lut = cell["activation_projection"] == "lut"
+    activation_array = "A_in_hw" if use_lut else "A_in"
+    tile_rows = 32 if use_lut else 16
+    lut_setup = (
+        "  gemmini_mx_load_lut_dt((uint64_t)B_lut, MATMUL_N / 2, 0, 8);\n"
+        "  gemmini_mx_load_lut_dt((uint64_t)A_lut, MATMUL_M / 2, 1, 8);\n"
+        "  gemmini_mx_load_lut_dt((uint64_t)C_lut, MATMUL_M / 2, 2, 8);\n"
+        if use_lut else "  gemmini_mx_lut_disable();\n"
+    )
     return f'''// Generated from model2MLIR site {recipe["site_id"]} and explicit source recipe.
 // Source driver SHA-256: {recipe["source_driver_sha256"]}
 // Source header SHA-256: {recipe["source_header_sha256"]}
@@ -168,7 +194,7 @@ static uint16_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
 static uint32_t output_scales[512] __attribute__((aligned(64)));
 
 int main(void) {{
-  const int tiles_i = MATMUL_M / 32;
+  const int tiles_i = MATMUL_M / {tile_rows};
   const int tiles_j = MATMUL_N / 32;
   const int tiles_k = MATMUL_K / DIM;
   const uint32_t a_base = 0;
@@ -177,19 +203,16 @@ int main(void) {{
   const uint32_t c_base = 128;
   memset(C_hw, 0, sizeof C_hw);
   gemmini_flush(0);
-  // E4M3 activation via 4-bit LUT index, direct FP4 weight, BF16 output.
+  // E4M3 activation ({cell["activation_projection"]}), direct FP4 weight, BF16 output.
   gemmini_extended3_config_ex(WEIGHT_STATIONARY, 0, 0, ACC_SCALE_IDENTITY,
-                              1, 1, 0, 0, false, 0, 2, 3, true);
-  gemmini_mx_load_lut_dt((uint64_t)B_lut, MATMUL_N / 2, 0, 8);
-  gemmini_mx_load_lut_dt((uint64_t)A_lut, MATMUL_M / 2, 1, 8);
-  gemmini_mx_load_lut_dt((uint64_t)C_lut, MATMUL_M / 2, 2, 8);
-  gemmini_mx_load_scales((uint64_t)A_scales_row, sizeof A_scales_row, 0);
+                              1, 1, 0, 0, false, 0, 2, 3, {str(use_lut).lower()});
+{lut_setup}  gemmini_mx_load_scales((uint64_t)A_scales_row, sizeof A_scales_row, 0);
   gemmini_mx_load_scales((uint64_t)B_scales_col, sizeof B_scales_col, 1);
   gemmini_fence();
   gemmini_config_ld(MATMUL_K);
   for (int i = 0; i < tiles_i; ++i)
     for (int k = 0; k < tiles_k; ++k)
-      gemmini_extended_mvin((void *)&A_in_hw[i * DIM][k * DIM],
+      gemmini_extended_mvin((void *)&{activation_array}[i * DIM][k * DIM],
                             a_base + (i * tiles_k + k) * DIM, DIM, DIM);
   gemmini_config_ld(MATMUL_N / 2);
   for (int k = 0; k < tiles_k; ++k)

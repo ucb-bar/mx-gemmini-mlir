@@ -29,6 +29,8 @@ def _revision(root: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--variant", choices=("lut", "direct"), default="lut",
+                        help="E4M3 activation projection in Nicolas's DIM16 source test")
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "profile",
                  "riscv-root", "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
@@ -52,8 +54,9 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    source = software / "bareMetalC/matmul_tiled_asym_e4m3_fp4_64x64.c"
-    header = software / "include/matmul_data_asym_e4m3_fp4.h"
+    suffix = "e4m3_fp4" if args.variant == "lut" else "e4m3s_fp4"
+    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
+    header = software / f"include/matmul_data_asym_{suffix}.h"
     recipe = source_recipe(source, header, profile)
 
     class Matmul(torch.nn.Module):
@@ -142,7 +145,7 @@ def main() -> None:
         "schema": "mx_gemmini.nicolas_asymmetric_spike_qualification.v1",
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": "64-cubed source specialization of one captured PyTorch matmul; "
+        "scope": f"64-cubed {args.variant} E4M3 source specialization of one captured PyTorch matmul; "
                  "checked-in packed inputs, not random PyTorch example inputs; "
                  "standalone asymmetric MX profile without VPU",
         "model2mlir_revision": _revision(model2mlir), "mxq_revision": _revision(mxq_root),
@@ -154,6 +157,7 @@ def main() -> None:
         "software_revision": _revision(software),
         "spike_extension_revision": _revision(extension),
         "profile_name": profile["name"], "profile_sha256": profile_sha256(profile),
+        "activation_projection": args.variant,
         "source_driver_sha256": sha256(source), "source_header_sha256": sha256(header),
         "frontend_contract_sha256": sha256(contract), "frontend_policy_sha256": sha256(policy),
         "capture_sites": sites, "opaque_calls": opaque,

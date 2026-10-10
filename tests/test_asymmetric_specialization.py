@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, emit_baremetal,
-                                                           source_recipe, specialize_handoff)
+from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
+                                                           emit_baremetal, source_recipe,
+                                                           specialize_handoff)
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.verify_profile_ir import verify_ir
@@ -94,3 +95,28 @@ def test_emitter_rejects_a_legal_but_different_physical_mode(tmp_path):
     assert verify_ir(altered, profile)["contracts"] == 1
     with pytest.raises(ValueError, match="differs from recipe"):
         emit_baremetal(altered, profile, recipe, source=source, header=header)
+
+
+def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
+    profile = _profile("MxAsymE4M3Fp4GemminiRocketConfig")
+    source = tmp_path / "matmul_tiled_asym_e4m3s_fp4_64x64.c"
+    header = tmp_path / "matmul_data_asym_e4m3s_fp4.h"
+    source.write_text("\n".join((
+        '#include "include/matmul_data_asym_e4m3s_fp4.h"',
+        "#define USE_LUT 0", "#define MX_ALTFMT 0",
+        "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
+    header.write_text("\n".join((
+        "#define MATMUL_M   64", "#define MATMUL_K   64", "#define MATMUL_N   64",
+        "A_in[MATMUL_M][MATMUL_K]", "B_in[MATMUL_K][MATMUL_N / 2]",
+        "A_scales_row[MATMUL_GK][MATMUL_M]",
+        "B_scales_col[MATMUL_GK][MATMUL_N]",
+        "C_out_bf16[MATMUL_M][MATMUL_N]")))
+    recipe = source_recipe(source, header, profile)
+    assert recipe["compute"] == DIRECT_CELL
+    bound = specialize_handoff(CAPTURE, profile, recipe)
+    emitted = emit_baremetal(bound, profile, recipe, source=source, header=header)
+    assert 'activation_projection = "direct"' in bound
+    assert 'pe_mode = 6 : i32' in bound
+    assert "const int tiles_i = MATMUL_M / 16" in emitted
+    assert "&A_in[i * DIM][k * DIM]" in emitted
+    assert "gemmini_mx_load_lut_dt" not in emitted
