@@ -1,0 +1,116 @@
+{
+  "cases": {
+    "fp4_source_cli": {
+      "bundle_origin": "radiance_source_header_specialization",
+      "compared_bf16_outputs": 65536,
+      "files_sha256": {
+        "artifact_manifest.json": "1e816ac2135b69f5285868707ccbf7e24d9610daa573717ebc19e73a3665300f",
+        "artifact_manifest_repro.json": "c9e12cf5ec9dd31c49a00c25691a7c00ebce9e838d635729a53ec351aa040767",
+        "bound.mlir": "de271df2b996202a6ad25f6f2eb9e3e7efa8f7c433a66dcb48623ade99fb76fb",
+        "bundle_manifest.json": "36d8946d00844d50c7ef2f8ec4745ce5a8bf438007f5c876343961e9e4966511",
+        "mx_driver.c": "305b6270638a6a21742e0c6b0c9c39fdefdfd3d37dc8cde657560de9fbfbcf59",
+        "mx_issue.c.gz": "21f90fa949bae976819fee14a2a8501d9f469cd0ca4e18968a98601a082ea769",
+        "mx_issue.h": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+        "mx_issue.o": "57212cd368d9164c721e9494971fa7158fff8599a466427148c210743c69a5c4",
+        "mx_program.elf.gz": "acaef0bba9d89becfb15915f81d8630ebe54d21f4025844ad9feb2c6b2a86e52",
+        "object_manifest.json": "c096eb377a46b2140b4de780b8c724e557d9033683ba1cad6bdea76c55923979",
+        "physical_program.json.gz": "0c7ac0686c7fefecc50967e36bfb42847478ca68bdc03dbbbb40d605aed771c3",
+        "spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09"
+      },
+      "golden_basis": "derived_bf16_x2",
+      "precision": "FP4",
+      "scope": "Generated source-derived FP4 fixture; no committed 256x256 FP4 Radiance driver or source ELF parity.",
+      "shape_mnk": [
+        256,
+        256,
+        256
+      ],
+      "source_bundle": "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle",
+      "source_driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
+      "source_fixture": "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/fixture",
+      "source_header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+      "spike_status": "derived_vpu_golden_matched_on_pinned_spike",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ],
+      "vpu_commands": 4
+    },
+    "fp8_retile64": {
+      "bundle_origin": "radiance_source_header_specialization",
+      "compared_bf16_outputs": 16384,
+      "files_sha256": {
+        "artifact_manifest.json": "ddc82cb015ec1bed5d800212ab7e74bbba52c6813346ac4da68b16b383b78918",
+        "artifact_manifest_repro.json": "849e0a4ea63d314e327bbefc8df32d068a3d084ae59137c388cec4a88882985a",
+        "bound.mlir": "015faf5ab09b763d870af5afa95ae1957df7f9e3baa7943a8515a1693e61aeae",
+        "bundle_manifest.json": "1706205d10f46883b1ce487757681aaec0ba59a07e5de47e083859949dd421e0",
+        "mx_driver.c": "cb38770c23bdcb96bfcc5c27b9ae5e00bbb1435612a77b508169a78416363e13",
+        "mx_issue.c.gz": "f5e4cfc29a0d271996dc65e67700de3a8e7e74f66f24b7c36c238bc5bf33a988",
+        "mx_program.elf.gz": "50df149deb2333543685395d638d5e70aa579e211e2418636a9c837432f06d6b",
+        "physical_program.json.gz": "0d9ef1431c4fc571a79377b70cee16702f2d8df41460c192b52fbc7f28bfb03d",
+        "spike.log": "1029e8ac1af6b1c7128dbcc1a7fbe0d569d32302e31d01169aa88fadd50304a4"
+      },
+      "precision": "FP8",
+      "scope": "Compiler retiling of committed FP8 source data to 64x64 output tiles; no claim of identical source driver tile schedule.",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "source_bundle": "docs/evidence/radiance_fp8_512_tk256_latest_266c593/bundle",
+      "source_driver_sha256": "ebf41fdce8dbe1e06164b6c381547e7edc1aa330c73f866cbedf3aacd1b21bcd",
+      "source_header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "spike_status": "source_golden_matched_on_pinned_spike",
+      "tile_mnk": [
+        64,
+        64,
+        256
+      ],
+      "vpu_commands": 0
+    },
+    "fp8_tilewise_vpu": {
+      "bundle_origin": "radiance_source_header_specialization",
+      "compared_bf16_outputs": 65536,
+      "files_sha256": {
+        "artifact_manifest.json": "9eb9674b26fe18b71ed7449ea705b0392e43c3977c4493a6987ce5f162775812",
+        "artifact_manifest_repro.json": "e91d275d98a3d96087de1e0a174da8f9b70c54e50d70bebe1e09f149e3deec06",
+        "bound.mlir": "bb42c4876793298c111d0bdc294f717cc4c49f6373e68a85ab8f315fed839af6",
+        "bundle_manifest.json": "60666977db968c962a51481f9e4ac8217c5f723e1bed68611c99ae0f4d671d91",
+        "mx_driver.c": "305b6270638a6a21742e0c6b0c9c39fdefdfd3d37dc8cde657560de9fbfbcf59",
+        "mx_issue.c.gz": "977abfb40859cc702ef11fe2ec5a7d2c2efb97ccb2322a25cd75dccbbf1d40e1",
+        "mx_issue.h": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+        "mx_issue.o": "682e3a29e0dfa965d6f711790048b07025f4b73daeefdfb8250bb140fc7b4867",
+        "mx_program.elf.gz": "c1e218a979d062cb8fc6b9f42de5b87f4c2fcac058304a2ef8e1a5a67a2dd31e",
+        "object_manifest.json": "f3af359afcc432ead91c3dfc9cafca25891daed8877cd3c65c9c3ccea45d75df",
+        "physical_program.json.gz": "e1564491d611c34724ed2ff0bf61710b328044cb82ef193d7cd67efc38e28d64",
+        "spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09"
+      },
+      "golden_basis": "derived_bf16_x2",
+      "precision": "FP8",
+      "scope": "Source header and typed VPU x2 golden; source tk256 driver is excluded from 128 KiB Radiance build; no source ELF parity.",
+      "shape_mnk": [
+        256,
+        256,
+        256
+      ],
+      "source_bundle": "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle",
+      "source_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+      "source_header_sha256": "d61f5358db4f6e39e51e0cf7f9867e393a67ce0c1b4d41c596d73a72d2496c70",
+      "spike_status": "derived_vpu_golden_matched_on_pinned_spike",
+      "tile_mnk": [
+        128,
+        128,
+        256
+      ],
+      "vpu_commands": 4
+    }
+  },
+  "compiler_revision": "5b542807fd510250313e9cf9671794e5c21cfb75",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "output_layout": "row_major_bf16",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.bf16_row_major_spike.v1",
+  "scope": "Rocket/Spike MX only; no Muon, Radiance SoC, RTL, or FPGA execution claim.",
+  "status": "three_multi_tile_row_major_cases_matched_on_pinned_spike"
+}

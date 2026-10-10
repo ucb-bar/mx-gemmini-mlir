@@ -44,7 +44,8 @@ jobs:
             tests/test_radiance_fp4_runtime_tilewise_object_evidence.py \
             tests/test_radiance_fp8_runtime_source_object_evidence.py \
             tests/test_radiance_fp6_runtime_source_object_evidence.py \
-            tests/test_bf16_row_major_readout.py
+            tests/test_bf16_row_major_readout.py \
+            tests/test_bf16_row_major_spike_evidence.py
 
   pinned-rtl-profiles:
     runs-on: ubuntu-latest

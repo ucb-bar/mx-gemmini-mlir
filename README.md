@@ -44,6 +44,10 @@ before each tile readout. All 65,536 BF16 outputs match
 the source-derived ×2 reference on pinned Spike; this selected epilogue is not
 yet a general graph lowering. The selected source `tk256` driver is excluded
 from Radiance's 128 KiB build; this test uses Nicolas's 256 KiB MX+VPU profile.
+The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
+writes four output tiles directly into one logical matrix. Pinned Spike matches
+65,536 FP4 and FP8 outputs with VPU ×2 and 16,384 FP8 outputs retiled to
+64×64; FP4 and FP8 also emit data-free objects with a row-major output ABI.
 The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4-gemm-with-tilewise-vpu-epilogue)
 also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
 generator and golden model to create a new 256×256 FP4 fixture; Radiance has

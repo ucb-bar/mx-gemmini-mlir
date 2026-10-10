@@ -1992,6 +1992,53 @@ python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
   --out-dir /tmp/radiance-fp4-generated-tilewise-vpu-x2
 ```
 
+## Direct row-major BF16 readout across output tiles
+
+`mx_gemmini.readout_bf16` now accepts the typed
+`memory_layout = "row_major_bf16"` selection. The physical lowerer writes each
+tile's BF16 values directly into the logical row-major output buffer using
+16-byte readout strips. The standalone checker compares that buffer to the
+source golden in linear order; the caller no longer has to untile output.
+The default tile-major layout remains available for existing objects. Invalid
+layout names are rejected by both the native dialect verifier and the Python
+profile verifier.
+
+The [three-case evidence index](evidence/bf16_row_major_readout_266c593/index.json)
+archives typed MLIR, source-bundle manifest, generated physical commands,
+Rocket issuer, ELF, Spike log, two independent artifact receipts, and a
+[regression audit](../tests/test_bf16_row_major_spike_evidence.py). The first
+two cases also archive data-free RV64 RoCC objects with a row-major BF16 output
+pointer ABI. All output bytes are written exactly once.
+
+| Case | Output tiles | Source-derived outputs matched on pinned Spike | Scope |
+|---|---:|---:|---|
+| [FP4 generated 256×256×256, VPU ×2](evidence/bf16_row_major_readout_266c593/fp4_source_cli/artifact_manifest.json) | Four 128×128 | 65,536 BF16 | Derived Radiance fixture; no committed 256×256 FP4 source ELF parity |
+| [FP8 256×256×256, VPU ×2](evidence/bf16_row_major_readout_266c593/fp8_tilewise_vpu/artifact_manifest.json) | Four 128×128 | 65,536 BF16 | Source `tk256` driver is excluded from Radiance's 128 KiB build |
+| [FP8 128×128×512, retiled](evidence/bf16_row_major_readout_266c593/fp8_retile64/artifact_manifest.json) | Four 64×64 | 16,384 BF16 | Compiler retiling of source data; source driver uses a different tile schedule |
+
+The FP4 case can be reproduced with the one-command source path after
+restoring its archived generated header beside the
+[derived driver](evidence/radiance_fp4_generated_tilewise_vpu_266c593/fixture/kernels/gemm_mxgemmini/mxgemm.fp4.m256n256k256.tm128tn128tk128.fullout.cpp):
+copy the fixture directory to a writable location and decompress
+`mxgemm.data.fp4.m256n256k256.h.gz` there as
+`mxgemm.data.fp4.m256n256k256.h`.
+
+```sh
+python -m tools.qualify_source_mx \
+  --mlir docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/profile_bound.mlir \
+  --driver /path/to/restored/fixture/kernels/gemm_mxgemmini/mxgemm.fp4.m256n256k256.tm128tn128tk128.fullout.cpp \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --tilewise-vpu-x2 --bf16-output-layout row_major_bf16 \
+  --out-dir /tmp/fp4-row-major
+```
+
+The two runs per case reproduce bound MLIR, commands, issuer, ELF, and Spike
+log. Their linker warning records the output path, so only the `link.log`
+hash differs. This is Rocket/Spike numerical evidence for the MX path; it
+does not qualify Muon, the combined Radiance SoC, RTL timing, or FPGA behavior.
+
 ### Executed generated FP4 source tiles on Cyclotron
 
 The [source-tile qualifier](../tools/qualify_radiance_fp4_derived_cyclotron_tiles.py)
