@@ -69,8 +69,12 @@ def test_generated_fp4_tilewise_vpu_spike_receipts_and_refusals(tmp_path):
     validate_derived_gemm_fixture(manifest)
     assert manifest["origin"] == DERIVED_GEMM_FIXTURE_ORIGIN
     assert manifest["source_derivation"] == index["source_derivation"]
+    assert manifest["source_derivation"]["transformation"] == (
+        "fp8_m256n256k256_tk256_to_fp4_tk128_with_activation_alias_v2")
     assert manifest["source_driver_sha256"] == _sha(_archived(DRIVER))
     assert manifest["source_header_sha256"] == _sha(_archived(HEADER))
+    assert _archived(DRIVER).decode().count(
+        "static const uint8_t *A_in = &A_in_hw[0][0];") == 1
     assert len(resources["golden_bf16"]) == 256 * 256 * 2
     payload = _archived("payload_bound.mlir").decode()
     bound = _archived("tilewise_bound.mlir").decode()
@@ -120,3 +124,17 @@ def test_generated_fp4_tilewise_vpu_spike_receipts_and_refusals(tmp_path):
     assert receipt["compared_bf16_outputs"] == 65536
     assert receipt["elf_sha256"] == index["elf_sha256"]
     assert "0 BF16 mismatches" in _archived("build/spike.log").decode()
+
+    source_build = json.loads(_archived("source_build/receipt.json"))
+    assert source_build["schema"] == "mx_gemmini.radiance_generated_fp4_source_build.v1"
+    assert source_build["status"] == "derived_muon_soc_elf_built_not_executed"
+    assert source_build["source_revision"] == index["source_revision"]
+    assert source_build["driver_sha256"] == _sha(_archived(DRIVER))
+    assert source_build["header_sha256"] == _sha(_archived(HEADER))
+    source_elf = _archived("source_build/source.soc.elf")
+    assert source_elf[:4] == b"\x7fELF" and source_elf[4] == 2
+    assert int.from_bytes(source_elf[18:20], "little") == 243
+    assert _sha(source_elf) == source_build["source_soc_elf_sha256"]
+    build_log = _archived("source_build/build.log")
+    assert _sha(build_log) == source_build["build_log_sha256"]
+    assert b"wrote mxgemm.fp4.m256n256k256.tm128tn128tk128.fullout.soc.elf" in build_log

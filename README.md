@@ -48,6 +48,8 @@ The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4
 also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
 generator and golden model to create a new 256×256 FP4 fixture; Radiance has
 no committed driver for this case, so this result does not claim source ELF parity.
+The derived Muon source driver builds, but has not been run on a Muon/Radiance
+simulator; the numerical check is against its generated golden on MX Spike.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

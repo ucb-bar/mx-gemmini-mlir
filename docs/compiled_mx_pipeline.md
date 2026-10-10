@@ -1960,6 +1960,14 @@ or disguised origin, while the native dialect accepts the declared origin.
 This is compiler execution against a generated
 fixture, not parity with a committed Radiance source ELF.
 
+The corrected derived driver also builds as a Muon/Radiance `.soc.elf` with
+the pinned Radiance source revision and its exact Gemmini software submodule.
+The [build receipt](evidence/radiance_fp4_generated_tilewise_vpu_266c593/source_build/receipt.json)
+archives that executable and build log. It was **built, not executed**: the
+source driver uses Muon scheduling, while the pinned MX Spike run executes the
+compiler's Rocket/RoCC ELF. Source-driver execution requires the separate
+Muon/Radiance simulator or FPGA path.
+
 The [two-run receipt](evidence/radiance_fp4_generated_tilewise_vpu_266c593/index.json)
 records four compiler-issued VPU commands and **65,536 / 65,536 BF16 outputs**
 matching the generated matrix golden after exact BF16 ×2 on pinned Spike.

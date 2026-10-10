@@ -1,0 +1,14 @@
+{
+  "build_log_sha256": "31daed92219ad156f019952d2973771ad7e9b75d9ede449e836ce729ff2f6f3e",
+  "driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
+  "execution_scope": "Muon/Radiance SoC ELF build only; MX Rocket Spike executes the compiler ELF separately",
+  "gemmini_software_revision": "6fc8ec79bc828b33628ec951bfa1d0f65278a338",
+  "header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+  "muon_clang_sha256": "b7c2078d5543e94b4c2e27b92d0ff1b784984af2fc26e7c395d49c65622d3a67",
+  "muon_runtime_archive_sha256": "b6a9028656269125c21f24ffa420cb825045094599b9337d9809d0eab8013554",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "schema": "mx_gemmini.radiance_generated_fp4_source_build.v1",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "source_soc_elf_sha256": "22982ef29f0ef5ac12f2443f0e5aab6528b81bacb545dc99020e06289fddc557",
+  "status": "derived_muon_soc_elf_built_not_executed"
+}

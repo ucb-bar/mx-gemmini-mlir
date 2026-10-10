@@ -79,16 +79,16 @@
   "site_id": "functional:matmul",
   "source_derivation": {
     "base_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
-    "derived_driver_sha256": "27b25a5a5d4eb8cb0748cc6cda244b71443af0afdff0fb6c84f5150159a682fd",
+    "derived_driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
     "generated_header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
     "golden_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
     "golden_model_sha256": "da25bd520b0a1d694743a3224cc3f368dcc102902044c1c8a8da583cd4431747",
     "schema": "mx_gemmini.radiance_generated_fp4_gemm_fixture.v1",
     "source_generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
     "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
-    "transformation": "fp8_m256n256k256_tk256_to_fp4_tk128_v1"
+    "transformation": "fp8_m256n256k256_tk256_to_fp4_tk128_with_activation_alias_v2"
   },
-  "source_driver_sha256": "27b25a5a5d4eb8cb0748cc6cda244b71443af0afdff0fb6c84f5150159a682fd",
+  "source_driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
   "source_header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
   "tile_mnk": [
     128,
