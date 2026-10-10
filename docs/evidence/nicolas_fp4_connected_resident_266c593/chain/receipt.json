@@ -1,0 +1,40 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "f8bf7f8f3bdcb0bd7a299d15e98bdb3c1739ff764c66c805b1f0f3054597b93e",
+  "compared_c1_e8m0_scales": 128,
+  "compared_c1_fp4_codes": 4096,
+  "compared_c2_e8m0_scales": 128,
+  "compared_c2_fp4_codes": 4096,
+  "compiler_revision": "59c67720bb62c3ed0e2373ef364f758ca2dce7ab",
+  "compiler_spike": {
+    "elf_sha256": "9e04aeb5387a031c6c806c1a7b081946ed8373453045a28ea4402ad1f956191d",
+    "exit_code": 0,
+    "matched": true,
+    "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+  },
+  "driver_sha256": "5149339c5d50533b13245c5e82e8ded49354ea3ba1a0717dbaeaca7958379fad",
+  "extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "frontend_manifest_sha256": "f66d1c3fb2a5fffcfd25e5312f03a6a00fc2c1c3aafb9079c102108a3502ab09",
+  "frontend_mlir_sha256": "624823a91f75a35d099f6a1a87a2aec0a62598d9c53ce6c1e2b462c931bbf4a1",
+  "header_sha256": "2df2bf78912754631985f8d8803251125dc52a2b7e772c41eab65c24b79b278e",
+  "issuer_sha256": "7143fbb4d47e5ac1e8ff8c75ad91d6ba155dd4537279a53f88ddfb7cbf77cd45",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "object_sha256": "51746b4d48182d2de5730dc9e8bf5758bc261e079bbf525af2ab932d3891f4c4",
+  "physical_sha256": "a5eea87de494b8ed34ea409745764f86d45e640b8ce46936f58d589a14c7b79c",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_closure_sha256": "f3e66305099bf47795c8029d2ee8a665dddec1439821223a08dc590161e57e4a",
+  "source_sha256": "83a9ba1742da993d263bfcae1f9da9d1640e8ee1bfb556dfa05d30e612324257",
+  "source_spike": {
+    "elf_sha256": "91e75405559408d6d5a11c555f7ead0ba45ed4d126c62e4f0fc5a5db3291eeb0",
+    "exit_code": 0,
+    "matched": true,
+    "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_and_compiler_matched_on_pinned_spike"
+}
