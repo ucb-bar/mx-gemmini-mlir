@@ -19,7 +19,8 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     """Write a source-independent command issuer, data object, and receipt."""
     if program.mode != "spike_serial":
         raise ValueError("standalone execution is qualified only for the serial Spike mode")
-    if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
+    if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2",
+                                     "radiance_header_fp8"}:
         raise ValueError("standalone MX output format is not qualified")
     if (not program.source_golden_preserving and
             program.derived_expected_bf16 is None and
@@ -38,6 +39,7 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
     quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}
+    host_header = program.output_format == "radiance_header_fp8"
     packed_fp4 = program.output_format == "fp4_e2m1"
     packed_fp6 = program.output_format == "fp6_e3m2"
     quant_name = "nicolas_fp6" if packed_fp6 else "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
@@ -51,6 +53,15 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
         runtime_declarations = (
             f"static uint8_t output_quantized[{quant_bytes}] __attribute__((aligned(64)));\n"
             "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
+    elif host_header:
+        if (not program.source_golden_preserving or
+                len(resources.get("golden_fp8", b"")) != m * n or
+                len(resources.get("golden_output_scales", b"")) != m * n // 32):
+            raise ValueError("Radiance header epilogue needs exact source BF16 and FP8 goldens")
+        runtime_declarations = (
+            f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
+            f"static uint8_t output_quantized[{m * n}] __attribute__((aligned(64)));\n"
+            f"static uint8_t scratch_output_scales[{m * n // 32}] __attribute__((aligned(64)));\n")
     else:
         runtime_declarations = (f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
                                 "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
@@ -152,6 +163,106 @@ int main(void) {{
   return code_errors != 0 || scale_errors != 0;
 }}
 '''
+    elif host_header:
+        driver = f'''#include <stdint.h>
+#include <stdio.h>
+{externs}
+{runtime_declarations}
+void mx_issue({", ".join(f"const void *{name}" for name in names)});
+
+static float bf16_value(uint16_t bits) {{
+  union {{ uint32_t u; float f; }} v = {{ .u = (uint32_t)bits << 16 }};
+  return v.f;
+}}
+
+static uint32_t float_bits(float value) {{
+  union {{ float f; uint32_t u; }} v = {{ .f = value }};
+  return v.u;
+}}
+
+static float power_of_two(int exponent) {{
+  union {{ uint32_t u; float f; }} v = {{
+    .u = exponent >= -126 ? (uint32_t)(exponent + 127) << 23 :
+         (uint32_t)1 << (exponent + 149)
+  }};
+  return v.f;
+}}
+
+static int floor_log2_positive_bits(uint32_t bits) {{
+  int biased = (int)((bits >> 23) & 255);
+  if (biased) return biased - 127;
+  uint32_t fraction = bits & 0x7fffff;
+  int leading = -1;
+  while (fraction) {{ fraction >>= 1; ++leading; }}
+  return leading - 149;
+}}
+
+static int rne_integer(float x) {{
+  int whole = (int)x;
+  float fraction = x - (float)whole;
+  return fraction < 0.5f ? whole : fraction > 0.5f ? whole + 1 :
+         (whole & 1) ? whole + 1 : whole;
+}}
+
+static uint8_t radiance_fp8_code(float x) {{
+  uint32_t raw = float_bits(x);
+  if ((raw & 0x7fffffff) == 0 || ((raw >> 23) & 255) == 255) return 0;
+  int sign = (raw >> 24) & 0x80;
+  float magnitude = x < 0.0f ? -x : x;
+  int exponent = floor_log2_positive_bits(raw & 0x7fffffff);
+  if (exponent < -6) return 0;
+  int mantissa;
+  if (exponent > 8) {{ exponent = 8; mantissa = 6; }}
+  else {{
+    float base = power_of_two(exponent);
+    mantissa = rne_integer((magnitude - base) / (base / 8.0f));
+    if (mantissa >= 8) {{
+      ++exponent; mantissa = 0;
+      if (exponent > 8) {{ exponent = 8; mantissa = 6; }}
+    }} else {{
+      int high = exponent == 8 ? 6 : 7;
+      if (mantissa > high) mantissa = high;
+      if (mantissa < 0) mantissa = 0;
+    }}
+  }}
+  return (uint8_t)(sign | (((exponent + 7) & 15) << 3) | mantissa);
+}}
+
+static void radiance_header_requantize(void) {{
+  const uint16_t *input = (const uint16_t *)output_bf16;
+  for (uint32_t row = 0; row < {m}; ++row)
+    for (uint32_t group = 0; group < {n // 32}; ++group) {{
+      uint32_t begin = row * {n} + group * 32;
+      uint16_t maximum = 0;
+      for (uint32_t offset = 0; offset < 32; ++offset) {{
+        uint16_t magnitude = input[begin + offset] & 0x7fff;
+        if (magnitude > maximum) maximum = magnitude;
+      }}
+      int exponent = maximum == 0 ? 0 :
+          floor_log2_positive_bits((uint32_t)maximum << 16) - 8 + 127;
+      uint8_t scale_code = maximum == 0 ? 0 :
+          (uint8_t)(exponent < 0 ? 0 : exponent > 254 ? 254 : exponent);
+      scratch_output_scales[row * {n // 32} + group] = scale_code;
+      float scale = power_of_two((int)scale_code - 127);
+      for (uint32_t offset = 0; offset < 32; ++offset)
+        output_quantized[begin + offset] =
+            radiance_fp8_code(bf16_value(input[begin + offset]) / scale);
+    }}
+}}
+
+int main(void) {{
+  mx_issue({arguments});
+  radiance_header_requantize();
+  int code_errors = 0, scale_errors = 0;
+  for (uint32_t i = 0; i < {m * n}; ++i)
+    if (output_quantized[i] != golden_fp8[i]) ++code_errors;
+  for (uint32_t i = 0; i < {m * n // 32}; ++i)
+    if (scratch_output_scales[i] != golden_output_scales[i]) ++scale_errors;
+  printf("lowered MX {m}x{n}x{k}: %d Radiance FP8 code mismatches, %d E8M0 scale mismatches\\n",
+         code_errors, scale_errors);
+  return code_errors != 0 || scale_errors != 0;
+}}
+'''
     assembly = [".section .rodata", ".balign 64"]
     for name in sorted(resource_files):
         assembly.extend((f".globl {name}", f"{name}:",
@@ -196,5 +307,8 @@ int main(void) {{
         receipt["source_quant_scale_differences"] = sum(
             a != b for a, b in zip(resources["golden_output_scales"],
                                    resources["nicolas_output_scales"]))
+    if host_header:
+        receipt["golden_basis"] = "radiance_header_fp8_from_mx_bf16"
+        receipt["output_policy"] = "radiance_header_fp8_v1"
     (directory / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt

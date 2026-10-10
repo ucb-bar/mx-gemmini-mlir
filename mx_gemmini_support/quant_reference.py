@@ -105,6 +105,59 @@ def quantize_bf16_fp8_output(bf16_bytes: bytes, m: int, n: int) -> tuple[bytes, 
     return bytes(codes), bytes(scales)
 
 
+def _radiance_e4m3_code(value: float) -> int:
+    """The legacy Radiance mx_golden.cpp FP8 encoder, including its zero floor."""
+    if value == 0.0 or not math.isfinite(value):
+        return 0
+    sign = 0x80 if value < 0 else 0
+    magnitude = abs(value)
+    exponent = math.floor(math.log2(magnitude))
+    if exponent < -6:
+        return 0
+    if exponent > 8:
+        exponent, mantissa = 8, 6
+    else:
+        mantissa = round((magnitude - math.ldexp(1.0, exponent)) /
+                         math.ldexp(1.0, exponent - 3))
+        if mantissa >= 8:
+            exponent += 1
+            mantissa = 0
+            if exponent > 8:
+                exponent, mantissa = 8, 6
+        else:
+            mantissa = min(mantissa, 6 if exponent == 8 else 7)
+    return sign | (((exponent + 7) & 15) << 3) | mantissa
+
+
+def quantize_bf16_radiance_header_fp8(bf16_bytes: bytes, m: int,
+                                      n: int) -> tuple[bytes, bytes]:
+    """Reproduce Radiance's FP8 C_out and row-major C_scales_row.
+
+    Radiance's generator writes FP8 C_out for FP4 input kernels too. This
+    deliberately models the source header, not the MX hardware requantizer.
+    """
+    if m <= 0 or n <= 0 or n % 32 or len(bf16_bytes) != 2 * m * n:
+        raise ValueError("Radiance FP8 output shape or byte count is invalid")
+    values = [struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
+              for (word,) in struct.iter_unpack("<H", bf16_bytes)]
+    codes = bytearray(m * n)
+    scales = bytearray(m * n // 32)
+    for row in range(m):
+        for group in range(n // 32):
+            begin = row * n + group * 32
+            block = values[begin:begin + 32]
+            if any(not math.isfinite(value) for value in block):
+                raise ValueError("Radiance FP8 output requires finite BF16 values")
+            maximum = max(abs(value) for value in block)
+            scale_code = (0 if maximum == 0 else
+                          max(0, min(254, math.floor(math.log2(maximum)) - 8 + 127)))
+            scale = math.ldexp(1.0, scale_code - 127)
+            scales[row * (n // 32) + group] = scale_code
+            for offset, value in enumerate(block):
+                codes[begin + offset] = _radiance_e4m3_code(value / scale)
+    return bytes(codes), bytes(scales)
+
+
 def quantize_bf16_fp4_output(bf16_bytes: bytes, m: int, n: int) -> tuple[bytes, bytes]:
     """Use Nicolas's E2M1 output projection and packed-even/odd-M layout."""
     if m <= 0 or m % 2 or n <= 0 or n % 32 or len(bf16_bytes) != 2 * m * n:

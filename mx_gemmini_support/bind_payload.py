@@ -17,7 +17,8 @@ _FORMAT = {"FP8": ("fp8_e4m3", "direct"),
            "FP6": ("fp6_e3m2", "lut")}
 
 
-def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
+def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
+                 source_header_quantized: bool = False) -> str:
     """Mark a captured contraction with the exact materialized source bytes.
 
     This is an explicit source specialization of a model2MLIR capture. It
@@ -67,6 +68,11 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
     attach_source_resources(module, contract, manifest)
+    if source_header_quantized and (
+            precision not in {"FP8", "FP4"} or
+            manifest.get("source_quant_golden_convention") != "source_header" or
+            manifest.get("output_specialization") is not None):
+        raise ValueError("Radiance header requantization requires an FP8/FP4 source quantized driver")
     if manifest.get("output_format") is not None:
         if manifest["output_format"] not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
             raise ValueError("source quantized output has an unsupported format")
@@ -80,18 +86,29 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
         block = readout.parent
         assert block is not None
         m, n, _ = manifest["shape_mnk"]
-        codes_type = TensorType(i8, [m // 2 if precision in {"FP4", "FP6"} else m, n])
+        codes_type = TensorType(i8, [m if source_header_quantized else
+                                     m // 2 if precision in {"FP4", "FP6"} else m, n])
         scales_type = TensorType(i8, [m, n // 32])
-        quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
-            operands=readout.operands, result_types=[codes_type, scales_type],
-            attributes={**readout.attributes,
-                        "output_format": StringAttr(manifest["output_format"])})
-        block.insert_op_before(quant, readout)
+        if source_header_quantized:
+            quant = UnregisteredOp.with_name("mx_gemmini.host_requantize").create(
+                operands=readout.results, result_types=[codes_type, scales_type],
+                attributes={**readout.attributes,
+                            "output_format": StringAttr("fp8_e4m3"),
+                            "quant_policy": StringAttr("radiance_header_fp8_v1")})
+            block.insert_op_before(quant, old_return)
+        else:
+            quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
+                operands=readout.operands, result_types=[codes_type, scales_type],
+                attributes={**readout.attributes,
+                            "output_format": StringAttr(manifest["output_format"])})
+            block.insert_op_before(quant, readout)
         block.insert_op_before(ReturnOp(*quant.results), old_return)
         block.erase_op(old_return)
-        block.erase_op(readout)
+        if not source_header_quantized:
+            block.erase_op(readout)
         function.update_function_type()
         module.attributes["mx.output_specialization"] = StringAttr(
+            "radiance_header_fp8_host_requant" if source_header_quantized else
             "matrix_vpu_x2_spad_requant_fp8" if manifest.get("output_specialization") ==
             "matrix_vpu_x2_spad_requant_fp8" else
             "source_bf16_fp6_lut_quantized" if precision == "FP6" else

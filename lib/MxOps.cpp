@@ -191,6 +191,27 @@ LogicalResult ReadoutQuantizedOp::verify() {
     return emitOpError("code and E8M0 scale tensor shapes differ");
   return success();
 }
+LogicalResult HostRequantizeOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto input = dyn_cast<RankedTensorType>(getValue().getType());
+  auto codes = dyn_cast<RankedTensorType>(getCodes().getType());
+  auto scales = dyn_cast<RankedTensorType>(getScales().getType());
+  auto output = (*this)->getAttrOfType<StringAttr>("output_format");
+  auto policy = (*this)->getAttrOfType<StringAttr>("quant_policy");
+  if (!output || output.getValue() != "fp8_e4m3" ||
+      !policy || policy.getValue() != "radiance_header_fp8_v1")
+    return emitOpError("requires the explicit Radiance FP8 header policy");
+  if (!input || input.getRank() != 2 || !input.getElementType().isBF16() ||
+      !codes || codes.getRank() != 2 || !codes.getElementType().isInteger(8) ||
+      !scales || scales.getRank() != 2 || !scales.getElementType().isInteger(8) ||
+      !codes.hasStaticShape() || !scales.hasStaticShape() ||
+      codes.getDimSize(0) != scales.getDimSize(0) ||
+      codes.getDimSize(1) != scales.getDimSize(1) * 32)
+    return emitOpError("requires BF16 input and matching rank-two FP8 code/E8M0 scale tensors");
+  if (input.hasStaticShape() && input.getShape() != codes.getShape())
+    return emitOpError("BF16 input shape differs from output code shape");
+  return success();
+}
 LogicalResult ReadoutToSmemOp::verify() { return verifyBinding(*this); }
 LogicalResult WaitOp::verify() { return verifyBinding(*this); }
 

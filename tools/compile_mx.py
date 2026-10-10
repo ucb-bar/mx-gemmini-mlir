@@ -133,7 +133,9 @@ def main() -> None:
                                 stderr=subprocess.STDOUT, check=False)
         (args.out_dir / "spike.log").write_text(result.stdout)
         prefix = f"lowered MX {'x'.join(map(str, program.shape))}: "
-        expected = (prefix + "0 FP8 code mismatches, 0 E8M0 scale mismatches"
+        expected = (prefix + "0 Radiance FP8 code mismatches, 0 E8M0 scale mismatches"
+                    if program.output_format == "radiance_header_fp8" else
+                    prefix + "0 FP8 code mismatches, 0 E8M0 scale mismatches"
                     if program.output_format == "fp8_e4m3" else
                     prefix + "0 FP4 packed-code mismatches, 0 E8M0 scale mismatches"
                     if program.output_format == "fp4_e2m1" else
@@ -141,7 +143,8 @@ def main() -> None:
                     if program.output_format == "fp6_e3m2" else
                     prefix + "0 BF16 mismatches")
         passed = result.returncode == 0 and expected in result.stdout
-        qualifier = ("nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
+        qualifier = ("radiance_header" if program.output_format == "radiance_header_fp8" else
+                     "nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
                      "derived_vpu_golden" if program.derived_expected_bf16 is not None else
                      "source_golden")
         receipt.update({
@@ -156,7 +159,10 @@ def main() -> None:
             "spike_log_sha256": _sha(args.out_dir / "spike.log"),
             "fp6_spike_scale_selector_workaround": manifest["precision"] == "FP6",
         })
-        if program.output_format == "fp8_e4m3":
+        if program.output_format == "radiance_header_fp8":
+            receipt["compared_source_fp8_codes"] = program.shape[0] * program.shape[1]
+            receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+        elif program.output_format == "fp8_e4m3":
             receipt["compared_fp8_codes"] = program.shape[0] * program.shape[1]
             receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
         elif program.output_format == "fp4_e2m1":

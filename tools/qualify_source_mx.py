@@ -28,6 +28,8 @@ def main() -> None:
                         help="project the checked-in FP6 fullout BF16 result onto its C LUT")
     parser.add_argument("--vpu-spad-requant-x2", action="store_true",
                         help="compose BF16 matrix, VPU x2, and tiled resident FP8 requant")
+    parser.add_argument("--source-header-quantized", action="store_true",
+                        help="lower the Radiance FP8 C_out convention as a host BF16 epilogue")
     args = parser.parse_args()
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     kernel = read_source_gemm(args.driver)
@@ -42,7 +44,8 @@ def main() -> None:
                             fp6_quantized_specialization=args.fp6_quantized_specialization,
                             vpu_spad_requant_x2=args.vpu_spad_requant_x2)
     mlir = args.out_dir / "payload_bound.mlir"
-    bound = bind_payload(args.mlir.read_text(), profile, manifest)
+    bound = bind_payload(args.mlir.read_text(), profile, manifest,
+                         source_header_quantized=args.source_header_quantized)
     if args.vpu_spad_requant_x2:
         bound = append_vpu_spad_requant_x2(bound, profile, manifest)
     mlir.write_text(bound)

@@ -225,6 +225,12 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             output = _text_attr(op, "output_format")
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
                 raise ValueError("MX quantized readout output is absent from selected profile")
+        elif name == "mx_gemmini.host_requantize":
+            if (_text_attr(op, "output_format") != "fp8_e4m3" or
+                    _text_attr(op, "quant_policy") != "radiance_header_fp8_v1" or
+                    _text_attr(module, "mx.output_specialization") !=
+                    "radiance_header_fp8_host_requant"):
+                raise ValueError("MX host requantize requires the Radiance FP8 header policy")
         elif name == "mx_gemmini.vpu_execute":
             vpu_command(profile, kind=_text_attr(op, "kind"),
                         src1_row=_int_attr(op, "src1_row"), src2_row=_int_attr(op, "src2_row"),
