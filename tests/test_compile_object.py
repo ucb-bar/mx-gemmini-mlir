@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.target_profile import load_profile
-from tools.compile_object import classify
+from tools.compile_object import _resident_pair_precision, classify
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +19,8 @@ PROFILES = ROOT / "profiles/gemmini-mx-cleanup-266c593"
     ("docs/evidence/radiance_plain_mx_profile_trio_266c593/fp4/payload_bound.mlir",
      "MxGemminiRocketConfig", "source_contract", 4),
     ("docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96/connected_chain.mlir.gz",
+     "MxGemminiRocketConfig", "resident_pair", 0),
+    ("docs/evidence/nicolas_fp4_connected_resident_266c593/chain/connected.mlir",
      "MxGemminiRocketConfig", "resident_pair", 0),
     ("docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/connected_bound.mlir",
      "MxE4M3Fp4VpuGemminiRocketConfig", "resident_vpu_pair", 0),
@@ -32,6 +34,8 @@ def test_compiler_selects_the_verified_graph_family(mlir_path, profile_name,
     selected, report = classify(content.decode(), load_profile(PROFILES / f"{profile_name}.json"))
     assert selected == family
     assert report["source_resources"] == resources
+    if "nicolas_fp4_connected_resident" in mlir_path:
+        assert _resident_pair_precision(content.decode()) == "fp4_e2m1"
 
 
 def test_compiler_rejects_ambiguous_or_unsupported_binding():

@@ -65,6 +65,28 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     raise ValueError(f"MX object has no qualified lowering for graph counts {counts}")
 
 
+def _resident_pair_precision(mlir_text: str) -> str:
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+
+    from mx_gemmini_support.verify_profile_ir import _operation_name, _text_attr
+
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    mm2 = [op for op in module.walk()
+           if _operation_name(op) == "mx_gemmini.resident_contract"]
+    if len(mm2) != 1:
+        raise ValueError("connected MX object needs one resident contraction")
+    precision = _text_attr(mm2[0], "activation_format")
+    if precision not in ("fp8_e4m3", "fp4_e2m1"):
+        raise ValueError("connected MX object has no resident precision lowerer")
+    return precision
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("mlir", "profile", "rtl-root", "riscv-root", "out-dir"):
@@ -102,6 +124,8 @@ def main() -> None:
             raise ValueError("connected MX object needs --resources-dir and --abi-json only")
         extra = ["--resources-dir", str(args.resources_dir.resolve()),
                  "--abi-json", str(args.abi_json.resolve())]
+        if family == "resident_pair":
+            extra += ["--precision", _resident_pair_precision(mlir_text)]
     if args.mx_opt is not None:
         with tempfile.TemporaryDirectory(prefix="mx-object-verify-") as temp:
             native_input = Path(temp) / "input.mlir"

@@ -16,8 +16,9 @@ The compiler path is:
    `contract → readout_quantized → resident_contract` edge.
 3. `resident_pair_graph.py` checks SSA edges, buffer lengths, profile, and
    scratchpad lifetimes, then issues the same physical commands used by the
-   source. `emit_resident_pair_object.py --precision fp4_e2m1` builds a
-   data-free RV64 RoCC object with an explicit ten-buffer ABI.
+   source. `tools.compile_object` dispatches this graph to
+   `emit_resident_pair_object.py --precision fp4_e2m1` and builds a data-free
+   RV64 RoCC object with an explicit ten-buffer ABI.
 4. `qualify_nicolas_fp4_resident_chain.py` links the compiler issuer into a
    diagnostic copy of Nicolas's source. Only accelerator issue sites change;
    the source's C1/C2 nibble and scale comparisons remain. Both source and
@@ -42,6 +43,15 @@ python -m tools.qualify_nicolas_fp4_resident_chain \
   --riscv-root /scratch/agustin/projects/chipyard/.conda-env/riscv-tools \
   --mx-opt build/tools/mx-gemmini-opt --frontend-dir /tmp/mx-fp4-capture \
   --out-dir /tmp/mx-fp4-chain
+
+python -m tools.compile_object \
+  --mlir /tmp/mx-fp4-chain/connected.mlir \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
+  --riscv-root /scratch/agustin/projects/chipyard/.conda-env/riscv-tools \
+  --resources-dir docs/evidence/nicolas_fp4_connected_resident_266c593/object \
+  --abi-json docs/evidence/nicolas_fp4_connected_resident_266c593/object/abi.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /tmp/mx-fp4-object
 ```
 
 The [evidence archive](evidence/nicolas_fp4_connected_resident_266c593/index.json)
