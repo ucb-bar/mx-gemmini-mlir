@@ -36,7 +36,13 @@ def main() -> None:
                         help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
     parser.add_argument("--generate-missing-fp6-header", action="store_true",
                         help="stage a checked source-derived FP6 header without editing Radiance")
+    parser.add_argument("--physical-mode", choices=("spike_serial", "rtl_alternating"),
+                        default="spike_serial")
+    parser.add_argument("--experimental-spike-extension-root", type=Path,
+                        help="isolated modified Spike source for an experimental physical mode")
     args = parser.parse_args()
+    if args.physical_mode == "rtl_alternating" and not args.experimental_spike_extension_root:
+        parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -90,12 +96,17 @@ def main() -> None:
     if args.vpu_spad_requant_x2:
         bound = append_vpu_spad_requant_x2(bound, profile, manifest)
     mlir.write_text(bound)
-    subprocess.run([sys.executable, "-m", "tools.compile_mx",
-                    "--mlir", str(mlir.resolve()), "--bundle", str(bundle.resolve()),
-                    "--profile", str(args.profile.resolve()),
-                    "--rtl-root", str(args.rtl_root.resolve()),
-                    "--riscv-root", str(args.riscv_root.resolve()),
-                    "--out-dir", str((args.out_dir / "build").resolve()), "--run-spike"],
+    command = [sys.executable, "-m", "tools.compile_mx",
+               "--mlir", str(mlir.resolve()), "--bundle", str(bundle.resolve()),
+               "--profile", str(args.profile.resolve()),
+               "--rtl-root", str(args.rtl_root.resolve()),
+               "--riscv-root", str(args.riscv_root.resolve()),
+               "--out-dir", str((args.out_dir / "build").resolve()), "--run-spike",
+               "--physical-mode", args.physical_mode]
+    if args.experimental_spike_extension_root:
+        command += ["--experimental-spike-extension-root",
+                    str(args.experimental_spike_extension_root.resolve())]
+    subprocess.run(command,
                    cwd=Path(__file__).resolve().parents[1], check=True)
 
 
