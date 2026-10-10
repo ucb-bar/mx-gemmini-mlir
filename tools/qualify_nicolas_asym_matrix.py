@@ -16,7 +16,8 @@ import re
 import subprocess
 import sys
 
-from mx_gemmini_support.asymmetric_specialization import source_recipe
+from mx_gemmini_support.asymmetric_specialization import (generated_header_recipe,
+                                                           source_recipe)
 from mx_gemmini_support.target_profile import load_profile
 
 
@@ -32,7 +33,8 @@ def _sha(path: Path) -> str:
 def discover(software: Path, profile_dir: Path, rtl_root: Path,
              mesh_dim: int = 16, *, all_asym: bool = False,
              source_shape: str = "64x64", include_symmetric_lut: bool = False,
-             include_symmetric_fp4: bool = False
+             include_symmetric_fp4: bool = False,
+             include_generated: bool = False
              ) -> list[tuple[str, Path, dict]]:
     """Preflight each checked-in source/header against its legal mesh profile."""
     if all_asym and mesh_dim != 16:
@@ -40,6 +42,9 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
     if (include_symmetric_lut or include_symmetric_fp4) and (
             mesh_dim != 16 or source_shape != "64x64" or not all_asym):
         raise ValueError("same-format source tests need DIM16 all-asymmetric 64x64")
+    if include_generated and (source_shape != "64x64" or
+                              (mesh_dim == 16 and not all_asym)):
+        raise ValueError("generated modes need the 64x64 all-asymmetric profile")
     rows = []
     dim_suffix = f"_dim{mesh_dim}" if mesh_dim != 16 else ""
     sources = sorted((software / "bareMetalC").glob(
@@ -82,6 +87,18 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
         header = software / "include/matmul_fp4_64x64.h"
         recipe = source_recipe(source, header, profile)
         rows.append(("fp4_fp4", profile_path, recipe["compute"]))
+    if include_generated:
+        profile_name = ("MxAllAsymGemminiRocketConfig" if mesh_dim == 16 else
+                        f"MxDim{mesh_dim}AllAsymGemminiRocketConfig")
+        profile_path = profile_dir / f"{profile_name}.json"
+        profile = load_profile(profile_path, rtl_root=rtl_root)
+        manifest_name = ("mx_gemmini_generated_modes_manifest.json" if mesh_dim == 16 else
+                         f"mx_gemmini_generated_modes_dim{mesh_dim}_manifest.json")
+        generated = json.loads((software / "include" / manifest_name).read_text())
+        for name in sorted(generated["headers_sha256"]):
+            header = software / "include" / f"matmul_data_asym_{name}{dim_suffix}.h"
+            recipe = generated_header_recipe(software / "gen_asym.py", header, profile)
+            rows.append((name, profile_path, recipe["compute"]))
     if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
     if mesh_dim == 16 and not all_asym and source_shape == "64x64":
@@ -116,6 +133,8 @@ def main() -> None:
                         help="include Nicolas's three same-format DIM16 LUT source tests")
     parser.add_argument("--include-symmetric-fp4", action="store_true",
                         help="include Nicolas's direct FP4 by FP4 DIM16 BF16 source test")
+    parser.add_argument("--include-generated", action="store_true",
+                        help="include headers from pinned Nicolas gen_asym.py manifest")
     parser.add_argument("--source-suffix", action="append",
                         help="qualify only this named source pair; repeat to select several")
     args = parser.parse_args()
@@ -126,6 +145,9 @@ def main() -> None:
     if (args.include_symmetric_lut or args.include_symmetric_fp4) and (
             args.mesh_dim != 16 or args.source_shape != "64x64" or not args.all_asym):
         parser.error("same-format tests need --mesh-dim 16 --all-asym --source-shape 64x64")
+    if args.include_generated and (args.source_shape != "64x64" or
+                                   (args.mesh_dim == 16 and not args.all_asym)):
+        parser.error("generated modes need a 64x64 all-asymmetric profile")
     out_dir = args.out_dir.resolve()
     if out_dir.exists():
         parser.error(f"refusing to overwrite {out_dir}")
@@ -136,7 +158,8 @@ def main() -> None:
                     rtl, args.mesh_dim, all_asym=args.all_asym,
                     source_shape=args.source_shape,
                     include_symmetric_lut=args.include_symmetric_lut,
-                    include_symmetric_fp4=args.include_symmetric_fp4)
+                    include_symmetric_fp4=args.include_symmetric_fp4,
+                    include_generated=args.include_generated)
     if args.source_suffix:
         selected = set(args.source_suffix)
         unknown = selected - {suffix for suffix, _, _ in rows}
@@ -145,13 +168,22 @@ def main() -> None:
         rows = [(suffix, profile, cell) for suffix, profile, cell in rows
                 if suffix in selected]
     out_dir.mkdir(parents=True)
+    generated_names = set()
+    generation_manifest_sha256 = None
+    if args.include_generated:
+        name = ("mx_gemmini_generated_modes_manifest.json" if args.mesh_dim == 16 else
+                f"mx_gemmini_generated_modes_dim{args.mesh_dim}_manifest.json")
+        path = software / "include" / name
+        generated_names = set(json.loads(path.read_text())["headers_sha256"])
+        generation_manifest_sha256 = _sha(path)
 
     def qualify(row: tuple[str, Path, dict]) -> dict:
         suffix, profile, cell = row
         directory = out_dir / suffix
         same_format = (suffix.split("_")[0] if args.include_symmetric_lut and
                        suffix in {"e2m3_e2m3", "e4m3_e4m3", "e5m2_e5m2"} else None)
-        source_selection = (["--symmetric-fp4"] if args.include_symmetric_fp4 and
+        source_selection = (["--generated-mode", suffix] if suffix in generated_names else
+                            ["--symmetric-fp4"] if args.include_symmetric_fp4 and
                             suffix == "fp4_fp4" else
                             ["--symmetric-lut", same_format] if same_format else
                             ["--source-suffix", suffix])
@@ -192,24 +224,35 @@ def main() -> None:
                    for cell in load_profile(profile_path, rtl_root=rtl)["legal_compute"]}
     selected_cells = {(profile_path.stem, json.dumps(cell, sort_keys=True))
                       for _, profile_path, cell in rows}
+    passing_cells = {(row["profile_name"], json.dumps(row["compute"], sort_keys=True))
+                     for row in results if row["status"] == "passed"}
+    missing_keys = (legal_cells.keys() - passing_cells if args.include_generated else
+                    legal_cells.keys() - selected_cells)
     missing_cells = [{"profile_name": key[0], "compute": legal_cells[key]}
-                     for key in sorted(legal_cells.keys() - selected_cells)]
+                     for key in sorted(missing_keys)]
+    failed_cells = [{"profile_name": row["profile_name"], "compute": row["compute"]}
+                    for row in results if row["status"] == "failed"]
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
                 "scope": (f"named DIM{args.mesh_dim} {args.source_shape} " +
                           ("asymmetric and same-format" if
                            args.include_symmetric_lut or args.include_symmetric_fp4
-                           else "asymmetric") + " Rocket/RoCC source tests on pinned Spike" +
+                           else "asymmetric") +
+                          (" source and generated-header" if args.include_generated else
+                           "") + " Rocket/RoCC tests on pinned Spike" +
                           (" using the all-asymmetric profile" if args.all_asym else "")),
                 "mesh_dim": args.mesh_dim,
                 "source_shape": args.source_shape,
                 "all_asym_profile": args.all_asym or args.mesh_dim != 16,
                 "includes_symmetric_lut": args.include_symmetric_lut,
                 "includes_symmetric_fp4": args.include_symmetric_fp4,
+                "includes_generated": args.include_generated,
+                "generation_manifest_sha256": generation_manifest_sha256,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),
                 "legal_mode_count": len(legal_cells),
                 "uncovered_legal_compute": missing_cells,
-                "profile_complete": not missing_cells,
+                "selected_but_failed_compute": failed_cells,
+                "profile_complete": not missing_cells and not failed_cells,
                 "passed_modes": sum(row["status"] == "passed" for row in results),
                 "rows": results}
     (out_dir / "matrix_receipt.json").write_text(

@@ -326,26 +326,48 @@ _GENERATED_MODES = {
     "e2m3_e4m3s", "e3m2_e3m2", "e4m3s_e2m3",
     "e4m3s_e4m3", "e4m3_e4m3s",
 }
+_MESH_GENERATED_MODES = {
+    "fp4_fp4", "fp4_e4m3", "fp4_e4m3s", "e2m3_e4m3s",
+    "e2m3_e2m3", "e2m3_e4m3", "e3m2_e4m3", "e3m2_e3m2",
+    "e3m2_e4m3s", "e4m3s_e2m3", "e4m3s_e4m3s",
+    "e4m3s_e4m3", "e4m3_e4m3s", "e4m3_e4m3", "e5m2_e5m2",
+}
+_MESH_BASELINE_SHA256 = {
+    8: "0ae643c6be0e288d9d9b3cb9c163ac8c669b0fb8941cee85cd1a7daa35c94b83",
+    16: "b4c7f87d11a0e096bc8ccfe2234c88c992ac5d2bccdb7b4d09c9aca0d770d8dc",
+    32: "13730bd97ec1306bb93d11f7cb7464dd5ce5b1b0a111f524c5679524c9a507b5",
+}
 
 
 def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dict:
     """Bind a new Nicolas-model header without claiming a checked-in C driver.
 
-    The generator is the pinned gen_asym.py. The five added format pairs are
-    selected explicitly; the header bytes and every required array are checked
-    before the typed contraction can be lowered.
+    The generator is pinned gen_asym.py. The header bytes, baseline reproduction,
+    and every required array are checked before the contraction is lowered.
     """
     if generator.name != "gen_asym.py" or not generator.is_file() or not header.is_file():
         raise ValueError("generated MX recipe needs Nicolas's generator and its header")
-    match = re.fullmatch(r"matmul_data_asym_([a-z0-9]+)_([a-z0-9]+)\.h", header.name)
-    if match is None or f"{match[1]}_{match[2]}" not in _GENERATED_MODES:
+    match = re.fullmatch(
+        r"matmul_data_asym_([a-z0-9]+)_([a-z0-9]+?)(?:_dim(8|32))?\.h",
+        header.name)
+    if match is None:
         raise ValueError("generated MX header names an unregistered format pair")
-    generation_manifest = header.parent / "mx_gemmini_generated_modes_manifest.json"
+    dim = int(match[3]) if match[3] else 16
+    name = f"{match[1]}_{match[2]}"
+    if name not in (_GENERATED_MODES if dim == 16 else _MESH_GENERATED_MODES):
+        raise ValueError("generated MX header names an unregistered format pair")
+    generation_manifest = header.parent / (
+        "mx_gemmini_generated_modes_manifest.json" if dim == 16 else
+        f"mx_gemmini_generated_modes_dim{dim}_manifest.json")
     if not generation_manifest.is_file():
         raise ValueError("generated MX header lacks its pinned generation manifest")
     provenance = json.loads(generation_manifest.read_text())
-    if (provenance.get("schema") !=
-            "mx_gemmini.nicolas_generated_asymmetric_headers.v1" or
+    expected_schema = ("mx_gemmini.nicolas_generated_asymmetric_headers.v1"
+                       if dim == 16 else "mx_gemmini.nicolas_generated_mesh_headers.v1")
+    wrapper = ("generate_nicolas_missing_headers.py" if dim == 16 else
+               "generate_nicolas_mesh_headers.py")
+    if (provenance.get("schema") != expected_schema or
+            (dim != 16 and provenance.get("mesh_dim") != dim) or
             provenance.get("rtl_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
             provenance.get("software_revision") !=
@@ -354,23 +376,23 @@ def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dic
             "7bc41952de394f5cc5e782baf132e7c7542eb4e4" or
             provenance.get("microxcaling_elemwise_sha256") !=
             "57a825c801ec551d63a2aa6c827372b5ab420ff7b0f76c4d599d7d5050e83130" or
-            provenance.get("baseline_sha256") !=
-            "b4c7f87d11a0e096bc8ccfe2234c88c992ac5d2bccdb7b4d09c9aca0d770d8dc" or
+            provenance.get("baseline_sha256") != _MESH_BASELINE_SHA256[dim] or
             provenance.get("wrapper_sha256") != sha256(
                 Path(__file__).resolve().parents[1] /
-                "tools/generate_nicolas_missing_headers.py") or
+                f"tools/{wrapper}") or
             provenance.get("generator_sha256") != sha256(generator) or
-            provenance.get("headers_sha256", {}).get(f"{match[1]}_{match[2]}") !=
+            provenance.get("headers_sha256", {}).get(name) !=
             sha256(header)):
         raise ValueError("generated MX header differs from its pinned generation manifest")
-    synthetic_name = f"matmul_tiled_asym_{match[1]}_{match[2]}_64x64.c"
+    synthetic_name = (f"matmul_tiled_asym_{name}_64x64" +
+                      (f"_dim{dim}" if dim != 16 else "") + ".c")
     variant = _source_variant(Path(synthetic_name), header, profile, header.read_text())
     cell = variant["cell"]
     require_compute(profile, cell["activation_format"], cell["weight_format"],
                     pe_mode=cell["pe_mode"],
                     activation_projection=cell["activation_projection"],
                     weight_projection=cell["weight_projection"])
-    if (profile["geometry"] != {"mesh_rows": 16, "mesh_columns": 16,
+    if (profile["geometry"] != {"mesh_rows": dim, "mesh_columns": dim,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
             profile["resources"]["lut_config"]["read_data_bits"] <
@@ -395,7 +417,7 @@ def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dic
         "source_header_sha256": sha256(header),
         "profile_sha256": profile_sha256(profile),
         "compute": cell.copy(),
-        "source_layout": {**variant, "mesh_dim": 16,
+        "source_layout": {**variant, "mesh_dim": dim,
                           "lut_arrays": list(variant.get("lut_arrays", ())),
                           "config_altfmt": int(cell["activation_format"] in
                                                {"fp8_e5m2", "fp6_e2m3"}),

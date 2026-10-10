@@ -47,9 +47,11 @@ def main() -> None:
     parser.add_argument("--symmetric-fp4", action="store_true",
                         help="Nicolas's named direct FP4 by FP4 BF16 source test")
     parser.add_argument("--generated-mode", choices=(
-        "e2m3_e4m3s", "e3m2_e3m2", "e4m3s_e2m3",
-        "e4m3s_e4m3", "e4m3_e4m3s"),
-        help="DIM16 header generated with Nicolas's pinned gen_asym.py")
+        "fp4_fp4", "fp4_e4m3", "fp4_e4m3s", "e2m3_e4m3s",
+        "e2m3_e2m3", "e2m3_e4m3", "e3m2_e4m3", "e3m2_e3m2",
+        "e3m2_e4m3s", "e4m3s_e2m3", "e4m3s_e4m3s",
+        "e4m3s_e4m3", "e4m3_e4m3s", "e4m3_e4m3", "e5m2_e5m2"),
+        help="header generated with Nicolas's pinned gen_asym.py")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
     parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
@@ -84,12 +86,17 @@ def main() -> None:
     software = args.rtl_root / "software/gemmini-rocc-tests"
     if args.generated_mode:
         if (args.source_suffix or args.symmetric_lut or args.symmetric_fp4 or
-                args.source_shape != "64x64" or args.mesh_dim != 16 or
+                args.source_shape != "64x64" or
                 not args.physical):
-            parser.error("generated MX mode needs DIM16 64x64 physical lowering only")
+            parser.error("generated MX mode needs 64x64 physical lowering only")
+        if (args.mesh_dim == 16 and args.generated_mode not in {
+                "e2m3_e4m3s", "e3m2_e3m2", "e4m3s_e2m3",
+                "e4m3s_e4m3", "e4m3_e4m3s"}):
+            parser.error("this generated mode is registered for DIM8/DIM32 only")
         suffix = args.generated_mode
         source = software / "gen_asym.py"
-        header = software / f"include/matmul_data_asym_{suffix}.h"
+        dim_suffix = f"_dim{args.mesh_dim}" if args.mesh_dim != 16 else ""
+        header = software / f"include/matmul_data_asym_{suffix}{dim_suffix}.h"
     elif args.symmetric_fp4:
         if (args.source_suffix or args.symmetric_lut or args.source_shape != "64x64" or
                 args.mesh_dim != 16):
