@@ -17,6 +17,7 @@ from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_resident_mm2_128_266c593"
+FRONTEND = ROOT / "docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -54,6 +55,28 @@ def test_archived_typed_mm2_and_spike_result_match_source() -> None:
     assert _sha(_read("spike.log")) == first["spike_log_sha256"]
     assert (b"lowered resident MM2 128x128: 0 FP8 code mismatches, "
             b"0 E8M0 scale mismatches") in _read("spike.log")
+
+
+def test_latest_model2mlir_captures_both_plain_chain_sites() -> None:
+    index = json.loads((FRONTEND / "index.json").read_text())
+    first = json.loads((FRONTEND / "receipt.json").read_text())
+    second = json.loads((FRONTEND / "reproduction_receipt.json").read_text())
+    assert first == second
+    assert first["model2mlir_revision"] == "e9ded36eb85abf2d9097ac4dc11457c825853388"
+    assert first["matrix_dim"] == 128
+    assert first["profile_sha256"] == index["profile_sha256"]
+    assert first["source_sha256"] == json.loads(
+        (EVIDENCE / "index.json").read_text())["source_sha256"]
+    assert first["opaque_calls"] == {}
+    assert [(site["site_id"], site["status"], site["shape"])
+            for site in first["sites"]] == [
+                ("functional:matmul", "quantized", [128, 128, 128]),
+                ("functional:matmul_1", "quantized", [128, 128, 128]),
+            ]
+    for name, digest in index["files_sha256"].items():
+        assert _sha(gzip.decompress((FRONTEND / f"{name}.gz").read_bytes())) == digest
+    bound = gzip.decompress((FRONTEND / "nicolas_chain.profile_bound.mlir.gz").read_bytes())
+    assert bound.count(b'"mx_gemmini.contract"') == 2
 
 
 def test_typed_mm2_uses_resident_c1_and_source_placement() -> None:

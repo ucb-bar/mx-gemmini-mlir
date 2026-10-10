@@ -1,0 +1,13 @@
+{
+  "files_sha256": {
+    "nicolas_chain.handoff.mlir": "11e95c471cd97a8c1b3afda6ed15ef07bc7e148abff8a818ecbb30b297fbbd25",
+    "nicolas_chain.model2mlir.mlir": "e9aefc816aa1323c756dd977246fd078fd6ca94272c3a279d90b53e48cfd6a8b",
+    "nicolas_chain.profile_bound.mlir": "77eede897619cffbbf4f9b5336707ac56923734ed0a7bd2d62cdc2c18f8d7164",
+    "quantization_manifest.json": "a37bd273eb832a127ee9bd5eac4a898bdde67d8695846b7bdb978b704bcdb2bc"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_plain_chain_128_frontend_archive.v1",
+  "scope": "two model2MLIR sites; source packed payload and connected physical lowering remain separate"
+}

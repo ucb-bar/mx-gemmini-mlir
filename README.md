@@ -76,6 +76,8 @@ The [128³ resident MM2 check](docs/evidence/nicolas_resident_mm2_128_266c593/in
 uses Nicolas's plain MX profile and stock Spike extension. Compiler-issued
 commands match all 16,384 C2 FP8 codes and 512 scales; C1 is preloaded from
 Nicolas's source header, so the first contraction remains outside this check.
+The [current model2MLIR capture](docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36/index.json)
+also identifies both 128³ contraction sites under the plain MX profile.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
 writes four output tiles directly into one logical matrix. Pinned Spike matches
 65,536 FP4 and FP8 outputs with VPU ×2 and 16,384 FP8 outputs retiled to

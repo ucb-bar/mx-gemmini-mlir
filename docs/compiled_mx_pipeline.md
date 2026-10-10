@@ -690,6 +690,16 @@ matches **16,384 C2 FP8 codes and 512 E8M0 scales** on stock Spike; a second
 run reproduces the generated program, ELF, and log. This test starts at C1;
 the 128³ MM1 and its connection to MM2 are still a separate compiler gate.
 
+The [128³ two-site frontend capture](evidence/nicolas_plain_chain_128_model2mlir_e9ded36/index.json)
+uses current upstream model2MLIR `e9ded36`, the plain MX profile, and
+`torch.matmul(torch.matmul(A, B1), B2)`. Both 128×128×128 contractions appear
+as profile-bound `mx_gemmini.contract` sites with no opaque frontend calls.
+Two independent captures reproduce the source MLIR, handoff, bound MLIR,
+and manifest byte for byte. The PyTorch examples establish graph structure;
+Nicolas's source header supplies the packed operands and numerical goldens.
+The capture is frontend evidence and does not yet connect MM1 to the resident
+MM2 physical program above.
+
 ```sh
 python -m tools.qualify_nicolas_resident_128 \
   --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
@@ -697,6 +707,10 @@ python -m tools.qualify_nicolas_resident_128 \
   --out-dir /new/mx-resident-mm2-128 \
   --baseline-manifest docs/evidence/nicolas_resident_mm2_128_266c593/artifact_manifest.json
 ```
+
+Capture the two sites again with `python -m tools.capture_nicolas_chain
+--matrix-dim 128` and the pinned model2MLIR, MXQuant, RTL, profile, and
+`mx-gemmini-opt` paths; see the command's `--help` for its full arguments.
 
 A [current upstream frontend rerun](evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
 recaptured the two-site graph with model2MLIR `e9ded36` and executed the
