@@ -330,6 +330,17 @@ also reproduced from a source tree without its generated header using the
 one-command staged fixture path, with identical ELF and Spike log hashes.
 These runs use the E3M2-only profile and the 256 KiB target scratchpad.
 
+The [source parity roster](evidence/radiance_mx_gemm_source_parity_266c593.json)
+ties all **31 `mxgemm.fp*.cpp` drivers** in this pinned Radiance snapshot to
+source-output Spike receipts: 23 fullout drivers with exact BF16 comparisons
+and eight requant drivers with exact source code and scale comparisons. Its
+test rechecks every source hash, receipt hash, output count, simulator status,
+and a frontend capture from model2MLIR `7485a829` for each driver. This
+roster covers the precision-specific MX GEMM drivers on the
+selected Rocket RoCC simulator profiles. The generic MX GEMM entry points,
+other Radiance workloads, RTL timing, and FPGA execution remain separate
+qualification gates.
+
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
 Two checked [FP8](../examples/mx_fp8_vpu_x2_profile_bound.mlir) and

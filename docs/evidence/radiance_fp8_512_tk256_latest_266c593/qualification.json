@@ -1,0 +1,30 @@
+{
+  "compiler_revision": "36f655ab29a759b04c6a19291d864d6a7ed931cd",
+  "elf_sha256": "cffca710f35e8d777dad5de9d61c0acf940bd6b9f4f479f7b70d5cd7c5f33a58",
+  "files_sha256": {
+    "bound.mlir": "d0f7d72b03c1ddc25558b7188b96eae35127bfa6b0ffedd0c89c78dae7859d5b",
+    "bundle/activation.bin": "c60cca00dd0e4e82da9333513dfa4a301b0b05025ad76575f9851fba37d7e4e8",
+    "bundle/activation_scales.bin": "7b90ea5e51e7bb3b31d95ada304a486dc71f1224bf6912006590d4ae83956e64",
+    "bundle/golden_bf16.bin": "478418246e353aee97840adf94fae7a67b2d29d31c75ed0ba25bfa013f3836a6",
+    "bundle/manifest.json": "6409d39a163b557be0a15f2430b5b975a0084346627dd1691ebf5e750a351ca5",
+    "bundle/output_scales.bin": "55bf316e38139d04a0e3eb109386ee050250859f01da023dbfe2475da24cdccc",
+    "bundle/weight.bin": "53593767143c89709310f332bc88a2265e218cd6ef5ef9e55982ec09fa0c4c66",
+    "bundle/weight_scales.bin": "91d5b36288d1e37990669713914c8fd46249017dd3def5df43be133fad3e9e3f",
+    "capture_receipt.json": "5e0b3a621659be203ebe655f5dee5a9bfd9a0c602961964050d8bbf8738cf3b4",
+    "handoff.mlir": "1163a6059a36a0d169e89f4623124036314fdd4343af7595acf420cff5cac617",
+    "model2mlir.mlir": "a341085aa7f5b4a1008ff05e879f7d3e03fa328c1c993525226ecdbd48fa22b0",
+    "mx_driver.c": "cb38770c23bdcb96bfcc5c27b9ae5e00bbb1435612a77b508169a78416363e13",
+    "mx_issue.c": "43afddc52e65414a5af50041c35940afd47b35baeb7792dbc50befc1839f7b6e",
+    "physical_program.json": "b2725807a34ea25237f698f331b436d2919a6dac48dceb6fbc9b1b0ef429eac7",
+    "profile_bound.mlir": "92f42a38676592382ca0c22a2a5ed81a33eb7f9f4b9650c21671e84797722c8d",
+    "quantization_manifest.json": "bd3afae8bd49d9bfe7fc55262cea97393e0d7614c3c71600b4d3b3a4734401ce",
+    "receipt.json": "e2e1969efc2c4aa25d500f8e2679718dd76a0d3e1a4e418cb3f02f6b8c117c84",
+    "source_driver.cpp": "ebf41fdce8dbe1e06164b6c381547e7edc1aa330c73f866cbedf3aacd1b21bcd",
+    "source_header.h": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+    "spike.log": "1029e8ac1af6b1c7128dbcc1a7fbe0d569d32302e31d01169aa88fadd50304a4"
+  },
+  "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_fp8_512_tk256_latest_spike.v1",
+  "source_revision": "d4732fb41c2d55088050c0399a4c6243b53e5fbd"
+}
