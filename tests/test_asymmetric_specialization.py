@@ -85,7 +85,8 @@ def test_emitter_rejects_a_legal_but_different_physical_mode(tmp_path):
         "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
     header.write_text("\n".join((
         "#define MATMUL_M   64", "#define MATMUL_K   64", "#define MATMUL_N   64",
-        "A_in_hw[32][64]", "B_in[MATMUL_K][MATMUL_N / 2]", "A_lut[32][4]",
+        "A_in_hw[32][64]", "B_in[MATMUL_K][MATMUL_N / 2]",
+        "A_lut[32][4]", "B_lut[32][4]", "C_lut[32][4]",
         "A_scales_row[MATMUL_GK][MATMUL_M]",
         "B_scales_col[MATMUL_GK][MATMUL_N]",
         "C_out_bf16[MATMUL_M][MATMUL_N]")))
@@ -133,15 +134,20 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     ("fp4_fp6", 2048, 1, 3, "MxAsymFp4Fp6GemminiRocketConfig", 3),
     ("e4m3_e2m3", 2048, 9, 3, "MxAsymE4M3E2M3GemminiRocketConfig", 4),
     ("e5m2_fp4", 2048, 3, 3, "MxAsymE5M2Fp4GemminiRocketConfig", 4),
+    ("e4m3s_e3m2", 4096, 7, 1, "MxAsymE4M3E3M2GemminiRocketConfig", 4),
+    ("fp4_e4m3s", 2048, 2, 0, "MxAsymFp4E4M3GemminiRocketConfig", 0),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
         tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):
     profile = _profile(profile_name)
     source = tmp_path / f"matmul_tiled_asym_{variant}_64x64.c"
     header = tmp_path / f"matmul_data_asym_{variant}.h"
+    packed_activation = variant not in {"e4m3s_fp4", "e4m3s_e3m2"}
+    direct_weight_bytes = variant == "fp4_e4m3s"
     source.write_text("\n".join((
         f'#include "include/{header.name}"',
-        f"#define USE_LUT {int(lut_loads != 0)}",
+        ("((uint64_t)(0) << 5)" if direct_weight_bytes else
+         f"#define USE_LUT {int(lut_loads != 0)}"),
         f"#define MX_ALTFMT {int(variant == 'e5m2_fp4')}",
         *(["((uint64_t)(1) << 31)", "((uint64_t)(1) << 12)"]
           if variant == "e4m3_e2m3" else []),
@@ -153,12 +159,16 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
 
     header_text = ("#define MATMUL_M   64\n#define MATMUL_K   64\n"
                    "#define MATMUL_N   64\n")
-    header_text += array("uint8_t", "A_in_hw" if lut_loads else "A_in",
-                         "[32][64]" if lut_loads else "[MATMUL_M][MATMUL_K]",
+    header_text += array("uint8_t", "A_in_hw" if packed_activation else "A_in",
+                         "[32][64]" if packed_activation else "[MATMUL_M][MATMUL_K]",
                          activation_bytes)
-    header_text += array("uint8_t", "B_in", "[MATMUL_K][MATMUL_N / 2]", 2048)
+    header_text += array("uint8_t", "B_in",
+                         "[MATMUL_K][MATMUL_N]" if direct_weight_bytes else
+                         "[MATMUL_K][MATMUL_N / 2]",
+                         4096 if direct_weight_bytes else 2048)
     if lut_loads:
-        for name in ("A_lut", "B_lut", "C_lut"):
+        for name in (("B_lut",) if variant == "e4m3s_e3m2" else
+                     ("A_lut", "B_lut", "C_lut")):
             header_text += array("uint32_t", name, f"[32][{lut_words}]", 32 * lut_words)
     header_text += array("uint8_t", "A_scales_row", "[MATMUL_GK][MATMUL_M]", 128)
     header_text += array("uint8_t", "B_scales_col", "[MATMUL_GK][MATMUL_N]", 128)
@@ -178,13 +188,13 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     program, resources, resource_manifest = lower_asymmetric_physical(
         bound, profile, recipe, source=source, header=header)
     assert program.plan["pe_mode"] == mode
-    assert program.plan["weight_projection"] == ("direct" if mode in (10, 6, 3)
-                                                   else "lut")
+    assert program.plan["weight_projection"] == recipe["compute"]["weight_projection"]
     config_ex = next(step.command.rs1.immediate for step in program.steps
                      if isinstance(step.command, Command) and step.command.funct == 0)
     assert bool(config_ex & (1 << 31)) == (variant == "e4m3_e2m3")
     assert bool(config_ex & (1 << 6)) == (variant == "e5m2_fp4")
     assert len(resources["activation"]) == activation_bytes
+    assert len(resources["weight"]) == (4096 if direct_weight_bytes else 2048)
     assert len(resources["golden_bf16"]) == 8192
     assert {"activation", "weight", "activation_scales", "weight_scales"} <= set(
         resource_manifest["resources"])
@@ -193,5 +203,8 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     assert sum(isinstance(step.command, Command) and step.command.funct == 30
                for step in program.steps) == int(not lut_loads)
     generated = write_standalone_sources(tmp_path / "lowered", program, resources)
-    assert generated["command_count"] == (63 if lut_loads else 69)
+    expected_commands = (63 + (program.plan["tiles_i"] - 2) * 4 +
+                         (program.plan["tiles_j"] - 2) * 4 +
+                         (lut_loads if lut_loads else 1) - 3)
+    assert generated["command_count"] == expected_commands
     assert "void mx_issue(" in (tmp_path / "lowered/mx_issue.c").read_text()

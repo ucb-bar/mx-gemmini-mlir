@@ -34,7 +34,8 @@ def _revision(root: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--variant", choices=("lut", "direct", "fp6_lut", "fp4_fp6_lut",
-                                              "e4m3_e2m3_lut", "e5m2_fp4_lut"), default="lut",
+                                              "e4m3_e2m3_lut", "e5m2_fp4_lut",
+                                              "e4m3_direct_e3m2", "fp4_direct_e4m3"), default="lut",
                         help="activation format and projection in Nicolas's DIM16 source test")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
@@ -67,7 +68,9 @@ def main() -> None:
     suffix = {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
               "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6",
               "e4m3_e2m3_lut": "e4m3_e2m3",
-              "e5m2_fp4_lut": "e5m2_fp4"}[args.variant]
+              "e5m2_fp4_lut": "e5m2_fp4",
+              "e4m3_direct_e3m2": "e4m3s_e3m2",
+              "fp4_direct_e4m3": "fp4_e4m3s"}[args.variant]
     source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
     header = software / f"include/matmul_data_asym_{suffix}.h"
     recipe = source_recipe(source, header, profile)
