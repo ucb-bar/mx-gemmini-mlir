@@ -46,6 +46,14 @@ FP4_DIRECT_E4M3_CELL = {"activation_format": "fp4_e2m1",
                         "activation_projection": "direct",
                         "weight_format": "fp8_e4m3",
                         "weight_projection": "direct", "pe_mode": 2}
+E2M3_E5M2_CELL = {"activation_format": "fp6_e2m3",
+                  "activation_projection": "lut",
+                  "weight_format": "fp8_e5m2",
+                  "weight_projection": "lut", "pe_mode": 10}
+E4M3_DIRECT_E5M2_CELL = {"activation_format": "fp8_e4m3",
+                         "activation_projection": "direct",
+                         "weight_format": "fp8_e5m2",
+                         "weight_projection": "lut", "pe_mode": 7}
 
 _VARIANTS = {
     "matmul_tiled_asym_e4m3_fp4_64x64.c": {
@@ -69,6 +77,25 @@ _VARIANTS = {
         "cell": DIRECT_CELL, "mesh_dim": 16, "shape": [128, 128, 128],
         "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
         "lut_words_per_line": 0, "lut_entry_bits": 0,
+    },
+    "matmul_tiled_asym_e2m3_e5m2_128x128x256_dim32.c": {
+        "header": "matmul_data_asym_e2m3_e5m2_128x128x256_dim32.h",
+        "cell": E2M3_E5M2_CELL, "mesh_dim": 32, "shape": [128, 128, 256],
+        "activation_array": "A_in_hw[64][256]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8, "lut_lines": 64,
+    },
+    "matmul_tiled_asym_e4m3s_e5m2_128x128x256_dim32.c": {
+        "header": "matmul_data_asym_e4m3s_e5m2_128x128x256_dim32.h",
+        "cell": E4M3_DIRECT_E5M2_CELL, "mesh_dim": 32, "shape": [128, 128, 256],
+        "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": True,
+        "lut_arrays": ("B_lut",), "lut_words_per_line": 4,
+        "lut_entry_bits": 8, "lut_lines": 64,
+    },
+    "matmul_tiled_asym_fp4_fp6_128x128x256_dim32.c": {
+        "header": "matmul_data_asym_fp4_fp6_128x128x256_dim32.h",
+        "cell": FP4_FP6_CELL, "mesh_dim": 32, "shape": [128, 128, 256],
+        "activation_array": "A_in_hw[64][256]", "use_lut": True,
+        "lut_words_per_line": 3, "lut_entry_bits": 6, "lut_lines": 64,
     },
     "matmul_tiled_asym_fp6_fp4_64x64.c": {
         "header": "matmul_data_asym_fp6_fp4.h", "cell": FP6_FP4_CELL,
@@ -215,7 +242,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             raise ValueError("Nicolas E2M3 weight format encoding changed")
     for lut_array in variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")
                                  if variant["use_lut"] else ()):
-        if f'{lut_array}[32][{variant["lut_words_per_line"]}]' not in header_text:
+        if f'{lut_array}[{variant.get("lut_lines", 32)}][{variant["lut_words_per_line"]}]' not in header_text:
             raise ValueError(f"Nicolas source {lut_array} changed")
     altfmt_match = re.search(r"^#define MX_ALTFMT\s+([01])\b", source_text, re.M)
     config_altfmt = int(altfmt_match.group(1)) if altfmt_match else 0
@@ -435,10 +462,11 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     if variant["header"] != header.name:
         raise ValueError("asymmetric source layout names a different data header")
     m, n, k = recipe["shape"]
-    packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
+    packed_activation = variant["activation_array"].startswith("A_in_hw[")
     lut_words = variant["lut_words_per_line"]
     a_name = "A_in_hw" if packed_activation else "A_in"
-    a_shape = "[32][64]" if packed_activation else "[MATMUL_M][MATMUL_K]"
+    a_shape = (variant["activation_array"].removeprefix("A_in_hw") if packed_activation
+               else "[MATMUL_M][MATMUL_K]")
     weight_shape = ("[MATMUL_K][MATMUL_N]" if variant.get("weight_array") else
                     "[MATMUL_K][MATMUL_N / 2]")
     weight_count = k * n if variant.get("weight_array") else k * n // 2
@@ -460,13 +488,15 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
                                       count=m * n, maximum=0xffff), 2),
     }
     if variant["use_lut"]:
+        lut_lines = variant.get("lut_lines", 32)
         for c_name, resource in (("A_lut", "activation_lut"),
                                  ("B_lut", "weight_lut"),
                                  ("C_lut", "output_lut")):
             if c_name not in variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")):
                 continue
             resources[resource] = _bytes(_array(text, name=c_name, ctype="uint32_t",
-                                               dimensions=f"[32][{lut_words}]", count=32 * lut_words,
+                                               dimensions=f"[{lut_lines}][{lut_words}]",
+                                               count=lut_lines * lut_words,
                                                maximum=0xffffffff), 4)
     return resources
 
@@ -477,7 +507,7 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
 
     variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]
     m, n, k = recipe["shape"]
-    packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
+    packed_activation = variant["activation_array"].startswith("A_in_hw[")
     shapes = {
         "activation": ((m // 2, k) if packed_activation else (m, k), 8,
                        "packed_even_odd_m_nibbles" if packed_activation else "row_major_codes"),
@@ -491,10 +521,11 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
     if variant["use_lut"]:
         words = variant["lut_words_per_line"]
         bits = variant["lut_entry_bits"]
+        lut_lines = variant.get("lut_lines", 32)
         all_luts = {
-            "activation_lut": ((32, words), 32, f"row_pair_lut_{bits}bit"),
-            "weight_lut": ((32, words), 32, f"column_pair_lut_{bits}bit"),
-            "output_lut": ((32, words), 32, f"output_pair_lut_{bits}bit"),
+            "activation_lut": ((lut_lines, words), 32, f"row_pair_lut_{bits}bit"),
+            "weight_lut": ((lut_lines, words), 32, f"column_pair_lut_{bits}bit"),
+            "output_lut": ((lut_lines, words), 32, f"output_pair_lut_{bits}bit"),
         }
         names = {"A_lut": "activation_lut", "B_lut": "weight_lut",
                  "C_lut": "output_lut"}
@@ -578,7 +609,7 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     cell = recipe["compute"]
     variant = recipe.get("source_layout") or _VARIANTS[source.name]
     use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
-    packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
+    packed_activation = variant["activation_array"].startswith("A_in_hw[")
     m, n, k_dim = recipe["shape"]
     weight_stride = n if variant.get("weight_array") else n // 2
     dim = variant.get("mesh_dim", 16)
@@ -620,7 +651,8 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
             if resource not in resources:
                 continue
             issue("upload_lut", _cmd(29, Operand(buffer=resource),
-                                     (lut_entry_bits << 34) | (selector << 32) | 32))
+                                     (lut_entry_bits << 34) | (selector << 32) |
+                                     variant.get("lut_lines", 32)))
     else:
         issue("disable_lut", _cmd(30, 0, 0))
     issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"),
