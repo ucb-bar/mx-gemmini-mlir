@@ -32,6 +32,7 @@ def test_connected_fp4_archive_integrity_and_spike_results():
     capture = json.loads(_read("capture/receipt.json"))
     chain = json.loads(_read("chain/receipt.json"))
     obj = json.loads(_read("object/object_manifest.json"))
+    dispatch = json.loads(_read("object/compile_manifest.json"))
     assert capture["status"] == "two_site_frontend_handoff_only"
     assert [site["format"] for site in capture["sites"]] == ["mxfp4", "mxfp4"]
     assert capture["opaque_calls"] == []
@@ -44,6 +45,9 @@ def test_connected_fp4_archive_integrity_and_spike_results():
     assert obj["embedded_operand_bytes"] == obj["embedded_golden_bytes"] == 0
     assert obj["allocated_data_section_bytes"] == 0
     assert obj["bound_mlir_sha256"] == chain["bound_mlir_sha256"]
+    assert dispatch["lowering_family"] == "resident_pair"
+    assert dispatch["compiler_revision"] == index["dispatcher_revision"]
+    assert dispatch["object_sha256"] == obj["object_sha256"]
     assert {entry["slot"] for entry in obj["buffer_abi"]} == {
         "a1_activation", "a1_scales", "b1_weight", "b1_scales",
         "b2_weight", "b2_scales", "c1_scales", "c1_tiled_observed",

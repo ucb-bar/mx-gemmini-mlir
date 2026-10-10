@@ -118,8 +118,8 @@
       "slot": "c2_tiled"
     }
   ],
-  "compiler_revision": "59c67720bb62c3ed0e2373ef364f758ca2dce7ab",
-  "compiler_source_closure_sha256": "f3e66305099bf47795c8029d2ee8a665dddec1439821223a08dc590161e57e4a",
+  "compiler_revision": "24c340f4b40aabb4e3a539d1d4f63dcfa304e755",
+  "compiler_source_closure_sha256": "e7069764ef1a2b1e7e7ec89ae696e502d08dc89dc02e9740f8c152c06f89f254",
   "defined_symbol": "mx_issue",
   "embedded_golden_bytes": 0,
   "embedded_operand_bytes": 0,

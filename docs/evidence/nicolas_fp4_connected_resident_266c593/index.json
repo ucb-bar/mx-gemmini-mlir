@@ -6,6 +6,7 @@
     "c2_fp4_codes": 4096
   },
   "compiler_revision": "59c6772",
+  "dispatcher_revision": "24c340f4b40aabb4e3a539d1d4f63dcfa304e755",
   "files": {
     "capture/handoff.mlir.gz": {
       "bytes": 2410,
@@ -117,6 +118,11 @@
       "compressed": true,
       "sha256": "01a4b4473e689db384328698bea3c4dda9898adfc10d724871bd7a8b118c23d4"
     },
+    "object/compile_manifest.json": {
+      "bytes": 1085,
+      "compressed": false,
+      "sha256": "616c233a2b382d980d0d0284b418345f31914ffb84ff64d944f28f2610ea693c"
+    },
     "object/mx_issue.c.gz": {
       "bytes": 10481,
       "compressed": true,
@@ -135,7 +141,7 @@
     "object/object_manifest.json": {
       "bytes": 4921,
       "compressed": false,
-      "sha256": "688e710b6bfcd6dbd8ab813bd5197a1a51c1f52b62692085f7af79f1890eb345"
+      "sha256": "25e891ea18dc0a50d3ee24dece3a3c4df52260b625a4dc21402b96492ca0a4c0"
     },
     "object/physical_program.json.gz": {
       "bytes": 27315,
