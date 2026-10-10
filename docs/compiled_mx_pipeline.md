@@ -437,10 +437,11 @@ python -m tools.qualify_nicolas_vpu_ops_source \
   --out-dir /tmp/nicolas-vpu-source
 ```
 
-This source executable is the full VPU oracle. Compiler-issued coverage now
-includes all 14 opcodes in the base and fused sections below. The additional
-source cases for broadcast, same-bank access, chaining, and memory hazards
-still require compiler-issued qualifications.
+This source executable is the full VPU oracle. The compiler-issued base,
+fused, and variant qualifications below cover all **25 single-operation
+source checks**, including all 14 opcodes, broadcast, same-bank access, and
+reduction length one. The four chained and memory-hazard checks remain to be
+issued by the compiler.
 
 ### Compiler-issued base VPU operations
 
@@ -505,6 +506,39 @@ PyTorch identifies the operation and shapes; the source VPU reference defines
 the rounded BF16 results. These checks qualify the two fused opcodes on
 Nicolas's Spike model. The base-op checks above cover the other 12 opcodes;
 the source ordering variants and RTL/FPGA behavior remain separate gates.
+
+### Compiler-issued VPU broadcast and same-bank variants
+
+The [variant receipt](evidence/nicolas_vpu_variants_compiled_266c593/index.json)
+captures Nicolas's remaining single-operation source forms through the same
+model2MLIR revision. Eleven independent programs cover MUL and MAX with
+same-bank or broadcast sources, broadcast SUB across two addresses, plain and
+broadcast EXPSUB, both EXPSUM placements with their sum outputs, and RSUM
+with reduction length one. The binding selects the actual source bank
+addresses and transfers only the rows the VPU reads. The generated issuer
+places no fence between DMA and VPU commands, matching the source ordering
+test. Nicolas's input generator and `vpu_ref.h` are the driver oracle.
+
+All **5,888 / 5,888 BF16 values** across these 11 programs match on pinned
+Spike. Two clean runs reproduce their captures, bound MLIR, issuers, ELFs,
+extension, and logs byte for byte
+([reproducibility](evidence/nicolas_vpu_variants_compiled_266c593/reproducibility.json)).
+The [same-bank MUL](evidence/nicolas_vpu_variants_compiled_266c593/mul_same_bank/bound.mlir)
+and [broadcast EXPSUM](evidence/nicolas_vpu_variants_compiled_266c593/expsum_bcast/bound.mlir)
+modules show the physical address and reduction bindings. Reproduce with:
+
+```sh
+python -m tools.qualify_nicolas_vpu_variants \
+  --model2mlir-root /path/to/model2MLIR \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/nicolas-vpu-variants
+```
+
+These checks establish numerical and ordered-command parity on Nicolas's
+Spike extension. The chained VPU→VPU, DMA write-after-read, and two-unit
+cross-VPU dependency cases still need compiler-issued programs; RTL/FPGA
+qualification is separate.
 
 ### Compiler-issued BF16 VPU softmax
 

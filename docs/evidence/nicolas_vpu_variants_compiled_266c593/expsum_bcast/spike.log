@@ -1,0 +1,3 @@
+compiled variant expsum_bcast: 0 output mismatches, 0 sum mismatches
+Gemmini extension configured with:
+    dim = 16
