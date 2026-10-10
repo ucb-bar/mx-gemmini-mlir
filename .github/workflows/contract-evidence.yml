@@ -77,6 +77,7 @@ jobs:
             tests/test_nicolas_plain_fp8_typed_object_evidence.py \
             tests/test_nicolas_plain_fp8_256_two_wave_evidence.py \
             tests/test_nicolas_plain_fp8_96x96x64_evidence.py \
+            tests/test_nicolas_fp8_requant_typed_object_evidence.py \
             tests/test_nicolas_plain_fp4_typed_object_evidence.py \
             tests/test_nicolas_plain_fp6_typed_object_evidence.py \
             tests/test_bf16_row_major_readout.py \

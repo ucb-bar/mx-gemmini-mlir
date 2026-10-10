@@ -1,0 +1,3 @@
+compiled Nicolas FP8 128 requant: 0 code mismatches / 16384, 0 scale mismatches / 512
+Gemmini extension configured with:
+    dim = 16
