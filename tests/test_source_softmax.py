@@ -20,6 +20,7 @@ from mx_gemmini_support.vector_lowering import lower_vector_commands
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_vpu_softmax_model2mlir_329718b"
+FULL_EVIDENCE = ROOT / "docs/evidence/nicolas_vpu_softmax_full_ce54256"
 PROFILE = (ROOT / "profiles/gemmini-mx-cleanup-266c593/"
            "MxE4M3Fp4VpuGemminiRocketConfig.json")
 CONTRACT = ROOT / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
@@ -60,6 +61,33 @@ def test_softmax_compiler_output_and_spike_reproduction() -> None:
     assert (EVIDENCE / "mx_issue.c").read_text().count(".insn r 0x7b, 3, 33") == 6
 
 
+def test_complete_softmax_program_reproduces_on_spike() -> None:
+    first = json.loads((FULL_EVIDENCE / "first.json").read_text())
+    second = json.loads((FULL_EVIDENCE / "reproduction.json").read_text())
+    assert first == second
+    assert first["compiler_revision"] == "ce54256eb0e7b9ecdbc83a9be52727d39fc333fc"
+    assert first["status"] == "source_vpu_softmax_matched_on_pinned_spike"
+    assert first["spike_exit_code"] == 0
+    assert first["compared_bf16_values"] == 512
+    assert first["ordered_functs"] == [7, 0, 0, *([2] * 4),
+                                       *([33] * 6), *([3] * 4)]
+    for key, name in (("frontend_mlir_sha256", "softmax.model2mlir.mlir"),
+                      ("bound_mlir_sha256", "softmax.profile_bound.mlir"),
+                      ("binding_manifest_sha256", "binding_manifest.json"),
+                      ("spike_log_sha256", "spike.log")):
+        assert first[key] == _sha(FULL_EVIDENCE / name)
+    assert first["files_sha256"]["mx_issue.c"] == _sha(FULL_EVIDENCE / "mx_issue.c")
+    assert first["frontend_mlir_sha256"] == _sha(EVIDENCE / "softmax.model2mlir.mlir")
+    assert first["bound_mlir_sha256"] == _sha(EVIDENCE / "softmax.profile_bound.mlir")
+    issuer = (FULL_EVIDENCE / "mx_issue.c").read_text()
+    assert issuer.count(".insn r 0x7b, 3, 33") == 6
+    assert issuer.count(".insn r 0x7b, 3, 2") == 4
+    assert issuer.count(".insn r 0x7b, 3, 3, x0") == 4
+    log = (FULL_EVIDENCE / "spike.log").read_text()
+    assert "softmax 16x32: 0 mismatches vs ref" in log
+    assert "vpu_softmax PASSED" in log
+
+
 def test_softmax_binding_refuses_changed_pinned_source() -> None:
     rtl = Path(os.environ.get("MX_GEMMINI_RTL_ROOT", "/nonexistent"))
     source_path = rtl / "software/gemmini-rocc-tests/bareMetalC/vpu_softmax.c"
@@ -84,6 +112,8 @@ def test_softmax_binding_refuses_changed_pinned_source() -> None:
     assert manifest == json.loads((EVIDENCE / "binding_manifest.json").read_text())
     assert [command.funct for command in lower_softmax_program(mlir, source, profile)] == (
         [7, 0, 0, *([2] * 4), *([33] * 6), *([3] * 4)])
+    assert manifest["bound_mlir_sha256"] == _sha(
+        FULL_EVIDENCE / "softmax.profile_bound.mlir")
     with pytest.raises(ValueError, match="schedule"):
         audit_source(source.replace("VPU_RMAX", "VPU_RSUM", 1))
     with pytest.raises(ValueError, match="capture"):

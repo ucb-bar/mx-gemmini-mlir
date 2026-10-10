@@ -425,17 +425,22 @@ includes the following source-audited cases.
 tensor with pinned model2MLIR `e9ded36`. It checks the resulting max, subtract,
 exp, sum, and division decomposition, then binds Nicolas's six-step BF16 VPU
 schedule to the MX+VPU profile. The typed
-[VPU MLIR](evidence/nicolas_vpu_softmax_model2mlir_329718b/softmax.profile_bound.mlir)
-lowers to six funct-33 RoCC commands. The generated issuer replaces exactly
-the six VPU calls in Nicolas's `vpu_softmax.c`; that source retains input
-generation, transfers, and its bit-exact VPU reference checker. On pinned
-Spike, all **512 BF16 outputs** match the reference. Two clean runs reproduce
-the frontend MLIR, bound MLIR, generated issuer, objects, ELF, extension, and
-Spike log hashes ([first](evidence/nicolas_vpu_softmax_model2mlir_329718b/first.json),
-[second](evidence/nicolas_vpu_softmax_model2mlir_329718b/reproduction.json)).
+[VPU MLIR](evidence/nicolas_vpu_softmax_full_ce54256/softmax.profile_bound.mlir)
+lowers to a 17-command Rocket program: flush, load/store configuration, four
+input transfers, six funct-33 VPU operations, and four output transfers. The
+generated issuer replaces Nicolas's MX configuration, transfer, and VPU calls;
+the source retains input generation, a completion fence, and its bit-exact VPU
+reference checker. On
+pinned Spike, all **512 BF16 outputs** match the reference. Two clean runs
+reproduce the frontend MLIR, bound MLIR, generated issuer, objects, ELF,
+extension, and Spike log hashes
+([first](evidence/nicolas_vpu_softmax_full_ce54256/first.json),
+[second](evidence/nicolas_vpu_softmax_full_ce54256/reproduction.json)).
+The earlier [six-command compute-only qualification](evidence/nicolas_vpu_softmax_model2mlir_329718b/first.json)
+is retained separately.
 The source VPU rounds each intermediate to BF16; model2MLIR's PyTorch
 decomposition uses FP32 intermediates. This qualifies the source VPU softmax
-sequence, not bit-exact PyTorch output or compiler-generated transfers.
+sequence against the source reference, not bit-exact PyTorch output.
 
 ```sh
 python -m tools.qualify_nicolas_vpu_softmax \
