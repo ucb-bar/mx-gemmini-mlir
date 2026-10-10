@@ -1,0 +1,31 @@
+name: MX contract and evidence
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python contract dependencies
+        run: python -m pip install -e '.[ir]' 'pytest>=8,<9'
+      - name: Check issuer, profile refusal, and archived numerical evidence
+        run: |
+          python -m pytest -q \
+            tests/test_command_ir.py \
+            tests/test_bind_profile.py \
+            tests/test_verify_profile_ir.py::test_named_asymmetric_contract \
+            tests/test_verify_profile_ir.py::test_illegal_contract_rejected \
+            tests/test_target_profile.py::test_lut_projection_selects_mode_per_operand \
+            tests/test_radiance_mx_gemm_source_parity_roster.py \
+            tests/test_radiance_latest_full_roster_evidence.py \
+            tests/test_spike_weight_lut_candidate_all_modes_evidence.py

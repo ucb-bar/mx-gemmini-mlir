@@ -315,6 +315,11 @@ FP4. This qualifies only that two-wave shape and command sequence; larger
 capacity-driven wave plans still need simulator checks.
 
 Run `python -m pytest tests -q` from this directory.
+The [GitHub Actions contract gate](.github/workflows/contract-evidence.yml)
+checks issuer fields, illegal profile modes, and the archived 31-driver and
+108-mode receipts from a fresh Python install. Rebuilding the numerical Spike
+runs still requires the pinned Radiance, Gemmini, model2MLIR, and RV64 toolchains
+documented in [the pipeline](docs/compiled_mx_pipeline.md).
 
 To inspect the provider through Merlin, set `MERLIN_TARGET_PATH` to this
 directory and resolve `mx_gemmini`. This selects its metadata only; no
