@@ -51,7 +51,10 @@ def test_compiler_orders_matrix_vpu_requant_and_reuses_dead_operand_rows(tmp_pat
     assert '"mx_gemmini.contract"' in bound
     assert '"mx_gemmini.vpu_execute"' in bound
     assert '"mx_gemmini.spad_requant"' in bound
-    assert '"mx_gemmini.readout_quantized"' in bound
+    assert '"mx_gemmini.readout_bf16"' in bound
+    assert '"mx_gemmini.vpu_execute"(%4)' in bound
+    assert '"mx_gemmini.spad_requant"(%5)' in bound
+    assert 'func.return %6, %7' in bound
     opt = ROOT / "build/tools/mx-gemmini-opt"
     if opt.is_file():
         path = tmp_path / "bound.mlir"
@@ -107,6 +110,10 @@ def test_matrix_vpu_requant_rejects_changed_residency_or_pointer(tmp_path):
     with pytest.raises(ValueError, match="scratchpad lifetime or operation differs"):
         lower_bound_source(bound.replace('scale_buffer = "scratch_output_scales"',
                                          'scale_buffer = "other_scales"'),
+                           profile, manifest, resources)
+    with pytest.raises(ValueError, match="VPU/SPAD SSA handoff differs"):
+        lower_bound_source(bound.replace('"mx_gemmini.spad_requant"(%5)',
+                                         '"mx_gemmini.spad_requant"(%4)'),
                            profile, manifest, resources)
 
 

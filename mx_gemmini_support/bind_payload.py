@@ -132,8 +132,9 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
 def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) -> str:
     """Compose typed VPU and resident requant after one source-bound matmul."""
     from xdsl.context import Context
-    from xdsl.dialects.builtin import Builtin, BoolAttr, IntegerAttr, StringAttr, UnregisteredOp, i32, i64
-    from xdsl.dialects.func import Func
+    from xdsl.dialects.builtin import (Builtin, BoolAttr, IntegerAttr, StringAttr,
+                                      TensorType, UnregisteredOp, bf16, i8, i32, i64)
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
     from xdsl.printer import Printer
 
@@ -164,17 +165,30 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
     readout = ops[-1]
     block = readout.parent
     assert block is not None
+    function = readout.parent_op()
+    if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
+        raise ValueError("VPU/SPAD x2 requires a returning source contraction")
+    old_return = function.get_return_op()
+    if list(old_return.operands) != list(readout.results):
+        raise ValueError("VPU/SPAD x2 source readout must be returned")
     binding = {name: readout.attributes[name]
                for name in ("site_id", "profile_sha256", "contract_sha256",
                             "policy_sha256", "manifest_sha256")}
     i32attr = lambda value: IntegerAttr(value, i32)
-    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(attributes={
+    bf16_type = TensorType(bf16, [64, 64])
+    codes_type = TensorType(i8, [64, 64])
+    scales_type = TensorType(i8, [64, 2])
+    bf16_readout = UnregisteredOp.with_name("mx_gemmini.readout_bf16").create(
+        operands=list(ops[0].results), result_types=[bf16_type], attributes=binding)
+    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(
+        operands=list(bf16_readout.results), result_types=[bf16_type], attributes={
         **binding, "kind": StringAttr("muls"),
         "src1_row": i32attr(source_row), "src2_row": i32attr(0),
         "dst_row": i32attr(source_row), "rows": i32attr(rows),
         "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
         "immediate_bf16": i32attr(0x4000)})
-    requant = UnregisteredOp.with_name("mx_gemmini.spad_requant").create(attributes={
+    requant = UnregisteredOp.with_name("mx_gemmini.spad_requant").create(
+        operands=list(vpu.results), result_types=[codes_type, scales_type], attributes={
         **binding, "source_row": i32attr(source_row),
         "destination_row": i32attr(destination_row),
         "m": i32attr(64), "n": i32attr(64),
@@ -182,8 +196,13 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
         "tiled": BoolAttr.from_bool(True), "resident": BoolAttr.from_bool(True),
         "scale_dram_address": IntegerAttr(0, i64),
         "scale_buffer": StringAttr("scratch_output_scales")})
+    block.insert_op_before(bf16_readout, readout)
     block.insert_op_before(vpu, readout)
     block.insert_op_before(requant, readout)
+    block.insert_op_before(ReturnOp(*requant.results), old_return)
+    block.erase_op(old_return)
+    block.erase_op(readout)
+    function.update_function_type()
     output = StringIO()
     Printer(stream=output).print_op(module)
     rendered = output.getvalue() + "\n"

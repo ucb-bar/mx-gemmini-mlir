@@ -130,23 +130,47 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
         "radiance_header_fp6_host_requant": "radiance_header_fp6",
     }.get(specialization)
     host_requant = host_kind is not None
-    readout_name = ("mx_gemmini.readout_bf16" if output_format == "bf16" or host_requant
+    vector_requant = specialization == "matrix_vpu_x2_spad_requant_fp8"
+    readout_name = ("mx_gemmini.readout_bf16" if output_format == "bf16" or
+                    host_requant or vector_requant
                     else "mx_gemmini.readout_quantized")
     readout = [op for op in ops if _operation_name(op) == readout_name]
     names = [_operation_name(op) for op in ops]
     if (len(contract) != 1 or len(readout) != 1 or
             names[0] != "mx_gemmini.contract" or
-            names[-1] != ("mx_gemmini.host_requantize" if host_requant else readout_name) or
-            any(name not in {"mx_gemmini.vpu_execute", "mx_gemmini.spad_requant"}
-                for name in names[1:-2 if host_requant else -1]) or
+            names[-1] != ("mx_gemmini.spad_requant" if vector_requant else
+                          "mx_gemmini.host_requantize" if host_requant else readout_name) or
+            (not vector_requant and any(
+                name not in {"mx_gemmini.vpu_execute", "mx_gemmini.spad_requant"}
+                for name in names[1:-2 if host_requant else -1])) or
+            (vector_requant and names != ["mx_gemmini.contract",
+                                         "mx_gemmini.readout_bf16",
+                                         "mx_gemmini.vpu_execute",
+                                         "mx_gemmini.spad_requant"]) or
             (host_requant and (names[-2] != readout_name or len(names) != 3))):
         raise ValueError("physical MX lowering requires a matching output readout")
     if (manifest.get("site_id") != _text_attr(contract[0], "site_id") or
             manifest.get("site_id") != _text_attr(readout[0], "site_id") or
             _text_attr(contract[0], "payload_manifest_sha256") != digest):
         raise ValueError("physical MX lowering site or payload binding differs")
-    if output_format != "bf16" and not host_requant and _text_attr(readout[0], "output_format") != output_format:
+    if output_format != "bf16" and not host_requant and not vector_requant and \
+            _text_attr(readout[0], "output_format") != output_format:
         raise ValueError("physical MX output format differs from source specialization")
+    if vector_requant:
+        first, bf16_readout, vpu, requant = ops
+        function = requant.parent_op()
+        if (manifest.get("output_format") != "fp8_e4m3" or
+                list(bf16_readout.operands) != list(first.results) or
+                list(vpu.operands) != list(bf16_readout.results) or
+                list(requant.operands) != list(vpu.results) or
+                not isinstance(function, FuncOp) or
+                not isinstance(function.get_return_op(), ReturnOp) or
+                list(function.get_return_op().operands) != list(requant.results) or
+                [str(result.type) for result in (*bf16_readout.results, *vpu.results,
+                                                 *requant.results)] != [
+                    "tensor<64x64xbf16>", "tensor<64x64xbf16>",
+                    "tensor<64x64xi8>", "tensor<64x2xi8>"]):
+            raise ValueError("physical MX VPU/SPAD SSA handoff differs from source specialization")
     if host_requant:
         host = ops[-1]
         function = host.parent_op()
@@ -176,7 +200,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                 list(function.get_return_op().operands) != list(host.results)):
             raise ValueError("physical MX Radiance header epilogue binding differs")
     vector_ops = []
-    for op in ops[1:-2 if host_requant else -1]:
+    for op in (ops[2:] if vector_requant else
+               ops[1:-2 if host_requant else -1]):
         if _text_attr(op, "site_id") != manifest["site_id"]:
             raise ValueError("physical MX vector operation belongs to another contraction site")
         if _operation_name(op) == "mx_gemmini.vpu_execute":
