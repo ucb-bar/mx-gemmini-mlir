@@ -875,6 +875,49 @@ python -m tools.qualify_resident_pair_object \
 For the 64-row case, use `--output-rows 64` during capture and
 `--source-rows 64` in both Spike qualifiers, with distinct output directories.
 
+The [rectangular connected-pair archive](evidence/nicolas_rectangular_pair_64x96x64_64x64x96_c0be9b9/index.json)
+adds **MM1 64×96×64 → MM2 64×64×96**. Nicolas's checked-in
+`matmul_fp8_64x96x64` A/B wire inputs and unchanged C1 codes, scales, and
+BF16 golden qualify the first stage. B2 is a 96×64 slice of the checked-in
+128³ chain weight; the pinned Nicolas mesh model derives C2. A fresh checkout
+of `c0be9b9` captured both sites through model2MLIR `e9ded36`, bound their
+distinct tensor shapes, emitted a data-free RV64 object, and linked it as the
+only MX issuer. Stock Spike matched **6,144 C1 codes and 192 scales**, then
+**4,096 C2 codes and 128 scales**, with zero mismatches. The first attempt
+had 3,992 C2 code and 34 scale mismatches because MM2 reused the square
+chain's B traversal. The fixed rectangular path uses Nicolas's K-major
+weight tile order; its regression test and both Spike logs are archived.
+This qualifies the selected Rocket RoCC/Spike configuration, not RTL or FPGA.
+The archived `bound/connected.mlir.gz` and six `bound/*.bin.gz` files can be
+passed directly to `tools.compile_object`; a replay reproduced the archived
+object, C issuer, and physical command stream byte for byte.
+
+```sh
+python -m tools.capture_nicolas_chain \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQ_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --matrix-dim 96 --first-k 64 --second-width 64 --output-rows 64 \
+  --out-dir /new/mx-rectangular-capture
+python -m tools.bind_rectangular_chain \
+  --capture-dir /new/mx-rectangular-capture --rtl-root "$MX_RTL_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-rectangular-bound
+python -m tools.compile_object \
+  --mlir /new/mx-rectangular-bound/connected.mlir \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --resources-dir /new/mx-rectangular-bound \
+  --abi-json examples/resident-pair-abi.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-rectangular-object
+python -m tools.qualify_rectangular_pair_object \
+  --object-dir /new/mx-rectangular-object \
+  --capture-dir /new/mx-rectangular-capture \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-rectangular-spike
+```
+
 The MX+VPU 64³ connected graph now has a parallel object path through
 [`resident_vpu_graph.py`](../mx_gemmini_support/resident_vpu_graph.py). It
 checks the `contract → readout_bf16 → vpu_execute → spad_requant →
@@ -3312,9 +3355,9 @@ cases with:
    qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
    Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
    MX cases.
-   Lower other typed graphs without a source-specific seam, including
-   rectangular MM1/MM2 dimensions, broader changed N/K dimensions, and
-   mixed-engine graphs.
+   One rectangular 64×96×64 → 64×64×96 pair is now qualified on Spike;
+   lower broader rectangular graphs, distinct B1/B2 footprints, and
+   mixed-engine graphs without a source-specific seam.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;

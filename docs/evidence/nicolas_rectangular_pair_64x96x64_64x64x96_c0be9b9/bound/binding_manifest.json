@@ -1,0 +1,37 @@
+{
+  "b2_header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "bound_mlir_sha256": "dffc412e7066106df1bcdea2819006b9332dcd280c39a88ad05246c521c49d38",
+  "capture_receipt_sha256": "0ca5ccafd369a535ee0c8c56ae29448882dc10cfcef3357d6869006d03dfb741",
+  "compiler_revision": "c0be9b943247c9cfbe37896096362072018320fa",
+  "compiler_source_closure_sha256": "f86227cda34693cbed936aeffd1be7005119d65614656c8203c849bce7423923",
+  "first_shape_mnk": [
+    64,
+    96,
+    64
+  ],
+  "header_sha256": "5b71b66fdb15fd776958e8d995d15f9aa0ddbbd39892c3cdb27d1ca144c15dd2",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "reference_kind": "unchanged_nicolas_c1_and_pinned_model_derived_c2",
+  "resources_sha256": {
+    "a1_activation": "acdc5bc333d9a0899dbad92473a65a1649eca611cc00e73868f56cd69bd00391",
+    "a1_scales": "a6b2bcb7b556b2c6cccced0c4daf578012b0bd12e5cf75a6e2f362c173524644",
+    "b1_scales": "7a9ea9334f4c6de98db91e7649f9f4d2bb7f8d3292deb82d4eeef144a78684a0",
+    "b1_weight": "3f0c3bb68cf4b4dea6f353e141ece88b0584cc24f0f8f51c472029e4be31c546",
+    "b2_scales": "8149dcfad83999416310a6be134d661f26020166de70e608e423d4f989c0eb86",
+    "b2_weight": "61d275ae669ea3101100434d74018ec1ef3033e53e0635185d7949741cf7f535",
+    "c1_codes_ref": "6e722117cb4c69dbbd5ebfd7b3a49fc118a128572b984320e9c96dc07a995e9f",
+    "c1_scales_ref": "e8134d375f3a3e4b2b9b2f04e45d9485553246a021979ea7dd7e631f28fe1c2a",
+    "c2_codes_ref": "601f86214603e15d26965108844542dd37be8a87817f7a85bf3f73ef0b2d61d1",
+    "c2_scales_ref": "7d0f690c15ec756a7d6d987914845b46ddbbebe6fd6f2de5f23f399403becdec"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_rectangular_chain_binding.v1",
+  "second_shape_mnk": [
+    64,
+    64,
+    96
+  ],
+  "source_sha256": "026aa3f9510306aa43b7513a1a27ee610091eacc96af2dd0ce255d9e372b219d",
+  "status": "source_c1_and_model_c2_bound_to_typed_pair"
+}

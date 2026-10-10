@@ -1,0 +1,60 @@
+{
+  "schema": "mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "c0be9b943247c9cfbe37896096362072018320fa",
+  "source_sha256": "026aa3f9510306aa43b7513a1a27ee610091eacc96af2dd0ce255d9e372b219d",
+  "header_sha256": "5b71b66fdb15fd776958e8d995d15f9aa0ddbbd39892c3cdb27d1ca144c15dd2",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "source_mlir_sha256": "889cfc44d3109d4c4fe5be74c3275c1522de3dab6c38dbcfa4bec3a44b54dcbb",
+  "handoff_mlir_sha256": "4dd4781de330657bd0158db3fc3844f345d3156957730c2f585f24183de89046",
+  "bound_mlir_sha256": "8347701dc89d64bebd3354bfcae3589511145750b0b133ace98d57eeb06c410f",
+  "manifest_sha256": "5b6c97fdc95e9e8ef656abd4a6113ec09ece8d83cb5fec8746f28bd55f82e741",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        96,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        64,
+        96
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "MM1 codes/scales have an unchanged Nicolas 64x96x64 source golden; MM2 uses a checked 128\u00b3 B2 wire slice and a pinned mesh-model reference",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "matrix_dim": 96,
+  "output_rows": 64,
+  "first_shape_mnk": [
+    64,
+    96,
+    64
+  ],
+  "second_shape_mnk": [
+    64,
+    64,
+    96
+  ],
+  "b2_header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0"
+}

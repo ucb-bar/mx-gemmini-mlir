@@ -1,0 +1,4 @@
+lowered rectangular 64x96x64 -> 64x64x96: C1 0 codes 0 scales; C2 3992 codes 34 scales
+Gemmini extension configured with:
+    dim = 16
+*** FAILED *** (tohost = 1)

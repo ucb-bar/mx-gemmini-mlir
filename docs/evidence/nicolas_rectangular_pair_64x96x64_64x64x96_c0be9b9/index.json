@@ -1,0 +1,179 @@
+{
+  "compared": {
+    "c1_e8m0_scales": 192,
+    "c1_fp8_codes": 6144,
+    "c2_e8m0_scales": 128,
+    "c2_fp8_codes": 4096
+  },
+  "compiler_revision": "c0be9b943247c9cfbe37896096362072018320fa",
+  "diagnostic_before_fix": {
+    "c1_code_mismatches": 0,
+    "c1_scale_mismatches": 0,
+    "c2_code_mismatches": 3992,
+    "c2_scale_mismatches": 34,
+    "cause": "MM2 B2 was loaded in square-chain j-major traversal"
+  },
+  "files": {
+    "bound/a1_activation.bin.gz": {
+      "bytes": 4096,
+      "compressed": true,
+      "sha256": "acdc5bc333d9a0899dbad92473a65a1649eca611cc00e73868f56cd69bd00391"
+    },
+    "bound/a1_scales.bin.gz": {
+      "bytes": 128,
+      "compressed": true,
+      "sha256": "a6b2bcb7b556b2c6cccced0c4daf578012b0bd12e5cf75a6e2f362c173524644"
+    },
+    "bound/b1_scales.bin.gz": {
+      "bytes": 192,
+      "compressed": true,
+      "sha256": "7a9ea9334f4c6de98db91e7649f9f4d2bb7f8d3292deb82d4eeef144a78684a0"
+    },
+    "bound/b1_weight.bin.gz": {
+      "bytes": 6144,
+      "compressed": true,
+      "sha256": "3f0c3bb68cf4b4dea6f353e141ece88b0584cc24f0f8f51c472029e4be31c546"
+    },
+    "bound/b2_scales.bin.gz": {
+      "bytes": 192,
+      "compressed": true,
+      "sha256": "8149dcfad83999416310a6be134d661f26020166de70e608e423d4f989c0eb86"
+    },
+    "bound/b2_weight.bin.gz": {
+      "bytes": 6144,
+      "compressed": true,
+      "sha256": "61d275ae669ea3101100434d74018ec1ef3033e53e0635185d7949741cf7f535"
+    },
+    "bound/binding_manifest.json": {
+      "bytes": 2053,
+      "compressed": false,
+      "sha256": "df5b1cb42e87b59b3f440db638af10e0ec9449b58910e6dc01a972b3326f6b4a"
+    },
+    "bound/c1_codes_ref.bin.gz": {
+      "bytes": 6144,
+      "compressed": true,
+      "sha256": "6e722117cb4c69dbbd5ebfd7b3a49fc118a128572b984320e9c96dc07a995e9f"
+    },
+    "bound/c1_scales_ref.bin.gz": {
+      "bytes": 192,
+      "compressed": true,
+      "sha256": "e8134d375f3a3e4b2b9b2f04e45d9485553246a021979ea7dd7e631f28fe1c2a"
+    },
+    "bound/c2_codes_ref.bin.gz": {
+      "bytes": 4096,
+      "compressed": true,
+      "sha256": "601f86214603e15d26965108844542dd37be8a87817f7a85bf3f73ef0b2d61d1"
+    },
+    "bound/c2_scales_ref.bin.gz": {
+      "bytes": 128,
+      "compressed": true,
+      "sha256": "7d0f690c15ec756a7d6d987914845b46ddbbebe6fd6f2de5f23f399403becdec"
+    },
+    "bound/connected.mlir.gz": {
+      "bytes": 3139,
+      "compressed": true,
+      "sha256": "dffc412e7066106df1bcdea2819006b9332dcd280c39a88ad05246c521c49d38"
+    },
+    "capture/nicolas_chain.handoff.mlir.gz": {
+      "bytes": 2410,
+      "compressed": true,
+      "sha256": "4dd4781de330657bd0158db3fc3844f345d3156957730c2f585f24183de89046"
+    },
+    "capture/nicolas_chain.model2mlir.mlir.gz": {
+      "bytes": 245773,
+      "compressed": true,
+      "sha256": "889cfc44d3109d4c4fe5be74c3275c1522de3dab6c38dbcfa4bec3a44b54dcbb"
+    },
+    "capture/nicolas_chain.profile_bound.mlir.gz": {
+      "bytes": 3096,
+      "compressed": true,
+      "sha256": "8347701dc89d64bebd3354bfcae3589511145750b0b133ace98d57eeb06c410f"
+    },
+    "capture/quantization_manifest.json.gz": {
+      "bytes": 1010,
+      "compressed": true,
+      "sha256": "5b6c97fdc95e9e8ef656abd4a6113ec09ece8d83cb5fec8746f28bd55f82e741"
+    },
+    "capture/receipt.json": {
+      "bytes": 2251,
+      "compressed": false,
+      "sha256": "0ca5ccafd369a535ee0c8c56ae29448882dc10cfcef3357d6869006d03dfb741"
+    },
+    "diagnostic/spike.log": {
+      "bytes": 163,
+      "compressed": false,
+      "sha256": "1b20b566157f15c05d275b4c002dbe1b6724e6b0f811cc488ea384dbac1d83ea"
+    },
+    "object/compile_manifest.json": {
+      "bytes": 1085,
+      "compressed": false,
+      "sha256": "c38971c36585da50ea597f7e4685d5ce0dd9a1c41d109541b9bb8d80deb43fc4"
+    },
+    "object/mx_issue.c.gz": {
+      "bytes": 20865,
+      "compressed": true,
+      "sha256": "b2c53397a81c2ec3000f107c2d79a63c74ebeb7b732b21c7efc62c057953f33c"
+    },
+    "object/mx_issue.h": {
+      "bytes": 371,
+      "compressed": false,
+      "sha256": "872a702ab7e8d6a8de76efb325a27f98a409b38f921c08c683c26bac240261d7"
+    },
+    "object/mx_issue.o.gz": {
+      "bytes": 3552,
+      "compressed": true,
+      "sha256": "802b94ca383a94afb7816cabfae1ac686f6c4e36974e70d96944de844237f996"
+    },
+    "object/object_manifest.json": {
+      "bytes": 4900,
+      "compressed": false,
+      "sha256": "62ac704fc6a73b5c31237399aadabf157910ec7793657b8500025049b48aa785"
+    },
+    "object/physical_program.json.gz": {
+      "bytes": 55643,
+      "compressed": true,
+      "sha256": "44986cdae40a3ccc02d5ae02fa16d199887e2d8291c633ff160ddf6157e94b8b"
+    },
+    "spike/mx_data.S.gz": {
+      "bytes": 750,
+      "compressed": true,
+      "sha256": "400722c53eaf72c7978b358108bf583a991a586ebb1817975bea4c2e733c06ae"
+    },
+    "spike/mx_driver.c.gz": {
+      "bytes": 2032,
+      "compressed": true,
+      "sha256": "c437dbe2fa8ac445e8149da4302695db2cba8bede97206fbdc442c790b23faca"
+    },
+    "spike/mx_program.elf.gz": {
+      "bytes": 48288,
+      "compressed": true,
+      "sha256": "b4b7f625af60c97090a7e93748cf04b8152c083b92245f6b29107a267386300d"
+    },
+    "spike/qualification_manifest.json": {
+      "bytes": 2835,
+      "compressed": false,
+      "sha256": "287fb91403874b8d99b4ee81884e64ae7da3e6fe906c19e4ee856edc84d71c0f"
+    },
+    "spike/spike.log": {
+      "bytes": 131,
+      "compressed": false,
+      "sha256": "4d7c5504b047eece862f119f542b38f735f01fba07ad1b06dc3c342ee979f5f2"
+    }
+  },
+  "first_shape_mnk": [
+    64,
+    96,
+    64
+  ],
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "reference_kind": "unchanged_nicolas_c1_and_pinned_model_derived_c2",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_rectangular_pair_fresh_spike.v1",
+  "second_shape_mnk": [
+    64,
+    64,
+    96
+  ],
+  "status": "source_c1_and_model_c2_matched_on_pinned_spike"
+}
