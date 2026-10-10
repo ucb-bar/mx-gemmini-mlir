@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 
 from mx_gemmini_support.command_ir import Command, Fence, emit_c
-from mx_gemmini_support.resident_pair_graph import INPUTS, lower_connected_fp8_pair
+from mx_gemmini_support.resident_pair_graph import INPUTS, lower_connected_pair
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _source_closure
 
@@ -54,21 +54,26 @@ def _load_mlir(path: Path) -> bytes:
     return data
 
 
-def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str]) -> list[dict]:
+def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str], *,
+                precision: str = "fp8_e4m3") -> list[dict]:
     m, n, k = pair.plan.m, pair.plan.n, pair.plan.k
     first_k = getattr(pair.plan, "first_k", k)
     first_n = k if hasattr(pair.plan, "first_k") else n
+    pack = 2 if precision == "fp4_e2m1" else 1
+    a_layout = "operand_a_tiled_packed_fp4" if pack == 2 else "row_major_fp8"
+    b_layout = "row_major_n_packed_fp4" if pack == 2 else "row_major_fp8"
+    tile_layout = "tile_major_packed_fp4" if pack == 2 else "tile_major_fp8"
     slots = {
-        "a1_activation": (m * first_k, "read", "row_major_fp8"),
+        "a1_activation": (m * first_k // pack, "read", a_layout),
         "a1_scales": (m * first_k // 32, "read", "k_group_major_a_scales"),
-        "b1_weight": (first_k * first_n, "read", "row_major_fp8"),
+        "b1_weight": (first_k * first_n // pack, "read", b_layout),
         "b1_scales": (first_k * first_n // 32, "read", "k_group_major_b_scales"),
-        "b2_weight": (k * n, "read", "row_major_fp8"),
+        "b2_weight": (k * n // pack, "read", b_layout),
         "b2_scales": (k * n // 32, "read", "k_group_major_b_scales"),
         "c1_scales": (m * first_n // 32, "write", "row_major_e8m0_scales"),
-        "c1_tiled_observed": (m * first_n, "write", "tile_major_fp8"),
+        "c1_tiled_observed": (m * first_n // pack, "write", tile_layout),
         "c2_scales": (m * n // 32, "write", "row_major_e8m0_scales"),
-        "c2_tiled": (m * n, "write", "tile_major_fp8"),
+        "c2_tiled": (m * n // pack, "write", tile_layout),
     }
     symbols = {slot: buffers[slot] for slot in INPUTS} | {
         slot: outputs[slot] for slot in OUTPUTS}
@@ -139,6 +144,8 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--mx-opt", type=Path,
                         help="also verify the typed module with native mx-gemmini-opt")
+    parser.add_argument("--precision", choices=("fp8_e4m3", "fp4_e2m1"),
+                        default="fp8_e4m3")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated issuer, object, and physical program")
     args = parser.parse_args()
@@ -168,11 +175,11 @@ def main() -> None:
                  for slot in INPUTS}
     mlir_bytes = _load_mlir(args.mlir)
     mlir_text = mlir_bytes.decode()
-    pair = lower_connected_fp8_pair(
+    pair = lower_connected_pair(
         mlir_text, profile, resources, buffers=buffers,
         c1_scales=outputs["c1_scales"],
         c1_tiled_observed=outputs["c1_tiled_observed"],
-        c2_tiled=outputs["c2_tiled"])
+        c2_tiled=outputs["c2_tiled"], precision=args.precision)
     # The typed MM2 operation must carry the same scale destination as the ABI.
     used_outputs = {operand.buffer for command in pair.commands
                     if isinstance(command, Command)
@@ -185,7 +192,7 @@ def main() -> None:
                           if isinstance(command, Command) and command.funct == 26]
     if scale_destinations != [outputs["c1_scales"], outputs["c2_scales"]]:
         raise ValueError("resident pair scale output slots differ from typed MLIR")
-    buffer_abi = _buffer_abi(pair, buffers, outputs)
+    buffer_abi = _buffer_abi(pair, buffers, outputs, precision=args.precision)
     if args.mx_opt is not None:
         if args.mlir.name.endswith(".mlir.gz"):
             with tempfile.TemporaryDirectory(prefix="mx-pair-verifier-") as temp:
@@ -219,6 +226,8 @@ def main() -> None:
     if hasattr(pair.plan, "first_k"):
         physical_record["first_shape_mnk"] = [pair.plan.m, pair.plan.k,
                                               pair.plan.first_k]
+    if args.precision != "fp8_e4m3":
+        physical_record["precision"] = args.precision
     physical.write_text(json.dumps(physical_record, indent=2, sort_keys=True) + "\n")
     obj, data_bytes = _compile_object(args.out_dir, args.riscv_root)
     cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
@@ -252,6 +261,8 @@ def main() -> None:
     if hasattr(pair.plan, "first_k"):
         manifest["first_shape_mnk"] = [pair.plan.m, pair.plan.k,
                                         pair.plan.first_k]
+    if args.precision != "fp8_e4m3":
+        manifest["precision"] = args.precision
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     if args.baseline_manifest is not None:

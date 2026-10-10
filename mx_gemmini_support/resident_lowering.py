@@ -1,4 +1,4 @@
-"""Profile-checked physical lowering for a DIM16 FP8 resident contraction.
+"""Profile-checked physical lowering for DIM16 FP8 and FP4 resident contractions.
 
 The typed operation names the live scratchpad tile and source buffers. The
 64-cubed VPU/requant and 128-cubed direct requant chains use the same physical
@@ -21,28 +21,36 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     if profile["geometry"].get("mesh_columns") != 16:
         raise ValueError("resident MX contraction requires the qualified DIM16 layout")
     shape = (attrs["m"], attrs["n"], attrs["k"])
+    precision = attrs["activation_format"]
+    fp4 = precision == "fp4_e2m1"
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
+    fp4_shape = shape == (64, 64, 64)
     vpu_shape = (shape[0] == 64 and shape[1] in (32, 64) and shape[2] == 64)
-    if not vpu_shape and not plain_shape:
+    if not ((fp4 and fp4_shape) or (not fp4 and (vpu_shape or plain_shape))):
         raise ValueError("resident MX contraction needs a supported complete tile")
-    if vpu_shape and (not profile["resources"].get("spad_requant") or
+    if not fp4 and vpu_shape and (not profile["resources"].get("spad_requant") or
                       not profile["resources"].get("vpu")):
         raise ValueError("64-row resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
-    if plain_shape and (
+    if (plain_shape or fp4) and (
             profile["name"] != "MxGemminiRocketConfig" or
             profile["resources"].get("spad_requant") or
             profile["resources"].get("vpu")):
         raise ValueError("plain resident MX contraction needs Nicolas's plain MX profile")
-    if any(attrs[key] != "fp8_e4m3" for key in
+    if any(attrs[key] != precision for key in
            ("activation_format", "weight_format", "output_format")):
-        raise ValueError("resident MX contraction requires E4M3 inputs and output")
+        raise ValueError("resident MX contraction requires matching FP8 or FP4 inputs and output")
+    from .target_profile import require_compute
+    require_compute(profile, precision, precision, pe_mode=0 if fp4 else 8,
+                    activation_projection="direct", weight_projection="direct")
     for key in ("weight_buffer", "weight_scales_buffer", "output_scales_buffer"):
         if not isinstance(attrs[key], str) or not _BUFFER.fullmatch(attrs[key]):
             raise ValueError(f"resident MX {key} must name a runtime buffer")
     m, n, k = shape
-    activation_rows, weight_rows, output_rows = (m * k // 16, k * n // 16,
-                                                  m * n // 16)
+    packed = 2 if fp4 else 1
+    activation_rows, weight_rows, output_rows = (m * k // (16 * packed),
+                                                  k * n // (16 * packed),
+                                                  m * n // (16 * packed))
     rows = profile["resources"]["scratchpad_bytes"] // 16
     a, b, c = (attrs[key] for key in ("activation_row", "weight_row", "output_row"))
     if any(type(value) is not int for value in (a, b, c)) or not (
@@ -51,7 +59,7 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
             c + output_rows <= b and b + weight_rows == rows and
             rows <= 1 << 14):
         raise ValueError("resident MX scratchpad tile placement or lifetime differs")
-    if "fp8_e4m3" not in profile["candidate_output_modes"]:
+    if precision not in profile["candidate_output_modes"]:
         raise ValueError("resident MX output mode is absent from selected profile")
 
 
@@ -65,24 +73,27 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
 
     m, n, k = attrs["m"], attrs["n"], attrs["k"]
     a, b, c = (attrs[key] for key in ("activation_row", "weight_row", "output_row"))
-    i, j, kk = m // 16, n // 16, k // 16
+    fp4 = attrs["activation_format"] == "fp4_e2m1"
+    i, j, kk = m // (32 if fp4 else 16), n // (32 if fp4 else 16), k // 16
+    config_ex = ((1 << 16) | (2 << 14) | (2 << 12) | (2 << 10) | (1 << 2)
+                 if fp4 else (1 << 16) | (1 << 2))
     commands: list[Command | Fence] = [
         # gemmini_extended3_config_ex(WS, ..., E4M3 inputs/output).
-        cmd(0, (1 << 16) | (1 << 2), 1 << 48),
+        cmd(0, config_ex, 1 << 48),
         # gemmini_mx_load_scales(B2, sizeof(B2), weight selector 1).
         cmd(27, Operand(buffer=attrs["weight_scales_buffer"]), (1 << 32) | (k // 32 * n)),
         Fence(),
         # B2 is row-major in DRAM and operand-B tile-major in bank 3.
-        cmd(0, (16 << 16) | (1 << 8) | 1, n),
+        cmd(0, (16 << 16) | (1 << 8) | 1, n // (2 if fp4 else 1)),
     ]
     # Nicolas's square chain used j-major source traversal. For a rectangular
     # B matrix the model and RTL consume tile (k,j) at k*j+j, so preserve the
     # source's row-major K×N layout when K and N differ.
-    tiles = ((tk, tj) for tk in range(kk) for tj in range(j)) if n != k else (
+    tiles = ((tk, tj) for tk in range(kk) for tj in range(j)) if fp4 or n != k else (
         (tk, tj) for tj in range(j) for tk in range(kk))
     for tk, tj in tiles:
-        offset = (tk * 16 * n + tj * 16) if n != k else (tj * 16 * n + tk * 16)
-        row = b + ((tk * j + tj) if n != k else (tj * kk + tk)) * 16
+        offset = (tk * 16 * (n // 2 if fp4 else n) + tj * 16) if fp4 or n != k else (tj * 16 * n + tk * 16)
+        row = b + ((tk * j + tj) if fp4 or n != k else (tj * kk + tk)) * 16
         commands.append(cmd(2, Operand(buffer=attrs["weight_buffer"], byte_offset=offset),
                             (16 << 48) | (16 << 32) | row))
     commands += [
@@ -94,7 +105,7 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
                         address_mask=(1 << 33) - 1,
                         or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
         cmd(9, 0, (kk << 32) | (j << 16) | i),
-        cmd(24, a, b + k * n // 16),
+        cmd(24, a, b + k * n // (32 if fp4 else 16)),
         cmd(8, 0, (c << 32) | 0x200 | 0x38 | (1 << 10)),
         Fence(),
     ]

@@ -260,3 +260,75 @@ def lower_first_fp8_resident(plan: ResidentPairPlan, *,
         Fence(),
     ])
     return tuple(commands)
+
+
+def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
+                           a_row: int, c1_row: int, c2_row: int) -> ResidentPairPlan:
+    """Place Nicolas's packed E2M1 64-cubed pair with B1/B2 tail reuse."""
+    resources = profile["resources"]
+    if (profile.get("transport") != "rocket_rocc" or
+            profile["name"] != "MxGemminiRocketConfig" or
+            profile["geometry"]["mesh_columns"] != 16 or
+            profile["geometry"]["mesh_rows"] != 16 or
+            not resources.get("requantizer") or
+            resources.get("vpu") or resources.get("spad_requant")):
+        raise ValueError("FP4 resident pair needs Nicolas's plain DIM16 MX profile")
+    require_compute(profile, "fp4_e2m1", "fp4_e2m1", pe_mode=0,
+                    activation_projection="direct", weight_projection="direct")
+    if shape != (64, 64, 64):
+        raise ValueError("FP4 resident pair needs Nicolas's 64-cubed source shape")
+    rows = resources["scratchpad_bytes"] // 16
+    a_rows = b_rows = c_rows = 64 * 64 // 32
+    b_row = rows - b_rows
+    ranges = [(a_row, a_row + a_rows), (c1_row, c1_row + c_rows),
+              (c2_row, c2_row + c_rows), (b_row, rows)]
+    if (rows != 16384 or any(type(row) is not int or row < 0 or row % 16
+                             for row in (a_row, c1_row, c2_row)) or
+            any(end > rows for _, end in ranges) or
+            any(left[1] > right[0] and right[1] > left[0]
+                for i, left in enumerate(ranges)
+                for right in ranges[i + 1:]) or
+            resources["scale_mem_config"]["size_bytes"] // 4 < 128 or
+            resources["accumulator_bytes"] < 64 * 64 * 2):
+        raise ValueError("FP4 resident pair scratchpad or scale capacity differs")
+    return ResidentPairPlan(64, 64, 64, 16, rows, a_row, b_row, c1_row,
+                            c2_row, a_rows, b_rows, c_rows, 2, 2, 4,
+                            128, 128, 128)
+
+
+def lower_first_fp4_resident(plan: ResidentPairPlan, *,
+                             activation_buffer: str, activation_scales_buffer: str,
+                             weight_buffer: str, weight_scales_buffer: str,
+                             output_scales_buffer: str) -> tuple[Command | Fence, ...]:
+    """Issue MM1 and leave its packed output and scales resident for MM2."""
+    i, j, kk = plan.m_tiles, plan.n_tiles, plan.k_tiles
+    config_ex = (1 << 16) | (2 << 14) | (2 << 12) | (2 << 10) | (1 << 2)
+    commands: list[Command | Fence] = [
+        _cmd(7, 0, 0), _cmd(0, config_ex, 1 << 48),
+        _cmd(27, Operand(buffer=activation_scales_buffer), plan.a_scale_bytes),
+        _cmd(27, Operand(buffer=weight_scales_buffer),
+             (1 << 32) | plan.b_scale_bytes),
+        Fence(), _config_ld(plan.m),
+    ]
+    for mi in range(i):
+        for ki in range(kk):
+            commands.append(_transfer(
+                2, activation_buffer, mi * plan.dim * plan.m + ki * plan.dim,
+                plan.a_row + (mi * kk + ki) * plan.dim))
+    commands.append(_config_ld(plan.n // 2))
+    for ki in range(kk):
+        for nj in range(j):
+            commands.append(_transfer(
+                2, weight_buffer, ki * plan.dim * plan.n // 2 + nj * plan.dim,
+                plan.b_row + (ki * j + nj) * plan.dim))
+    commands.extend([
+        Fence(), _config_st(2),
+        _cmd(26, Operand(buffer=output_scales_buffer,
+                         address_mask=(1 << 33) - 1,
+                         or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
+        _cmd(9, 0, (kk << 32) | (j << 16) | i),
+        _cmd(24, plan.a_row, plan.rows),
+        _cmd(8, 0, (plan.c1_row << 32) | 0x200 | 0x38 | (1 << 10)),
+        Fence(),
+    ])
+    return tuple(commands)

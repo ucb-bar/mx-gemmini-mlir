@@ -347,14 +347,17 @@ LogicalResult ResidentContractOp::verify() {
   auto format = [this](StringRef name) {
     return (*this)->getAttrOfType<StringAttr>(name).getValue();
   };
-  if (format("activation_format") != "fp8_e4m3" ||
-      format("weight_format") != "fp8_e4m3" ||
-      format("output_format") != "fp8_e4m3")
-    return emitOpError("resident contraction currently requires E4M3 inputs and output");
+  StringRef precision = format("activation_format");
+  if ((precision != "fp8_e4m3" && precision != "fp4_e2m1") ||
+      format("weight_format") != precision ||
+      format("output_format") != precision)
+    return emitOpError("resident contraction requires matching E4M3 or E2M1 inputs and output");
   if (!getInputs().empty()) {
     int64_t m = row("m"), n = row("n"), k = row("k");
+    int64_t pack = precision == "fp4_e2m1" ? 2 : 1;
     const int64_t expected[6][2] = {
-        {m, k}, {m, k / 32}, {k, n}, {k / 32, n}, {m, n}, {m, n / 32}};
+        {m / pack, k}, {m, k / 32}, {k, n / pack}, {k / 32, n},
+        {m / pack, n}, {m, n / 32}};
     for (unsigned i = 0; i < 6; ++i) {
       Value value = i < 4 ? getInputs()[i] : getOutputs()[i - 4];
       auto tensor = dyn_cast<RankedTensorType>(value.getType());

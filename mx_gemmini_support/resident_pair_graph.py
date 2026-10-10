@@ -1,4 +1,4 @@
-"""Lower a typed FP8 contraction/readout/resident-contraction graph.
+"""Lower a typed MX contraction/readout/resident-contraction graph.
 
 Source adapters supply runtime bytes and an ABI buffer map. This module
 checks the SSA edges, profile, payload digest, scratchpad lifetimes, and
@@ -16,8 +16,10 @@ from .command_ir import Command, Fence
 from .physical_program import _config_st, _transfer
 from .resident_lowering import lower_resident_contract
 from .resident_pair_plan import (RectangularPairPlan, ResidentPairPlan,
+                                 lower_first_fp4_resident,
                                  lower_first_fp8_rectangular,
                                  lower_first_fp8_resident,
+                                 plan_fp4_resident_pair,
                                  plan_fp8_rectangular_pair,
                                  plan_fp8_resident_pair)
 from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
@@ -44,12 +46,13 @@ def input_digest(resources: dict[str, bytes], buffers: dict[str, str]) -> str:
         hashes, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-def lower_connected_fp8_pair(mlir_text: str, profile: dict,
+def lower_connected_pair(mlir_text: str, profile: dict,
                              resources: dict[str, bytes], *,
                              buffers: dict[str, str],
                              c1_scales: str, c1_tiled_observed: str,
-                             c2_tiled: str, a_row: int = 0) -> ConnectedPair:
-    """Compile one direct E4M3 MM1→resident MM2 pair to ordered RoCC commands.
+                             c2_tiled: str, a_row: int = 0,
+                             precision: str = "fp8_e4m3") -> ConnectedPair:
+    """Compile one direct E4M3 or E2M1 MM1→resident MM2 pair.
 
     Diagnostic C1 readout is optional to consume on the host; it never reloads
     C1 before MM2. Numerical claims belong to source-qualified callers.
@@ -59,17 +62,20 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
 
+    if precision not in ("fp8_e4m3", "fp4_e2m1"):
+        raise ValueError("connected resident pair precision is unsupported")
+    fp4 = precision == "fp4_e2m1"
     if (set(buffers) != set(INPUTS) or
             any(not isinstance(value, str) or not _BUFFER.fullmatch(value)
                 for value in (*buffers.values(), c1_scales,
                               c1_tiled_observed, c2_tiled)) or
             len(set((*buffers.values(), c1_scales, c1_tiled_observed,
                      c2_tiled))) != len(INPUTS) + 3):
-        raise ValueError("connected FP8 pair needs distinct named ABI buffers")
+        raise ValueError("connected MX pair needs distinct named ABI buffers")
     checked = verify_ir(mlir_text, profile)
     if (checked["contracts"], checked["resident_contracts"],
             checked["vpu_commands"], checked["spad_requants"]) != (1, 1, 0, 0):
-        raise ValueError("connected FP8 pair needs MM1 and resident MM2")
+        raise ValueError("connected MX pair needs MM1 and resident MM2")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
     context.load_dialect(Func)
@@ -77,18 +83,18 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
     try:
         digest = input_digest(resources, buffers)
     except (KeyError, TypeError) as error:
-        raise ValueError("connected FP8 pair runtime input is absent") from error
+        raise ValueError("connected MX pair runtime input is absent") from error
     if _text_attr(module, "mx.runtime_resources_sha256") != digest:
-        raise ValueError("connected FP8 pair runtime payload digest differs")
+        raise ValueError("connected MX pair runtime payload digest differs")
     functions = [op for op in module.walk() if isinstance(op, FuncOp)]
     if len(functions) != 1:
-        raise ValueError("connected FP8 pair needs one function")
+        raise ValueError("connected MX pair needs one function")
     function = functions[0]
     ops = list(function.body.block.ops)
     if [_operation_name(op) for op in ops] != [
             "mx_gemmini.contract", "mx_gemmini.readout_quantized",
             "mx_gemmini.resident_contract", "func.return"]:
-        raise ValueError("connected FP8 pair operation order differs")
+        raise ValueError("connected MX pair operation order differs")
     mm1, readout, mm2, ret = ops
     attrs = {name: _int_attr(mm2, name) for name in
              ("activation_row", "weight_row", "output_row", "m", "n", "k")}
@@ -97,21 +103,25 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
                    "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
     m, n, k = attrs["m"], attrs["n"], attrs["k"]
     if any(type(value) is not int or value <= 0 for value in (m, n, k)) or k % 32 or n % 32:
-        raise ValueError("connected FP8 pair shape needs complete scale groups")
+        raise ValueError("connected MX pair shape needs complete scale groups")
     args = list(function.body.block.args)
-    first_k_match = re.fullmatch(rf"tensor<{m}x(\d+)xi8>", str(args[0].type))
+    first_k_match = re.fullmatch(
+        rf"tensor<{m // (2 if fp4 else 1)}x(\d+)xi8>", str(args[0].type))
     if first_k_match is None:
-        raise ValueError("connected FP8 pair MM1 activation shape differs")
+        raise ValueError("connected MX pair MM1 activation shape differs")
     first_k = int(first_k_match.group(1))
     if first_k <= 0 or first_k % 32:
-        raise ValueError("connected FP8 pair MM1 needs complete scale groups")
-    arg_types = (f"tensor<{m}x{first_k}xi8>",
+        raise ValueError("connected MX pair MM1 needs complete scale groups")
+    arg_types = (f"tensor<{m // (2 if fp4 else 1)}x{first_k}xi8>",
                  f"tensor<{first_k // 32}x{m}xi8>",
-                 f"tensor<{first_k}x{k}xi8>",
+                 f"tensor<{first_k}x{k // (2 if fp4 else 1)}xi8>",
                  f"tensor<{first_k // 32}x{k}xi8>",
-                 f"tensor<{k}x{n}xi8>", f"tensor<{k // 32}x{n}xi8>")
-    first_output_types = (f"tensor<{m}x{k}xi8>", f"tensor<{m}x{k // 32}xi8>")
-    output_types = (f"tensor<{m}x{n}xi8>", f"tensor<{m}x{n // 32}xi8>")
+                 f"tensor<{k}x{n // (2 if fp4 else 1)}xi8>",
+                 f"tensor<{k // 32}x{n}xi8>")
+    first_output_types = (f"tensor<{m // (2 if fp4 else 1)}x{k}xi8>",
+                          f"tensor<{m}x{k // 32}xi8>")
+    output_types = (f"tensor<{m // (2 if fp4 else 1)}x{n}xi8>",
+                    f"tensor<{m}x{n // 32}xi8>")
     if (tuple(str(arg.type) for arg in args) != arg_types or
             tuple(str(result.type) for result in mm1.results) !=
             (f"tensor<{m}x{k}xbf16>",) or
@@ -122,23 +132,23 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
             list(mm2.operands) != [*readout.results, *args[4:]] or
             not isinstance(ret, ReturnOp) or
             list(ret.operands) != list(mm2.results)):
-        raise ValueError("connected FP8 pair SSA tensor edges differ")
+        raise ValueError("connected MX pair SSA tensor edges differ")
     first_site = _text_attr(mm1, "site_id")
     second_site = _text_attr(mm2, "site_id")
     if (first_site != _text_attr(readout, "site_id") or
             first_site == second_site or
             any(_text_attr(mm1, name) != value for name, value in {
-                "activation_format": "fp8_e4m3", "weight_format": "fp8_e4m3",
+                "activation_format": precision, "weight_format": precision,
                 "activation_projection": "direct", "weight_projection": "direct"}.items()) or
-            _int_attr(mm1, "pe_mode") != 8 or
-            _text_attr(readout, "output_format") != "fp8_e4m3"):
-        raise ValueError("connected FP8 pair site or precision differs")
-    expected_lengths = (m * first_k, m * first_k // 32,
-                        first_k * k, first_k * k // 32,
-                        k * n, k * n // 32)
+            _int_attr(mm1, "pe_mode") != (0 if fp4 else 8) or
+            _text_attr(readout, "output_format") != precision):
+        raise ValueError("connected MX pair site or precision differs")
+    expected_lengths = (m * first_k // (2 if fp4 else 1), m * first_k // 32,
+                        first_k * k // (2 if fp4 else 1), first_k * k // 32,
+                        k * n // (2 if fp4 else 1), k * n // 32)
     if any(len(resources[buffers[slot]]) != length
            for slot, length in zip(INPUTS, expected_lengths)):
-        raise ValueError("connected FP8 pair physical input size differs")
+        raise ValueError("connected MX pair physical input size differs")
     if (attrs["weight_buffer"] != buffers["b2_weight"] or
             attrs["weight_scales_buffer"] != buffers["b2_scales"] or
             not isinstance(attrs["output_scales_buffer"], str) or
@@ -148,9 +158,15 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
             any(name in resources for name in (
                 c1_scales, c1_tiled_observed, c2_tiled,
                 attrs["output_scales_buffer"]))):
-        raise ValueError("connected FP8 pair MM2 buffers differ from ABI")
+        raise ValueError("connected MX pair MM2 buffers differ from ABI")
     rectangular = first_k != k or n != k
-    if rectangular:
+    if fp4:
+        plan = plan_fp4_resident_pair(
+            profile, shape=(m, n, k), a_row=a_row,
+            c1_row=attrs["activation_row"], c2_row=attrs["output_row"])
+        if rectangular:
+            raise ValueError("connected FP4 resident pair has no rectangular source fixture")
+    elif rectangular:
         plan = plan_fp8_rectangular_pair(
             profile, first_shape=(m, k, first_k),
             second_shape=(m, n, k), a_row=a_row,
@@ -160,8 +176,9 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
             profile, shape=(m, n, k), a_row=a_row,
             c1_row=attrs["activation_row"], c2_row=attrs["output_row"])
     if attrs["weight_row"] != plan.b_row:
-        raise ValueError("connected FP8 pair B placement differs from profile")
-    lower_first = lower_first_fp8_rectangular if rectangular else lower_first_fp8_resident
+        raise ValueError("connected MX pair B placement differs from profile")
+    lower_first = (lower_first_fp4_resident if fp4 else
+                   lower_first_fp8_rectangular if rectangular else lower_first_fp8_resident)
     commands: list[Command | Fence] = list(lower_first(
         plan, activation_buffer=buffers["a1_activation"],
         activation_scales_buffer=buffers["a1_scales"],
@@ -181,3 +198,12 @@ def lower_connected_fp8_pair(mlir_text: str, profile: dict,
                                   plan.c2_row + row))
     commands.append(Fence())
     return ConnectedPair(plan, first_site, second_site, tuple(commands))
+
+
+def lower_connected_fp8_pair(mlir_text: str, profile: dict,
+                             resources: dict[str, bytes], *, buffers: dict[str, str],
+                             c1_scales: str, c1_tiled_observed: str,
+                             c2_tiled: str, a_row: int = 0) -> ConnectedPair:
+    return lower_connected_pair(
+        mlir_text, profile, resources, buffers=buffers, c1_scales=c1_scales,
+        c1_tiled_observed=c1_tiled_observed, c2_tiled=c2_tiled, a_row=a_row)
