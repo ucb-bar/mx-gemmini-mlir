@@ -1500,6 +1500,14 @@ objects, ELFs, extensions, and Spike logs as the archived baseline for all
 31 drivers. The default command refuses a changed source/tool revision or
 artifact digest before writing a success receipt.
 
+A [fresh GitHub checkout at `205e178`](evidence/mx_fresh_checkout_205e178/index.json)
+rebuilt `mx-gemmini-opt` from source, then ran this one-command reproduction
+against the current Radiance `80f84ca` checkout. Its 31 fresh frontend and
+Spike rows match the archived source, bound MLIR, ELF, and simulator-log
+hashes. The same checkout rebuilt and ran the eight-wrapper Spike matrix;
+all eight output identities match their archive. The receipt pins the fresh
+compiler, model2MLIR, RTL, source, and rebuilt `mx-gemmini-opt` digests.
+
 Repeat the capture and Spike commands with fresh output directories, then run
 `tools.archive_radiance_roster` with both pairs and the header materialization
 report. It rejects changed frontend artifacts, generated sources, objects,

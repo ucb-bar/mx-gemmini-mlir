@@ -42,6 +42,9 @@ closes the previous named-profile gaps with two source-derived runs per
 wrapper, while the separate mode-class matrix records the stock Spike
 weight-LUT discrepancy. The 41 Gemmini-only fragments remain structural
 profiles.
+A [fresh-checkout reproduction](docs/evidence/mx_fresh_checkout_205e178/index.json)
+builds `mx-gemmini-opt` from the pushed branch and rechecks all 31 Radiance
+MX GEMM drivers and eight Rocket-wrapper cases on Nicolas's Spike.
 The same command now accepts the current Radiance `spatter-workloads` revision
 `80f84ca` with `--compatible-source-revision`: all 31 driver and header bytes,
 typed MLIR, physical streams, ELFs, and Spike logs match the pinned roster.

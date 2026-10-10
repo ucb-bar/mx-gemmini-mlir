@@ -1,0 +1,18 @@
+{
+  "compiler_remote": "git@github.com:ucb-bar/mx-gemmini-mlir.git",
+  "compiler_revision": "205e178b26b4dec69f29aa50f727f8788af1fffd",
+  "files_sha256": {
+    "radiance_frontend_index.json": "e150efb3a22916088a909f95a5688833b56ebc406ca7749feb47d2bc14c27568",
+    "radiance_roster_reproduction.json": "e2e362f0e8a4bbd4ac39bbe18ae00bedb96dbc7029383bb148203bff48bec9af",
+    "radiance_spike_index.json": "02c74e91d68d22c2815c1a6b71aad9387f8acfe7eff37f545da5cdd2dcc903b2",
+    "rocket_wrapper_index.json": "81dd0fdb66ff292adf52193c1e31e26e3cb8d0ced19f53d5af44c949e076c7a1"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mx_opt_sha256": "4ad3f6f56deec5115d2e1d38433b0c6731389c80ec38d74b6816ffb9d5e45fc3",
+  "radiance_source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "rocket_wrappers": 8,
+  "roster_drivers": 31,
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fresh_checkout_reproduction.v1",
+  "status": "fresh_checkout_built_and_source_rosters_reproduced"
+}

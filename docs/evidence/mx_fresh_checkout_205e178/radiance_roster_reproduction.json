@@ -1,0 +1,17 @@
+{
+  "baseline_frontend_index_sha256": "47ef832752288ddeab0a28c1ca1a7a12d0150880d407143512b6aeb3505db8c4",
+  "baseline_source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a",
+  "baseline_spike_index_sha256": "4e4fd3dac081e6a336274608347f826488fa993d131714548fc5c2594981c8e3",
+  "compatible_source_revision": true,
+  "compiler_revision": "205e178b26b4dec69f29aa50f727f8788af1fffd",
+  "covered_drivers": 31,
+  "frontend_index_sha256": "e150efb3a22916088a909f95a5688833b56ebc406ca7749feb47d2bc14c27568",
+  "fullout_drivers": 23,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "requant_drivers": 8,
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_mx_gemm_reproduction.v1",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "spike_index_sha256": "02c74e91d68d22c2815c1a6b71aad9387f8acfe7eff37f545da5cdd2dcc903b2",
+  "status": "all_31_source_goldens_reproduced_on_pinned_spike"
+}
