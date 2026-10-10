@@ -8,6 +8,7 @@ import re
 import pytest
 
 from mx_gemmini_support.command_ir import Command
+from mx_gemmini_support.resident_lowering import validate_resident_contract
 from mx_gemmini_support.resident_pair_graph import input_digest
 from mx_gemmini_support.resident_vpu_graph import (INPUTS, OUTPUTS,
                                                    lower_connected_fp8_vpu_pair)
@@ -133,3 +134,30 @@ def test_connected_scalar_chain_preserves_ssa_order_and_object_dispatch():
     with pytest.raises(ValueError, match="in-place scalar operations"):
         lower_connected_fp8_vpu_pair(
             displaced, profile, resources, buffers=buffers, outputs=outputs)
+
+
+@pytest.mark.parametrize("profile_name", (
+    "MxE4M3Fp4VpuGemminiRocketConfig",
+    "MxE4M3VpuGemminiRocketConfig",
+))
+def test_vpu_resident_width_is_bounded_by_real_target_capacity(profile_name):
+    profile = load_profile(PROFILE.parent / f"{profile_name}.json")
+    rows = profile["resources"]["scratchpad_bytes"] // 16
+
+    def attrs(width: int) -> dict:
+        return {
+            "m": 64, "n": width, "k": 64,
+            "activation_format": "fp8_e4m3",
+            "weight_format": "fp8_e4m3", "output_format": "fp8_e4m3",
+            "activation_row": 128, "weight_row": rows - 4 * width,
+            "output_row": 512, "weight_buffer": "b2_weight",
+            "weight_scales_buffer": "b2_scales",
+            "output_scales_buffer": "c2_scales",
+        }
+
+    for width in (32, 64, 96, 128, 512):
+        validate_resident_contract(profile, attrs(width))
+    with pytest.raises(ValueError, match="supported complete tile"):
+        validate_resident_contract(profile, attrs(48))
+    with pytest.raises(ValueError, match="accumulator capacity"):
+        validate_resident_contract(profile, attrs(544))

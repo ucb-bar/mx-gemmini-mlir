@@ -27,7 +27,10 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
     packed_shape = shape in ((64, 64, 64), (128, 128, 128))
-    vpu_shape = (shape[0] == 64 and shape[1] in (32, 64) and shape[2] == 64)
+    # The VPU handoff keeps a 64x64 C1 tile resident. MM2 may use any complete
+    # E8M0 output width that fits the selected scratchpad and accumulator.
+    vpu_shape = (shape[0] == 64 and shape[1] >= 32 and
+                 shape[1] % 32 == 0 and shape[2] == 64)
     if not (((fp4 or fp6) and packed_shape) or
             (not fp4 and not fp6 and (vpu_shape or plain_shape))):
         raise ValueError("resident MX contraction needs a supported complete tile")
@@ -73,6 +76,10 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
         raise ValueError("resident MX scratchpad tile placement or lifetime differs")
     if precision not in profile["candidate_output_modes"]:
         raise ValueError("resident MX output mode is absent from selected profile")
+    scale_capacity = profile["resources"]["scale_mem_config"]["size_bytes"] // 4
+    if (max(m * k, k * n, m * n) // 32 > scale_capacity or
+            m * n * 2 > profile["resources"]["accumulator_bytes"]):
+        raise ValueError("resident MX scale or accumulator capacity is exceeded")
 
 
 def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence, ...]:

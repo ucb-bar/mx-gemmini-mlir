@@ -88,8 +88,8 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
     vpus = ops[2:2 + vpu_count]
     requant, mm2, ret = ops[2 + vpu_count:]
     n = _int_attr(mm2, "n")
-    if n not in (32, 64):
-        raise ValueError("connected MX VPU pair needs a qualified MM2 width")
+    if type(n) is not int or n < 32 or n % 32:
+        raise ValueError("connected MX VPU pair needs a complete E8M0 MM2 width")
     if (lengths["b2_weight"], lengths["b2_scales"]) != (64 * n, 2 * n):
         raise ValueError("connected MX VPU pair MM2 input sizes differ")
     args = list(function.body.block.args)

@@ -47,8 +47,11 @@ def main() -> None:
     rectangular = (first_k, args.matrix_dim) == (64, 96) and second_width in (32, 64)
     narrow_vpu = (first_k, args.matrix_dim, second_width, output_rows) == (
         64, 64, 32, 64)
+    wide_vpu = ((first_k, args.matrix_dim, output_rows) == (64, 64, 64)
+                and second_width in (96, 128))
     if ((first_k, second_width) != (args.matrix_dim, args.matrix_dim) and
-            not narrow_vpu and (not rectangular or output_rows != 64)):
+            not narrow_vpu and not wide_vpu and
+            (not rectangular or output_rows != 64)):
         parser.error("selected connected MX shape has no checked source specialization")
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
@@ -141,6 +144,8 @@ def main() -> None:
     receipt = {
         "schema": ("mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
                    if rectangular else
+                   "mx_gemmini.nicolas_derived_wide_vpu_chain_model2mlir_capture.v1"
+                   if wide_vpu else
                    "mx_gemmini.nicolas_narrow_vpu_chain_model2mlir_capture.v1"
                    if narrow_vpu else
                    "mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
@@ -182,6 +187,13 @@ def main() -> None:
         receipt["numerical_scope"] = (
             "MM1 and VPU use Nicolas's checked 64³ source; MM2 uses its first "
             "32 weight columns and the corresponding first output block")
+    if wide_vpu:
+        receipt["first_shape_mnk"] = [64, 64, 64]
+        receipt["second_shape_mnk"] = [64, second_width, 64]
+        receipt["numerical_scope"] = (
+            "MM1 and VPU use Nicolas's checked 64³ source; the wider MM2 "
+            "weight columns are derived from its B2 wire bytes and require "
+            "a separately checked pinned mesh-model output reference")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 

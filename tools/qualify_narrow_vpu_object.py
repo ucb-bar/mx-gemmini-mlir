@@ -4,20 +4,18 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import json
-import math
 from pathlib import Path
 import shutil
 import subprocess
 
 from mx_gemmini_support.command_ir import emit_c
+from mx_gemmini_support.connected_fp8_model import (
+    MODEL_SHA256, load_nicolas_fp8_model, model_c2)
 from mx_gemmini_support.narrow_vpu_chain import render_narrow_vpu_chain
 from mx_gemmini_support.narrow_vpu_source import derive_narrow_vpu_resources
 from mx_gemmini_support.quant_reference import (
     bf16_add_scalar, exact_bf16_x2, quantize_bf16_fp8_output)
-from mx_gemmini_support.source_attention_qk import (
-    ACCUMULATOR_PRECISION, PRODUCT_PRECISION, decode_e4m3)
 from mx_gemmini_support.resident_pair_graph import INPUTS
 from mx_gemmini_support.resident_vpu_graph import OUTPUTS, lower_connected_fp8_vpu_pair
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -30,7 +28,9 @@ PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketC
 MARKER = "lowered narrow MX/VPU: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales"
 
 
-def _driver(names: tuple[str, ...]) -> str:
+def _driver(names: tuple[str, ...], second_width: int = 32) -> str:
+    if second_width < 32 or second_width % 32:
+        raise ValueError("connected VPU driver needs complete E8M0 output blocks")
     declarations = "\n".join(
         f"extern const uint8_t {name}[];" for name in
         (*INPUTS, "c1_bf16", "c1_codes_ref", "c1_scales_ref",
@@ -41,8 +41,8 @@ def _driver(names: tuple[str, ...]) -> str:
 static uint8_t c1_scales[128] __attribute__((aligned(64)));
 static uint8_t c1_bf16_observed[8192] __attribute__((aligned(64)));
 static uint8_t c1_tiled[4096] __attribute__((aligned(64)));
-static uint8_t c2_scales[64] __attribute__((aligned(64)));
-static uint8_t c2_tiled[2048] __attribute__((aligned(64)));
+static uint8_t c2_scales[{2 * second_width}] __attribute__((aligned(64)));
+static uint8_t c2_tiled[{64 * second_width}] __attribute__((aligned(64)));
 void mx_issue({", ".join(f"const void *{name}" for name in names)});
 
 int main(void) {{
@@ -56,14 +56,14 @@ int main(void) {{
       uint32_t tiled = (((row / 16) * 4 + col / 16) * 16 + row % 16) * 16 + col % 16;
       c1_codes += c1_tiled[tiled] != c1_codes_ref[row * 64 + col];
     }}
-    for (uint32_t col = 0; col < 32; ++col) {{
-      uint32_t tiled = (((row / 16) * 2 + col / 16) * 16 + row % 16) * 16 + col % 16;
-      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * 32 + col];
+    for (uint32_t col = 0; col < {second_width}; ++col) {{
+      uint32_t tiled = (((row / 16) * {second_width // 16} + col / 16) * 16 + row % 16) * 16 + col % 16;
+      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * {second_width} + col];
     }}
   }}
   for (uint32_t i = 0; i < 128; ++i)
     c1_scale_errors += c1_scales[i] != c1_scales_ref[i];
-  for (uint32_t i = 0; i < 64; ++i)
+  for (uint32_t i = 0; i < {2 * second_width}; ++i)
     c2_scale_errors += c2_scales[i] != c2_scales_ref[i];
   printf("lowered narrow MX/VPU: C1 BF16 %d, C1 %d codes %d scales, "
          "C2 %d codes %d scales\\n", bf16_errors, c1_codes,
@@ -103,31 +103,8 @@ def _append_zero_adds(bound: str) -> str:
 
 
 def _model_c2(resources: dict[str, bytes], model) -> tuple[bytes, bytes]:
-    import torch
-
-    def values(codes: bytes, rows: int, cols: int):
-        return torch.tensor([decode_e4m3(code) for code in codes],
-                            dtype=torch.float32).reshape(rows, cols)
-
-    def scales(codes: bytes, rows: int, cols: int):
-        return torch.tensor([math.ldexp(1.0, code - 127) for code in codes],
-                            dtype=torch.float32).reshape(rows, cols)
-
-    result = model.tiled_matmul_hwlike(
-        values(resources["c1_codes_ref"], 64, 64),
-        values(resources["b2_weight"], 64, 32),
-        scales(resources["c1_scales_ref"], 64, 2),
-        scales(resources["b2_scales"], 2, 32), verbose=False,
-        prod_precision_list=PRODUCT_PRECISION,
-        acc_precision_list=ACCUMULATOR_PRECISION)
-    if not torch.isfinite(result).all():
-        raise ValueError("derived MM2 reference contains nonfinite values")
-    codes, width = model.tensor_to_custom_fp_codes(result, "bf16")
-    if width != 16:
-        raise ValueError("Nicolas MM2 model changed BF16 output width")
-    bf16 = b"".join(int(code).to_bytes(2, "little")
-                    for row in codes for code in row)
-    return quantize_bf16_fp8_output(bf16, 64, 32)
+    _, codes, scales = model_c2(resources, model, width=32)
+    return codes, scales
 
 
 def main() -> None:
@@ -211,12 +188,9 @@ def main() -> None:
             raise ValueError("derived nonzero ADDS graph differs from source")
         model_path = software / "fp8_matmul_model.py"
         model_sha256 = _sha(model_path)
-        if model_sha256 != "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071":
+        if model_sha256 != MODEL_SHA256:
             raise ValueError("Nicolas's pinned FP8 model changed")
-        spec = importlib.util.spec_from_file_location("nicolas_fp8_model", model_path)
-        assert spec and spec.loader
-        model = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(model)
+        model = load_nicolas_fp8_model(software)
         baseline_c2 = _model_c2(resources, model)
         if baseline_c2 != (resources["c2_codes_ref"], resources["c2_scales_ref"]):
             raise ValueError("Nicolas's model no longer matches the source C2 reference")
