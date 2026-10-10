@@ -43,6 +43,9 @@ The reverse FP4 direct × FP6 E3M2 LUT profile does as well, with its own
 source-bound mode and 4,096 / 4,096 BF16 Spike match.
 The separate E4M3 LUT × E2M3 LUT profile also passes all 4,096 source BF16
 outputs, including the weight alternate-format command bit.
+The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
+operand, scale, LUT, and golden arrays to the typed contraction before
+lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.
 The physical `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.

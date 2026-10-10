@@ -506,6 +506,28 @@ python -m tools.qualify_nicolas_asym --variant e4m3_e2m3_lut \
   --out-dir /new/output-directory
 ```
 
+### Typed binding of Nicolas's packed source resources
+
+The asymmetric CLI now materializes an external resource manifest before
+physical lowering. It records each checked-in operand, E8M0 scale, LUT,
+and BF16 golden array with its byte hash, shape, element width, and layout.
+The manifest digest is attached to the typed `mx_gemmini.contract` and its
+module, with an explicit Nicolas source origin. Both the Python verifier and
+`mx-gemmini-opt` check this binding. The physical lowerer regenerates the
+manifest from the named source and refuses a missing or changed binding.
+The byte arrays remain separate compiler input files; the PyTorch capture
+still supplies the contraction graph and does not claim to have quantized
+those arrays.
+
+The E4M3×E2M3 mode passed **4,096 / 4,096 BF16** values twice with this
+binding; the two runs match on the bound MLIR, manifest, command stream,
+objects, ELF, and Spike log hashes. See the [receipt](evidence/compiled_nicolas_asym_payload_e4m3_e2m3_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_payload_e4m3_e2m3_repro_20261009.json),
+[typed MLIR](evidence/model2mlir_nicolas_asym_payload_e4m3_e2m3_bound_20261009.mlir),
+and [resource manifest](evidence/compiled_nicolas_asym_payload_e4m3_e2m3_resources_20261009.json).
+The reverse FP4×FP6 mode also passed a fresh [Spike regression](evidence/compiled_nicolas_asym_payload_fp4_fp6_regression_20261009.json)
+with the binding.
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
