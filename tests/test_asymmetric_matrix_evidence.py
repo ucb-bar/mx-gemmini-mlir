@@ -73,3 +73,48 @@ def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(
         for receipt in (a, b):
             receipt["build_log_sha256"].pop("link.log")
         assert a == b
+
+
+@pytest.mark.parametrize("label,dim,shape,profile_name,selected", [
+    ("dim16", 16, "128x128", "MxAllAsymGemminiRocketConfig", 1),
+    ("dim32", 32, "128x128x256", "MxDim32AllAsymGemminiRocketConfig", 4),
+])
+def test_larger_source_matrix_receipts_are_complete_and_reproducible(
+        label: str, dim: int, shape: str, profile_name: str, selected: int) -> None:
+    folder = EVIDENCE / "nicolas_asym_large_matrix_266c593"
+    profile = json.loads((PROFILES / f"{profile_name}.json").read_text())
+    legal = {_cell(cell) for cell in profile["legal_compute"]}
+    manifests = [json.loads((folder / f"{label}_matrix_{run}.json").read_text())
+                 for run in ("first", "repro")]
+    for manifest, run in zip(manifests, ("first", "repro")):
+        assert (manifest["mesh_dim"], manifest["source_shape"],
+                manifest["selected_modes"], manifest["passed_modes"],
+                manifest["legal_mode_count"], manifest["profile_complete"]) == (
+                    dim, shape, selected, selected, 36, False)
+        assert manifest["all_asym_profile"] is True
+        selected_cells = {_cell(row["compute"]) for row in manifest["rows"]}
+        assert len(selected_cells) == selected
+        assert selected_cells <= legal
+        assert {(_cell(item["compute"]), item["profile_name"])
+                for item in manifest["uncovered_legal_compute"]} == {
+                    (cell, profile_name) for cell in legal - selected_cells}
+        for row in manifest["rows"]:
+            assert row["status"] == "passed"
+            assert row["matched_bf16_outputs"] == 16384
+            path = folder / f"{label}_{run}" / f"{row['source_suffix']}.json"
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == row["receipt_sha256"]
+            receipt = json.loads(path.read_text())
+            assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+            assert receipt["compared_bf16_outputs"] == 16384
+            assert receipt["compiler_revision"].startswith("56a9574")
+    first, repro = manifests
+    assert first["uncovered_legal_compute"] == repro["uncovered_legal_compute"]
+    assert [row["source_suffix"] for row in first["rows"]] == [
+        row["source_suffix"] for row in repro["rows"]]
+    for row in first["rows"]:
+        name = row["source_suffix"]
+        a = json.loads((folder / f"{label}_first" / f"{name}.json").read_text())
+        b = json.loads((folder / f"{label}_repro" / f"{name}.json").read_text())
+        for receipt in (a, b):
+            receipt["build_log_sha256"].pop("link.log")
+        assert a == b

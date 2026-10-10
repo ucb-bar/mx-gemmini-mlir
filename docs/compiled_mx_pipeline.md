@@ -720,6 +720,29 @@ links all six receipts and inspectable generated artifacts; it pins compiler
 profile in the command above. All five checked-in larger asymmetric source
 cases now have full-output Spike parity; arbitrary shapes remain unqualified.
 
+The matrix CLI can also run each larger source set with one command:
+
+```sh
+python -m tools.qualify_nicolas_asym_matrix \
+  --mesh-dim 32 --source-shape 128x128x256 \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/dim32-large-matrix --jobs 4
+# For the DIM16 case, use --mesh-dim 16 --all-asym --source-shape 128x128.
+```
+
+Two independent suite runs passed **4 / 4** DIM32 cases and **1 / 1** DIM16
+case, with all 16,384 outputs matched in every case. The
+[DIM32 first](evidence/nicolas_asym_large_matrix_266c593/dim32_matrix_first.json)
+and [reproduction](evidence/nicolas_asym_large_matrix_266c593/dim32_matrix_repro.json),
+plus [DIM16 first](evidence/nicolas_asym_large_matrix_266c593/dim16_matrix_first.json)
+and [reproduction](evidence/nicolas_asym_large_matrix_266c593/dim16_matrix_repro.json),
+index ten per-mode receipts. They pin compiler `56a9574` and
+record the 32 and 35 legal cells, respectively, outside these *larger-shape*
+source sets. The 64³ matrices above qualify additional cells in the same
+profiles; these missing lists are specific to each source shape.
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
