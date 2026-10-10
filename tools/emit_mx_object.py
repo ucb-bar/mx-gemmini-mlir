@@ -1,9 +1,9 @@
 """Emit a linkable RV64 RoCC MX issuer with explicit runtime buffer pointers.
 
 The typed, payload-bound MLIR and checked bundle specialize the physical
-schedule. The object contains commands only: the caller supplies every input,
-scale, scratch, and output pointer at invocation time. The bundle's operand
-bytes and golden are never linked into this object.
+schedule. The caller supplies every input, scale, scratch, and output pointer
+at invocation time. Radiance host requantization follows MX command issue in
+the same entry point. The bundle's operand bytes and golden are never linked.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import re
 import subprocess
 
 from mx_gemmini_support.command_ir import Command, emit_c
+from mx_gemmini_support.host_requant_object import emit_composed_c
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -40,6 +41,13 @@ def _referenced_buffers(program, manifest: dict) -> list[dict]:
             if operand.buffer is not None:
                 uses.setdefault(operand.buffer, []).append(operand)
     m, n, _ = program.shape
+    host_requant = program.output_format in {"radiance_header_fp8",
+                                             "radiance_header_fp6"}
+    if host_requant:
+        uses.setdefault("output_quantized", [])
+        uses.setdefault("scratch_output_scales", [])
+        if program.output_format == "radiance_header_fp6":
+            uses.setdefault("output_lut", [])
     entries = []
     for name in sorted(uses):
         if name in manifest["resources"]:
@@ -54,11 +62,15 @@ def _referenced_buffers(program, manifest: dict) -> list[dict]:
                       program.plan.get("bf16_output_layout") != "row_major_bf16"
                       else "row_major_bf16")
         elif name == "output_quantized":
-            length = m * n // (2 if program.output_format in {"fp4_e2m1", "fp6_e3m2"} else 1)
+            length = m * n // (2 if program.output_format in {
+                "fp4_e2m1", "fp6_e3m2", "radiance_header_fp6"} else 1)
             role = "write"
-            layout = "tiled_quantized" if program.tiled_quant_readout else "row_major_codes"
+            layout = ("pair_major_nibble_codes" if program.output_format ==
+                      "radiance_header_fp6" else "tiled_quantized" if
+                      program.tiled_quant_readout else "row_major_codes")
         elif name == "scratch_output_scales":
-            length, role, layout = 2048, "scratch", "e8m0_scale_storage"
+            length = m * n // 32 if host_requant else 2048
+            role, layout = ("write" if host_requant else "scratch"), "e8m0_scale_storage"
         else:
             raise ValueError(f"physical command references unknown runtime buffer {name}")
         masks = {operand.address_mask for operand in uses[name]
@@ -67,7 +79,8 @@ def _referenced_buffers(program, manifest: dict) -> list[dict]:
             "name": name, "position": len(entries), "role": role,
             "minimum_bytes": length, "alignment_bytes": 64, "layout": layout,
             "address_masks": sorted(masks),
-            "maximum_byte_offset": max(operand.byte_offset for operand in uses[name]),
+            "maximum_byte_offset": max((operand.byte_offset for operand in uses[name]),
+                                       default=0),
         })
     return entries
 
@@ -84,25 +97,31 @@ def main() -> None:
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
     program = lower_bound_source(args.mlir.read_text(), profile, manifest, resources)
-    if program.output_format in {"radiance_header_fp8", "radiance_header_fp6"}:
-        raise ValueError("MX linkable object has no host_requantize lowering; "
-                         "use tools.qualify_source_mx for a complete standalone ELF")
     if program.mode != "spike_serial" or profile.get("transport") != "rocket_rocc":
         raise ValueError("linkable MX object currently requires Rocket RoCC serial mode")
     buffers = _referenced_buffers(program, manifest)
     if not buffers or not any(entry["role"] == "write" for entry in buffers):
         raise ValueError("linkable MX issuer has no runtime output buffer")
     names = tuple(entry["name"] for entry in buffers)
-    c_source = emit_c([step.command for step in program.steps],
-                      transport="rocket_rocc", buffers=names)
+    host_requant = program.output_format in {"radiance_header_fp8",
+                                             "radiance_header_fp6"}
+    commands_c = emit_c(
+        [step.command for step in program.steps], transport="rocket_rocc",
+        buffers=names, symbol="mx_issue_commands" if host_requant else "mx_issue",
+        internal=host_requant)
+    c_source = (emit_composed_c(commands_c, program.output_format, names,
+                                *program.shape[:2]) if host_requant else commands_c)
     args.out_dir.mkdir(parents=True)
     issuer = args.out_dir / "mx_issue.c"
     issuer.write_text(c_source)
     header = args.out_dir / "mx_issue.h"
+    signature = ", ".join(
+        f"{'void' if host_requant and name in {'output_bf16', 'output_quantized', 'scratch_output_scales'} else 'const void'} *{name}"
+        for name in names)
     header.write_text(
         "#ifndef MX_ISSUE_H\n#define MX_ISSUE_H\n\n"
         "/* Buffer order, sizes, and layouts are in object_manifest.json. */\n"
-        f"void mx_issue({', '.join(f'const void *{name}' for name in names)});\n\n"
+        f"void mx_issue({signature});\n\n"
         "#endif\n")
     physical = args.out_dir / "physical_program.json"
     physical.write_text(json.dumps(program.receipt(), indent=2, sort_keys=True) + "\n")
@@ -156,6 +175,9 @@ def main() -> None:
         "rtl_revision": _git_revision(args.rtl_root),
         "defined_symbol": "mx_issue", "undefined_symbols": [],
     }
+    if host_requant:
+        receipt["host_output_format"] = program.output_format
+        receipt["status"] = "rv64_rocc_composed_object_built"
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"linkable MX RoCC issuer: {obj}")

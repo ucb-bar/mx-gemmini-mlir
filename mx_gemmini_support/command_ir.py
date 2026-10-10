@@ -205,7 +205,8 @@ def spad_requant_command(profile: Mapping, *, source_row: int, destination_row: 
 
 
 def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
-           buffers: tuple[str, ...]) -> str:
+           buffers: tuple[str, ...], symbol: str = "mx_issue",
+           internal: bool = False) -> str:
     """Emit a freestanding command issuer with explicit runtime pointer inputs.
 
     `mx_control_base` is the selected Radiance tile's Gemmini control-register
@@ -213,6 +214,8 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
     """
     if transport not in ("rocket_rocc", "muon_mmio"):
         raise ValueError("MX transport must be rocket_rocc or muon_mmio")
+    if not _NAME.fullmatch(symbol):
+        raise ValueError("MX issuer symbol must be a safe C identifier")
     if transport == "rocket_rocc" and any(isinstance(item, WaitIdle) for item in commands):
         raise ValueError("Rocket RoCC has no selected busy-register completion endpoint")
     if (any(not isinstance(name, str) or not _NAME.fullmatch(name) for name in buffers) or
@@ -238,7 +241,7 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
             '"I"(offset), "r"((uint32_t)(value)) : "memory")',
             "",
         ))
-    lines.append(f"void mx_issue({', '.join(parameters) or 'void'}) {{")
+    lines.append(f"{'static ' if internal else ''}void {symbol}({', '.join(parameters) or 'void'}) {{")
     checked = set()
     for command in commands:
         if not isinstance(command, Command):

@@ -42,20 +42,22 @@ def test_compiler_selects_the_verified_graph_family(mlir_path, profile_name,
         assert _resident_pair_precision(content.decode()) == "fp6_e3m2"
 
 
-@pytest.mark.parametrize(("name", "profile_name"), [
+@pytest.mark.parametrize(("name", "profile_name", "resources"), [
     ("mxgemm.fp4.singletile.tm128tn128tk128.requant",
-     "MxE4M3Fp4VpuGemminiRocketConfig"),
+     "MxE4M3Fp4VpuGemminiRocketConfig", 4),
     ("mxgemm.fp6.singletile.tm128tn128tk128.requant",
-     "MxE3M2OnlyGemminiRocketConfig"),
+     "MxE3M2OnlyGemminiRocketConfig", 7),
     ("mxgemm.fp8.singletile.tm128tn128tk128.requant",
-     "MxE4M3Fp4VpuGemminiRocketConfig"),
+     "MxE4M3Fp4VpuGemminiRocketConfig", 4),
 ])
-def test_compiler_rejects_unlowered_host_requant_object(name, profile_name):
+def test_compiler_accepts_source_bound_host_requant_object(name, profile_name,
+                                                           resources):
     path = (ROOT / "docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22/spike" /
             name / "payload_bound.mlir")
     profile = load_profile(PROFILES / f"{profile_name}.json")
-    with pytest.raises(ValueError, match="no host_requantize lowering"):
-        classify(path.read_text(), profile)
+    family, report = classify(path.read_text(), profile)
+    assert family == "source_contract"
+    assert report["source_resources"] == resources
 
 
 def test_compiler_rejects_ambiguous_or_unsupported_binding():
