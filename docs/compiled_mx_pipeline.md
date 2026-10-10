@@ -3496,6 +3496,34 @@ records the source, model, profile, object, ELF, and Spike hashes.
 
 ## Nicolas two-tile MX+VPU scheduling source baseline
 
+The public [`tools.compile_object`](../tools/compile_object.py) command now
+selects the full three-site graph as `full_vpu_branch`. It reuses the existing
+two-branch physical lowerer and emits a data-free RV64 RoCC object. The input
+is the complete typed graph plus its checked BF16-preload precursor, seven
+source-derived `.bin` inputs (six runtime operands and a C1 BF16 reference),
+and the [explicit buffer ABI](../examples/full-vpu-branch-abi.json). The
+precursor establishes that the complete graph was formed by replacing its
+preload with the captured first matrix; it is not executed by the object.
+The compiler rejects a changed precursor, payload digest, profile, schedule,
+or buffer map before emitting a qualified object.
+
+The replay command below derives the operands from Nicolas's pinned source,
+compiles serial and pipelined graphs on both VPU Rocket profiles through the
+public entry point, checks each issuer against the previously qualified object,
+and runs every object against the full source goldens on pinned Spike:
+
+```sh
+python -m tools.replay_full_vpu_branch_dispatch \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/mx-public-branch-replay
+```
+
+This integration covers Nicolas's 64×64 three-site, two-branch FP8 graph and
+the two named VPU profiles. Broader graph shapes and branch structures still
+need the lowerer's scratchpad lifetime rules generalized.
+
 Nicolas's `chain_pipelined.c` starts from a preloaded 64×64 BF16 C1 tile,
 shares one B2 weight tile, and issues two resident VPU→requant→MM2 chains
 with BF16 scalar factors 2 and 4. Its fenced, program-order, and pipelined

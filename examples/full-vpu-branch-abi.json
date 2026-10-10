@@ -1,0 +1,24 @@
+{
+  "inputs": {
+    "a1_activation": "a1_activation",
+    "a1_scales": "a1_scales",
+    "b1_scales": "b1_scales",
+    "b1_weight": "b1_weight",
+    "b2_scales": "b2_scales",
+    "b2_weight": "b2_weight"
+  },
+  "outputs": {
+    "c1_bf16_observed": "c1_bf16_observed",
+    "c1_scales_0": "c1_scales_0",
+    "c1_scales_1": "c1_scales_1",
+    "c1_scales_mm1": "c1_scales_mm1",
+    "c1_tiled_0": "c1_tiled_0",
+    "c1_tiled_1": "c1_tiled_1",
+    "c2_scales_0": "c2_scales_0",
+    "c2_scales_1": "c2_scales_1",
+    "c2_tiled_0": "c2_tiled_0",
+    "c2_tiled_1": "c2_tiled_1"
+  },
+  "schema": "mx_gemmini.full_vpu_branch_buffer_map.v1",
+  "source_reference": "c1_bf16"
+}
