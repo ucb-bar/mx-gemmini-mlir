@@ -1,7 +1,9 @@
-"""Run the FP8/FP4/FP6 Radiance source ladder on Nicolas's plain MX profile.
+"""Run selected Radiance FP8/FP4/FP6 source cases on a pinned MX profile.
 
 The inputs are model2MLIR's archived handoffs for these exact source drivers.
-This command rebinds each handoff to MxGemminiRocketConfig, exports the source
+By default this rebinds all three handoffs to MxGemminiRocketConfig. A selected
+profile and subset of source precisions may be supplied to qualify other legal
+DIM16 Rocket configurations. The command exports the source
 payload, lowers physical MX commands, builds RV64 ELFs, and compares every
 BF16 output on the pinned Rocket/RoCC Spike extension.
 """
@@ -34,16 +36,30 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source-root", "rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--profile", type=Path, default=PROFILE)
+    parser.add_argument("--case", action="append", choices=tuple(DRIVERS),
+                        help="select a source precision; repeat for several (default: all three)")
     args = parser.parse_args()
     source, rtl, riscv, out = (args.source_root.resolve(), args.rtl_root.resolve(),
                                args.riscv_root.resolve(), args.out_dir.resolve())
     if out.exists():
         parser.error(f"refusing to overwrite {out}")
-    profile = load_profile(PROFILE, rtl_root=rtl)
-    if (profile["name"] != "MxGemminiRocketConfig" or
+    selected_profile = args.profile.resolve()
+    selected_cases = {name: stem for name, stem in DRIVERS.items()
+                      if args.case is None or name in args.case}
+    if args.case is not None and len(set(args.case)) != len(args.case):
+        parser.error("each --case may be selected only once")
+    profile = load_profile(selected_profile, rtl_root=rtl)
+    if (profile["transport"] != "rocket_rocc" or
             profile["geometry"]["mesh_columns"] != 16 or
-            len(profile["legal_compute"]) != 3 or
-            not profile["resources"]["lut"] or profile["resources"]["vpu"]):
+            not profile["legal_compute"]):
+        parser.error("selected MX profile needs legal DIM16 Rocket compute")
+    base_contract = (selected_profile == PROFILE.resolve() and
+                     len(selected_cases) == len(DRIVERS))
+    if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
+                          len(profile["legal_compute"]) != 3 or
+                          not profile["resources"]["lut"] or
+                          profile["resources"]["vpu"]):
         parser.error("selected plain MX profile differs from the three-precision RTL config")
     frontend_index = json.loads((FRONTEND / "index.json").read_text())
     if (frontend_index["model2mlir_revision"] !=
@@ -51,11 +67,8 @@ def main() -> None:
             frontend_index["rtl_revision"] != _git_revision(rtl)):
         parser.error("archived model2MLIR capture or Nicolas RTL revision differs")
     rows = {Path(row["driver"]).stem: row for row in frontend_index["rows"]}
-    out.mkdir(parents=True)
-    inputs = out / "inputs"
-    inputs.mkdir()
-    results = []
-    for precision, stem in DRIVERS.items():
+    staged = []
+    for precision, stem in selected_cases.items():
         row = rows[stem]
         captured = FRONTEND / stem
         receipt = json.loads((captured / "receipt.json").read_text())
@@ -74,12 +87,19 @@ def main() -> None:
                 _sha(frontend) != row["source_mlir_sha256"] or
                 _sha(captured / "receipt.json") != row["receipt_sha256"]):
             raise ValueError(f"Radiance source or model2MLIR capture differs: {stem}")
-        selected = inputs / f"{stem}.mlir"
-        selected.write_text(bind_handoff(handoff.read_text(), profile))
+        staged.append((precision, stem, row, handoff, driver, kernel,
+                       bind_handoff(handoff.read_text(), profile)))
+    out.mkdir(parents=True)
+    inputs = out / "inputs"
+    inputs.mkdir()
+    results = []
+    for precision, stem, row, handoff, driver, kernel, bound_handoff in staged:
+        selected_mlir = inputs / f"{stem}.mlir"
+        selected_mlir.write_text(bound_handoff)
         result_dir = out / precision
         command = [sys.executable, "-m", "tools.qualify_source_mx",
-                   "--mlir", str(selected), "--driver", str(driver),
-                   "--profile", str(PROFILE), "--rtl-root", str(rtl),
+                   "--mlir", str(selected_mlir), "--driver", str(driver),
+                   "--profile", str(selected_profile), "--rtl-root", str(rtl),
                    "--riscv-root", str(riscv), "--out-dir", str(result_dir)]
         run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, check=False)
@@ -98,7 +118,7 @@ def main() -> None:
             "driver_sha256": _sha(driver),
             "header_sha256": _sha(kernel.data_header),
             "handoff_mlir_sha256": _sha(handoff),
-            "profile_bound_mlir_sha256": _sha(selected),
+            "profile_bound_mlir_sha256": _sha(selected_mlir),
             "payload_bound_mlir_sha256": _sha(result_dir / "payload_bound.mlir"),
             "bundle_manifest_sha256": _sha(result_dir / "bundle/manifest.json"),
             "physical_program_sha256": _sha(result_dir / "build/physical_program.json"),
@@ -110,9 +130,15 @@ def main() -> None:
             "status": artifact["status"],
         })
     summary = {
-        "schema": "mx_gemmini.radiance_plain_mx_profile_source_ladder.v1",
-        "status": "three_source_precisions_matched_on_pinned_spike",
-        "scope": "archived model2MLIR e9ded36 captures rebound to Nicolas MxGemminiRocketConfig; source operands and BF16 goldens from byte-checked Radiance headers",
+        "schema": ("mx_gemmini.radiance_plain_mx_profile_source_ladder.v1"
+                   if base_contract else
+                   "mx_gemmini.radiance_selected_mx_profile_source_cases.v1"),
+        "status": ("three_source_precisions_matched_on_pinned_spike"
+                   if base_contract else
+                   "selected_source_precisions_matched_on_pinned_spike"),
+        "scope": ("archived model2MLIR e9ded36 captures rebound to Nicolas MxGemminiRocketConfig; source operands and BF16 goldens from byte-checked Radiance headers"
+                  if base_contract else
+                  "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; source operands and BF16 goldens from byte-checked Radiance headers"),
         "source_revision": _git_revision(source),
         "rtl_revision": _git_revision(rtl),
         "model2mlir_revision": frontend_index["model2mlir_revision"],
@@ -125,8 +151,10 @@ def main() -> None:
         "compared_bf16_outputs": sum(row["compared_bf16_outputs"] for row in results),
         "rows": results,
     }
+    if not base_contract:
+        summary["profile_name"] = profile["name"]
     (out / "qualification.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
-    print(f"plain MX FP8/FP4/FP6: {summary['compared_bf16_outputs']} "
+    print(f"{profile['name']} {','.join(selected_cases)}: {summary['compared_bf16_outputs']} "
           "source BF16 outputs matched Nicolas Spike")
 
 
