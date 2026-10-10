@@ -90,6 +90,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 128 requant", True),
+    "fp8_64x64x64_requant_dim32": Case(
+        "fp8_64x64x64_requant_dim32", "FP8", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp8_64x64_requant_dim32.c", "matmul_fp8_64x64_dim32.h",
+        "1ddf6983ee813ee6ec286d0d86ec2f45575bf0bd81b40125d5f454ed466baa64",
+        "3e2565521f6cd0ade7cc58b873043c7e6ccc59ea41fd1ff6b2dca6aeb4e8a407",
+        "MxDim32GemminiRocketConfig",
+        ("activation", "activation_scales", "output_quantized",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 64 requant DIM32", True),
     "fp4_64x64x64": Case(
         "fp4_64x64x64", "FP4", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp4_64x64.c", "matmul_fp4_64x64.h",
@@ -313,7 +323,9 @@ int main(void) {{
 
 
 def run_spike(rtl_root: Path, riscv_root: Path, object_dir: Path,
-              out_dir: Path, case: Case) -> tuple[int, str, Path]:
+              out_dir: Path, case: Case, mesh_dim: int) -> tuple[int, str, Path]:
+    if mesh_dim not in {8, 16, 32}:
+        raise ValueError("Nicolas source qualifier needs a supported MX mesh dimension")
     software = rtl_root / "software/gemmini-rocc-tests"
     bench = software / "riscv-tests/benchmarks/common"
     build = out_dir / "run"
@@ -353,12 +365,15 @@ def run_spike(rtl_root: Path, riscv_root: Path, object_dir: Path,
     extension_sources = [extension / "gemmini.cc", extension / "gemmini_perf.cc",
                          *sorted((extension / "perf").rglob("*.cc"))]
     so = build / "libgemmini.so"
-    _run(["g++", "-L", str(riscv_root / "lib"),
+    _run(["g++", *([f"-DGEMMINI_DIM={mesh_dim}"] if mesh_dim != 16 else []),
+          "-L", str(riscv_root / "lib"),
           f"-Wl,-rpath,{riscv_root / 'lib'}", "-shared", "-o", str(so),
           "-std=c++17", "-I", str(riscv_root / "include"), "-fPIC", "-O3",
           *(str(path) for path in extension_sources)],
          cwd=build, log=build / "extension.log")
-    run = subprocess.run([str(spike), f"--extlib={so}", "--extension=gemmini",
+    extension_name = "gemmini" if mesh_dim == 16 else f"gemmini_dim{mesh_dim}"
+    run = subprocess.run([str(spike), f"--extlib={so}",
+                          f"--extension={extension_name}",
                           str(elf)], cwd=build, text=True, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, check=False)
     (build / "spike.log").write_text(run.stdout)
@@ -416,8 +431,11 @@ def main(default_case: str | None = None) -> None:
           "--rtl-root", str(rtl_root), "--riscv-root", str(args.riscv_root.resolve()),
           "--mx-opt", str(args.mx_opt.resolve()), "--out-dir", str(object_dir)],
          cwd=ROOT, log=args.out_dir / "object_compile.log")
+    mesh_dim = profile["geometry"]["mesh_columns"]
+    if profile["geometry"]["mesh_rows"] != mesh_dim:
+        raise ValueError("Nicolas source qualifier needs a square MX mesh")
     returncode, output, elf = run_spike(rtl_root, args.riscv_root.resolve(),
-                                        object_dir, args.out_dir, case)
+                                        object_dir, args.out_dir, case, mesh_dim)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -444,6 +462,7 @@ def main(default_case: str | None = None) -> None:
         "compiler_revision": dispatch["compiler_revision"],
         "compiler_source_closure_sha256": dispatch["compiler_source_closure_sha256"],
         "profile_name": profile["name"], "profile_sha256": profile_sha256(profile),
+        "mesh_dim": mesh_dim,
         "case": case.key,
         "source_mlir_sha256": _sha(args.out_dir / "model2mlir.mlir"),
         "handoff_mlir_sha256": _sha(args.out_dir / "handoff.mlir"),
