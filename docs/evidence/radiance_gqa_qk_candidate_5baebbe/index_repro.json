@@ -1,0 +1,60 @@
+{
+  "bound_mlir_sha256": "5d9b0de10971a5f3c3e1057a323691a207f1bd1ae05d67abc6b9ef5eb1508b62",
+  "bundle_manifest_sha256": "7ff8f37d1544e54fc78f12bf50787d6a1a0e4fc9ead42fe9f740b00c53533ebc",
+  "compared_bf16_outputs": 4096,
+  "compiler_revision": "5baebbef724c42c8ef47bebe20a1656e859a5806",
+  "elf_sha256": "c58c4f70d2dae1bb0b9f4c67653d2e8584da1976a3ba3ddcfc20e87df9a7e47f",
+  "files_sha256": {
+    "activation.bin": "6504b226ca3ddc4702a89d5f4ef3aff9129b372090da052fdea62048ddb5bd7b",
+    "activation_scales.bin": "8039e7ba7a444c008b6b1d11912f20a3e97636b5fde68d07ea67439b9719458e",
+    "golden_bf16.bin": "17bbb32b3bb01804860f00f66c893e10b390f5c6b56c1dcc9a3087185dc84811",
+    "mx_data.S": "a65d346000f9364644ed522095eae2ac7301c502801995d199bfe2fcbb35e5fb",
+    "mx_driver.c": "46ebe94a2cdf95eb30a3de77d4c5937b5e148e47677227df31af7a0e53431331",
+    "mx_issue.c": "dc7d79a41255f90c8ada0839d2d4e8192f6f203d33e724fa68114fb83b1956fa",
+    "output_scales.bin": "ae16eb1567bb016bb1c5e879f0d88088c88110d591521931e3f91e0964b12e43",
+    "physical_program.json": "57a4b850bec93230d64360b5cde514f99f51899a42ebf4d5d5c673304113a25e",
+    "weight.bin": "44fcb9e9a2d1cdf414b669d6333a6a114b360557ec4d4d6fcdbdb10920336b8e",
+    "weight_scales.bin": "2b157dfeede5ea750e5ab1c6f1f13fd009eb8f5d8642c68ad2a0a42df53cf382"
+  },
+  "frontend_mlir_sha256": "2f01fab1d162647aeddfab5410a654e2b78c021b2c6fff33d8edfdb7fc65cc1b",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "mx_0.o": "1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab",
+    "mx_1.o": "61ae57616feee9226986d90d39f7c7556b0e016258589fa065656a7619b6d351",
+    "mx_2.o": "c311d6a7bb5b33312f8206a2a6189f65c077d10f2703b0be1ff63b0c415b348d",
+    "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "original_source_products_over_448": 244154,
+  "physical_program_sha256": "57a4b850bec93230d64360b5cde514f99f51899a42ebf4d5d5c673304113a25e",
+  "policy": {
+    "e8m0_shift": 6,
+    "oracle": "dim16_reduced_precision_product_and_accumulator",
+    "schema": "mx_gemmini.attention_qk_shift.v1",
+    "source_arrays_sha256": {
+      "activation": "e165fcc0d93d805dab529f18a183219d84287c1b0b1f0e5c43f6728df7900804",
+      "activation_scales": "ea3b33814d33e56152fafc800dbae260ac7ab6117acaffeb20d06ccb59690e8e",
+      "weight": "fb08f627ecc2a1badaca69eb19210c04611913bdd063bbc79c5aaee2f8828f06",
+      "weight_scales": "af86b2f026470df8a339c7767ed994f028690f5c3c2f514ac3618ba618e7f29b"
+    },
+    "source_header_sha256": "900712a90bad7c19d311e9ed5c42800bce0cb1c34c1d2788f19c0b25e2d23e65",
+    "stage": "gqa_qk_head0_block0"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_gqa_qk_candidate.v1",
+  "scope": "first QK tile only; changed source operand codes and scales; no full attention or original source golden parity",
+  "source_arrays_sha256": {
+    "activation": "e165fcc0d93d805dab529f18a183219d84287c1b0b1f0e5c43f6728df7900804",
+    "activation_scales": "ea3b33814d33e56152fafc800dbae260ac7ab6117acaffeb20d06ccb59690e8e",
+    "weight": "fb08f627ecc2a1badaca69eb19210c04611913bdd063bbc79c5aaee2f8828f06",
+    "weight_scales": "af86b2f026470df8a339c7767ed994f028690f5c3c2f514ac3618ba618e7f29b"
+  },
+  "source_driver_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "source_header_sha256": "900712a90bad7c19d311e9ed5c42800bce0cb1c34c1d2788f19c0b25e2d23e65",
+  "source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a",
+  "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356",
+  "spike_manifest_semantic_sha256": "32df317c921574799c36125fc9c0180f5eeb1d41e7e2d7c8881c129f4fcd59dd",
+  "status": "shifted_source_qk_candidate_matched_on_pinned_spike",
+  "submodule_revision": "6fc8ec79bc828b33628ec951bfa1d0f65278a338"
+}

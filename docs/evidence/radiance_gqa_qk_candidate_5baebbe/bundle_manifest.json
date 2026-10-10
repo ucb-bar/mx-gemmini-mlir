@@ -1,0 +1,100 @@
+{
+  "origin": "radiance_source_derived_attention_qk_candidate",
+  "precision": "FP8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources": {
+    "activation": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "6504b226ca3ddc4702a89d5f4ef3aff9129b372090da052fdea62048ddb5bd7b",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "8039e7ba7a444c008b6b1d11912f20a3e97636b5fde68d07ea67439b9719458e",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "17bbb32b3bb01804860f00f66c893e10b390f5c6b56c1dcc9a3087185dc84811",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "ae16eb1567bb016bb1c5e879f0d88088c88110d591521931e3f91e0964b12e43",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "weight": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "44fcb9e9a2d1cdf414b669d6333a6a114b360557ec4d4d6fcdbdb10920336b8e",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "2b157dfeede5ea750e5ab1c6f1f13fd009eb8f5d8642c68ad2a0a42df53cf382",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "site_id": "functional:matmul",
+  "source_derivation": {
+    "e8m0_shift": 6,
+    "oracle": "dim16_reduced_precision_product_and_accumulator",
+    "schema": "mx_gemmini.attention_qk_shift.v1",
+    "source_arrays_sha256": {
+      "activation": "e165fcc0d93d805dab529f18a183219d84287c1b0b1f0e5c43f6728df7900804",
+      "activation_scales": "ea3b33814d33e56152fafc800dbae260ac7ab6117acaffeb20d06ccb59690e8e",
+      "weight": "fb08f627ecc2a1badaca69eb19210c04611913bdd063bbc79c5aaee2f8828f06",
+      "weight_scales": "af86b2f026470df8a339c7767ed994f028690f5c3c2f514ac3618ba618e7f29b"
+    },
+    "source_header_sha256": "900712a90bad7c19d311e9ed5c42800bce0cb1c34c1d2788f19c0b25e2d23e65",
+    "stage": "gqa_qk_head0_block0"
+  },
+  "source_driver_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "source_header_sha256": "900712a90bad7c19d311e9ed5c42800bce0cb1c34c1d2788f19c0b25e2d23e65",
+  "tile_mnk": [
+    64,
+    64,
+    64
+  ]
+}

@@ -1293,6 +1293,50 @@ python -m tools.qualify_radiance_batched_gemv_roster \
 This qualifies the exact batched source kernels and physical traffic on Spike.
 It does not establish mixed MX/Muon scheduling or FPGA cycle counts.
 
+### GQA QK numerical domain and source-derived candidate
+
+The pinned `flash_attention_mx_gqa` source generator emits FP8 Q and K codes
+for a 64×64×64 first QK tile. Its Python matrix golden uses BF16 product and
+accumulator precision. Nicolas's DIM16 MX path instead uses an E4M3 product
+and a reduced-precision accumulator ramp before applying E8M0 scales. For
+the exact generated header at Radiance `ee22e0b`, **244,154 of 262,144** raw
+Q×K products exceed E4M3's maximum finite magnitude, 448. A direct compiler
+probe with those unchanged bytes returned 4,096 BF16 mismatches on pinned
+Spike; its first reported results were NaNs. The generator's final attention
+golden therefore cannot establish parity for that hardware path.
+
+The compiler now accepts a **separate, explicitly labeled candidate**: divide
+the source Q and K values by 64 before FP8 encoding, and increase each E8M0
+scale exponent by six. The resulting source-derived QK tile is finite under
+Nicolas's product and accumulator precision. A model2MLIR `matmul` capture
+binds those candidate bytes, and the generated Rocket/RoCC program matches
+all **4,096 BF16 outputs** of the hardware-aware candidate oracle on Spike.
+The [candidate index](evidence/radiance_gqa_qk_candidate_5baebbe/index.json)
+records source, policy, compiled artifacts, and Spike identities; its
+[reproduction index](evidence/radiance_gqa_qk_candidate_5baebbe/index_repro.json)
+is byte identical. The payload origin and derivation are checked by the MLIR
+and bundle verifiers, so this candidate cannot be presented as unchanged
+source-header parity.
+
+From a clean checkout at `ee22e0b` with its pinned `lib/mxgemmini` submodule,
+reproduce the candidate with:
+
+```sh
+python -m tools.qualify_radiance_gqa_qk \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --scale-shift 6 \
+  --out-dir /new/mx-gqa-qk \
+  --baseline-index docs/evidence/radiance_gqa_qk_candidate_5baebbe/index.json
+```
+
+This proves only one source-derived QK tile. The unchanged GQA source data,
+causal masking, online softmax, requantization, PV, multi-head scheduling,
+Muon handoff, and final attention output remain unqualified. The next source
+step is to revise and verify the Radiance generator's numerical domain before
+claiming exact source parity.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)
@@ -1325,7 +1369,9 @@ qualify the three cells on stock Spike, RTL simulation, or FPGA.
    fixtures because the corresponding headers are absent upstream; check
    future committed headers against them. Qualify remaining configuration
    families and source shapes without receipts, and extend multi-output
-   tiling beyond the qualified FP8 BF16 shape.
+   tiling beyond the qualified FP8 BF16 shape. For GQA, reconcile the
+   source generator with the hardware product and accumulator precision,
+   then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
    qualified 64³ Nicolas source case, and lower other typed graphs without a
    source-specific seam.

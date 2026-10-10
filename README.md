@@ -37,6 +37,11 @@ traffic across four M tiles.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.
+The [GQA QK audit](docs/compiled_mx_pipeline.md#gqa-qk-numerical-domain-and-source-derived-candidate)
+finds that the current attention generator's Q/K bytes overflow Nicolas's
+reduced-precision MX path. An explicitly requantized first-tile candidate
+matches 4,096 BF16 outputs on Spike; unchanged attention source parity remains
+open.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike
