@@ -110,6 +110,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP4 64 requant", True),
+    "fp4_128x128x512_requant": Case(
+        "fp4_128x128x512_requant", "FP4", (128, 128, 512), (128, 128, 512),
+        "matmul_tiled_fp4_128x128x512_requant.c", "matmul_fp4_128x128x512.h",
+        "07c970dc15e983ff91aa68a1fe578a37902b7e201e826b17e9a36db007f7c026",
+        "a20619dd213e28238ea29a9bcb7d918e60d8a30cb02a4f609a2fa74377ab44b1",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_quantized",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP4 128x128x512 requant", True),
     "fp6_128x128x512": Case(
         "fp6_128x128x512", "FP6", (128, 128, 512), (128, 128, 512),
         "matmul_tiled_fp6_128x128x512.c", "matmul_fp6_128x128x512.h",
