@@ -1,0 +1,30 @@
+{
+  "recipe": {
+    "compute": {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 6,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    "frontend_capture_format": "mxfp8",
+    "profile_sha256": "fb0e0e5a6bb0bca2fa215ac58fe81e6d430421c0a55a1859c6500b5575122826",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_driver_sha256": "438ec91a72317bd21dde8e32196aeca7b81a67c698f4c46b64e61b2ef009d9d5",
+    "source_header_sha256": "b8fe147ba3f5e19f1a2bbe941d99253759edfaa1dbb3bfc27290c7d44e723f17"
+  },
+  "resources_sha256": {
+    "activation": "1b90d71c55743b2ca0535ae3f884106f58359153b412dea1684c17ba2d042f94",
+    "activation_scales": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16": "f92f9ce60ed906f8dd5a675fdb76745cd872bf290f96ae04ff151d7ed5e8b86d",
+    "weight": "d8996c6a560e79036acd4bd3ff9566729a3c06a701c809a6c042a8c1ec3dc667",
+    "weight_scales": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v1"
+}

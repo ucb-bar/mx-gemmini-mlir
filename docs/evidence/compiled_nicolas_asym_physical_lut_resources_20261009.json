@@ -1,0 +1,33 @@
+{
+  "recipe": {
+    "compute": {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "lut",
+      "pe_mode": 10,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    "frontend_capture_format": "mxfp8",
+    "profile_sha256": "fb0e0e5a6bb0bca2fa215ac58fe81e6d430421c0a55a1859c6500b5575122826",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_driver_sha256": "2405a800afdb6554721e9c405cd2f3c1842d97c0a173ad3f53ff1ea309d74eaf",
+    "source_header_sha256": "020d5825f08a525ae274f4d0803607aaae89b2f7e8262c9a1fe74de2f7c5488e"
+  },
+  "resources_sha256": {
+    "activation": "f4fd0cbcebbf8b29b606a53bfef9039cd5b026d7b0403e621a6fad57a998686e",
+    "activation_lut": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "activation_scales": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16": "7ed99521094c50586285ee0b069ae699c1a5588966766c0582b9ce40619f968a",
+    "output_lut": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "weight": "d8996c6a560e79036acd4bd3ff9566729a3c06a701c809a6c042a8c1ec3dc667",
+    "weight_lut": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "weight_scales": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v1"
+}

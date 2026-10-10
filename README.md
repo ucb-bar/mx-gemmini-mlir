@@ -17,7 +17,8 @@ scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
 operand movement, K-wave compute, and BF16 or supported quantized readout for
 complete output tiles.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
-output on Nicolas's pinned Spike extension. Nine source schedules pass; see
+output on Nicolas's pinned Spike extension. Qualified source shapes span the
+FP8 and FP4 ladder; see
 [compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts also match Nicolas's current
@@ -26,14 +27,17 @@ header as an explicit quantized output specialization; its 16-wave schedule
 selects FP6 output only on the final K wave. Source header output goldens use
 older or different conventions, so
 [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
-The source-audited Nicolas C1 VPU×2→tiled resident SPAD_REQUANT seam also
-compiles from typed MLIR and matches all 4,096 codes and 128 scales on Spike.
-A separate source-bound FP8 program composes the first matrix, VPU×2, and
-tiled resident SPAD_REQUANT in one typed MLIR module; its compiler-generated
-ELF matches all 4,096 codes and 128 scales on Spike. The second resident
-matrix stage and general mixed lowering remain open.
-The physical
-`WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
+The source-bound full
+MM1→VPU×2→SPAD_REQUANT→resident MM2 chain now runs in one compiler-generated
+RV64 program and matches the C1/C2 source outputs on Spike. The two frontend
+and target MLIR inputs are checked and joined by site ID and source hashes;
+one connected SSA-level chain and general mixed lowering remain open.
+The two legal E4M3×FP4 modes in Nicolas's standalone asymmetric profile also
+lower through the shared physical command representation and match all 4,096
+BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no
+asymmetric compute mode; see
+[asymmetric qualification](docs/compiled_mx_pipeline.md#nicolass-standalone-asymmetric-mode).
+The physical `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.
 

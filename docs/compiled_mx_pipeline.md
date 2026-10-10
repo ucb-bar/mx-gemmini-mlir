@@ -383,6 +383,27 @@ and [generated issue source](evidence/compiled_nicolas_asym_direct_e4m3_fp4_issu
 The source PyTorch capture and unbound handoff hashes equal those in the LUT
 mode evidence; the recipes and bound contracts differ.
 
+The default qualification command now lowers both modes into the same
+`PhysicalProgram` representation used by the symmetric MX compiler. The
+lowerer exports Nicolas's packed arrays as hashed binary resources, checks
+the typed site and profile mode, and emits ordered configuration, LUT or
+disable, scale, DMA, compute, and readout commands. The existing standalone
+emitter produces a generic RoCC command issuer, data object, and BF16
+checker; it does not copy either source C kernel into the executable.
+
+| Activation path | PE mode | Physical commands | Spike BF16 matches | Evidence |
+|---|---:|---:|---:|---|
+| E4M3 via LUT × FP4 direct | 10 | 63 | 4,096 / 4,096 | [receipt](evidence/compiled_nicolas_asym_physical_lut_20261009.json), [reproduction](evidence/compiled_nicolas_asym_physical_lut_repro_20261009.json), [command stream](evidence/compiled_nicolas_asym_physical_lut_program_20261009.json) |
+| E4M3 direct × FP4 direct | 6 | 69 | 4,096 / 4,096 | [receipt](evidence/compiled_nicolas_asym_physical_direct_20261009.json), [reproduction](evidence/compiled_nicolas_asym_physical_direct_repro_20261009.json), [command stream](evidence/compiled_nicolas_asym_physical_direct_program_20261009.json) |
+
+The [LUT issuer](evidence/compiled_nicolas_asym_physical_lut_issue_20261009.c)
+and [direct issuer](evidence/compiled_nicolas_asym_physical_direct_issue_20261009.c)
+are generated from those physical streams. Each pair of fresh builds matches
+the capture, resources, command program, issue source, objects, ELF,
+extension, and Spike log hashes. The earlier bounded C diagnostics remain
+available with `--diagnostic` for their archived receipts; the command below
+uses the physical stream by default.
+
 Reproduce with a new output directory:
 
 ```sh
