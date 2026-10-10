@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from mx_gemmini_support.quant_reference import bf16_add_scalar
+from mx_gemmini_support.quant_reference import bf16_add_scalar, exact_bf16_x2
 from tools.qualify_narrow_vpu_object import _append_zero_adds
 
 
@@ -39,7 +39,8 @@ def test_two_ordered_vpu_commands_match_every_source_identity_reference():
     derived = (EVIDENCE / "connected_adds.mlir").read_text()
     source_c1 = gzip.decompress((SOURCE / "bound/c1_bf16.bin.gz").read_bytes())
     assert derived == _append_zero_adds(source_bound)
-    assert bf16_add_scalar(source_c1, 0) == source_c1
+    first_vpu_output = exact_bf16_x2(source_c1)
+    assert bf16_add_scalar(first_vpu_output, 0) == first_vpu_output
     assert index["schema"] == "mx_gemmini.connected_scalar_chain_spike.v1"
     assert index["status"] == "two_ordered_vpu_ops_matched_source_identity_on_pinned_spike"
     assert index["scope"] == "Nicolas source MM1/MM2 plus derived ADDS +0; identity case only"

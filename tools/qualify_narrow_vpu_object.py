@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
+import math
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,7 +14,10 @@ import subprocess
 from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.narrow_vpu_chain import render_narrow_vpu_chain
 from mx_gemmini_support.narrow_vpu_source import derive_narrow_vpu_resources
-from mx_gemmini_support.quant_reference import bf16_add_scalar
+from mx_gemmini_support.quant_reference import (
+    bf16_add_scalar, exact_bf16_x2, quantize_bf16_fp8_output)
+from mx_gemmini_support.source_attention_qk import (
+    ACCUMULATOR_PRECISION, PRODUCT_PRECISION, decode_e4m3)
 from mx_gemmini_support.resident_pair_graph import INPUTS
 from mx_gemmini_support.resident_vpu_graph import OUTPUTS, lower_connected_fp8_vpu_pair
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -68,8 +73,10 @@ int main(void) {{
 '''
 
 
-def _append_zero_adds(bound: str) -> str:
-    """Derive a second ordered VPU command whose BF16 source oracle is unchanged."""
+def _append_scalar_adds(bound: str, scalar_bf16: int) -> str:
+    """Derive an SSA-linked scalar ADDS after Nicolas's source MULS ×2."""
+    if not 0 <= scalar_bf16 <= 0xffff or scalar_bf16 & 0x7f80 == 0x7f80:
+        raise ValueError("derived VPU scalar must be finite BF16 bits")
     marker = '    %vpu = "mx_gemmini.vpu_execute"'
     if bound.count(marker) != 1 or bound.count('"mx_gemmini.spad_requant"(%vpu)') != 1:
         raise ValueError("narrow source graph lacks its single checked VPU edge")
@@ -84,10 +91,43 @@ def _append_zero_adds(bound: str) -> str:
               .replace('"mx_gemmini.vpu_execute"(%bf16)',
                        '"mx_gemmini.vpu_execute"(%vpu)', 1)
               .replace('kind = "muls"', 'kind = "adds"', 1)
-              .replace('immediate_bf16 = 16384', 'immediate_bf16 = 0', 1))
+              .replace('immediate_bf16 = 16384',
+                       f'immediate_bf16 = {scalar_bf16}', 1))
     return (bound[:end] + second + bound[end:]).replace(
         '"mx_gemmini.spad_requant"(%vpu)',
         '"mx_gemmini.spad_requant"(%vpu2)', 1)
+
+
+def _append_zero_adds(bound: str) -> str:
+    return _append_scalar_adds(bound, 0)
+
+
+def _model_c2(resources: dict[str, bytes], model) -> tuple[bytes, bytes]:
+    import torch
+
+    def values(codes: bytes, rows: int, cols: int):
+        return torch.tensor([decode_e4m3(code) for code in codes],
+                            dtype=torch.float32).reshape(rows, cols)
+
+    def scales(codes: bytes, rows: int, cols: int):
+        return torch.tensor([math.ldexp(1.0, code - 127) for code in codes],
+                            dtype=torch.float32).reshape(rows, cols)
+
+    result = model.tiled_matmul_hwlike(
+        values(resources["c1_codes_ref"], 64, 64),
+        values(resources["b2_weight"], 64, 32),
+        scales(resources["c1_scales_ref"], 64, 2),
+        scales(resources["b2_scales"], 2, 32), verbose=False,
+        prod_precision_list=PRODUCT_PRECISION,
+        acc_precision_list=ACCUMULATOR_PRECISION)
+    if not torch.isfinite(result).all():
+        raise ValueError("derived MM2 reference contains nonfinite values")
+    codes, width = model.tensor_to_custom_fp_codes(result, "bf16")
+    if width != 16:
+        raise ValueError("Nicolas MM2 model changed BF16 output width")
+    bf16 = b"".join(int(code).to_bytes(2, "little")
+                    for row in codes for code in row)
+    return quantize_bf16_fp8_output(bf16, 64, 32)
 
 
 def main() -> None:
@@ -99,6 +139,10 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--derived-zero-adds-mlir", type=Path,
                         help="check an SSA-linked ADDS +0 after the source MULS ×2")
+    parser.add_argument("--derived-adds-mlir", type=Path,
+                        help="check a derived SSA-linked nonzero scalar ADDS")
+    parser.add_argument("--derived-adds-bf16", type=lambda s: int(s, 0),
+                        help="BF16 bits of the derived nonzero ADDS immediate")
     args = parser.parse_args()
     for name in ("capture_dir", "bound_dir", "object_dir", "rtl_root",
                  "riscv_root", "out_dir"):
@@ -145,12 +189,48 @@ def main() -> None:
             any((args.bound_dir / f"{name}.bin").read_bytes() != data
                 for name, data in resources.items())):
         raise ValueError("narrow MX/VPU bound resources differ from source")
+    if args.derived_zero_adds_mlir and args.derived_adds_mlir:
+        parser.error("select one derived VPU candidate")
+    if (args.derived_adds_mlir is None) != (args.derived_adds_bf16 is None):
+        parser.error("nonzero ADDS graph and BF16 immediate must be supplied together")
     bound_for_object = bound_path
+    reference_resources = resources.copy()
+    model_sha256 = None
     if args.derived_zero_adds_mlir is not None:
         bound_for_object = args.derived_zero_adds_mlir.resolve()
+        first_vpu_output = exact_bf16_x2(resources["c1_bf16"])
         if (bound_for_object.read_text() != _append_zero_adds(bound) or
-                bf16_add_scalar(resources["c1_bf16"], 0) != resources["c1_bf16"]):
+                bf16_add_scalar(first_vpu_output, 0) != first_vpu_output):
             raise ValueError("derived ADDS +0 graph or BF16 oracle differs from source")
+    if args.derived_adds_mlir is not None:
+        scalar = args.derived_adds_bf16
+        if scalar == 0:
+            parser.error("use --derived-zero-adds-mlir for the identity case")
+        bound_for_object = args.derived_adds_mlir.resolve()
+        if bound_for_object.read_text() != _append_scalar_adds(bound, scalar):
+            raise ValueError("derived nonzero ADDS graph differs from source")
+        model_path = software / "fp8_matmul_model.py"
+        model_sha256 = _sha(model_path)
+        if model_sha256 != "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071":
+            raise ValueError("Nicolas's pinned FP8 model changed")
+        spec = importlib.util.spec_from_file_location("nicolas_fp8_model", model_path)
+        assert spec and spec.loader
+        model = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(model)
+        baseline_c2 = _model_c2(resources, model)
+        if baseline_c2 != (resources["c2_codes_ref"], resources["c2_scales_ref"]):
+            raise ValueError("Nicolas's model no longer matches the source C2 reference")
+        derived_bf16 = bf16_add_scalar(exact_bf16_x2(resources["c1_bf16"]), scalar)
+        c1_codes, c1_scales = quantize_bf16_fp8_output(derived_bf16, 64, 64)
+        reference_resources["c1_codes_ref"] = c1_codes
+        reference_resources["c1_scales_ref"] = c1_scales
+        c2_codes, c2_scales = _model_c2(reference_resources, model)
+        reference_resources["c2_codes_ref"] = c2_codes
+        reference_resources["c2_scales_ref"] = c2_scales
+        if any(reference_resources[name] == resources[name] for name in
+               ("c1_codes_ref", "c1_scales_ref", "c2_codes_ref",
+                "c2_scales_ref")):
+            raise ValueError("derived nonzero case did not change every output class")
     pair = lower_connected_fp8_vpu_pair(
         bound_for_object.read_text(), profile, resources,
         buffers={name: name for name in INPUTS},
@@ -189,7 +269,7 @@ def main() -> None:
     build = args.out_dir / "build"
     build.mkdir()
     assembly = [".section .rodata", ".balign 64"]
-    for name, data in sorted(resources.items()):
+    for name, data in sorted(reference_resources.items()):
         (build / f"{name}.bin").write_bytes(data)
         assembly.extend((f".globl {name}", f"{name}:",
                          f'.incbin "{name}.bin"', ".balign 64"))
@@ -238,12 +318,16 @@ def main() -> None:
     passed = result.returncode == 0 and MARKER in result.stdout
     receipt = {
         "schema": "mx_gemmini.nicolas_narrow_vpu_pair_spike.v1",
-        "status": (("derived_zero_adds_vpu_chain_matched_on_pinned_spike" if
+        "status": (("derived_nonzero_adds_vpu_chain_matched_on_pinned_spike" if
+                    args.derived_adds_mlir else
+                    "derived_zero_adds_vpu_chain_matched_on_pinned_spike" if
                     args.derived_zero_adds_mlir else
                     "source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike") if passed else
                    "narrow_mx_vpu_pair_failed_on_pinned_spike"),
         "first_shape_mnk": [64, 64, 64], "second_shape_mnk": [64, 32, 64],
-        "reference_kind": ("source_chain_plus_bf16_adds_zero_identity" if
+        "reference_kind": ("source_chain_plus_bf16_adds_nonzero_model_derived" if
+                           args.derived_adds_mlir else
+                           "source_chain_plus_bf16_adds_zero_identity" if
                            args.derived_zero_adds_mlir else
                            "unchanged_nicolas_vpu_chain_left_output_block"),
         "compared_c1_bf16_values": 4096,
@@ -268,6 +352,16 @@ def main() -> None:
         "resources_sha256": {name: hashlib.sha256(data).hexdigest()
                              for name, data in sorted(resources.items())},
     }
+    if args.derived_adds_mlir is not None:
+        receipt["derived_adds_bf16"] = args.derived_adds_bf16
+        receipt["model_sha256"] = model_sha256
+        receipt["source_to_derived_byte_differences"] = {
+            name: sum(a != b for a, b in zip(resources[name], reference_resources[name]))
+            for name in ("c1_codes_ref", "c1_scales_ref", "c2_codes_ref",
+                         "c2_scales_ref")}
+        receipt["reference_resources_sha256"] = {
+            name: hashlib.sha256(data).hexdigest()
+            for name, data in sorted(reference_resources.items())}
     (args.out_dir / "qualification_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
