@@ -94,6 +94,59 @@ _VARIANTS = {
     },
 }
 _VARIANTS_BY_HEADER = {variant["header"]: variant for variant in _VARIANTS.values()}
+_FORMAT_TOKEN = {
+    "e4m3": ("fp8_e4m3", "lut"), "e4m3s": ("fp8_e4m3", "direct"),
+    "e5m2": ("fp8_e5m2", "lut"), "e5m2s": ("fp8_e5m2", "direct"),
+    "e3m2": ("fp6_e3m2", "lut"), "e2m3": ("fp6_e2m3", "lut"),
+    "fp6": ("fp6_e3m2", "lut"), "fp4": ("fp4_e2m1", "direct"),
+}
+
+
+def _source_variant(source: Path, header: Path, profile: dict,
+                    header_text: str) -> dict:
+    """Derive the source layout and legal mode from one named DIM16 test."""
+    pinned = _VARIANTS.get(source.name)
+    if pinned is not None:
+        if header.name != pinned["header"]:
+            raise ValueError("selected asymmetric source/header pair differs")
+        return pinned
+    match = re.fullmatch(r"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64\.c",
+                         source.name)
+    if match is None:
+        raise ValueError("selected asymmetric specialization needs a named Nicolas 64-cubed test")
+    left, right = match.groups()
+    if (left not in _FORMAT_TOKEN or right not in _FORMAT_TOKEN or
+            header.name != f"matmul_data_asym_{left}_{right}.h"):
+        raise ValueError("selected asymmetric source/header pair or format differs")
+    activation_format, activation_projection = _FORMAT_TOKEN[left]
+    weight_format, weight_projection = _FORMAT_TOKEN[right]
+    cells = [cell for cell in profile["legal_compute"] if
+             all(cell[key] == value for key, value in {
+                 "activation_format": activation_format,
+                 "activation_projection": activation_projection,
+                 "weight_format": weight_format,
+                 "weight_projection": weight_projection,
+             }.items())]
+    if len(cells) != 1:
+        raise ValueError("selected asymmetric source has no unique legal profile mode")
+    activation_array = ("A_in_hw[32][64]" if "A_in_hw[32][64]" in header_text else
+                        "A_in[MATMUL_M][MATMUL_K]")
+    weight_array = ("B_in[MATMUL_K][MATMUL_N]" if
+                    "B_in[MATMUL_K][MATMUL_N]" in header_text else None)
+    lut_shapes = {name: re.search(rf"\b{name}\[32\]\[(3|4)\]", header_text)
+                  for name in ("A_lut", "B_lut", "C_lut")}
+    lut_arrays = [name for name, shape in lut_shapes.items() if shape is not None]
+    words = {int(shape.group(1)) for shape in lut_shapes.values() if shape is not None}
+    use_lut = activation_projection == "lut" or weight_projection == "lut"
+    if (len(words) > 1 or (use_lut and (not words or not lut_arrays)) or
+            (not use_lut and lut_arrays)):
+        raise ValueError("asymmetric source LUT arrays differ from legal projection")
+    return {"header": header.name, "cell": cells[0],
+            "activation_array": activation_array, "use_lut": use_lut,
+            "lut_arrays": lut_arrays,
+            "lut_words_per_line": next(iter(words), 0),
+            "lut_entry_bits": 2 * next(iter(words), 0),
+            **({"weight_array": weight_array} if weight_array else {})}
 
 
 def sha256(path: Path) -> str:
@@ -102,11 +155,10 @@ def sha256(path: Path) -> str:
 
 def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     """Bind one checked-in Nicolas test and its data to a legal profile mode."""
-    variant = _VARIANTS.get(source.name)
-    if variant is None or header.name != variant["header"]:
-        raise ValueError("selected asymmetric specialization needs a named Nicolas 64-cubed test")
     if not source.is_file() or not header.is_file():
         raise ValueError("selected asymmetric source or data header is absent")
+    source_text, header_text = source.read_text(), header.read_text()
+    variant = _source_variant(source, header, profile, header_text)
     cell = variant["cell"]
     require_compute(profile, cell["activation_format"], cell["weight_format"],
                     pe_mode=cell["pe_mode"],
@@ -119,7 +171,6 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             (variant["lut_entry_bits"] or 8) or
             profile["resources"]["lut_config"]["address_bits"] != 4):
         raise ValueError("selected asymmetric source requires DIM16, 256 KiB SPAD, 4-bit LUT indices")
-    source_text, header_text = source.read_text(), header.read_text()
     for marker in (f'#include "include/{header.name}"',):
         if marker not in source_text:
             raise ValueError(f"Nicolas source command contract changed: {marker}")
@@ -142,19 +193,37 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
         if f"#define MX_ALTFMT {altfmt}" not in source_text:
             raise ValueError("Nicolas FP8 source alternate format selection changed")
     if cell["weight_format"] == "fp6_e2m3":
-        for marker in ("((uint64_t)(1) << 31)", "((uint64_t)(1) << 12)"):
-            if marker not in source_text:
-                raise ValueError(f"Nicolas E2M3 weight encoding changed: {marker}")
+        if "((uint64_t)(1) << 12)" not in source_text:
+            raise ValueError("Nicolas E2M3 weight format encoding changed")
     for lut_array in variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")
                                  if variant["use_lut"] else ()):
         if f'{lut_array}[32][{variant["lut_words_per_line"]}]' not in header_text:
             raise ValueError(f"Nicolas source {lut_array} changed")
+    altfmt_match = re.search(r"^#define MX_ALTFMT\s+([01])\b", source_text, re.M)
+    config_altfmt = int(altfmt_match.group(1)) if altfmt_match else 0
+    if cell["activation_format"] != "fp4_e2m1" and config_altfmt != int(
+            cell["activation_format"] in {"fp8_e5m2", "fp6_e2m3"}):
+        raise ValueError("Nicolas activation alternate format differs from selected mode")
+    weight_alt = int(cell["weight_format"] in {"fp8_e5m2", "fp6_e2m3"})
+    weight_altfmt_diff = (config_altfmt ^ weight_alt) if cell["weight_format"] != "fp4_e2m1" else 0
+    if cell["weight_format"] != "fp4_e2m1":
+        config_block = source_text.split("ROCC_INSTRUCTION_RS1_RS2(XCUSTOM_ACC,", 1)[-1].split("k_CONFIG);", 1)[0]
+        coded_diff = re.search(r"\(\(uint64_t\)\(([01])\) << 31\)", config_block)
+        source_diff = int(coded_diff.group(1)) if coded_diff else 0
+        if source_diff != weight_altfmt_diff:
+            raise ValueError("Nicolas weight alternate format differs from selected mode")
+    source_layout = {key: value for key, value in variant.items() if key != "cell"}
+    source_layout["lut_arrays"] = list(variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")
+                                                     if variant["use_lut"] else ()))
+    source_layout["config_altfmt"] = config_altfmt
+    source_layout["weight_altfmt_diff"] = weight_altfmt_diff
     return {"schema": "mx_gemmini.asymmetric_source_recipe.v1",
             "site_id": "functional:matmul", "shape": [64, 64, 64],
             "frontend_capture_format": "mxfp8",
             "source_driver_sha256": sha256(source),
             "source_header_sha256": sha256(header),
-            "profile_sha256": profile_sha256(profile), "compute": cell.copy()}
+            "profile_sha256": profile_sha256(profile), "compute": cell.copy(),
+            "source_layout": source_layout}
 
 
 def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
@@ -170,10 +239,11 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             recipe.get("shape") != [64, 64, 64] or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
-            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
-                                          FP4_FP6_CELL, E4M3_E2M3_CELL,
-                                          E5M2_FP4_CELL, E4M3_DIRECT_E3M2_CELL,
-                                          FP4_DIRECT_E4M3_CELL) or
+            (recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
+                                           FP4_FP6_CELL, E4M3_E2M3_CELL,
+                                           E5M2_FP4_CELL, E4M3_DIRECT_E3M2_CELL,
+                                           FP4_DIRECT_E4M3_CELL) and
+             not isinstance(recipe.get("source_layout"), dict)) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
                 for key in ("source_driver_sha256", "source_header_sha256"))):
@@ -341,7 +411,9 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     if sha256(header) != recipe.get("source_header_sha256"):
         raise ValueError("asymmetric source header differs from recipe")
     text = header.read_text(encoding="ascii")
-    variant = _VARIANTS_BY_HEADER[header.name]
+    variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]
+    if variant["header"] != header.name:
+        raise ValueError("asymmetric source layout names a different data header")
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     lut_words = variant["lut_words_per_line"]
     a_name = "A_in_hw" if packed_activation else "A_in"
@@ -382,7 +454,7 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
     """Describe every Nicolas source byte array with its physical shape."""
     from .source_payload import Resource
 
-    variant = _VARIANTS_BY_HEADER[header.name]
+    variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     shapes = {
         "activation": ((32, 64) if packed_activation else (64, 64), 8,
@@ -482,7 +554,7 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
             _text_attr(contracts[0], "payload_origin") != resource_manifest["origin"]):
         raise ValueError("asymmetric physical lowering payload differs from typed MLIR")
     cell = recipe["compute"]
-    variant = _VARIANTS[source.name]
+    variant = recipe.get("source_layout") or _VARIANTS[source.name]
     use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     weight_stride = 64 if variant.get("weight_array") else 32
@@ -496,13 +568,14 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         steps.append(PhysicalStep(phase, None, command))
 
     issue("configure", _cmd(7, 0, 0))
-    activation_code = {"fp8_e4m3": 0, "fp8_e5m2": 0,
-                       "fp6_e3m2": 1, "fp4_e2m1": 2}[cell["activation_format"]]
-    weight_code = {"fp8_e4m3": 0, "fp6_e3m2": 1, "fp6_e2m3": 1,
-                   "fp4_e2m1": 2}[cell["weight_format"]]
+    format_code = {"fp8_e4m3": 0, "fp8_e5m2": 0,
+                   "fp6_e3m2": 1, "fp6_e2m3": 1, "fp4_e2m1": 2}
+    activation_code = format_code[cell["activation_format"]]
+    weight_code = format_code[cell["weight_format"]]
     lut_entry_bits = variant["lut_entry_bits"]
-    activation_altfmt = int(cell["activation_format"] == "fp8_e5m2")
-    weight_altfmt_diff = int(cell["weight_format"] == "fp6_e2m3")
+    activation_altfmt = variant.get("config_altfmt", int(cell["activation_format"] == "fp8_e5m2"))
+    weight_altfmt_diff = variant.get("weight_altfmt_diff",
+                                     int(cell["weight_format"] == "fp6_e2m3"))
     config_ex = (1 << 16) | (weight_code << 12) | (activation_code << 10) | \
                 (3 << 14) | (int(use_lut) << 5) | (1 << 2) | \
                 (activation_altfmt << 6) | (weight_altfmt_diff << 31)

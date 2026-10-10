@@ -136,6 +136,8 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     ("e5m2_fp4", 2048, 3, 3, "MxAsymE5M2Fp4GemminiRocketConfig", 4),
     ("e4m3s_e3m2", 4096, 7, 1, "MxAsymE4M3E3M2GemminiRocketConfig", 4),
     ("fp4_e4m3s", 2048, 2, 0, "MxAsymFp4E4M3GemminiRocketConfig", 0),
+    ("e2m3_e3m2", 2048, 10, 3, "MxAsymE2M3E3M2GemminiRocketConfig", 3),
+    ("e3m2_e4m3s", 2048, 5, 1, "MxAsymE3M2E4M3GemminiRocketConfig", 4),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
         tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):
@@ -143,14 +145,15 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     source = tmp_path / f"matmul_tiled_asym_{variant}_64x64.c"
     header = tmp_path / f"matmul_data_asym_{variant}.h"
     packed_activation = variant not in {"e4m3s_fp4", "e4m3s_e3m2"}
-    direct_weight_bytes = variant == "fp4_e4m3s"
+    direct_weight_bytes = variant in {"fp4_e4m3s", "e3m2_e4m3s"}
     source.write_text("\n".join((
         f'#include "include/{header.name}"',
-        ("((uint64_t)(0) << 5)" if direct_weight_bytes else
+        ("((uint64_t)(0) << 5)" if variant == "fp4_e4m3s" else
          f"#define USE_LUT {int(lut_loads != 0)}"),
-        f"#define MX_ALTFMT {int(variant == 'e5m2_fp4')}",
+        f"#define MX_ALTFMT {int(variant in {'e5m2_fp4', 'e2m3_e3m2'})}",
         *(["((uint64_t)(1) << 31)", "((uint64_t)(1) << 12)"]
           if variant == "e4m3_e2m3" else []),
+        *(["((uint64_t)(1) << 31)"] if variant == "e2m3_e3m2" else []),
         "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
 
     def array(type_name: str, name: str, dims: str, count: int) -> str:
@@ -168,12 +171,16 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
                          4096 if direct_weight_bytes else 2048)
     if lut_loads:
         for name in (("B_lut",) if variant == "e4m3s_e3m2" else
+                     ("A_lut",) if variant == "e3m2_e4m3s" else
                      ("A_lut", "B_lut", "C_lut")):
             header_text += array("uint32_t", name, f"[32][{lut_words}]", 32 * lut_words)
     header_text += array("uint8_t", "A_scales_row", "[MATMUL_GK][MATMUL_M]", 128)
     header_text += array("uint8_t", "B_scales_col", "[MATMUL_GK][MATMUL_N]", 128)
     header_text += array("uint16_t", "C_out_bf16", "[MATMUL_M][MATMUL_N]", 4096)
     header.write_text(header_text)
+    if variant == "e2m3_e3m2":
+        with pytest.raises(ValueError, match="no unique legal profile mode"):
+            source_recipe(source, header, _profile("MxAsymE4M3E3M2GemminiRocketConfig"))
     recipe = source_recipe(source, header, profile)
     bound = specialize_handoff(CAPTURE, profile, recipe)
     with pytest.raises(ValueError, match="payload differs from typed MLIR"):
@@ -191,8 +198,8 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     assert program.plan["weight_projection"] == recipe["compute"]["weight_projection"]
     config_ex = next(step.command.rs1.immediate for step in program.steps
                      if isinstance(step.command, Command) and step.command.funct == 0)
-    assert bool(config_ex & (1 << 31)) == (variant == "e4m3_e2m3")
-    assert bool(config_ex & (1 << 6)) == (variant == "e5m2_fp4")
+    assert bool(config_ex & (1 << 31)) == (variant in {"e4m3_e2m3", "e2m3_e3m2"})
+    assert bool(config_ex & (1 << 6)) == (variant in {"e5m2_fp4", "e2m3_e3m2"})
     assert len(resources["activation"]) == activation_bytes
     assert len(resources["weight"]) == (4096 if direct_weight_bytes else 2048)
     assert len(resources["golden_bf16"]) == 8192

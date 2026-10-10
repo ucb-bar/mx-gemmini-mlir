@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -37,6 +38,8 @@ def main() -> None:
                                               "e4m3_e2m3_lut", "e5m2_fp4_lut",
                                               "e4m3_direct_e3m2", "fp4_direct_e4m3"), default="lut",
                         help="activation format and projection in Nicolas's DIM16 source test")
+    parser.add_argument("--source-suffix", type=str,
+                        help="Nicolas DIM16 source pair, for example e2m3_e5m2")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
                        help="compile through shared physical command IR (default)")
@@ -65,12 +68,14 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    suffix = {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
+    suffix = args.source_suffix or {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
               "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6",
               "e4m3_e2m3_lut": "e4m3_e2m3",
               "e5m2_fp4_lut": "e5m2_fp4",
               "e4m3_direct_e3m2": "e4m3s_e3m2",
               "fp4_direct_e4m3": "fp4_e4m3s"}[args.variant]
+    if not re.fullmatch(r"[a-z0-9]+_[a-z0-9]+", suffix):
+        parser.error("source suffix must name one DIM16 asymmetric source pair")
     source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
     header = software / f"include/matmul_data_asym_{suffix}.h"
     recipe = source_recipe(source, header, profile)
@@ -178,7 +183,7 @@ def main() -> None:
                    if args.physical else "mx_gemmini.nicolas_asymmetric_spike_qualification.v1"),
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": (f"64-cubed {args.variant} activation source specialization of one captured PyTorch matmul; "
+        "scope": (f"64-cubed {suffix} source specialization of one captured PyTorch matmul; "
                   "checked-in packed inputs, not random PyTorch example inputs; " +
                   ("shared physical command IR and standalone emitter; " if args.physical else
                    "bounded C diagnostic; ") +
