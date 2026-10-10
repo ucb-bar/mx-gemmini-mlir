@@ -193,7 +193,12 @@ def main() -> None:
     parser.add_argument("--run-spike", action="store_true")
     parser.add_argument("--include-mm1", action="store_true",
                         help="issue the captured upstream MM1 and feed its BF16 result to both branches")
+    parser.add_argument("--issue-schedule", choices=(
+        "program_order_with_dependency_fences", "pipelined"),
+        default="program_order_with_dependency_fences")
     args = parser.parse_args()
+    if args.issue_schedule == "pipelined" and not args.include_mm1:
+        parser.error("pipelined issue requires the compiler-issued MM1 BF16 tile")
     out, rtl, riscv = (args.out_dir.resolve(), args.rtl_root.resolve(),
                        args.riscv_root.resolve())
     if out.exists():
@@ -229,7 +234,9 @@ def main() -> None:
     if args.include_mm1:
         bound, preloaded = render_full_chain_pipelined(
             frontend, trace, captured_manifest, profile, resources, facts)
-        chain = lower_full_chain_pipelined(bound, preloaded, profile, resources)
+        chain = lower_full_chain_pipelined(
+            bound, preloaded, profile, resources,
+            issue_schedule=args.issue_schedule)
         required_inputs, required_outputs = FULL_INPUTS, FULL_OUTPUTS
     else:
         bound = render_chain_pipelined(
@@ -261,7 +268,7 @@ def main() -> None:
     physical.write_text(json.dumps({
         "schema": ("mx_gemmini.full_chain_pipelined_physical.v1" if args.include_mm1 else
                    "mx_gemmini.chain_pipelined_physical.v1"),
-        "issue_schedule": "program_order_with_dependency_fences",
+        "issue_schedule": args.issue_schedule,
         "sites": chain.sites,
         "profile_sha256": profile_sha256(profile),
         "commands": [({"kind": "command", **asdict(item)} if isinstance(item, Command)
@@ -276,7 +283,7 @@ def main() -> None:
         "first_matmul_scope": ("captured MM1 issued from Nicolas's packed A1/B1 inputs" if
                                args.include_mm1 else
                                "source C1 BF16 preload; captured shared MM1 site is not issued by this object"),
-        "issue_schedule": "program_order_with_dependency_fences",
+        "issue_schedule": args.issue_schedule,
         "source_sha256": facts["source_sha256"],
         "header_sha256": facts["header_sha256"],
         "source_resource_sha256": facts["resource_sha256"],

@@ -16,7 +16,7 @@ from mx_gemmini_support.chain_pipelined_graph import (
 from mx_gemmini_support.full_chain_pipelined import (
     audit_full_chain_pipelined, lower_full_chain_pipelined,
     render_full_chain_pipelined)
-from mx_gemmini_support.command_ir import Command
+from mx_gemmini_support.command_ir import Command, Fence
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
 
@@ -246,3 +246,52 @@ def test_e4m3_only_profile_has_its_own_capture_and_full_spike_receipt():
         selected["spike_qualification"]["spike_log_sha256"])
     assert source["status"] == "four_source_checks_matched_on_pinned_spike"
     assert source["spike_log_sha256"] == _sha(E4M3_ONLY / "source_spike.log")
+
+
+def test_compiler_issues_source_pipeline_order_and_both_profiles_match():
+    software = RTL / "software/gemmini-rocc-tests"
+    if not (software / "bareMetalC/chain_pipelined.c").is_file():
+        pytest.skip("requires Nicolas's pinned chain source")
+    selected = load_profile(PROFILE, rtl_root=RTL)
+    resources, _ = audit_full_chain_pipelined(
+        software / "bareMetalC/chain_pipelined.c",
+        software / "include/matmul_fp8_64x64_chain.h",
+        software / "bareMetalC/matmul_tiled_fp8_64x64_chain.c",
+        software / "bareMetalC/chain_vpu_spad_requant.c", selected)
+    pipeline = FULL / "pipelined"
+    chain = lower_full_chain_pipelined(
+        (pipeline / "connected.mlir").read_text(),
+        (pipeline / "preloaded.mlir").read_text(), selected, resources,
+        issue_schedule="pipelined")
+    stages = [(i, item.funct) for i, item in enumerate(chain.commands)
+              if isinstance(item, Command) and item.funct in (8, 33, 34)]
+    assert [funct for _, funct in stages] == [8, 33, 34, 33, 8, 34, 8]
+    assert not any(isinstance(item, Fence) for item in
+                   chain.commands[stages[1][0]:stages[-1][0]])
+    assert sum(isinstance(item, Command) and item.rs1.buffer == "b2_weight"
+               for item in chain.commands) == 16
+    with pytest.raises(ValueError, match="unknown two-tile MX issue schedule"):
+        lower_full_chain_pipelined(
+            (pipeline / "connected.mlir").read_text(),
+            (pipeline / "preloaded.mlir").read_text(), selected, resources,
+            issue_schedule="invalid")
+    first = json.loads((pipeline / "object_manifest.json").read_text())
+    second_dir = E4M3_ONLY / "compiled_pipelined"
+    second = json.loads((second_dir / "object_manifest.json").read_text())
+    for directory, manifest in ((pipeline, first), (second_dir, second)):
+        assert manifest["issue_schedule"] == "pipelined"
+        assert manifest["allocated_data_section_bytes"] == 0
+        assert manifest["physical_program_sha256"] == _sha(directory / "physical_program.json")
+        assert manifest["object_sha256"] == _sha(directory / "mx_issue.o")
+        assert manifest["spike_qualification"]["status"] == (
+            "full_three_site_chain_matched_on_pinned_spike")
+        assert manifest["spike_qualification"]["elf_sha256"] == _sha(
+            directory / "mx_program.elf")
+        assert manifest["spike_qualification"]["spike_log_sha256"] == _sha(
+            directory / "spike.log")
+        assert "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" in (
+            directory / "spike.log").read_text()
+    assert first["profile_sha256"] != second["profile_sha256"]
+    assert first["object_sha256"] == second["object_sha256"]
+    assert first["spike_qualification"]["spike_log_sha256"] == (
+        second["spike_qualification"]["spike_log_sha256"])

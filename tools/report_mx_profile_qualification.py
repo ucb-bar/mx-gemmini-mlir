@@ -97,7 +97,8 @@ def _narrow_vpu_receipt(relative: str, profile: dict) -> dict:
 
 def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
                           source_path: str, source_log_path: str,
-                          profile: dict) -> dict:
+                          profile: dict, *,
+                          schedule: str = "program_order_with_dependency_fences") -> dict:
     """Check the full three-site program under this exact named VPU profile."""
     capture, obj, source = (_read(path) for path in
                             (capture_path, compiled_path, source_path))
@@ -105,7 +106,13 @@ def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
     digest = profile_sha256(profile)
     spike = obj.get("spike_qualification", {})
     physical = json.loads((base / "physical_program.json").read_text())
-    commands = [item for item in physical["commands"] if item["kind"] == "command"]
+    ordered = physical["commands"]
+    commands = [item for item in ordered if item["kind"] == "command"]
+    stage_indices = [i for i, item in enumerate(ordered)
+                     if item["kind"] == "command" and item["funct"] in (8, 33, 34)]
+    stage_order = [ordered[i]["funct"] for i in stage_indices]
+    expected_order = ([8, 33, 34, 33, 8, 34, 8] if schedule == "pipelined" else
+                      [8, 33, 34, 8, 33, 34, 8])
     if (capture.get("schema") !=
             "mx_gemmini.nicolas_chain_pipelined_model2mlir_capture.v1" or
             capture.get("status") != "three_site_frontend_handoff_only" or
@@ -138,8 +145,9 @@ def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
             any(obj.get(name) != 0 for name in
                 ("allocated_data_section_bytes", "embedded_operand_bytes",
                  "embedded_golden_bytes")) or
-            obj.get("issue_schedule") != "program_order_with_dependency_fences" or
+            obj.get("issue_schedule") != schedule or
             physical.get("profile_sha256") != digest or
+            physical.get("issue_schedule") != schedule or
             source.get("profile_sha256") != digest or
             source.get("status") != "four_source_checks_matched_on_pinned_spike" or
             source.get("spike_log_sha256") != _digest(source_log_path) or
@@ -149,6 +157,10 @@ def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
             sum(item["funct"] == 8 for item in commands) != 3 or
             sum(item["funct"] == 33 for item in commands) != 2 or
             sum(item["funct"] == 34 for item in commands) != 2 or
+            stage_order != expected_order or
+            (schedule == "pipelined" and any(
+                item["kind"] == "fence" for item in
+                ordered[stage_indices[1]:stage_indices[-1]])) or
             sum(item["rs1"].get("buffer") == "b2_weight" for item in commands) != 16 or
             "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" not in
             (base / "spike.log").read_text() or
@@ -157,7 +169,8 @@ def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
             _key(DIRECT_E4M3) not in {_key(cell) for cell in profile["legal_compute"]}):
         raise ValueError(f"full two-tile VPU qualification differs from profile: {compiled_path}")
     return {
-        "kind": "connected_mx_vpu_two_tile_spike",
+        "kind": ("connected_mx_vpu_two_tile_pipelined_spike" if
+                 schedule == "pipelined" else "connected_mx_vpu_two_tile_spike"),
         "evidence": compiled_path,
         "capture": capture_path,
         "source": source_path,
@@ -169,7 +182,7 @@ def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
         "compared_e8m0_scales": 512,
         "issues_vpu_commands": True,
         "issues_captured_mm1": True,
-        "schedule": "program_order_with_dependency_fences",
+        "schedule": schedule,
     }
 
 
@@ -441,6 +454,20 @@ def build_report() -> dict:
         profile = load_profile(PROFILE_DIR / f"{name}.json")
         direct_receipts.setdefault(name, []).append(
             _two_tile_vpu_receipt(*paths, profile))
+    pipelined_paths = {
+        "MxE4M3Fp4VpuGemminiRocketConfig": (
+            two_tile_paths["MxE4M3Fp4VpuGemminiRocketConfig"][0],
+            "docs/evidence/nicolas_chain_pipelined_full_266c593/pipelined/object_manifest.json",
+            *two_tile_paths["MxE4M3Fp4VpuGemminiRocketConfig"][2:]),
+        "MxE4M3VpuGemminiRocketConfig": (
+            two_tile_paths["MxE4M3VpuGemminiRocketConfig"][0],
+            "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/object_manifest.json",
+            *two_tile_paths["MxE4M3VpuGemminiRocketConfig"][2:]),
+    }
+    for name, paths in pipelined_paths.items():
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        direct_receipts.setdefault(name, []).append(
+            _two_tile_vpu_receipt(*paths, profile, schedule="pipelined"))
     profiles = []
     for path in sorted(PROFILE_DIR.glob("*.json")):
         profile = load_profile(path)
@@ -483,6 +510,8 @@ def build_report() -> dict:
                                          requant_path,
                                          *narrow_vpu_paths.values(),
                                          *(path for paths in two_tile_paths.values()
+                                           for path in paths),
+                                         *(path for paths in pipelined_paths.values()
                                            for path in paths),
                                          *vector_paths})},
         "profile_count": len(profiles),

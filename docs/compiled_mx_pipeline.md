@@ -3500,3 +3500,17 @@ program's issuer, object, ELF, and log are byte-identical. The
 [profile qualification catalog](evidence/mx_profile_qualification_catalog_266c593/index.json)
 indexes these as separate named-profile receipts; it does not infer FP4 or
 FP6 VPU support from the shared FP8 result.
+
+### Compiler-issued pipelined issue order
+
+`--include-mm1 --issue-schedule pipelined` emits the source's stage order:
+tile 1's BF16 reload precedes tile 0's VPU; tile 1's VPU is issued before
+tile 0's MM2; tile 1's requant and MM2 follow. There are no completion
+fences between those six VPU, requant, and MM2 stage commands. The
+[FP4-capable VPU receipt](evidence/nicolas_chain_pipelined_full_266c593/pipelined/object_manifest.json)
+and [E4M3-only VPU receipt](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/object_manifest.json)
+each match all **4,096 BF16 values**, **16,384 FP8 codes**, and **512 scales**
+on Nicolas's pinned Spike. The profile catalog indexes the pipelined runs
+separately from the fenced program-order runs. These are functional Spike
+results; RTL queue overlap and the source's 405-cycle measurement have not
+been reproduced by a compiler-issued RTL run.

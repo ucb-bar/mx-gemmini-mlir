@@ -122,7 +122,8 @@ def render_full_chain_pipelined(frontend: str, trace: dict, manifest: dict,
 
 
 def lower_full_chain_pipelined(full_mlir: str, preloaded_mlir: str,
-                               profile: dict, resources: dict[str, bytes]
+                               profile: dict, resources: dict[str, bytes], *,
+                               issue_schedule: str = "program_order_with_dependency_fences"
                                ) -> TwoTileChain:
     """Replace C1 preload with compiler-issued MM1 and preserve both branches."""
     from .chain_pipelined_graph import _module
@@ -197,5 +198,58 @@ def lower_full_chain_pipelined(full_mlir: str, preloaded_mlir: str,
     if sum(isinstance(item, Command) and item.rs1.buffer == "c1_bf16_observed"
            for item in body) != 32:
         raise ValueError("full two-tile second BF16 branch did not reload MM1 result")
-    return TwoTileChain(
-        (*first, *commands[1:preload_start], *body), baseline.sites)
+    serial = TwoTileChain((*first, *commands[1:preload_start], *body), baseline.sites)
+    if issue_schedule == "program_order_with_dependency_fences":
+        return serial
+    if issue_schedule != "pipelined":
+        raise ValueError("unknown two-tile MX issue schedule")
+    return _pipeline_two_tile_commands(serial)
+
+
+def _pipeline_two_tile_commands(serial: TwoTileChain) -> TwoTileChain:
+    """Issue tile-1 VPU before tile-0 MM2, matching Nicolas's source order."""
+    commands = serial.commands
+    def indices(funct: int) -> list[int]:
+        return [i for i, item in enumerate(commands)
+                if isinstance(item, Command) and item.funct == funct]
+
+    vpu, quant, loops = indices(33), indices(34), indices(8)
+    if len(vpu) != 2 or len(quant) != 2 or len(loops) != 3 or not (
+            vpu[0] < quant[0] < loops[1] < vpu[1] < quant[1] < loops[2]):
+        raise ValueError("two-tile serial stages cannot form source pipeline")
+    first_reload = next((i for i in range(loops[1] + 1, vpu[1])
+                         if isinstance(commands[i], Command) and
+                         commands[i].funct == 2 and
+                         commands[i].rs1.buffer == "c1_bf16_observed"), None)
+    if first_reload is None:
+        raise ValueError("second tile lacks computed BF16 reload")
+    reload_start = max((i for i in range(loops[1] + 1, first_reload)
+                        if isinstance(commands[i], Command) and
+                        commands[i].funct == 0 and
+                        commands[i].rs1.immediate == (16 << 16) | (1 << 8) | 1 and
+                        commands[i].rs2.immediate == 16), default=-1)
+    first_output = next((i for i in range(loops[2] + 1, len(commands))
+                         if isinstance(commands[i], Command) and
+                         commands[i].funct == 3 and
+                         commands[i].rs1.buffer == "c1_tiled_0"), None)
+    if (reload_start < 0 or first_reload - reload_start != 2 or
+            first_output is None or first_output < 1 or
+            not isinstance(commands[first_output - 1], Command) or
+            commands[first_output - 1].funct != 0 or
+            sum(isinstance(item, Command) and item.rs1.buffer == "c1_bf16_observed"
+                for item in commands[reload_start:vpu[1]]) != 32):
+        raise ValueError("two-tile pipeline preload or readout boundary differs")
+    no_fences = lambda values: [item for item in values if not isinstance(item, Fence)]
+    pipelined = (
+        *commands[:vpu[0]],
+        *no_fences(commands[reload_start:vpu[1]]),
+        commands[vpu[0]], commands[quant[0]], commands[vpu[1]],
+        *no_fences(commands[quant[0] + 1:loops[1] + 1]),
+        commands[quant[1]],
+        *no_fences(commands[quant[1] + 1:loops[2] + 1]),
+        Fence(), *commands[first_output - 1:],
+    )
+    if ([item.funct for item in pipelined if isinstance(item, Command)
+         and item.funct in (33, 34, 8)][1:] != [33, 34, 33, 8, 34, 8]):
+        raise ValueError("two-tile pipeline command order differs from source")
+    return TwoTileChain(pipelined, serial.sites)
