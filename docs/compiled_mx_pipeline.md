@@ -983,8 +983,8 @@ profiles; these missing lists are specific to each source shape.
 
 ## Remaining gates
 
-1. Qualify the source-compatible FP8 host epilogue on additional shapes and
-   on RTL or FPGA if that execution path is needed there. Qualify actual FP6
+1. Qualify the source-compatible FP8 host epilogue on RTL or FPGA if that
+   execution path is needed there. Qualify actual FP6
    requant source drivers once their missing data
    headers are available, the remaining configuration families, and any
    source shapes without receipts. Extend multi-output tiling beyond the
@@ -992,12 +992,11 @@ profiles; these missing lists are specific to each source shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
-3. Fix and upstream the Spike weight-LUT lane selection for the one remaining
-   DIM16 cell, check it against RTL, then qualify 15 untested cells on each
-   DIM8/DIM32
-   all-asymmetric profile, and every other legal mode class on the matching
-   Spike/RTL configuration,
-   and keep unsupported profile combinations rejected. FP6+VPU requires a
-   new RTL configuration and profile before it can be advertised.
+3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
+   the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
+   The other 35 / 36 legal cells pass stock Spike on all three geometries;
+   further RTL qualification remains separate. Keep unsupported profile
+   combinations rejected. FP6+VPU requires a new RTL configuration and
+   profile before it can be advertised.
 4. Validate the alternating FP6 scale path against RTL, then qualify the
    Radiance MMIO/FPGA issue path separately from Rocket RoCC.
