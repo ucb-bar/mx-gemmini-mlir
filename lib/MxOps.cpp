@@ -3,6 +3,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/SHA256.h"
+#include <algorithm>
 using namespace mlir;
 using namespace mlir::mx_gemmini;
 
@@ -18,6 +19,14 @@ static bool isNamedFormat(StringRef value) {
 
 static bool isProjection(StringRef value) {
   return value == "direct" || value == "lut";
+}
+
+static bool isSha256(StringRef value) {
+  return value.size() == 64 &&
+         std::all_of(value.begin(), value.end(), [](char digit) {
+           return (digit >= '0' && digit <= '9') ||
+                  (digit >= 'a' && digit <= 'f');
+         });
 }
 
 static LogicalResult verifyBinding(Operation *op) {
@@ -42,6 +51,57 @@ static LogicalResult verifyBinding(Operation *op) {
         localProfile.getValue() != moduleProfile.getValue())
       return op->emitOpError("profile digest differs from mx.profile_sha256");
   }
+  return success();
+}
+
+static bool isCheckedResource(Value value, StringRef expectedName,
+                              StringRef payloadDigest) {
+  auto resource = value.getDefiningOp<ResourceOp>();
+  if (!resource) return false;
+  auto name = resource->getAttrOfType<StringAttr>("resource_name");
+  auto payload = resource->getAttrOfType<StringAttr>("payload_manifest_sha256");
+  return name && payload && name.getValue() == expectedName &&
+         payload.getValue() == payloadDigest;
+}
+
+LogicalResult ResourceOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto module = (*this)->getParentOfType<ModuleOp>();
+  auto modulePayload = module->getAttrOfType<StringAttr>("mx.payload_manifest_sha256");
+  auto localPayload = (*this)->getAttrOfType<StringAttr>("payload_manifest_sha256");
+  auto name = (*this)->getAttrOfType<StringAttr>("resource_name");
+  auto hash = (*this)->getAttrOfType<StringAttr>("resource_sha256");
+  auto layout = (*this)->getAttrOfType<StringAttr>("resource_layout");
+  if (!modulePayload || !localPayload || modulePayload != localPayload ||
+      !name || !hash || !isSha256(hash.getValue()) || !layout ||
+      layout.getValue().empty())
+    return emitOpError("requires a checked module payload and resource descriptor");
+  auto tensor = dyn_cast<RankedTensorType>(getData().getType());
+  if (!tensor || !tensor.hasStaticShape() || tensor.getRank() != 2 ||
+      (!tensor.getElementType().isInteger(8) &&
+       !tensor.getElementType().isInteger(16) &&
+       !tensor.getElementType().isInteger(32)) ||
+      tensor.getDimSize(0) <= 0 || tensor.getDimSize(1) <= 0)
+    return emitOpError("requires a static rank-two byte, halfword, or word tensor");
+  return success();
+}
+
+LogicalResult UploadLutOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto target = (*this)->getAttrOfType<StringAttr>("lut_target");
+  auto payload = (*this)->getAttrOfType<StringAttr>("payload_manifest_sha256");
+  auto module = (*this)->getParentOfType<ModuleOp>();
+  if (!target || !payload ||
+      (target.getValue() != "activation" && target.getValue() != "weight" &&
+       target.getValue() != "output") ||
+      payload != module->getAttrOfType<StringAttr>("mx.payload_manifest_sha256") ||
+      !isCheckedResource(getData(),
+                         (target.getValue() + "_lut").str(), payload.getValue()))
+    return emitOpError("requires a matching checked LUT resource");
+  auto tensor = dyn_cast<RankedTensorType>(getData().getType());
+  if (!tensor || tensor.getRank() != 2 || !tensor.hasStaticShape() ||
+      !tensor.getElementType().isInteger(32))
+    return emitOpError("requires a static rank-two i32 LUT bank");
   return success();
 }
 
@@ -79,6 +139,15 @@ LogicalResult ContractOp::verify() {
          origin.getValue() != "nicolas_source_header_specialization" &&
          origin.getValue() != "nicolas_generated_header_specialization"))
       return emitOpError("source payload differs from module binding");
+  }
+  auto resourceSchema = module->getAttrOfType<StringAttr>("mx.payload_binding_schema");
+  if (resourceSchema) {
+    if (resourceSchema.getValue() != "source_resources_ssa_v1" || !localPayload ||
+        !isCheckedResource(getLhsCodes(), "activation", localPayload.getValue()) ||
+        !isCheckedResource(getLhsScales(), "activation_scales", localPayload.getValue()) ||
+        !isCheckedResource(getRhsCodes(), "weight", localPayload.getValue()) ||
+        !isCheckedResource(getRhsScales(), "weight_scales", localPayload.getValue()))
+      return emitOpError("contraction operands differ from source resource binding");
   }
   auto legacy = (*this)->getAttrOfType<StringAttr>("format");
   auto act = (*this)->getAttrOfType<StringAttr>("activation_format");

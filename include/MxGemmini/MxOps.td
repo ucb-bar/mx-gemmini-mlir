@@ -10,6 +10,26 @@ class Mx_Op<string mnemonic> : Op<MxGemmini_Dialect, mnemonic> {
   let hasVerifier = 1;
 }
 
+def Mx_ResourceOp : Mx_Op<"resource"> {
+  let summary = "A checked external MX operand, scale, or LUT resource";
+  let arguments = (ins StrAttr:$site_id, StrAttr:$resource_name,
+                   StrAttr:$resource_sha256, StrAttr:$resource_layout,
+                   StrAttr:$payload_manifest_sha256,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+  let results = (outs AnyTensor:$data);
+}
+
+def Mx_UploadLutOp : Mx_Op<"upload_lut"> {
+  let summary = "Bind an indexed MX LUT bank before contraction";
+  let arguments = (ins AnyTensor:$data, StrAttr:$site_id,
+                   StrAttr:$lut_target, StrAttr:$payload_manifest_sha256,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+}
+
 def Mx_EncodeOp : Mx_Op<"encode"> {
   let summary = "Prepare packed operand codes and E8M0 scales";
   let arguments = (ins AnyTensor:$source, StrAttr:$site_id,

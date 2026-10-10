@@ -531,7 +531,9 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
              recipe["source_generation_manifest_sha256"]) or
             _text_attr(module, "mx.source_header_sha256") != recipe["source_header_sha256"]):
         raise ValueError("profile-bound MLIR lacks matching asymmetric source provenance")
-    operations = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
+    operations = [op for op in module.walk()
+                  if _operation_name(op).startswith("mx_gemmini.") and
+                  _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     cell = recipe["compute"]
     if ([_operation_name(op) for op in operations] !=
             ["mx_gemmini.contract", "mx_gemmini.readout_bf16"] or
@@ -745,7 +747,8 @@ def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
 
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
-    from .source_payload import manifest_json, manifest_sha256
+    from .source_payload import manifest_sha256
+    from .resource_ir import attach_source_resources
     manifest = _resource_manifest(recipe, resources, header)
     digest = manifest_sha256(manifest)
     context = Context(allow_unregistered=True)
@@ -757,9 +760,9 @@ def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
     contract = next(op for op in module.walk()
                     if _operation_name(op) == "mx_gemmini.contract")
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
-    module.attributes["mx.payload_manifest_json"] = StringAttr(manifest_json(manifest))
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
+    attach_source_resources(module, contract, manifest)
     output = StringIO()
     Printer(stream=output).print_op(module)
     bound = output.getvalue() + "\n"

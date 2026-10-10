@@ -160,7 +160,9 @@ def _bound_contract(mlir_text: str, profile: dict, kernel: SourceGemm) -> str:
     context.load_dialect(Builtin)
     context.load_dialect(Func)
     module = Parser(context, mlir_text).parse_module()
-    ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
+    ops = [op for op in module.walk()
+           if _operation_name(op).startswith("mx_gemmini.") and
+           _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     contracts = [op for op in ops if _operation_name(op) == "mx_gemmini.contract"]
     readouts = [op for op in ops if _operation_name(op) == "mx_gemmini.readout_bf16"]
     if len(contracts) != 1 or len(readouts) != 1 or len(ops) != 2 or kernel.quant_output:

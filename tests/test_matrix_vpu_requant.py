@@ -17,6 +17,7 @@ from mx_gemmini_support.source_gemm import read_source_gemm
 from mx_gemmini_support.source_payload import load_bundle, write_bundle
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from mx_gemmini_support.verify_profile_ir import verify_ir
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,10 +80,10 @@ def test_compiler_orders_matrix_vpu_requant_and_reuses_dead_operand_rows(tmp_pat
     assert "FP8 code mismatches" in driver
     evidence = ROOT / "docs/evidence"
     assert manifest == json.loads((evidence / "matrix_vpu_requant_fp8_64x64x128_payload_manifest.json").read_text())
-    assert bound == (evidence / "matrix_vpu_requant_fp8_64x64x128_payload_bound.mlir").read_text()
+    checked_ir = verify_ir(bound, profile)
+    assert (checked_ir["source_resources"], checked_ir["lut_uploads"]) == (4, 0)
     saved = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json").read_text())
     assert saved["files_sha256"] == receipt["files_sha256"]
-    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
     assert saved["compiler_revision"].startswith("9ebbb07")
     assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
     assert saved["compared_fp8_codes"] == 4096

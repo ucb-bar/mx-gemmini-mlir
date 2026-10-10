@@ -48,7 +48,10 @@ def test_source_bundle_binds_real_data_to_captured_mlir(
     mlir = (REPO / f"docs/evidence/model2mlir_radiance_mx_{capture}_bound_20261009.mlir").read_text()
     bound = bind_payload(mlir, profile, manifest)
     assert f'mx.payload_manifest_sha256 = "{manifest_sha256(manifest)}"' in bound
-    assert verify_ir(bound, profile)["contracts"] == 1
+    checked = verify_ir(bound, profile)
+    assert checked["contracts"] == 1
+    assert (checked["source_resources"], checked["lut_uploads"]) == (
+        (7, 3) if precision == "FP6" else (4, 0))
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin, StringAttr
     from xdsl.dialects.func import Func
@@ -61,6 +64,29 @@ def test_source_bundle_binds_real_data_to_captured_mlir(
     module = Parser(context, bound).parse_module()
     embedded = json.loads(module.attributes["mx.payload_manifest_json"].data)
     assert embedded == manifest
+    assert module.attributes["mx.payload_binding_schema"].data == "source_resources_ssa_v1"
+    contract = next(op for op in module.walk()
+                    if _operation_name(op) == "mx_gemmini.contract")
+    assert len(contract.parent.args) == 0
+    assert [_operation_name(operand.owner) for operand in contract.operands] == [
+        "mx_gemmini.resource"] * 4
+    assert [operand.owner.attributes["resource_name"].data
+            for operand in contract.operands] == [
+                "activation", "activation_scales", "weight", "weight_scales"]
+    if precision == "FP6":
+        reordered = Parser(context, bound).parse_module()
+        upload = next(op for op in reordered.walk()
+                      if _operation_name(op) == "mx_gemmini.upload_lut")
+        contraction = next(op for op in reordered.walk()
+                           if _operation_name(op) == "mx_gemmini.contract")
+        block = upload.parent
+        assert block is not None
+        block.detach_op(upload)
+        block.insert_op_after(upload, contraction)
+        stream = StringIO()
+        Printer(stream=stream).print_op(reordered)
+        with pytest.raises(ValueError, match="uploaded before contraction"):
+            verify_ir(stream.getvalue(), profile)
     if precision == "FP6":
         for name in ("activation_lut", "weight_lut", "output_lut"):
             assert embedded["resources"][name]["shape"] == [64, 3]
@@ -85,7 +111,7 @@ def test_source_bundle_binds_real_data_to_captured_mlir(
         contract.attributes["payload_manifest_sha256"] = StringAttr(truncated_digest)
         stream = StringIO()
         Printer(stream=stream).print_op(module)
-        with pytest.raises(ValueError, match="activation LUT is absent"):
+        with pytest.raises(ValueError, match="source resource differs"):
             verify_ir(stream.getvalue(), profile)
     with pytest.raises(ValueError, match="already payload-bound"):
         bind_payload(bound, profile, manifest)

@@ -118,7 +118,9 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[
              _text_attr(module, "mx.payload_manifest_json") != manifest_json(manifest)) or
             manifest.get("profile_sha256") != profile_sha256(profile)):
         raise ValueError("physical MX lowering payload or target digest differs")
-    ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
+    ops = [op for op in module.walk()
+           if _operation_name(op).startswith("mx_gemmini.") and
+           _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     contract = [op for op in ops if _operation_name(op) == "mx_gemmini.contract"]
     output_format = manifest.get("output_format", "bf16")
     readout_name = ("mx_gemmini.readout_bf16" if output_format == "bf16"

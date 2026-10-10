@@ -23,6 +23,13 @@ layouts, byte counts, and hashes are inspectable in MLIR. The Python verifier
 checks the manifest structure, per-row FP6 LUT banks, and digest; `mx-opt`
 checks its SHA-256 against the contract binding. Physical lowering compares
 that manifest with the source bundle before using its external byte arrays.
+Current bindings use `mx.payload_binding_schema = "source_resources_ssa_v1"`:
+typed `mx_gemmini.resource` results replace the captured contraction's four
+code/scale inputs, and `mx_gemmini.upload_lut` consumes each available LUT
+resource before the contraction. The source-specialized function drops its
+now-unused captured tensor arguments. The verifier checks names, tensor shapes,
+hashes, and upload order. Earlier archived MLIR uses the digest-only binding;
+its physical stream remains reproducible through the pinned source bundle.
 The capture does not claim that the PyTorch tensor generated those source bytes.
 For an FP8 or FP4 source driver with quantized output, the same binding specializes
 the terminal BF16 readout into typed `mx_gemmini.readout_quantized`, returning

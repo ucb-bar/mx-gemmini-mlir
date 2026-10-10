@@ -18,6 +18,7 @@ from mx_gemmini_support.source_gemm import read_source_gemm
 from mx_gemmini_support.source_payload import load_bundle, write_bundle
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from mx_gemmini_support.verify_profile_ir import verify_ir
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,10 +81,10 @@ def test_fp6_fullout_source_specialization_delays_quantization_to_final_wave(tmp
     evidence = ROOT / "docs/evidence"
     stem = "model2mlir_radiance_mx_fp6_128x128x2048_quant"
     assert manifest == json.loads((evidence / f"{stem}_payload_manifest.json").read_text())
-    assert bound == (evidence / f"{stem}_payload_bound.mlir").read_text()
+    checked_ir = verify_ir(bound, profile)
+    assert (checked_ir["source_resources"], checked_ir["lut_uploads"]) == (7, 3)
     saved = json.loads((evidence / "compiled_mx_fp6_128x128x2048_quant_20261009.json").read_text())
     assert saved["files_sha256"] == receipt["files_sha256"]
-    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
     assert saved["compiler_revision"].startswith("e40120b")
     assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
     assert saved["compared_fp6_packed_bytes"] == 8192

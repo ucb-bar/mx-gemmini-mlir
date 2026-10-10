@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -15,6 +14,7 @@ from mx_gemmini_support.source_gemm import read_source_gemm
 from mx_gemmini_support.source_payload import load_bundle, write_bundle
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from mx_gemmini_support.verify_profile_ir import verify_ir
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,7 +85,11 @@ def test_compiler_regenerates_numerically_qualified_physical_stream(
     assert saved["command_count"] == receipt["command_count"]
     assert saved["fence_count"] == receipt["fence_count"]
     assert saved["files_sha256"] == receipt["files_sha256"]
-    assert saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    # Historical receipts pin the earlier digest-only MLIR syntax. The new
+    # source-resource SSA binding must preserve its emitted physical program.
+    checked_ir = verify_ir(bound, profile)
+    assert checked_ir["source_resources"] == (7 if precision == "FP6" else 4)
+    assert checked_ir["lut_uploads"] == (3 if precision == "FP6" else 0)
     assert '#include "mxgemm.data.' not in (tmp_path / "artifact/mx_issue.c").read_text()
     assert saved["fp6_spike_scale_selector_workaround"] == (precision == "FP6")
     if kernel.shape[0] != kernel.tile[0] or kernel.shape[1] != kernel.tile[1]:

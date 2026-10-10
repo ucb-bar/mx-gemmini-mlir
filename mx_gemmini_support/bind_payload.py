@@ -6,7 +6,8 @@ import argparse
 from io import StringIO
 from pathlib import Path
 
-from .source_payload import load_bundle, manifest_json, manifest_sha256
+from .resource_ir import attach_source_resources
+from .source_payload import load_bundle, manifest_sha256
 from .target_profile import load_profile, profile_sha256
 from .verify_profile_ir import _operation_name, _text_attr, verify_ir
 
@@ -63,9 +64,9 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
     if len(readouts) != 1:
         raise ValueError("source BF16 payload needs a matching MLIR readout")
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
-    module.attributes["mx.payload_manifest_json"] = StringAttr(manifest_json(manifest))
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
+    attach_source_resources(module, contract, manifest)
     if manifest.get("output_format") is not None:
         if manifest["output_format"] not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
             raise ValueError("source quantized output has an unsupported format")
@@ -120,7 +121,9 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
     module = Parser(context, mlir_text).parse_module()
     if _text_attr(module, "mx.output_specialization") != "matrix_vpu_x2_spad_requant_fp8":
         raise ValueError("VPU/SPAD x2 composition needs a matching typed output readout")
-    ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
+    ops = [op for op in module.walk()
+           if _operation_name(op).startswith("mx_gemmini.") and
+           _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     if [_operation_name(op) for op in ops] != ["mx_gemmini.contract", "mx_gemmini.readout_quantized"]:
         raise ValueError("VPU/SPAD x2 composition needs one bare contraction and readout")
     from .source_gemm import plan_mx_gemm

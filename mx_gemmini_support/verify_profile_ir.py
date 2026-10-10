@@ -49,8 +49,9 @@ def _bool_attr(op, name: str) -> bool:
 
 
 def verify_ir(mlir_text: str, profile: dict) -> dict:
+    from .resource_ir import INPUTS, LUTS, SCHEMA as RESOURCE_SCHEMA
     from xdsl.context import Context
-    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.builtin import Builtin, IntegerType, TensorType
     from xdsl.dialects.func import Func
     from xdsl.parser import Parser
 
@@ -66,6 +67,10 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                                        any(c not in "0123456789abcdef" for c in payload_digest)):
         raise ValueError("MX module payload manifest digest is malformed")
     payload_json = _text_attr(module, "mx.payload_manifest_json")
+    binding_schema = _text_attr(module, "mx.payload_binding_schema")
+    if binding_schema is not None and (
+            binding_schema != RESOURCE_SCHEMA or payload_json is None):
+        raise ValueError("MX source resource binding schema is unsupported")
     payload_manifest = None
     if payload_json is not None:
         try:
@@ -100,6 +105,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     not descriptor["layout"]):
                 raise ValueError(f"MX payload resource {resource_name} descriptor is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
+    source_resources: dict[str, object] = {}
+    lut_uploads: set[str] = set()
     for op in module.walk():
         name = _operation_name(op)
         if not name.startswith("mx_gemmini."):
@@ -113,7 +120,37 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             raise ValueError(f"{name}: site ID is absent")
         if _text_attr(op, "profile_sha256") != digest:
             raise ValueError(f"{name}: profile digest differs from selected target profile")
-        if name == "mx_gemmini.contract":
+        if name == "mx_gemmini.resource":
+            resource_name = _text_attr(op, "resource_name")
+            if (binding_schema != RESOURCE_SCHEMA or payload_manifest is None or
+                    resource_name not in payload_manifest["resources"] or
+                    resource_name in source_resources or
+                    _text_attr(op, "payload_manifest_sha256") != payload_digest):
+                raise ValueError("MX source resource differs from selected payload")
+            descriptor = payload_manifest["resources"][resource_name]
+            result_type = op.results[0].type if len(op.results) == 1 else None
+            if (not isinstance(result_type, TensorType) or
+                    list(result_type.get_shape()) != descriptor["shape"] or
+                    not isinstance(result_type.element_type, IntegerType) or
+                    result_type.element_type.width.data != descriptor["element_bits"] or
+                    _text_attr(op, "resource_sha256") != descriptor["sha256"] or
+                    _text_attr(op, "resource_layout") != descriptor["layout"] or
+                    _text_attr(op, "site_id") != payload_manifest["site_id"]):
+                raise ValueError(f"MX source resource {resource_name} type or digest differs")
+            source_resources[resource_name] = op
+        elif name == "mx_gemmini.upload_lut":
+            target = _text_attr(op, "lut_target")
+            resource_name = f"{target}_lut"
+            resource_op = op.operands[0].owner if len(op.operands) == 1 else None
+            if (binding_schema != RESOURCE_SCHEMA or target not in {
+                    "activation", "weight", "output"} or
+                    resource_name not in source_resources or
+                    resource_op is not source_resources[resource_name] or
+                    resource_name in lut_uploads or
+                    _text_attr(op, "payload_manifest_sha256") != payload_digest):
+                raise ValueError("MX LUT upload differs from checked source resource")
+            lut_uploads.add(resource_name)
+        elif name == "mx_gemmini.contract":
             local_payload = _text_attr(op, "payload_manifest_sha256")
             if payload_digest is not None:
                 if local_payload != payload_digest or _text_attr(op, "payload_origin") not in {
@@ -148,6 +185,14 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                            resources[name]["layout"] != layout
                            for name, layout in expected_luts.items()):
                         raise ValueError("MX FP6 per-row LUT banks are incomplete")
+            if binding_schema == RESOURCE_SCHEMA:
+                if len(op.operands) != len(INPUTS) or any(
+                        operand.owner is not source_resources.get(resource_name)
+                        for operand, resource_name in zip(op.operands, INPUTS)):
+                    raise ValueError("MX contraction operands differ from source resources")
+                expected_luts = set(LUTS) & set(payload_manifest["resources"])
+                if lut_uploads != expected_luts:
+                    raise ValueError("MX LUT banks must be uploaded before contraction")
             attributes = {name: _text_attr(op, name) for name in (
                 "activation_format", "weight_format", "activation_projection", "weight_projection")}
             if any(value is None for value in attributes.values()):
@@ -212,13 +257,19 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             resident_contracts += 1
         elif name not in {"mx_gemmini.readout_bf16", "mx_gemmini.readout_to_smem", "mx_gemmini.wait"}:
             raise ValueError(f"unknown MX operation {name}")
+    if binding_schema == RESOURCE_SCHEMA:
+        expected_resources = set(INPUTS) | (set(LUTS) & set(payload_manifest["resources"]))
+        if (set(source_resources) != expected_resources or
+                lut_uploads != (set(LUTS) & set(payload_manifest["resources"]))):
+            raise ValueError("MX source resource or LUT upload set is incomplete")
     if not (contracts or vpu_commands or spad_requants or resident_contracts):
         raise ValueError("MX profile-bound IR has no executable or contraction operation")
     return {"schema": "mx_gemmini.profile_ir_check.v1",
             "status": profile["qualification"], "profile_sha256": digest,
             "contracts": contracts, "encodes": encodes, "requantizes": requants,
             "vpu_commands": vpu_commands, "spad_requants": spad_requants,
-            "resident_contracts": resident_contracts}
+            "resident_contracts": resident_contracts,
+            "source_resources": len(source_resources), "lut_uploads": len(lut_uploads)}
 
 
 def main() -> None:

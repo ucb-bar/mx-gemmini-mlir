@@ -14,8 +14,10 @@ and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0
 scales, and all FP6 A/B/C LUT lines to a profile-bound model2MLIR contraction.
 New bound MLIR embeds a canonical resource manifest with each array's shape,
-layout, byte count, and SHA-256. The dialect and physical lowerer check its
-digest against the contraction; the external binary bundle supplies the bytes.
+layout, byte count, and SHA-256. Typed `mx_gemmini.resource` results feed the
+contraction's packed code and scale operands; `mx_gemmini.upload_lut` names
+each LUT bank before compute. The dialect and physical lowerer check the
+binding, and the external binary bundle supplies the bytes.
 `physical_program.lower_bound_source` schedules configuration, scale/LUT DMA,
 operand movement, K-wave compute, and BF16 or supported quantized readout for
 complete output tiles.
