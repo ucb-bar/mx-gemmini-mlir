@@ -121,6 +121,7 @@ def test_typed_two_branch_graph_and_shared_b2_physical_commands():
 
 def test_archived_compiler_object_and_spike_full_outputs():
     manifest = json.loads((COMPILED / "object_manifest.json").read_text())
+    replay = json.loads((COMPILED / "fresh_replay_manifest.json").read_text())
     assert manifest["schema"] == "mx_gemmini.chain_pipelined_linkable_object.v1"
     assert manifest["status"] == "rv64_rocc_two_tile_object_built"
     assert manifest["allocated_data_section_bytes"] == 0
@@ -136,3 +137,10 @@ def test_archived_compiler_object_and_spike_full_outputs():
     assert manifest["spike_qualification"]["elf_sha256"] == _sha(COMPILED / "mx_program.elf")
     assert manifest["spike_qualification"]["spike_log_sha256"] == _sha(COMPILED / "spike.log")
     assert "C1 0 codes 0 scales, C2 0 codes 0 scales" in (COMPILED / "spike.log").read_text()
+    assert replay["compiler_revision"] == "8d1635426d141b61ff3a2a13bbf187e242696ae1"
+    for key in ("bound_mlir_sha256", "physical_program_sha256",
+                "issuer_c_sha256", "object_sha256",
+                "compiler_source_closure_sha256"):
+        assert replay[key] == manifest[key]
+    for key in ("elf_sha256", "extension_sha256", "spike_log_sha256"):
+        assert replay["spike_qualification"][key] == manifest["spike_qualification"][key]

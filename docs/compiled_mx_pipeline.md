@@ -3453,6 +3453,9 @@ issuer, object, ELF, extension, and Spike log hashes. The executable starts
 from the source driver's preloaded C1 BF16 tile; the captured upstream MM1 is
 not issued by this object. The source's pipelined issue order and RTL cycle
 overlap remain separate gates.
+An independent checkout of pushed commit `8d16354` reproduced those hashes,
+including the compiler source closure, in the
+[fresh replay manifest](evidence/nicolas_chain_pipelined_compiled_266c593/fresh_replay_manifest.json).
 
 Reproduce the object and Spike check with `python -m
 tools.compile_nicolas_chain_pipelined --capture-dir
