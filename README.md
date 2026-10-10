@@ -35,8 +35,9 @@ The [re-stream baseline](docs/compiled_mx_pipeline.md#four-pass-re-stream-compar
 matches its committed source golden and shows the expected fourfold weight
 traffic across four M tiles.
 The [four-tile MX+VPU case](docs/compiled_mx_pipeline.md#four-tile-fp8-gemm-with-tilewise-vpu-epilogue)
-captures `matmul * 2.0` through model2MLIR and applies one compiler-issued
-in-place VPU command before each tile readout. All 65,536 BF16 outputs match
+captures `matmul * 2.0` through model2MLIR and connects contraction, VPU, and
+readout in typed SSA. It applies one compiler-issued in-place VPU command
+before each tile readout. All 65,536 BF16 outputs match
 the source-derived ×2 reference on pinned Spike; this selected epilogue is not
 yet a general graph lowering.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)

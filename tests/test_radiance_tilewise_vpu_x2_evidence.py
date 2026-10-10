@@ -92,6 +92,8 @@ def test_radiance_tilewise_vpu_x2_spike_evidence(tmp_path):
                       "mx.vector_tile_policy = \"unknown\""),
         bound.replace("immediate_bf16 = 16384 : i32", "immediate_bf16 = 16256 : i32"),
         bound.replace("src1_row = 2048 : i32", "src1_row = 2049 : i32"),
+        bound.replace('"mx_gemmini.readout_bf16"(%4)',
+                      '"mx_gemmini.readout_bf16"(%acc)'),
         bound.replace(", mx.vector_tile_policy = \"bf16_muls_x2_each_output_tile_v1\"", ""),
     ):
         assert changed != bound

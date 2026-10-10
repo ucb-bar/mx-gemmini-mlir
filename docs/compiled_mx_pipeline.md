@@ -1884,7 +1884,8 @@ epilogue is taken from the captured PyTorch graph; its expected BF16 values
 are derived from the source GEMM golden using exact BF16 multiplication.
 
 The handoff currently exports the matmul site only. The checked payload binder
-adds a typed `mx_gemmini.vpu_execute` with the explicit module policy
+adds a typed, SSA-connected `mx_gemmini.vpu_execute` between the contraction
+and BF16 readout, with the explicit module policy
 `bf16_muls_x2_each_output_tile_v1`. The physical lowerer applies it to the
 reused C scratchpad tile after each tile's final K wave and before its BF16
 readout. It rejects missing or changed policy, scratchpad row, operation, or

@@ -73,6 +73,11 @@ the matrix K waves; FP8 and FP4 ×2 runs match their exact derived goldens on
 Spike. A 64×64×128 FP8 program composes the matrix, VPU×2, and tiled resident
 SPAD_REQUANT; a separate 64×64×64 source-bound program also includes the
 following resident matrix stage. Both have numerical parity on Spike.
+A [four-output-tile FP8 case](compiled_mx_pipeline.md#four-tile-fp8-gemm-with-tilewise-vpu-epilogue)
+connects contraction, VPU, and BF16 readout with typed SSA, repeats the
+in-place VPU ×2 after each tile's final K wave, and matches all 65,536
+source-derived BF16 values on pinned Spike. This uses the selected DIM16
+MX+VPU profile and an explicit tilewise policy.
 General scheduling and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An
