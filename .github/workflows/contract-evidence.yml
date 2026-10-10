@@ -29,3 +29,25 @@ jobs:
             tests/test_radiance_mx_gemm_source_parity_roster.py \
             tests/test_radiance_latest_full_roster_evidence.py \
             tests/test_spike_weight_lut_candidate_all_modes_evidence.py
+
+  pinned-rtl-profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install profile test dependencies
+        run: python -m pip install -e . 'pytest>=8,<9'
+      - name: Fetch Nicolas's pinned Gemmini and MxGen source
+        run: |
+          git clone --filter=blob:none --single-branch --branch gemmini-mx-cleanup \
+            --no-checkout https://github.com/ucb-bar/gemmini.git /tmp/gemmini-mx-pinned
+          git -C /tmp/gemmini-mx-pinned checkout --detach \
+            266c593f2cb51d7e3fe83fc0317072b585ac3c52
+          git -C /tmp/gemmini-mx-pinned submodule update --init mxgen
+      - name: Check all source-bound profiles and negative mode selection
+        env:
+          MX_GEMMINI_RTL_ROOT: /tmp/gemmini-mx-pinned
+        run: python -m pytest -q tests/test_target_profile.py
