@@ -1,0 +1,24 @@
+{
+  "compared_c1_e8m0_scales": 64,
+  "compared_c1_fp8_codes": 2048,
+  "compared_c2_e8m0_scales": 64,
+  "compared_c2_fp8_codes": 2048,
+  "compiler_revision": "1eebfc5b7290ad72f57d4b859936acbcc98d6a9a",
+  "linked_elf_sha256": "da71847ef8ad84457de91e015882ef597a59df223fb398afbc6c3ca3d971d040",
+  "object_manifest_sha256": "380409ff3f4dad07f8133d1e3643ed8d0f0c4e560775b06eb962171169e7ce24",
+  "object_sha256": "127143cd143c38b3ad3f8ac2e5492ac9a3f3b1865b74b0dd85467b12d5a252ce",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.resident_pair_object_spike.v1",
+  "shape_mnk": [
+    16,
+    128,
+    128
+  ],
+  "source_issuer_sha256": "4098a4487be2dbdf0abca60e483ed7199c621e598b7219508724aca5683d9186",
+  "source_reference_manifest_sha256": "7b7db9ec50059cb661e912d19aba9b397a05fa266bd735f31f79d58762fcdbf0",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "ab6ae80ab56cda5ac3b2a674d9e553db01cca716f559a1ce2f087dc02f3dafa4",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_connected_object_matched_on_pinned_spike"
+}

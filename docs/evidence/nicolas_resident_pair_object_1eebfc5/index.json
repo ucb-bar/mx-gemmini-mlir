@@ -1,0 +1,80 @@
+{
+  "cases": {
+    "128": {
+      "compared_c1_e8m0_scales": 512,
+      "compared_c1_fp8_codes": 16384,
+      "compared_c2_e8m0_scales": 512,
+      "compared_c2_fp8_codes": 16384,
+      "files_sha256": {
+        "linked.elf": "30f333270739af19e79e8059b0b1ee705c3a79986a211763cbf51a71c26ab25b",
+        "mx_issue.c": "781c91c15e486a3679132a9a22a99e308e53e02775165c1c75c21e9f8a7e8a1c",
+        "mx_issue.h": "872a702ab7e8d6a8de76efb325a27f98a409b38f921c08c683c26bac240261d7",
+        "mx_issue.o": "d6cd7a16833769d3eea21a0736738cb59dac1c8d0aed2959f80334e745483d4b",
+        "object_manifest.json": "bacdda96dd3048c82f5eced8858b9dc99887efc8f45b2e8064ceef5efaf45edc",
+        "physical_program.json": "615030a1d0289b04d640dd1b40dafc73c6b7bf56d81100588278500182408c94",
+        "qualification_manifest.json": "865c505f07fec94c64f94ae7869ab8d827cd94da06efbbd2eedc1614d8621517",
+        "source_reference_manifest.json": "ab29c22f262586e0ff4fd0a7680a4624e6a419b778364de123689fb1e5439892",
+        "spike.log": "7e6c31a8a7130ac1df209d884ccd0aae4a33441b2c80598c62dd2a02c012cb57"
+      },
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "status": "source_connected_object_matched_on_pinned_spike"
+    },
+    "16": {
+      "compared_c1_e8m0_scales": 64,
+      "compared_c1_fp8_codes": 2048,
+      "compared_c2_e8m0_scales": 64,
+      "compared_c2_fp8_codes": 2048,
+      "files_sha256": {
+        "linked.elf": "da71847ef8ad84457de91e015882ef597a59df223fb398afbc6c3ca3d971d040",
+        "mx_issue.c": "4098a4487be2dbdf0abca60e483ed7199c621e598b7219508724aca5683d9186",
+        "mx_issue.h": "872a702ab7e8d6a8de76efb325a27f98a409b38f921c08c683c26bac240261d7",
+        "mx_issue.o": "127143cd143c38b3ad3f8ac2e5492ac9a3f3b1865b74b0dd85467b12d5a252ce",
+        "object_manifest.json": "380409ff3f4dad07f8133d1e3643ed8d0f0c4e560775b06eb962171169e7ce24",
+        "physical_program.json": "2a9cbeae1ea3357aceb3ba3c9613bece71a80580f7b5b68f62b26b663a5fad2a",
+        "qualification_manifest.json": "51b9748b527a45aacc9754c1fdfef4060f24b18be8cd16be345a0f0a4db8a18f",
+        "source_reference_manifest.json": "7b7db9ec50059cb661e912d19aba9b397a05fa266bd735f31f79d58762fcdbf0",
+        "spike.log": "ab6ae80ab56cda5ac3b2a674d9e553db01cca716f559a1ce2f087dc02f3dafa4"
+      },
+      "shape_mnk": [
+        16,
+        128,
+        128
+      ],
+      "status": "source_connected_object_matched_on_pinned_spike"
+    },
+    "96": {
+      "compared_c1_e8m0_scales": 384,
+      "compared_c1_fp8_codes": 12288,
+      "compared_c2_e8m0_scales": 384,
+      "compared_c2_fp8_codes": 12288,
+      "files_sha256": {
+        "linked.elf": "b810a55d762781494b3d5d845292728b05cd84af9982c4509b3230b09988ac9d",
+        "mx_issue.c": "317aa32125f3d2f8f95a0c6c12ced94ae8db12c8f91c9eff32400126be25fa9e",
+        "mx_issue.h": "872a702ab7e8d6a8de76efb325a27f98a409b38f921c08c683c26bac240261d7",
+        "mx_issue.o": "e149f31debfa19c17581bc6a748a42be8485ad36c0b2cec951146a8adcde8d8d",
+        "object_manifest.json": "e7b48ae7cedb6ef21089a65042ed91a89b3443a263c4e1aab29a38f940a1177b",
+        "object_manifest_repro.json": "e7b48ae7cedb6ef21089a65042ed91a89b3443a263c4e1aab29a38f940a1177b",
+        "physical_program.json": "e1ed56c4e52e44da84de404e3319dd41ca75dd6dea50191d9ecbb0b1d1a28d0b",
+        "qualification_manifest.json": "7a6b8950a2ebb0d14fd5faeaaa63ddb3c736e5e270334923c105156b795407c6",
+        "qualification_manifest_repro.json": "7a6b8950a2ebb0d14fd5faeaaa63ddb3c736e5e270334923c105156b795407c6",
+        "source_reference_manifest.json": "c91c0c50350627d708cb27fd6a879cef27fbe655eac9d1953b2253be7ffd68de",
+        "spike.log": "cc8e995fe16e629df84997b93ebda9381b2fd5f341d4e05c058376878bf84523"
+      },
+      "shape_mnk": [
+        96,
+        128,
+        128
+      ],
+      "status": "source_connected_object_matched_on_pinned_spike"
+    }
+  },
+  "compiler_revision": "1eebfc5b7290ad72f57d4b859936acbcc98d6a9a",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.resident_pair_object_archive.v1"
+}

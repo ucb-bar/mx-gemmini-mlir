@@ -786,6 +786,41 @@ records baseline-identical programs and full C1/C2 output for M = 16, 96,
 and 128. A separate checkout of commit `1f8c6ab` replayed M = 96 against
 the archived baseline with identical command source, objects, ELF, and log.
 
+The reusable pair also has a direct, data-free RV64 object path. The single
+`tools.emit_resident_pair_object` command accepts bound MLIR (plain or
+gzip-compressed), a selected RTL-derived profile, the six checked runtime
+operand files, and an explicit [buffer ABI](../examples/resident-pair-abi.json).
+It validates the native dialect IR, typed SSA graph, source payload digest,
+buffer sizes, and scratchpad plan; emits the same physical RoCC issuer; and
+builds `mx_issue.o` with **zero embedded operand or golden bytes**. The object
+manifest records the ten pointer positions, minimum sizes, layouts, command
+hashes, tool hashes, and selected profile. The [object and Spike archive](evidence/nicolas_resident_pair_object_1eebfc5/index.json)
+qualifies M = 16, 96, and 128. Each object is the sole MX command issuer in
+the linked source comparison harness; Nicolas's stock Spike matches every
+C1/C2 FP8 code and E8M0 scale. Two independent M = 96 builds reproduce the
+object, linked ELF, and Spike log byte for byte.
+
+```sh
+python -m tools.emit_resident_pair_object \
+  --mlir docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96/connected_chain.mlir.gz \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --resources-dir docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96 \
+  --abi-json examples/resident-pair-abi.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-pair-object-m96
+python -m tools.qualify_resident_pair_object \
+  --object-dir /new/mx-pair-object-m96 \
+  --frontend-dir docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --source-rows 96 \
+  --out-dir /new/mx-pair-object-spike-m96
+```
+
+This object path uses source bytes to specialize and verify the compiler
+input but does not link those bytes into the object. The Spike harness is a
+separate source parity gate. Other connected graph topologies and precision
+chains still need a reusable lowering and their own numerical qualification.
+
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:
 
