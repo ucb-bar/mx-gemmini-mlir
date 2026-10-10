@@ -1,0 +1,40 @@
+{
+  "allocated_data_section_bytes": 0,
+  "command_count": 101,
+  "compiler_revision": "d4ed0d8e0fea4acb089a198f7fec11dbd03f67f1",
+  "compiler_source_closure_sha256": "812194b5d23ff55a87259045535c64ae6fb7cadf512b7139b4c8cddb3c88c06f",
+  "compiler_spike": {
+    "compared_e8m0_scales": 512,
+    "compared_fp4_codes": 16384,
+    "elf_sha256": "4c183d43653c07185e895e8b1047ff602ce1aeb393dbf079c3daeca5cb54b0f6",
+    "exit_code": 0,
+    "spike_log_sha256": "5bfefc943bf09890b76d80123ab84be2e6f97f497833056d810ec2bbc4931a0b"
+  },
+  "connected_mlir_sha256": "93aadc7dd0dc6f8c534ed39a458bca697c9b235e38b1b1943e221bfbe1d1c58d",
+  "driver_patch_sha256": "cbcd5e141629fc4fa3b5e341494786a4f76d68cdb3ea396ab5bda9fb31e2fedc",
+  "driver_sha256": "64004081975ded7409375f0f91fb898dab9182db3fca587a966d5da08f06f712",
+  "extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "issuer_c_sha256": "a820913d033a5f4f4a885a22d8706fce2ab8802a2b66c69afb2197062d0c75a7",
+  "object_dispatch_manifest_sha256": "9b4b60b53122544dabcd4029e634d8f3239f490333e0538c587bca17adc61fcf",
+  "object_manifest_sha256": "48713d6f6f7b63f27c779b83f679e0a0e4769ce4777e005fa48162f0b3391ed0",
+  "object_sha256": "ab3975ad7ad33a913ceadc7858d3ab934ab1b41a5aa16f54bb9be8b733e7b067",
+  "physical_program_sha256": "59712b7d85173a806e5e1465ee89808fa114276a7ff19f98449114ab92ffc0b9",
+  "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "reference_header_sha256": "72ed54217ac242f78b24399fb1620c59b5842110290d0ee768e1fbdc84011c3e",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_fp4_dual_public_object_spike.v1",
+  "scope": "Nicolas source input and per-element oracle; public compiled flat+tiled FP4 SPAD_REQUANT",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_sha256": "812842fd751d7fa0d8fb98a150df29424bdaba65613531335001f9f2260eb884",
+  "source_spike": {
+    "compared_e8m0_scales": 512,
+    "compared_fp4_codes": 16384,
+    "elf_sha256": "b99f9b3880fd57e77bc029042cea97a07c364b14aba97bedb267b2ffe088e5f8",
+    "exit_code": 0,
+    "spike_log_sha256": "4c0a13c6fade1a271e7f1aac34213370f157d6ec8916c09b4e8f878be9309bae"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_and_public_object_matched_on_pinned_spike"
+}

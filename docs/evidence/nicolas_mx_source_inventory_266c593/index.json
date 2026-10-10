@@ -811,6 +811,13 @@
       "evidence_references": [
         {
           "field": "source_sha256",
+          "path": "docs/evidence/nicolas_fp4_dual_public_object_d4ed0d8_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_fp4_dual_public_object_spike.v1",
+          "sha256": "fca3528abed15b66262785c046e458cf90097f35930361795ff07269a91afde2",
+          "status": "source_and_public_object_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
           "path": "docs/evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json",
           "schema": "mx_gemmini.nicolas_fp4_spad_requant_compiler_spike.v1",
           "sha256": "ec6aedb2c7f25942ad569d6ede320a4e34b4a308ebf57a9660c217b1edb925e2",

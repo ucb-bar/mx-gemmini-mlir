@@ -83,6 +83,7 @@ jobs:
             tests/test_nicolas_fp4_requant_typed_object_evidence.py \
             tests/test_nicolas_fp4_large_requant_typed_object_evidence.py \
             tests/test_nicolas_fp4_dim32_requant_typed_object_evidence.py \
+            tests/test_nicolas_fp4_dual_public_object_evidence.py \
             tests/test_nicolas_fp6_requant_typed_object_evidence.py \
             tests/test_nicolas_plain_fp4_typed_object_evidence.py \
             tests/test_nicolas_plain_fp6_typed_object_evidence.py \

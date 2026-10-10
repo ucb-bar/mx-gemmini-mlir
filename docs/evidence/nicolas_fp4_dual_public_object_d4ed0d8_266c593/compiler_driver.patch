@@ -1,0 +1,72 @@
+--- spad_requant_fp4.c
++++ compiler_driver.c
+@@ -8,6 +8,7 @@
+ 
+ #include "include/gemmini_testutils.h"
+ #include "include/mx_e4m3_ref.h"
++void mx_issue(const void *, const void *, const void *, const void *, const void *);
+ 
+ #if !defined(MX_ROCKET) && !defined(SPIKE_SIM)
+ int main() { printf("skipped: SPAD_REQUANT config / Spike-only test\n"); return 0; }
+@@ -21,7 +22,8 @@
+ #define SP_TILED 0x2000   // bank 2: (M/32)*(N/16)*16 = 256 rows
+ 
+ static uint16_t X[M][N] __attribute__((aligned(64)));
+-static uint8_t codes_hw[M * N / 2] __attribute__((aligned(64)));
++static uint8_t codes_flat_hw[M * N / 2] __attribute__((aligned(64)));
++static uint8_t codes_tiled_hw[M * N / 2] __attribute__((aligned(64)));
+ static uint8_t scales_hw[M * GN] __attribute__((aligned(64)));
+ static uint8_t scales_hw2[M * GN] __attribute__((aligned(64)));
+ static uint8_t codes_ref[M][N], scales_ref[M][GN];
+@@ -79,44 +81,35 @@
+     }
+ 
+   gemmini_flush(0);
+-  gemmini_config_ld(DIM);
+-  gemmini_config_st(DIM);
+   memset(scales_hw, 0xa5, sizeof(scales_hw));
+   memset(scales_hw2, 0xa5, sizeof(scales_hw2));
+-
+-  // ---- flat: byte (m/2, n) at SP_FLAT + (m/2)*N/16 + n/16, col n%16 ----
+-  for (int r = 0; r < M * N / 8; r += DIM) gemmini_extended_mvin((uint8_t *)X + r * DIM, SP_SRC + r, DIM, DIM);
++  memset(codes_flat_hw, 0xa5, sizeof(codes_flat_hw));
++  memset(codes_tiled_hw, 0xa5, sizeof(codes_tiled_hw));
+   uint64_t t0 = read_cycles();
+-  gemmini_spad_requant_fp4(SP_FLAT, SP_SRC, M, N, 0, (uint64_t)scales_hw, 0);
+-  memset(codes_hw, 0xa5, sizeof(codes_hw));
+-  for (int r = 0; r < M * N / 32; r += DIM) gemmini_extended_mvout(codes_hw + r * DIM, SP_FLAT + r, DIM, DIM);
++  mx_issue(X, scales_hw, scales_hw2, codes_flat_hw, codes_tiled_hw);
+   gemmini_fence();
+   uint64_t t1 = read_cycles();
+   int bad_flat = 0;
+   for (int m = 0; m < M; m++)
+     for (int n = 0; n < N; n++) {
+-      uint8_t byte = codes_hw[(m / 2) * N + n], got = (m & 1) ? byte >> 4 : byte & 0xf;
++      uint8_t byte = codes_flat_hw[(m / 2) * N + n], got = (m & 1) ? byte >> 4 : byte & 0xf;
+       if (got != codes_ref[m][n] && bad_flat++ < 4)
+         printf("  flat code[%d][%d]: hw %x ref %x\n", m, n, got, codes_ref[m][n]);
+     }
+   int bad_sc = check_scales("flat", scales_hw);
+ 
+-  // ---- FP4 operand-A tiled: tile (i, kt) row r (= row pair) at SP_TILED + (i*N/16 + kt)*16 + r ----
+-  gemmini_spad_requant_fp4(SP_TILED, SP_SRC, M, N, 1, (uint64_t)scales_hw2, 0);
+-  memset(codes_hw, 0xa5, sizeof(codes_hw));
+-  for (int r = 0; r < M * N / 32; r += DIM) gemmini_extended_mvout(codes_hw + r * DIM, SP_TILED + r, DIM, DIM);
+-  gemmini_fence();
++  // Operand-A tiled FP4 image was emitted by the same compiler object.
+   int bad_tiled = 0;
+   for (int m = 0; m < M; m++)
+     for (int n = 0; n < N; n++) {
+       int p = m / 2, row = ((p / 16) * (N / 16) + n / 16) * 16 + p % 16;
+-      uint8_t byte = codes_hw[row * DIM + n % 16], got = (m & 1) ? byte >> 4 : byte & 0xf;
++      uint8_t byte = codes_tiled_hw[row * DIM + n % 16], got = (m & 1) ? byte >> 4 : byte & 0xf;
+       if (got != codes_ref[m][n] && bad_tiled++ < 4)
+         printf("  tiled code[%d][%d]: hw %x ref %x\n", m, n, got, codes_ref[m][n]);
+     }
+   int bad_sc2 = check_scales("tiled", scales_hw2);
+ 
+-  printf("spad_requant_fp4 %dx%d: flat %d, tiled %d code mismatches; scales %d, %d mismatches; %llu cycles (requant+mvout)\n",
++  printf("spad_requant_fp4 %dx%d: flat %d, tiled %d code mismatches; scales %d, %d mismatches; %llu cycles (compiler issue+readout)\n",
+          M, N, bad_flat, bad_tiled, bad_sc, bad_sc2, (unsigned long long)(t1 - t0));
+   int fail = bad_flat || bad_tiled || bad_sc || bad_sc2;
+   printf("spad_requant_fp4 %s\n", fail ? "FAILED" : "PASSED");

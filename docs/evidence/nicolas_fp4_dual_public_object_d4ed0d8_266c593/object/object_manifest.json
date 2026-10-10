@@ -1,0 +1,66 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "93aadc7dd0dc6f8c534ed39a458bca697c9b235e38b1b1943e221bfbe1d1c58d",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_64x128",
+      "minimum_bytes": 16384,
+      "name": "X",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_e8m0_scales",
+      "minimum_bytes": 256,
+      "name": "scales_hw",
+      "position": 1,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_e8m0_scales",
+      "minimum_bytes": 256,
+      "name": "scales_hw2",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_m_fp4_e2m1",
+      "minimum_bytes": 4096,
+      "name": "codes_flat_hw",
+      "position": 3,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "operand_a_tiled_fp4_e2m1",
+      "minimum_bytes": 4096,
+      "name": "codes_tiled_hw",
+      "position": 4,
+      "role": "write"
+    }
+  ],
+  "command_count": 101,
+  "compiler_revision": "d4ed0d8e0fea4acb089a198f7fec11dbd03f67f1",
+  "compiler_source_closure_sha256": "812194b5d23ff55a87259045535c64ae6fb7cadf512b7139b4c8cddb3c88c06f",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 1,
+  "issuer_c_sha256": "a820913d033a5f4f4a885a22d8706fce2ab8802a2b66c69afb2197062d0c75a7",
+  "issuer_h_sha256": "8910ac568284c199ffa173e8064a8e2eadba0da11d25cd38edef971b3aa2f572",
+  "mlir_container_sha256": "93aadc7dd0dc6f8c534ed39a458bca697c9b235e38b1b1943e221bfbe1d1c58d",
+  "object_emitter_sha256": "25755df13e842cd85be3bdf1489e85ea9055dc6b6e3557d47fe91de762f00b18",
+  "object_sha256": "ab3975ad7ad33a913ceadc7858d3ab934ab1b41a5aa16f54bb9be8b733e7b067",
+  "physical_program_sha256": "59712b7d85173a806e5e1465ee89808fa114276a7ff19f98449114ab92ffc0b9",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
+  "status": "rv64_rocc_fp4_dual_requant_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
