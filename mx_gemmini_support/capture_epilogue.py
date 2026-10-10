@@ -8,7 +8,7 @@ import math
 import struct
 
 from .bind_payload import (append_tilewise_vpu_adds, append_tilewise_vpu_muls,
-                           append_tilewise_vpu_x2)
+                           append_tilewise_vpu_scalar_chain, append_tilewise_vpu_x2)
 from .verify_profile_ir import _text_attr
 
 
@@ -19,8 +19,8 @@ def _digest(value: dict) -> str:
 
 def _append_captured_scalar(mlir_text: str, profile: dict,
                             payload_manifest: dict, capture, *,
-                            allow_add: bool) -> str:
-    """Lower one finite BF16 scalar epilogue from a model2MLIR capture.
+                            allow_add: bool, allow_chain: bool) -> str:
+    """Lower finite BF16 scalar epilogues from a model2MLIR capture.
 
     The frontend graph and final MLIR must match the digest-gated handoff.
     Unmatched or wider scalar values fail closed instead of silently changing
@@ -59,35 +59,42 @@ def _append_captured_scalar(mlir_text: str, profile: dict,
     nodes = original.get("nodes", [])
     supported = ({"aten.mul.Tensor", "aten.add.Tensor"} if allow_add
                  else {"aten.mul.Tensor"})
-    if (len(nodes) != 5 or [node.get("op") for node in nodes] != [
-            "placeholder", "placeholder", "call_function", "call_function", "output"] or
+    scalars = nodes[3:-1]
+    if (not 5 <= len(nodes) <= (20 if allow_chain else 5) or
+            [node.get("op") for node in nodes] != [
+                "placeholder", "placeholder", "call_function",
+                *["call_function"] * len(scalars), "output"] or
             nodes[2].get("target") != "aten.matmul.default" or
-            nodes[3].get("target") not in supported or
-            nodes[2].get("kwargs") != {} or nodes[3].get("kwargs") != {} or
+            nodes[2].get("kwargs") != {} or
             nodes[2].get("args") != [
                 {"node_id": node["id"], "value_id": node["id"] + ":v0"}
                 for node in nodes[:2]] or
-            not isinstance(nodes[3].get("args"), list) or
-            len(nodes[3]["args"]) != 2 or
-            nodes[3]["args"][0] != {
-                "node_id": nodes[2]["id"], "value_id": nodes[2]["id"] + ":v0"} or
-            nodes[4].get("args") != [[{
-                "node_id": nodes[3]["id"], "value_id": nodes[3]["id"] + ":v0"}]]):
+            any(node.get("target") not in supported or node.get("kwargs") != {} or
+                not isinstance(node.get("args"), list) or len(node["args"]) != 2 or
+                node["args"][0] != {"node_id": previous["id"],
+                                    "value_id": previous["id"] + ":v0"}
+                for previous, node in zip(nodes[2:-2], scalars)) or
+            nodes[-1].get("args") != [[{
+                "node_id": scalars[-1]["id"],
+                "value_id": scalars[-1]["id"] + ":v0"}]]):
         raise ValueError("scalar VPU binding supports one returned matmul-scalar chain")
-    scalar = nodes[3]["args"][1]
-    try:
-        finite = type(scalar) in {float, int} and math.isfinite(scalar)
-    except OverflowError:
-        finite = False
-    if not finite:
-        raise ValueError("scalar VPU capture needs a finite literal")
-    try:
-        scalar_f32 = struct.unpack("<I", struct.pack("<f", scalar))[0]
-    except (OverflowError, struct.error) as error:
-        raise ValueError("scalar VPU capture literal exceeds BF16 range") from error
-    if scalar_f32 & 0xffff or (scalar_f32 & 0x7f800000) == 0x7f800000:
-        raise ValueError("scalar VPU capture literal is not exactly finite BF16")
-    scalar_bf16 = scalar_f32 >> 16
+    operations = []
+    for node in scalars:
+        scalar = node["args"][1]
+        try:
+            finite = type(scalar) in {float, int} and math.isfinite(scalar)
+        except OverflowError:
+            finite = False
+        if not finite:
+            raise ValueError("scalar VPU capture needs a finite literal")
+        try:
+            scalar_f32 = struct.unpack("<I", struct.pack("<f", scalar))[0]
+        except (OverflowError, struct.error) as error:
+            raise ValueError("scalar VPU capture literal exceeds BF16 range") from error
+        if scalar_f32 & 0xffff or (scalar_f32 & 0x7f800000) == 0x7f800000:
+            raise ValueError("scalar VPU capture literal is not exactly finite BF16")
+        operations.append(("adds" if node["target"] == "aten.add.Tensor" else "muls",
+                           scalar_f32 >> 16))
     sites = quant.get("sites", [])
     selected_format = {"FP8": "mxfp8", "FP4": "mxfp4"}.get(
         payload_manifest.get("precision"))
@@ -98,10 +105,14 @@ def _append_captured_scalar(mlir_text: str, profile: dict,
             sites[0].get("format") != selected_format or
             sites[0].get("shape") != payload_manifest.get("shape_mnk") or
             "linalg.matmul" not in frontend or
-            f'prov.aten = "{nodes[3]["target"]}"' not in frontend or
-            f"{scalar:.6e}" not in frontend):
+            any(f'prov.aten = "{node["target"]}"' not in frontend or
+                f"{node['args'][1]:.6e}" not in frontend for node in scalars)):
         raise ValueError("scalar VPU source site or frontend operation differs")
-    if nodes[3]["target"] == "aten.add.Tensor":
+    if len(operations) > 1:
+        return append_tilewise_vpu_scalar_chain(
+            mlir_text, profile, payload_manifest, tuple(operations))
+    kind, scalar_bf16 = operations[0]
+    if kind == "adds":
         return append_tilewise_vpu_adds(mlir_text, profile, payload_manifest,
                                         scalar_bf16)
     if scalar_bf16 == 0x4000:
@@ -112,13 +123,13 @@ def _append_captured_scalar(mlir_text: str, profile: dict,
 
 def append_captured_tilewise_vpu_scalar(mlir_text: str, profile: dict,
                                         payload_manifest: dict, capture) -> str:
-    """Bind captured `matmul * scalar` or `matmul + scalar` to BF16 VPU."""
+    """Bind an ordered captured matmul-scalar chain to the BF16 VPU."""
     return _append_captured_scalar(mlir_text, profile, payload_manifest,
-                                   capture, allow_add=True)
+                                   capture, allow_add=True, allow_chain=True)
 
 
 def append_captured_tilewise_vpu_muls(mlir_text: str, profile: dict,
                                       payload_manifest: dict, capture) -> str:
     """Preserve the multiplication-only capture binding entry point."""
     return _append_captured_scalar(mlir_text, profile, payload_manifest,
-                                   capture, allow_add=False)
+                                   capture, allow_add=False, allow_chain=False)

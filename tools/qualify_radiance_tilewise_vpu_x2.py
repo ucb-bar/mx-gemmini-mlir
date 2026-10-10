@@ -1,9 +1,9 @@
-"""Capture and compile a four-tile Radiance FP8 GEMM with a BF16 VPU MULS epilogue.
+"""Capture and compile a four-tile Radiance FP8 GEMM with a BF16 VPU epilogue.
 
-The PyTorch trace must contain exactly matmul followed by scalar multiplication.
+The PyTorch trace contains matmul followed by selected scalar operations.
 Source operand bytes and the BF16 matrix golden come from the selected
 Radiance header; the compiler derives the BF16 reference and emits all RoCC
-commands, including one in-place VPU command for each output tile.
+commands, including ordered in-place VPU commands for each output tile.
 """
 
 from __future__ import annotations
@@ -43,7 +43,8 @@ def _digest(data: bytes) -> str:
 
 
 def _check_trace(result, *, quant_format: str = "mxfp8",
-                 scalar: float = 2.0, operation: str = "muls") -> None:
+                 scalar: float = 2.0, operation: str = "muls",
+                 second_scalar: float | None = None) -> None:
     from m2m.coverage import opaque_report
 
     trace = result.capture_trace or {}
@@ -51,17 +52,26 @@ def _check_trace(result, *, quant_format: str = "mxfp8",
     calls = [node for node in nodes if node.get("op") == "call_function"]
     if (trace.get("status") != "complete" or trace.get("blockers") or
             opaque_report(result.mlir_text) or
-            [node.get("target") for node in calls] != [
+            [node.get("target") for node in calls] != ([
+                "aten.matmul.default", "aten.mul.Tensor", "aten.add.Tensor"]
+                if operation == "affine" else [
                 "aten.matmul.default",
-                "aten.mul.Tensor" if operation == "muls" else "aten.add.Tensor"] or
+                "aten.mul.Tensor" if operation == "muls" else "aten.add.Tensor"]) or
             len([node for node in nodes if node.get("op") == "placeholder"]) != 2 or
             len(calls[0].get("args", [])) != 2 or
             [arg.get("node_id") for arg in calls[0]["args"]] != [
                 node["id"] for node in nodes[:2]] or
             calls[1].get("args") != [
                 {"node_id": calls[0]["id"], "value_id": calls[0]["id"] + ":v0"}, scalar] or
+            (operation == "affine" and
+             (calls[2].get("args") != [
+                 {"node_id": calls[1]["id"], "value_id": calls[1]["id"] + ":v0"},
+                 second_scalar] or calls[2].get("kwargs") != {} or
+              f"{second_scalar:.6e}" not in result.mlir_text)) or
             "linalg.matmul" not in result.mlir_text or
             f'prov.aten = "{calls[1]["target"]}"' not in result.mlir_text or
+            (operation == "affine" and
+             'prov.aten = "aten.add.Tensor"' not in result.mlir_text) or
             f"{scalar:.6e}" not in result.mlir_text):
         raise ValueError("model2MLIR trace does not prove matmul followed by selected scalar")
     sites = result.quantization_manifest.get("sites", [])
@@ -79,12 +89,25 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--scalar-bits", type=lambda value: int(value, 0),
                         default=0x4000, help="finite BF16 scalar bits (default: 0x4000, 2.0)")
-    parser.add_argument("--epilogue", choices=("muls", "adds"), default="muls")
+    parser.add_argument("--epilogue", choices=("muls", "adds", "affine"), default="muls")
+    parser.add_argument("--second-scalar-bits", type=lambda value: int(value, 0),
+                        help="BF16 addition scalar after multiplication for affine epilogue")
     args = parser.parse_args()
     scalar_bits = args.scalar_bits
     if not 0 <= scalar_bits <= 0xffff or (scalar_bits & 0x7f80) == 0x7f80:
         parser.error("--scalar-bits must encode a finite BF16 value")
     scalar = struct.unpack("<f", (scalar_bits << 16).to_bytes(4, "little"))[0]
+    if args.epilogue == "affine":
+        if (args.second_scalar_bits is None or
+                not 0 <= args.second_scalar_bits <= 0xffff or
+                (args.second_scalar_bits & 0x7f80) == 0x7f80):
+            parser.error("affine epilogue needs a finite --second-scalar-bits")
+        second_scalar = struct.unpack(
+            "<f", (args.second_scalar_bits << 16).to_bytes(4, "little"))[0]
+    else:
+        if args.second_scalar_bits is not None:
+            parser.error("--second-scalar-bits requires --epilogue affine")
+        second_scalar = None
     model2mlir, mxq_root, source, rtl, riscv, mx_opt, out = (
         args.model2mlir_root.resolve(), args.mxq_root.resolve(),
         args.source_root.resolve(), args.rtl_root.resolve(),
@@ -120,6 +143,8 @@ def main() -> None:
     class GemmScalar(torch.nn.Module):
         def forward(self, lhs, rhs):
             result = torch.matmul(lhs, rhs)
+            if args.epilogue == "affine":
+                return result * scalar + second_scalar
             return result * scalar if args.epilogue == "muls" else result + scalar
 
     with torch.random.fork_rng(devices=[]):
@@ -132,7 +157,8 @@ def main() -> None:
         backend="fx_importer", capture_trace=True)
     if not result.ok:
         raise RuntimeError(f"model2MLIR capture failed: {result.diagnostics}")
-    _check_trace(result, scalar=scalar, operation=args.epilogue)
+    _check_trace(result, scalar=scalar, operation=args.epilogue,
+                 second_scalar=second_scalar)
     validate_handoff(result, CONTRACT.read_bytes(), POLICY.read_bytes())
     handoff = render_handoff(result, CONTRACT.read_bytes(), POLICY.read_bytes())
     selected = bind_handoff(handoff, profile)
@@ -154,7 +180,8 @@ def main() -> None:
     (out / "tilewise_bound.mlir").write_text(bound)
     program = lower_bound_source(bound, profile, manifest, resources)
     if (len(program.plan.get("output_tiles", [])) != 4 or
-            sum(step.phase == "vpu" for step in program.steps) != 4 or
+            sum(step.phase == "vpu" for step in program.steps) !=
+            (8 if args.epilogue == "affine" else 4) or
             program.derived_expected_bf16 is None):
         raise ValueError("compiler did not apply one VPU epilogue to each output tile")
     _run([str(mx_opt), str(out / "tilewise_bound.mlir"), "-o", "/dev/null"],
@@ -169,15 +196,20 @@ def main() -> None:
     if (compiled["status"] != "derived_vpu_golden_matched_on_pinned_spike" or
             compiled["compared_bf16_outputs"] != 65536 or
             compiled["golden_basis"] != (
+                "derived_bf16_scalar_chain" if args.epilogue == "affine" else
                 "derived_bf16_adds" if args.epilogue == "adds" else
                 "derived_bf16_x2" if scalar_bits == 0x4000 else "derived_bf16_muls")):
         raise RuntimeError("tilewise VPU full-output Spike qualification failed")
-    index = {"schema": ("mx_gemmini.radiance_tilewise_vpu_adds_spike.v1"
+    index = {"schema": ("mx_gemmini.radiance_tilewise_vpu_affine_spike.v1"
+                         if args.epilogue == "affine" else
+                         "mx_gemmini.radiance_tilewise_vpu_adds_spike.v1"
                          if args.epilogue == "adds" else
                          "mx_gemmini.radiance_tilewise_vpu_x2_spike.v1"
                          if scalar_bits == 0x4000 else
                          "mx_gemmini.radiance_tilewise_vpu_scalar_spike.v1"),
-             "status": ("source_derived_vpu_adds_matched_on_pinned_spike"
+             "status": ("source_derived_vpu_affine_matched_on_pinned_spike"
+                        if args.epilogue == "affine" else
+                        "source_derived_vpu_adds_matched_on_pinned_spike"
                         if args.epilogue == "adds" else
                         "source_derived_vpu_x2_matched_on_pinned_spike"
                         if scalar_bits == 0x4000 else
@@ -194,7 +226,7 @@ def main() -> None:
                  ROOT, sorted((ROOT / "mx_gemmini_support").glob("*.py")) +
                  sorted((ROOT / "tools").glob("*.py"))),
              "shape_mnk": [256, 256, 256], "tile_mnk": [128, 128, 256],
-             "output_tiles": 4, "vpu_commands": 4,
+             "output_tiles": 4, "vpu_commands": 8 if args.epilogue == "affine" else 4,
              "compared_bf16_outputs": 65536,
              "files_sha256": {name: _sha(out / name) for name in (
                  "frontend.mlir", "handoff.mlir", "profile_bound.mlir",
@@ -205,11 +237,14 @@ def main() -> None:
                  "build/artifact_manifest.json")},
              "elf_sha256": compiled["elf_sha256"],
              "extension_sha256": compiled["extension_sha256"]}
-    if scalar_bits != 0x4000 or args.epilogue == "adds":
+    if scalar_bits != 0x4000 or args.epilogue in {"adds", "affine"}:
         index["scalar_bf16_bits"] = scalar_bits
         index["scalar_value"] = scalar
-    if args.epilogue == "adds":
+    if args.epilogue in {"adds", "affine"}:
         index["epilogue"] = args.epilogue
+    if args.epilogue == "affine":
+        index["second_scalar_bf16_bits"] = args.second_scalar_bits
+        index["second_scalar_value"] = second_scalar
     (out / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
     print(f"four-tile FP8 MX+VPU {args.epilogue.upper()} {scalar}: "
           "65,536/65,536 BF16 outputs matched pinned Spike")

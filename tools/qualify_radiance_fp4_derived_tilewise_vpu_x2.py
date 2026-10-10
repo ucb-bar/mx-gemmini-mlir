@@ -3,7 +3,7 @@
 Radiance does not contain this 256x256 FP4 driver. The pinned Radiance FP8
 driver supplies only a source template; its generator and golden model produce
 new FP4 operands and a BF16 matrix reference. The PyTorch graph supplies the
-matmul -> scalar MULS structure. This test qualifies the compiler and selected Spike
+matmul and scalar epilogue structure. This test qualifies the compiler and selected Spike
 profile, not parity with a committed Radiance source ELF.
 """
 
@@ -112,12 +112,25 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--scalar-bits", type=lambda value: int(value, 0),
                         default=0x4000, help="finite BF16 scalar bits (default: 0x4000, 2.0)")
-    parser.add_argument("--epilogue", choices=("muls", "adds"), default="muls")
+    parser.add_argument("--epilogue", choices=("muls", "adds", "affine"), default="muls")
+    parser.add_argument("--second-scalar-bits", type=lambda value: int(value, 0),
+                        help="BF16 addition scalar after multiplication for affine epilogue")
     args = parser.parse_args()
     scalar_bits = args.scalar_bits
     if not 0 <= scalar_bits <= 0xffff or (scalar_bits & 0x7f80) == 0x7f80:
         parser.error("--scalar-bits must encode a finite BF16 value")
     scalar = struct.unpack("<f", (scalar_bits << 16).to_bytes(4, "little"))[0]
+    if args.epilogue == "affine":
+        if (args.second_scalar_bits is None or
+                not 0 <= args.second_scalar_bits <= 0xffff or
+                (args.second_scalar_bits & 0x7f80) == 0x7f80):
+            parser.error("affine epilogue needs a finite --second-scalar-bits")
+        second_scalar = struct.unpack(
+            "<f", (args.second_scalar_bits << 16).to_bytes(4, "little"))[0]
+    else:
+        if args.second_scalar_bits is not None:
+            parser.error("--second-scalar-bits requires --epilogue affine")
+        second_scalar = None
     model2mlir, mxq_root, source, rtl, riscv, mx_opt, out = (
         args.model2mlir_root.resolve(), args.mxq_root.resolve(),
         args.source_root.resolve(), args.rtl_root.resolve(),
@@ -149,6 +162,8 @@ def main() -> None:
     class GemmScalar(torch.nn.Module):
         def forward(self, lhs, rhs):
             result = torch.matmul(lhs, rhs)
+            if args.epilogue == "affine":
+                return result * scalar + second_scalar
             return result * scalar if args.epilogue == "muls" else result + scalar
 
     with torch.random.fork_rng(devices=[]):
@@ -162,7 +177,7 @@ def main() -> None:
     if not result.ok:
         raise RuntimeError(f"model2MLIR capture failed: {result.diagnostics}")
     _check_trace(result, quant_format="mxfp4", scalar=scalar,
-                 operation=args.epilogue)
+                 operation=args.epilogue, second_scalar=second_scalar)
     contract, policy = CONTRACT.read_bytes(), POLICY.read_bytes()
     validate_handoff(result, contract, policy)
     handoff = render_handoff(result, contract, policy)
@@ -186,7 +201,8 @@ def main() -> None:
     (out / "tilewise_bound.mlir").write_text(bound)
     program = lower_bound_source(bound, profile, manifest, resources)
     if (len(program.plan.get("output_tiles", [])) != 4 or
-            sum(step.phase == "vpu" for step in program.steps) != 4 or
+            sum(step.phase == "vpu" for step in program.steps) !=
+            (8 if args.epilogue == "affine" else 4) or
             program.derived_expected_bf16 is None):
         raise ValueError("compiler did not apply one VPU epilogue to each FP4 output tile")
     _run([str(mx_opt), str(out / "tilewise_bound.mlir"), "-o", "/dev/null"],
@@ -201,16 +217,21 @@ def main() -> None:
     if (compiled["status"] != "derived_vpu_golden_matched_on_pinned_spike" or
             compiled["compared_bf16_outputs"] != 65536 or
             compiled["golden_basis"] != (
+                "derived_bf16_scalar_chain" if args.epilogue == "affine" else
                 "derived_bf16_adds" if args.epilogue == "adds" else
                 "derived_bf16_x2" if scalar_bits == 0x4000 else "derived_bf16_muls")):
         raise RuntimeError("derived FP4 tilewise VPU full-output Spike test failed")
     index = {
-        "schema": ("mx_gemmini.radiance_generated_fp4_tilewise_vpu_adds_spike.v1"
+        "schema": ("mx_gemmini.radiance_generated_fp4_tilewise_vpu_affine_spike.v1"
+                   if args.epilogue == "affine" else
+                   "mx_gemmini.radiance_generated_fp4_tilewise_vpu_adds_spike.v1"
                    if args.epilogue == "adds" else
                    "mx_gemmini.radiance_generated_fp4_tilewise_vpu_spike.v1"
                    if scalar_bits == 0x4000 else
                    "mx_gemmini.radiance_generated_fp4_tilewise_vpu_scalar_spike.v1"),
-        "status": ("generated_fp4_fixture_vpu_adds_matched_on_pinned_spike"
+        "status": ("generated_fp4_fixture_vpu_affine_matched_on_pinned_spike"
+                   if args.epilogue == "affine" else
+                   "generated_fp4_fixture_vpu_adds_matched_on_pinned_spike"
                    if args.epilogue == "adds" else
                    "generated_fp4_fixture_vpu_x2_matched_on_pinned_spike"
                    if scalar_bits == 0x4000 else
@@ -227,7 +248,7 @@ def main() -> None:
             ROOT, sorted((ROOT / "mx_gemmini_support").glob("*.py")) +
             sorted((ROOT / "tools").glob("*.py"))),
         "shape_mnk": [256, 256, 256], "tile_mnk": [128, 128, 128],
-        "output_tiles": 4, "vpu_commands": 4,
+        "output_tiles": 4, "vpu_commands": 8 if args.epilogue == "affine" else 4,
         "compared_bf16_outputs": 65536,
         "files_sha256": {name: _sha(out / name) for name in (
             "fixture/kernels/gemm_mxgemmini/" + DRIVER,
@@ -241,11 +262,14 @@ def main() -> None:
         "elf_sha256": compiled["elf_sha256"],
         "extension_sha256": compiled["extension_sha256"],
     }
-    if scalar_bits != 0x4000 or args.epilogue == "adds":
+    if scalar_bits != 0x4000 or args.epilogue in {"adds", "affine"}:
         index["scalar_bf16_bits"] = scalar_bits
         index["scalar_value"] = scalar
-    if args.epilogue == "adds":
+    if args.epilogue in {"adds", "affine"}:
         index["epilogue"] = args.epilogue
+    if args.epilogue == "affine":
+        index["second_scalar_bf16_bits"] = args.second_scalar_bits
+        index["second_scalar_value"] = second_scalar
     (out / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
     print(f"generated FP4 four-tile MX+VPU {args.epilogue.upper()} {scalar}: "
           "65,536/65,536 BF16 outputs matched Spike")

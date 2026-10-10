@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from io import StringIO
+import json
 from pathlib import Path
 
 from .resource_ir import attach_source_resources
@@ -143,6 +144,18 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
 
 def _append_tilewise_vpu_scalar(mlir_text: str, profile: dict, manifest: dict,
                                 scalar_bf16: int, policy: str) -> str:
+    kind = {"bf16_muls_x2_each_output_tile_v1": "muls",
+            "bf16_muls_scalar_each_output_tile_v1": "muls",
+            "bf16_adds_scalar_each_output_tile_v1": "adds"}.get(policy)
+    if kind is None:
+        raise ValueError("tilewise VPU needs a known policy")
+    return _append_tilewise_vpu_operations(
+        mlir_text, profile, manifest, ((kind, scalar_bf16),), policy)
+
+
+def _append_tilewise_vpu_operations(mlir_text: str, profile: dict, manifest: dict,
+                                    operations: tuple[tuple[str, int], ...],
+                                    policy: str) -> str:
     """Apply one in-place BF16 scalar VPU op to each complete MX output tile.
 
     The bound contraction owns the full logical output, while its physical C
@@ -159,14 +172,22 @@ def _append_tilewise_vpu_scalar(mlir_text: str, profile: dict, manifest: dict,
     from .source_gemm import plan_mx_gemm
 
     verify_ir(mlir_text, profile)
-    kind = {"bf16_muls_x2_each_output_tile_v1": "muls",
-            "bf16_muls_scalar_each_output_tile_v1": "muls",
-            "bf16_adds_scalar_each_output_tile_v1": "adds"}.get(policy)
-    if (not isinstance(scalar_bf16, int) or isinstance(scalar_bf16, bool) or
-            not 0 <= scalar_bf16 <= 0xffff or
-            (scalar_bf16 & 0x7f80) == 0x7f80 or
-            kind is None or
-            (policy == "bf16_muls_x2_each_output_tile_v1" and scalar_bf16 != 0x4000)):
+    single = policy in {"bf16_muls_x2_each_output_tile_v1",
+                        "bf16_muls_scalar_each_output_tile_v1",
+                        "bf16_adds_scalar_each_output_tile_v1"}
+    chained = policy == "bf16_scalar_chain_each_output_tile_v1"
+    if ((single and len(operations) != 1) or
+            (chained and not 2 <= len(operations) <= 16) or
+            not (single or chained) or
+            any(kind not in {"muls", "adds"} or type(scalar) is not int or
+                not 0 <= scalar <= 0xffff or (scalar & 0x7f80) == 0x7f80
+                for kind, scalar in operations) or
+            (policy == "bf16_muls_x2_each_output_tile_v1" and
+             operations != (("muls", 0x4000),)) or
+            (policy == "bf16_muls_scalar_each_output_tile_v1" and
+             operations[0][0] != "muls") or
+            (policy == "bf16_adds_scalar_each_output_tile_v1" and
+             operations[0][0] != "adds")):
         raise ValueError("tilewise VPU needs a finite BF16 scalar and known policy")
     if (manifest.get("output_format", "bf16") != "bf16" or
             manifest.get("precision") not in {"FP8", "FP4"} or
@@ -219,26 +240,33 @@ def _append_tilewise_vpu_scalar(mlir_text: str, profile: dict, manifest: dict,
     block.erase_op(contract)
     contract = new_contract
     i32attr = lambda value: IntegerAttr(value, i32)
-    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(
-        operands=list(contract.results), result_types=[result_type], attributes={
-        **binding, "kind": StringAttr(kind),
-        "src1_row": i32attr(row), "src2_row": i32attr(0),
-        "dst_row": i32attr(row), "rows": i32attr(plan["c_rows"]),
-        "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
-        "immediate_bf16": i32attr(scalar_bf16)})
+    previous = list(contract.results)
+    for kind, scalar_bf16 in operations:
+        vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(
+            operands=previous, result_types=[result_type], attributes={
+            **binding, "kind": StringAttr(kind),
+            "src1_row": i32attr(row), "src2_row": i32attr(0),
+            "dst_row": i32attr(row), "rows": i32attr(plan["c_rows"]),
+            "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
+            "immediate_bf16": i32attr(scalar_bf16)})
+        block.insert_op_before(vpu, readout)
+        previous = list(vpu.results)
     new_readout = UnregisteredOp.with_name("mx_gemmini.readout_bf16").create(
-        operands=list(vpu.results), result_types=[result_type],
+        operands=previous, result_types=[result_type],
         attributes=dict(readout.attributes))
     old_return = function.get_return_op()
-    block.insert_op_before(vpu, readout)
     block.insert_op_before(new_readout, readout)
     block.insert_op_before(ReturnOp(*new_readout.results), old_return)
     block.erase_op(old_return)
     block.erase_op(readout)
     function.update_function_type()
     module.attributes["mx.vector_tile_policy"] = StringAttr(policy)
-    if policy != "bf16_muls_x2_each_output_tile_v1":
-        module.attributes["mx.vector_scalar_bf16"] = i32attr(scalar_bf16)
+    if chained:
+        module.attributes["mx.vector_scalar_chain_json"] = StringAttr(json.dumps(
+            [{"kind": kind, "immediate_bf16": scalar} for kind, scalar in operations],
+            sort_keys=True, separators=(",", ":")))
+    elif policy != "bf16_muls_x2_each_output_tile_v1":
+        module.attributes["mx.vector_scalar_bf16"] = i32attr(operations[0][1])
     output = StringIO()
     Printer(stream=output).print_op(module)
     rendered = output.getvalue() + "\n"
@@ -267,6 +295,15 @@ def append_tilewise_vpu_adds(mlir_text: str, profile: dict, manifest: dict,
     return _append_tilewise_vpu_scalar(
         mlir_text, profile, manifest, scalar_bf16,
         "bf16_adds_scalar_each_output_tile_v1")
+
+
+def append_tilewise_vpu_scalar_chain(
+        mlir_text: str, profile: dict, manifest: dict,
+        operations: tuple[tuple[str, int], ...]) -> str:
+    """Bind an ordered in-place BF16 scalar chain across output tiles."""
+    return _append_tilewise_vpu_operations(
+        mlir_text, profile, manifest, operations,
+        "bf16_scalar_chain_each_output_tile_v1")
 
 
 def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) -> str:

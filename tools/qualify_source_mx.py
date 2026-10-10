@@ -42,7 +42,7 @@ def main() -> None:
     parser.add_argument("--tilewise-vpu-muls-bf16-bits", type=lambda value: int(value, 0),
                         help="apply in-place BF16 VPU MULS with this finite scalar immediate per output tile")
     parser.add_argument("--tilewise-vpu-from-capture", action="store_true",
-                        help="derive tilewise BF16 MULS from a digest-checked model2MLIR capture")
+                        help="derive tilewise BF16 MULS/ADDS or a scalar chain from a digest-checked model2MLIR capture")
     parser.add_argument("--capture-trace", type=Path)
     parser.add_argument("--capture-quantization-manifest", type=Path)
     parser.add_argument("--capture-frontend-mlir", type=Path)

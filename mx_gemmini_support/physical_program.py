@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
+import json
 from typing import Mapping
 
 from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
@@ -45,6 +46,7 @@ class PhysicalProgram:
     output_format: str = "bf16"
     tiled_quant_readout: bool = False
     derived_vpu_scalar_bf16: int | None = None
+    derived_vpu_scalar_chain: tuple[tuple[str, int], ...] | None = None
 
     def receipt(self) -> dict:
         steps = []
@@ -67,13 +69,18 @@ class PhysicalProgram:
             receipt["source_golden_preserving"] = self.source_golden_preserving
         if self.derived_expected_bf16 is not None:
             receipt["golden_derivation"] = (
-                "bf16_exact_multiply_by_two" if self.derived_vpu_scalar_bf16 is None
+                "bf16_scalar_chain_rne" if self.derived_vpu_scalar_chain is not None
+                else "bf16_exact_multiply_by_two" if self.derived_vpu_scalar_bf16 is None
                 else "bf16_scalar_adds_rne" if self.plan.get("vector_tile_policy") ==
                 "bf16_adds_scalar_each_output_tile_v1" else "bf16_scalar_muls_rne")
             receipt["derived_expected_bf16_sha256"] = hashlib.sha256(
                 self.derived_expected_bf16).hexdigest()
             if self.derived_vpu_scalar_bf16 is not None:
                 receipt["derived_vpu_scalar_bf16"] = self.derived_vpu_scalar_bf16
+            if self.derived_vpu_scalar_chain is not None:
+                receipt["derived_vpu_scalar_chain"] = [
+                    {"kind": kind, "immediate_bf16": scalar}
+                    for kind, scalar in self.derived_vpu_scalar_chain]
         if self.output_format != "bf16":
             receipt["output_format"] = self.output_format
             receipt["source_golden_preserving"] = self.source_golden_preserving
@@ -156,6 +163,7 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
     names = [_operation_name(op) for op in ops]
     tilewise_policy = _text_attr(module, "mx.vector_tile_policy")
     tilewise_scalar = _int_attr(module, "mx.vector_scalar_bf16")
+    tilewise_chain_json = _text_attr(module, "mx.vector_scalar_chain_json")
     if (len(contract) != 1 or len(readout) != 1 or
             names[0] != "mx_gemmini.contract" or
             names[-1] != ("mx_gemmini.spad_requant" if vector_requant else
@@ -178,18 +186,29 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
         function = readout[0].parent_op()
         if (tilewise_policy not in {"bf16_muls_x2_each_output_tile_v1",
                                     "bf16_muls_scalar_each_output_tile_v1",
-                                    "bf16_adds_scalar_each_output_tile_v1"} or
+                                    "bf16_adds_scalar_each_output_tile_v1",
+                                    "bf16_scalar_chain_each_output_tile_v1"} or
                 (tilewise_policy == "bf16_muls_x2_each_output_tile_v1" and
                  tilewise_scalar is not None) or
                 (tilewise_policy in {"bf16_muls_scalar_each_output_tile_v1",
                                      "bf16_adds_scalar_each_output_tile_v1"} and
                  (tilewise_scalar is None or not 0 <= tilewise_scalar <= 0xffff or
                   (tilewise_scalar & 0x7f80) == 0x7f80)) or
+                (tilewise_policy == "bf16_scalar_chain_each_output_tile_v1" and
+                 (tilewise_scalar is not None or tilewise_chain_json is None)) or
+                (tilewise_policy != "bf16_scalar_chain_each_output_tile_v1" and
+                 tilewise_chain_json is not None) or
                 output_format != "bf16" or
-                names != ["mx_gemmini.contract", "mx_gemmini.vpu_execute",
-                          "mx_gemmini.readout_bf16"] or
+                (names != ["mx_gemmini.contract", *[
+                    "mx_gemmini.vpu_execute"] * (len(names) - 2),
+                    "mx_gemmini.readout_bf16"]) or
+                (len(names) != 3 if tilewise_policy !=
+                 "bf16_scalar_chain_each_output_tile_v1" else
+                 not 4 <= len(names) <= 18) or
                 list(ops[1].operands) != list(contract[0].results) or
-                list(readout[0].operands) != list(ops[1].results) or
+                any(list(right.operands) != list(left.results)
+                    for left, right in zip(ops[1:-2], ops[2:-1])) or
+                list(readout[0].operands) != list(ops[-2].results) or
                 not isinstance(function, FuncOp) or
                 not isinstance(function.get_return_op(), ReturnOp) or
                 list(function.get_return_op().operands) != list(readout[0].results)):
@@ -278,7 +297,26 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
             (len(vector_ops) != 1 or vector_ops[0][0] != "vpu" or
              vector_ops[0][1]["immediate_bf16"] != tilewise_scalar)):
         raise ValueError("physical MX tilewise VPU scalar differs from command immediate")
-    if tilewise_policy is None and tilewise_scalar is not None:
+    if tilewise_policy == "bf16_scalar_chain_each_output_tile_v1":
+        try:
+            chain = json.loads(tilewise_chain_json)
+        except (TypeError, ValueError) as error:
+            raise ValueError("physical MX scalar chain policy is malformed") from error
+        expected = [{"kind": op[1]["kind"],
+                     "immediate_bf16": op[1]["immediate_bf16"]}
+                    for op in vector_ops]
+        if (type(chain) is not list or chain != expected or
+                len(chain) != len(vector_ops) or
+                any(type(item) is not dict or set(item) !=
+                    {"kind", "immediate_bf16"} or
+                    item["kind"] not in {"muls", "adds"} or
+                    type(item["immediate_bf16"]) is not int or
+                    not 0 <= item["immediate_bf16"] <= 0xffff or
+                    (item["immediate_bf16"] & 0x7f80) == 0x7f80
+                    for item in chain)):
+            raise ValueError("physical MX scalar chain differs from VPU commands")
+    if tilewise_policy is None and (tilewise_scalar is not None or
+                                    tilewise_chain_json is not None):
         raise ValueError("physical MX VPU scalar requires a tilewise policy")
     return vector_ops, host_kind, tilewise_policy, memory_layout
 
@@ -333,23 +371,28 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         # tensor needs a separate lifetime planner.
         scalar_bf16 = (vector_ops[0][1]["immediate_bf16"]
                        if len(vector_ops) == 1 and vector_ops[0][0] == "vpu" else None)
-        tilewise_kind = ("adds" if tilewise_policy == "bf16_adds_scalar_each_output_tile_v1"
-                         else "muls")
+        tilewise_kinds = (["adds"] if tilewise_policy ==
+                          "bf16_adds_scalar_each_output_tile_v1" else ["muls"] if
+                          tilewise_policy != "bf16_scalar_chain_each_output_tile_v1" else
+                          [op[1]["kind"] for op in vector_ops])
         tilewise = (tilewise_policy in {"bf16_muls_x2_each_output_tile_v1",
                                        "bf16_muls_scalar_each_output_tile_v1",
-                                       "bf16_adds_scalar_each_output_tile_v1"} and
-                    len(vector_ops) == 1 and vector_ops[0][0] == "vpu" and
+                                       "bf16_adds_scalar_each_output_tile_v1",
+                                       "bf16_scalar_chain_each_output_tile_v1"} and
+                    len(vector_ops) == len(tilewise_kinds) and
+                    all(op[0] == "vpu" for op in vector_ops) and
                     output_format == "bf16" and
-                    vector_ops[0][1] == {
-                        "kind": tilewise_kind, "src1_row": plan["c_spad_dest"],
+                    all(op[1] == {
+                        "kind": kind, "src1_row": plan["c_spad_dest"],
                         "src2_row": 0, "dst_row": plan["c_spad_dest"],
                         "rows": plan["c_rows"], "reduction_length": 1,
-                        "broadcast": False, "immediate_bf16": scalar_bf16,
-                        "second_dst_row": None} and
+                        "broadcast": False, "immediate_bf16": op[1]["immediate_bf16"],
+                        "second_dst_row": None}
+                        for op, kind in zip(vector_ops, tilewise_kinds)) and
                     (tilewise_policy != "bf16_muls_x2_each_output_tile_v1" or
                      scalar_bf16 == 0x4000))
         if not tilewise:
-            raise ValueError("multi-output MX vector epilogue needs an in-place BF16 scalar op per tile")
+            raise ValueError("multi-output MX vector epilogue needs in-place BF16 scalar ops per tile")
         plan = {**plan, "vector_tile_policy": tilewise_policy}
     if host_requant and len(output_tiles) != 1:
         raise ValueError("Radiance header epilogue requires a single BF16 output tile")
@@ -544,6 +587,16 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     source_golden_preserving = not vector_ops and not quant_output
     derived_expected_bf16 = None
     derived_vpu_scalar_bf16 = None
+    derived_vpu_scalar_chain = None
+    if tilewise_policy == "bf16_scalar_chain_each_output_tile_v1":
+        derived_vpu_scalar_chain = tuple(
+            (op[1]["kind"], op[1]["immediate_bf16"]) for op in vector_ops)
+        derived_expected_bf16 = resources["golden_bf16"]
+        for kind, scalar in derived_vpu_scalar_chain:
+            derived_expected_bf16 = (
+                bf16_mul_scalar if kind == "muls" else bf16_add_scalar)(
+                    derived_expected_bf16, scalar)
+        source_golden_preserving = False
     if len(vector_ops) == 1 and vector_ops[0][0] == "vpu":
         vpu = vector_ops[0][1]
         in_place_full_output = (
@@ -572,4 +625,4 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),
                            mode, shape, plan, tuple(steps), source_golden_preserving,
                            derived_expected_bf16, output_format, vector_requant,
-                           derived_vpu_scalar_bf16)
+                           derived_vpu_scalar_bf16, derived_vpu_scalar_chain)

@@ -297,7 +297,8 @@ int main(void) {{
                                 for path in sorted(directory.iterdir()) if path.is_file()}}
     if program.derived_expected_bf16 is not None:
         receipt["golden_basis"] = (
-            "derived_bf16_x2" if program.derived_vpu_scalar_bf16 is None
+            "derived_bf16_scalar_chain" if program.derived_vpu_scalar_chain is not None
+            else "derived_bf16_x2" if program.derived_vpu_scalar_bf16 is None
             else "derived_bf16_adds" if program.plan.get("vector_tile_policy") ==
             "bf16_adds_scalar_each_output_tile_v1" else "derived_bf16_muls")
     if quantized:
