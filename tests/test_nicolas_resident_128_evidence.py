@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.command_ir import Command
+from mx_gemmini_support.plain_chain_128 import lower_plain_chain_128
 from mx_gemmini_support.resident_lowering import (lower_single_resident_contract,
                                                   validate_resident_contract)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -18,6 +19,7 @@ from mx_gemmini_support.target_profile import load_profile, profile_sha256
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_resident_mm2_128_266c593"
 FRONTEND = ROOT / "docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36"
+CONNECTED = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_266c593"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -27,6 +29,10 @@ def _sha(data: bytes) -> str:
 
 def _read(name: str) -> bytes:
     return gzip.decompress((EVIDENCE / f"{name}.gz").read_bytes())
+
+
+def _connected(name: str) -> bytes:
+    return gzip.decompress((CONNECTED / f"{name}.gz").read_bytes())
 
 
 def test_archived_typed_mm2_and_spike_result_match_source() -> None:
@@ -77,6 +83,62 @@ def test_latest_model2mlir_captures_both_plain_chain_sites() -> None:
         assert _sha(gzip.decompress((FRONTEND / f"{name}.gz").read_bytes())) == digest
     bound = gzip.decompress((FRONTEND / "nicolas_chain.profile_bound.mlir.gz").read_bytes())
     assert bound.count(b'"mx_gemmini.contract"') == 2
+
+
+def test_connected_plain_chain_executes_both_sites_without_c1_reload() -> None:
+    index = json.loads((CONNECTED / "index.json").read_text())
+    first = json.loads((CONNECTED / "artifact_manifest.json").read_text())
+    second = json.loads((CONNECTED / "reproduction_manifest.json").read_text())
+    assert index["schema"] == "mx_gemmini.nicolas_connected_plain_chain_128_archive.v1"
+    assert first["status"] == second["status"] == (
+        "source_connected_chain_matched_on_pinned_spike")
+    assert first["spike_exit_code"] == second["spike_exit_code"] == 0
+    assert first["compiler_revision"] == index["compiler_revision"]
+    assert first["frontend_mlir_sha256"] == index["frontend_mlir_sha256"]
+    for key in ("bound_mlir_sha256", "elf_sha256", "extension_sha256",
+                "spike_log_sha256", "files_sha256", "object_sha256"):
+        assert first[key] == second[key], key
+    assert (index["compared_c1_fp8_codes"], index["compared_c1_e8m0_scales"],
+            index["compared_fp8_codes"], index["compared_e8m0_scales"]) == (
+            16384, 512, 16384, 512)
+    for name, digest in index["files_sha256"].items():
+        assert _sha(_connected(name)) == digest
+    assert (b"lowered connected 128x128: C1 0 codes 0 scales; "
+            b"C2 0 codes 0 scales") in _connected("spike.log")
+    resources = {path.name.removesuffix(".bin.gz"):
+                 _connected(path.name.removesuffix(".gz"))
+                 for path in CONNECTED.glob("*.bin.gz")}
+    assert "c1_tiled" not in resources
+    assert "c1_act_scales" not in resources
+    frontend = gzip.decompress(
+        (FRONTEND / "nicolas_chain.profile_bound.mlir.gz").read_bytes()).decode()
+    manifest = json.loads(gzip.decompress(
+        (FRONTEND / "quantization_manifest.json.gz").read_bytes()))
+    mlir = _connected("connected_chain.mlir").decode()
+    profile = load_profile(PROFILE)
+    args = {"source_sha256": index["source_sha256"],
+            "header_sha256": index["header_sha256"]}
+    commands = lower_plain_chain_128(mlir, frontend, manifest, profile, resources,
+                                      **args)
+    uploads = [command.rs1.buffer for command in commands
+               if isinstance(command, Command) and command.funct == 2]
+    assert uploads.count("a1_activation") == 64
+    assert uploads.count("b1_weight") == 64
+    assert uploads.count("b2_weight") == 64
+    assert set(uploads) == {"a1_activation", "b1_weight", "b2_weight"}
+    readouts = [command.rs1.buffer for command in commands
+                if isinstance(command, Command) and command.funct == 3]
+    assert readouts == ["c1_tiled_observed"] * 64 + ["c2_tiled"] * 64
+    with pytest.raises(ValueError, match="SSA tensor edges"):
+        lower_plain_chain_128(
+            mlir.replace('"mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s)',
+                         '"mx_gemmini.resident_contract"(%b2, %c1s, %c1, %b2s)'),
+            frontend, manifest, profile, resources, **args)
+    changed = dict(resources)
+    changed["a1_activation"] = bytes([resources["a1_activation"][0] ^ 1]) + (
+        resources["a1_activation"][1:])
+    with pytest.raises(ValueError, match="source binding differs"):
+        lower_plain_chain_128(mlir, frontend, manifest, profile, changed, **args)
 
 
 def test_typed_mm2_uses_resident_c1_and_source_placement() -> None:

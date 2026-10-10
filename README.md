@@ -72,12 +72,12 @@ byte on Nicolas's Spike extension, with 65,536 matching outputs in each case.
 The [connected two-matmul MX+VPU chain](docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
 also runs from current upstream model2MLIR `e9ded36`; its objects, ELF, and
 Spike log match the earlier frontend run byte for byte.
-The [128³ resident MM2 check](docs/evidence/nicolas_resident_mm2_128_266c593/index.json)
-uses Nicolas's plain MX profile and stock Spike extension. Compiler-issued
-commands match all 16,384 C2 FP8 codes and 512 scales; C1 is preloaded from
-Nicolas's source header, so the first contraction remains outside this check.
-The [current model2MLIR capture](docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36/index.json)
-also identifies both 128³ contraction sites under the plain MX profile.
+The [128³ plain MX chain](docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json)
+uses the [current model2MLIR capture](docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36/index.json)
+and compiler-issued MM1→resident MM2 commands on Nicolas's stock Spike.
+All 16,384 FP8 codes and 512 scales match at each site. The independent
+[MM2 check](docs/evidence/nicolas_resident_mm2_128_266c593/index.json)
+starts from source C1 data to isolate the resident second contraction.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
 writes four output tiles directly into one logical matrix. Pinned Spike matches
 65,536 FP4 and FP8 outputs with VPU ×2 and 16,384 FP8 outputs retiled to

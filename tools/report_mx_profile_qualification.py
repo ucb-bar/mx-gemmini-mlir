@@ -201,6 +201,24 @@ def build_report() -> dict:
         "compared_e8m0_scales": resident["compared_e8m0_scales"],
         "excludes_mm1": True,
     })
+    connected_path = "docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json"
+    connected = _read(connected_path)
+    if (connected["profile_sha256"] != profile_sha256(plain_profile) or
+            connected["rtl_revision"] != candidate["rtl_revision"] or
+            connected["compared_c1_fp8_codes"] != 16384 or
+            connected["compared_c1_e8m0_scales"] != 512 or
+            connected["compared_fp8_codes"] != 16384 or
+            connected["compared_e8m0_scales"] != 512 or
+            connected["scope"] !=
+            "typed MM1 quantized C1 and scales remain resident for typed MM2"):
+        raise ValueError("plain MX connected-chain receipt differs from selected profile")
+    direct_receipts[plain_profile["name"]].append({
+        "kind": "source_bound_connected_mm1_mm2_spike", "evidence": connected_path,
+        "compared_c1_fp8_codes": 16384,
+        "compared_c1_e8m0_scales": 512,
+        "compared_c2_fp8_codes": 16384,
+        "compared_c2_e8m0_scales": 512,
+    })
     base_vpu = load_profile(PROFILE_DIR / "MxE4M3VpuGemminiRocketConfig.json")
     for path in vector_paths:
         index = _read(path)
@@ -301,6 +319,7 @@ def build_report() -> dict:
         "sources_sha256": {path: _digest(path) for path in sorted(
             set(stock_paths.values()) | {candidate_path, selected_path, vpu_path,
                                          dedicated_path, plain_path, resident_path,
+                                         connected_path,
                                          wrapper_path,
                                          requant_path,
                                          *vector_paths})},

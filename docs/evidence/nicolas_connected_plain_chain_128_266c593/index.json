@@ -1,0 +1,33 @@
+{
+  "compared_c1_e8m0_scales": 512,
+  "compared_c1_fp8_codes": 16384,
+  "compared_e8m0_scales": 512,
+  "compared_fp8_codes": 16384,
+  "compiler_revision": "8dd3d1afe602b0b0cf9b87a0f7a5828c7390d86d",
+  "files_sha256": {
+    "a1_activation.bin": "80c93cf54660ecdb5ac112b1d67ebfb01809228264fe00150931bdf6a01dc18f",
+    "a1_scales.bin": "89061e9a4fad843e760fbc210186253597181563f997006d7ae9a6fe7ef16ac7",
+    "b1_scales.bin": "c8714c766bedf65e9028ccd1ef1500e38f8e2dd5bcb36a8bf2af019eb38c411c",
+    "b1_weight.bin": "7e3dfe8126225175cdf7084db7754f1f326a09fd5119de4ee7fd6e17648e2651",
+    "b2_scales.bin": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb",
+    "b2_weight.bin": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24",
+    "c1_codes_ref.bin": "20e9c311575c79bf0adf44ab85c2719cdfe11fa2eccda4757ab7b9e5b6ea9333",
+    "c1_scales_ref.bin": "7470ea1238ffe22c419276984e5110c211594d614e2f62e13d1608aeb77613e7",
+    "c2_codes_ref.bin": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c",
+    "c2_scales_ref.bin": "5c271924606a4c927865271403a0cae25a2685e92dfb839cf650b26bc674eb96",
+    "connected_chain.mlir": "0ce12feb7509a74040139412f33941b06dfdf0061aa6dfb6eadfb672d4213316",
+    "mx_data.S": "400722c53eaf72c7978b358108bf583a991a586ebb1817975bea4c2e733c06ae",
+    "mx_driver.c": "ccf1d8eba05045bcdcdf8081e1be213c1159448c21886dff968a362cc2f296ec",
+    "mx_issue.c": "781c91c15e486a3679132a9a22a99e308e53e02775165c1c75c21e9f8a7e8a1c",
+    "mx_program.elf": "30f333270739af19e79e8059b0b1ee705c3a79986a211763cbf51a71c26ab25b",
+    "physical_program.json": "7588e85994d4236d7fb5c99afa39c3fa52d67579cbfc9dc81231dcf2e0d0ebd2",
+    "spike.log": "7e6c31a8a7130ac1df209d884ccd0aae4a33441b2c80598c62dd2a02c012cb57"
+  },
+  "frontend_mlir_sha256": "77eede897619cffbbf4f9b5336707ac56923734ed0a7bd2d62cdc2c18f8d7164",
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_connected_plain_chain_128_archive.v1",
+  "scope": "typed MM1 quantized C1 and scales remain resident for typed MM2",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944"
+}

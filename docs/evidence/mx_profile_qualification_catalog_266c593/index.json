@@ -1493,6 +1493,14 @@
           "evidence": "docs/evidence/nicolas_resident_mm2_128_266c593/index.json",
           "excludes_mm1": true,
           "kind": "source_bound_resident_mm2_spike"
+        },
+        {
+          "compared_c1_e8m0_scales": 512,
+          "compared_c1_fp8_codes": 16384,
+          "compared_c2_e8m0_scales": 512,
+          "compared_c2_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json",
+          "kind": "source_bound_connected_mm1_mm2_spike"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1562,6 +1570,7 @@
   "scope": "selected indexed evidence; mode-class probes do not qualify other named profiles",
   "sources_sha256": {
     "docs/evidence/nicolas_asym_matrix_dim16_266c593/matrix_first.json": "245be615adfc2bacf11ba8b0250baff555e416a044eae9317044d235e9cee51b",
+    "docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json": "03d752daa7bcd1ae20f83a28a5637fe5874a270ff314e34b2dd7513b74d5811a",
     "docs/evidence/nicolas_generated_mesh_dim32_266c593/qualification.json": "f6282646a29a193d9d6bb064d43544724e2c60a5a542822d19d2b1378ee917b1",
     "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json": "da3bb2965e0de5ffcddcb2c09dd9b9549645b513e27dc4272e546f987f593372",
     "docs/evidence/nicolas_generated_modes_266c593/qualification.json": "beca2bf9f6d2a345cc694dc88b394f314ecf1eec3d2b1a11e32a7aa8cc2869c6",

@@ -115,3 +115,13 @@ def test_plain_mx_resident_mm2_receipt_stays_scoped_to_second_contraction() -> N
         "compared_e8m0_scales": 512,
         "excludes_mm1": True,
     }
+    connected = next(item for item in selected["named_profile_spike_evidence"]
+                     if item["kind"] == "source_bound_connected_mm1_mm2_spike")
+    assert connected == {
+        "kind": "source_bound_connected_mm1_mm2_spike",
+        "evidence": "docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json",
+        "compared_c1_fp8_codes": 16384,
+        "compared_c1_e8m0_scales": 512,
+        "compared_c2_fp8_codes": 16384,
+        "compared_c2_e8m0_scales": 512,
+    }
