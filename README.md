@@ -45,6 +45,9 @@ The separate E4M3 LUT × E2M3 LUT profile also passes all 4,096 source BF16
 outputs, including the weight alternate-format command bit.
 Nicolas's E5M2 LUT × FP4 direct profile passes the same full-output Spike
 check and exercises the activation alternate-format bit.
+Direct E4M3 activation × E3M2 LUT weight and FP4 activation × direct E4M3
+weight also pass; these cases qualify the full-width activation and weight
+transfer layouts, respectively.
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.

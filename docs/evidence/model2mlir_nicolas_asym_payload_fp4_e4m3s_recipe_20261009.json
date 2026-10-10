@@ -1,0 +1,20 @@
+{
+  "compute": {
+    "activation_format": "fp4_e2m1",
+    "activation_projection": "direct",
+    "pe_mode": 2,
+    "weight_format": "fp8_e4m3",
+    "weight_projection": "direct"
+  },
+  "frontend_capture_format": "mxfp8",
+  "profile_sha256": "9323c7e482ab0bf2811d2b0322bcfd2b97deb83e7f6ec8bcbeaebbb5a008ce4f",
+  "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+  "shape": [
+    64,
+    64,
+    64
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "afb02d48fac74706d1efaa23e6888b16bad9c4f4871e5c6fb54171e0b8975815",
+  "source_header_sha256": "7789d4bc0a90e8c5d6b4e8f35a79aa0348eb73e414a5251e7b15d7a1c5495628"
+}

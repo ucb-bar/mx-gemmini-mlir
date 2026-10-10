@@ -531,6 +531,27 @@ python -m tools.qualify_nicolas_asym --variant e5m2_fp4_lut \
   --out-dir /new/output-directory
 ```
 
+### Direct FP8 operand layouts
+
+Two more Nicolas modes require different transfer geometry. E4M3 direct
+activation × E3M2 LUT weight uses a full 64×64 activation array and only a
+weight LUT. FP4 direct activation × E4M3 direct weight uses a full 64×64
+weight array and four N tiles instead of two. The physical lowerer now derives
+the activation and weight transfer counts and strides from the selected
+source layout. Each generated 69-command program matched **all 4,096 BF16
+source values** in two independent post-commit Spike runs.
+
+| Standalone profile and source mode | PE mode | Evidence |
+|---|---:|---|
+| `MxAsymE4M3E3M2GemminiRocketConfig`, `--variant e4m3_direct_e3m2` | 7 | [receipt](evidence/compiled_nicolas_asym_payload_e4m3s_e3m2_20261009.json), [reproduction](evidence/compiled_nicolas_asym_payload_e4m3s_e3m2_repro_20261009.json), [program](evidence/compiled_nicolas_asym_payload_e4m3s_e3m2_program_20261009.json) |
+| `MxAsymFp4E4M3GemminiRocketConfig`, `--variant fp4_direct_e4m3` | 2 | [receipt](evidence/compiled_nicolas_asym_payload_fp4_e4m3s_20261009.json), [reproduction](evidence/compiled_nicolas_asym_payload_fp4_e4m3s_repro_20261009.json), [program](evidence/compiled_nicolas_asym_payload_fp4_e4m3s_program_20261009.json) |
+
+Both use the same CLI arguments shown above with their respective profile
+path. Their typed MLIR binds the source [E4M3×E3M2](evidence/model2mlir_nicolas_asym_payload_e4m3s_e3m2_bound_20261009.mlir)
+or [FP4×E4M3](evidence/model2mlir_nicolas_asym_payload_fp4_e4m3s_bound_20261009.mlir)
+resource manifest before physical lowering. These are standalone MX profiles
+without VPU.
+
 ### Typed binding of Nicolas's packed source resources
 
 The asymmetric CLI now materializes an external resource manifest before
