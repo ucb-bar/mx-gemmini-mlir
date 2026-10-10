@@ -90,6 +90,11 @@ in steps of 16, with full C1/C2 Spike comparisons and independent replays.
 A [linkable RV64 object path](docs/evidence/nicolas_resident_pair_object_1eebfc5/index.json)
 compiles the typed connected graph into a data-free `mx_issue.o`; M = 16, 96,
 and 128 objects pass the same full-output Spike comparisons.
+The [MX+VPU object path](docs/evidence/nicolas_resident_vpu_object_6c9ed40/index.json)
+also compiles the typed 64³ MM1→VPU×2→resident requant→MM2 graph to a
+data-free RV64 object. Nicolas's stock Spike matches all 4,096 BF16 values,
+8,192 FP8 codes, and 256 scales; a fresh upstream checkout reproduces the
+object and Spike log.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
 rebuilds the native verifier and reproduces the connected program and Spike log.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)

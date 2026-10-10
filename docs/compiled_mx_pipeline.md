@@ -822,8 +822,53 @@ python -m tools.qualify_resident_pair_object \
 
 This object path uses source bytes to specialize and verify the compiler
 input but does not link those bytes into the object. The Spike harness is a
-separate source parity gate. Other connected graph topologies and precision
-chains still need a reusable lowering and their own numerical qualification.
+separate source parity gate. This plain FP8 path qualifies the direct
+requantized pair on the selected profile and row counts.
+
+The MX+VPU 64³ connected graph now has a parallel object path through
+[`resident_vpu_graph.py`](../mx_gemmini_support/resident_vpu_graph.py). It
+checks the `contract → readout_bf16 → vpu_execute → spad_requant →
+resident_contract` SSA edges, six input lengths and payload hashes, VPU
+scratchpad lifetime, MM2 placement, and the selected MX+VPU profile. The
+caller supplies runtime symbols and site IDs. The source adapter continues
+to check Nicolas's header, first-matmul capture, VPU seam, and output goldens.
+The command stream and `mx_issue.o` are byte-identical to the established
+source path. The [Spike and fresh-checkout archive](evidence/nicolas_resident_vpu_object_6c9ed40/index.json)
+records 0 mismatches across 4,096 BF16 values, 8,192 FP8 codes, and 256
+E8M0 scales on Nicolas's stock Spike for
+`MxE4M3Fp4VpuGemminiRocketConfig`. The object carries no operand or golden
+data. This numerical qualification covers the 64³ scalar ×2 chain; other
+VPU operations, shapes, and precisions need their own tests.
+
+To reproduce from a checked-out compiler and Nicolas's source tree, first
+run `tools.qualify_nicolas_vector_requant` with `--connected-ssa` and the
+archived two-site frontend receipt to materialize checked input `.bin` files.
+Then use the generated `connected_bound.mlir` and `build/` directory:
+
+```sh
+python tools/qualify_nicolas_vector_requant.py \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --with-resident-matmul --connected-ssa \
+  --frontend-bound-mlir docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/frontend_bound.mlir \
+  --frontend-receipt docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/capture_receipt.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-vpu-source
+python -m tools.emit_resident_vpu_object \
+  --mlir /new/mx-vpu-source/connected_bound.mlir \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --resources-dir /new/mx-vpu-source/build \
+  --abi-json examples/resident-vpu-abi.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-vpu-object
+python tools/qualify_nicolas_vector_requant.py \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --with-resident-matmul --connected-ssa \
+  --frontend-bound-mlir docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/frontend_bound.mlir \
+  --frontend-receipt docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/capture_receipt.json \
+  --issuer-object /new/mx-vpu-object/mx_issue.o \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-vpu-object-spike
+```
 
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:
