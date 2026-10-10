@@ -91,15 +91,21 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN,
                                      ATTENTION_PV_PROXY_ORIGIN,
                                      DERIVED_GEMM_FIXTURE_ORIGIN,
+                                     TARGET_MESH_REFERENCE_ORIGIN,
                                      validate_attention_qk_candidate,
                                      validate_attention_pv_proxy,
-                                     validate_derived_gemm_fixture)
+                                     validate_derived_gemm_fixture,
+                                     validate_target_mesh_reference)
         if payload_manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
             validate_attention_qk_candidate(payload_manifest)
         elif payload_manifest.get("origin") == ATTENTION_PV_PROXY_ORIGIN:
             validate_attention_pv_proxy(payload_manifest)
         elif payload_manifest.get("origin") == DERIVED_GEMM_FIXTURE_ORIGIN:
             validate_derived_gemm_fixture(payload_manifest)
+        elif payload_manifest.get("origin") == TARGET_MESH_REFERENCE_ORIGIN:
+            validate_target_mesh_reference(payload_manifest)
+            if payload_manifest["target_mesh_reference"]["mesh_dim"] != profile["geometry"]["mesh_columns"]:
+                raise ValueError("MX target mesh reference differs from profile")
         elif "source_derivation" in payload_manifest:
             raise ValueError("derived MX payload must declare its candidate origin")
         for resource_name, descriptor in payload_manifest["resources"].items():
@@ -170,6 +176,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if payload_digest is not None:
                 if local_payload != payload_digest or _text_attr(op, "payload_origin") not in {
                         "radiance_source_header_specialization",
+                        "radiance_source_target_mesh_reference",
                         "radiance_source_derived_attention_qk_candidate",
                         "radiance_source_derived_attention_pv_proxy",
                         "radiance_source_derived_gemm_fixture",

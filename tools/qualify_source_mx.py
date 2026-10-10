@@ -16,8 +16,11 @@ from mx_gemmini_support.bind_payload import (
     append_vpu_spad_requant_x2, bind_payload,
     select_bf16_output_layout)
 from mx_gemmini_support.capture_epilogue import append_captured_tilewise_vpu_scalar
+from mx_gemmini_support.mesh_reference import derive_mesh_reference
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
-from mx_gemmini_support.source_payload import write_bundle
+from mx_gemmini_support.source_payload import (load_bundle,
+                                                replace_source_golden_with_mesh_reference,
+                                                write_bundle)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.generate_radiance_fp6_header import generate
 
@@ -51,6 +54,8 @@ def main() -> None:
                         help="select the physical memory layout of final BF16 readout")
     parser.add_argument("--source-header-quantized", action="store_true",
                         help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
+    parser.add_argument("--target-mesh-reference", action="store_true",
+                        help="derive DIM8/32 BF16 oracle from Radiance's pinned host model")
     parser.add_argument("--generate-missing-fp6-header", action="store_true",
                         help="stage a checked source-derived FP6 header without editing Radiance")
     parser.add_argument("--physical-mode", choices=("spike_serial", "rtl_alternating"),
@@ -69,6 +74,13 @@ def main() -> None:
             (not args.tilewise_vpu_from_capture and any(path is not None for path in capture_paths))):
         parser.error("capture-derived VPU needs all three capture sidecar paths")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    if args.target_mesh_reference and (
+            profile["geometry"]["mesh_columns"] not in {8, 32} or
+            args.physical_mode != "spike_serial" or
+            args.fp6_quantized_specialization or args.vpu_spad_requant_x2 or
+            args.tilewise_vpu_x2 or args.tilewise_vpu_muls_bf16_bits is not None or
+            args.tilewise_vpu_from_capture or args.source_header_quantized):
+        parser.error("target mesh reference needs plain DIM8/32 BF16 source lowering")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     fixture = None
@@ -105,6 +117,13 @@ def main() -> None:
                                 profile_sha256=profile_sha256(profile),
                                 fp6_quantized_specialization=args.fp6_quantized_specialization,
                                 vpu_spad_requant_x2=args.vpu_spad_requant_x2)
+        if args.target_mesh_reference:
+            _, resources = load_bundle(bundle)
+            target, policy = derive_mesh_reference(
+                selected_driver.resolve().parents[2], resources, kernel.shape,
+                kernel.datatype, profile["geometry"]["mesh_columns"])
+            (args.out_dir / "source_golden_bf16.bin").write_bytes(resources["golden_bf16"])
+            manifest = replace_source_golden_with_mesh_reference(bundle, target, policy)
         if generation is not None:
             generated = args.out_dir / "source_fixture"
             generated.mkdir()

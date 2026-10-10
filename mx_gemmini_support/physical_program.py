@@ -47,6 +47,7 @@ class PhysicalProgram:
     tiled_quant_readout: bool = False
     derived_vpu_scalar_bf16: int | None = None
     derived_vpu_scalar_chain: tuple[tuple[str, int], ...] | None = None
+    golden_origin: str = "source_header"
 
     def receipt(self) -> dict:
         steps = []
@@ -65,7 +66,8 @@ class PhysicalProgram:
                 "mode": self.mode, "shape_mnk": list(self.shape),
                 "plan": self.plan,
                 "steps": steps}
-        if any(step.phase in {"vpu", "spad_requant"} for step in self.steps):
+        if (not self.source_golden_preserving or
+                any(step.phase in {"vpu", "spad_requant"} for step in self.steps)):
             receipt["source_golden_preserving"] = self.source_golden_preserving
         if self.derived_expected_bf16 is not None:
             receipt["golden_derivation"] = (
@@ -86,6 +88,8 @@ class PhysicalProgram:
             receipt["source_golden_preserving"] = self.source_golden_preserving
         if self.tiled_quant_readout:
             receipt["tiled_quant_readout"] = True
+        if self.golden_origin != "source_header":
+            receipt["golden_origin"] = self.golden_origin
         return receipt
 
 
@@ -114,8 +118,8 @@ def _transfer(funct: int, buffer: str, offset: int, row: int, *, dim: int = 16) 
 
 def _transfer_rect(funct: int, buffer: str, offset: int, row: int, *,
                    rows: int, cols: int = 16) -> Command:
-    if not 1 <= rows <= 16 or cols != 16:
-        raise ValueError("MX BF16 row-major transfer needs 1..16 rows of 16 bytes")
+    if not 1 <= rows <= 16 or cols not in {8, 16, 32}:
+        raise ValueError("MX BF16 row-major transfer needs 1..16 mesh-width rows")
     return _cmd(funct, Operand(buffer=buffer, byte_offset=offset),
                 (rows << 48) | (cols << 32) | row)
 
@@ -327,6 +331,10 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
     vector_ops, host_kind, tilewise_policy, memory_layout = _check_binding(
         mlir_text, profile, manifest)
+    if manifest.get("origin") == "radiance_source_target_mesh_reference" and (
+            manifest["target_mesh_reference"]["mesh_dim"] !=
+            profile["geometry"]["mesh_columns"]):
+        raise ValueError("physical MX target mesh reference differs from profile")
     host_requant = host_kind is not None
     if mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown MX physical scheduling mode")
@@ -355,12 +363,12 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     m, n, k = shape
     tm, tn, tk = tile
     dim = profile["geometry"]["mesh_columns"]
-    if dim != 16 or m % tm or n % tn or tk % 16 or plan["c_rows"] % 16:
-        raise ValueError("physical source lowering needs complete DIM16 output tiles")
+    if m % tm or n % tn or tk % dim or plan["c_rows"] % dim:
+        raise ValueError("physical source lowering needs complete mesh-width output tiles")
     output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
     if memory_layout == "row_major_bf16" and len(output_tiles) > 1:
         if tn * 2 % dim or not 1 <= tn * 2 // dim <= 16:
-            raise ValueError("row-major BF16 tile row exceeds selected DIM16 transfer")
+            raise ValueError("row-major BF16 tile row exceeds selected mesh transfer")
         plan = {**plan, "bf16_output_layout": "row_major_bf16"}
     if tilewise_policy and len(output_tiles) == 1:
         raise ValueError("physical MX tilewise VPU policy needs multiple output tiles")
@@ -419,8 +427,9 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                             "scale_buffer": "scratch_output_scales"} or
                 expected_destination + m * n // dim > plan["scratchpad_rows"]):
             raise ValueError("physical VPU/SPAD scratchpad lifetime or operation differs")
-    pe = 16 if precision == "FP8" else 32
-    ti, tj, tki = tm // pe, tn // pe, tk // 16
+    values_per_byte = 1 if precision == "FP8" else 2
+    pe = dim * values_per_byte
+    ti, tj, tki = tm // pe, tn // pe, tk // dim
     a_stride = k
     b_stride = n if precision == "FP8" else n // 2
     if (len(resources["activation"]) != a_stride * (m if precision == "FP8" else m // 2) or
@@ -464,8 +473,8 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                                 else fmt if matrix_quant_output else 3) << 14)
     issue("configure", _cmd(7, 0, 0))
     issue("configure", _cmd(0, config_ex, 1 << 48))
-    issue("configure", _config_ld(a_stride))
-    issue("configure", _config_ld(b_stride, id=1))
+    issue("configure", _config_ld(a_stride, dim=dim))
+    issue("configure", _config_ld(b_stride, id=1, dim=dim))
     issue("configure", _config_st(dim if matrix_quant_output else n * 2))
     issue("configure", Fence())
 
@@ -480,8 +489,6 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     scale_half = profile["resources"]["scale_mem_config"]["size_bytes"] // 4
     if scale_half != 4096:
         raise ValueError("physical MX scale-half geometry is not yet supported")
-    values_per_byte = 1 if precision == "FP8" else 2
-
     def lower_output_tile(output_tile: dict) -> None:
         m_start, n_start = output_tile["m_start"], output_tile["n_start"]
         for wave in plan["waves"]:
@@ -512,24 +519,26 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
             a_row = wave["a_spad_start"]
             b_end = wave["b_spad_end"]
             b_start = b_end - tki * tj * dim
-            issue("move_activation", _config_ld(a_stride), index)
+            issue("move_activation", _config_ld(a_stride, dim=dim), index)
             for i in range(ti):
                 for ki in range(tki):
                     offset = (m_start // values_per_byte + i * dim) * a_stride + \
                              wave["k_start"] + ki * dim
-                    if offset + 15 * a_stride + dim > len(resources["activation"]):
+                    if offset + (dim - 1) * a_stride + dim > len(resources["activation"]):
                         raise ValueError("physical MX activation tile exceeds payload")
                     row = a_row + (i * tki + ki) * dim
-                    issue("move_activation", _transfer(2, "activation", offset, row), index)
-            issue("move_weight", _config_ld(b_stride), index)
+                    issue("move_activation", _transfer(2, "activation", offset, row,
+                                                         dim=dim), index)
+            issue("move_weight", _config_ld(b_stride, dim=dim), index)
             for ki in range(tki):
                 for j in range(tj):
                     offset = (wave["k_start"] + ki * dim) * b_stride + \
                              n_start // values_per_byte + j * dim
-                    if offset + 15 * b_stride + dim > len(resources["weight"]):
+                    if offset + (dim - 1) * b_stride + dim > len(resources["weight"]):
                         raise ValueError("physical MX weight tile exceeds payload")
                     row = b_start + (ki * tj + j) * dim
-                    issue("move_weight", _transfer(2, "weight", offset, row), index)
+                    issue("move_weight", _transfer(2, "weight", offset, row,
+                                                     dim=dim), index)
             issue("move_weight", Fence(), index)
 
             selector_bits = (selector << 60) | (selector << 61)
@@ -567,7 +576,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                 issue("readout", _transfer_rect(
                     3, "output_bf16", offset,
                     readout_source + local_row * rows_per_logical,
-                    rows=rows_per_logical))
+                    rows=rows_per_logical, cols=dim))
         else:
             output_tile_base = output_tile["index"] * (
                 tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
@@ -578,13 +587,15 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                     raise ValueError("physical MX readout exceeds output shape")
                 issue("readout", _transfer(
                     3, "output_quantized" if quant_output else "output_bf16",
-                    offset, readout_source + row))
+                    offset, readout_source + row, dim=dim))
         issue("readout", Fence())
 
     for output_tile in output_tiles:
         lower_output_tile(output_tile)
 
-    source_golden_preserving = not vector_ops and not quant_output
+    source_golden_preserving = (not vector_ops and not quant_output and
+                                manifest.get("origin") !=
+                                "radiance_source_target_mesh_reference")
     derived_expected_bf16 = None
     derived_vpu_scalar_bf16 = None
     derived_vpu_scalar_chain = None
@@ -625,4 +636,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),
                            mode, shape, plan, tuple(steps), source_golden_preserving,
                            derived_expected_bf16, output_format, vector_requant,
-                           derived_vpu_scalar_bf16, derived_vpu_scalar_chain)
+                           derived_vpu_scalar_bf16, derived_vpu_scalar_chain,
+                           golden_origin=("target_mesh_reference" if manifest.get("origin") ==
+                                          "radiance_source_target_mesh_reference" else
+                                          "source_header"))

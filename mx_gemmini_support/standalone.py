@@ -25,7 +25,8 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
         raise ValueError("standalone MX output format is not qualified")
     if (not program.source_golden_preserving and
             program.derived_expected_bf16 is None and
-            program.output_format not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}):
+            program.output_format not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} and
+            program.golden_origin != "target_mesh_reference"):
         raise ValueError("source BF16 golden does not cover these MX VPU/requant operations")
     if any(name not in resources for name in ("activation", "weight", "activation_scales",
                                               "weight_scales", "golden_bf16")):

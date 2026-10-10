@@ -25,6 +25,53 @@ SCHEMA = "mx_gemmini.source_payload.v1"
 ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
 ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
 DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
+TARGET_MESH_REFERENCE_ORIGIN = "radiance_source_target_mesh_reference"
+
+
+def validate_target_mesh_reference(manifest: dict) -> None:
+    """Keep a derived DIM8/32 numerical reference distinct from source goldens."""
+    from .mesh_reference import _MODEL_CPP_SHA256, _MODEL_MATH_SHA256
+
+    policy = manifest.get("target_mesh_reference")
+    descriptor = manifest.get("resources", {}).get("golden_bf16", {})
+    if (manifest.get("origin") != TARGET_MESH_REFERENCE_ORIGIN or
+            manifest.get("precision") not in {"FP8", "FP4"} or
+            manifest.get("output_format") is not None or
+            "source_derivation" in manifest or
+            not isinstance(policy, dict) or
+            set(policy) != {"schema", "mesh_dim", "source_golden_sha256",
+                            "model_cpp_sha256", "model_math_sha256",
+                            "transformed_cpp_sha256", "target_golden_sha256"} or
+            policy.get("schema") != "mx_gemmini.radiance_target_mesh_reference.v1" or
+            policy.get("mesh_dim") not in {8, 32} or
+            policy.get("model_cpp_sha256") != _MODEL_CPP_SHA256 or
+            policy.get("model_math_sha256") != _MODEL_MATH_SHA256 or
+            policy.get("target_golden_sha256") != descriptor.get("sha256") or
+            policy.get("source_golden_sha256") == descriptor.get("sha256")):
+        raise ValueError("target mesh reference lacks pinned numerical provenance")
+    for name in ("source_golden_sha256", "transformed_cpp_sha256"):
+        value = policy[name]
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise ValueError(f"target mesh reference lacks {name}")
+
+
+def replace_source_golden_with_mesh_reference(directory: Path, target: bytes,
+                                              policy: dict) -> dict:
+    """Rewrite only the expected BF16 bytes in a freshly written source bundle."""
+    manifest, resources = load_bundle(directory)
+    if (manifest.get("origin") != "radiance_source_header_specialization" or
+            manifest.get("output_format") is not None or
+            len(target) != len(resources["golden_bf16"]) or
+            policy.get("source_golden_sha256") != _sha(resources["golden_bf16"])):
+        raise ValueError("target mesh reference does not match the source bundle")
+    manifest["origin"] = TARGET_MESH_REFERENCE_ORIGIN
+    manifest["target_mesh_reference"] = policy
+    manifest["resources"]["golden_bf16"]["sha256"] = _sha(target)
+    validate_target_mesh_reference(manifest)
+    (directory / "golden_bf16.bin").write_bytes(target)
+    (directory / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return manifest
 
 
 def validate_derived_gemm_fixture(manifest: dict) -> None:
@@ -396,6 +443,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         validate_attention_pv_proxy(manifest)
     elif manifest.get("origin") == DERIVED_GEMM_FIXTURE_ORIGIN:
         validate_derived_gemm_fixture(manifest)
+    elif manifest.get("origin") == TARGET_MESH_REFERENCE_ORIGIN:
+        validate_target_mesh_reference(manifest)
     elif "source_derivation" in manifest:
         raise ValueError("derived MX payload must declare its candidate origin")
     precision = manifest.get("precision")

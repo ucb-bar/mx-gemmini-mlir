@@ -241,8 +241,11 @@ def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
     """Plan a physical MX tile from typed dimensions and target resources."""
     m, n, k = shape
     tm, tn, tk = tile
-    named, projection, pe, values_per_byte = _DATATYPES[datatype]
-    dim = 16
+    named, projection, base_pe, values_per_byte = _DATATYPES[datatype]
+    dim = profile["geometry"]["mesh_columns"] if profile is not None else 16
+    pe = dim * values_per_byte
+    if base_pe != 16 * values_per_byte or dim not in {8, 16, 32}:
+        raise ValueError("source MX GEMM needs a supported square mesh")
     if (scratchpad_bytes <= 0 or scratchpad_bytes % (4 * dim) or
             tm <= 0 or tn <= 0 or tk < 32 or tm % pe or tn % pe or tk % 32 or
             k % tk or m < tm or n < tn):
@@ -250,8 +253,8 @@ def plan_mx_gemm(*, shape: tuple[int, int, int], tile: tuple[int, int, int],
     if profile is not None:
         if profile.get("schema") != "mx_gemmini.target_profile.v2":
             raise ValueError("selected MX target profile must be source-bound v2")
-        if profile["geometry"]["mesh_columns"] != dim or profile["geometry"]["mesh_rows"] != dim:
-            raise ValueError("source MX GEMM needs a DIM16 mesh")
+        if profile["geometry"]["mesh_rows"] != dim:
+            raise ValueError("source MX GEMM needs a square mesh")
         if profile["resources"]["scratchpad_bytes"] != scratchpad_bytes:
             raise ValueError("selected MX profile scratchpad differs from planned target")
         legal = any(cell["activation_format"] == cell["weight_format"] == named and

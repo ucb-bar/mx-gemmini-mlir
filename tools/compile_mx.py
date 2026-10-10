@@ -71,6 +71,10 @@ def main() -> None:
     if args.experimental_spike_extension_root and not args.run_spike:
         parser.error("experimental Spike extension requires --run-spike")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    mesh_dim = profile["geometry"]["mesh_columns"]
+    if (mesh_dim not in {8, 16, 32} or
+            profile["geometry"]["mesh_rows"] != mesh_dim):
+        parser.error("Spike execution needs a supported square MX mesh")
     manifest, resources = load_bundle(args.bundle)
     mlir_text = args.mlir.read_text()
     program = lower_bound_source(mlir_text, profile, manifest, resources,
@@ -136,14 +140,17 @@ def main() -> None:
         extension_sources = [extension / "gemmini.cc", extension / "gemmini_perf.cc"]
         extension_sources += sorted((extension / "perf").rglob("*.cc"))
         so = args.out_dir / "libgemmini.so"
-        _run(["g++", "-L", str(args.riscv_root / "lib"),
+        _run(["g++", *([f"-DGEMMINI_DIM={mesh_dim}"] if mesh_dim != 16 else []),
+              "-L", str(args.riscv_root / "lib"),
               f"-Wl,-rpath,{args.riscv_root / 'lib'}", "-shared", "-o", str(so),
               "-std=c++17", "-I", str(args.riscv_root / "include"), "-fPIC", "-O3",
               *([f"-ffile-prefix-map={extension}=software/libgemmini"]
                 if args.experimental_spike_extension_root else []),
               *(str(path) for path in extension_sources)],
              cwd=args.out_dir, log=args.out_dir / "extension_build.log")
-        result = subprocess.run([str(spike), f"--extlib={so}", "--extension=gemmini", str(elf)],
+        extension_name = "gemmini" if mesh_dim == 16 else f"gemmini_dim{mesh_dim}"
+        result = subprocess.run([str(spike), f"--extlib={so}",
+                                 f"--extension={extension_name}", str(elf)],
                                 cwd=args.out_dir, text=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, check=False)
         (args.out_dir / "spike.log").write_text(result.stdout)
@@ -160,7 +167,9 @@ def main() -> None:
                     if program.output_format == "fp6_e3m2" else
                     prefix + "0 BF16 mismatches")
         passed = result.returncode == 0 and expected in result.stdout
-        qualifier = ("radiance_header" if program.output_format in {
+        qualifier = ("target_mesh_reference" if manifest.get("origin") ==
+                     "radiance_source_target_mesh_reference" else
+                     "radiance_header" if program.output_format in {
                          "radiance_header_fp8", "radiance_header_fp6"} else
                      "nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
                      "derived_vpu_golden" if program.derived_expected_bf16 is not None else
@@ -180,6 +189,8 @@ def main() -> None:
         })
         if args.experimental_spike_extension_root:
             receipt["experimental_spike_extension"] = True
+        if mesh_dim != 16:
+            receipt["spike_extension_name"] = extension_name
         if program.output_format == "radiance_header_fp8":
             receipt["compared_source_fp8_codes"] = program.shape[0] * program.shape[1]
             receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32

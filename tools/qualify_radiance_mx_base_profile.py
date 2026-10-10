@@ -3,7 +3,7 @@
 The inputs are model2MLIR's archived handoffs for these exact source drivers.
 By default this rebinds all three handoffs to MxGemminiRocketConfig. A selected
 profile and subset of source precisions may be supplied to qualify other legal
-DIM16 Rocket configurations. The command exports the source
+DIM8, DIM16, or DIM32 Rocket configurations. The command exports the source
 payload, lowers physical MX commands, builds RV64 ELFs, and compares every
 BF16 output on the pinned Rocket/RoCC Spike extension.
 """
@@ -51,9 +51,13 @@ def main() -> None:
         parser.error("each --case may be selected only once")
     profile = load_profile(selected_profile, rtl_root=rtl)
     if (profile["transport"] != "rocket_rocc" or
-            profile["geometry"]["mesh_columns"] != 16 or
+            profile["geometry"]["mesh_columns"] not in {8, 16, 32} or
+            profile["geometry"]["mesh_rows"] != profile["geometry"]["mesh_columns"] or
             not profile["legal_compute"]):
-        parser.error("selected MX profile needs legal DIM16 Rocket compute")
+        parser.error("selected MX profile needs legal square-mesh Rocket compute")
+    mesh_reference = profile["geometry"]["mesh_columns"] != 16
+    if mesh_reference and "fp6" in selected_cases:
+        parser.error("DIM8/32 source mesh reference currently supports FP8/FP4 only")
     base_contract = (selected_profile == PROFILE.resolve() and
                      len(selected_cases) == len(DRIVERS))
     if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
@@ -101,19 +105,23 @@ def main() -> None:
                    "--mlir", str(selected_mlir), "--driver", str(driver),
                    "--profile", str(selected_profile), "--rtl-root", str(rtl),
                    "--riscv-root", str(riscv), "--out-dir", str(result_dir)]
+        if mesh_reference:
+            command.append("--target-mesh-reference")
         run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, check=False)
         (inputs / f"{precision}.compile.log").write_text(run.stdout)
         if run.returncode != 0:
             raise RuntimeError(f"MX {precision} qualification failed: {run.stdout[-3000:]}")
         artifact = json.loads((result_dir / "build/artifact_manifest.json").read_text())
-        if (artifact["status"] != "source_golden_matched_on_pinned_spike" or
+        expected_status = ("target_mesh_reference_matched_on_pinned_spike" if
+                           mesh_reference else "source_golden_matched_on_pinned_spike")
+        if (artifact["status"] != expected_status or
                 artifact["spike_exit_code"] != 0 or
                 artifact["compared_bf16_outputs"] != kernel.shape[0] * kernel.shape[1] or
                 artifact["profile_sha256"] != profile_sha256(profile) or
                 artifact["bound_mlir_sha256"] != _sha(result_dir / "payload_bound.mlir")):
-            raise RuntimeError(f"MX {precision} did not match every source BF16 output")
-        results.append({
+            raise RuntimeError(f"MX {precision} did not match every selected BF16 reference output")
+        result = {
             "precision": precision.upper(), "driver": row["driver"],
             "driver_sha256": _sha(driver),
             "header_sha256": _sha(kernel.data_header),
@@ -128,16 +136,29 @@ def main() -> None:
             "spike_log_sha256": artifact["spike_log_sha256"],
             "compared_bf16_outputs": artifact["compared_bf16_outputs"],
             "status": artifact["status"],
-        })
+        }
+        if mesh_reference:
+            source_golden = result_dir / "source_golden_bf16.bin"
+            target_manifest = json.loads((result_dir / "bundle/manifest.json").read_text())
+            if (target_manifest["target_mesh_reference"]["source_golden_sha256"] !=
+                    _sha(source_golden)):
+                raise RuntimeError("target mesh reference lost source golden provenance")
+            result["source_golden_sha256"] = _sha(source_golden)
+            result["target_golden_sha256"] = _sha(result_dir / "bundle/golden_bf16.bin")
+            result["target_mesh_reference"] = target_manifest["target_mesh_reference"]
+        results.append(result)
     summary = {
         "schema": ("mx_gemmini.radiance_plain_mx_profile_source_ladder.v1"
                    if base_contract else
+                   "mx_gemmini.radiance_target_mesh_reference_cases.v1" if mesh_reference else
                    "mx_gemmini.radiance_selected_mx_profile_source_cases.v1"),
         "status": ("three_source_precisions_matched_on_pinned_spike"
                    if base_contract else
+                   "target_mesh_reference_precisions_matched_on_pinned_spike" if mesh_reference else
                    "selected_source_precisions_matched_on_pinned_spike"),
         "scope": ("archived model2MLIR e9ded36 captures rebound to Nicolas MxGemminiRocketConfig; source operands and BF16 goldens from byte-checked Radiance headers"
                   if base_contract else
+                  "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; byte-checked Radiance operands and derived target mesh BF16 reference" if mesh_reference else
                   "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; source operands and BF16 goldens from byte-checked Radiance headers"),
         "source_revision": _git_revision(source),
         "rtl_revision": _git_revision(rtl),
@@ -155,7 +176,7 @@ def main() -> None:
         summary["profile_name"] = profile["name"]
     (out / "qualification.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     print(f"{profile['name']} {','.join(selected_cases)}: {summary['compared_bf16_outputs']} "
-          "source BF16 outputs matched Nicolas Spike")
+          f"{'target mesh reference' if mesh_reference else 'source'} BF16 outputs matched Nicolas Spike")
 
 
 if __name__ == "__main__":
