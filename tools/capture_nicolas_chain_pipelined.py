@@ -24,27 +24,6 @@ def _revision(path: Path) -> str:
                                    text=True).strip()
 
 
-def validate_original_branch_trace(trace: dict) -> None:
-    """Require two scalar branches from one MM1 and one shared B2 input."""
-    try:
-        nodes = trace["graphs"]["original"]["nodes"]
-        targets = [node["target"] for node in nodes]
-        edges = [[arg.get("node_id") if isinstance(arg, dict) else arg
-                  for arg in node["args"]] for node in nodes]
-        ids = [node["id"] for node in nodes]
-    except (KeyError, TypeError) as error:
-        raise ValueError("model2MLIR original graph trace is incomplete") from error
-    if (targets != ["a", "b1", "b2", "aten.matmul.default",
-                    "aten.mul.Tensor", "aten.matmul.default",
-                    "aten.mul.Tensor", "aten.matmul.default", "output"] or
-            edges[3] != ids[:2] or edges[4] != [ids[3], 2.0] or
-            edges[5] != [ids[4], ids[2]] or edges[6] != [ids[3], 4.0] or
-            edges[7] != [ids[6], ids[2]] or edges[8] != [[
-                {"node_id": ids[5], "value_id": f"{ids[5]}:v0"},
-                {"node_id": ids[7], "value_id": f"{ids[7]}:v0"}]]):
-        raise ValueError("model2MLIR original graph lost the shared two-branch chain")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "profile", "mx-opt",
@@ -62,6 +41,7 @@ def main() -> None:
     import torch
     from m2m.capture.external_quantization import ExternalQuantizationConfig
     from m2m.coverage import opaque_report
+    from mx_gemmini_support.chain_pipelined_graph import validate_original_branch_trace
     from mx_gemmini_support.bind_profile import bind_handoff
     from mx_gemmini_support.handoff import render_handoff, validate_handoff
     from mx_gemmini_support.target_profile import load_profile, profile_sha256

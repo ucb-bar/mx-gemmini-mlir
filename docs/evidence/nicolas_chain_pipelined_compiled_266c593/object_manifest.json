@@ -1,0 +1,131 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "31e13bdf80e40ffde39780d4a135e5ca9c9bcf53aac897c2ccdd2a22412dad32",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 128,
+      "name": "b2_scales",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 4096,
+      "name": "b2_weight",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 8192,
+      "name": "c1_bf16",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 128,
+      "name": "c1_scales_0",
+      "position": 3,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 128,
+      "name": "c1_scales_1",
+      "position": 4,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 4096,
+      "name": "c1_tiled_0",
+      "position": 5,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 4096,
+      "name": "c1_tiled_1",
+      "position": 6,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 128,
+      "name": "c2_scales_0",
+      "position": 7,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 128,
+      "name": "c2_scales_1",
+      "position": 8,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 4096,
+      "name": "c2_tiled_0",
+      "position": 9,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "minimum_bytes": 4096,
+      "name": "c2_tiled_1",
+      "position": 10,
+      "role": "write"
+    }
+  ],
+  "capture_receipt_sha256": "c7a1bdd2b41f025725c1599594505158fc4ccac9cdb8c12561386ef47daee856",
+  "command_count": 165,
+  "compiler_revision": "f87a0017124b8645e841be32b182385723b186bc",
+  "compiler_source_closure_sha256": "a472345b9df2a41aab785d108ad9329b6871ee9397b03dce74e604de72146675",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 13,
+  "first_matmul_scope": "source C1 BF16 preload; captured shared MM1 site is not issued by this object",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "issue_schedule": "program_order_with_dependency_fences",
+  "issuer_c_sha256": "00deb3ace894992a15788c93b1e4b6113ced00daf401bc06def4c2be3f54f8b0",
+  "object_sha256": "098b90adeed541894ac2ad6349bd1208466dfa532c7e8a8a64099117308a1f89",
+  "physical_program_sha256": "ddd79b1e77bc3578bb36d0da80046cd7ad1c02590ffa37990b627a4d32704ae8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "runtime_input_sha256": {
+    "b2_scales": "97fd68ad074bffabc0d0c3efebca90af795f296debc05bfcf5a9f84090f5d88c",
+    "b2_weight": "e4471ea8b48af4268064b6a3651c06f56d75378babb9158d03fc0bdf3a943c5b",
+    "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619"
+  },
+  "schema": "mx_gemmini.chain_pipelined_linkable_object.v1",
+  "source_resource_sha256": {
+    "b2_scales": "97fd68ad074bffabc0d0c3efebca90af795f296debc05bfcf5a9f84090f5d88c",
+    "b2_weight": "e4471ea8b48af4268064b6a3651c06f56d75378babb9158d03fc0bdf3a943c5b",
+    "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref_0": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_codes_ref_1": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref_0": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "c1_scales_ref_1": "8a320cc7a2c947ab8a3c5d5daf89f20a45b4498b6f6f0b0632b14b3d9e907644",
+    "c2_codes_ref_0": "6b7d9efd916edb1946da28efcea10c7e1ad70b92bbc0a54c2f185fca8ef914b4",
+    "c2_codes_ref_1": "6b7d9efd916edb1946da28efcea10c7e1ad70b92bbc0a54c2f185fca8ef914b4",
+    "c2_scales_ref_0": "40b6d52fecfb33e8731f64f3a2f1ad320a79bc3df46866b805f4d5583c21581e",
+    "c2_scales_ref_1": "f22c337d9745c57189ee2aaaa2a570d2faf5860c02e1b94944bce1bd34870318"
+  },
+  "source_scope": "preloaded BF16 C1; two VPU scalar branches and resident MM2 tiles; source tests three issue schedules",
+  "source_sha256": "6bbcf587aa5ccfdf99ff2b1a46a08117067ed056a68c3bc30b267ee7fcd350d4",
+  "spike_qualification": {
+    "compared_e8m0_scales": 512,
+    "compared_fp8_codes": 16384,
+    "elf_sha256": "08298d536c797ce32b8c15e97710d36cb1766d13fdeacfb9b38fd0de5dbf31fe",
+    "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+    "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+    "spike_exit_code": 0,
+    "spike_log_sha256": "67ec652b1d989f59aaf40b0e0768709f7153fc3a82d8627493bb161c47122c05",
+    "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+    "status": "both_source_tiles_matched_on_pinned_spike"
+  },
+  "status": "rv64_rocc_two_tile_object_built"
+}

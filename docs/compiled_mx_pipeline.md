@@ -3431,4 +3431,31 @@ MM2 sites. The capture's profile-bound MLIR is a three-site handoff; it does
 not preserve branch SSA edges. `audit_chain_pipelined` checks Nicolas's exact
 tile placement and issue-order markers and independently derives full C1 and
 C2 FP8 codes and E8M0 scales for both factors from the source BF16 goldens.
-Compiler-issued two-tile lowering and an object/ELF comparison remain open.
+The compiler-issued source chain is described below.
+
+### Compiler-issued two-tile source chain
+
+The [typed connected graph](evidence/nicolas_chain_pipelined_compiled_266c593/connected.mlir)
+binds Nicolas's BF16 C1 preload to two VPU scalar operations, two resident
+requants, and two MM2 sites. The physical lowerer reuses the qualified VPU,
+SPAD_REQUANT, and resident-MM2 command builders and loads B2 only once. It
+issues the branches in program order with dependency fences. The
+[linkable object](evidence/nicolas_chain_pipelined_compiled_266c593/mx_issue.o)
+contains no allocated data; its [physical program](evidence/nicolas_chain_pipelined_compiled_266c593/physical_program.json)
+and [manifest](evidence/nicolas_chain_pipelined_compiled_266c593/object_manifest.json)
+record the profile, source inputs, command stream, and object hashes.
+
+The [standalone Spike log](evidence/nicolas_chain_pipelined_compiled_266c593/spike.log)
+reports **0 mismatches** across both tiles' **16,384 FP8 codes** and **512
+E8M0 scales**, checked against references derived from Nicolas's header. Two
+independent compiler runs produced identical bound MLIR, physical program,
+issuer, object, ELF, extension, and Spike log hashes. The executable starts
+from the source driver's preloaded C1 BF16 tile; the captured upstream MM1 is
+not issued by this object. The source's pipelined issue order and RTL cycle
+overlap remain separate gates.
+
+Reproduce the object and Spike check with `python -m
+tools.compile_nicolas_chain_pipelined --capture-dir
+docs/evidence/nicolas_chain_pipelined_266c593 --rtl-root <Nicolas RTL>
+--riscv-root <RISC-V tools> --mx-opt build/tools/mx-gemmini-opt --out-dir
+<new output directory> --run-spike` from this repository.
