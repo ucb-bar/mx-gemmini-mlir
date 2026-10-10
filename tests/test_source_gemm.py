@@ -13,6 +13,7 @@ from mx_gemmini_support.source_gemm import (plan_source_gemm, read_source_gemm,
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.source_payload import read_source_payload
 from tools.materialize_radiance_ws_data import materialize
+from tools.materialize_radiance_batched_gemv_data import materialize as materialize_batched
 
 
 SOURCE = os.getenv("RADIANCE_KERNELS_ROOT")
@@ -134,3 +135,33 @@ def test_restream_source_reloads_weight_for_four_m_tiles(tmp_path):
     (changed / "data").write_text(header[:start] + altered)
     with pytest.raises(ValueError, match="activation-scale tiling"):
         read_source_payload(read_source_gemm(changed / "kernel.cpp"))
+
+
+def test_batched_gemv_sources_bind_nonsquare_tiles_and_goldens(tmp_path):
+    root = Path(SOURCE)
+    assert materialize_batched(root)["generated"] == []
+    profile = load_profile(Path(__file__).resolve().parents[1] /
+                           "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    for directory, m, datatype in (
+            ("gemv_batched_fp8_m32", 32, "FP8"),
+            ("gemv_batched_fp8_m64", 64, "FP8"),
+            ("gemv_batched_fp8_m128", 128, "FP8"),
+            ("gemv_batched_fp4_m128", 128, "FP4")):
+        driver = root / "kernels" / directory / "kernel.cpp"
+        kernel = read_source_gemm(driver)
+        assert kernel.shape == (m, 128, 2048)
+        assert kernel.tile == (m, 128, 128)
+        assert kernel.datatype == datatype
+        assert len(read_source_payload(kernel)["golden_bf16"].data) == m * 128 * 2
+        plan = plan_source_gemm(
+            kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+            profile=profile)
+        assert len(plan["waves"]) == 16
+        changed = tmp_path / directory
+        changed.mkdir()
+        (changed / "data").symlink_to(driver.parent / "data")
+        (changed / "kernel.cpp").write_text(
+            driver.read_text().replace("a->M,a->N,a->K", "a->N,a->M,a->K", 1))
+        with pytest.raises(ValueError, match="source call or shape binding"):
+            read_source_gemm(changed / "kernel.cpp")

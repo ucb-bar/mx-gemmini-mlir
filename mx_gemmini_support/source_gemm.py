@@ -50,6 +50,10 @@ def read_source_gemm(driver: Path) -> SourceGemm:
     if driver.name == "kernel.cpp" and driver.parent.name in {
             "gemm_mxgemmini_ws", "gemm_mxgemmini_ws_downproj_fp4"}:
         return _read_weight_stationary_gemm(driver, source)
+    if driver.name == "kernel.cpp" and driver.parent.name in {
+            "gemv_batched_fp8_m32", "gemv_batched_fp8_m64",
+            "gemv_batched_fp8_m128", "gemv_batched_fp4_m128"}:
+        return _read_batched_gemv(driver, source)
     header_name = _match(r'^#include "(mxgemm\.data\.[^"/]+\.h)"', source, "data header")
     header = driver.parent / header_name
     declared = re.fullmatch(r'mxgemm\.data\.(fp[468])\.m(\d+)n(\d+)k(\d+)\.h', header_name)
@@ -109,6 +113,41 @@ def _read_weight_stationary_gemm(driver: Path, source: str) -> SourceGemm:
         (256, 64, 5632), (256, 64, 64), "FP4")
     if (shape, tile, datatype) != expected or quant:
         raise ValueError("weight-stationary MX source shape, tile, or format changed")
+    return SourceGemm(driver, header, shape, tile, datatype, False, False, True)
+
+
+def _read_batched_gemv(driver: Path, source: str) -> SourceGemm:
+    """Bind the four committed decode projections, including non-square tiles."""
+    required = (
+        '#include "data"', '#include "mxgemm_lib.hpp"',
+        'mxgemm<GEMM_CFG>(a->M,a->N,a->K,a->C,tid,tpb,tbid);',
+        'kernel_args={reinterpret_cast<uint8_t*>(reinterpret_cast<uint32_t>((uint16_t*)C_raw)),MATMUL_M,MATMUL_N,MATMUL_K};',
+    )
+    if any(source.count(marker) != 1 for marker in required):
+        raise ValueError("batched GEMV source call or shape binding changed")
+    header = driver.parent / "data"
+    if not header.is_file():
+        raise ValueError("batched GEMV source data is missing; run its pinned generator")
+    data = header.read_text(encoding="ascii")
+    shape = tuple(int(_match(rf'^#define MATMUL_{axis}\s+(\d+)\b', data,
+                             f"MATMUL_{axis}")) for axis in ("M", "N", "K"))
+    config = _match(r'constexpr GemmConfig GEMM_CFG\s*\{(.*?)\};', source,
+                    "GemmConfig GEMM_CFG")
+    tile = tuple(shape[("M", "N", "K").index(axis)] if value == f"MATMUL_{axis}"
+                 else int(value) if value.isdecimal() else None
+                 for axis in ("M", "N", "K")
+                 for value in [_match(rf'\.TILE_{axis}\s*=\s*(MATMUL_{axis}|\d+)\b',
+                                      config, f"TILE_{axis}")])
+    datatype = _match(r'\.DATATYPE\s*=\s*GemmDatatype::(FP[48])\b',
+                      config, "DATATYPE")
+    quant = _match(r'\.QUANT_OUTPUT\s*=\s*(true|false)\b',
+                   config, "QUANT_OUTPUT") == "true"
+    expected_m = int(_match(r'^gemv_batched_fp[48]_m(\d+)$',
+                            driver.parent.name, "batch size"))
+    expected_precision = "FP4" if "_fp4_" in driver.parent.name else "FP8"
+    if (shape != (expected_m, 128, 2048) or tile != (expected_m, 128, 128)
+            or datatype != expected_precision or quant):
+        raise ValueError("batched GEMV shape, tile, or format differs from source variant")
     return SourceGemm(driver, header, shape, tile, datatype, False, False, True)
 
 
