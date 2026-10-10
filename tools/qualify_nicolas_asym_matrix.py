@@ -29,7 +29,8 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def discover(software: Path, profile_dir: Path, rtl_root: Path) -> list[tuple[str, Path]]:
+def discover(software: Path, profile_dir: Path,
+             rtl_root: Path) -> list[tuple[str, Path, dict]]:
     """Preflight every checked-in DIM16 source/header against its legal profile."""
     rows = []
     sources = sorted((software / "bareMetalC").glob("matmul_tiled_asym_*_64x64.c"))
@@ -45,10 +46,21 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path) -> list[tuple[st
         header = software / "include" / f"matmul_data_asym_{suffix}.h"
         profile_path = profile_dir / f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig.json"
         profile = load_profile(profile_path, rtl_root=rtl_root)
-        source_recipe(source, header, profile)
-        rows.append((suffix, profile_path))
-    if len({suffix for suffix, _ in rows}) != len(rows):
+        recipe = source_recipe(source, header, profile)
+        rows.append((suffix, profile_path, recipe["compute"]))
+    if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
+    by_profile: dict[Path, list[dict]] = {}
+    for _, profile_path, cell in rows:
+        by_profile.setdefault(profile_path, []).append(cell)
+    dedicated = [path for path in sorted(profile_dir.glob("MxAsym*GemminiRocketConfig.json"))
+                 if load_profile(path, rtl_root=rtl_root)["geometry"]["mesh_rows"] == 16]
+    for profile_path in dedicated:
+        profile = load_profile(profile_path, rtl_root=rtl_root)
+        expected = {json.dumps(cell, sort_keys=True) for cell in profile["legal_compute"]}
+        actual = [json.dumps(cell, sort_keys=True) for cell in by_profile.get(profile_path, ())]
+        if set(actual) != expected or len(actual) != len(expected):
+            raise ValueError(f"Nicolas DIM16 source mode coverage is incomplete: {profile_path.name}")
     return rows
 
 
@@ -73,14 +85,15 @@ def main() -> None:
     rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593", rtl)
     if args.source_suffix:
         selected = set(args.source_suffix)
-        unknown = selected - {suffix for suffix, _ in rows}
+        unknown = selected - {suffix for suffix, _, _ in rows}
         if unknown:
             parser.error(f"unknown source suffixes: {', '.join(sorted(unknown))}")
-        rows = [(suffix, profile) for suffix, profile in rows if suffix in selected]
+        rows = [(suffix, profile, cell) for suffix, profile, cell in rows
+                if suffix in selected]
     out_dir.mkdir(parents=True)
 
-    def qualify(row: tuple[str, Path]) -> dict:
-        suffix, profile = row
+    def qualify(row: tuple[str, Path, dict]) -> dict:
+        suffix, profile, cell = row
         directory = out_dir / suffix
         command = [sys.executable, "-m", "tools.qualify_nicolas_asym",
                    "--source-suffix", suffix,
@@ -100,6 +113,7 @@ def main() -> None:
                   receipt.get("status") == "source_golden_matched_on_pinned_spike" and
                   receipt.get("compared_bf16_outputs") == 4096)
         return {"source_suffix": suffix, "profile_name": profile.stem,
+                "compute": cell,
                 "status": "passed" if passed else "failed",
                 "exit_code": run.returncode,
                 "receipt_sha256": _sha(receipt_path) if receipt else None,
@@ -114,6 +128,7 @@ def main() -> None:
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
                 "scope": "named DIM16 64x64x64 asymmetric Rocket/RoCC source tests on pinned Spike",
                 "selected_modes": len(rows),
+                "selected_profiles": len({profile for _, profile, _ in rows}),
                 "passed_modes": sum(row["status"] == "passed" for row in results),
                 "rows": results}
     (out_dir / "matrix_receipt.json").write_text(
