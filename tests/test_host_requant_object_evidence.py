@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from mx_gemmini_support import radiance_fp6_host, radiance_fp8_host
+
 
 EVIDENCE = (Path(__file__).resolve().parents[1] /
             "docs/evidence/radiance_host_requant_objects_80f84ca")
@@ -91,6 +93,16 @@ def test_all_source_host_requant_objects_match_on_pinned_spike():
         assert _sha((source / "bundle/manifest.json").read_bytes()) == row["bundle_manifest_sha256"]
         command_c = _read(prefix / "object/mx_issue.c.gz")
         driver_c = _read(prefix / "spike/mx_driver.c.gz")
+        m, n, _ = spike["shape_mnk"]
+        generator = radiance_fp6_host if precision == "fp6" else radiance_fp8_host
+        legacy = (Path(__file__).resolve().parents[1] /
+                  "docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22/spike" /
+                  name / "build/mx_driver.c").read_text()
+        first = ("static uint32_t float_bits(float value) {" if precision == "fp6"
+                 else "static float bf16_value(uint16_t bits) {")
+        legacy_kernel = first + legacy.split(first, 1)[1].split("\nint main(void) {", 1)[0]
+        assert generator.emit_kernel(m, n) == legacy_kernel
+        assert generator.emit_kernel(m, n, runtime_pointers=True).encode() in command_c
         assert b"mx_issue_commands(" in command_c
         assert b"radiance_header_requantize(" in command_c
         assert b"radiance_header_requantize(" not in driver_c

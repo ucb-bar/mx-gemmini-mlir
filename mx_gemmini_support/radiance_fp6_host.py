@@ -5,16 +5,39 @@ from __future__ import annotations
 
 def emit_driver(externs: str, declarations: str, arguments: str,
                 names: tuple[str, ...], m: int, n: int, k: int) -> str:
-    if (m, n) != (128, 128):
-        raise ValueError("Radiance FP6 host epilogue requires its 128x128 LUT layout")
     signature = ", ".join(f"const void *{name}" for name in names)
-    return f'''#include <stdint.h>
+    return (f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
 {declarations}
 void mx_issue({signature});
 
-static uint32_t float_bits(float value) {{
+''' + emit_kernel(m, n) + f'''
+int main(void) {{
+  mx_issue({arguments});
+  radiance_header_requantize();
+  int code_errors = 0, scale_errors = 0;
+  for (uint32_t i = 0; i < {m * n // 2}; ++i)
+    if (output_quantized[i] != source_fp6_packed[i]) ++code_errors;
+  for (uint32_t i = 0; i < {m * n // 32}; ++i)
+    if (scratch_output_scales[i] != golden_output_scales[i]) ++scale_errors;
+  printf("lowered MX {m}x{n}x{k}: %d Radiance FP6 packed-index mismatches, %d E8M0 scale mismatches\\n",
+         code_errors, scale_errors);
+  return code_errors != 0 || scale_errors != 0;
+}}
+''')
+
+
+def emit_kernel(m: int, n: int, *, runtime_pointers: bool = False) -> str:
+    """Emit the shared Radiance FP6 host quantizer arithmetic."""
+    if (m, n) != (128, 128):
+        raise ValueError("Radiance FP6 host epilogue requires its 128x128 LUT layout")
+    lut_parameter = ", const uint8_t *output_lut" if runtime_pointers else ""
+    lut_argument = ", output_lut" if runtime_pointers else ""
+    signature = ("const void *output_bf16, const uint8_t *output_lut, "
+                 "uint8_t *output_quantized, uint8_t *scratch_output_scales"
+                 if runtime_pointers else "void")
+    return f'''static uint32_t float_bits(float value) {{
   union {{ float f; uint32_t u; }} v = {{ .f = value }};
   return v.u;
 }}
@@ -88,7 +111,7 @@ static uint8_t source_fp6_code(uint16_t bits) {{
   return code_sign | (uint8_t)((biased << 2) | out_m);
 }}
 
-static uint8_t lut_code(uint32_t pair, uint32_t index) {{
+static uint8_t lut_code(uint32_t pair, uint32_t index{lut_parameter}) {{
   const uint8_t *line = output_lut + pair * 12;
   uint32_t bit = index * 6, byte = bit >> 3;
   uint16_t chunk = line[byte];
@@ -105,11 +128,11 @@ static int fp6_fixed(uint8_t code) {{
   return code & 0x20 ? -magnitude : magnitude;
 }}
 
-static uint8_t nearest_lut_index(uint32_t pair, uint8_t code) {{
+static uint8_t nearest_lut_index(uint32_t pair, uint8_t code{lut_parameter}) {{
   int input = fp6_fixed(code), best_distance = 0;
   uint8_t best = 0;
   for (uint8_t index = 0; index < 16; ++index) {{
-    int distance = input - fp6_fixed(lut_code(pair, index));
+    int distance = input - fp6_fixed(lut_code(pair, index{lut_argument}));
     if (distance < 0) distance = -distance;
     distance &= 0x1ff;
     if (index == 0 || distance < best_distance) {{
@@ -119,7 +142,7 @@ static uint8_t nearest_lut_index(uint32_t pair, uint8_t code) {{
   return best;
 }}
 
-static void radiance_header_requantize(void) {{
+static void radiance_header_requantize({signature}) {{
   const uint16_t *input = (const uint16_t *)output_bf16;
   for (uint32_t row = 0; row < {m}; ++row)
     for (uint32_t group = 0; group < {n // 32}; ++group) {{
@@ -141,23 +164,10 @@ static void radiance_header_requantize(void) {{
         uint32_t bits = float_bits(scaled);
         uint16_t rounded = (uint16_t)((bits + 0x7fff + ((bits >> 16) & 1)) >> 16);
         uint8_t code = source_fp6_code(rounded);
-        uint8_t index = nearest_lut_index(row >> 1, code);
+        uint8_t index = nearest_lut_index(row >> 1, code{lut_argument});
         output_quantized[(row >> 1) * {n} + col] |=
             (uint8_t)(index << ((row & 1) ? 4 : 0));
       }}
     }}
-}}
-
-int main(void) {{
-  mx_issue({arguments});
-  radiance_header_requantize();
-  int code_errors = 0, scale_errors = 0;
-  for (uint32_t i = 0; i < {m * n // 2}; ++i)
-    if (output_quantized[i] != source_fp6_packed[i]) ++code_errors;
-  for (uint32_t i = 0; i < {m * n // 32}; ++i)
-    if (scratch_output_scales[i] != golden_output_scales[i]) ++scale_errors;
-  printf("lowered MX {m}x{n}x{k}: %d Radiance FP6 packed-index mismatches, %d E8M0 scale mismatches\\n",
-         code_errors, scale_errors);
-  return code_errors != 0 || scale_errors != 0;
 }}
 '''

@@ -5,13 +5,33 @@ from __future__ import annotations
 
 def emit_driver(externs: str, runtime_declarations: str, arguments: str,
                 names: tuple[str, ...], m: int, n: int, k: int) -> str:
-    return f'''#include <stdint.h>
+    return (f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
 {runtime_declarations}
 void mx_issue({", ".join(f"const void *{name}" for name in names)});
 
-static float bf16_value(uint16_t bits) {{
+''' + emit_kernel(m, n) + f'''
+int main(void) {{
+  mx_issue({arguments});
+  radiance_header_requantize();
+  int code_errors = 0, scale_errors = 0;
+  for (uint32_t i = 0; i < {m * n}; ++i)
+    if (output_quantized[i] != golden_fp8[i]) ++code_errors;
+  for (uint32_t i = 0; i < {m * n // 32}; ++i)
+    if (scratch_output_scales[i] != golden_output_scales[i]) ++scale_errors;
+  printf("lowered MX {m}x{n}x{k}: %d Radiance FP8 code mismatches, %d E8M0 scale mismatches\\n",
+         code_errors, scale_errors);
+  return code_errors != 0 || scale_errors != 0;
+}}
+''')
+
+
+def emit_kernel(m: int, n: int, *, runtime_pointers: bool = False) -> str:
+    """Emit the shared Radiance FP8 host quantizer arithmetic."""
+    signature = ("const void *output_bf16, uint8_t *output_quantized, "
+                 "uint8_t *scratch_output_scales" if runtime_pointers else "void")
+    return f'''static float bf16_value(uint16_t bits) {{
   union {{ uint32_t u; float f; }} v = {{ .u = (uint32_t)bits << 16 }};
   return v.f;
 }}
@@ -69,7 +89,7 @@ static uint8_t radiance_fp8_code(float x) {{
   return (uint8_t)(sign | (((exponent + 7) & 15) << 3) | mantissa);
 }}
 
-static void radiance_header_requantize(void) {{
+static void radiance_header_requantize({signature}) {{
   const uint16_t *input = (const uint16_t *)output_bf16;
   for (uint32_t row = 0; row < {m}; ++row)
     for (uint32_t group = 0; group < {n // 32}; ++group) {{
@@ -89,18 +109,5 @@ static void radiance_header_requantize(void) {{
         output_quantized[begin + offset] =
             radiance_fp8_code(bf16_value(input[begin + offset]) / scale);
     }}
-}}
-
-int main(void) {{
-  mx_issue({arguments});
-  radiance_header_requantize();
-  int code_errors = 0, scale_errors = 0;
-  for (uint32_t i = 0; i < {m * n}; ++i)
-    if (output_quantized[i] != golden_fp8[i]) ++code_errors;
-  for (uint32_t i = 0; i < {m * n // 32}; ++i)
-    if (scratch_output_scales[i] != golden_output_scales[i]) ++scale_errors;
-  printf("lowered MX {m}x{n}x{k}: %d Radiance FP8 code mismatches, %d E8M0 scale mismatches\\n",
-         code_errors, scale_errors);
-  return code_errors != 0 || scale_errors != 0;
 }}
 '''

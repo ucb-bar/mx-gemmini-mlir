@@ -2,7 +2,6 @@
 
 The arithmetic comes from the same C generators as standalone Spike programs.
 Only the storage binding changes: module globals become runtime pointers.
-Each rewrite is anchored to one exact generator fragment and fails on drift.
 """
 
 from __future__ import annotations
@@ -10,48 +9,12 @@ from __future__ import annotations
 from . import radiance_fp6_host, radiance_fp8_host
 
 
-def _replace_one(source: str, old: str, new: str) -> str:
-    if source.count(old) != 1:
-        raise ValueError(f"Radiance host generator drifted at {old!r}")
-    return source.replace(old, new, 1)
-
-
-def _kernel(driver: str, first: str) -> str:
-    if driver.count(first) != 1 or driver.count("\nint main(void) {") != 1:
-        raise ValueError("Radiance host driver has no unique arithmetic body")
-    return first + driver.split(first, 1)[1].split("\nint main(void) {", 1)[0]
-
-
 def emit_runtime_kernel(output_format: str, m: int, n: int) -> str:
     """Return the source-verified host quantizer with explicit buffer inputs."""
     if output_format == "radiance_header_fp8":
-        driver = radiance_fp8_host.emit_driver("", "", "", (), m, n, 0)
-        source = _kernel(driver, "static float bf16_value(uint16_t bits) {")
-        return _replace_one(
-            source, "static void radiance_header_requantize(void) {",
-            "static void radiance_header_requantize("
-            "const void *output_bf16, uint8_t *output_quantized, "
-            "uint8_t *scratch_output_scales) {")
+        return radiance_fp8_host.emit_kernel(m, n, runtime_pointers=True)
     if output_format == "radiance_header_fp6":
-        driver = radiance_fp6_host.emit_driver("", "", "", (), m, n, 0)
-        source = _kernel(driver, "static uint32_t float_bits(float value) {")
-        for old, new in (
-            ("static uint8_t lut_code(uint32_t pair, uint32_t index) {",
-             "static uint8_t lut_code(uint32_t pair, uint32_t index, "
-             "const uint8_t *output_lut) {"),
-            ("static uint8_t nearest_lut_index(uint32_t pair, uint8_t code) {",
-             "static uint8_t nearest_lut_index(uint32_t pair, uint8_t code, "
-             "const uint8_t *output_lut) {"),
-            ("lut_code(pair, index)", "lut_code(pair, index, output_lut)"),
-            ("nearest_lut_index(row >> 1, code)",
-             "nearest_lut_index(row >> 1, code, output_lut)"),
-            ("static void radiance_header_requantize(void) {",
-             "static void radiance_header_requantize("
-             "const void *output_bf16, const uint8_t *output_lut, "
-             "uint8_t *output_quantized, uint8_t *scratch_output_scales) {"),
-        ):
-            source = _replace_one(source, old, new)
-        return source
+        return radiance_fp6_host.emit_kernel(m, n, runtime_pointers=True)
     raise ValueError("MX source object has no runtime host epilogue for output format")
 
 
