@@ -51,6 +51,10 @@ writes four output tiles directly into one logical matrix. Pinned Spike matches
 One FP4 object is independently [rebound twice on Spike](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
 to distinct source-derived payloads and matches 131,072 BF16 outputs without
 host output rearrangement.
+The [Muon MMIO object path](docs/compiled_mx_pipeline.md#muon-mmio-issuer-handoff)
+reuses the checked physical FP8+VPU schedule and builds a data-free RV32
+issuer with gateway busy waits. Its current evidence is structural; a matched
+Radiance SoC profile and execution receipt are still needed.
 The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4-gemm-with-tilewise-vpu-epilogue)
 also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
 generator and golden model to create a new 256×256 FP4 fixture; Radiance has

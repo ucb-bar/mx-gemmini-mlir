@@ -2060,6 +2060,42 @@ python -m tools.qualify_runtime_fp4_row_major_object \
   --out-dir /tmp/fp4-row-major-runtime
 ```
 
+## Muon MMIO issuer handoff
+
+The same checked physical MX program can now produce a data-free Muon RV32
+issuer object. The [MMIO object emitter](../tools/emit_mx_mmio_object.py)
+selects `rtl_alternating` scale scheduling for hardware, checks Radiance's
+`gemmini_mmio.h` register offsets and instruction word, then maps each
+physical completion fence to a CPU fence followed by a poll of the MX gateway
+busy register. The caller supplies every operand, scratch, output, and gateway
+base address at runtime. It uses Muon's `rv32im_zfinx_zhinx` compiler with
+the Vortex target feature, matching the source kernel build flags.
+
+Two independent builds of the source-bound four-tile FP8+VPU program produced
+identical [issuer C](evidence/fp8_vpu_muon_mmio_object_266c593/mx_issue.c.gz),
+[RV32 object](evidence/fp8_vpu_muon_mmio_object_266c593/mx_issue.o),
+[physical program](evidence/fp8_vpu_muon_mmio_object_266c593/physical_program.json.gz),
+and [manifest](evidence/fp8_vpu_muon_mmio_object_266c593/object_manifest.json).
+The [audit](../tests/test_muon_mmio_object_evidence.py) checks all 21 fence and
+busy-wait pairs, four VPU commands, the row-major output ABI, and the
+archive hashes. Reproduce the object with:
+
+```sh
+python -m tools.emit_mx_mmio_object \
+  --mlir docs/evidence/bf16_row_major_readout_266c593/fp8_tilewise_vpu/bound.mlir \
+  --bundle docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --radiance-root /path/to/radiance-kernels-80f84ca \
+  --muon-clang /path/to/llvm-muon/bin/clang \
+  --out-dir /tmp/fp8-vpu-muon-mmio
+```
+
+The object has structural compiler and ABI evidence only. No admitted
+Radiance MX+VPU SoC profile, linked Muon kernel, or MMIO numerical execution
+receipt exists for it yet; the pinned Spike results above qualify the Rocket
+path separately.
+
 ### Executed generated FP4 source tiles on Cyclotron
 
 The [source-tile qualifier](../tools/qualify_radiance_fp4_derived_cyclotron_tiles.py)
