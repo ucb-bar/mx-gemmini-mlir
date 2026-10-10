@@ -837,6 +837,14 @@ unchanged 128³ C1 and C2 source goldens; it then produced the 96-wide reference
 This is a source-derived numerical check for one new shape, not an unchanged
 96-wide source golden or RTL/FPGA qualification. The archived capture, input
 bytes, generated issuer, object, ELF, and Spike log carry SHA-256 digests.
+The [64×96×96 fresh-checkout archive](evidence/nicolas_plain_pair_64x96_derived_4dd6108/index.json)
+extends the same source-derived path across four M tiles. A checkout of
+`4dd6108` reproduced the two-site capture, issuer, data-free object, linked
+ELF, and Spike log byte for byte. The pinned model again matched the
+unchanged 128-wide source goldens before deriving the 96-wide reference;
+Spike matched **6,144 C1 and 6,144 C2 codes** and **192 scales per site**.
+The original 16-row fixture remains unchanged. These two cases qualify the
+plain MX RoCC/Spike path for their selected shapes and profile.
 
 ```sh
 python -m tools.capture_nicolas_chain \
@@ -863,6 +871,9 @@ python -m tools.qualify_resident_pair_object \
   --mx-opt build/tools/mx-gemmini-opt \
   --source-rows 16 --source-width 96 --out-dir /new/mx-object-spike-16x96
 ```
+
+For the 64-row case, use `--output-rows 64` during capture and
+`--source-rows 64` in both Spike qualifiers, with distinct output directories.
 
 The MX+VPU 64³ connected graph now has a parallel object path through
 [`resident_vpu_graph.py`](../mx_gemmini_support/resident_vpu_graph.py). It
@@ -3299,7 +3310,8 @@ cases with:
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
    qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
-   Nicolas's 128³ source and the one source-derived 16×96×96 plain MX case.
+   Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
+   MX cases.
    Lower other typed graphs without a source-specific seam, including
    rectangular MM1/MM2 dimensions, broader changed N/K dimensions, and
    mixed-engine graphs.

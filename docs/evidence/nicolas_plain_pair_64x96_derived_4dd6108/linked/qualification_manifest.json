@@ -1,0 +1,26 @@
+{
+  "compared_c1_e8m0_scales": 192,
+  "compared_c1_fp8_codes": 6144,
+  "compared_c2_e8m0_scales": 192,
+  "compared_c2_fp8_codes": 6144,
+  "compiler_revision": "4dd610822e32f8b9263e7114442a3e981392c2ea",
+  "linked_elf_sha256": "ae79432051120be75a845e340aa057b5ab39383c0437ff1f1d8c2c9ca967f938",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "object_manifest_sha256": "6fdbcf557a8f93bc33261c086fa84551a0a39560447e2f6355ff6fa2a1b3cf1c",
+  "object_sha256": "9da5705b3ba307a04c23461b90187ce1e812047c504a85d73234f9efc6d1db26",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "reference_kind": "source_wire_slice_with_pinned_mesh_model_outputs",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.resident_pair_object_spike.v1",
+  "shape_mnk": [
+    64,
+    96,
+    96
+  ],
+  "source_issuer_sha256": "5b19bee0e4bfed6b00a7d62c774c49d537ef4a973b804b1025d00b1c3d3cfabe",
+  "source_reference_manifest_sha256": "24c1e3593da073ade5871b5465b7e71c802748eed664780ec1094e2ee3a71994",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "7a4367f9dcbe66103f084c802b4bb2867d9bc77abb54a7099fb11fa0412b1905",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "derived_source_connected_object_matched_on_pinned_spike"
+}
