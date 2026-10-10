@@ -1,0 +1,3 @@
+runtime FP4 tilewise: 0/131072 BF16 mismatches
+Gemmini extension configured with:
+    dim = 16

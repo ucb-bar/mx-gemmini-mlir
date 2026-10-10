@@ -53,6 +53,9 @@ finds that the derived 256×256 Muon driver builds but computes only one output
 tile. Four separately built source-derived 128×128 tiles reassemble to the
 full generated golden; their BF16 ×2 reference matches the compiler's Spike
 test. The source check uses a pinned functional Cyclotron model, not RTL.
+The [runtime object check](docs/compiled_mx_pipeline.md#reusable-four-tile-fp4-mxvpu-object-on-spike)
+issues the same data-free MX+VPU object twice on Nicolas's pinned Spike model
+with distinct source-derived FP4 inputs and matches all 131,072 BF16 outputs.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

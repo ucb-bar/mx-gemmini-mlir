@@ -2018,6 +2018,51 @@ The four separate source programs are an explicit derived decomposition.
 Cyclotron is a functional model; this does not qualify an unmodified
 multi-tile source driver, RTL, or FPGA execution of the VPU epilogue.
 
+### Reusable four-tile FP4 MX+VPU object on Spike
+
+The [object manifest](evidence/radiance_fp4_runtime_tilewise_object_266c593/object_manifest.json)
+describes a linkable RV64 RoCC issuer generated from the typed four-tile FP4
+MLIR. Its [object](evidence/radiance_fp4_runtime_tilewise_object_266c593/mx_issue.o)
+has no embedded operand, scale, or golden data. The caller supplies A/B codes,
+E8M0 scales, output, and scratch pointers. For four output tiles, the output
+ABI is **output-tile-major BF16**; each 128×128 tile occupies a consecutive
+32 KiB region. The object manifest now states that layout explicitly.
+
+The [runtime qualifier](../tools/qualify_runtime_fp4_tilewise_object.py)
+links this one object into a driver that calls it twice. The first call uses
+the generated Radiance FP4 fixture. The second swaps its 128-row M halves and
+128-column N halves in both packed operands and scales. Its independent
+expected matrix is the corresponding permutation of the source BF16 golden,
+followed by exact BF16 ×2. Both calls match every output on Nicolas's pinned
+Spike extension: **131,072 / 131,072 BF16 values**, with the first output
+still intact after the second call. The
+[receipt](evidence/radiance_fp4_runtime_tilewise_object_266c593/index.json),
+[repeat receipt](evidence/radiance_fp4_runtime_tilewise_object_266c593/index_repro.json),
+[driver](evidence/radiance_fp4_runtime_tilewise_object_266c593/mx_runtime_driver.c),
+[ELF](evidence/radiance_fp4_runtime_tilewise_object_266c593/mx_runtime_fp4_tilewise.elf.gz),
+and [Spike log](evidence/radiance_fp4_runtime_tilewise_object_266c593/spike.log)
+are archived. The repeat receipt matches byte for byte. This exercises runtime
+rebinding and the multi-tile output ABI on the functional Spike model. The
+256×256 FP4 fixture remains source-derived; Radiance has no committed
+256×256 FP4 driver, and this run does not qualify Muon, RTL, or FPGA execution.
+
+Reproduce with Nicolas Gemmini `266c593` and the selected RISC-V toolchain:
+
+```sh
+python -m tools.emit_mx_object \
+  --mlir docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/tilewise_bound.mlir \
+  --bundle docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp4-runtime-object
+python -m tools.qualify_runtime_fp4_tilewise_object \
+  --object-dir /tmp/fp4-runtime-object \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp4-runtime-run
+```
+
 Reproduce from a clean Radiance `80f84ca` checkout, its `6fc8ec7` MX software
 submodule, the pinned Cyclotron overwrite-model worktree, and the Muon toolchain:
 
