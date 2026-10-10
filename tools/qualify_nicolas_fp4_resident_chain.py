@@ -27,24 +27,25 @@ OUTPUTS = ("c1_scales", "c1_tiled_observed", "c2_scales", "c2_tiled")
 BUFFERS = (*INPUTS, *OUTPUTS)
 
 
-def compiler_driver(source: str) -> str:
+def compiler_driver(source: str, *, dimension: int = 64) -> str:
     """Retain Nicolas's complete four-way reference comparison unchanged."""
+    include = f'"include/matmul_fp4_{dimension}x{dimension}_chain.h"'
     if (source.count(MARKER) != 1 or source.count("gemmini_loop_ws_spad(") != 2 or
-            source.count('"include/matmul_fp4_64x64_chain.h"') != 1):
+            source.count(include) != 1):
         raise ValueError("Nicolas FP4 source comparison or issue sites changed")
     start = source.index("  gemmini_flush(0);")
     first_check = source.index('  int c1_err = check_nibbles("C1"', start)
     second_start = source.index("  // Reuse MM1's output block-scales", first_check)
     second_check = source.index('  int c2_err = check_nibbles("C2"', second_start)
-    issue = '''  static uint8_t c1_tiled_observed[2048] __attribute__((aligned(64)));
-  static uint8_t c2_tiled[2048] __attribute__((aligned(64)));
+    issue = '''  static uint8_t c1_tiled_observed[MATMUL_M * MATMUL_N / 2] __attribute__((aligned(64)));
+  static uint8_t c2_tiled[MATMUL_M * MATMUL_N / 2] __attribute__((aligned(64)));
   gemmini_flush(0);
   // The compiler issues both connected contractions and observes both C tiles.
   mx_issue(A_in_hw, A_scales_row, B_in, B_scales_col, B2_in,
            B2_scales_col, c1_scales, c1_tiled_observed, c2_scales, c2_tiled);
-  for (int row = 0; row < 32; ++row)
-    for (int col = 0; col < 64; ++col) {
-      int tile = (((row / 16) * 4 + col / 16) * 16 + row % 16) * 16 + col % 16;
+  for (int row = 0; row < MATMUL_M / 2; ++row)
+    for (int col = 0; col < MATMUL_N; ++col) {
+      int tile = (((row / 16) * (MATMUL_N / 16) + col / 16) * 16 + row % 16) * 16 + col % 16;
       C1_hw[row][col] = c1_tiled_observed[tile];
       C2_hw[row][col] = c2_tiled[tile];
     }
@@ -53,8 +54,8 @@ def compiler_driver(source: str) -> str:
                 source[second_check:])
     prototype = "void mx_issue(" + ", ".join("const void *" for _ in BUFFERS) + ");\n"
     modified = modified.replace(
-        '#include "include/matmul_fp4_64x64_chain.h"',
-        '#include "include/matmul_fp4_64x64_chain.h"\n' + prototype, 1)
+        '#include ' + include,
+        '#include ' + include + '\n' + prototype, 1)
     main = modified[modified.index("int main()") :]
     if ("gemmini_loop_ws_spad(" in main or
             "gemmini_extended_mvin(" in main or
@@ -84,6 +85,7 @@ def main() -> None:
     for name in ("rtl-root", "riscv-root", "mx-opt", "out-dir", "frontend-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--profile", type=Path, default=PROFILE)
+    parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
     args = parser.parse_args()
     rtl, riscv, out = args.rtl_root.resolve(), args.riscv_root.resolve(), args.out_dir.resolve()
     if out.exists():
@@ -94,10 +96,11 @@ def main() -> None:
     cc, spike = riscv / "bin/riscv64-unknown-elf-gcc", riscv / "bin/spike"
     if not cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
         parser.error("RISC-V GCC, Spike, and host g++ are required")
-    source = software / "bareMetalC/matmul_tiled_fp4_64x64_chain.c"
-    header = software / "include/matmul_fp4_64x64_chain.h"
+    dim = args.matrix_dim
+    source = software / f"bareMetalC/matmul_tiled_fp4_{dim}x{dim}_chain.c"
+    header = software / f"include/matmul_fp4_{dim}x{dim}_chain.h"
     profile = load_profile(args.profile, rtl_root=rtl)
-    resources = source_resources(source.read_text(), header.read_text())
+    resources = source_resources(source.read_text(), header.read_text(), dimension=dim)
     frontend_dir = args.frontend_dir.resolve()
     frontend_path = frontend_dir / "nicolas_fp4_chain.profile_bound.mlir"
     manifest_path = frontend_dir / "quantization_manifest.json"
@@ -105,6 +108,7 @@ def main() -> None:
     capture = json.loads(capture_path.read_text())
     if (capture.get("schema") != "mx_gemmini.nicolas_fp4_resident_model2mlir_capture.v1" or
             capture.get("status") != "two_site_frontend_handoff_only" or
+            capture.get("matrix_dim", 64) != dim or
             capture.get("source_sha256") != _sha(source) or
             capture.get("header_sha256") != _sha(header) or
             capture.get("profile_sha256") != profile_sha256(profile) or
@@ -117,11 +121,12 @@ def main() -> None:
     ir = out / "connected.mlir"
     ir.write_text(render_fp4_plain_chain(
         profile, resources, source_sha256=_sha(source), header_sha256=_sha(header),
-        frontend_mlir=frontend, frontend_manifest=manifest))
+        frontend_mlir=frontend, frontend_manifest=manifest, dimension=dim))
     _run([str(args.mx_opt.resolve()), str(ir), "-o", "/dev/null"],
          cwd=out, log=out / "native_verify.log")
     commands = lower_fp4_plain_chain(ir.read_text(), profile, resources,
-                                     frontend_mlir=frontend, frontend_manifest=manifest)
+                                     frontend_mlir=frontend, frontend_manifest=manifest,
+                                     dimension=dim)
     physical = out / "physical_program.json"
     physical.write_text(json.dumps({
         "schema": "mx_gemmini.fp4_connected_resident_physical.v1",
@@ -133,7 +138,7 @@ def main() -> None:
     issuer.write_text(emit_c(commands, transport="rocket_rocc", buffers=BUFFERS))
     obj, data_bytes = _compile_object(out, riscv)
     driver = out / "compiler_driver.c"
-    driver.write_text(compiler_driver(source.read_text()))
+    driver.write_text(compiler_driver(source.read_text(), dimension=dim))
     (out / "compiler_driver.patch").write_text("".join(difflib.unified_diff(
         source.read_text().splitlines(keepends=True),
         driver.read_text().splitlines(keepends=True),
@@ -156,8 +161,9 @@ def main() -> None:
         "status": ("source_and_compiler_matched_on_pinned_spike" if baseline["matched"]
                    and compiled["matched"] else "source_or_compiler_failed_on_pinned_spike"),
         "source_spike": baseline, "compiler_spike": compiled,
-        "compared_c1_fp4_codes": 4096, "compared_c2_fp4_codes": 4096,
-        "compared_c1_e8m0_scales": 128, "compared_c2_e8m0_scales": 128,
+        "compared_c1_fp4_codes": dim * dim, "compared_c2_fp4_codes": dim * dim,
+        "compared_c1_e8m0_scales": dim * dim // 32,
+        "compared_c2_e8m0_scales": dim * dim // 32,
         "source_sha256": _sha(source), "header_sha256": _sha(header),
         "frontend_mlir_sha256": _sha(frontend_path),
         "frontend_manifest_sha256": _sha(manifest_path),
@@ -175,6 +181,8 @@ def main() -> None:
         "spike_sha256": _sha(spike), "riscv_gcc_sha256": _sha(cc),
         "extension_sha256": _sha(so),
     }
+    if dim != 64:
+        receipt["matrix_dim"] = dim
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(receipt["status"])
     if not baseline["matched"] or not compiled["matched"]:

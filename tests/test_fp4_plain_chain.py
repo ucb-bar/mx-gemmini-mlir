@@ -21,30 +21,36 @@ from tools.qualify_nicolas_fp4_resident_chain import compiler_driver
 
 ROOT = Path(__file__).resolve().parents[1]
 RTL = Path(os.environ.get("MX_GEMMINI_RTL_ROOT", "/nonexistent"))
-SOURCE = RTL / "software/gemmini-rocc-tests/bareMetalC/matmul_tiled_fp4_64x64_chain.c"
-HEADER = RTL / "software/gemmini-rocc-tests/include/matmul_fp4_64x64_chain.h"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
-def fixture():
-    if not SOURCE.is_file() or not HEADER.is_file():
+def fixture(dimension: int = 64):
+    source_path = (RTL / "software/gemmini-rocc-tests/bareMetalC" /
+                   f"matmul_tiled_fp4_{dimension}x{dimension}_chain.c")
+    header_path = (RTL / "software/gemmini-rocc-tests/include" /
+                   f"matmul_fp4_{dimension}x{dimension}_chain.h")
+    if not source_path.is_file() or not header_path.is_file():
         pytest.skip("requires Nicolas's pinned FP4 resident source")
     profile = load_profile(PROFILE, rtl_root=RTL)
-    source, header = SOURCE.read_text(), HEADER.read_text()
-    resources = source_resources(source, header)
+    source, header = source_path.read_text(), header_path.read_text()
+    resources = source_resources(source, header, dimension=dimension)
     mlir = render_fp4_plain_chain(
         profile, resources,
-        source_sha256=hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
-        header_sha256=hashlib.sha256(HEADER.read_bytes()).hexdigest())
+        source_sha256=hashlib.sha256(source_path.read_bytes()).hexdigest(),
+        header_sha256=hashlib.sha256(header_path.read_bytes()).hexdigest(),
+        dimension=dimension)
     return profile, resources, mlir, source
 
 
-def test_fp4_source_bound_connected_pair():
-    profile, resources, mlir, source = fixture()
-    commands = lower_fp4_plain_chain(mlir, profile, resources)
-    plan = plan_fp4_resident_pair(profile, shape=(64, 64, 64),
+@pytest.mark.parametrize("dimension", (64, 128))
+def test_fp4_source_bound_connected_pair(dimension: int):
+    profile, resources, mlir, source = fixture(dimension)
+    commands = lower_fp4_plain_chain(mlir, profile, resources, dimension=dimension)
+    plan = plan_fp4_resident_pair(profile, shape=(dimension,) * 3,
                                   a_row=0, c1_row=2048, c2_row=4096)
-    assert (plan.a_rows, plan.b_rows, plan.c_rows, plan.b_row) == (128, 128, 128, 16256)
+    rows = dimension * dimension // 32
+    assert (plan.a_rows, plan.b_rows, plan.c_rows, plan.b_row) == (
+        rows, rows, rows, 16384 - rows)
     issued = [command for command in commands if isinstance(command, Command)]
     assert [command.funct for command in issued].count(8) == 2
     assert [command.funct for command in issued].count(26) == 2
@@ -60,29 +66,33 @@ def test_fp4_source_bound_connected_pair():
                       {name: name for name in
                        ("c1_scales", "c1_tiled_observed", "c2_scales", "c2_tiled")},
                       precision="fp4_e2m1")
+    packed, scales = dimension * dimension // 2, dimension * dimension // 32
     assert {entry["slot"]: entry["minimum_bytes"] for entry in abi} == {
-        "a1_activation": 2048, "a1_scales": 128,
-        "b1_weight": 2048, "b1_scales": 128,
-        "b2_weight": 2048, "b2_scales": 128,
-        "c1_scales": 128, "c1_tiled_observed": 2048,
-        "c2_scales": 128, "c2_tiled": 2048}
-    driver = compiler_driver(source)
+        "a1_activation": packed, "a1_scales": scales,
+        "b1_weight": packed, "b1_scales": scales,
+        "b2_weight": packed, "b2_scales": scales,
+        "c1_scales": scales, "c1_tiled_observed": packed,
+        "c2_scales": scales, "c2_tiled": packed}
+    driver = compiler_driver(source, dimension=dimension)
     assert driver.count("mx_issue(") == 2  # declaration and call
     assert driver.count('check_nibbles("C1"') == 1
     assert driver.count('check_nibbles("C2"') == 1
 
 
-def test_fp4_connected_pair_rejects_tampering():
-    profile, resources, mlir, _ = fixture()
+@pytest.mark.parametrize("dimension", (64, 128))
+def test_fp4_connected_pair_rejects_tampering(dimension: int):
+    profile, resources, mlir, _ = fixture(dimension)
     with pytest.raises(ValueError):
         lower_fp4_plain_chain(mlir.replace("activation_row = 2048", "activation_row = 4096"),
-                              profile, resources)
+                              profile, resources, dimension=dimension)
     with pytest.raises(Exception):
-        lower_fp4_plain_chain(mlir.replace("tensor<32x64xi8>", "tensor<64x64xi8>", 1),
-                              profile, resources)
+        wrong = mlir.replace(f"tensor<{dimension // 2}x{dimension}xi8>",
+                             f"tensor<{dimension}x{dimension}xi8>", 1)
+        lower_fp4_plain_chain(wrong, profile, resources, dimension=dimension)
     with pytest.raises(ValueError):
         lower_fp4_plain_chain(mlir, profile,
-                              {**resources, "b2_weight": resources["b2_weight"][:-1]})
+                              {**resources, "b2_weight": resources["b2_weight"][:-1]},
+                              dimension=dimension)
     with pytest.raises(ValueError):
         lower_connected_pair(
             mlir, profile, resources,

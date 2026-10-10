@@ -25,7 +25,7 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     fp4 = precision == "fp4_e2m1"
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
-    fp4_shape = shape == (64, 64, 64)
+    fp4_shape = shape in ((64, 64, 64), (128, 128, 128))
     vpu_shape = (shape[0] == 64 and shape[1] in (32, 64) and shape[2] == 64)
     if not ((fp4 and fp4_shape) or (not fp4 and (vpu_shape or plain_shape))):
         raise ValueError("resident MX contraction needs a supported complete tile")

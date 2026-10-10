@@ -1,4 +1,4 @@
-"""Capture Nicolas's 64-cubed FP4 two-matmul graph with pinned model2MLIR."""
+"""Capture Nicolas's 64- or 128-cubed FP4 chain with pinned model2MLIR."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ def main() -> None:
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "profile",
                  "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -48,8 +49,9 @@ def main() -> None:
             "fp4_e2m1" not in profile["candidate_output_modes"]):
         raise ValueError("FP4 capture needs Nicolas's plain MX profile")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    source = software / "bareMetalC/matmul_tiled_fp4_64x64_chain.c"
-    header = software / "include/matmul_fp4_64x64_chain.h"
+    dim = args.matrix_dim
+    source = software / f"bareMetalC/matmul_tiled_fp4_{dim}x{dim}_chain.c"
+    header = software / f"include/matmul_fp4_{dim}x{dim}_chain.h"
     if not source.is_file() or not header.is_file():
         raise ValueError("Nicolas FP4 source or header is absent")
 
@@ -60,7 +62,7 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        example = tuple(torch.randn((64, 64), dtype=torch.float32) for _ in range(3))
+        example = tuple(torch.randn((dim, dim), dtype=torch.float32) for _ in range(3))
     contract = root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = root / "examples/fp4-policy.yaml"
     result = m2m.convert(
@@ -71,7 +73,7 @@ def main() -> None:
         raise RuntimeError(f"FP4 two-matmul capture failed: {result.diagnostics}")
     sites = result.quantization_manifest["sites"]
     expected = [(f"functional:matmul{'' if i == 0 else '_1'}", "quantized",
-                 "mxfp4", [64, 64, 64]) for i in range(2)]
+                 "mxfp4", [dim, dim, dim]) for i in range(2)]
     if [(site["site_id"], site["status"], site["format"], site["shape"])
             for site in sites] != expected:
         raise ValueError("FP4 source sites differ from captured model2MLIR graph")
@@ -95,6 +97,7 @@ def main() -> None:
         "model2mlir_revision": _git(m2m_root), "mxq_revision": _git(mxq_root),
         "rtl_revision": _git(args.rtl_root), "software_revision": _git(software),
         "source_sha256": _sha(source), "header_sha256": _sha(header),
+        "matrix_dim": dim,
         "profile_sha256": profile_sha256(profile),
         "source_mlir_sha256": _sha(raw), "handoff_mlir_sha256": _sha(handoff),
         "bound_mlir_sha256": _sha(bound), "manifest_sha256": _sha(manifest),

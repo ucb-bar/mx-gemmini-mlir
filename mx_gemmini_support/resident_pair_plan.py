@@ -264,7 +264,7 @@ def lower_first_fp8_resident(plan: ResidentPairPlan, *,
 
 def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
                            a_row: int, c1_row: int, c2_row: int) -> ResidentPairPlan:
-    """Place Nicolas's packed E2M1 64-cubed pair with B1/B2 tail reuse."""
+    """Place Nicolas's packed E2M1 square chain with B1/B2 tail reuse."""
     resources = profile["resources"]
     if (profile.get("transport") != "rocket_rocc" or
             profile["name"] != "MxGemminiRocketConfig" or
@@ -275,10 +275,11 @@ def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
         raise ValueError("FP4 resident pair needs Nicolas's plain DIM16 MX profile")
     require_compute(profile, "fp4_e2m1", "fp4_e2m1", pe_mode=0,
                     activation_projection="direct", weight_projection="direct")
-    if shape != (64, 64, 64):
-        raise ValueError("FP4 resident pair needs Nicolas's 64-cubed source shape")
+    if shape not in ((64, 64, 64), (128, 128, 128)):
+        raise ValueError("FP4 resident pair needs Nicolas's 64- or 128-cubed source shape")
+    size = shape[0]
     rows = resources["scratchpad_bytes"] // 16
-    a_rows = b_rows = c_rows = 64 * 64 // 32
+    a_rows = b_rows = c_rows = size * size // 32
     b_row = rows - b_rows
     ranges = [(a_row, a_row + a_rows), (c1_row, c1_row + c_rows),
               (c2_row, c2_row + c_rows), (b_row, rows)]
@@ -288,12 +289,14 @@ def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
             any(left[1] > right[0] and right[1] > left[0]
                 for i, left in enumerate(ranges)
                 for right in ranges[i + 1:]) or
-            resources["scale_mem_config"]["size_bytes"] // 4 < 128 or
-            resources["accumulator_bytes"] < 64 * 64 * 2):
+            resources["scale_mem_config"]["size_bytes"] // 4 < size * size // 32 or
+            resources["accumulator_bytes"] < size * size * 2):
         raise ValueError("FP4 resident pair scratchpad or scale capacity differs")
-    return ResidentPairPlan(64, 64, 64, 16, rows, a_row, b_row, c1_row,
-                            c2_row, a_rows, b_rows, c_rows, 2, 2, 4,
-                            128, 128, 128)
+    scales = size * size // 32
+    return ResidentPairPlan(size, size, size, 16, rows, a_row, b_row, c1_row,
+                            c2_row, a_rows, b_rows, c_rows,
+                            size // 32, size // 32, size // 16,
+                            scales, scales, scales)
 
 
 def lower_first_fp4_resident(plan: ResidentPairPlan, *,
