@@ -10,6 +10,7 @@ import pytest
 from mx_gemmini_support.source_gemm import (plan_source_gemm, read_source_gemm,
                                             source_scratchpad_bytes)
 from mx_gemmini_support.target_profile import load_profile
+from tools.materialize_radiance_ws_data import materialize
 
 
 SOURCE = os.getenv("RADIANCE_KERNELS_ROOT")
@@ -65,3 +66,34 @@ def test_fp6_source_needs_a_lut_capable_target():
     with pytest.raises(ValueError, match="no fp6_e3m2/lut"):
         plan_source_gemm(kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
                          profile=profile)
+
+
+def test_read_once_weight_stationary_sources_bind_real_data(tmp_path):
+    root = Path(SOURCE)
+    report = materialize(root)
+    assert report["generated"] == []
+    profile = load_profile(Path(__file__).resolve().parents[1] /
+                           "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    for folder, shape, precision, waves in (
+            ("gemm_mxgemmini_ws", (256, 64, 2048), "FP8", 32),
+            ("gemm_mxgemmini_ws_downproj_fp4", (256, 64, 5632), "FP4", 88)):
+        driver = root / "kernels" / folder / "kernel.cpp"
+        kernel = read_source_gemm(driver)
+        assert kernel.shape == shape
+        assert kernel.tile == (256, 64, 64)
+        assert kernel.datatype == precision
+        assert kernel.data_header == driver.parent / "data"
+        plan = plan_source_gemm(
+            kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+            profile=profile)
+        assert len(plan["waves"]) == waves
+        assert "output_tiles" not in plan
+    original = root / "kernels/gemm_mxgemmini_ws/kernel.cpp"
+    changed = tmp_path / "gemm_mxgemmini_ws"
+    changed.mkdir()
+    (changed / "data").symlink_to(original.parent / "data")
+    (changed / "kernel.cpp").write_text(
+        original.read_text().replace("mxgemm<CFG>", "mxgemm<OTHER>", 1))
+    with pytest.raises(ValueError, match="shared GEMM library"):
+        read_source_gemm(changed / "kernel.cpp")

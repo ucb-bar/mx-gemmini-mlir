@@ -45,6 +45,9 @@ class SourceGemm:
 def read_source_gemm(driver: Path) -> SourceGemm:
     """Extract literal source facts; reject expressions this audit cannot prove."""
     source = driver.read_text()
+    if driver.name == "kernel.cpp" and driver.parent.name in {
+            "gemm_mxgemmini_ws", "gemm_mxgemmini_ws_downproj_fp4"}:
+        return _read_weight_stationary_gemm(driver, source)
     header_name = _match(r'^#include "(mxgemm\.data\.[^"/]+\.h)"', source, "data header")
     header = driver.parent / header_name
     declared = re.fullmatch(r'mxgemm\.data\.(fp[468])\.m(\d+)n(\d+)k(\d+)\.h', header_name)
@@ -77,6 +80,34 @@ def read_source_gemm(driver: Path) -> SourceGemm:
         raise ValueError(f"driver call dimensions {evaluated} differ from data header {shape}")
     return SourceGemm(driver, header, shape, tile, datatype, quant, acc_to_gmem,
                       header.is_file())
+
+
+def _read_weight_stationary_gemm(driver: Path, source: str) -> SourceGemm:
+    """Read the two Radiance read-once MX kernels without inventing a driver."""
+    if (source.count('#include "data"') != 1 or
+            source.count('#include "mxgemm_lib.hpp"') != 1 or
+            re.search(r'mxgemm<CFG>\s*\(MATMUL_M,\s*MATMUL_N,\s*MATMUL_K,',
+                      source) is None):
+        raise ValueError("weight-stationary MX source no longer calls the shared GEMM library")
+    header = driver.parent / "data"
+    if not header.is_file():
+        raise ValueError("weight-stationary MX source data is missing; run its pinned generator")
+    data = header.read_text(encoding="ascii")
+    shape = tuple(int(_match(rf'^#define MATMUL_{axis}\s+(\d+)\b', data,
+                             f"MATMUL_{axis}")) for axis in ("M", "N", "K"))
+    config = _match(r'constexpr GemmConfig CFG\s*\{(.*?)\};', source, "GemmConfig CFG")
+    tile = tuple(int(_match(rf'\.TILE_{axis}\s*=\s*(\d+)\b', config,
+                            f"TILE_{axis}")) for axis in ("M", "N", "K"))
+    datatype = _match(r'\.DATATYPE\s*=\s*GemmDatatype::(FP[468])\b',
+                      config, "DATATYPE")
+    quant = _match(r'\.QUANT_OUTPUT\s*=\s*(true|false)\b',
+                   config, "QUANT_OUTPUT") == "true"
+    expected = ((256, 64, 2048), (256, 64, 64), "FP8") if (
+        driver.parent.name == "gemm_mxgemmini_ws") else (
+        (256, 64, 5632), (256, 64, 64), "FP4")
+    if (shape, tile, datatype) != expected or quant:
+        raise ValueError("weight-stationary MX source shape, tile, or format changed")
+    return SourceGemm(driver, header, shape, tile, datatype, False, False, True)
 
 
 def source_scratchpad_bytes(library: Path) -> int:

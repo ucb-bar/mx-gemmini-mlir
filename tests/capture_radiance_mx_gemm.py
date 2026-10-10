@@ -95,7 +95,7 @@ def main() -> None:
     assert spec and spec.loader
     source_data = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(source_data)
-    if kernel.datatype != "FP6":
+    if kernel.datatype != "FP6" and driver.parent.name == "gemm_mxgemmini":
         generated_shapes = source_data.MISSING_FP8 if kernel.datatype == "FP8" else source_data.MISSING_FP4
         if (kernel.shape[0], kernel.shape[1], kernel.shape[2]) not in generated_shapes:
             raise RuntimeError("the chosen GEMM shape is absent from source generator")
