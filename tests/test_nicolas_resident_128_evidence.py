@@ -49,7 +49,7 @@ def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:
     index = json.loads((ROW_PREFIX / "index.json").read_text())
     first = json.loads((ROW_PREFIX / "artifact_manifest.json").read_text())
     second = json.loads((ROW_PREFIX / "reproduction_manifest.json").read_text())
-    capture = json.loads((ROW_PREFIX / "capture_receipt.json").read_text())
+    capture = json.loads((ROW_PREFIX / "receipt.json").read_text())
     assert first == second
     assert first["status"] == index["status"] == (
         "source_prefix_connected_chain_matched_on_pinned_spike")

@@ -16,7 +16,6 @@
     "c1_scales_ref.bin": "f91bd820c221944456ab84472f38120162b97887e7f44abdd62ad7e386bf7a84",
     "c2_codes_ref.bin": "8974d495f7b1234fc98162a758768df98a53bdf872c51fef928f7013e39b22e6",
     "c2_scales_ref.bin": "d8162c0a7123812d6b5e4faa691828fdb079c94dfedeb5ade81fe432633032f0",
-    "capture_receipt.json": "68e04b058e7080cd6c47a760a7803e735d57f408f152fb36874465e4b09215bb",
     "connected_chain.mlir": "149a95f61462e146819f674f8049aba48980cf46b62e9525eebddbbd6e3c7ae4",
     "mx_data.S": "400722c53eaf72c7978b358108bf583a991a586ebb1817975bea4c2e733c06ae",
     "mx_driver.c": "6514ecd81218e4a41d5ec20fbf8d99ccd3a5c1302a16965ea742ceb0d91542f2",
@@ -27,6 +26,7 @@
     "nicolas_chain.profile_bound.mlir": "663606b1cad356e8e7934d5800be675c18f6e79228a69607b13a4b5a95d703b9",
     "physical_program.json": "8e17350cd4a1b1c821099395c853def9223456c7202ab01e1c5f7e7d0b5e535c",
     "quantization_manifest.json": "e669ac0a2e4f0a7fc1308e001ba7b2d119c26881b78884dda4a44f4e495c74a1",
+    "receipt.json": "68e04b058e7080cd6c47a760a7803e735d57f408f152fb36874465e4b09215bb",
     "reproduction_manifest.json": "a7d8b56525b03068110cc1957755f12b5dfac2c34f2c9f6e60d6cbf7bbc3a3d3",
     "spike.log": "26b34fb65890d0e0e0a9d1f408542f120546d8a9db721361ce939def271a5093"
   },
