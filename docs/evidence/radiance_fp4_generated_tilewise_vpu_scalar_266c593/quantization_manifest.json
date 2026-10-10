@@ -1,0 +1,24 @@
+{
+  "adapter_id": "mx_gemmini",
+  "compiled_contract_sha256": "9aed93eb5784b455d01c10838ac6960857ea4d10db876fb7b218b8e34d842e0e",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "lowering_status": "operation_plan_only",
+  "numeric_status": "operand_fake_quant_only",
+  "policy_sha256": "817bd66f35edc1f4e3fb4729e7439a0387ed6e780b445ec375d260a35d98a6ab",
+  "schema": "m2m.quantization_manifest.v1",
+  "sites": [
+    {
+      "format": "mxfp4",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        256,
+        256,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    }
+  ],
+  "source_graph_sha256": "8d5878b66c521806311e663a630279e0c403272460d26b59df00a7c44b97d854"
+}

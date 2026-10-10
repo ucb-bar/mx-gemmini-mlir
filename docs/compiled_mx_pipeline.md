@@ -2086,6 +2086,17 @@ python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
   --out-dir /tmp/radiance-fp4-generated-tilewise-vpu-x2
 ```
 
+The same derived FP4 fixture now supports a captured finite BF16 scalar MULS
+epilogue. With `--scalar-bits 0x3fc0`, two runs from compiler `c6b41c0`
+matched **65,536 / 65,536 BF16 values** for `matmul * 1.5` on Nicolas's pinned
+Spike. The [capture and receipts](evidence/radiance_fp4_generated_tilewise_vpu_scalar_266c593/index.json)
+and [regression test](../tests/test_fp4_tilewise_vpu_scalar_evidence.py)
+cover the generated fixture, original graph, bound MLIR, four physical VPU
+commands, derived BF16 reference, standalone source, ELF, and Spike output.
+Reproduce with the command above, adding `--scalar-bits 0x3fc0` and choosing a
+fresh output directory. This case retains the generated-fixture scope; it does
+not establish parity with a committed FP4 source driver.
+
 ## Direct row-major BF16 readout across output tiles
 
 `mx_gemmini.readout_bf16` now accepts the typed
