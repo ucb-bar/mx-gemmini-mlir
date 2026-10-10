@@ -732,6 +732,10 @@ capacity. The planner rejects overlapping live ranges, misaligned rows, and
 insufficient memory. Its source weight layout emitter remains scoped to
 square tiles, and 128³ is the numerically qualified plain-MX case. The plan
 emits the same 128³ command bytes as the archived Spike run.
+The [published planner rerun](evidence/nicolas_resident_pair_plan_b1b5882/index.json)
+checks this from commit `b1b5882` on Nicolas's stock Spike: the generated
+MLIR, physical program, objects, ELF, and log hashes remain equal to the
+connected-chain baseline, with every C1 and C2 output matched.
 
 ```sh
 python -m tools.qualify_nicolas_resident_128 \

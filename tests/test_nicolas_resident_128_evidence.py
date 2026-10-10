@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 import gzip
 import hashlib
 import json
@@ -23,6 +24,7 @@ EVIDENCE = ROOT / "docs/evidence/nicolas_resident_mm2_128_266c593"
 FRONTEND = ROOT / "docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36"
 CONNECTED = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_266c593"
 FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0"
+PAIR_PLAN = ROOT / "docs/evidence/nicolas_resident_pair_plan_b1b5882"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -187,6 +189,30 @@ def test_resident_pair_planner_derives_counts_and_rejects_overlapping_lifetimes(
     with pytest.raises(ValueError, match="requantizer profile"):
         plan_fp8_resident_pair(
             profile, shape=(128, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
+
+
+def test_published_pair_planner_preserves_full_spike_program() -> None:
+    index = json.loads((PAIR_PLAN / "index.json").read_text())
+    actual = json.loads((PAIR_PLAN / "artifact_manifest.json").read_text())
+    baseline = json.loads((CONNECTED / "artifact_manifest.json").read_text())
+    saved = json.loads((PAIR_PLAN / "plan.json").read_text())
+    profile = load_profile(PROFILE)
+    plan = plan_fp8_resident_pair(
+        profile, shape=(128, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
+    assert saved == asdict(plan)
+    assert (saved["b_row"], saved["a_rows"], saved["c_rows"],
+            saved["a_scale_bytes"]) == (15360, 1024, 1024, 512)
+    assert index["schema"] == "mx_gemmini.nicolas_resident_pair_plan_reproduction.v1"
+    assert index["compiler_revision"] == (
+        "b1b58821deacd3e660baf8605c170f2c99a01005")
+    assert index["status"] == actual["status"] == (
+        "source_connected_chain_matched_on_pinned_spike")
+    assert index["baseline_compiler_revision"] == baseline["compiler_revision"]
+    assert actual["spike_exit_code"] == 0
+    for key in index["stable_fields_equal_to_baseline"]:
+        assert actual[key] == baseline[key], key
+    for name, digest in index["files_sha256"].items():
+        assert _sha((PAIR_PLAN / name).read_bytes()) == digest
 
 
 def test_fresh_published_checkout_rebuilds_and_reproduces_connected_chain() -> None:
