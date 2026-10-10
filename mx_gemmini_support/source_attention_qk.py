@@ -47,14 +47,19 @@ class QkSourceTile:
     weight: bytes
     activation_scales: bytes
     weight_scales: bytes
+    head: int = 0
+    block: int = 0
 
     def hashes(self) -> dict[str, str]:
         return {name: _sha(getattr(self, name)) for name in (
             "activation", "weight", "activation_scales", "weight_scales")}
 
 
-def read_first_gqa_qk(source_root: Path, *, hardware_generated: bool = False) -> QkSourceTile:
-    """Select head zero, key block zero from the pinned causal GQA driver."""
+def read_gqa_qk_tile(source_root: Path, *, head: int, block: int,
+                     hardware_generated: bool = False) -> QkSourceTile:
+    """Select one source QK tile using the driver's GQA head and block mapping."""
+    if type(head) is not int or not 0 <= head < 8 or type(block) is not int or not 0 <= block < 2:
+        raise ValueError("pinned GQA tile requires head 0..7 and used block 0..1")
     directory = source_root / "kernels/flash_attention_mx_gqa"
     driver, header = directory / "kernel.cpp", directory / "include/fa_data.h"
     generator_sha = HARDWARE_GENERATOR_SHA256 if hardware_generated else GENERATOR_SHA256
@@ -69,8 +74,10 @@ def read_first_gqa_qk(source_root: Path, *, hardware_generated: bool = False) ->
     code = driver.read_text()
     for marker in (
             ".TILE_M = FA_SQ, .TILE_N = FA_BK, .TILE_K = FA_D,",
+            "const uint32_t kv = h / FA_GRP;",
             "const uint8_t *Qh        = &QK_A_in[h * FA_SQ][0];",
             "&QK_B_blocks[kvb * FA_D][0]",
+            "&QK_B_blocks[(kvb + j + 1) * FA_D][0]",
             "mxgemm_compute_tile<QK>(tid, /*c_spad=*/S_ROW[0]);"):
         if code.count(marker) != 1:
             raise ValueError("pinned GQA QK source stage changed")
@@ -86,21 +93,29 @@ def read_first_gqa_qk(source_root: Path, *, hardware_generated: bool = False) ->
         found = re.search(rf"^#define {macro}\s+(\d+)\b", data, re.MULTILINE)
         if found is None or int(found.group(1)) != expected:
             raise ValueError(f"pinned GQA {macro} changed")
+    kv_block = (head // 4) * 2 + block
     arrays = {
-        "activation": ("QK_A_in", "[FA_NQ*FA_SQ][FA_D]", 8 * 64 * 64, 64 * 64),
+        "activation": ("QK_A_in", "[FA_NQ*FA_SQ][FA_D]", 8 * 64 * 64,
+                       head * 64 * 64, 64 * 64),
         "weight": ("QK_B_blocks", "[FA_NKV*FA_NBLK_USED*FA_D][FA_BK]", 2 * 2 * 64 * 64,
-                   64 * 64),
+                   kv_block * 64 * 64, 64 * 64),
         "activation_scales": ("QK_A_scales_row", "[FA_NQ*FA_GK][FA_SQ]", 8 * 2 * 64,
-                              2 * 64),
+                              head * 2 * 64, 2 * 64),
         "weight_scales": ("QK_B_scales_blocks", "[FA_NKV*FA_NBLK_USED*FA_GK][FA_BK]",
-                          2 * 2 * 2 * 64, 2 * 64),
+                          2 * 2 * 2 * 64, kv_block * 2 * 64, 2 * 64),
     }
     selected = {}
-    for resource, (name, dimensions, count, length) in arrays.items():
+    for resource, (name, dimensions, count, start, length) in arrays.items():
         all_values = _array(data, name=name, ctype="uint8_t", dimensions=dimensions,
                             count=count, maximum=255)
-        selected[resource] = bytes(all_values[:length])
-    return QkSourceTile(driver, header, **selected)
+        selected[resource] = bytes(all_values[start:start + length])
+    return QkSourceTile(driver, header, **selected, head=head, block=block)
+
+
+def read_first_gqa_qk(source_root: Path, *, hardware_generated: bool = False) -> QkSourceTile:
+    """Select head zero, key block zero for the original single-tile probe."""
+    return read_gqa_qk_tile(source_root, head=0, block=0,
+                            hardware_generated=hardware_generated)
 
 
 def decode_e4m3(code: int) -> float:
@@ -226,7 +241,7 @@ def derive_generated_hardware_qk(tile: QkSourceTile, *, torch, low_level_model,
     }
     policy = {
         "schema": "mx_gemmini.attention_qk_shift.v1",
-        "stage": "gqa_qk_head0_block0", "e8m0_shift": HARDWARE_SHIFT,
+        "stage": f"gqa_qk_head{tile.head}_block{tile.block}", "e8m0_shift": HARDWARE_SHIFT,
         "oracle": "dim16_reduced_precision_product_and_accumulator",
         "source_header_sha256": _sha(tile.header.read_bytes()),
         "source_arrays_sha256": tile.hashes(),

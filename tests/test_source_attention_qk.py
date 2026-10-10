@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import gzip
 import shutil
 import subprocess
 import sys
@@ -12,7 +13,8 @@ import pytest
 
 from mx_gemmini_support.source_attention_qk import (
     HARDWARE_GENERATOR_SHA256, HARDWARE_MODEL_SHA256,
-    derive_shifted_qk, read_first_gqa_qk, source_product_overflow_count)
+    derive_shifted_qk, read_first_gqa_qk, read_gqa_qk_tile,
+    source_product_overflow_count)
 from mx_gemmini_support.source_payload import (
     ATTENTION_QK_CANDIDATE_ORIGIN, validate_attention_qk_candidate)
 
@@ -33,9 +35,13 @@ def test_attention_candidate_requires_explicit_derivation():
         },
     }
     validate_attention_qk_candidate(manifest)
+    validate_attention_qk_candidate({**manifest, "source_derivation": {
+        **manifest["source_derivation"], "stage": "gqa_qk_head7_block1"}})
     for change in ({"origin": "radiance_source_header_specialization"},
                    {"source_derivation": {**manifest["source_derivation"],
                                           "e8m0_shift": 0}},
+                   {"source_derivation": {**manifest["source_derivation"],
+                                          "stage": "gqa_qk_head8_block0"}},
                    {"source_derivation": {**manifest["source_derivation"],
                                           "source_header_sha256": "c" * 64}}):
         altered = {**manifest, **change}
@@ -96,3 +102,24 @@ def test_hardware_model_patch_applies_only_to_pinned_source(tmp_path):
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.run(["git", "apply", "--unidiff-zero", "--check", str(patch)],
                        cwd=tmp_path, check=True, capture_output=True)
+    shutil.copyfile(original / "kernel.cpp", copied / "kernel.cpp")
+    (tmp_path / "lib").mkdir()
+    (tmp_path / "lib/mxgemmini").symlink_to(source_root / "lib/mxgemmini",
+                                            target_is_directory=True)
+    archive = (Path(__file__).resolve().parents[1] /
+               "docs/evidence/radiance_gqa_generated_80f84ca/fa_data.h.gz")
+    (copied / "include").mkdir()
+    (copied / "include/fa_data.h").write_bytes(gzip.decompress(archive.read_bytes()))
+    q00 = read_gqa_qk_tile(tmp_path, head=0, block=0, hardware_generated=True)
+    q01 = read_gqa_qk_tile(tmp_path, head=0, block=1, hardware_generated=True)
+    q30 = read_gqa_qk_tile(tmp_path, head=3, block=0, hardware_generated=True)
+    q40 = read_gqa_qk_tile(tmp_path, head=4, block=0, hardware_generated=True)
+    q70 = read_gqa_qk_tile(tmp_path, head=7, block=0, hardware_generated=True)
+    assert q00.activation == q01.activation
+    assert q00.activation != q30.activation
+    assert q00.weight == q30.weight
+    assert q00.weight != q01.weight
+    assert q00.weight != q40.weight
+    assert q40.weight == q70.weight
+    with pytest.raises(ValueError, match="head 0..7"):
+        read_gqa_qk_tile(tmp_path, head=8, block=0, hardware_generated=True)

@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
 
 from .source_fp6 import _array, _bytes, read_source_fp6_payload
 from .source_gemm import SourceGemm
@@ -31,7 +32,8 @@ def validate_attention_qk_candidate(manifest: dict) -> None:
     policy = manifest.get("source_derivation")
     if (not isinstance(policy, dict) or
             policy.get("schema") != "mx_gemmini.attention_qk_shift.v1" or
-            policy.get("stage") != "gqa_qk_head0_block0" or
+            not isinstance(policy.get("stage"), str) or
+            re.fullmatch(r"gqa_qk_head[0-7]_block[01]", policy["stage"]) is None or
             type(policy.get("e8m0_shift")) is not int or
             not 1 <= policy["e8m0_shift"] <= 8 or
             policy.get("oracle") != "dim16_reduced_precision_product_and_accumulator" or
