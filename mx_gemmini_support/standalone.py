@@ -298,7 +298,8 @@ int main(void) {{
     if program.derived_expected_bf16 is not None:
         receipt["golden_basis"] = (
             "derived_bf16_x2" if program.derived_vpu_scalar_bf16 is None
-            else "derived_bf16_muls")
+            else "derived_bf16_adds" if program.plan.get("vector_tile_policy") ==
+            "bf16_adds_scalar_each_output_tile_v1" else "derived_bf16_muls")
     if quantized:
         receipt["golden_basis"] = (
             "nicolas_vpu_x2_spad_requant_from_source_bf16" if program.tiled_quant_readout else

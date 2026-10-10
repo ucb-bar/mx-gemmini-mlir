@@ -15,7 +15,7 @@ import hashlib
 from typing import Mapping
 
 from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
-from .quant_reference import (bf16_mul_scalar, exact_bf16_x2,
+from .quant_reference import (bf16_add_scalar, bf16_mul_scalar, exact_bf16_x2,
                               quantize_bf16_radiance_header_fp8,
                               quantize_bf16_radiance_header_fp6)
 from .source_gemm import plan_mx_gemm
@@ -68,7 +68,8 @@ class PhysicalProgram:
         if self.derived_expected_bf16 is not None:
             receipt["golden_derivation"] = (
                 "bf16_exact_multiply_by_two" if self.derived_vpu_scalar_bf16 is None
-                else "bf16_scalar_muls_rne")
+                else "bf16_scalar_adds_rne" if self.plan.get("vector_tile_policy") ==
+                "bf16_adds_scalar_each_output_tile_v1" else "bf16_scalar_muls_rne")
             receipt["derived_expected_bf16_sha256"] = hashlib.sha256(
                 self.derived_expected_bf16).hexdigest()
             if self.derived_vpu_scalar_bf16 is not None:
@@ -176,10 +177,12 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
     if tilewise_policy is not None:
         function = readout[0].parent_op()
         if (tilewise_policy not in {"bf16_muls_x2_each_output_tile_v1",
-                                    "bf16_muls_scalar_each_output_tile_v1"} or
+                                    "bf16_muls_scalar_each_output_tile_v1",
+                                    "bf16_adds_scalar_each_output_tile_v1"} or
                 (tilewise_policy == "bf16_muls_x2_each_output_tile_v1" and
                  tilewise_scalar is not None) or
-                (tilewise_policy == "bf16_muls_scalar_each_output_tile_v1" and
+                (tilewise_policy in {"bf16_muls_scalar_each_output_tile_v1",
+                                     "bf16_adds_scalar_each_output_tile_v1"} and
                  (tilewise_scalar is None or not 0 <= tilewise_scalar <= 0xffff or
                   (tilewise_scalar & 0x7f80) == 0x7f80)) or
                 output_format != "bf16" or
@@ -270,7 +273,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
                 "scale_dram_address": _int_attr(op, "scale_dram_address"),
                 "scale_buffer": _text_attr(op, "scale_buffer"),
             }))
-    if (tilewise_policy == "bf16_muls_scalar_each_output_tile_v1" and
+    if (tilewise_policy in {"bf16_muls_scalar_each_output_tile_v1",
+                            "bf16_adds_scalar_each_output_tile_v1"} and
             (len(vector_ops) != 1 or vector_ops[0][0] != "vpu" or
              vector_ops[0][1]["immediate_bf16"] != tilewise_scalar)):
         raise ValueError("physical MX tilewise VPU scalar differs from command immediate")
@@ -329,12 +333,15 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         # tensor needs a separate lifetime planner.
         scalar_bf16 = (vector_ops[0][1]["immediate_bf16"]
                        if len(vector_ops) == 1 and vector_ops[0][0] == "vpu" else None)
+        tilewise_kind = ("adds" if tilewise_policy == "bf16_adds_scalar_each_output_tile_v1"
+                         else "muls")
         tilewise = (tilewise_policy in {"bf16_muls_x2_each_output_tile_v1",
-                                       "bf16_muls_scalar_each_output_tile_v1"} and
+                                       "bf16_muls_scalar_each_output_tile_v1",
+                                       "bf16_adds_scalar_each_output_tile_v1"} and
                     len(vector_ops) == 1 and vector_ops[0][0] == "vpu" and
                     output_format == "bf16" and
                     vector_ops[0][1] == {
-                        "kind": "muls", "src1_row": plan["c_spad_dest"],
+                        "kind": tilewise_kind, "src1_row": plan["c_spad_dest"],
                         "src2_row": 0, "dst_row": plan["c_spad_dest"],
                         "rows": plan["c_rows"], "reduction_length": 1,
                         "broadcast": False, "immediate_bf16": scalar_bf16,
@@ -342,7 +349,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                     (tilewise_policy != "bf16_muls_x2_each_output_tile_v1" or
                      scalar_bf16 == 0x4000))
         if not tilewise:
-            raise ValueError("multi-output MX vector epilogue needs an in-place BF16 MULS per tile")
+            raise ValueError("multi-output MX vector epilogue needs an in-place BF16 scalar op per tile")
         plan = {**plan, "vector_tile_policy": tilewise_policy}
     if host_requant and len(output_tiles) != 1:
         raise ValueError("Radiance header epilogue requires a single BF16 output tile")
@@ -556,6 +563,10 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         if in_place_full_output and tilewise_policy == "bf16_muls_scalar_each_output_tile_v1":
             derived_vpu_scalar_bf16 = vpu["immediate_bf16"]
             derived_expected_bf16 = bf16_mul_scalar(
+                resources["golden_bf16"], derived_vpu_scalar_bf16)
+        if in_place_full_output and tilewise_policy == "bf16_adds_scalar_each_output_tile_v1":
+            derived_vpu_scalar_bf16 = vpu["immediate_bf16"]
+            derived_expected_bf16 = bf16_add_scalar(
                 resources["golden_bf16"], derived_vpu_scalar_bf16)
 
     return PhysicalProgram(profile_sha256(profile), manifest_sha256(manifest),

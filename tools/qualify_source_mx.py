@@ -15,7 +15,7 @@ from mx_gemmini_support.bind_payload import (
     append_tilewise_vpu_muls, append_tilewise_vpu_x2,
     append_vpu_spad_requant_x2, bind_payload,
     select_bf16_output_layout)
-from mx_gemmini_support.capture_epilogue import append_captured_tilewise_vpu_muls
+from mx_gemmini_support.capture_epilogue import append_captured_tilewise_vpu_scalar
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -132,7 +132,7 @@ def main() -> None:
             quantization_manifest=json.loads(
                 args.capture_quantization_manifest.read_text()),
             mlir_text=args.capture_frontend_mlir.read_text())
-        bound = append_captured_tilewise_vpu_muls(
+        bound = append_captured_tilewise_vpu_scalar(
             bound, profile, manifest, capture)
     if args.bf16_output_layout:
         bound = select_bf16_output_layout(

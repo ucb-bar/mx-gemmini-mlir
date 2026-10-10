@@ -7,7 +7,8 @@ import json
 import math
 import struct
 
-from .bind_payload import append_tilewise_vpu_muls, append_tilewise_vpu_x2
+from .bind_payload import (append_tilewise_vpu_adds, append_tilewise_vpu_muls,
+                           append_tilewise_vpu_x2)
 from .verify_profile_ir import _text_attr
 
 
@@ -16,9 +17,10 @@ def _digest(value: dict) -> str:
                                      allow_nan=False).encode()).hexdigest()
 
 
-def append_captured_tilewise_vpu_muls(mlir_text: str, profile: dict,
-                                      payload_manifest: dict, capture) -> str:
-    """Lower exactly `matmul * finite BF16 scalar` from a model2MLIR capture.
+def _append_captured_scalar(mlir_text: str, profile: dict,
+                            payload_manifest: dict, capture, *,
+                            allow_add: bool) -> str:
+    """Lower one finite BF16 scalar epilogue from a model2MLIR capture.
 
     The frontend graph and final MLIR must match the digest-gated handoff.
     Unmatched or wider scalar values fail closed instead of silently changing
@@ -55,10 +57,13 @@ def append_captured_tilewise_vpu_muls(mlir_text: str, profile: dict,
         raise ValueError("scalar VPU capture differs from bound MX handoff")
 
     nodes = original.get("nodes", [])
+    supported = ({"aten.mul.Tensor", "aten.add.Tensor"} if allow_add
+                 else {"aten.mul.Tensor"})
     if (len(nodes) != 5 or [node.get("op") for node in nodes] != [
             "placeholder", "placeholder", "call_function", "call_function", "output"] or
-            [node.get("target") for node in nodes[2:4]] != [
-                "aten.matmul.default", "aten.mul.Tensor"] or
+            nodes[2].get("target") != "aten.matmul.default" or
+            nodes[3].get("target") not in supported or
+            nodes[2].get("kwargs") != {} or nodes[3].get("kwargs") != {} or
             nodes[2].get("args") != [
                 {"node_id": node["id"], "value_id": node["id"] + ":v0"}
                 for node in nodes[:2]] or
@@ -93,10 +98,27 @@ def append_captured_tilewise_vpu_muls(mlir_text: str, profile: dict,
             sites[0].get("format") != selected_format or
             sites[0].get("shape") != payload_manifest.get("shape_mnk") or
             "linalg.matmul" not in frontend or
-            'prov.aten = "aten.mul.Tensor"' not in frontend or
+            f'prov.aten = "{nodes[3]["target"]}"' not in frontend or
             f"{scalar:.6e}" not in frontend):
         raise ValueError("scalar VPU source site or frontend operation differs")
+    if nodes[3]["target"] == "aten.add.Tensor":
+        return append_tilewise_vpu_adds(mlir_text, profile, payload_manifest,
+                                        scalar_bf16)
     if scalar_bf16 == 0x4000:
         return append_tilewise_vpu_x2(mlir_text, profile, payload_manifest)
     return append_tilewise_vpu_muls(mlir_text, profile, payload_manifest,
                                     scalar_bf16)
+
+
+def append_captured_tilewise_vpu_scalar(mlir_text: str, profile: dict,
+                                        payload_manifest: dict, capture) -> str:
+    """Bind captured `matmul * scalar` or `matmul + scalar` to BF16 VPU."""
+    return _append_captured_scalar(mlir_text, profile, payload_manifest,
+                                   capture, allow_add=True)
+
+
+def append_captured_tilewise_vpu_muls(mlir_text: str, profile: dict,
+                                      payload_manifest: dict, capture) -> str:
+    """Preserve the multiplication-only capture binding entry point."""
+    return _append_captured_scalar(mlir_text, profile, payload_manifest,
+                                   capture, allow_add=False)

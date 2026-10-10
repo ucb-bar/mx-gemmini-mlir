@@ -8,10 +8,12 @@ import struct
 
 import pytest
 
-from mx_gemmini_support.bind_payload import append_tilewise_vpu_muls
+from mx_gemmini_support.bind_payload import (append_tilewise_vpu_adds,
+                                            append_tilewise_vpu_muls)
 from mx_gemmini_support.physical_program import lower_bound_source
-from mx_gemmini_support.quant_reference import bf16_mul_scalar
+from mx_gemmini_support.quant_reference import bf16_add_scalar, bf16_mul_scalar
 from mx_gemmini_support.source_payload import load_bundle
+from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile
 
 
@@ -84,3 +86,37 @@ def test_generated_fp4_tilewise_scalar_uses_same_physical_policy():
     assert program.derived_expected_bf16 == bf16_mul_scalar(
         resources["golden_bf16"], 0x3fc0)
     assert sum(step.phase == "vpu" for step in program.steps) == 4
+
+
+def test_tilewise_adds_binding_and_derived_bf16_reference(tmp_path):
+    profile = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    manifest, resources = load_bundle(EVIDENCE / "bundle")
+    payload = _archived("payload_bound.mlir").decode()
+    bound = append_tilewise_vpu_adds(payload, profile, manifest, 0x3fc0)
+    program = lower_bound_source(bound, profile, manifest, resources)
+    assert program.plan["vector_tile_policy"] == "bf16_adds_scalar_each_output_tile_v1"
+    assert program.receipt()["golden_derivation"] == "bf16_scalar_adds_rne"
+    assert program.derived_vpu_scalar_bf16 == 0x3fc0
+    assert program.derived_expected_bf16 == bf16_add_scalar(
+        resources["golden_bf16"], 0x3fc0)
+    assert sum(step.phase == "vpu" for step in program.steps) == 4
+    emitted = write_standalone_sources(tmp_path / "emitted", program, resources)
+    assert emitted["golden_basis"] == "derived_bf16_adds"
+    for changed in (
+        bound.replace("mx.vector_scalar_bf16 = 16320 : i32",
+                      "mx.vector_scalar_bf16 = 16128 : i32"),
+        bound.replace("immediate_bf16 = 16320 : i32",
+                      "immediate_bf16 = 16128 : i32"),
+        bound.replace('kind = "adds"', 'kind = "muls"'),
+    ):
+        assert changed != bound
+        with pytest.raises(ValueError):
+            lower_bound_source(changed, profile, manifest, resources)
+
+
+def test_bf16_add_reference_rounding():
+    source = struct.pack("<6H", 0x3f80, 0xbf80, 0x3f81,
+                         0x0001, 0x7f7f, 0x8000)
+    assert struct.unpack("<6H", bf16_add_scalar(source, 0x3fc0)) == (
+        0x4020, 0x3f00, 0x4020, 0x3fc0, 0x7f7f, 0x3fc0)

@@ -41,18 +41,17 @@ def exact_bf16_x2(source: bytes) -> bytes:
     return bytes(output)
 
 
-def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
-    """Multiply BF16 values by a finite BF16 scalar with Nicolas VPU RNE.
-
-    Each BF16 product is exactly representable in binary64. Rounding that
-    product once to BF16 matches the independent vpu_ref.h MULS convention.
-    """
+def _bf16_scalar_arithmetic(source: bytes, scalar_bf16: int,
+                            operation: str) -> bytes:
+    """Apply Nicolas's double arithmetic followed by BF16 RNE."""
     if len(source) % 2:
-        raise ValueError("BF16 MULS reference requires complete 16-bit values")
+        raise ValueError("BF16 scalar reference requires complete 16-bit values")
     if (not isinstance(scalar_bf16, int) or isinstance(scalar_bf16, bool) or
             not 0 <= scalar_bf16 <= 0xffff or
             (scalar_bf16 & 0x7f80) == 0x7f80):
-        raise ValueError("BF16 MULS scalar must be finite BF16 bits")
+        raise ValueError("BF16 scalar must be finite BF16 bits")
+    if operation not in {"add", "mul"}:
+        raise ValueError("BF16 scalar reference operation is unsupported")
 
     def as_float(word: int) -> float:
         return struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
@@ -62,9 +61,9 @@ def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
     for (word,) in struct.iter_unpack("<H", source):
         value = as_float(word)
         if not math.isfinite(value):
-            raise ValueError("BF16 MULS reference needs finite source values")
-        product = value * scalar
-        bits = struct.unpack("<Q", struct.pack("<d", product))[0]
+            raise ValueError("BF16 scalar reference needs finite source values")
+        result = value + scalar if operation == "add" else value * scalar
+        bits = struct.unpack("<Q", struct.pack("<d", result))[0]
         sign = (bits >> 48) & 0x8000
         exponent = (bits >> 52) & 0x7ff
         if exponent == 0:
@@ -85,6 +84,16 @@ def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
             rounded = sign | min(magnitude, 0x7f80)
         output.extend(rounded.to_bytes(2, "little"))
     return bytes(output)
+
+
+def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
+    """Match Nicolas vpu_ref.h MULS, including final BF16 RNE."""
+    return _bf16_scalar_arithmetic(source, scalar_bf16, "mul")
+
+
+def bf16_add_scalar(source: bytes, scalar_bf16: int) -> bytes:
+    """Match Nicolas vpu_ref.h ADDS, including final BF16 RNE."""
+    return _bf16_scalar_arithmetic(source, scalar_bf16, "add")
 
 
 def _e4m3_rne(value: float) -> int:
