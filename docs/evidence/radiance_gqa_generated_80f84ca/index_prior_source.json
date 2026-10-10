@@ -1,0 +1,65 @@
+{
+  "bound_mlir_sha256": "d4252be4372cbf0a52c60930bcad8ace8b8955b474f456e3f01fe388c03b2298",
+  "bundle_manifest_sha256": "d745f3635f966fb8f0f16cf56e8bfcfa3def70ebde71220425fa0f3acbfafef2",
+  "compared_bf16_outputs": 4096,
+  "compiler_revision": "abad502df87933af9b23ff70e583ecca8b0922c2",
+  "elf_sha256": "2e80f476fd3d2e69cf90c92e0e4ec305e24daf2e3684b83d848af2157b5db68f",
+  "files_sha256": {
+    "activation.bin": "d817aaeddeabce2b0be280695ab528413eb01d4f0d93bcbd43d14105fb056fb6",
+    "activation_scales.bin": "8039e7ba7a444c008b6b1d11912f20a3e97636b5fde68d07ea67439b9719458e",
+    "golden_bf16.bin": "b6fb2085456ce8cce2354163c84c204bf57e594acf528414e3098118629a5f38",
+    "mx_data.S": "a65d346000f9364644ed522095eae2ac7301c502801995d199bfe2fcbb35e5fb",
+    "mx_driver.c": "46ebe94a2cdf95eb30a3de77d4c5937b5e148e47677227df31af7a0e53431331",
+    "mx_issue.c": "dc7d79a41255f90c8ada0839d2d4e8192f6f203d33e724fa68114fb83b1956fa",
+    "output_scales.bin": "ae16eb1567bb016bb1c5e879f0d88088c88110d591521931e3f91e0964b12e43",
+    "physical_program.json": "129c04fbd0cc561480fecb6188162c4678784240d8eadaf8ee318332e9efef0e",
+    "weight.bin": "5b1bafbecfca2ffc01b021eb623f5b952b27d87c004273c3068ed4dd235886d2",
+    "weight_scales.bin": "2b157dfeede5ea750e5ab1c6f1f13fd009eb8f5d8642c68ad2a0a42df53cf382"
+  },
+  "frontend_mlir_sha256": "2f01fab1d162647aeddfab5410a654e2b78c021b2c6fff33d8edfdb7fc65cc1b",
+  "full_attention_fp32_relative_error": 0.08332,
+  "generated_source_products_over_448": 0,
+  "generator_patch_sha256": "fdf118e56101b0147ffd4c43ed31dd90094692f5c8d87ac96476e8ae18d53910",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "mx_0.o": "1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab",
+    "mx_1.o": "61ae57616feee9226986d90d39f7c7556b0e016258589fa065656a7619b6d351",
+    "mx_2.o": "02c536049fc7ee872f5f60f8dc1559929a8a414c4a1970f9f760b1181cacc777",
+    "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "patched_generator_sha256": "338be03f27619a612d5de0ec9b6d3ae63114b07ce41df3d056b4d39e747f74f3",
+  "patched_model_sha256": "50fb59cecb0c808ae04899f62855bd3dac5fea5947e6f772574a0d924f70e073",
+  "physical_program_sha256": "129c04fbd0cc561480fecb6188162c4678784240d8eadaf8ee318332e9efef0e",
+  "policy": {
+    "e8m0_shift": 6,
+    "generated_from_patch_sha256": "fdf118e56101b0147ffd4c43ed31dd90094692f5c8d87ac96476e8ae18d53910",
+    "oracle": "dim16_reduced_precision_product_and_accumulator",
+    "schema": "mx_gemmini.attention_qk_shift.v1",
+    "source_arrays_sha256": {
+      "activation": "d817aaeddeabce2b0be280695ab528413eb01d4f0d93bcbd43d14105fb056fb6",
+      "activation_scales": "8039e7ba7a444c008b6b1d11912f20a3e97636b5fde68d07ea67439b9719458e",
+      "weight": "5b1bafbecfca2ffc01b021eb623f5b952b27d87c004273c3068ed4dd235886d2",
+      "weight_scales": "2b157dfeede5ea750e5ab1c6f1f13fd009eb8f5d8642c68ad2a0a42df53cf382"
+    },
+    "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+    "stage": "gqa_qk_head0_block0"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_gqa_qk_candidate.v1",
+  "scope": "first QK tile only; patched experimental GQA source generator and golden; no full mixed-engine attention parity",
+  "source_arrays_sha256": {
+    "activation": "d817aaeddeabce2b0be280695ab528413eb01d4f0d93bcbd43d14105fb056fb6",
+    "activation_scales": "8039e7ba7a444c008b6b1d11912f20a3e97636b5fde68d07ea67439b9719458e",
+    "weight": "5b1bafbecfca2ffc01b021eb623f5b952b27d87c004273c3068ed4dd235886d2",
+    "weight_scales": "2b157dfeede5ea750e5ab1c6f1f13fd009eb8f5d8642c68ad2a0a42df53cf382"
+  },
+  "source_driver_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+  "source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a",
+  "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356",
+  "spike_manifest_semantic_sha256": "2ac27748e6e4d2efc79b1fa9e442e86bf81cbb954612147e42891898200ce837",
+  "status": "generated_source_qk_candidate_matched_on_pinned_spike",
+  "submodule_revision": "6fc8ec79bc828b33628ec951bfa1d0f65278a338"
+}

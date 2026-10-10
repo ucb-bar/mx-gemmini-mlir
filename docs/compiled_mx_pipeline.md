@@ -1337,6 +1337,49 @@ Muon handoff, and final attention output remain unqualified. The next source
 step is to revise and verify the Radiance generator's numerical domain before
 claiming exact source parity.
 
+#### Regenerated GQA fixture against Nicolas's Spike model
+
+The [experimental source patch](patches/radiance_gqa_hardware_model.patch)
+adds an explicit `--mx-hardware-shift 6` option to the Radiance GQA data
+generator. It rounds the shifted operands to E4M3, increases the E8M0 scales,
+and computes the full GQA golden with Nicolas's E4M3 product and accumulator
+schedule. The ordinary generator invocation retains its old behavior. The
+qualification tool applies this patch to a **copy** of the source files and
+checks the resulting generator, model, header, and patch digests.
+
+Using the current `spatter-workloads` source at `80f84ca` and its pinned
+`lib/mxgemmini` submodule, the regenerated GQA header has no raw Q×K products
+above E4M3's finite range in its first tile. All **32,768** generated `O_gold`
+BF16 codes are finite and agree between the header and `.npy` export; the full
+golden has **8.33%** relative error against the FP32 reference.
+The first source-generated QK tile is captured from PyTorch `matmul` by
+model2MLIR, bound to those emitted bytes, compiled to physical MX commands and
+a standalone Rocket/RoCC ELF, and checked on Nicolas's pinned Spike extension:
+**4,096 / 4,096 BF16 outputs match**. A clean `ee22e0b` checkout and the
+current `80f84ca` source produced the same generated header, physical program,
+and ELF hashes; their [indexes](evidence/radiance_gqa_generated_80f84ca/index_prior_source.json)
+differ only in the source revision. The [qualification index](evidence/radiance_gqa_generated_80f84ca/index.json)
+records the exact tool, source, payload, object, and Spike digests.
+It was generated from compiler commit `abad502`; check out that commit when
+comparing the complete index byte for byte, since the index records `HEAD`.
+
+Reproduce from a clean `80f84ca` Radiance checkout with its `lib/mxgemmini`
+submodule initialized:
+
+```sh
+python -m tools.qualify_radiance_gqa_qk \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --scale-shift 6 \
+  --generated-hardware-model --out-dir /new/mx-gqa-generated
+```
+
+This is an experimental source correction and a **first QK tile** result.
+The patched generator has not been merged into `radiance-kernels`; the full
+mixed MX/Muon attention kernel, its VPU softmax and requantization, PV tiles,
+causal masking, and final `O_gold` comparison still need execution evidence.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)
