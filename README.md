@@ -518,6 +518,11 @@ The [connected FP8 MX/VPU width archive](docs/evidence/nicolas_wide_vpu_pair_266
 records two fresh-checkout, full-output Spike runs at 96 and 128 MM2 columns.
 The extra columns are explicitly source-derived, and their output references
 come from Nicolas's pinned mesh model.
+The [128-cubed connected MX/VPU archive](docs/evidence/nicolas_square_128_vpu_pair_266c593_cc4859c/README.md)
+records two more clean-checkout Spike runs. Its first matrix transfers, scale
+loads, loop bounds, BF16 readout, resident handoff, and output ABI are derived
+from the typed shape and target profile. The VPU chain is derived from
+Nicolas's 128-cubed source operands and original MM1 BF16 golden.
 The [GitHub Actions contract gate](.github/workflows/contract-evidence.yml)
 checks issuer fields, illegal profile modes, and the archived 31-driver and
 108-mode receipts from a fresh Python install. A second job checks all 81

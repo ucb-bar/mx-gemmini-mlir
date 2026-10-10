@@ -1,0 +1,50 @@
+{
+  "bound_mlir_sha256": "dde5eb4450dbcfa3d96a81bbb5bf1eff67dbbd029f88234574cf518e09e7a44c",
+  "capture_receipt_sha256": "2faa8f149b665a2b2cd8fd315cc5a1c9db005d2508763cfe6fd7020ede9d9523",
+  "compared_c1_bf16_values": 16384,
+  "compared_c1_e8m0_scales": 512,
+  "compared_c1_fp8_codes": 16384,
+  "compared_c2_e8m0_scales": 512,
+  "compared_c2_fp8_codes": 16384,
+  "compiler_revision": "cc4859c98f47fdad07de3dab01f8b900ac437287",
+  "elf_sha256": "057b67aac710c4cee562716035cc42082b5bf9fea30e9ba10425f3301dc20c3e",
+  "first_shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_manifest_sha256": "03bb242754c68ef3caf8d8dfe1d69071e33ee67dd3825bf64d9c1cf65730316b",
+  "object_sha256": "453f928281f83521c948e41695384ac2d256fcab2b58c9d707f26f4b761fdc3e",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources_sha256": {
+    "a1_activation": "80c93cf54660ecdb5ac112b1d67ebfb01809228264fe00150931bdf6a01dc18f",
+    "a1_scales": "89061e9a4fad843e760fbc210186253597181563f997006d7ae9a6fe7ef16ac7",
+    "b1_scales": "c8714c766bedf65e9028ccd1ef1500e38f8e2dd5bcb36a8bf2af019eb38c411c",
+    "b1_weight": "7e3dfe8126225175cdf7084db7754f1f326a09fd5119de4ee7fd6e17648e2651",
+    "b2_scales": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb",
+    "b2_weight": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24",
+    "c1_bf16": "4cc7d53b21f1a5f2ae935124c313e7843673d0d34a63359ff2be50753e50c32e",
+    "c1_codes_ref": "20e9c311575c79bf0adf44ab85c2719cdfe11fa2eccda4757ab7b9e5b6ea9333",
+    "c1_scales_ref": "58f62e934873c5e4802765fff4bd4b4fbbbc0eeee1bfeac9eba42be3abab064e",
+    "c2_bf16_ref": "1bdb528e8365e15dc0bf497bbb1e8d84c46cd3ce519ae91a2c5b7aebca84ef20",
+    "c2_codes_ref": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c",
+    "c2_scales_ref": "ccf3df7e5f3fa4c1ed5a7e5d5d10ec00bea5dc1656c9ca29c7de5d21b6871204"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.derived_square_128_vpu_pair_spike.v1",
+  "second_shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "second_width": 128,
+  "source_scope": "unchanged Nicolas 128-cubed MM1 operands and BF16 golden; derived BF16 VPU x2 and pinned-model MM2 outputs",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "eadcc30a29a31a1c9ef495e2de97f1bb2ed3b242d437f363316102c8d0152620",
+  "status": "source_derived_square_128_vpu_pair_matched_on_pinned_spike"
+}

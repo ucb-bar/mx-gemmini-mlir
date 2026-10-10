@@ -1,0 +1,24 @@
+{
+  "first_width": 128,
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resource_sha256": {
+    "a1_activation": "80c93cf54660ecdb5ac112b1d67ebfb01809228264fe00150931bdf6a01dc18f",
+    "a1_scales": "89061e9a4fad843e760fbc210186253597181563f997006d7ae9a6fe7ef16ac7",
+    "b1_scales": "c8714c766bedf65e9028ccd1ef1500e38f8e2dd5bcb36a8bf2af019eb38c411c",
+    "b1_weight": "7e3dfe8126225175cdf7084db7754f1f326a09fd5119de4ee7fd6e17648e2651",
+    "b2_scales": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb",
+    "b2_weight": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24",
+    "c1_bf16": "4cc7d53b21f1a5f2ae935124c313e7843673d0d34a63359ff2be50753e50c32e",
+    "c1_codes_ref": "20e9c311575c79bf0adf44ab85c2719cdfe11fa2eccda4757ab7b9e5b6ea9333",
+    "c1_scales_ref": "58f62e934873c5e4802765fff4bd4b4fbbbc0eeee1bfeac9eba42be3abab064e",
+    "c2_bf16_ref": "1bdb528e8365e15dc0bf497bbb1e8d84c46cd3ce519ae91a2c5b7aebca84ef20",
+    "c2_codes_ref": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c",
+    "c2_scales_ref": "ccf3df7e5f3fa4c1ed5a7e5d5d10ec00bea5dc1656c9ca29c7de5d21b6871204"
+  },
+  "second_width": 128,
+  "source_scope": "unchanged Nicolas 128-cubed MM1 operands and BF16 golden; derived BF16 VPU x2 and pinned-model MM2 outputs",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944"
+}

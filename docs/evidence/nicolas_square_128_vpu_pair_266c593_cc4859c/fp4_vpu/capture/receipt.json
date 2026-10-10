@@ -1,0 +1,58 @@
+{
+  "schema": "mx_gemmini.nicolas_square_128_vpu_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "cc4859c98f47fdad07de3dab01f8b900ac437287",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "source_mlir_sha256": "e9aefc816aa1323c756dd977246fd078fd6ca94272c3a279d90b53e48cfd6a8b",
+  "handoff_mlir_sha256": "11e95c471cd97a8c1b3afda6ed15ef07bc7e148abff8a818ecbb30b297fbbd25",
+  "bound_mlir_sha256": "aceb05bb7d1e51e1d616b6b347cb0562bba31e34da321b398063228889d75587",
+  "manifest_sha256": "a37bd273eb832a127ee9bd5eac4a898bdde67d8695846b7bdb978b704bcdb2bc",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "the 128-cubed operands and original MM1 BF16 are Nicolas source bytes; VPU x2 and changed MM2 outputs need pinned-model references",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "matrix_dim": 128,
+  "first_shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "second_shape_mnk": [
+    128,
+    128,
+    128
+  ]
+}

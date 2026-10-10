@@ -3478,7 +3478,7 @@ records the source, model, profile, object, ELF, and Spike hashes.
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
-   qualified 64³ and 64×32×64 MX+VPU cases and the plain MX 16-row prefix ladder of
+   qualified 64³, source-derived 128³ MX+VPU, and plain MX 16-row prefix ladder of
    Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
    MX cases.
    Two rectangular 64×96×64 → 64×{32,64}×96 pairs are now qualified on

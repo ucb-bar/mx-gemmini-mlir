@@ -1,0 +1,264 @@
+{
+  "cases": {
+    "e4m3_vpu": {
+      "files": {
+        "abi.json": {
+          "bytes": 441,
+          "sha256": "4795b4786b39f1c8aa1c75627200d128ea4817f76d1fc8639a9e9f2c2ac526d3"
+        },
+        "build/mx_data.S.gz": {
+          "bytes": 876,
+          "sha256": "a23d4b8d82c84ec259785b7d6dda5aae13e1d29e7e4ec5f4cec03534273ed943"
+        },
+        "build/mx_driver.c.gz": {
+          "bytes": 2286,
+          "sha256": "f2fc687dcfb3f9829497b93e2a18748106eac96bbf8530f0f0132068e3ee5f42"
+        },
+        "build/mx_program.elf.gz": {
+          "bytes": 179016,
+          "sha256": "057b67aac710c4cee562716035cc42082b5bf9fea30e9ba10425f3301dc20c3e"
+        },
+        "build/spike.log": {
+          "bytes": 120,
+          "sha256": "eadcc30a29a31a1c9ef495e2de97f1bb2ed3b242d437f363316102c8d0152620"
+        },
+        "capture/nicolas_chain.handoff.mlir.gz": {
+          "bytes": 2410,
+          "sha256": "11e95c471cd97a8c1b3afda6ed15ef07bc7e148abff8a818ecbb30b297fbbd25"
+        },
+        "capture/nicolas_chain.model2mlir.mlir.gz": {
+          "bytes": 246581,
+          "sha256": "e9aefc816aa1323c756dd977246fd078fd6ca94272c3a279d90b53e48cfd6a8b"
+        },
+        "capture/nicolas_chain.profile_bound.mlir.gz": {
+          "bytes": 3096,
+          "sha256": "6d5b4d45ec119e4f22e61cfb21c771fd0aa4f0f5a94d32204fa02ffae4836358"
+        },
+        "capture/quantization_manifest.json.gz": {
+          "bytes": 1016,
+          "sha256": "a37bd273eb832a127ee9bd5eac4a898bdde67d8695846b7bdb978b704bcdb2bc"
+        },
+        "capture/receipt.json": {
+          "bytes": 2137,
+          "sha256": "32173583177d04adcabaca7929f009eb93b709ae8a848dfe6d6e0d0ce6be1d75"
+        },
+        "connected.mlir.gz": {
+          "bytes": 4435,
+          "sha256": "27e32a8dbcc2b71cff644e3656b72a54b8a66a7039007f6ae04595c71e5ba9f2"
+        },
+        "index.json": {
+          "bytes": 2814,
+          "sha256": "7225a78d244a1ed33cc28c150fabf37feb910ed81f22033713e8cd485b883c16"
+        },
+        "object/compile_manifest.json": {
+          "bytes": 1111,
+          "sha256": "5c6ed1caa17739dac1180fb2c591146a673019499d51bc39284d121f860226e3"
+        },
+        "object/mx_issue.c.gz": {
+          "bytes": 77240,
+          "sha256": "2a89dbdb569ec226ec07240d54a285c9668f8e2eefd9f89d6f4a47237420e058"
+        },
+        "object/mx_issue.h": {
+          "bytes": 392,
+          "sha256": "ac84ce03b8a1aad3ae14b65a18f50e62cd6de42065b9acd70c8896b33ce4395f"
+        },
+        "object/mx_issue.o.gz": {
+          "bytes": 11600,
+          "sha256": "453f928281f83521c948e41695384ac2d256fcab2b58c9d707f26f4b761fdc3e"
+        },
+        "object/object_manifest.json": {
+          "bytes": 5131,
+          "sha256": "8c2276ca61b46c0c9c88d50a695c34192e41811a8c1ee5fdf6969704b2b820fc"
+        },
+        "object/physical_program.json.gz": {
+          "bytes": 206904,
+          "sha256": "2264baa12dec3e8afa11ea8e0ce1efbbb4b898f5afce90643494d98c9ea357e7"
+        },
+        "resources/a1_activation.bin.gz": {
+          "bytes": 16384,
+          "sha256": "80c93cf54660ecdb5ac112b1d67ebfb01809228264fe00150931bdf6a01dc18f"
+        },
+        "resources/a1_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "89061e9a4fad843e760fbc210186253597181563f997006d7ae9a6fe7ef16ac7"
+        },
+        "resources/b1_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "c8714c766bedf65e9028ccd1ef1500e38f8e2dd5bcb36a8bf2af019eb38c411c"
+        },
+        "resources/b1_weight.bin.gz": {
+          "bytes": 16384,
+          "sha256": "7e3dfe8126225175cdf7084db7754f1f326a09fd5119de4ee7fd6e17648e2651"
+        },
+        "resources/b2_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb"
+        },
+        "resources/b2_weight.bin.gz": {
+          "bytes": 16384,
+          "sha256": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24"
+        },
+        "resources/c1_bf16.bin.gz": {
+          "bytes": 32768,
+          "sha256": "4cc7d53b21f1a5f2ae935124c313e7843673d0d34a63359ff2be50753e50c32e"
+        },
+        "resources/c1_codes_ref.bin.gz": {
+          "bytes": 16384,
+          "sha256": "20e9c311575c79bf0adf44ab85c2719cdfe11fa2eccda4757ab7b9e5b6ea9333"
+        },
+        "resources/c1_scales_ref.bin.gz": {
+          "bytes": 512,
+          "sha256": "58f62e934873c5e4802765fff4bd4b4fbbbc0eeee1bfeac9eba42be3abab064e"
+        },
+        "resources/c2_bf16_ref.bin.gz": {
+          "bytes": 32768,
+          "sha256": "1bdb528e8365e15dc0bf497bbb1e8d84c46cd3ce519ae91a2c5b7aebca84ef20"
+        },
+        "resources/c2_codes_ref.bin.gz": {
+          "bytes": 16384,
+          "sha256": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c"
+        },
+        "resources/c2_scales_ref.bin.gz": {
+          "bytes": 512,
+          "sha256": "ccf3df7e5f3fa4c1ed5a7e5d5d10ec00bea5dc1656c9ca29c7de5d21b6871204"
+        },
+        "resources/facts.json": {
+          "bytes": 1676,
+          "sha256": "3f5d339c9442f54a5052177a3d5a0850f7d979226f6b5bbd82b4a6248171f792"
+        }
+      },
+      "profile": "MxE4M3VpuGemminiRocketConfig"
+    },
+    "fp4_vpu": {
+      "files": {
+        "abi.json": {
+          "bytes": 441,
+          "sha256": "4795b4786b39f1c8aa1c75627200d128ea4817f76d1fc8639a9e9f2c2ac526d3"
+        },
+        "build/mx_data.S.gz": {
+          "bytes": 876,
+          "sha256": "a23d4b8d82c84ec259785b7d6dda5aae13e1d29e7e4ec5f4cec03534273ed943"
+        },
+        "build/mx_driver.c.gz": {
+          "bytes": 2286,
+          "sha256": "f2fc687dcfb3f9829497b93e2a18748106eac96bbf8530f0f0132068e3ee5f42"
+        },
+        "build/mx_program.elf.gz": {
+          "bytes": 179016,
+          "sha256": "057b67aac710c4cee562716035cc42082b5bf9fea30e9ba10425f3301dc20c3e"
+        },
+        "build/spike.log": {
+          "bytes": 120,
+          "sha256": "eadcc30a29a31a1c9ef495e2de97f1bb2ed3b242d437f363316102c8d0152620"
+        },
+        "capture/nicolas_chain.handoff.mlir.gz": {
+          "bytes": 2410,
+          "sha256": "11e95c471cd97a8c1b3afda6ed15ef07bc7e148abff8a818ecbb30b297fbbd25"
+        },
+        "capture/nicolas_chain.model2mlir.mlir.gz": {
+          "bytes": 246581,
+          "sha256": "e9aefc816aa1323c756dd977246fd078fd6ca94272c3a279d90b53e48cfd6a8b"
+        },
+        "capture/nicolas_chain.profile_bound.mlir.gz": {
+          "bytes": 3096,
+          "sha256": "aceb05bb7d1e51e1d616b6b347cb0562bba31e34da321b398063228889d75587"
+        },
+        "capture/quantization_manifest.json.gz": {
+          "bytes": 1016,
+          "sha256": "a37bd273eb832a127ee9bd5eac4a898bdde67d8695846b7bdb978b704bcdb2bc"
+        },
+        "capture/receipt.json": {
+          "bytes": 2137,
+          "sha256": "2faa8f149b665a2b2cd8fd315cc5a1c9db005d2508763cfe6fd7020ede9d9523"
+        },
+        "connected.mlir.gz": {
+          "bytes": 4435,
+          "sha256": "dde5eb4450dbcfa3d96a81bbb5bf1eff67dbbd029f88234574cf518e09e7a44c"
+        },
+        "index.json": {
+          "bytes": 2814,
+          "sha256": "1a9ce810537e0290808024d9d5cf1727d711b01079c04db319f47d76fc393c73"
+        },
+        "object/compile_manifest.json": {
+          "bytes": 1111,
+          "sha256": "45d5bbef2fb706ecc930ca8bddb42eb89888d531beda5d48dca95e99bfad74a0"
+        },
+        "object/mx_issue.c.gz": {
+          "bytes": 77240,
+          "sha256": "2a89dbdb569ec226ec07240d54a285c9668f8e2eefd9f89d6f4a47237420e058"
+        },
+        "object/mx_issue.h": {
+          "bytes": 392,
+          "sha256": "ac84ce03b8a1aad3ae14b65a18f50e62cd6de42065b9acd70c8896b33ce4395f"
+        },
+        "object/mx_issue.o.gz": {
+          "bytes": 11600,
+          "sha256": "453f928281f83521c948e41695384ac2d256fcab2b58c9d707f26f4b761fdc3e"
+        },
+        "object/object_manifest.json": {
+          "bytes": 5131,
+          "sha256": "03bb242754c68ef3caf8d8dfe1d69071e33ee67dd3825bf64d9c1cf65730316b"
+        },
+        "object/physical_program.json.gz": {
+          "bytes": 206904,
+          "sha256": "bdbe5fca6b08df73d8581c17db73e24eb0dced90317d1c48e0ddbec5ac35687f"
+        },
+        "resources/a1_activation.bin.gz": {
+          "bytes": 16384,
+          "sha256": "80c93cf54660ecdb5ac112b1d67ebfb01809228264fe00150931bdf6a01dc18f"
+        },
+        "resources/a1_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "89061e9a4fad843e760fbc210186253597181563f997006d7ae9a6fe7ef16ac7"
+        },
+        "resources/b1_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "c8714c766bedf65e9028ccd1ef1500e38f8e2dd5bcb36a8bf2af019eb38c411c"
+        },
+        "resources/b1_weight.bin.gz": {
+          "bytes": 16384,
+          "sha256": "7e3dfe8126225175cdf7084db7754f1f326a09fd5119de4ee7fd6e17648e2651"
+        },
+        "resources/b2_scales.bin.gz": {
+          "bytes": 512,
+          "sha256": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb"
+        },
+        "resources/b2_weight.bin.gz": {
+          "bytes": 16384,
+          "sha256": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24"
+        },
+        "resources/c1_bf16.bin.gz": {
+          "bytes": 32768,
+          "sha256": "4cc7d53b21f1a5f2ae935124c313e7843673d0d34a63359ff2be50753e50c32e"
+        },
+        "resources/c1_codes_ref.bin.gz": {
+          "bytes": 16384,
+          "sha256": "20e9c311575c79bf0adf44ab85c2719cdfe11fa2eccda4757ab7b9e5b6ea9333"
+        },
+        "resources/c1_scales_ref.bin.gz": {
+          "bytes": 512,
+          "sha256": "58f62e934873c5e4802765fff4bd4b4fbbbc0eeee1bfeac9eba42be3abab064e"
+        },
+        "resources/c2_bf16_ref.bin.gz": {
+          "bytes": 32768,
+          "sha256": "1bdb528e8365e15dc0bf497bbb1e8d84c46cd3ce519ae91a2c5b7aebca84ef20"
+        },
+        "resources/c2_codes_ref.bin.gz": {
+          "bytes": 16384,
+          "sha256": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c"
+        },
+        "resources/c2_scales_ref.bin.gz": {
+          "bytes": 512,
+          "sha256": "ccf3df7e5f3fa4c1ed5a7e5d5d10ec00bea5dc1656c9ca29c7de5d21b6871204"
+        },
+        "resources/facts.json": {
+          "bytes": 1676,
+          "sha256": "62051b1963a4d6ab73f0a8c3deb109ceb85fa0f701218d0fb29e667fb8c454f9"
+        }
+      },
+      "profile": "MxE4M3Fp4VpuGemminiRocketConfig"
+    }
+  },
+  "compiler_revision": "cc4859c98f47fdad07de3dab01f8b900ac437287",
+  "schema": "mx_gemmini.derived_square_128_vpu_pair_archive.v1"
+}
