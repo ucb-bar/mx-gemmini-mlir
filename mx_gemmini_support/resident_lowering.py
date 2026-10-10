@@ -23,10 +23,12 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     shape = (attrs["m"], attrs["n"], attrs["k"])
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
-    if shape != (64, 64, 64) and not plain_shape:
+    vpu_shape = (shape[0] == 64 and shape[1] in (32, 64) and shape[2] == 64)
+    if not vpu_shape and not plain_shape:
         raise ValueError("resident MX contraction needs a supported complete tile")
-    if shape == (64, 64, 64) and not profile["resources"].get("spad_requant"):
-        raise ValueError("64³ resident MX contraction needs the qualified SPAD_REQUANT profile")
+    if vpu_shape and (not profile["resources"].get("spad_requant") or
+                      not profile["resources"].get("vpu")):
+        raise ValueError("64-row resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
     if plain_shape and (
             profile["name"] != "MxGemminiRocketConfig" or
             profile["resources"].get("spad_requant") or

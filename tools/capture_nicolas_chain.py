@@ -45,9 +45,11 @@ def main() -> None:
     first_k = args.first_k or args.matrix_dim
     second_width = args.second_width or args.matrix_dim
     rectangular = (first_k, args.matrix_dim) == (64, 96) and second_width in (32, 64)
+    narrow_vpu = (first_k, args.matrix_dim, second_width, output_rows) == (
+        64, 64, 32, 64)
     if ((first_k, second_width) != (args.matrix_dim, args.matrix_dim) and
-            (not rectangular or output_rows != 64)):
-        parser.error("only Nicolas's 64x96x64 → 64x{32,64}x96 rectangular pairs are selected")
+            not narrow_vpu and (not rectangular or output_rows != 64)):
+        parser.error("selected connected MX shape has no checked source specialization")
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
     if args.out_dir.exists():
@@ -139,6 +141,8 @@ def main() -> None:
     receipt = {
         "schema": ("mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
                    if rectangular else
+                   "mx_gemmini.nicolas_narrow_vpu_chain_model2mlir_capture.v1"
+                   if narrow_vpu else
                    "mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
                    else f"mx_gemmini.nicolas_chain_{args.matrix_dim}_model2mlir_capture.v1"),
         "status": "two_site_frontend_handoff_only",
@@ -172,6 +176,12 @@ def main() -> None:
         receipt["numerical_scope"] = (
             "MM1 codes/scales have an unchanged Nicolas 64x96x64 source golden; "
             "MM2 uses a checked 128³ B2 wire slice and a pinned mesh-model reference")
+    if narrow_vpu:
+        receipt["first_shape_mnk"] = [64, 64, 64]
+        receipt["second_shape_mnk"] = [64, 32, 64]
+        receipt["numerical_scope"] = (
+            "MM1 and VPU use Nicolas's checked 64³ source; MM2 uses its first "
+            "32 weight columns and the corresponding first output block")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 

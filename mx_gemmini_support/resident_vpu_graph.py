@@ -27,6 +27,7 @@ _BUFFER = re.compile(r"[A-Za-z_][A-Za-z_0-9]*\Z")
 class ConnectedVpuPair:
     first_site: str
     second_site: str
+    second_width: int
     commands: tuple[Command | Fence, ...]
 
 
@@ -56,10 +57,10 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
         lengths = {slot: len(resources[buffers[slot]]) for slot in INPUTS}
     except (KeyError, TypeError) as error:
         raise ValueError("connected MX VPU pair runtime input is absent") from error
-    if lengths != {"a1_activation": 4096, "a1_scales": 128,
-                   "b1_weight": 4096, "b1_scales": 128,
-                   "b2_weight": 4096, "b2_scales": 128}:
-        raise ValueError("connected MX VPU pair input sizes differ from 64³")
+    if any(lengths.get(name) != size for name, size in {
+            "a1_activation": 4096, "a1_scales": 128,
+            "b1_weight": 4096, "b1_scales": 128}.items()):
+        raise ValueError("connected MX VPU pair MM1 input sizes differ from 64³")
     report = verify_ir(mlir_text, profile)
     if (report["contracts"], report["vpu_commands"], report["spad_requants"],
             report["resident_contracts"]) != (1, 1, 1, 1):
@@ -82,16 +83,23 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
             "mx_gemmini.resident_contract", "func.return"]:
         raise ValueError("connected MX VPU pair operation order differs")
     mm1, readout, vpu, requant, mm2, ret = ops
+    n = _int_attr(mm2, "n")
+    if n not in (32, 64):
+        raise ValueError("connected MX VPU pair needs a qualified MM2 width")
+    if (lengths["b2_weight"], lengths["b2_scales"]) != (64 * n, 2 * n):
+        raise ValueError("connected MX VPU pair MM2 input sizes differ")
     args = list(function.body.block.args)
     first_args = ("tensor<64x64xi8>", "tensor<2x64xi8>",
                   "tensor<64x64xi8>", "tensor<2x64xi8>")
     quantized = ("tensor<64x64xi8>", "tensor<64x2xi8>")
-    if (tuple(str(arg.type) for arg in args) != first_args + first_args[2:] or
+    final = (f"tensor<64x{n}xi8>", f"tensor<64x{n // 32}xi8>")
+    if (tuple(str(arg.type) for arg in args) != first_args +
+            (f"tensor<64x{n}xi8>", f"tensor<2x{n}xi8>") or
             tuple(str(result.type) for result in mm1.results) != ("tensor<64x64xbf16>",) or
             tuple(str(result.type) for result in readout.results) != ("tensor<64x64xbf16>",) or
             tuple(str(result.type) for result in vpu.results) != ("tensor<64x64xbf16>",) or
             tuple(str(result.type) for result in requant.results) != quantized or
-            tuple(str(result.type) for result in mm2.results) != quantized or
+            tuple(str(result.type) for result in mm2.results) != final or
             list(mm1.operands) != args[:4] or
             list(readout.operands) != list(mm1.results) or
             list(vpu.operands) != list(readout.results) or
@@ -116,9 +124,9 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
                   ("activation_format", "weight_format", "output_format",
                    "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
     rows = profile["resources"]["scratchpad_bytes"] // 16
-    if (tuple(attrs[key] for key in ("m", "n", "k")) != (64, 64, 64) or
+    if (tuple(attrs[key] for key in ("m", "n", "k")) != (64, n, 64) or
             tuple(attrs[key] for key in ("activation_row", "weight_row", "output_row")) !=
-            (128, rows - 256, 512) or
+            (128, rows - 64 * n // 16, 512) or
             attrs["weight_buffer"] != buffers["b2_weight"] or
             attrs["weight_scales_buffer"] != buffers["b2_scales"] or
             attrs["output_scales_buffer"] != outputs["c2_scales"] or
@@ -154,6 +162,6 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
     first = emit_verified_first_matrix_commands(
         profile, resources, buffers=first_buffers)
     return ConnectedVpuPair(
-        first_site, second_site,
+        first_site, second_site, n,
         (*first, Fence(), vector, Fence(), quant, Fence(),
          *lower_resident_contract(profile, attrs)))
