@@ -1,0 +1,19 @@
+{
+  "artifact_manifest_sha256": [
+    "35c5355d1ba970107a59847828a80a9270dbd3fbecf10e67d725c8e3aed6ecad",
+    "f05d720c0304b4912a997619e6e3d7df528b9b80d95cf1d79b76eb0935e5ab67"
+  ],
+  "bound_mlir_sha256": "75ed9fd6c20fa572a9e4c646e94eb3125ebb84ad1915cf899707efc7892a7387",
+  "capture_scalar_bf16": 16320,
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "b5637a3425236134709955a624bcc2a86c13762b",
+  "compiler_source_closure_sha256": "83f71d88ce3e5c3e9a07b6b86b3e3a3afc667b8cb81bcb4acdb4ca9bd496ab82",
+  "elf_sha256": "098d162e7d667c7b604d87de8552fbdf7591dde9fd634377f162346bacf1a7f2",
+  "generated_issue_sha256": "df432832c13dcd625ce138403ded06406577501dd6905250fb5e5bafa05705a4",
+  "physical_program_sha256": "57405c80d172d34f3e4e6190702cd61ce400fab49a9e42cb481fe5ebd5358ff2",
+  "schema": "mx_gemmini.capture_derived_source_cli_spike.v1",
+  "scope": "Radiance FP8 matrix source and captured scalar epilogue; source driver does not contain VPU scalar operation",
+  "source_index_sha256": "9cbc531dc2054079d8fa41cd62f768070f17dea576c849c5932e2961386d59a1",
+  "spike_log_sha256": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+  "status": "two_capture_derived_cli_runs_matched_on_pinned_spike"
+}

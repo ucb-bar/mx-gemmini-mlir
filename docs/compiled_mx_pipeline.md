@@ -2038,6 +2038,31 @@ python -m tools.qualify_radiance_tilewise_vpu_x2 \
   --out-dir /tmp/radiance-tilewise-vpu-scalar-1p5
 ```
 
+The general source compiler can also take the capture sidecars directly:
+
+```sh
+python -m tools.qualify_source_mx \
+  --mlir /path/to/profile_bound.mlir \
+  --driver /path/to/mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/mx-captured-scalar \
+  --tilewise-vpu-from-capture \
+  --capture-trace /path/to/capture_trace.json \
+  --capture-quantization-manifest /path/to/quantization_manifest.json \
+  --capture-frontend-mlir /path/to/frontend.mlir
+```
+
+The [capture adapter](../mx_gemmini_support/capture_epilogue.py) derives the
+scalar from the original graph, checks that graph and the frontend MLIR against
+the digest-gated handoff, and rejects scalars that cannot be represented
+exactly as finite BF16 immediates. The [two CLI receipts](evidence/radiance_tilewise_vpu_scalar_266c593/cli_capture_index.json)
+from compiler `b5637a3` reproduce the previously archived bound MLIR, source
+bundle, physical program, generated issuer, ELF, Spike log, and all 65,536
+outputs. This is a supported narrow graph pattern; the general source CLI
+still requires an explicit source payload and selected target profile.
+
 ## Generated four-tile FP4 GEMM with tilewise VPU epilogue
 
 The [FP4 qualifier](../tools/qualify_radiance_fp4_derived_tilewise_vpu_x2.py)
