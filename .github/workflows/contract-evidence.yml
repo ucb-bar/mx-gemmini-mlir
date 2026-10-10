@@ -20,6 +20,7 @@ jobs:
         run: python -m pip install -e '.[ir]' 'pytest>=8,<9'
       - name: Check issuer, profile refusal, and archived numerical evidence
         run: |
+          python -m tools.report_mx_profile_qualification --check
           python -m pytest -q \
             tests/test_command_ir.py \
             tests/test_bind_profile.py \
@@ -33,6 +34,11 @@ jobs:
             tests/test_generated_nicolas_modes.py \
             tests/test_nicolas_e4m3_lut_pe_evidence.py \
             tests/test_spike_weight_lut_candidate_all_modes_evidence.py \
+            tests/test_mx_profile_qualification_catalog.py \
+            tests/test_selected_mx_profiles_evidence.py \
+            tests/test_radiance_fullout_mesh_roster_evidence.py \
+            tests/test_radiance_requant_mesh_roster_evidence.py \
+            tests/test_radiance_vpu_legal_roster_evidence.py \
             tests/test_source_softmax.py \
             tests/test_radiance_ws_read_once_evidence.py \
             tests/test_radiance_restream_evidence.py \
