@@ -55,12 +55,18 @@ rebuilds all 31 drivers on `spatter-workloads` with model2MLIR `e9ded36` and
 checks 466,944 BF16 values or quantized code bytes plus 3,328 scales on Spike.
 A published-checkout rerun reproduces every frontend, object, ELF, and Spike
 log hash; only path-bearing build logs differ.
+The [current source replay at `f193c8f`](docs/evidence/radiance_mx_gemm_f193c8f_80f84ca/README.md)
+again reproduces all 31 drivers from `80f84ca` and checks the same full-output
+and compiled-artifact hashes against the pinned baseline.
 A [fresh published compiler run](docs/evidence/radiance_mx_gemm_fresh_4fc4d3a_82be2c7/index.json)
 also reproduces all 31 drivers from upstream Radiance `82be2c7` on Nicolas's
 Spike, comparing 466,944 output elements across BF16 and requantized cases.
 The [source build-selection audit](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 finds that 18 of those named drivers are listed in Radiance's Makefile and 13
 are source recipes excluded from its build.
+Nicolas's separate [171-program MX test roster](docs/nicolas_mx_kernel_coverage.md)
+has broader source variants; its qualified mode classes do not yet establish
+compiler regeneration of every named program.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

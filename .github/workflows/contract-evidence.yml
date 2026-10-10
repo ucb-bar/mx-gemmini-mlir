@@ -72,6 +72,7 @@ jobs:
             tests/test_square_128_vpu_pair_evidence.py \
             tests/test_host_requant_object_evidence.py \
             tests/test_current_radiance_roster_evidence.py \
+            tests/test_current_radiance_f193c8f_replay.py \
             tests/test_bf16_row_major_readout.py \
             tests/test_bf16_row_major_spike_evidence.py \
             tests/test_fp4_row_major_runtime_object_evidence.py \
