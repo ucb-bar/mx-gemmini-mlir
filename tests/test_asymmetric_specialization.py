@@ -132,6 +132,7 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     ("fp6_fp4", 2048, 3, 3, "MxAsymFp6Fp4GemminiRocketConfig", 3),
     ("fp4_fp6", 2048, 1, 3, "MxAsymFp4Fp6GemminiRocketConfig", 3),
     ("e4m3_e2m3", 2048, 9, 3, "MxAsymE4M3E2M3GemminiRocketConfig", 4),
+    ("e5m2_fp4", 2048, 3, 3, "MxAsymE5M2Fp4GemminiRocketConfig", 4),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
         tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):
@@ -140,7 +141,8 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     header = tmp_path / f"matmul_data_asym_{variant}.h"
     source.write_text("\n".join((
         f'#include "include/{header.name}"',
-        f"#define USE_LUT {int(lut_loads != 0)}", "#define MX_ALTFMT 0",
+        f"#define USE_LUT {int(lut_loads != 0)}",
+        f"#define MX_ALTFMT {int(variant == 'e5m2_fp4')}",
         *(["((uint64_t)(1) << 31)", "((uint64_t)(1) << 12)"]
           if variant == "e4m3_e2m3" else []),
         "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
@@ -181,6 +183,7 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     config_ex = next(step.command.rs1.immediate for step in program.steps
                      if isinstance(step.command, Command) and step.command.funct == 0)
     assert bool(config_ex & (1 << 31)) == (variant == "e4m3_e2m3")
+    assert bool(config_ex & (1 << 6)) == (variant == "e5m2_fp4")
     assert len(resources["activation"]) == activation_bytes
     assert len(resources["golden_bf16"]) == 8192
     assert {"activation", "weight", "activation_scales", "weight_scales"} <= set(
