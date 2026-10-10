@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 
 import pytest
 
 from mx_gemmini_support.source_gemm import (plan_source_gemm, read_source_gemm,
                                             source_scratchpad_bytes)
 from mx_gemmini_support.target_profile import load_profile
+from mx_gemmini_support.source_payload import read_source_payload
 from tools.materialize_radiance_ws_data import materialize
 
 
@@ -97,3 +99,38 @@ def test_read_once_weight_stationary_sources_bind_real_data(tmp_path):
         original.read_text().replace("mxgemm<CFG>", "mxgemm<OTHER>", 1))
     with pytest.raises(ValueError, match="shared GEMM library"):
         read_source_gemm(changed / "kernel.cpp")
+
+
+def test_restream_source_reloads_weight_for_four_m_tiles(tmp_path):
+    root = Path(SOURCE)
+    driver = root / "kernels/gemm_mxgemmini_ws_restream/kernel.cpp"
+    kernel = read_source_gemm(driver)
+    assert kernel.shape == (256, 64, 2048)
+    assert kernel.tile == (64, 64, 64)
+    assert kernel.datatype == "FP8"
+    payload = read_source_payload(kernel)
+    assert len(payload["activation_scales"].data) == 64 * 256
+    profile = load_profile(Path(__file__).resolve().parents[1] /
+                           "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    plan = plan_source_gemm(
+        kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+        profile=profile)
+    assert len(plan["waves"]) == 32
+    assert [tile["m_start"] for tile in plan["output_tiles"]] == [0, 64, 128, 192]
+    changed = tmp_path / "gemm_mxgemmini_ws_restream"
+    changed.mkdir()
+    (changed / "data").symlink_to(driver.parent / "data")
+    (changed / "kernel.cpp").write_text(
+        driver.read_text().replace("for (uint32_t m=0; m<WS_MT; m++)",
+                                   "for (uint32_t m=1; m<WS_MT; m++)", 1))
+    with pytest.raises(ValueError, match="re-stream MX schedule"):
+        read_source_gemm(changed / "kernel.cpp")
+    (changed / "kernel.cpp").write_text(driver.read_text())
+    header = (driver.parent / "data").read_text()
+    start = header.index("static const uint8_t A_scales_tiled")
+    altered = re.sub(r"0x[0-9a-f]{2}", "0xff", header[start:], count=1)
+    (changed / "data").unlink()
+    (changed / "data").write_text(header[:start] + altered)
+    with pytest.raises(ValueError, match="activation-scale tiling"):
+        read_source_payload(read_source_gemm(changed / "kernel.cpp"))

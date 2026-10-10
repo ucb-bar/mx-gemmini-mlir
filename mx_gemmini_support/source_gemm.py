@@ -45,6 +45,8 @@ class SourceGemm:
 def read_source_gemm(driver: Path) -> SourceGemm:
     """Extract literal source facts; reject expressions this audit cannot prove."""
     source = driver.read_text()
+    if driver.name == "kernel.cpp" and driver.parent.name == "gemm_mxgemmini_ws_restream":
+        return _read_restream_gemm(driver, source)
     if driver.name == "kernel.cpp" and driver.parent.name in {
             "gemm_mxgemmini_ws", "gemm_mxgemmini_ws_downproj_fp4"}:
         return _read_weight_stationary_gemm(driver, source)
@@ -108,6 +110,32 @@ def _read_weight_stationary_gemm(driver: Path, source: str) -> SourceGemm:
     if (shape, tile, datatype) != expected or quant:
         raise ValueError("weight-stationary MX source shape, tile, or format changed")
     return SourceGemm(driver, header, shape, tile, datatype, False, False, True)
+
+
+def _read_restream_gemm(driver: Path, source: str) -> SourceGemm:
+    """Read the committed four-M-block counterexample to read-once B traffic."""
+    required = (
+        '#include "data"', '#include "mxgemm_lib.hpp"',
+        '#define WS_MB   64', '#define WS_MT   4',
+        '.TILE_M=WS_MB', '.TILE_N=64', '.TILE_K=64',
+        '.DATATYPE=GemmDatatype::FP8', '.QUANT_OUTPUT=false',
+        'for (uint32_t m=0; m<WS_MT; m++)',
+        'mxgemm_restream<CFG>(MATMUL_K, a->C, tid, tpb);',
+        'A_in = &A_in_data[0][0] + (uint32_t)m*WS_MB*MATMUL_K;',
+        'const uint8_t *A_sc = &A_scales_tiled[0][0] + (uint32_t)m*MATMUL_GK*WS_MB;',
+        'const uint8_t *B_sc = &B_scales_col[0][0];',
+    )
+    if any(source.count(marker) != 1 for marker in required):
+        raise ValueError("source re-stream MX schedule changed")
+    header = driver.parent / "data"
+    if not header.is_file():
+        raise ValueError("committed re-stream MX source data is missing")
+    data = header.read_text(encoding="ascii")
+    shape = tuple(int(_match(rf'^#define MATMUL_{axis}\s+(\d+)\b', data,
+                             f"MATMUL_{axis}")) for axis in ("M", "N", "K"))
+    if shape != (256, 64, 2048):
+        raise ValueError("source re-stream MX data shape changed")
+    return SourceGemm(driver, header, shape, (64, 64, 64), "FP8", False, False, True)
 
 
 def source_scratchpad_bytes(library: Path) -> int:

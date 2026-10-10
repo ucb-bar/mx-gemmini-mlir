@@ -103,11 +103,24 @@ def read_source_payload(kernel: SourceGemm, *,
             "golden_bf16": Resource(fp6.golden_bf16_bytes, (m, n), 16, "row_major_bf16"),
         }
     else:
-        a_name = "A_in_hw" if packed else "A_in"
+        restream = kernel.driver.parent.name == "gemm_mxgemmini_ws_restream"
+        a_name = "A_in_hw" if packed else "A_in_data" if restream else "A_in"
         a_shape = (m // 2, k) if packed else (m, k)
         a_decl = "[MATMUL_M / 2][MATMUL_K]" if packed else "[MATMUL_M][MATMUL_K]"
         b_shape = (k, n // 2) if packed else (k, n)
         b_decl = "[MATMUL_K][MATMUL_N / 2]" if packed else "[MATMUL_K][MATMUL_N]"
+        if restream:
+            row = _array(source, name="A_scales_row", ctype="uint8_t",
+                         dimensions="[MATMUL_GK][MATMUL_M]", count=k // 32 * m,
+                         maximum=255)
+            tiled = _array(source, name="A_scales_tiled", ctype="uint8_t",
+                           dimensions="[256][64]", count=k // 32 * m,
+                           maximum=255)
+            if any(tiled[block * 64 * 64 + group * 64 + lane] !=
+                   row[group * m + block * 64 + lane]
+                   for block in range(4) for group in range(k // 32)
+                   for lane in range(64)):
+                raise ValueError("source re-stream activation-scale tiling differs from canonical data")
         resources = {
             "activation": Resource(bytes(_array(source, name=a_name, ctype="uint8_t",
                                                 dimensions=a_decl, count=_product(a_shape), maximum=255)),
