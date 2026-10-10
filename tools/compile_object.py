@@ -29,6 +29,7 @@ EMITTERS = {
     "full_vpu_branch": "tools.emit_full_vpu_branch_object",
     "vpu_softmax": "tools.emit_vpu_softmax_object",
     "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
+    "asymmetric_source": "tools.emit_asymmetric_object",
 }
 MANIFEST_SCHEMAS = {
     "source_contract": "mx_gemmini.linkable_object.v1",
@@ -37,6 +38,7 @@ MANIFEST_SCHEMAS = {
     "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
     "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
     "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
+    "asymmetric_source": "mx_gemmini.asymmetric_source_linkable_object.v1",
 }
 
 
@@ -58,6 +60,13 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     module = Parser(context, mlir_text).parse_module()
     source = module.attributes.get("mx.payload_binding_schema") is not None
     runtime = module.attributes.get("mx.runtime_resources_sha256") is not None
+    asymmetric = (module.attributes.get("mx.asymmetric_recipe_sha256") is not None and
+                  module.attributes.get("mx.payload_manifest_sha256") is not None)
+    asymmetric_provenance = any(module.attributes.get(name) is not None for name in (
+        "mx.asymmetric_recipe_sha256", "mx.source_driver_sha256",
+        "mx.source_generator_sha256"))
+    if asymmetric_provenance and not asymmetric:
+        raise ValueError("asymmetric source graph lacks its recipe or payload binding")
     counts = (report["contracts"], report["resident_contracts"],
               report["vpu_commands"], report["spad_requants"])
     if not source and not runtime and counts == (0, 0, 6, 0):
@@ -66,6 +75,8 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
         from mx_gemmini_support.fp4_dual_requant import lower_fp4_dual_requant
         lower_fp4_dual_requant(mlir_text, profile)
         return "fp4_dual_requant", report
+    if asymmetric and source and not runtime and counts == (1, 0, 0, 0) and report["source_resources"]:
+        return "asymmetric_source", report
     if source == runtime:
         raise ValueError("MX object needs exactly one payload binding scheme")
     if source and counts[0] == 1 and counts[1] == 0 and report["source_resources"]:
@@ -111,6 +122,12 @@ def main() -> None:
                         help="checked runtime input files for a connected pair")
     parser.add_argument("--abi-json", type=Path,
                         help="runtime buffer map for a connected pair")
+    parser.add_argument("--recipe-json", type=Path,
+                        help="checked asymmetric source recipe")
+    parser.add_argument("--source-driver", type=Path,
+                        help="pinned asymmetric source C program or generator")
+    parser.add_argument("--source-header", type=Path,
+                        help="pinned asymmetric packed-data header")
     parser.add_argument("--mx-opt", type=Path,
                         help="also run the native MX dialect verifier")
     parser.add_argument("--preloaded-mlir", type=Path,
@@ -132,6 +149,9 @@ def main() -> None:
         raise ValueError("MX object input must be .mlir or .mlir.gz")
     mlir_text = mlir_bytes.decode()
     family, report = classify(mlir_text, profile)
+    asymmetric_inputs = (args.recipe_json, args.source_driver, args.source_header)
+    if family != "asymmetric_source" and any(asymmetric_inputs):
+        raise ValueError("asymmetric source files require an asymmetric MLIR graph")
     if family != "full_vpu_branch" and (args.preloaded_mlir is not None or
                                         args.issue_schedule != "program_order_with_dependency_fences"):
         raise ValueError("preloaded MLIR and issue schedule require a full MX/VPU branch")
@@ -149,6 +169,13 @@ def main() -> None:
         if args.bundle or args.resources_dir or args.abi_json:
             raise ValueError("typed FP4 dual requant object has a fixed five-buffer ABI")
         extra = []
+    elif family == "asymmetric_source":
+        if (args.bundle or args.resources_dir or args.abi_json or
+                not all(asymmetric_inputs)):
+            raise ValueError("asymmetric MX object needs --recipe-json, --source-driver, and --source-header only")
+        extra = ["--recipe-json", str(args.recipe_json.resolve()),
+                 "--source-driver", str(args.source_driver.resolve()),
+                 "--source-header", str(args.source_header.resolve())]
     else:
         if args.bundle or args.resources_dir is None or args.abi_json is None:
             raise ValueError("connected MX object needs --resources-dir and --abi-json only")

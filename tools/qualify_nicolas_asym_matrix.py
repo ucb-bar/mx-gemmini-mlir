@@ -137,6 +137,8 @@ def main() -> None:
                         help="include headers from pinned Nicolas gen_asym.py manifest")
     parser.add_argument("--source-suffix", action="append",
                         help="qualify only this named source pair; repeat to select several")
+    parser.add_argument("--public-object", action="store_true",
+                        help="link each case through tools.compile_object")
     args = parser.parse_args()
     if not 1 <= args.jobs <= 4:
         parser.error("--jobs must be between 1 and 4")
@@ -190,6 +192,7 @@ def main() -> None:
         command = [sys.executable, "-m", "tools.qualify_nicolas_asym",
                    *source_selection, "--mesh-dim", str(args.mesh_dim),
                    "--source-shape", args.source_shape,
+                   *(["--public-object"] if args.public_object else []),
                    "--model2mlir-root", str(args.model2mlir_root.resolve()),
                    "--mxq-root", str(args.mxq_root.resolve()),
                    "--rtl-root", str(rtl), "--profile", str(profile),
@@ -205,7 +208,10 @@ def main() -> None:
         expected_outputs = 4096 if args.source_shape == "64x64" else 16384
         passed = (run.returncode == 0 and
                   receipt.get("status") == "source_golden_matched_on_pinned_spike" and
-                  receipt.get("compared_bf16_outputs") == expected_outputs)
+                  receipt.get("compared_bf16_outputs") == expected_outputs and
+                  (not args.public_object or
+                   isinstance(receipt.get("public_object_sha256"), str) and
+                   len(receipt["public_object_sha256"]) == 64))
         return {"source_suffix": suffix, "profile_name": profile.stem,
                 "compute": cell,
                 "status": "passed" if passed else "failed",
@@ -213,6 +219,7 @@ def main() -> None:
                 "receipt_sha256": _sha(receipt_path) if receipt else None,
                 "compiler_revision": receipt.get("compiler_revision"),
                 "physical_program_sha256": receipt.get("physical_program_sha256"),
+                "public_object_sha256": receipt.get("public_object_sha256"),
                 "elf_sha256": receipt.get("elf_sha256"),
                 "spike_log_sha256": receipt.get("spike_log_sha256"),
                 "matched_bf16_outputs": expected_outputs if passed else 0}
@@ -246,6 +253,7 @@ def main() -> None:
                 "includes_symmetric_lut": args.include_symmetric_lut,
                 "includes_symmetric_fp4": args.include_symmetric_fp4,
                 "includes_generated": args.include_generated,
+                "public_object": args.public_object,
                 "generation_manifest_sha256": generation_manifest_sha256,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),

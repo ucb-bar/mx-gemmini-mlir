@@ -27,6 +27,9 @@ from mx_gemmini_support.asymmetric_specialization import (bind_asymmetric_payloa
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _require_gitlink, _run, _source_closure
+from tools.qualify_nicolas_plain_matrix_object import (
+    MODEL2MLIR_REVISION, MXQ_REVISION, RTL_REVISION,
+)
 
 
 def _revision(root: Path) -> str:
@@ -61,10 +64,14 @@ def main() -> None:
                        help="compile through shared physical command IR (default)")
     issue.add_argument("--diagnostic", dest="physical", action="store_false",
                        help="reproduce the earlier bounded C diagnostic")
+    parser.add_argument("--public-object", action="store_true",
+                        help="link the data-free object returned by tools.compile_object")
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "profile",
                  "riscv-root", "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
+    if args.public_object and not args.physical:
+        parser.error("public asymmetric object requires physical lowering")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     root = Path(__file__).resolve().parents[1]
@@ -80,6 +87,11 @@ def main() -> None:
     if (Path(m2m.__file__).resolve().parents[1] != model2mlir or
             Path(mxq.__file__).resolve().parents[1] != mxq_root):
         raise ValueError("model2MLIR or MXQuant resolved to a different checkout")
+    if args.public_object and (
+            _revision(model2mlir) != MODEL2MLIR_REVISION or
+            _revision(mxq_root) != MXQ_REVISION or
+            _revision(args.rtl_root) != RTL_REVISION):
+        raise ValueError("public Nicolas asymmetric replay needs pinned frontend and RTL revisions")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
@@ -186,6 +198,24 @@ def main() -> None:
         standalone_receipt = write_standalone_sources(build_dir, program, resources)
         (build_dir / "resource_manifest.json").write_text(
             json.dumps(resource_manifest, indent=2, sort_keys=True) + "\n")
+    object_dir = args.out_dir / "object"
+    if args.public_object:
+        _run([sys.executable, "-m", "tools.compile_object",
+              "--mlir", str(args.out_dir / "asymmetric_bound.mlir"),
+              "--recipe-json", str(args.out_dir / "recipe.json"),
+              "--source-driver", str(source.resolve()),
+              "--source-header", str(header.resolve()),
+              "--profile", str(args.profile.resolve()),
+              "--rtl-root", str(args.rtl_root.resolve()),
+              "--riscv-root", str(args.riscv_root.resolve()),
+              "--mx-opt", str(args.mx_opt.resolve()),
+              "--out-dir", str(object_dir)], cwd=root,
+             log=args.out_dir / "object_compile.log")
+        if ((object_dir / "mx_issue.c").read_bytes() !=
+                (build_dir / "mx_issue.c").read_bytes() or
+                (object_dir / "physical_program.json").read_bytes() !=
+                (build_dir / "physical_program.json").read_bytes()):
+            raise ValueError("public asymmetric object differs from standalone physical commands")
 
     bench = software / "riscv-tests/benchmarks/common"
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
@@ -200,7 +230,9 @@ def main() -> None:
              "-I", str(software / "riscv-tests"),
              "-I", str(software / "riscv-tests/env"),
              "-I", str(software), "-I", str(bench)]
-    source_files = ([build_dir / name for name in ("mx_issue.c", "mx_driver.c", "mx_data.S")]
+    source_files = ([build_dir / name for name in (
+                    ("mx_driver.c", "mx_data.S") if args.public_object else
+                    ("mx_issue.c", "mx_driver.c", "mx_data.S"))]
                     if args.physical else [build_dir / "asymmetric_issue.c"])
     source_files += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
     objects = []
@@ -211,7 +243,9 @@ def main() -> None:
         objects.append(obj)
     elf = build_dir / "asymmetric_program.elf"
     _run([str(riscv_cc), "-nostdlib", "-nostartfiles", "-static", "-T",
-          str(bench / "test.ld"), *(str(obj) for obj in objects), "-lm", "-lgcc",
+          str(bench / "test.ld"),
+          *([str(object_dir / "mx_issue.o")] if args.public_object else []),
+          *(str(obj) for obj in objects), "-lm", "-lgcc",
           "-o", str(elf)], cwd=build_dir, log=build_dir / "link.log")
 
     extension = args.rtl_root / "software/libgemmini"
@@ -294,6 +328,18 @@ def main() -> None:
             if path.suffix == ".bin" or path.name in
             {"mx_issue.c", "mx_driver.c", "mx_data.S", "physical_program.json",
              "resource_manifest.json"}}
+    if args.public_object:
+        dispatch = json.loads((object_dir / "compile_manifest.json").read_text())
+        object_manifest = json.loads((object_dir / "object_manifest.json").read_text())
+        if (dispatch["lowering_family"] != "asymmetric_source" or
+                object_manifest["allocated_data_section_bytes"] != 0 or
+                object_manifest["object_sha256"] != sha256(object_dir / "mx_issue.o")):
+            raise ValueError("public asymmetric object dispatch or data-free ABI differs")
+        receipt["scope"] += "; public data-free object compiler"
+        receipt["public_object_dispatch_sha256"] = sha256(object_dir / "compile_manifest.json")
+        receipt["public_object_manifest_sha256"] = sha256(object_dir / "object_manifest.json")
+        receipt["public_object_sha256"] = sha256(object_dir / "mx_issue.o")
+        receipt["public_object_abi"] = object_manifest["buffer_abi"]
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {run.stdout.strip()}")
     if not passed:

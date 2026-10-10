@@ -16,6 +16,7 @@ from mx_gemmini_support.command_ir import Command
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.verify_profile_ir import verify_ir
+from tools.compile_object import classify
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -214,6 +215,11 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     bound = bind_asymmetric_payload(bound, profile, recipe,
                                     source=source, header=header)
     assert 'mx.payload_manifest_sha256 = "' in bound
+    assert classify(bound, profile)[0] == "asymmetric_source"
+    if variant == "e4m3s_fp4":
+        with pytest.raises(ValueError, match="lacks its recipe"):
+            classify(bound.replace("mx.asymmetric_recipe_sha256",
+                                   "mx.hidden_recipe_sha256"), profile)
     with pytest.raises(ValueError, match="already payload-bound"):
         bind_asymmetric_payload(bound, profile, recipe,
                                 source=source, header=header)
