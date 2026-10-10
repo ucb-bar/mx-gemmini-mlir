@@ -870,6 +870,35 @@ python tools/qualify_nicolas_vector_requant.py \
   --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-vpu-object-spike
 ```
 
+### One object compiler entry point
+
+[`tools.compile_object`](../tools/compile_object.py) selects the object
+lowerer from the verified typed graph. A source-bound single contraction uses
+`--bundle`; a connected resident pair uses `--resources-dir` and
+`--abi-json`. The driver accepts plain or gzip-compressed MLIR for resident
+graphs and writes `compile_manifest.json` beside the existing object and
+physical program manifests. It rejects ambiguous bindings and graph families
+without executable lowering. This dispatch does not change scheduling:
+`emit_mx_object`, `emit_resident_pair_object`, and
+`emit_resident_vpu_object` still own their respective physical streams.
+
+For example, a source-bound FP4 contraction can be compiled in one command:
+
+```sh
+python -m tools.compile_object \
+  --mlir docs/evidence/radiance_plain_mx_profile_trio_266c593/fp4/payload_bound.mlir \
+  --bundle docs/evidence/radiance_plain_mx_profile_trio_266c593/fp4/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-fp4-object
+```
+
+For a resident graph, replace `--bundle` with `--resources-dir` and the
+matching `examples/resident-pair-abi.json` or
+`examples/resident-vpu-abi.json`. The source bundle or input files are needed
+to verify the typed payload; the emitted object contains no operand or golden
+data. Existing Spike qualifiers link that object and compare full outputs.
+
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:
 

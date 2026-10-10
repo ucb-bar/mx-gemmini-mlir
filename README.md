@@ -95,6 +95,9 @@ also compiles the typed 64³ MM1→VPU×2→resident requant→MM2 graph to a
 data-free RV64 object. Nicolas's stock Spike matches all 4,096 BF16 values,
 8,192 FP8 codes, and 256 scales; a fresh upstream checkout reproduces the
 object and Spike log.
+`python -m tools.compile_object` is the shared entry point for these object
+paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
+typed graph and reuses the existing physical lowerers.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
 rebuilds the native verifier and reproduces the connected program and Spike log.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
