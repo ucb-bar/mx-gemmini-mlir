@@ -1,0 +1,90 @@
+{
+  "assembled_bf16_sha256": "a3debe096ac8d0a34b585c6ba160c2bd285b2d1e2affd47f575645170dd0819e",
+  "assembled_x2_bf16_sha256": "58649ffd4ba0de74cc624e9fa67f2cecec65cd41dc3744f80ea3849a3a87b9d8",
+  "cases": [
+    {
+      "build_log_sha256": "6148163cb27c9b6cccf5f5b323f16bf4361a09bd71bc569f02a98836756cc61c",
+      "cyclotron_log_sha256": "499ef77c4ddd3a790bc154289f87dcf02ea89997bd339597f86cec8d252c6343",
+      "driver_sha256": "99b921c9c600b009af5c546480e2b963cd7661809285a070043289b36ee0ee55",
+      "elf_sha256": "273128640760e0ccc6d522347b84083d08105ad43a6556987b21b77ccbbb6a3e",
+      "header_sha256": "b07809a9a88fd1eec923f71deafb71aa99386e6967770f757b15f5818a8fa0b3",
+      "matched_bf16": 16384,
+      "output_sha256": "c9e443f7d3ac87604e0296afe5e05c53109a9199e3a398492f47fb7eb226d3ee",
+      "tile": [
+        0,
+        0
+      ]
+    },
+    {
+      "build_log_sha256": "667c9b1f5ae91f3772243405e35be91a4f009caacfbb268fae969010d2fe4c6a",
+      "cyclotron_log_sha256": "f9cabb16b55d1568300334c62da076cb9b2eee9cd3d56fbc842eb6dc24d03c16",
+      "driver_sha256": "59bf1c21e455172d6d8a940565351d0cdef5a31225a6ad394d6e26cccc968980",
+      "elf_sha256": "3e26d3e33d7873955f76db6dc7c92a0593627200156d5e02432fc818c264ab77",
+      "header_sha256": "fe5bb9a5f2551894888e7639f6ef520bd9c708c650d0994c3021207bd6d72adf",
+      "matched_bf16": 16384,
+      "output_sha256": "3ea05b9daf72217f835a51eaf02f5a13601e76137b0eb6c5b08b829fa7cab450",
+      "tile": [
+        0,
+        1
+      ]
+    },
+    {
+      "build_log_sha256": "5c25a69116d89753655d9eeaf7753398d9ef0e2aa88b7eff22b9b865612ed833",
+      "cyclotron_log_sha256": "c0819a3d271fc72364030c5b7c4bfa54c6d6ad8b47a265885aefaff965b86215",
+      "driver_sha256": "6eb08a84a0a9c0d2ab9fb81b2df43fbc4fcc25d618fa530b8948c2d8576a7b73",
+      "elf_sha256": "fd238854664d412d64e718ee540245863e61fca85f3e6f498b44af9492735620",
+      "header_sha256": "ba958e2e98225ec9a1210e144ec3ac69e684c899722e6f753c1440a6fac9a2a7",
+      "matched_bf16": 16384,
+      "output_sha256": "5ae9b53f3b53964953255017ef5ace8194837b037bb2fd2720f85f22526e8b72",
+      "tile": [
+        1,
+        0
+      ]
+    },
+    {
+      "build_log_sha256": "db133be5f7080e63b2792b5584d6da5fb1f87faf266e6882a5a1bfb617fbe2c6",
+      "cyclotron_log_sha256": "b003ab3447ee9378e6536abe8592df8b29be47e53327b3f0dab4c2171ac76bb5",
+      "driver_sha256": "92eb57cd025c3ea476d549a06797e1d8c43a95aea4a534b779100290c15ef4db",
+      "elf_sha256": "9d8128d5dea74831c969b2c2790230828ad111dbb21188c152a9bd9d079c1433",
+      "header_sha256": "27ed5ee940636aa2148d2241ddc2991ec70093d149b55dc86e19feaf35277c31",
+      "matched_bf16": 16384,
+      "output_sha256": "e8ff77813c7634468a18cb7908b3fe6fff0638237914bdb31809ec083738b971",
+      "tile": [
+        1,
+        1
+      ]
+    }
+  ],
+  "compared_bf16": 65536,
+  "compiler_derived_x2_bf16_sha256": "58649ffd4ba0de74cc624e9fa67f2cecec65cd41dc3744f80ea3849a3a87b9d8",
+  "compiler_revision": "44d4cc996eb432b327755f6d0273d432c70ce995",
+  "cyclotron_binary_sha256": "8f87b4bdf9392304cc7d7c87e793ab6873405f46e5ce756a6ca523300bf3751d",
+  "cyclotron_model_sha256": "49b42427082f4bca7f0e30ceca8631563cf24376009cea2e458351fbac46cffd",
+  "cyclotron_revision": "2d6adad4ad94d1621fdff9c9a1e5eac871048f24",
+  "muon_clang_sha256": "b7c2078d5543e94b4c2e27b92d0ff1b784984af2fc26e7c395d49c65622d3a67",
+  "muon_runtime_archive_sha256": "b6a9028656269125c21f24ffa420cb825045094599b9337d9809d0eab8013554",
+  "mx_software_revision": "6fc8ec79bc828b33628ec951bfa1d0f65278a338",
+  "raw_driver": {
+    "build_log_sha256": "582fef12e24ac3357673a4e1dedf45c4bd0b3458f0a450e2510112c3362afe9f",
+    "cyclotron_log_sha256": "923d642a4fa51b06343b039d34e7cf1e330f5f6ae495abb53fdd4dd546f5c0ba",
+    "driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
+    "elf_sha256": "192853c3a75556d6290f7edee9563c706a0340808073ab72f1d05211633ab6a7",
+    "header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+    "mismatched_bf16": 65490,
+    "output_sha256": "eb1c22dc484a7598a93e228e493510b8e4b5e718e728e623469ad9d5d39b8c4d",
+    "status": "builds_but_does_not_compute_four_output_tiles"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "schema": "mx_gemmini.radiance_generated_fp4_four_source_tiles_cyclotron.v1",
+  "scope": "four separately built source-derived single-tile kernels; not the unmodified 256x256 Radiance driver, RTL, or FPGA",
+  "source_files_sha256": {
+    "kernels/common.mk": "fa889bdf2587f3c5e6a2216a0babb030be4f2b6d1e377398845b958593802b07",
+    "kernels/gemm_mxgemmini/mxgemm.fp4.m128n128k256.tm128tn128tk128.fullout.cpp": "33accc38f62228e978b6bf82342dbb0ff6f35812081fdab1371f640390042e9d",
+    "lib/mxgemm/mxgemm_lib.hpp": "003302c019de637a02b285a90ca40f114a53341f6ee22bec774fd20310a7177d"
+  },
+  "source_golden_bf16_sha256": "a3debe096ac8d0a34b585c6ba160c2bd285b2d1e2affd47f575645170dd0819e",
+  "source_header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+  "source_payload_manifest_sha256": "98a8976a536d5826940bdc21d9a6f8feee395d0b446ac7e6354718d50a58cd21",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "four_derived_muon_mx_tiles_match_compiler_vpu_reference"
+}

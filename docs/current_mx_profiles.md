@@ -82,6 +82,10 @@ A [four-output-tile FP4 case](compiled_mx_pipeline.md#generated-four-tile-fp4-ge
 uses the same typed path and checks all 65,536 BF16 values on Spike with the
 FP4+VPU profile. Its 256×256 driver and header are explicitly generated from
 pinned Radiance sources because no matching driver is committed upstream.
+The [executed source-tile check](compiled_mx_pipeline.md#executed-generated-fp4-source-tiles-on-cyclotron)
+confirms four separate Muon/MX tiles against the same generated golden on
+Cyclotron. The naive 256×256 source driver itself does not implement four
+output tiles, so this is a derived source decomposition.
 General scheduling and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An

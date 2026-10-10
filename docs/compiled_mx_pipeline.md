@@ -1963,10 +1963,10 @@ fixture, not parity with a committed Radiance source ELF.
 The corrected derived driver also builds as a Muon/Radiance `.soc.elf` with
 the pinned Radiance source revision and its exact Gemmini software submodule.
 The [build receipt](evidence/radiance_fp4_generated_tilewise_vpu_266c593/source_build/receipt.json)
-archives that executable and build log. It was **built, not executed**: the
-source driver uses Muon scheduling, while the pinned MX Spike run executes the
-compiler's Rocket/RoCC ELF. Source-driver execution requires the separate
-Muon/Radiance simulator or FPGA path.
+archives that executable and build log; that receipt certifies the build only.
+The source driver uses Muon scheduling, while the pinned MX Spike run executes
+the compiler's Rocket/RoCC ELF. Its separate Cyclotron execution is reported
+below.
 
 The [two-run receipt](evidence/radiance_fp4_generated_tilewise_vpu_266c593/index.json)
 records four compiler-issued VPU commands and **65,536 / 65,536 BF16 outputs**
@@ -1990,6 +1990,45 @@ python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
   --riscv-root /path/to/riscv-tools \
   --mx-opt build/tools/mx-gemmini-opt \
   --out-dir /tmp/radiance-fp4-generated-tilewise-vpu-x2
+```
+
+### Executed generated FP4 source tiles on Cyclotron
+
+The [source-tile qualifier](../tools/qualify_radiance_fp4_derived_cyclotron_tiles.py)
+builds four Muon/Radiance 128×128 drivers from the pinned Radiance FP4
+single-tile template. It slices the generated 256×256 fixture's packed A/B
+bytes, E8M0 scales, and BF16 golden for each output tile. On the pinned
+Cyclotron functional MX model with the separately qualified accumulator
+overwrite correction, each tile matches **16,384 / 16,384 BF16 outputs**.
+Assembled in matrix order, the four executed outputs match all **65,536**
+generated BF16 values. Exact BF16 ×2 has the same SHA-256 as the compiler's
+full-output Spike reference. Two independent source builds reproduce the
+header, ELF, and output hashes. The [receipt](evidence/radiance_fp4_generated_cyclotron_tiles_266c593/receipt.json),
+[source outputs](evidence/radiance_fp4_generated_cyclotron_tiles_266c593/assembled_bf16.bin.gz),
+and [repeat receipt](evidence/radiance_fp4_generated_cyclotron_tiles_266c593/receipt_repro.json)
+are archived.
+
+The same qualifier also builds and runs the naive generated 256×256 source
+driver. It has **65,490 / 65,536 BF16 mismatches** against the generated
+matrix golden. Radiance's shared GEMM helper currently invokes one output
+tile and leaves multi-tile operand offsets and scale loads unfinished; a
+driver's 256×256 dimensions alone do not make it a four-tile source kernel.
+The four separate source programs are an explicit derived decomposition.
+Cyclotron is a functional model; this does not qualify an unmodified
+multi-tile source driver, RTL, or FPGA execution of the VPU epilogue.
+
+Reproduce from a clean Radiance `80f84ca` checkout, its `6fc8ec7` MX software
+submodule, the pinned Cyclotron overwrite-model worktree, and the Muon toolchain:
+
+```sh
+python -m tools.qualify_radiance_fp4_derived_cyclotron_tiles \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --radiance-lib-root /path/to/built-radiance/lib \
+  --mx-software-root /path/to/radiance-kernels-80f84ca/lib/mxgemmini \
+  --cyclotron-root /path/to/cyclotron-overwrite-probe \
+  --llvm-muon /path/to/llvm-muon \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/radiance-fp4-derived-cyclotron-tiles
 ```
 
 ## Remaining gates

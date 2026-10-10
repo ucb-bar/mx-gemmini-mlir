@@ -39,7 +39,8 @@ jobs:
             tests/test_source_attention_qk.py \
             tests/test_radiance_gqa_qk_evidence.py \
             tests/test_radiance_tilewise_vpu_x2_evidence.py \
-            tests/test_radiance_fp4_generated_tilewise_vpu_evidence.py
+            tests/test_radiance_fp4_generated_tilewise_vpu_evidence.py \
+            tests/test_radiance_fp4_generated_cyclotron_tiles_evidence.py
 
   pinned-rtl-profiles:
     runs-on: ubuntu-latest
