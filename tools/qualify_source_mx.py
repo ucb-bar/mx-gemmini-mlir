@@ -35,7 +35,7 @@ def main() -> None:
     parser.add_argument("--source-header-quantized", action="store_true",
                         help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
     parser.add_argument("--generate-missing-fp6-header", action="store_true",
-                        help="stage a checked source-derived FP6 requant header without editing Radiance")
+                        help="stage a checked source-derived FP6 header without editing Radiance")
     args = parser.parse_args()
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.out_dir.exists():
@@ -53,10 +53,16 @@ def main() -> None:
             selected_driver = Path(fixture.name) / args.driver.name
             shutil.copy2(args.driver, selected_driver)
             pending = read_source_gemm(selected_driver)
-            if (pending.data_header_present or pending.datatype != "FP6" or
-                    not pending.quant_output or pending.shape not in {
-                        (128, 128, 128), (128, 128, 512)}):
-                parser.error("FP6 fixture generation requires a missing 128 or 512 depth requant header")
+            supported = (pending.shape[:2] == (128, 128) and
+                         ((pending.quant_output and pending.shape[2] in {128, 512} and
+                           pending.tile == pending.shape) or
+                          (not pending.quant_output and
+                           pending.tile[2] == {128: 128, 256: 128,
+                                               512: 512, 1024: 512}.get(
+                                                   pending.shape[2]) and
+                           pending.tile[:2] == (128, 128))))
+            if pending.data_header_present or pending.datatype != "FP6" or not supported:
+                parser.error("FP6 fixture generation requires a missing supported source header")
             generation = generate(args.driver.resolve().parents[2],
                                   pending.shape[2], pending.data_header)
         kernel = read_source_gemm(selected_driver)

@@ -1,4 +1,4 @@
-"""Generate missing Radiance FP6 requant headers from its checked-in 2048-K data.
+"""Generate missing Radiance FP6 headers from its checked-in 2048-K data.
 
 This is a source-fixture generator, not a compiler lowering. It slices the
 checked-in packed inputs and LUTs, then invokes Radiance's own mx_golden for
@@ -83,8 +83,8 @@ def _emit(lines: list[str], ctype: str, name: str, dimensions: str, data: bytes,
 
 
 def generate(radiance_root: Path, k: int, output: Path) -> dict:
-    if k not in {128, 512}:
-        raise ValueError("only the two missing checked-in FP6 requant K shapes are supported")
+    if k not in {128, 256, 512, 1024}:
+        raise ValueError("only the source-derived FP6 128/256/512/1024 K shapes are supported")
     if output.exists():
         raise ValueError(f"refusing to overwrite {output}")
     header_path = (radiance_root / "kernels/gemm_mxgemmini" /
@@ -204,7 +204,7 @@ def generate(radiance_root: Path, k: int, output: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--radiance-root", required=True, type=Path)
-    parser.add_argument("--k", required=True, type=int, choices=(128, 512))
+    parser.add_argument("--k", required=True, type=int, choices=(128, 256, 512, 1024))
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
     print(json.dumps(generate(args.radiance_root, args.k, args.out),

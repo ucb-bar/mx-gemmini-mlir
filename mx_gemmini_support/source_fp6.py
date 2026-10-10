@@ -73,11 +73,11 @@ def _lut_lines(words: tuple[int, ...]) -> tuple[tuple[int, ...], ...]:
 
 def read_source_fp6_payload(kernel: SourceGemm) -> SourceFp6Payload:
     """Prove that the source's nibble indices and row LUTs round-trip exactly."""
+    fullout_tiles = {128: 128, 256: 128, 512: 512, 1024: 512, 2048: 128}
     valid = ((not kernel.quant_output and
-              ((kernel.shape == (128, 128, 2048) and
-                kernel.tile == (128, 128, 128)) or
-               (kernel.shape in {(128, 128, 128), (128, 128, 512)} and
-                kernel.tile == kernel.shape))) or
+              kernel.shape[:2] == (128, 128) and
+              fullout_tiles.get(kernel.shape[2]) == kernel.tile[2] and
+              kernel.tile[:2] == (128, 128)) or
              (kernel.quant_output and kernel.shape in {
                  (128, 128, 128), (128, 128, 512)} and
               kernel.tile == kernel.shape))
