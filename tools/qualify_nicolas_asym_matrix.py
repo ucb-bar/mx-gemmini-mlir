@@ -2,7 +2,7 @@
 
 Each row captures a fresh PyTorch matmul through model2MLIR, binds Nicolas's
 checked-in packed arrays to typed MX MLIR, emits a standalone RoCC ELF, and
-compares all 4,096 BF16 outputs on the pinned Spike extension.
+compares every BF16 source output on the pinned Spike extension.
 """
 
 from __future__ import annotations
@@ -30,7 +30,8 @@ def _sha(path: Path) -> str:
 
 
 def discover(software: Path, profile_dir: Path, rtl_root: Path,
-             mesh_dim: int = 16, *, all_asym: bool = False
+             mesh_dim: int = 16, *, all_asym: bool = False,
+             source_shape: str = "64x64"
              ) -> list[tuple[str, Path, dict]]:
     """Preflight each checked-in source/header against its legal mesh profile."""
     if all_asym and mesh_dim != 16:
@@ -38,17 +39,18 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
     rows = []
     dim_suffix = f"_dim{mesh_dim}" if mesh_dim != 16 else ""
     sources = sorted((software / "bareMetalC").glob(
-        f"matmul_tiled_asym_*_64x64{dim_suffix}.c"))
+        f"matmul_tiled_asym_*_{source_shape}{dim_suffix}.c"))
     if not sources:
-        raise ValueError("Nicolas asymmetric 64-cubed source tests are absent")
+        raise ValueError("Nicolas asymmetric source tests are absent")
     for source in sources:
-        match = re.fullmatch(rf"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64{dim_suffix}\.c",
+        match = re.fullmatch(rf"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_{source_shape}{dim_suffix}\.c",
                              source.name)
         if match is None or any(token not in _NAME for token in match.groups()):
             raise ValueError(f"unrecognized Nicolas source test: {source.name}")
         left, right = match.groups()
         suffix = f"{left}_{right}"
-        header = software / "include" / f"matmul_data_asym_{suffix}{dim_suffix}.h"
+        shape_suffix = f"_{source_shape}" if source_shape != "64x64" else ""
+        header = software / "include" / f"matmul_data_asym_{suffix}{shape_suffix}{dim_suffix}.h"
         if mesh_dim == 16:
             profile_name = ("MxAllAsymGemminiRocketConfig" if all_asym else
                             f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig")
@@ -60,7 +62,7 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
         rows.append((suffix, profile_path, recipe["compute"]))
     if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
-    if mesh_dim == 16 and not all_asym:
+    if mesh_dim == 16 and not all_asym and source_shape == "64x64":
         by_profile: dict[Path, list[dict]] = {}
         for _, profile_path, cell in rows:
             by_profile.setdefault(profile_path, []).append(cell)
@@ -84,6 +86,8 @@ def main() -> None:
                         help="independent Spike builds to run concurrently (1–4)")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="Rocket mesh dimension (default: 16)")
+    parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
+                        default="64x64", help="named Nicolas source shape")
     parser.add_argument("--all-asym", action="store_true",
                         help="select DIM16 MxAllAsymGemminiRocketConfig instead of dedicated profiles")
     parser.add_argument("--source-suffix", action="append",
@@ -100,7 +104,8 @@ def main() -> None:
     rtl = args.rtl_root.resolve()
     software = rtl / "software/gemmini-rocc-tests"
     rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593",
-                    rtl, args.mesh_dim, all_asym=args.all_asym)
+                    rtl, args.mesh_dim, all_asym=args.all_asym,
+                    source_shape=args.source_shape)
     if args.source_suffix:
         selected = set(args.source_suffix)
         unknown = selected - {suffix for suffix, _, _ in rows}
@@ -115,6 +120,7 @@ def main() -> None:
         directory = out_dir / suffix
         command = [sys.executable, "-m", "tools.qualify_nicolas_asym",
                    "--source-suffix", suffix, "--mesh-dim", str(args.mesh_dim),
+                   "--source-shape", args.source_shape,
                    "--model2mlir-root", str(args.model2mlir_root.resolve()),
                    "--mxq-root", str(args.mxq_root.resolve()),
                    "--rtl-root", str(rtl), "--profile", str(profile),
@@ -127,9 +133,10 @@ def main() -> None:
         (directory / "matrix_run.log").write_text(run.stdout)
         receipt_path = directory / "receipt.json"
         receipt = json.loads(receipt_path.read_text()) if receipt_path.is_file() else {}
+        expected_outputs = 4096 if args.source_shape == "64x64" else 16384
         passed = (run.returncode == 0 and
                   receipt.get("status") == "source_golden_matched_on_pinned_spike" and
-                  receipt.get("compared_bf16_outputs") == 4096)
+                  receipt.get("compared_bf16_outputs") == expected_outputs)
         return {"source_suffix": suffix, "profile_name": profile.stem,
                 "compute": cell,
                 "status": "passed" if passed else "failed",
@@ -139,7 +146,7 @@ def main() -> None:
                 "physical_program_sha256": receipt.get("physical_program_sha256"),
                 "elf_sha256": receipt.get("elf_sha256"),
                 "spike_log_sha256": receipt.get("spike_log_sha256"),
-                "matched_bf16_outputs": 4096 if passed else 0}
+                "matched_bf16_outputs": expected_outputs if passed else 0}
 
     with ThreadPoolExecutor(max_workers=args.jobs) as executor:
         results = list(executor.map(qualify, rows))
@@ -151,10 +158,11 @@ def main() -> None:
     missing_cells = [{"profile_name": key[0], "compute": legal_cells[key]}
                      for key in sorted(legal_cells.keys() - selected_cells)]
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
-                "scope": (f"named DIM{args.mesh_dim} 64x64x64 asymmetric Rocket/RoCC source tests "
+                "scope": (f"named DIM{args.mesh_dim} {args.source_shape} asymmetric Rocket/RoCC source tests "
                           "on pinned Spike" + (" using the all-asymmetric profile"
                                                if args.all_asym else "")),
                 "mesh_dim": args.mesh_dim,
+                "source_shape": args.source_shape,
                 "all_asym_profile": args.all_asym or args.mesh_dim != 16,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),
