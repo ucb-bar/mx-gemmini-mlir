@@ -1406,6 +1406,29 @@ This covers the MX QK contractions for the source's used blocks. The causal
 mask, Muon online softmax and P requantization, MX PV contractions, and final
 attention output are separate stages and remain to be qualified together.
 
+The [PV handoff diagnostic](evidence/radiance_gqa_pv_handoff_80f84ca/diagnostic.json)
+pinpoints the next numerical mismatch. Given the **same BF16 P values** for
+head 0, block 0, the experimental Python golden's general MX quantizer and a
+translation of the source Muon requantizer differ on **4,093 / 4,096 P codes**
+and **128 / 128 P scales**. The translation's E4M3 encoder matches the source
+C helper for 228,480 nonnegative BF16/scale inputs; its scale selector uses
+rounded `torch.exp` as a proxy for Muon's `mu_fexp`, so the counts are a
+diagnostic rather than an executed Muon result. The source-style P and the
+generated V operand have a raw E4M3 PV product bound of 15 in this probe.
+The generated `O_gold` is therefore an internal model output, **not yet a
+golden for the existing mixed MX/Muon kernel**.
+
+```sh
+python -m tools.diagnose_radiance_gqa_pv_handoff \
+  --prepared-dir /new/mx-gqa-generated --source-root "$RADIANCE_KERNELS_ROOT" \
+  --out-json /new/gqa-pv-handoff.json
+```
+
+To qualify PV and the final output, the compiler needs runtime P codes and
+scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
+source-faithful numerical oracle for that handoff. This kernel's softmax runs
+on Muon; a separate MX VPU softmax test cannot stand in for it.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)

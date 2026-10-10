@@ -1,0 +1,31 @@
+{
+  "frontend_mlir_sha256": "2f01fab1d162647aeddfab5410a654e2b78c021b2c6fff33d8edfdb7fc65cc1b",
+  "generator_patch_sha256": "fdf118e56101b0147ffd4c43ed31dd90094692f5c8d87ac96476e8ae18d53910",
+  "model_p_code_range": [
+    0,
+    80
+  ],
+  "model_scale_code_range": [
+    123,
+    125
+  ],
+  "muon_requant_source_sha256": "c7dc2a63bf283a7cb3035983c26f76651569fa43a875d6fde06bcaf8991fa47f",
+  "p_code_mismatches": 4093,
+  "p_codes_compared": 4096,
+  "p_scale_mismatches": 128,
+  "p_scales_compared": 128,
+  "schema": "mx_gemmini.gqa_pv_handoff_diagnostic.v1",
+  "scope": "head0 block0 P operand; shared BF16 values; torch.exp proxy, not Muon SFU execution",
+  "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "source_style_p_code_range": [
+    0,
+    63
+  ],
+  "source_style_raw_pv_product_bound": 15.0,
+  "source_style_scale_code_range": [
+    125,
+    127
+  ],
+  "status": "source_muon_p_requant_policy_differs_from_experimental_model"
+}
