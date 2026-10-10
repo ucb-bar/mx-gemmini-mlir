@@ -1,9 +1,10 @@
-"""Compile a source-derived GQA QK quantization candidate on Nicolas's Spike.
+"""Compile a GQA QK headroom candidate on Nicolas's Spike.
 
 The committed Radiance attention generator's Q/K codes overflow Nicolas's
-reduced-precision MX product path. This command changes those bytes under an
-explicit E8M0 scale-shift policy. Passing means the candidate first QK tile
-matches its hardware-aware oracle; it does not prove attention source parity.
+reduced-precision MX product path. The default mode derives shifted bytes from
+the original header. With --generated-hardware-model, a pinned patch is applied
+to a copied generator and the emitted header is compiled directly. Both modes
+qualify one QK tile and do not prove full attention source parity.
 """
 
 from __future__ import annotations
@@ -12,12 +13,16 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import sys
 
 from mx_gemmini_support.source_attention_qk import (
-    SOURCE_REVISION, SUBMODULE_REVISION, GENERATOR_SHA256,
-    read_first_gqa_qk, derive_shifted_qk, source_product_overflow_count)
+    SOURCE_REVISION, LATEST_SOURCE_REVISION, SUBMODULE_REVISION, GENERATOR_SHA256,
+    HARDWARE_GENERATOR_SHA256, HARDWARE_MODEL_SHA256, HARDWARE_SHIFT,
+    read_first_gqa_qk, derive_shifted_qk, derive_generated_hardware_qk,
+    source_product_overflow_count)
 from mx_gemmini_support.source_gemm import SourceGemm
 from mx_gemmini_support.source_payload import (
     ATTENTION_QK_CANDIDATE_ORIGIN, make_manifest)
@@ -29,6 +34,7 @@ from tools.qualify_radiance_ws_roster import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
+HARDWARE_PATCH = ROOT / "docs/patches/radiance_gqa_hardware_model.patch"
 
 
 def _sha(path: Path) -> str:
@@ -54,30 +60,68 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--scale-shift", required=True, type=int)
     parser.add_argument("--baseline-index", type=Path)
+    parser.add_argument("--generated-hardware-model", action="store_true",
+                        help="regenerate GQA source data with the pinned experimental hardware model")
     args = parser.parse_args()
     for name in ("source_root", "model2mlir_root", "mxq_root", "rtl_root",
                  "riscv_root", "mx_opt", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
-    for path, revision in ((args.source_root, SOURCE_REVISION),
-                           (args.source_root / "lib/mxgemmini", SUBMODULE_REVISION),
+    if args.generated_hardware_model and args.scale_shift != HARDWARE_SHIFT:
+        parser.error(f"generated hardware model requires pinned shift {HARDWARE_SHIFT}")
+    source_revision = _revision(args.source_root)
+    allowed_sources = ((SOURCE_REVISION, LATEST_SOURCE_REVISION) if
+                       args.generated_hardware_model else (SOURCE_REVISION,))
+    if source_revision not in allowed_sources:
+        raise ValueError("selected Radiance source revision differs from pinned GQA fixture")
+    for path, revision in ((args.source_root / "lib/mxgemmini", SUBMODULE_REVISION),
                            (args.model2mlir_root, MODEL2MLIR_REVISION),
                            (args.mxq_root, MXQ_REVISION),
                            (args.rtl_root, RTL_REVISION)):
         if _revision(path) != revision:
             raise ValueError(f"selected source differs from pinned QK candidate: {path}")
-    directory = args.source_root / "kernels/flash_attention_mx_gqa"
-    generator = directory / "fa_gen_data.py"
-    if _sha(generator) != GENERATOR_SHA256:
+    source_directory = args.source_root / "kernels/flash_attention_mx_gqa"
+    if _sha(source_directory / "fa_gen_data.py") != GENERATOR_SHA256:
         raise ValueError("Radiance GQA data generator changed")
+    args.out_dir.mkdir(parents=True)
+    if args.generated_hardware_model:
+        patched_root = args.out_dir / "patched_source"
+        directory = patched_root / "kernels/flash_attention_mx_gqa"
+        directory.mkdir(parents=True)
+        for name in ("kernel.cpp", "fa_gen_data.py", "flash_attention_model.py"):
+            shutil.copyfile(source_directory / name, directory / name)
+        (patched_root / "lib").mkdir()
+        (patched_root / "lib/mxgemmini").symlink_to(
+            args.source_root / "lib/mxgemmini", target_is_directory=True)
+        # Apply in the copied tree; the source checkout is never modified.
+        result = subprocess.run(["git", "apply", "--unidiff-zero", str(HARDWARE_PATCH)],
+                                cwd=patched_root, text=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, check=False)
+        (args.out_dir / "apply_patch.log").write_text(result.stdout)
+        if result.returncode:
+            raise RuntimeError("hardware-model patch did not apply to copied source")
+        if (_sha(directory / "fa_gen_data.py") != HARDWARE_GENERATOR_SHA256 or
+                _sha(directory / "flash_attention_model.py") != HARDWARE_MODEL_SHA256):
+            raise ValueError("hardware-model source patch differs from pinned bytes")
+        generator = directory / "fa_gen_data.py"
+        _run([sys.executable, str(generator), "--Sq", "64", "--Sk", "256",
+              "--d", "64", "--block_n", "64", "--n_q", "8", "--n_kv", "2",
+              "--q_pos0", "64", "--mx-hardware-shift", str(HARDWARE_SHIFT),
+              "--out", str(directory / "include/fa_data.h")],
+             args.out_dir / "generation.log")
+    else:
+        directory = source_directory
+        generator = directory / "fa_gen_data.py"
     header = directory / "include/fa_data.h"
-    if not header.exists():
+    if not args.generated_hardware_model and not header.exists():
         subprocess.run([sys.executable, str(generator), "--Sq", "64", "--Sk", "256",
                         "--d", "64", "--block_n", "64", "--n_q", "8", "--n_kv", "2",
                         "--q_pos0", "64", "--out", "include/fa_data.h"],
                        cwd=directory, check=True)
-    tile = read_first_gqa_qk(args.source_root)
+    tile = read_first_gqa_qk(patched_root if args.generated_hardware_model else
+                             args.source_root,
+                             hardware_generated=args.generated_hardware_model)
     sys.path[:0] = [str(ROOT), str(args.model2mlir_root), str(args.mxq_root),
                     str(args.source_root / "lib/mxgemmini")]
     import torch
@@ -97,8 +141,26 @@ def main() -> None:
             (args.source_root / "lib/mxgemmini/fp8_matmul_model.py").resolve()):
         raise ValueError("QK frontend or numerical model resolved to another checkout")
     profile = load_profile(PROFILE, rtl_root=args.rtl_root)
-    resources, policy = derive_shifted_qk(tile, args.scale_shift, torch=torch,
-                                          low_level_model=low_level_model)
+    if args.generated_hardware_model:
+        resources, policy = derive_generated_hardware_qk(
+            tile, torch=torch, low_level_model=low_level_model,
+            patch_sha256=_sha(HARDWARE_PATCH))
+        sys.path.insert(0, str(directory))
+        import flash_attention_model as fa_model
+        fa_model.MX_HARDWARE_SHIFT = HARDWARE_SHIFT
+        q, k, _ = fa_model.make_inputs_gqa(64, 256, 64, 8, 2, 0)
+        qa, qs = fa_model.mx_quantize_cols(q[0])
+        kb, ks = fa_model.mx_quantize_cols(k[0, :64])
+        direct = fa_model.mx_gemm(qa, qs, kb.t().contiguous(), ks.t().contiguous())
+        direct_codes, direct_bits = low_level_model.tensor_to_custom_fp_codes(direct, "bf16")
+        from mx_gemmini_support.source_fp6 import _bytes
+        if (direct_bits != 16 or
+                _bytes(tuple(code for row in direct_codes for code in row), 2) !=
+                resources["golden_bf16"].data):
+            raise ValueError("generated GQA header bytes disagree with source QK model")
+    else:
+        resources, policy = derive_shifted_qk(tile, args.scale_shift, torch=torch,
+                                              low_level_model=low_level_model)
 
     class Qk(torch.nn.Module):
         def forward(self, query: torch.Tensor, key_transposed: torch.Tensor):
@@ -132,7 +194,6 @@ def main() -> None:
     manifest["source_derivation"] = policy
     payload_bound = bind_payload(bound, profile, manifest)
     verify_ir(payload_bound, profile)
-    args.out_dir.mkdir(parents=True)
     frontend = args.out_dir / "frontend"
     frontend.mkdir()
     for name, content in (("model2mlir.mlir", captured.mlir_text),
@@ -162,15 +223,18 @@ def main() -> None:
     over_product = source_product_overflow_count(tile)
     index = {
         "schema": "mx_gemmini.radiance_gqa_qk_candidate.v1",
-        "status": "shifted_source_qk_candidate_matched_on_pinned_spike",
-        "scope": "first QK tile only; changed source operand codes and scales; no full attention or original source golden parity",
-        "source_revision": SOURCE_REVISION, "submodule_revision": SUBMODULE_REVISION,
+        "status": ("generated_source_qk_candidate_matched_on_pinned_spike" if
+                   args.generated_hardware_model else
+                   "shifted_source_qk_candidate_matched_on_pinned_spike"),
+        "scope": ("first QK tile only; patched experimental GQA source generator and golden; no full mixed-engine attention parity" if
+                  args.generated_hardware_model else
+                  "first QK tile only; changed source operand codes and scales; no full attention or original source golden parity"),
+        "source_revision": source_revision, "submodule_revision": SUBMODULE_REVISION,
         "model2mlir_revision": MODEL2MLIR_REVISION, "mxq_revision": MXQ_REVISION,
         "rtl_revision": RTL_REVISION, "compiler_revision": _revision(ROOT),
         "source_driver_sha256": _sha(tile.driver),
         "source_header_sha256": _sha(tile.header),
         "source_arrays_sha256": tile.hashes(),
-        "original_source_products_over_448": over_product,
         "policy": policy,
         "frontend_mlir_sha256": _sha(frontend / "model2mlir.mlir"),
         "bound_mlir_sha256": _sha(frontend / "payload_bound.mlir"),
@@ -183,11 +247,24 @@ def main() -> None:
         "spike_manifest_semantic_sha256": _semantic_manifest_sha(receipt),
         "compared_bf16_outputs": receipt["compared_bf16_outputs"],
     }
+    if args.generated_hardware_model:
+        index["generated_source_products_over_448"] = over_product
+        index["generator_patch_sha256"] = _sha(HARDWARE_PATCH)
+        index["patched_generator_sha256"] = _sha(directory / "fa_gen_data.py")
+        index["patched_model_sha256"] = _sha(directory / "flash_attention_model.py")
+        generation = (args.out_dir / "generation.log").read_text()
+        relative_error = re.search(r"golden-model rel err\s+MX-flash\(causal\+GQA\)"
+                                   r" vs fp32 ref = ([0-9.eE+-]+)", generation)
+        if relative_error is None or not 0 <= float(relative_error.group(1)) < 1:
+            raise ValueError("generated full GQA golden lacks finite FP32 comparison")
+        index["full_attention_fp32_relative_error"] = float(relative_error.group(1))
+    else:
+        index["original_source_products_over_448"] = over_product
     if args.baseline_index and json.loads(args.baseline_index.read_text()) != index:
         raise ValueError("GQA QK candidate or compiled artifacts differ from baseline")
     _write(args.out_dir / "index.json", index)
     print(f"qualified source-derived GQA QK tile: 4096 BF16 outputs; "
-          f"original source has {over_product} oversized raw products")
+          f"selected source has {over_product} oversized raw products")
 
 
 if __name__ == "__main__":

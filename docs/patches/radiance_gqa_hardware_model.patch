@@ -1,0 +1,34 @@
+diff --git a/kernels/flash_attention_mx_gqa/fa_gen_data.py b/kernels/flash_attention_mx_gqa/fa_gen_data.py
+index 2f9cd20..8966511 100644
+--- a/kernels/flash_attention_mx_gqa/fa_gen_data.py
++++ b/kernels/flash_attention_mx_gqa/fa_gen_data.py
+@@ -73,0 +74,2 @@ def main():
++    ap.add_argument("--mx-hardware-shift", type=int, choices=range(1, 9),
++                    help="experimental E8M0 headroom shift with Nicolas's reduced-precision mesh model")
+@@ -74,0 +77 @@ def main():
++    FA.MX_HARDWARE_SHIFT = args.mx_hardware_shift or 0
+@@ -135,0 +139 @@ def main():
++        f.write(f"#define FA_MX_HARDWARE_SHIFT {FA.MX_HARDWARE_SHIFT}\n")
+diff --git a/kernels/flash_attention_mx_gqa/flash_attention_model.py b/kernels/flash_attention_mx_gqa/flash_attention_model.py
+index ddbff2a..9e8a82c 100644
+--- a/kernels/flash_attention_mx_gqa/flash_attention_model.py
++++ b/kernels/flash_attention_mx_gqa/flash_attention_model.py
+@@ -29,0 +30 @@ _ACC = [(4, 4)] * 8 + [(4, 5)] * 2 + [(4, 6)] * 5 + [(8, 7)] * 1
++MX_HARDWARE_SHIFT = 0  # Experimental generator policy; zero preserves committed behavior.
+@@ -72,0 +74,3 @@ def mx_quantize_cols(M):
++    if MX_HARDWARE_SHIFT:
++        q = _fp8_round(q / (1 << MX_HARDWARE_SHIFT))
++        s = s * (1 << MX_HARDWARE_SHIFT)
+@@ -79,5 +83,2 @@ def mx_gemm(A_fp8, A_scales, B_fp8, B_scales):
+-    # NOTE: the (4,x)-exponent accumulator schedule (_ACC) was tuned for O(1) demo
+-    # operands; MX column-group quantization scales real operands up into the fp8 range
+-    # (|x| up to 448), so their products overflow an exp=4 accumulator -> inf/NaN. The
+-    # mesh here is modeled with the bf16 product + bf16-accumulate path (the default),
+-    # which is numerically safe and matches the Gemmini bf16 accumulate.
++    # The legacy golden uses a wide BF16 path. With explicit operand headroom,
++    # use Nicolas's reduced-precision product and accumulator schedule instead.
+@@ -85,0 +87,4 @@ def mx_gemm(A_fp8, A_scales, B_fp8, B_scales):
++    if MX_HARDWARE_SHIFT:
++        return G.tiled_matmul_hwlike(
++            A, B, A_scales, B_scales, verbose=False,
++            prod_precision_list=_PROD, acc_precision_list=_ACC)
