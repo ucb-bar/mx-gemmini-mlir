@@ -1,0 +1,42 @@
+schema: mx_gemmini.quantization_policy.v1
+default_format: mxfp6
+module_overrides: {}
+functional_overrides: {}
+output_chains: {}
+fp6_codebooks:
+  default:
+    status: reviewed
+    activation:
+    - 0
+    - 14
+    - 18
+    - 5
+    - 39
+    - 12
+    - 17
+    - 6
+    - 7
+    - 8
+    - 4
+    - 46
+    - 9
+    - 13
+    - 42
+    - 38
+    weight:
+    - 0
+    - 37
+    - 6
+    - 11
+    - 17
+    - 9
+    - 44
+    - 4
+    - 5
+    - 45
+    - 40
+    - 36
+    - 14
+    - 13
+    - 38
+    - 43
