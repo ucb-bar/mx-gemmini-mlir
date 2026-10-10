@@ -32,7 +32,7 @@ def _revision(root: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--variant", choices=("lut", "direct", "fp6_lut"), default="lut",
+    parser.add_argument("--variant", choices=("lut", "direct", "fp6_lut", "fp4_fp6_lut"), default="lut",
                         help="activation format and projection in Nicolas's DIM16 source test")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
@@ -63,7 +63,7 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
     suffix = {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
-              "fp6_lut": "fp6_fp4"}[args.variant]
+              "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6"}[args.variant]
     source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
     header = software / f"include/matmul_data_asym_{suffix}.h"
     recipe = source_recipe(source, header, profile)

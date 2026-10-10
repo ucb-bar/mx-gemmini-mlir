@@ -129,6 +129,7 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     ("e4m3_fp4", 2048, 10, 3, "MxAsymE4M3Fp4GemminiRocketConfig", 4),
     ("e4m3s_fp4", 4096, 6, 0, "MxAsymE4M3Fp4GemminiRocketConfig", 0),
     ("fp6_fp4", 2048, 3, 3, "MxAsymFp6Fp4GemminiRocketConfig", 3),
+    ("fp4_fp6", 2048, 1, 3, "MxAsymFp4Fp6GemminiRocketConfig", 3),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
         tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):

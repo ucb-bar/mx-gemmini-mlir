@@ -26,6 +26,10 @@ ASYM_CELL = {
 }
 DIRECT_CELL = {**ASYM_CELL, "activation_projection": "direct", "pe_mode": 6}
 FP6_FP4_CELL = {**ASYM_CELL, "activation_format": "fp6_e3m2", "pe_mode": 3}
+FP4_FP6_CELL = {"activation_format": "fp4_e2m1",
+                "activation_projection": "direct",
+                "weight_format": "fp6_e3m2",
+                "weight_projection": "lut", "pe_mode": 1}
 
 _VARIANTS = {
     "matmul_tiled_asym_e4m3_fp4_64x64.c": {
@@ -40,6 +44,11 @@ _VARIANTS = {
     },
     "matmul_tiled_asym_fp6_fp4_64x64.c": {
         "header": "matmul_data_asym_fp6_fp4.h", "cell": FP6_FP4_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 3, "lut_entry_bits": 6,
+    },
+    "matmul_tiled_asym_fp4_fp6_64x64.c": {
+        "header": "matmul_data_asym_fp4_fp6.h", "cell": FP4_FP6_CELL,
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
         "lut_words_per_line": 3, "lut_entry_bits": 6,
     },
@@ -109,7 +118,8 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             recipe.get("shape") != [64, 64, 64] or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
-            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL) or
+            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
+                                          FP4_FP6_CELL) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
                 for key in ("source_driver_sha256", "source_header_sha256"))):
@@ -277,13 +287,15 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     if sha256(header) != recipe.get("source_header_sha256"):
         raise ValueError("asymmetric source header differs from recipe")
     text = header.read_text(encoding="ascii")
-    lut = recipe["compute"]["activation_projection"] == "lut"
-    lut_words = 3 if recipe["compute"]["activation_format"] == "fp6_e3m2" else 4
-    a_name = "A_in_hw" if lut else "A_in"
-    a_shape = "[32][64]" if lut else "[MATMUL_M][MATMUL_K]"
+    cell = recipe["compute"]
+    lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
+    packed_activation = cell["activation_format"] != "fp8_e4m3" or lut
+    lut_words = 3 if "fp6_e3m2" in (cell["activation_format"], cell["weight_format"]) else 4
+    a_name = "A_in_hw" if packed_activation else "A_in"
+    a_shape = "[32][64]" if packed_activation else "[MATMUL_M][MATMUL_K]"
     resources = {
         "activation": bytes(_array(text, name=a_name, ctype="uint8_t",
-                                    dimensions=a_shape, count=2048 if lut else 4096,
+                                    dimensions=a_shape, count=2048 if packed_activation else 4096,
                                     maximum=255)),
         "weight": bytes(_array(text, name="B_in", ctype="uint8_t",
                                 dimensions="[MATMUL_K][MATMUL_N / 2]",
@@ -319,8 +331,10 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         raise ValueError("asymmetric physical lowering source or target changed")
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
-    use_lut = recipe["compute"]["activation_projection"] == "lut"
-    ti, tj, tki = (2 if use_lut else 4), 2, 4
+    cell = recipe["compute"]
+    use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
+    packed_activation = cell["activation_format"] != "fp8_e4m3" or use_lut
+    ti, tj, tki = (2 if packed_activation else 4), 2, 4
     dim = 16
     a_base, b_end, c_base = 0, 8192, 128
     b_base = b_end - tki * tj * dim
@@ -330,9 +344,10 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         steps.append(PhysicalStep(phase, None, command))
 
     issue("configure", _cmd(7, 0, 0))
-    activation_code = 1 if recipe["compute"]["activation_format"] == "fp6_e3m2" else 0
-    lut_entry_bits = 6 if activation_code else 8
-    config_ex = (1 << 16) | (2 << 12) | (activation_code << 10) | \
+    activation_code = {"fp8_e4m3": 0, "fp6_e3m2": 1, "fp4_e2m1": 2}[cell["activation_format"]]
+    weight_code = {"fp6_e3m2": 1, "fp4_e2m1": 2}[cell["weight_format"]]
+    lut_entry_bits = 6 if "fp6_e3m2" in (cell["activation_format"], cell["weight_format"]) else 8
+    config_ex = (1 << 16) | (weight_code << 12) | (activation_code << 10) | \
                 (3 << 14) | (int(use_lut) << 5) | (1 << 2)
     issue("configure", _cmd(0, config_ex, 1 << 48))
     if use_lut:
