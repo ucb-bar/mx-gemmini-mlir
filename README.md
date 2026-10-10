@@ -39,6 +39,9 @@ MM1→VPU×2→SPAD_REQUANT→resident MM2 chain now runs in one compiler-genera
 RV64 program and matches the C1/C2 source outputs on Spike. The checked
 frontend and target inputs now form one SSA-connected typed chain for the
 qualified 64³ E4M3 source case; general mixed lowering remains open.
+The [BF16 VPU softmax seam](docs/compiled_mx_pipeline.md#compiler-issued-bf16-vpu-softmax)
+captures `torch.softmax` with model2MLIR, lowers Nicolas's six VPU operations,
+and matches all 512 BF16 source-reference outputs on Spike.
 The two legal E4M3×FP4 modes in Nicolas's standalone asymmetric profile also
 lower through the shared physical command representation and match all 4,096
 BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no

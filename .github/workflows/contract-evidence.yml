@@ -28,7 +28,8 @@ jobs:
             tests/test_target_profile.py::test_lut_projection_selects_mode_per_operand \
             tests/test_radiance_mx_gemm_source_parity_roster.py \
             tests/test_radiance_latest_full_roster_evidence.py \
-            tests/test_spike_weight_lut_candidate_all_modes_evidence.py
+            tests/test_spike_weight_lut_candidate_all_modes_evidence.py \
+            tests/test_source_softmax.py
 
   pinned-rtl-profiles:
     runs-on: ubuntu-latest
@@ -39,15 +40,16 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install profile test dependencies
-        run: python -m pip install -e . 'pytest>=8,<9'
+        run: python -m pip install -e '.[ir]' 'pytest>=8,<9'
       - name: Fetch Nicolas's pinned Gemmini and MxGen source
         run: |
           git clone --filter=blob:none --single-branch --branch gemmini-mx-cleanup \
             --no-checkout https://github.com/ucb-bar/gemmini.git /tmp/gemmini-mx-pinned
           git -C /tmp/gemmini-mx-pinned checkout --detach \
             266c593f2cb51d7e3fe83fc0317072b585ac3c52
-          git -C /tmp/gemmini-mx-pinned submodule update --init mxgen
-      - name: Check all source-bound profiles and negative mode selection
+          git -C /tmp/gemmini-mx-pinned submodule update --init \
+            mxgen software/gemmini-rocc-tests
+      - name: Check all profiles, VPU softmax binding, and negative selections
         env:
           MX_GEMMINI_RTL_ROOT: /tmp/gemmini-mx-pinned
-        run: python -m pytest -q tests/test_target_profile.py
+        run: python -m pytest -q tests/test_target_profile.py tests/test_source_softmax.py

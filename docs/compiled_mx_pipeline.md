@@ -416,8 +416,37 @@ Nicolas's reference `vpu_ops`, `vpu_softmax`, and
 the pinned Spike extension. They passed all reference comparisons, including
 the fused VPU cases and the VPU→requant→matmul chain. That is model capability
 evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.json)
-records source, ELF, tool, and log hashes. The dialect's physical
-VPU/SPAD_REQUANT command lowerer now has a source-audited executable seam:
+records source, ELF, tool, and log hashes. Compiler-issued VPU coverage now
+includes the following source-audited cases.
+
+### Compiler-issued BF16 VPU softmax
+
+`tools.qualify_nicolas_vpu_softmax` captures `torch.softmax` on a 16×32 BF16
+tensor with pinned model2MLIR `e9ded36`. It checks the resulting max, subtract,
+exp, sum, and division decomposition, then binds Nicolas's six-step BF16 VPU
+schedule to the MX+VPU profile. The typed
+[VPU MLIR](evidence/nicolas_vpu_softmax_model2mlir_329718b/softmax.profile_bound.mlir)
+lowers to six funct-33 RoCC commands. The generated issuer replaces exactly
+the six VPU calls in Nicolas's `vpu_softmax.c`; that source retains input
+generation, transfers, and its bit-exact VPU reference checker. On pinned
+Spike, all **512 BF16 outputs** match the reference. Two clean runs reproduce
+the frontend MLIR, bound MLIR, generated issuer, objects, ELF, extension, and
+Spike log hashes ([first](evidence/nicolas_vpu_softmax_model2mlir_329718b/first.json),
+[second](evidence/nicolas_vpu_softmax_model2mlir_329718b/reproduction.json)).
+The source VPU rounds each intermediate to BF16; model2MLIR's PyTorch
+decomposition uses FP32 intermediates. This qualifies the source VPU softmax
+sequence, not bit-exact PyTorch output or compiler-generated transfers.
+
+```sh
+python -m tools.qualify_nicolas_vpu_softmax \
+  --model2mlir-root "$MODEL2MLIR_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-vpu-softmax
+```
+
+### Matrix/VPU/requant source chain
+
 `source_vector_chain.py` checks the exact `VPU_MULS` and tiled, resident
 `SPAD_REQUANT` calls in Nicolas's `chain_vpu_spad_requant.c`, then emits
 [typed MLIR](evidence/nicolas_chain_vpu_requant_64x64_source_bound.mlir).

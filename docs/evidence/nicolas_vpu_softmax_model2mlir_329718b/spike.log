@@ -1,0 +1,5 @@
+softmax 16x32: 0 mismatches vs ref; max |p - p_fp32| = 2015 ppm, max |sum - 1| = 8052 ppm
+cycles: mvin 21, 6 VPU ops 39
+vpu_softmax PASSED
+Gemmini extension configured with:
+    dim = 16
