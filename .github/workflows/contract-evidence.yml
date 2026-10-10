@@ -49,6 +49,8 @@ jobs:
             tests/test_radiance_requant_mesh_roster_evidence.py \
             tests/test_radiance_vpu_legal_roster_evidence.py \
             tests/test_source_softmax.py \
+            tests/test_vpu_softmax_object.py \
+            tests/test_public_vpu_softmax_evidence.py \
             tests/test_radiance_ws_read_once_evidence.py \
             tests/test_radiance_restream_evidence.py \
             tests/test_radiance_batched_gemv_evidence.py \
