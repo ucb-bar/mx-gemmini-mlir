@@ -10,7 +10,7 @@ INPUTS = ("activation", "activation_scales", "weight", "weight_scales")
 LUTS = ("activation_lut", "weight_lut", "output_lut")
 
 
-def attach_source_resources(module, contract, manifest: dict) -> None:
+def attach_source_resources(module, contract, manifest: dict) -> dict:
     """Wire packed codes/scales to the contraction and LUT banks to uploads.
 
     The binary arrays stay in the source bundle. Each typed resource result
@@ -72,3 +72,4 @@ def attach_source_resources(module, contract, manifest: dict) -> None:
         if not argument.uses:
             block.erase_arg(argument)
     function.update_function_type()
+    return produced

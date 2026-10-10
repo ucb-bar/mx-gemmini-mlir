@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .command_ir import Command, emit_c
 from .physical_program import PhysicalProgram
+from . import radiance_fp6_host
 
 
 def _sha(data: bytes) -> str:
@@ -20,7 +21,7 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     if program.mode != "spike_serial":
         raise ValueError("standalone execution is qualified only for the serial Spike mode")
     if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2",
-                                     "radiance_header_fp8"}:
+                                     "radiance_header_fp8", "radiance_header_fp6"}:
         raise ValueError("standalone MX output format is not qualified")
     if (not program.source_golden_preserving and
             program.derived_expected_bf16 is None and
@@ -39,7 +40,9 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
     quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}
-    host_header = program.output_format == "radiance_header_fp8"
+    host_fp8 = program.output_format == "radiance_header_fp8"
+    host_fp6 = program.output_format == "radiance_header_fp6"
+    host_header = host_fp8 or host_fp6
     packed_fp4 = program.output_format == "fp4_e2m1"
     packed_fp6 = program.output_format == "fp6_e3m2"
     quant_name = "nicolas_fp6" if packed_fp6 else "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
@@ -54,13 +57,16 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
             f"static uint8_t output_quantized[{quant_bytes}] __attribute__((aligned(64)));\n"
             "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
     elif host_header:
+        code_name = "source_fp6_packed" if host_fp6 else "golden_fp8"
+        code_size = m * n // 2 if host_fp6 else m * n
         if (not program.source_golden_preserving or
-                len(resources.get("golden_fp8", b"")) != m * n or
-                len(resources.get("golden_output_scales", b"")) != m * n // 32):
-            raise ValueError("Radiance header epilogue needs exact source BF16 and FP8 goldens")
+                len(resources.get(code_name, b"")) != code_size or
+                len(resources.get("golden_output_scales", b"")) != m * n // 32 or
+                (host_fp6 and len(resources.get("output_lut", b"")) != 64 * 12)):
+            raise ValueError("Radiance header epilogue needs exact source BF16, codes, scales, and FP6 LUT")
         runtime_declarations = (
             f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
-            f"static uint8_t output_quantized[{m * n}] __attribute__((aligned(64)));\n"
+            f"static uint8_t output_quantized[{code_size}] __attribute__((aligned(64)));\n"
             f"static uint8_t scratch_output_scales[{m * n // 32}] __attribute__((aligned(64)));\n")
     else:
         runtime_declarations = (f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
@@ -163,7 +169,7 @@ int main(void) {{
   return code_errors != 0 || scale_errors != 0;
 }}
 '''
-    elif host_header:
+    elif host_fp8:
         driver = f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
@@ -263,6 +269,9 @@ int main(void) {{
   return code_errors != 0 || scale_errors != 0;
 }}
 '''
+    elif host_fp6:
+        driver = radiance_fp6_host.emit_driver(
+            externs, runtime_declarations, arguments, names, m, n, k)
     assembly = [".section .rodata", ".balign 64"]
     for name in sorted(resource_files):
         assembly.extend((f".globl {name}", f"{name}:",
@@ -308,7 +317,9 @@ int main(void) {{
             a != b for a, b in zip(resources["golden_output_scales"],
                                    resources["nicolas_output_scales"]))
     if host_header:
-        receipt["golden_basis"] = "radiance_header_fp8_from_mx_bf16"
-        receipt["output_policy"] = "radiance_header_fp8_v1"
+        receipt["golden_basis"] = ("radiance_header_fp6_from_mx_bf16" if host_fp6 else
+                                   "radiance_header_fp8_from_mx_bf16")
+        receipt["output_policy"] = ("radiance_header_fp6_v1" if host_fp6 else
+                                    "radiance_header_fp8_v1")
     (directory / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt

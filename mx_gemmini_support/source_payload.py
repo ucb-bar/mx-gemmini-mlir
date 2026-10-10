@@ -121,6 +121,32 @@ def read_source_payload(kernel: SourceGemm, *,
         source, name="C_scales_row", ctype="uint8_t",
         dimensions="[MATMUL_GN][MATMUL_M]", count=n // 32 * m, maximum=255)),
         (n // 32, m), 8, "n_group_row_e8m0")
+    if kernel.quant_output and kernel.datatype == "FP6":
+        projected = bytes(_array(source, name="C_proj_hw", ctype="uint8_t",
+                                 dimensions="[64][128]", count=m * n // 2,
+                                 maximum=255))
+        packed_n = bytes(_array(source, name="C_out", ctype="uint8_t",
+                                dimensions="[MATMUL_M][MATMUL_N / 2]",
+                                count=m * n // 2, maximum=255))
+        for row in range(m):
+            for col in range(n):
+                from_n = (packed_n[row * (n // 2) + col // 2] >> (4 * (col & 1))) & 15
+                from_m = (projected[(row // 2) * n + col] >> (4 * (row & 1))) & 15
+                if from_n != from_m:
+                    raise ValueError("source FP6 output projections differ")
+        source_scales = resources["output_scales"].data
+        row_major_scales = bytes(source_scales[group * m + row]
+                                 for row in range(m) for group in range(n // 32))
+        current_codes, current_scales = quantize_bf16_fp6_lut_output(
+            resources["golden_bf16"].data, m, n, resources["output_lut"].data)
+        resources["source_fp6_packed"] = Resource(
+            projected, (m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
+        resources["nicolas_fp6"] = Resource(
+            current_codes, (m // 2, n), 8, "packed_even_odd_m_fp6_lut_index")
+        resources["golden_output_scales"] = Resource(
+            row_major_scales, (m, n // 32), 8, "row_major_n_group_e8m0")
+        resources["nicolas_output_scales"] = Resource(
+            current_scales, (m, n // 32), 8, "row_major_n_group_e8m0")
     if fp6_quantized_specialization:
         source_codes = bytes(_array(source, name="C_proj_hw", ctype="uint8_t",
                                     dimensions="[64][128]", count=m * n // 2,
@@ -138,7 +164,7 @@ def read_source_payload(kernel: SourceGemm, *,
             bytes(source_scales[group * m + row]
                   for row in range(m) for group in range(n // 32)),
             (m, n // 32), 8, "row_major_n_group_e8m0")
-    if kernel.quant_output or vpu_spad_requant_x2:
+    if (kernel.quant_output and kernel.datatype in {"FP8", "FP4"}) or vpu_spad_requant_x2:
         if kernel.datatype not in {"FP8", "FP4"}:
             raise ValueError("source quantized-output golden is qualified only for FP8/FP4")
         codes = bytes(_array(source, name="C_out", ctype="uint8_t",
@@ -186,13 +212,18 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
                       for name, resource in sorted(resources.items())},
     }
     if kernel.quant_output:
-        manifest["output_format"] = ("fp8_e4m3" if kernel.datatype == "FP8"
-                                      else "fp4_e2m1")
-        manifest["output_oracle"] = ("nicolas_mxquant_po2_rne_v1" if kernel.datatype == "FP8"
-                                      else "nicolas_fp4_e3m1_e2m1_v1")
+        manifest["output_format"] = {"FP8": "fp8_e4m3", "FP4": "fp4_e2m1",
+                                     "FP6": "fp6_e3m2"}[kernel.datatype]
+        manifest["output_oracle"] = {
+            "FP8": "nicolas_mxquant_po2_rne_v1",
+            "FP4": "nicolas_fp4_e3m1_e2m1_v1",
+            "FP6": "nicolas_fp6_e3m2_lut_po2_rne_v1",
+        }[kernel.datatype]
         manifest["source_quant_golden_convention"] = "source_header"
         if kernel.datatype == "FP4":
             manifest["source_quant_header_format"] = "fp8_e4m3"
+        if kernel.datatype == "FP6":
+            manifest["source_quant_header_format"] = "packed_fp6_lut_index"
     if fp6_quantized_specialization:
         if kernel.datatype != "FP6" or kernel.quant_output:
             raise ValueError("FP6 output specialization requires a fullout source driver")
@@ -274,8 +305,11 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
                   manifest.get("output_oracle") == "nicolas_fp4_e3m1_e2m1_v1") or
                  (precision == "FP6" and output_format == "fp6_e3m2" and
                   manifest.get("output_oracle") == "nicolas_fp6_e3m2_lut_po2_rne_v1" and
-                  manifest.get("output_specialization") == "bf16_fullout_to_fp6_lut_quantized"))
-        expected_convention = ("source_header_projected" if precision == "FP6" else
+                  manifest.get("output_specialization") in {
+                      None, "bf16_fullout_to_fp6_lut_quantized"}))
+        expected_convention = ("source_header_projected" if precision == "FP6" and
+                               manifest.get("output_specialization") ==
+                               "bf16_fullout_to_fp6_lut_quantized" else
                                "source_header_unscaled" if manifest.get("output_specialization") ==
                                "matrix_vpu_x2_spad_requant_fp8" else "source_header")
         if (not valid or manifest.get("source_quant_golden_convention") != expected_convention or

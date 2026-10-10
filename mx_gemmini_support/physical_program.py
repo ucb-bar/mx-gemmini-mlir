@@ -14,7 +14,8 @@ import hashlib
 from typing import Mapping
 
 from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
-from .quant_reference import exact_bf16_x2, quantize_bf16_radiance_header_fp8
+from .quant_reference import (exact_bf16_x2, quantize_bf16_radiance_header_fp8,
+                              quantize_bf16_radiance_header_fp6)
 from .source_gemm import plan_mx_gemm
 from .source_payload import manifest_json, manifest_sha256
 from .target_profile import profile_sha256
@@ -99,7 +100,7 @@ def _exact_bf16_x2(source: bytes) -> bytes:
     return exact_bf16_x2(source)
 
 
-def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[tuple[str, dict]], bool]:
+def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[tuple[str, dict]], str | None]:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
@@ -123,7 +124,12 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
            _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     contract = [op for op in ops if _operation_name(op) == "mx_gemmini.contract"]
     output_format = manifest.get("output_format", "bf16")
-    host_requant = _text_attr(module, "mx.output_specialization") == "radiance_header_fp8_host_requant"
+    specialization = _text_attr(module, "mx.output_specialization")
+    host_kind = {
+        "radiance_header_fp8_host_requant": "radiance_header_fp8",
+        "radiance_header_fp6_host_requant": "radiance_header_fp6",
+    }.get(specialization)
+    host_requant = host_kind is not None
     readout_name = ("mx_gemmini.readout_bf16" if output_format == "bf16" or host_requant
                     else "mx_gemmini.readout_quantized")
     readout = [op for op in ops if _operation_name(op) == readout_name]
@@ -144,12 +150,26 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
     if host_requant:
         host = ops[-1]
         function = host.parent_op()
-        if (manifest.get("precision") not in {"FP8", "FP4"} or
+        precision = manifest.get("precision")
+        policy = ("radiance_header_fp6_lut_v1" if host_kind == "radiance_header_fp6"
+                  else "radiance_header_fp8_v1")
+        output = "fp6_e3m2" if host_kind == "radiance_header_fp6" else "fp8_e4m3"
+        allowed_precision = ({"FP6"} if host_kind == "radiance_header_fp6"
+                             else {"FP8", "FP4"})
+        expected_operands = list(readout[0].results)
+        if host_kind == "radiance_header_fp6":
+            lut = [op for op in module.walk()
+                   if _operation_name(op) == "mx_gemmini.resource" and
+                   _text_attr(op, "resource_name") == "output_lut"]
+            if len(lut) != 1:
+                raise ValueError("physical FP6 header epilogue needs a checked output LUT")
+            expected_operands += list(lut[0].results)
+        if (precision not in allowed_precision or
                 manifest.get("source_quant_golden_convention") != "source_header" or
                 _text_attr(host, "site_id") != manifest["site_id"] or
-                _text_attr(host, "quant_policy") != "radiance_header_fp8_v1" or
-                _text_attr(host, "output_format") != "fp8_e4m3" or
-                list(host.operands) != list(readout[0].results) or
+                _text_attr(host, "quant_policy") != policy or
+                _text_attr(host, "output_format") != output or
+                list(host.operands) != expected_operands or
                 list(readout[0].operands) != list(contract[0].results) or
                 not isinstance(function, FuncOp) or
                 not isinstance(function.get_return_op(), ReturnOp) or
@@ -182,14 +202,15 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                 "scale_dram_address": _int_attr(op, "scale_dram_address"),
                 "scale_buffer": _text_attr(op, "scale_buffer"),
             }))
-    return vector_ops, host_requant
+    return vector_ops, host_kind
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
-    vector_ops, host_requant = _check_binding(mlir_text, profile, manifest)
+    vector_ops, host_kind = _check_binding(mlir_text, profile, manifest)
+    host_requant = host_kind is not None
     if mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown MX physical scheduling mode")
     if profile.get("transport") != "rocket_rocc":
@@ -197,16 +218,18 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     precision = manifest["precision"]
     shape = tuple(manifest["shape_mnk"])
     tile = tuple(manifest["tile_mnk"])
-    output_format = ("radiance_header_fp8" if host_requant else
+    output_format = (host_kind if host_requant else
                      manifest.get("output_format", "bf16"))
     vector_requant = manifest.get("output_specialization") == "matrix_vpu_x2_spad_requant_fp8"
     if (precision, output_format) not in {("FP8", "bf16"), ("FP4", "bf16"),
                                           ("FP6", "bf16"), ("FP8", "fp8_e4m3"),
                                           ("FP4", "fp4_e2m1"), ("FP6", "fp6_e3m2"),
                                           ("FP8", "radiance_header_fp8"),
-                                          ("FP4", "radiance_header_fp8")}:
+                                          ("FP4", "radiance_header_fp8"),
+                                          ("FP6", "radiance_header_fp6")}:
         raise ValueError("physical MX source precision and output format differ")
-    quant_output = output_format not in {"bf16", "radiance_header_fp8"}
+    quant_output = output_format not in {"bf16", "radiance_header_fp8",
+                                         "radiance_header_fp6"}
     matrix_quant_output = quant_output and not vector_requant
     plan = plan_mx_gemm(shape=shape, tile=tile, datatype=precision,
                         quant_output=matrix_quant_output, acc_to_gmem=False,
@@ -262,8 +285,13 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     if quant_output and precision != "FP6" and len(resources["golden_fp8"]) != m * n:
         raise ValueError("physical FP8/FP4 source golden differs from output shape")
     if host_requant:
-        codes, scales = quantize_bf16_radiance_header_fp8(resources["golden_bf16"], m, n)
-        if (resources.get("golden_fp8") != codes or
+        codes, scales = (
+            quantize_bf16_radiance_header_fp6(
+                resources["golden_bf16"], m, n, resources["output_lut"])
+            if host_kind == "radiance_header_fp6" else
+            quantize_bf16_radiance_header_fp8(resources["golden_bf16"], m, n))
+        if (resources.get("source_fp6_packed" if host_kind == "radiance_header_fp6"
+                          else "golden_fp8") != codes or
                 resources.get("golden_output_scales") != scales):
             raise ValueError("Radiance source header quantized golden differs from BF16 epilogue")
 

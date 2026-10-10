@@ -253,3 +253,94 @@ def quantize_bf16_fp6_lut_output(bf16_bytes: bytes, m: int, n: int,
                 index = min(range(16), key=lambda i: abs(fixed - fixed_line[i]) & 0x1ff)
                 packed[(row // 2) * n + col] |= index << (4 if row & 1 else 0)
     return bytes(packed), bytes(scales)
+
+
+def _source_fp6_code(bits: int) -> int:
+    """Radiance mx_fp_math.h BF16→E4M2→FP6 projection."""
+    sign = -1.0 if bits & 0x8000 else 1.0
+    exponent = (bits >> 7) & 255
+    mantissa = bits & 127
+    if exponent == 0:
+        value = 0.0
+    elif exponent == 255:
+        raise ValueError("Radiance FP6 output requires finite BF16 values")
+    else:
+        unbiased = exponent - 127
+        if -6 <= unbiased <= 7:
+            high = (mantissa >> 5) & 3
+            rounding = (mantissa >> 4) & 1
+            sticky = (mantissa & 15) != 0
+            rounded = high + (rounding & (sticky or bool(high & 1)))
+            out_exponent = unbiased + int(rounded >= 4)
+            value = (float("inf") if out_exponent > 7 else
+                     (1.0 + (0 if rounded >= 4 else rounded) * 0.25) *
+                     2.0 ** out_exponent)
+        elif unbiased == -7:
+            value = (2 if mantissa <= 32 else
+                     3 if mantissa <= 95 else 4) / 256.0
+        elif unbiased == -8:
+            value = (1 if mantissa < 64 else 2) / 256.0
+        elif unbiased == -9:
+            value = (0 if mantissa == 0 else 1) / 256.0
+        else:
+            value = 0.0
+    value *= sign
+    magnitude = abs(value)
+    if not math.isfinite(magnitude) or magnitude >= 32.0:
+        value = sign * 28.0
+    elif magnitude <= 0.0546875:
+        value = 0.0
+    elif 0.0625 <= magnitude <= 0.21875:
+        value = sign * (0.0625 if magnitude <= 0.078125 else
+                        0.125 if magnitude <= 0.15625 else 0.1875)
+    if value == 0.0:
+        return 0
+    code_sign = 0x20 if value < 0 else 0
+    magnitude = abs(value)
+    if magnitude < 0.25:
+        return code_sign | min(3, math.floor(magnitude / 0.0625 + 0.5))
+    out_exponent = math.floor(math.log2(magnitude))
+    base = 2.0 ** out_exponent
+    output_mantissa = math.floor((magnitude - base) / (base / 4.0) + 0.5)
+    if output_mantissa >= 4:
+        output_mantissa = 0
+        out_exponent += 1
+    biased = min(7, out_exponent + 3)
+    return code_sign | (biased << 2) | min(3, output_mantissa)
+
+
+def quantize_bf16_radiance_header_fp6(
+        bf16_bytes: bytes, m: int, n: int,
+        output_lut_bytes: bytes) -> tuple[bytes, bytes]:
+    """Reproduce Radiance's packed-M FP6 C projection and output scales."""
+    if (m != 128 or n != 128 or len(bf16_bytes) != 2 * m * n or
+            len(output_lut_bytes) != 64 * 12):
+        raise ValueError("Radiance FP6 source projection requires its 128x128 LUT layout")
+    lines = []
+    for pair in range(64):
+        packed = int.from_bytes(output_lut_bytes[pair * 12:(pair + 1) * 12], "little")
+        lines.append(tuple((packed >> (6 * index)) & 63 for index in range(16)))
+    values = [struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
+              for (word,) in struct.iter_unpack("<H", bf16_bytes)]
+    codes = bytearray(m * n // 2)
+    scales = bytearray(m * n // 32)
+    for row in range(m):
+        fixed = tuple(_e3m2_fixed(code) for code in lines[row // 2])
+        for group in range(n // 32):
+            begin = row * n + group * 32
+            block = values[begin:begin + 32]
+            if any(not math.isfinite(value) for value in block):
+                raise ValueError("Radiance FP6 output requires finite BF16 values")
+            maximum = max(abs(value) for value in block)
+            scale_code = (0 if maximum == 0 else max(
+                0, min(254, math.floor(math.log2(maximum)) - 4 + 127)))
+            scales[row * (n // 32) + group] = scale_code
+            scale = math.ldexp(1.0, scale_code - 127)
+            for col, value in enumerate(block, group * 32):
+                bf16_bits = struct.unpack("<I", struct.pack("<f", value / scale))[0]
+                bf16_bits = (bf16_bits + 0x7fff + ((bf16_bits >> 16) & 1)) >> 16
+                input_code = _source_fp6_code(bf16_bits & 0xffff)
+                quantized = _e3m2_fixed(input_code)
+                index = min(range(16), key=lambda i: abs(quantized - fixed[i]) & 0x1ff)
+                codes[(row // 2) * n + col] |= index << (4 if row & 1 else 0)
+    return bytes(codes), bytes(scales)

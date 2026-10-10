@@ -67,12 +67,12 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
-    attach_source_resources(module, contract, manifest)
+    source_resources = attach_source_resources(module, contract, manifest)
     if source_header_quantized and (
-            precision not in {"FP8", "FP4"} or
+            precision not in {"FP8", "FP4", "FP6"} or
             manifest.get("source_quant_golden_convention") != "source_header" or
             manifest.get("output_specialization") is not None):
-        raise ValueError("Radiance header requantization requires an FP8/FP4 source quantized driver")
+        raise ValueError("Radiance header requantization requires an FP8/FP4/FP6 source quantized driver")
     if manifest.get("output_format") is not None:
         if manifest["output_format"] not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}:
             raise ValueError("source quantized output has an unsupported format")
@@ -86,15 +86,22 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
         block = readout.parent
         assert block is not None
         m, n, _ = manifest["shape_mnk"]
-        codes_type = TensorType(i8, [m if source_header_quantized else
+        codes_type = TensorType(i8, [m if source_header_quantized and precision != "FP6" else
                                      m // 2 if precision in {"FP4", "FP6"} else m, n])
         scales_type = TensorType(i8, [m, n // 32])
         if source_header_quantized:
+            if precision == "FP6" and "output_lut" not in source_resources:
+                raise ValueError("Radiance FP6 source requantization needs its output LUT")
             quant = UnregisteredOp.with_name("mx_gemmini.host_requantize").create(
-                operands=readout.results, result_types=[codes_type, scales_type],
+                operands=[*readout.results, *([source_resources["output_lut"]]
+                                              if precision == "FP6" else [])],
+                result_types=[codes_type, scales_type],
                 attributes={**readout.attributes,
-                            "output_format": StringAttr("fp8_e4m3"),
-                            "quant_policy": StringAttr("radiance_header_fp8_v1")})
+                            "output_format": StringAttr(
+                                "fp6_e3m2" if precision == "FP6" else "fp8_e4m3"),
+                            "quant_policy": StringAttr(
+                                "radiance_header_fp6_lut_v1" if precision == "FP6"
+                                else "radiance_header_fp8_v1")})
             block.insert_op_before(quant, old_return)
         else:
             quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
@@ -108,10 +115,12 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
             block.erase_op(readout)
         function.update_function_type()
         module.attributes["mx.output_specialization"] = StringAttr(
-            "radiance_header_fp8_host_requant" if source_header_quantized else
+            ("radiance_header_fp6_host_requant" if precision == "FP6"
+             else "radiance_header_fp8_host_requant") if source_header_quantized else
             "matrix_vpu_x2_spad_requant_fp8" if manifest.get("output_specialization") ==
             "matrix_vpu_x2_spad_requant_fp8" else
-            "source_bf16_fp6_lut_quantized" if precision == "FP6" else
+            "source_bf16_fp6_lut_quantized" if
+            manifest.get("output_specialization") == "bf16_fullout_to_fp6_lut_quantized" else
             "source_header_quantized")
     output = StringIO()
     Printer(stream=output).print_op(module)

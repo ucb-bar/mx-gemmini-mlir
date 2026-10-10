@@ -135,6 +135,8 @@ def main() -> None:
         prefix = f"lowered MX {'x'.join(map(str, program.shape))}: "
         expected = (prefix + "0 Radiance FP8 code mismatches, 0 E8M0 scale mismatches"
                     if program.output_format == "radiance_header_fp8" else
+                    prefix + "0 Radiance FP6 packed-index mismatches, 0 E8M0 scale mismatches"
+                    if program.output_format == "radiance_header_fp6" else
                     prefix + "0 FP8 code mismatches, 0 E8M0 scale mismatches"
                     if program.output_format == "fp8_e4m3" else
                     prefix + "0 FP4 packed-code mismatches, 0 E8M0 scale mismatches"
@@ -143,7 +145,8 @@ def main() -> None:
                     if program.output_format == "fp6_e3m2" else
                     prefix + "0 BF16 mismatches")
         passed = result.returncode == 0 and expected in result.stdout
-        qualifier = ("radiance_header" if program.output_format == "radiance_header_fp8" else
+        qualifier = ("radiance_header" if program.output_format in {
+                         "radiance_header_fp8", "radiance_header_fp6"} else
                      "nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
                      "derived_vpu_golden" if program.derived_expected_bf16 is not None else
                      "source_golden")
@@ -161,6 +164,9 @@ def main() -> None:
         })
         if program.output_format == "radiance_header_fp8":
             receipt["compared_source_fp8_codes"] = program.shape[0] * program.shape[1]
+            receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+        elif program.output_format == "radiance_header_fp6":
+            receipt["compared_source_fp6_packed_bytes"] = program.shape[0] * program.shape[1] // 2
             receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
         elif program.output_format == "fp8_e4m3":
             receipt["compared_fp8_codes"] = program.shape[0] * program.shape[1]

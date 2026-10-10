@@ -227,20 +227,30 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
                 raise ValueError("MX quantized readout output is absent from selected profile")
         elif name == "mx_gemmini.host_requantize":
-            if (_text_attr(op, "output_format") != "fp8_e4m3" or
-                    _text_attr(op, "quant_policy") != "radiance_header_fp8_v1" or
-                    _text_attr(module, "mx.output_specialization") !=
-                    "radiance_header_fp8_host_requant"):
-                raise ValueError("MX host requantize requires the Radiance FP8 header policy")
+            fp8 = (_text_attr(op, "output_format") == "fp8_e4m3" and
+                   _text_attr(op, "quant_policy") == "radiance_header_fp8_v1" and
+                   _text_attr(module, "mx.output_specialization") ==
+                   "radiance_header_fp8_host_requant")
+            fp6 = (_text_attr(op, "output_format") == "fp6_e3m2" and
+                   _text_attr(op, "quant_policy") == "radiance_header_fp6_lut_v1" and
+                   _text_attr(module, "mx.output_specialization") ==
+                   "radiance_header_fp6_host_requant")
+            if not fp8 and not fp6:
+                raise ValueError("MX host requantize requires a Radiance FP8 header policy or FP6 LUT header policy")
             shape = payload_manifest.get("shape_mnk") if payload_manifest else None
             if (not isinstance(shape, list) or len(shape) != 3 or
                     any(type(d) is not int or d <= 0 for d in shape) or
-                    shape[1] % 32 or len(op.operands) != 1 or len(op.results) != 2 or
+                    shape[1] % 32 or len(op.operands) != (2 if fp6 else 1) or
+                    len(op.results) != 2 or
                     not isinstance(op.operands[0].owner, Operation) or
                     _operation_name(op.operands[0].owner) != "mx_gemmini.readout_bf16"):
                 raise ValueError("MX host requantize lacks a source-bound BF16 readout")
+            if fp6 and (source_resources.get("output_lut") is None or
+                        op.operands[1].owner is not source_resources["output_lut"]):
+                raise ValueError("MX FP6 host requantize lacks its checked output LUT")
             for result, expected_shape in zip(op.results,
-                                              (shape[:2], [shape[0], shape[1] // 32])):
+                                              ([shape[0] // (2 if fp6 else 1), shape[1]],
+                                               [shape[0], shape[1] // 32])):
                 result_type = result.type
                 if (not isinstance(result_type, TensorType) or
                         list(result_type.get_shape()) != expected_shape or

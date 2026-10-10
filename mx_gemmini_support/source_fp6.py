@@ -1,8 +1,8 @@
-"""Read the checked-in FP6 GEMM's packed source operands and three LUT banks.
+"""Read Radiance FP6 GEMM's packed source operands and three LUT banks.
 
-This is a source-data binding for one handwritten fullout kernel. It checks
-packing and LUT interpretation; it does not issue MX commands or claim a
-model2MLIR numerical result.
+This binds the handwritten fullout kernel and source-derived requant fixtures.
+It checks packing and LUT interpretation before physical lowering; the
+model2MLIR capture alone is not a numerical result.
 """
 
 from __future__ import annotations
@@ -73,14 +73,18 @@ def _lut_lines(words: tuple[int, ...]) -> tuple[tuple[int, ...], ...]:
 
 def read_source_fp6_payload(kernel: SourceGemm) -> SourceFp6Payload:
     """Prove that the source's nibble indices and row LUTs round-trip exactly."""
-    if (kernel.datatype != "FP6" or kernel.quant_output or kernel.acc_to_gmem or
-            kernel.shape != (128, 128, 2048) or kernel.tile != (128, 128, 128) or
+    valid = ((not kernel.quant_output and kernel.shape == (128, 128, 2048) and
+              kernel.tile == (128, 128, 128)) or
+             (kernel.quant_output and kernel.shape in {
+                 (128, 128, 128), (128, 128, 512)} and
+              kernel.tile == kernel.shape))
+    if (kernel.datatype != "FP6" or kernel.acc_to_gmem or not valid or
             not kernel.data_header_present):
-        raise ValueError("source FP6 payload requires the checked-in 128x128x2048 fullout driver")
+        raise ValueError("source FP6 payload requires a checked fullout or generated requant driver")
     header = kernel.data_header.read_bytes()
     source = header.decode("ascii")
     m, n, k = kernel.shape
-    a = _array(source, name="A_in_hw", ctype="uint8_t", dimensions="[64][2048]",
+    a = _array(source, name="A_in_hw", ctype="uint8_t", dimensions=f"[64][{k}]",
                count=m * k // 2, maximum=255)
     b = _array(source, name="B_in", ctype="uint8_t",
                dimensions="[MATMUL_K][MATMUL_N / 2]", count=k * n // 2, maximum=255)

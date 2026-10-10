@@ -198,17 +198,28 @@ LogicalResult HostRequantizeOp::verify() {
   auto scales = dyn_cast<RankedTensorType>(getScales().getType());
   auto output = (*this)->getAttrOfType<StringAttr>("output_format");
   auto policy = (*this)->getAttrOfType<StringAttr>("quant_policy");
-  if (!output || output.getValue() != "fp8_e4m3" ||
-      !policy || policy.getValue() != "radiance_header_fp8_v1")
-    return emitOpError("requires the explicit Radiance FP8 header policy");
+  bool fp8 = output && policy && output.getValue() == "fp8_e4m3" &&
+             policy.getValue() == "radiance_header_fp8_v1";
+  bool fp6 = output && policy && output.getValue() == "fp6_e3m2" &&
+             policy.getValue() == "radiance_header_fp6_lut_v1";
+  if (!fp8 && !fp6)
+    return emitOpError("requires an explicit Radiance FP8 or FP6 header policy");
+  auto payload = (*this)->getParentOfType<ModuleOp>()->getAttrOfType<StringAttr>(
+      "mx.payload_manifest_sha256");
+  if ((fp8 && getOutputLut()) ||
+      (fp6 && (!payload || !getOutputLut() || !isCheckedResource(
+          getOutputLut(), "output_lut", payload.getValue()))))
+    return emitOpError("output LUT differs from selected FP6 source resource");
   if (!input || input.getRank() != 2 || !input.getElementType().isBF16() ||
       !codes || codes.getRank() != 2 || !codes.getElementType().isInteger(8) ||
       !scales || scales.getRank() != 2 || !scales.getElementType().isInteger(8) ||
       !codes.hasStaticShape() || !scales.hasStaticShape() ||
-      codes.getDimSize(0) != scales.getDimSize(0) ||
+      codes.getDimSize(0) * (fp6 ? 2 : 1) != scales.getDimSize(0) ||
       codes.getDimSize(1) != scales.getDimSize(1) * 32)
-    return emitOpError("requires BF16 input and matching rank-two FP8 code/E8M0 scale tensors");
-  if (input.hasStaticShape() && input.getShape() != codes.getShape())
+    return emitOpError("requires BF16 input and matching rank-two code/E8M0 scale tensors");
+  if (input.hasStaticShape() &&
+      (input.getDimSize(0) != codes.getDimSize(0) * (fp6 ? 2 : 1) ||
+       input.getDimSize(1) != codes.getDimSize(1)))
     return emitOpError("BF16 input shape differs from output code shape");
   return success();
 }
