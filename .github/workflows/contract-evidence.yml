@@ -76,6 +76,7 @@ jobs:
             tests/test_nicolas_mx_source_inventory.py \
             tests/test_nicolas_direct_matrix_suite_evidence.py \
             tests/test_nicolas_direct_matrix_suite_15_evidence.py \
+            tests/test_nicolas_asym_public_suite_evidence.py \
             tests/test_nicolas_plain_fp8_typed_object_evidence.py \
             tests/test_nicolas_plain_fp8_256_two_wave_evidence.py \
             tests/test_nicolas_plain_fp8_96x96x64_evidence.py \

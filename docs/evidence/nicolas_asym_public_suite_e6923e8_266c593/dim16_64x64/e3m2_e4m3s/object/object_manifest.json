@@ -1,0 +1,123 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "fb784f29a7e02b3ab8da8ee9a7b83537558099b6d0c1deffc9a1b3ea8f95fa77",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_m_nibbles",
+      "maximum_byte_offset": 1072,
+      "minimum_bytes": 2048,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_pair_lut_8bit",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 512,
+      "name": "activation_lut",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "activation_scales",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 7936,
+      "minimum_bytes": 8192,
+      "name": "output_bf16",
+      "position": 3,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 4,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "weight",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "weight_scales",
+      "position": 6,
+      "role": "read"
+    }
+  ],
+  "command_count": 69,
+  "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+  "compiler_source_closure_sha256": "9165bf7ea8a072a31435f73a898f4583bb0becf78c616a636b58377b54e08783",
+  "compute": {
+    "activation_format": "fp6_e3m2",
+    "activation_projection": "lut",
+    "pe_mode": 5,
+    "weight_format": "fp8_e4m3",
+    "weight_projection": "direct"
+  },
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 4,
+  "issuer_c_sha256": "270be2cd9912c3383aaff5b29072a5cf0a366dc25c4f6bc5a815507a81061ea1",
+  "issuer_h_sha256": "5c5c1abc2a5d29b83fe1b9572654f6158bdd46b32ffd788167d79801c2322f5e",
+  "mlir_container_sha256": "fb784f29a7e02b3ab8da8ee9a7b83537558099b6d0c1deffc9a1b3ea8f95fa77",
+  "mode": "spike_serial",
+  "object_emitter_sha256": "3240ea8abbd839f68b33498793fea3d22c4428f4c7f4e9730c7e9a9a43efc1c1",
+  "object_sha256": "cf1c2363ea4a2520c398f41126f709f3bc899d38b8d1e587fd1b35a13a6610cf",
+  "physical_program_sha256": "67e6f21d6aca3fc3207d627485932d2479a513478dbf0c4399847c2ea7b3d01b",
+  "profile_sha256": "62d75d427674bf21bae5ba3ad49e52f62d14db9ef61a865030d4ae2c7c8c8a5e",
+  "recipe_sha256": "05dc4c051a32ffb96e1af92965caf2a051aa83fed796ddccb4105f620d806a15",
+  "resource_manifest_sha256": "9bec58e4ef49ed63f2d7027475580db02c26c5a2e876223f9369e2d936886c20",
+  "resource_sha256": {
+    "activation": "78e19f0fa10435a1a42f55c9480239460100524aa26d4ec22993ca751ef4545d",
+    "activation_lut": "4bc90419fc0fb4897a5f44c08b15ae1641aff9143acc2512efd2db5f5cacf923",
+    "activation_scales": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16": "6aba9d823de9ba27aeab754e8a838ba7cc50eb9d5c7f1d09bac0d56ae5b0cead",
+    "weight": "5f21ace3ed4f4d935758d7dd78fbbdd47918cec3618258813103526227d820e2",
+    "weight_scales": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "source_driver_sha256": "bd55119b7fd33cf793cd8296610902f78b99ba718be156aa03aefec85e31e0f7",
+  "source_header_sha256": "92a5f34b01a6d2dc63ef98145f03ad92b6afd1f5615710a0c0d8509dd9b67456",
+  "status": "rv64_rocc_asymmetric_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

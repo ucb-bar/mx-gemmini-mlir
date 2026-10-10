@@ -1,0 +1,112 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "8360f3650f1139c2cc8e0cf42e1eba515793e6b1ac1b024eca323d6eb120d3e4",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 7936,
+      "minimum_bytes": 8192,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 3,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_n_nibbles",
+      "maximum_byte_offset": 1552,
+      "minimum_bytes": 2048,
+      "name": "weight",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "weight_scales",
+      "position": 5,
+      "role": "read"
+    }
+  ],
+  "command_count": 69,
+  "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+  "compiler_source_closure_sha256": "9165bf7ea8a072a31435f73a898f4583bb0becf78c616a636b58377b54e08783",
+  "compute": {
+    "activation_format": "fp8_e4m3",
+    "activation_projection": "direct",
+    "pe_mode": 6,
+    "weight_format": "fp4_e2m1",
+    "weight_projection": "direct"
+  },
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 4,
+  "issuer_c_sha256": "b6cc2c18024b1e178fd0edcd053e65c2fdc7f5eb473e3161330ead419462f709",
+  "issuer_h_sha256": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+  "mlir_container_sha256": "8360f3650f1139c2cc8e0cf42e1eba515793e6b1ac1b024eca323d6eb120d3e4",
+  "mode": "spike_serial",
+  "object_emitter_sha256": "3240ea8abbd839f68b33498793fea3d22c4428f4c7f4e9730c7e9a9a43efc1c1",
+  "object_sha256": "729e78c08f6819c9faa4d11bf18b28a00432fd89c13da52aaf56828cc961394c",
+  "physical_program_sha256": "666a94f385f6421c92d80b4f4d6ac59eb4e182dd4e13b99ef67513d73321d748",
+  "profile_sha256": "62d75d427674bf21bae5ba3ad49e52f62d14db9ef61a865030d4ae2c7c8c8a5e",
+  "recipe_sha256": "1d6f8ea9dbd43e35185870495a571a551af8f9b749d2065925d60afb02d0b57c",
+  "resource_manifest_sha256": "21ce581cb43c79915fbef839e1ce0178e0b12c9fdaf9d8979a69af17f3c0b8c1",
+  "resource_sha256": {
+    "activation": "1b90d71c55743b2ca0535ae3f884106f58359153b412dea1684c17ba2d042f94",
+    "activation_scales": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16": "f92f9ce60ed906f8dd5a675fdb76745cd872bf290f96ae04ff151d7ed5e8b86d",
+    "weight": "d8996c6a560e79036acd4bd3ff9566729a3c06a701c809a6c042a8c1ec3dc667",
+    "weight_scales": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "source_driver_sha256": "438ec91a72317bd21dde8e32196aeca7b81a67c698f4c46b64e61b2ef009d9d5",
+  "source_header_sha256": "b8fe147ba3f5e19f1a2bbe941d99253759edfaa1dbb3bfc27290c7d44e723f17",
+  "status": "rv64_rocc_asymmetric_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

@@ -1,0 +1,623 @@
+{
+  "mode": "spike_serial",
+  "payload_manifest_sha256": "f5848727008c38bc64197eed1a74bd245704e0560f48a9a519a94467e50d213d",
+  "plan": {
+    "a_row": 0,
+    "activation_projection": "direct",
+    "b_row": 8128,
+    "c_row": 64,
+    "mesh_dim": 32,
+    "pe_mode": 11,
+    "scratchpad_rows": 8192,
+    "shape_mnk": [
+      64,
+      64,
+      64
+    ],
+    "tile_mnk": [
+      64,
+      64,
+      64
+    ],
+    "tiles_i": 1,
+    "tiles_j": 1,
+    "tiles_k": 2,
+    "weight_projection": "lut"
+  },
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "schema": "mx_gemmini.physical_program.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "steps": [
+    {
+      "command": {
+        "funct": 7,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 0,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 0,
+          "or_bits": 0
+        }
+      },
+      "phase": "configure",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 0,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 2147604516,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 281474976710656,
+          "or_bits": 0
+        }
+      },
+      "phase": "configure",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 29,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "weight_lut",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 103079215136,
+          "or_bits": 0
+        }
+      },
+      "phase": "upload_lut",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 29,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "activation_lut",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 107374182432,
+          "or_bits": 0
+        }
+      },
+      "phase": "upload_lut",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 29,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_lut",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 111669149728,
+          "or_bits": 0
+        }
+      },
+      "phase": "upload_lut",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 27,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "activation_scales",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 128,
+          "or_bits": 0
+        }
+      },
+      "phase": "upload_scales",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 27,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "weight_scales",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 4294967424,
+          "or_bits": 0
+        }
+      },
+      "phase": "upload_scales",
+      "wave": null
+    },
+    {
+      "command": {},
+      "phase": "upload_scales",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 0,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 2097409,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 64,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_activation",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 2,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "activation",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694464,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_activation",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 2,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "activation",
+          "byte_offset": 32,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694496,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_activation",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 0,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 2097409,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 32,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_weight",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 2,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "weight",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693702592,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_weight",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 2,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "weight",
+          "byte_offset": 1024,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693702624,
+          "or_bits": 0
+        }
+      },
+      "phase": "move_weight",
+      "wave": null
+    },
+    {
+      "command": {},
+      "phase": "move_weight",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 0,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 2,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 128,
+          "or_bits": 0
+        }
+      },
+      "phase": "configure",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 26,
+        "rs1": {
+          "address_mask": 8589934591,
+          "buffer": "scratch_output_scales",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 4508006263816192
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 1,
+          "or_bits": 0
+        }
+      },
+      "phase": "select_scales",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 9,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 0,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 8590000129,
+          "or_bits": 0
+        }
+      },
+      "phase": "compute",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 24,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 0,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 8192,
+          "or_bits": 0
+        }
+      },
+      "phase": "compute",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 8,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 0,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 274877907512,
+          "or_bits": 0
+        }
+      },
+      "phase": "compute",
+      "wave": null
+    },
+    {
+      "command": {},
+      "phase": "compute",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 0,
+        "rs1": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 2,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 32,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 0,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694528,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 1024,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694560,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 2048,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694592,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 3072,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694624,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 4096,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694656,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 5120,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694688,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 6144,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694720,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {
+        "funct": 3,
+        "rs1": {
+          "address_mask": null,
+          "buffer": "output_bf16",
+          "byte_offset": 7168,
+          "immediate": null,
+          "or_bits": 0
+        },
+        "rs2": {
+          "address_mask": null,
+          "buffer": null,
+          "byte_offset": 0,
+          "immediate": 9007336693694752,
+          "or_bits": 0
+        }
+      },
+      "phase": "readout",
+      "wave": null
+    },
+    {
+      "command": {},
+      "phase": "readout",
+      "wave": null
+    }
+  ]
+}

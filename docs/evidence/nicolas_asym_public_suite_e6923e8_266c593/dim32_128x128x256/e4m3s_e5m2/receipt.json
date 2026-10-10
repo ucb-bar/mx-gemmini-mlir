@@ -1,0 +1,165 @@
+{
+  "activation_format": "fp8_e4m3",
+  "activation_projection": "direct",
+  "build_log_sha256": {
+    "compile_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "extension_build.log": "a49897432d37bd9fbbf277498db1321b1c9f751eb0ee831ed49c77f6b52d7775",
+    "link.log": "7ddcd3b12c2a250e97d982d386fb13e7f1349f9d1ba7c51856de5ecd0005479e"
+  },
+  "capture_sites": [
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    }
+  ],
+  "compared_bf16_outputs": 16384,
+  "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+  "compiler_source_closure_sha256": "9165bf7ea8a072a31435f73a898f4583bb0becf78c616a636b58377b54e08783",
+  "elf_sha256": "9e038076cb124a25c85cbbf7d59e5f338f40763293ab8803ee4c3617cdf7c48a",
+  "extension_sha256": "fffe456441eed89efe8d33eb1cdbd7541e578f7e0e079274ee7f98b9260c8bd5",
+  "extension_source_closure_sha256": "dbbc62171a9393691c575ec278dfdd75ca20fd6a2c9b52825380dad4e5d0af3f",
+  "files_sha256": {
+    "asymmetric_bound.mlir": "84d686579b42ef09c4e3804d8ed9bc3a20fdd07b27b47e2df2deaf31b9e1a0e9",
+    "handoff.mlir": "426e76b9af38bf8f9092679882da750a6eed5a93ac000bbfadac4dbe2fe85702",
+    "model2mlir.mlir": "9bebc8da7c2a7682e8783b21bc9f07cf62932d1086e0d17bef5cb3fbccd3e4df",
+    "quantization_manifest.json": "91da25f0414236aeb9596228beb8c4e75fb2663b815e75aa6a7df244b1e1da65",
+    "recipe.json": "afec736fee5428f9a5082009e2d7bce32844786224c5e36e75b6fa26d95f00d5"
+  },
+  "frontend_contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "generated_c_sha256": "bd568783af42defd869ad532d13a18b1999cca1587b92651810c849a2e289f63",
+  "generated_data_sha256": "9e620ef4e06f46aa06387edcbd58607e4834aff2a6502cf4265e675f21133270",
+  "generated_driver_sha256": "2414c586c780b81a067b1ca0b273bae585d75f6f9fc7f77c698525af39b37a35",
+  "host_cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+  "mesh_dim": 32,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mx_opt_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "mx_opt_sha256": "e597ca35e3bff1bf8cb82ba84c363c83b589504679e31365c23498a841734123",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "asymmetric_0.o": "091cd57428b833a94d332e47ceea24fd1dfecdf4b30ed8ace428121d2c920cf1",
+    "asymmetric_1.o": "a58ad9d95ddb8f42b4b0754b7dd8653d2099db0840016df22111ae92aff07a4a",
+    "asymmetric_2.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "asymmetric_3.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "opaque_calls": {},
+  "physical_command_count": 93,
+  "physical_fence_count": 4,
+  "physical_inputs_sha256": {
+    "activation.bin": "667d53509ae949b674a057919deeb23aa587476e0625d9dc8cf15830d24d062a",
+    "activation_scales.bin": "b6dce67e3bd1a2b7e78383d0250003f1993fe7bdb4770873ef25fd0b8b5920c4",
+    "golden_bf16.bin": "a76a6bb8898ba45ae0ca56035b60224a09541116c1d53f1b5459cc0390b13b3f",
+    "mx_data.S": "9e620ef4e06f46aa06387edcbd58607e4834aff2a6502cf4265e675f21133270",
+    "mx_driver.c": "2414c586c780b81a067b1ca0b273bae585d75f6f9fc7f77c698525af39b37a35",
+    "mx_issue.c": "bd568783af42defd869ad532d13a18b1999cca1587b92651810c849a2e289f63",
+    "physical_program.json": "80ecce96a23eaf64bc7daaa547dc3fe0f0918e57e1b6e8915bec62c93ca9d3f8",
+    "resource_manifest.json": "7eb2ff03bcddea9bf22b6e65b1db6c5fa60b8e44d7efc0d7ca38c5d3c18d3c70",
+    "weight.bin": "b8648133955cbc87b80b4b3655f16dcfcf02d3b767bcb98fd2ee55bddecdc8e7",
+    "weight_lut.bin": "0d5de416471589e28ab25303fb3757a04acb4864a608a084cdeac30381aad5d3",
+    "weight_scales.bin": "eaecbe4643a469fae3ed12dc8f5701fd0344a9d86bf5a698302f78206f0d8953"
+  },
+  "physical_program_sha256": "80ecce96a23eaf64bc7daaa547dc3fe0f0918e57e1b6e8915bec62c93ca9d3f8",
+  "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "public_object_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 24800,
+      "minimum_bytes": 32768,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 1024,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 31744,
+      "minimum_bytes": 32768,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 3,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_n_nibbles",
+      "maximum_byte_offset": 14368,
+      "minimum_bytes": 16384,
+      "name": "weight",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "column_pair_lut_8bit",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 1024,
+      "name": "weight_lut",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 1024,
+      "name": "weight_scales",
+      "position": 6,
+      "role": "read"
+    }
+  ],
+  "public_object_dispatch_sha256": "f476c1c8266fe0af6f267091d9ac3a2a89c45d0b27e09d0d61c354dcd6d1afac",
+  "public_object_manifest_sha256": "3c8f46a2b2833062666d69a21e8f22884ec9dde2f9fc32504f04e29cbf473e88",
+  "public_object_sha256": "3fb1561598853bd3c350995d19c271fcf6fe3e93c0bf5295dd9d8a5acb080991",
+  "resource_manifest_sha256": "7eb2ff03bcddea9bf22b6e65b1db6c5fa60b8e44d7efc0d7ca38c5d3c18d3c70",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+  "scope": "DIM32 128x128x256 e4m3s_e5m2 source specialization of one captured PyTorch matmul; checked-in packed inputs, not random PyTorch example inputs; shared physical command IR and standalone emitter; standalone asymmetric MX profile without VPU; public data-free object compiler",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_driver_sha256": "27e2c048552b14444ea73a816f87c38501863a8273d984426668335a4ab03b6b",
+  "source_header_sha256": "a60a531ea7987592368d43beb4043e9740c10aba3cff3b1df6953867bdf895d3",
+  "spike_exit_code": 0,
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "spike_log_sha256": "0a4e9be5d78e42cb899ef29d743f9a43751b63bd5515fdde9da284cd6bd5d46a",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_golden_matched_on_pinned_spike"
+}

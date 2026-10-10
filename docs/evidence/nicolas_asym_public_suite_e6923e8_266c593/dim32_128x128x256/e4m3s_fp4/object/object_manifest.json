@@ -1,0 +1,112 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "cdbccbc6c6c02ed9bf553fbd7ec4d42fa78377081eaf2a9d7d23e457d8d958e1",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 24800,
+      "minimum_bytes": 32768,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 1024,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 31744,
+      "minimum_bytes": 32768,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 3,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_n_nibbles",
+      "maximum_byte_offset": 14368,
+      "minimum_bytes": 16384,
+      "name": "weight",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 1024,
+      "name": "weight_scales",
+      "position": 5,
+      "role": "read"
+    }
+  ],
+  "command_count": 93,
+  "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+  "compiler_source_closure_sha256": "9165bf7ea8a072a31435f73a898f4583bb0becf78c616a636b58377b54e08783",
+  "compute": {
+    "activation_format": "fp8_e4m3",
+    "activation_projection": "direct",
+    "pe_mode": 6,
+    "weight_format": "fp4_e2m1",
+    "weight_projection": "direct"
+  },
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 4,
+  "issuer_c_sha256": "f25a9c03ac2987a3217cb973b3f1a3332b51ae85dcec904da1ed50d06bc7c2de",
+  "issuer_h_sha256": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+  "mlir_container_sha256": "cdbccbc6c6c02ed9bf553fbd7ec4d42fa78377081eaf2a9d7d23e457d8d958e1",
+  "mode": "spike_serial",
+  "object_emitter_sha256": "3240ea8abbd839f68b33498793fea3d22c4428f4c7f4e9730c7e9a9a43efc1c1",
+  "object_sha256": "f3fc66a1b6a9671c6376474bbcfa10c54a413ba75e9f2ece9b48a7d0d220aa94",
+  "physical_program_sha256": "f677511f5218d90b0c9e1f21b0b2d88ff24e03b3a8054d26ab3f53bf8e1dc15b",
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "recipe_sha256": "5ca0e1c5c419ebb0b19e479171a638e0a8ec5d0de07b96f4edc34722fc8e450f",
+  "resource_manifest_sha256": "5126ff9847ff3d720366d7dd30db6213a5062e1059b9cf40da922360ec02eef1",
+  "resource_sha256": {
+    "activation": "667d53509ae949b674a057919deeb23aa587476e0625d9dc8cf15830d24d062a",
+    "activation_scales": "b6dce67e3bd1a2b7e78383d0250003f1993fe7bdb4770873ef25fd0b8b5920c4",
+    "golden_bf16": "2c60503096a1e4ce552e9946dd3f022652efa72bb7fa26055537d181d8612d84",
+    "weight": "f5f3d000bc878039187f178343e34b9b58558e5285eb196941748bbe12ad7e03",
+    "weight_scales": "eaecbe4643a469fae3ed12dc8f5701fd0344a9d86bf5a698302f78206f0d8953"
+  },
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+  "shape_mnk": [
+    128,
+    128,
+    256
+  ],
+  "source_driver_sha256": "fba2db20344286faec9efe0795a8154ef1ddb9ce3a8ad3b2f83321c7d5e1e528",
+  "source_header_sha256": "ed4a6fac18f44676cce8e39abcd4b4127de27758de1fee63a6a9329043294a5c",
+  "status": "rv64_rocc_asymmetric_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

@@ -1,0 +1,131 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+  "recipe": {
+    "compute": {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 1,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    "frontend_capture_format": "mxfp8",
+    "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_driver_sha256": "7082075e0a92e42531c6ac291ac150c95f6b8b7cfd469b779eae5cdb8ca91264",
+    "source_header_sha256": "816f30835fc041427d9a3f131e094a42b9b739dbf488ec28fe43820ade2bfdfc",
+    "source_layout": {
+      "activation_array": "A_in_hw[32][64]",
+      "config_altfmt": 0,
+      "header": "matmul_data_asym_fp4_fp6_dim8.h",
+      "lut_arrays": [
+        "A_lut",
+        "B_lut",
+        "C_lut"
+      ],
+      "lut_entry_bits": 6,
+      "lut_words_per_line": 3,
+      "mesh_dim": 8,
+      "use_lut": true,
+      "weight_altfmt_diff": 0
+    }
+  },
+  "resources": {
+    "activation": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "d407bf5b2e7d5fc2df893f6c6359a9c229ed38fe2a8a1a46180b69412b6cb97d",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "activation_lut": {
+      "bytes": 384,
+      "element_bits": 32,
+      "file": "activation_lut.bin",
+      "layout": "row_pair_lut_6bit",
+      "sha256": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+      "shape": [
+        32,
+        3
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "71312149b8e4122524c25f5dcda3a5f855b4dcf030ebbfb0434c574b69f6378e",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "output_lut": {
+      "bytes": 384,
+      "element_bits": 32,
+      "file": "output_lut.bin",
+      "layout": "output_pair_lut_6bit",
+      "sha256": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+      "shape": [
+        32,
+        3
+      ]
+    },
+    "weight": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "99980f8a63faa881fe8f0f410ed566f379aa6a94aa524908a643041e2ee50530",
+      "shape": [
+        64,
+        32
+      ]
+    },
+    "weight_lut": {
+      "bytes": 384,
+      "element_bits": 32,
+      "file": "weight_lut.bin",
+      "layout": "column_pair_lut_6bit",
+      "sha256": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+      "shape": [
+        32,
+        3
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v2",
+  "site_id": "functional:matmul"
+}

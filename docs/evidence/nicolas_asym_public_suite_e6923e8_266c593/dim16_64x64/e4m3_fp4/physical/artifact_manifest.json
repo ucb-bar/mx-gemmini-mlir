@@ -1,0 +1,27 @@
+{
+  "command_count": 63,
+  "fence_count": 4,
+  "files_sha256": {
+    "activation.bin": "f4fd0cbcebbf8b29b606a53bfef9039cd5b026d7b0403e621a6fad57a998686e",
+    "activation_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "activation_scales.bin": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16.bin": "7ed99521094c50586285ee0b069ae699c1a5588966766c0582b9ce40619f968a",
+    "mx_data.S": "50ba1b8ddc3b0b589aa8b8f5981b814bf2c2b18f102326f145578850c9ab4a7f",
+    "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+    "mx_issue.c": "819aa933e0738ccd94b3781fe8c866faa578b1f3e3b3b50969a1cfe73b3b7f62",
+    "output_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "physical_program.json": "2e025532f6b5f2c5e56867ffb23c84fa677eff4577ce4ef1cbeb70ddf0cc6b4f",
+    "weight.bin": "d8996c6a560e79036acd4bd3ff9566729a3c06a701c809a6c042a8c1ec3dc667",
+    "weight_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "weight_scales.bin": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "mode": "spike_serial",
+  "payload_manifest_sha256": "0dec1aad9b16fb9861470d5d0873eee6c17fc6530a0a3cc808c04a57fd049921",
+  "profile_sha256": "62d75d427674bf21bae5ba3ad49e52f62d14db9ef61a865030d4ae2c7c8c8a5e",
+  "schema": "mx_gemmini.standalone_sources.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ]
+}

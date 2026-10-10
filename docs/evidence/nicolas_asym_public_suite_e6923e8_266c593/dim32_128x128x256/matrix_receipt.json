@@ -1,0 +1,422 @@
+{
+  "all_asym_profile": true,
+  "generation_manifest_sha256": null,
+  "includes_generated": false,
+  "includes_symmetric_fp4": false,
+  "includes_symmetric_lut": false,
+  "legal_mode_count": 36,
+  "mesh_dim": 32,
+  "passed_modes": 4,
+  "profile_complete": false,
+  "public_object": true,
+  "rows": [
+    {
+      "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "elf_sha256": "c8b9d730bee044832252aea4c79c81314d09d50f81b071c04185cd2337a90744",
+      "exit_code": 0,
+      "matched_bf16_outputs": 16384,
+      "physical_program_sha256": "1036db85be8ab7a205871043fd654489d74c2acad99997f70b254624904af329",
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "public_object_sha256": "55b2e17eaaca3883a463f695a1aa21b5fefff343a5063a591234bf8a8b9ad63c",
+      "receipt_sha256": "9c2ba40c19f1db31219328eb6fb68e53bcf31e054ab0d2b324e83b62194f2c84",
+      "source_suffix": "e2m3_e5m2",
+      "spike_log_sha256": "0a4e9be5d78e42cb899ef29d743f9a43751b63bd5515fdde9da284cd6bd5d46a",
+      "status": "passed"
+    },
+    {
+      "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "elf_sha256": "9e038076cb124a25c85cbbf7d59e5f338f40763293ab8803ee4c3617cdf7c48a",
+      "exit_code": 0,
+      "matched_bf16_outputs": 16384,
+      "physical_program_sha256": "80ecce96a23eaf64bc7daaa547dc3fe0f0918e57e1b6e8915bec62c93ca9d3f8",
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "public_object_sha256": "3fb1561598853bd3c350995d19c271fcf6fe3e93c0bf5295dd9d8a5acb080991",
+      "receipt_sha256": "45c6d1bda87792e7d0ac7be68856e729210418c863b64f622c3a99ba07c99b65",
+      "source_suffix": "e4m3s_e5m2",
+      "spike_log_sha256": "0a4e9be5d78e42cb899ef29d743f9a43751b63bd5515fdde9da284cd6bd5d46a",
+      "status": "passed"
+    },
+    {
+      "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 6,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "elf_sha256": "bc02152b28f12faa771c27d12426ba05aef4bd7393a23398887a1e9ee84e24d0",
+      "exit_code": 0,
+      "matched_bf16_outputs": 16384,
+      "physical_program_sha256": "f677511f5218d90b0c9e1f21b0b2d88ff24e03b3a8054d26ab3f53bf8e1dc15b",
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "public_object_sha256": "f3fc66a1b6a9671c6376474bbcfa10c54a413ba75e9f2ece9b48a7d0d220aa94",
+      "receipt_sha256": "bcd2df56958cce644ca822d31f1bfc7b091aaa245b3cc248d6a26c2e26f93609",
+      "source_suffix": "e4m3s_fp4",
+      "spike_log_sha256": "0a4e9be5d78e42cb899ef29d743f9a43751b63bd5515fdde9da284cd6bd5d46a",
+      "status": "passed"
+    },
+    {
+      "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "elf_sha256": "2c53512d62f6b6f1ff746df940603b4375994df4b29e1698842b126bdd8dd1f4",
+      "exit_code": 0,
+      "matched_bf16_outputs": 16384,
+      "physical_program_sha256": "5431880709265cc96716825d1f412ad39fc39ef07d91fb7fc9fcd37aa032734b",
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "public_object_sha256": "cd63d3a8abe17e385d58bb490e2765fccca026cff8b0bf108abf0e0601af99f4",
+      "receipt_sha256": "f0102b55b4dc6a36381a561c90d3e7a1cfc2d9ebf8f619e24355edbfd429db25",
+      "source_suffix": "fp4_fp6",
+      "spike_log_sha256": "0a4e9be5d78e42cb899ef29d743f9a43751b63bd5515fdde9da284cd6bd5d46a",
+      "status": "passed"
+    }
+  ],
+  "schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
+  "scope": "named DIM32 128x128x256 asymmetric Rocket/RoCC tests on pinned Spike",
+  "selected_but_failed_compute": [],
+  "selected_modes": 4,
+  "selected_profiles": 1,
+  "source_shape": "128x128x256",
+  "uncovered_legal_compute": [
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 0,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 2,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig"
+    }
+  ]
+}

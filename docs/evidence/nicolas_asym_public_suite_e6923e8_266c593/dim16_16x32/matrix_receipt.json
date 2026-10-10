@@ -1,0 +1,392 @@
+{
+  "all_asym_profile": true,
+  "generation_manifest_sha256": null,
+  "includes_generated": false,
+  "includes_symmetric_fp4": false,
+  "includes_symmetric_lut": false,
+  "legal_mode_count": 36,
+  "mesh_dim": 16,
+  "passed_modes": 1,
+  "profile_complete": false,
+  "public_object": true,
+  "rows": [
+    {
+      "compiler_revision": "e6923e8a774748f55ea3d065f6d3832d6618022d",
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 6,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "elf_sha256": "62efad030b44534cdd99bfb5ca3a92b8a53bc6bd632d0375bcdac6bf753ccfbd",
+      "exit_code": 0,
+      "matched_bf16_outputs": 512,
+      "physical_program_sha256": "25254a60892cb45a9e951fe2354495af84948c14e66335e3512730accd957878",
+      "profile_name": "MxAllAsymGemminiRocketConfig",
+      "public_object_sha256": "ed6c88fc6536814ad40fd9c69d817466c1d54d91437075ad163fe36550468dc9",
+      "receipt_sha256": "3c5b05d70019087b2a42071a18b6cfbdeb9f72279d7ce64246552e114cff3a2f",
+      "source_suffix": "e4m3s_fp4",
+      "spike_log_sha256": "25a58f7540337e297828b98a068e30abc424b7307d81c522b623608590eecc27",
+      "status": "passed"
+    }
+  ],
+  "schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
+  "scope": "named DIM16 16x32 asymmetric Rocket/RoCC tests on pinned Spike using the all-asymmetric profile",
+  "selected_but_failed_compute": [],
+  "selected_modes": 1,
+  "selected_profiles": 1,
+  "source_shape": "16x32",
+  "uncovered_legal_compute": [
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 0,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 2,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    },
+    {
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "profile_name": "MxAllAsymGemminiRocketConfig"
+    }
+  ]
+}
