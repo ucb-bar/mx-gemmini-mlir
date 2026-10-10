@@ -122,6 +122,18 @@ CASES = {
         ("A_in_hw", "A_lut", "A_scales_row", "C_hw", "C_lut",
          "scratch_output_scales", "B_in", "B_lut", "B_scales_col"),
         "FP6 128x128x512"),
+    "fp6_128x128x512_requant": Case(
+        "fp6_128x128x512_requant", "FP6", (128, 128, 512), (128, 128, 512),
+        "matmul_tiled_fp6_128x128x512_requant.c", "matmul_fp6_128x128x512.h",
+        "5f8bbd631ae19684a63d945dd2272930aad4553bc0f500c0bea58cb75c51235b",
+        "7e499e594e324e48c9f0b17b70a2fe7ec57f7d156af118f9dfa9d59b7e4507fd",
+        "MxE3M2OnlyGemminiRocketConfig",
+        ("activation", "activation_lut", "activation_scales", "output_lut",
+         "output_quantized", "scratch_output_scales", "weight", "weight_lut",
+         "weight_scales"),
+        ("A_in_hw", "A_lut", "A_scales_row", "C_lut", "C_hw",
+         "scratch_output_scales", "B_in", "B_lut", "B_scales_col"),
+        "FP6 128x128x512 requant", True),
 }
 
 
@@ -147,11 +159,15 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
     required = (f'#include "include/{case.header_name}"', "gemmini_mx_load_scales",
-                "gemmini_loop_ws_spad", "gemmini_extended_mvout", "C_out_bf16")
+                "gemmini_loop_ws_spad", "gemmini_extended_mvout")
+    if not case.quant_output:
+        required += ("C_out_bf16",)
     if case.precision == "FP6":
         required += ("gemmini_mx_load_lut_dt",)
     if case.quant_output:
-        required += ("gemmini_mxquant_config_mvout", "C_scales_out", "C_out[i][j]")
+        required += (("gemmini_mxquant_config_mvout", "C_proj_hw[i][j]",
+                      "C_scales_row[b][i]") if case.precision == "FP6" else
+                     ("gemmini_mxquant_config_mvout", "C_scales_out", "C_out[i][j]"))
     if any(needle not in source for needle in required):
         raise ValueError("Nicolas source no longer has the audited compute/check path")
     header_text = header.read_text()
@@ -224,10 +240,12 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
 
 def _driver(case: Case) -> str:
     if case.quant_output:
-        if case.precision not in {"FP8", "FP4"}:
-            raise ValueError("source quantized driver supports FP8 or packed FP4 output")
-        output_rows = "MATMUL_M/2" if case.precision == "FP4" else "MATMUL_M"
-        code_label = "packed-byte" if case.precision == "FP4" else "code"
+        if case.precision not in {"FP8", "FP4", "FP6"}:
+            raise ValueError("source quantized driver needs FP8, FP4, or FP6 output")
+        output_rows = "MATMUL_M/2" if case.precision in {"FP4", "FP6"} else "MATMUL_M"
+        code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
+        source_code = "C_proj_hw[i][j]" if case.precision == "FP6" else "C_out[i][j]"
+        source_scale = "C_scales_row[g][i]" if case.precision == "FP6" else "C_scales_out[i][g]"
         return f"""#include <stdint.h>
 #include <stdio.h>
 #include "include/gemmini_testutils.h"
@@ -241,17 +259,17 @@ int main(void) {{
   int code_errors = 0, scale_errors = 0;
   for (int i = 0; i < {output_rows}; ++i)
     for (int j = 0; j < MATMUL_N; ++j)
-      if (C_hw[i][j] != C_out[i][j]) {{
+      if (C_hw[i][j] != {source_code}) {{
         if (code_errors < 8) printf("{code_label} mismatch %d,%d got %x want %x\\n",
-                                    i,j,C_hw[i][j],C_out[i][j]);
+                                    i,j,C_hw[i][j],{source_code});
         ++code_errors;
       }}
   for (int i = 0; i < MATMUL_M; ++i)
     for (int g = 0; g < MATMUL_GN; ++g)
-      if (scratch_output_scales[i*MATMUL_GN+g] != C_scales_out[i][g]) {{
+      if (scratch_output_scales[i*MATMUL_GN+g] != {source_scale}) {{
         if (scale_errors < 8) printf("scale mismatch %d,%d got %x want %x\\n",
                                      i,g,scratch_output_scales[i*MATMUL_GN+g],
-                                     C_scales_out[i][g]);
+                                     {source_scale});
         ++scale_errors;
       }}
   printf("compiled Nicolas {case.label}: %d {code_label} mismatches / %d, %d scale mismatches / %d\\n",
@@ -366,9 +384,12 @@ def main(default_case: str | None = None) -> None:
                             source_origin=NICOLAS_SOURCE_HEADER_ORIGIN)
     if case.quant_output:
         _, resources = load_bundle(bundle)
-        output_format = "fp4_e2m1" if case.precision == "FP4" else "fp8_e4m3"
-        source_code = "source_fp4_packed" if case.precision == "FP4" else "golden_fp8"
-        target_code = "nicolas_fp4" if case.precision == "FP4" else "nicolas_fp8"
+        output_format = {"FP8": "fp8_e4m3", "FP4": "fp4_e2m1",
+                         "FP6": "fp6_e3m2"}[case.precision]
+        source_code = {"FP8": "golden_fp8", "FP4": "source_fp4_packed",
+                       "FP6": "source_fp6_packed"}[case.precision]
+        target_code = {"FP8": "nicolas_fp8", "FP4": "nicolas_fp4",
+                       "FP6": "nicolas_fp6"}[case.precision]
         if (manifest.get("output_format") != output_format or
                 resources[source_code] != resources[target_code] or
                 resources["golden_output_scales"] != resources["nicolas_output_scales"]):
@@ -388,8 +409,8 @@ def main(default_case: str | None = None) -> None:
     returncode, output, elf = run_spike(rtl_root, args.riscv_root.resolve(),
                                         object_dir, args.out_dir, case)
     m, n, _ = case.shape
-    code_label = "packed-byte" if case.precision == "FP4" else "code"
-    code_count = m * n // 2 if case.precision == "FP4" else m * n
+    code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
+    code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
     expected = (f"compiled Nicolas {case.label}: 0 {code_label} mismatches / {code_count}, "
                 f"0 scale mismatches / {m * n // 32}" if case.quant_output else
                 f"compiled Nicolas {case.label}: 0 mismatches / {m * n} BF16 values")
@@ -427,7 +448,8 @@ def main(default_case: str | None = None) -> None:
         "driver_sha256": _sha(args.out_dir / "run/mx_driver.c"),
         "outputs_checked": code_count + m * n // 32 if case.quant_output else m * n,
         "codes_checked": m * n if case.quant_output and case.precision == "FP8" else None,
-        "packed_bytes_checked": code_count if case.quant_output and case.precision == "FP4" else None,
+        "packed_bytes_checked": (code_count if case.quant_output and
+                                 case.precision in {"FP4", "FP6"} else None),
         "scales_checked": m * n // 32 if case.quant_output else None,
         "mismatches": 0 if passed else None,
     }
