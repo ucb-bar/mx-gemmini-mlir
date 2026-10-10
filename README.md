@@ -28,6 +28,9 @@ qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
 23 drivers with BF16 output and 8 with requantized output match their source
 goldens. The [one-command reproduction](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 rebuilds and checks those captures and Spike results against archived hashes.
+The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
+also match the FP8 and FP4 down-projection source goldens and load each packed
+weight tile once per K wave.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike

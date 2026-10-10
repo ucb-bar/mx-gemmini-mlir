@@ -1,0 +1,37 @@
+{
+  "generated": [
+    "kernels/gemm_mxgemmini/mxgemm.data.fp8.m256n64k2048.h",
+    "kernels/gemm_mxgemmini_ws/data",
+    "kernels/gemm_mxgemmini/mxgemm.data.fp4.m256n64k5632.h",
+    "kernels/gemm_mxgemmini_ws_downproj_fp4/data"
+  ],
+  "generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
+  "rows": [
+    {
+      "data": "kernels/gemm_mxgemmini_ws/data",
+      "data_sha256": "a3fad0f73fd71a8f93d06467f2f653f86bdf5c3405933217983cbf9683329f43",
+      "driver": "kernels/gemm_mxgemmini_ws/kernel.cpp",
+      "driver_sha256": "d1cca6d8b12d875a5cffa73ade73976ebaaa9e4db1323b9d385f23dc8fb11384",
+      "precision": "fp8",
+      "shape_mnk": [
+        256,
+        64,
+        2048
+      ]
+    },
+    {
+      "data": "kernels/gemm_mxgemmini_ws_downproj_fp4/data",
+      "data_sha256": "4c023254973cdad850d6138c5bc7b0375554d662f1f935537d907ce9f3c5c472",
+      "driver": "kernels/gemm_mxgemmini_ws_downproj_fp4/kernel.cpp",
+      "driver_sha256": "4e38f4f040ade76bc0c1584fe3374d719152087b0c9d21fd56ed2c06585b0678",
+      "precision": "fp4",
+      "shape_mnk": [
+        256,
+        64,
+        5632
+      ]
+    }
+  ],
+  "schema": "mx_gemmini.radiance_ws_data_materialization.v1",
+  "source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a"
+}
