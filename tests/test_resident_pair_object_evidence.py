@@ -12,6 +12,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_resident_pair_object_1eebfc5"
+FRESH = ROOT / "docs/evidence/nicolas_resident_pair_object_fresh_5172afa"
 INPUTS = ("a1_activation", "a1_scales", "b1_weight", "b1_scales",
           "b2_weight", "b2_scales")
 OUTPUTS = ("c1_scales", "c1_tiled_observed", "c2_scales", "c2_tiled")
@@ -84,3 +85,27 @@ def test_source_bound_resident_pair_object_matches_spike(m: int) -> None:
     if m == 96:
         assert read("object_manifest_repro.json") == read("object_manifest.json")
         assert read("qualification_manifest_repro.json") == read("qualification_manifest.json")
+
+
+def test_published_checkout_rebuilds_same_resident_pair_object_and_spike_result() -> None:
+    index = json.loads((FRESH / "index.json").read_text())
+    old = json.loads((EVIDENCE / "m96/object_manifest.json").read_text())
+    new = json.loads((FRESH / "object_manifest.json").read_text())
+    old_run = json.loads((EVIDENCE / "m96/qualification_manifest.json").read_text())
+    new_run = json.loads((FRESH / "qualification_manifest.json").read_text())
+    assert index["schema"] == "mx_gemmini.resident_pair_object_fresh_reproduction.v1"
+    assert index["compiler_revision"] == new["compiler_revision"] == (
+        "5172afafd0a099a010358d4c81038bccf40ea602")
+    assert index["baseline_compiler_revision"] == old["compiler_revision"]
+    for key in index["object_fields_equal_to_baseline"]:
+        assert new[key] == old[key], key
+    for key in index["qualification_fields_equal_to_baseline"]:
+        assert new_run[key] == old_run[key], key
+    assert new_run["status"] == index["status"] == (
+        "source_connected_object_matched_on_pinned_spike")
+    assert new_run["spike_exit_code"] == 0
+    for name, digest in index["files_sha256"].items():
+        path = FRESH / name
+        data = path.read_bytes() if path.is_file() else gzip.decompress(
+            (FRESH / f"{name}.gz").read_bytes())
+        assert _sha(data) == digest, name

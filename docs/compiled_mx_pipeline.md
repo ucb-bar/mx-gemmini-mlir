@@ -799,6 +799,10 @@ qualifies M = 16, 96, and 128. Each object is the sole MX command issuer in
 the linked source comparison harness; Nicolas's stock Spike matches every
 C1/C2 FP8 code and E8M0 scale. Two independent M = 96 builds reproduce the
 object, linked ELF, and Spike log byte for byte.
+A [fresh checkout of published commit `5172afa`](evidence/nicolas_resident_pair_object_fresh_5172afa/index.json)
+also rebuilt the 96-row object and replayed it on Spike. The object, linked
+ELF, and log hashes match the archived baseline; only commit-bearing receipt
+fields changed.
 
 ```sh
 python -m tools.emit_resident_pair_object \
