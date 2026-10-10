@@ -479,6 +479,33 @@ python -m tools.qualify_nicolas_asym --variant fp4_fp6_lut \
   --out-dir /new/output-directory
 ```
 
+### E4M3 activation with E2M3 weights
+
+The standalone `MxAsymE4M3E2M3GemminiRocketConfig` selects PE mode 9.
+Both operands use 8-bit LUT entries; the weight codes use the low six bits.
+The compiler emits the per-operand alternate-format bit in `CONFIG_EX` and
+loads Nicolas's checked-in E4M3 and E2M3 LUT banks. The generated physical
+program has 63 commands. Its standalone ELF matches **all 4,096 BF16 source
+values** on the pinned Spike extension, and two fresh captures and builds
+match on frontend artifacts, resources, commands, issuer, objects, ELF,
+extension, and Spike log hashes: [receipt](evidence/compiled_nicolas_asym_physical_e4m3_e2m3_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_physical_e4m3_e2m3_repro_20261009.json),
+[bound MLIR](evidence/model2mlir_nicolas_asym_e4m3_e2m3_bound_20261009.mlir),
+[source recipe](evidence/model2mlir_nicolas_asym_e4m3_e2m3_recipe_20261009.json),
+and [physical program](evidence/compiled_nicolas_asym_physical_e4m3_e2m3_program_20261009.json).
+As with the other mixed modes, model2MLIR captures the PyTorch matmul site;
+the explicit checked-in source recipe supplies its mixed precision and packed
+data. This standalone profile has no VPU.
+
+```sh
+python -m tools.qualify_nicolas_asym --variant e4m3_e2m3_lut \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAsymE4M3E2M3GemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/output-directory
+```
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
