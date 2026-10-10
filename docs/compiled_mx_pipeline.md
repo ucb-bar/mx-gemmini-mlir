@@ -2818,14 +2818,24 @@ requantization epilogue before checking every output byte and E8M0 scale on
 Spike. This path matches Radiance's output convention; the MX hardware
 requantizer has a separate numerical contract.
 
+The [requant archive](evidence/radiance_mx_requant_mesh_roster_266c593/index.json)
+records two independent runs for DIM8, DIM16, and DIM32. Every profile
+matched all **8 / 8 drivers, 90,112 / 90,112 output bytes, and 3,328 / 3,328
+E8M0 scales per run**. Across the six runs, the compiler checked 540,672
+output bytes and 19,968 scales. Normalized qualification rows, generated
+ELFs, and Spike logs are identical across each pair of runs. The source and
+target code/scale bytes, bound MLIR, physical program, and generated issuer
+are archived per case. DIM16 compares the source headers directly; DIM8 and
+DIM32 compare the derived target-mesh reference.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
    if those paths are needed there. The FP6 requant receipts use generated
    fixtures because the corresponding headers are absent upstream; check
-   future committed headers against them. Qualify the eight source
-   quantized-output drivers on DIM8/DIM32 and remaining configuration
-   families without receipts, and extend multi-output
+   future committed headers against them. Qualify the quantized-output
+   epilogues on RTL or FPGA where required, remaining configuration families
+   without receipts, and extend multi-output
    vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2, scalar
    ADDS, and ordered affine epilogues.
    For GQA, reconcile the

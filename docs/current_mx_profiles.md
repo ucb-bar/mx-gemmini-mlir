@@ -125,7 +125,11 @@ runs. The target reference records the geometry-specific accumulator schedule
 and Nicolas's product floor. The separate VPU-enabled Rocket profile matches
 the selected FP8 and FP4 matrix drivers twice; its vector instruction
 coverage is documented above. The eight quantized-output source drivers are
-not yet part of the DIM8/DIM32 roster.
+qualified separately on DIM8, DIM16, and DIM32 with the generated Radiance
+header requantization epilogue: each profile matches 90,112 output bytes and
+3,328 E8M0 scales in two Spike runs. See the
+[requant evidence](evidence/radiance_mx_requant_mesh_roster_266c593/index.json)
+for the numerical reference boundary.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config

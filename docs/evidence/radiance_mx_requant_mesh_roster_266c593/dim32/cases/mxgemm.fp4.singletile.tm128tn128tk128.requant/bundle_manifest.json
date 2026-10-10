@@ -1,0 +1,156 @@
+{
+  "origin": "radiance_source_target_mesh_reference",
+  "output_format": "fp4_e2m1",
+  "output_oracle": "nicolas_fp4_e3m1_e2m1_v1",
+  "precision": "FP4",
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "resources": {
+    "activation": {
+      "bytes": 8192,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "b3955dcbb7e3b7e5ac60859599ec61c15a0b44fa7bb76c93e5ce37e26863fd56",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "activation_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "052b1364e786afc67b87166ead89725a7a9d53920c61a16b6ac4325ebc42ba46",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 32768,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "86897ec9f706857abe450d5d2e0a35a2c5ef31ea2fddf81c62e29aef630e7e14",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "golden_fp8": {
+      "bytes": 16384,
+      "element_bits": 8,
+      "file": "golden_fp8.bin",
+      "layout": "row_major_fp8_e4m3",
+      "sha256": "90806c200d8c7465f47b3af2d0c3d01174a68eaf9cb210e326413991ec4e092c",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "golden_output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "golden_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "1c9823395aff4b0ac831dd8b8a31f4d95138079af28e8adc18b5e4379f8b61bb",
+      "shape": [
+        128,
+        4
+      ]
+    },
+    "nicolas_fp4": {
+      "bytes": 8192,
+      "element_bits": 8,
+      "file": "nicolas_fp4.bin",
+      "layout": "packed_even_odd_m_fp4_e2m1",
+      "sha256": "22a63a257291ba6414d2e1bad8cebaa498e2079359d9e88b387b0c1a3c68b108",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "nicolas_output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "nicolas_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "de3b10307f6d0f2364f708489323e03d9acf979595e9d9d90687763018e5b1fe",
+      "shape": [
+        128,
+        4
+      ]
+    },
+    "output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "c8182cd365b73fe48c2d3a8ee4f4f357d3f61c45ba7c6fa06d2d863f4681533f",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "weight": {
+      "bytes": 8192,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "39939111aaf244be6cf07fd9e3467270a60613bd012303d2036ed14b90fe01c0",
+      "shape": [
+        128,
+        64
+      ]
+    },
+    "weight_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "39a347e84aca82927651aee25117273ee027fcfb7770cc9df8883ea3f97ab11b",
+      "shape": [
+        4,
+        128
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "b40a27d9407779db66e287c8048305f2593808d25195e4a4cabfbfca4cd01427",
+  "source_header_sha256": "be8b5db02a2a90c32f8d2b35b70ac9d47d1a699ca85ccadfb705012fce050ed6",
+  "source_quant_golden_convention": "target_mesh_radiance_header_v1",
+  "source_quant_header_format": "fp8_e4m3",
+  "target_mesh_reference": {
+    "mesh_dim": 32,
+    "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+    "product_floor_exponent": -16,
+    "schema": "mx_gemmini.radiance_target_mesh_reference.v2",
+    "source_golden_sha256": "0f16dbce7ad6172e0150653022c300157ac37d46d6a0fa55234401e12fe09c6f",
+    "target_golden_sha256": "86897ec9f706857abe450d5d2e0a35a2c5ef31ea2fddf81c62e29aef630e7e14",
+    "transformed_cpp_sha256": "576dac7cd585552904458f01d855890145d9b4e75a7ce136d9408c0942b01266",
+    "transformed_math_sha256": "e79560d4ba22f6dab76a2e70a1f7db9db574b7cbc16553c194c80a44fc9bf3d6"
+  },
+  "target_quant_reference": {
+    "quant_policy": "radiance_header_fp8_v1",
+    "schema": "mx_gemmini.radiance_target_mesh_quant_reference.v1",
+    "source_code_sha256": "11cd7ecada530403c112ad9f74ffbfc5c60bca603a7730f211e6f5de0c7344da",
+    "source_scale_sha256": "2de68840222dfe23d88b0d81af08ff6bfa374e7ec5e1733ab86ab3ef9035e7d5",
+    "target_code_sha256": "90806c200d8c7465f47b3af2d0c3d01174a68eaf9cb210e326413991ec4e092c",
+    "target_nicolas_code_sha256": "22a63a257291ba6414d2e1bad8cebaa498e2079359d9e88b387b0c1a3c68b108",
+    "target_nicolas_scale_sha256": "de3b10307f6d0f2364f708489323e03d9acf979595e9d9d90687763018e5b1fe",
+    "target_scale_sha256": "1c9823395aff4b0ac831dd8b8a31f4d95138079af28e8adc18b5e4379f8b61bb"
+  },
+  "tile_mnk": [
+    128,
+    128,
+    128
+  ]
+}
