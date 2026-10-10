@@ -1,0 +1,72 @@
+{
+  "compared_bf16_outputs": 20480,
+  "compiler_revision": "3a51a40e4b77297d4fcb1568743b249d2867dbd6",
+  "compiler_source_closure_sha256": "098be8c27ab7d67cc5910f4b9b08c371f92d60ee611a0ea1802934275b6d5cc9",
+  "frontend_index_sha256": "47ef832752288ddeab0a28c1ca1a7a12d0150880d407143512b6aeb3505db8c4",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "rows": [
+    {
+      "artifact_manifest_sha256": "934a6416f9c95e999722c3a2d0d39dc4a1e25f6b5d57058ac766ad86d0926a3a",
+      "bundle_manifest_sha256": "b1b785cfce4a0ba7aa71c15e41e0494edc5c58a70b7ee68d39e09455a5b3ba2e",
+      "compared_bf16_outputs": 16384,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "36d95d08e9118197e73cb776ffd0b0c21f99eb17678dfc539fc262195c7a1bea",
+      "elf_sha256": "06f73a36fb08b2a3bd5bf7b8f18598e3440a91807a6e87b438c83c8d5726d4b6",
+      "generated_issue_sha256": "ebc25a44ad50512ec60f75b1bb68dcf1e3aff11f7d7eadde8bbff2f8338b5af7",
+      "handoff_mlir_sha256": "92cb85065e41544bbec21eddc8f5c65678d6f247259547d08e59c0c8f9a73341",
+      "header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "payload_bound_mlir_sha256": "fd34401c897720fdf1d1f1b03e886429f3c64246c32d9ccb5de350070ec91019",
+      "physical_program_sha256": "0b813216db46047750a884c0ad0f62d5b03985b8b65882b2c7803da92941c6d0",
+      "precision": "FP8",
+      "profile_bound_mlir_sha256": "bc238983d3650c83e7d66ae10f390fffa75c8ec70e3e4f23a4ebca544fcaccd0",
+      "source_golden_sha256": "478418246e353aee97840adf94fae7a67b2d29d31c75ed0ba25bfa013f3836a6",
+      "spike_log_sha256": "55d6740d9b9a79236ac6f9659210305592dcc9cf1392e2a0ae4d8f14770b1d9e",
+      "status": "target_mesh_reference_matched_on_pinned_spike",
+      "target_golden_sha256": "8d8ec2ab2411cfc6e4be200399c62ab21982b9c03df50e3ec5cc6731f3058a8a",
+      "target_mesh_reference": {
+        "mesh_dim": 32,
+        "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+        "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+        "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
+        "source_golden_sha256": "478418246e353aee97840adf94fae7a67b2d29d31c75ed0ba25bfa013f3836a6",
+        "target_golden_sha256": "8d8ec2ab2411cfc6e4be200399c62ab21982b9c03df50e3ec5cc6731f3058a8a",
+        "transformed_cpp_sha256": "576dac7cd585552904458f01d855890145d9b4e75a7ce136d9408c0942b01266"
+      }
+    },
+    {
+      "artifact_manifest_sha256": "3bfb1bd9ef278115022a3cff6c18d4f01632bddd4d511f743583e841a8f3e497",
+      "bundle_manifest_sha256": "0c56897b0a0fe625c4c0b02f46d6b9e91cc0f791a80ea9e25a12304d433be084",
+      "compared_bf16_outputs": 4096,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "8781fddbff19c5a17a0e671e8cc4787526ddecbb5daf9528b1106872c30667d0",
+      "elf_sha256": "0140070721329d4e762aee942d02bae201ff77cde4665da9196066d51dcb4288",
+      "generated_issue_sha256": "2159de9406e508bc3d9325ca286740b937030953ea93527a53877a69fd1a9b71",
+      "handoff_mlir_sha256": "3f82c9b70d83c73c0d6fa83029a8e4aa47022352b1b1a543ae01017fde63477c",
+      "header_sha256": "2ee4ca3372077130ae589e816523f4892a30233269b8e0123809a2864fc0ffcc",
+      "payload_bound_mlir_sha256": "6b8ec23220fb3f51c4b9dddecdb30c7064008cb9f3b465c0df00a2e8749f27fb",
+      "physical_program_sha256": "cbc7e8b31acd00b8bbd895aa17c5054c100fd279a82d8b268a9f829a934dad8f",
+      "precision": "FP4",
+      "profile_bound_mlir_sha256": "273692de5ddec9b82991249effa7077aa7489d5775ef59fab42ee2d4a105207a",
+      "source_golden_sha256": "09376e7dd7871a1d101049dffbce68603be526c4641da8fb7195ebb42f05e3b2",
+      "spike_log_sha256": "d7e6b5701c8a501ea8d5378c01b627da44d245ca1ff218f1aca322af34704cad",
+      "status": "target_mesh_reference_matched_on_pinned_spike",
+      "target_golden_sha256": "eeb393cc48893bc2fb3476b9e66529fe44006ad85fa966db39af5d63916e51b5",
+      "target_mesh_reference": {
+        "mesh_dim": 32,
+        "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+        "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+        "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
+        "source_golden_sha256": "09376e7dd7871a1d101049dffbce68603be526c4641da8fb7195ebb42f05e3b2",
+        "target_golden_sha256": "eeb393cc48893bc2fb3476b9e66529fe44006ad85fa966db39af5d63916e51b5",
+        "transformed_cpp_sha256": "576dac7cd585552904458f01d855890145d9b4e75a7ce136d9408c0942b01266"
+      }
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_target_mesh_reference_cases.v1",
+  "scope": "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; byte-checked Radiance operands and derived target mesh BF16 reference",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "target_mesh_reference_precisions_matched_on_pinned_spike"
+}

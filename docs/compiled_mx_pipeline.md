@@ -1356,6 +1356,45 @@ python -m tools.qualify_radiance_mx_base_profile \
   --case fp4 --out-dir /tmp/mx-fp4-only-profile
 ```
 
+### Radiance FP8 and FP4 on DIM8 and DIM32
+
+The source planner and physical command lowerer now derive scratchpad rows,
+operand transfers, tile counts, and BF16 readout from the selected square
+mesh. The standalone compiler builds the matching `gemmini_dim8` or
+`gemmini_dim32` Spike extension from Nicolas's pinned RTL submodule.
+
+Radiance's checked-in `C_out_bf16` bytes come from a DIM16 host model. The
+target meshes have different accumulator schedules, so exact comparison to
+those bytes would be an invalid qualification. The mesh reference path first
+recompiles Radiance's pinned `mx_golden.cpp` for DIM16 and requires a byte-for-byte
+match with the source header. It then changes only the mesh dimension, PE tile
+extent, and accumulator schedule to derive a target mesh reference from the
+**same source operand codes and E8M0 scales**. The source golden bytes, model
+source hashes, transformed model hash, and target reference hash remain in the
+bundle provenance. A target mesh reference is labeled separately from source
+golden parity throughout the physical receipt and Spike artifact manifest.
+
+Two independent builds per profile matched **20,480 / 20,480 BF16 outputs**
+on each of DIM8 and DIM32: FP8 128×128×512 and FP4 64×64×128. All four cases
+start from the archived model2MLIR `e9ded36` captures and source checked
+Radiance `80f84ca` data. The
+[mesh qualification index](evidence/radiance_mx_mesh_reference_266c593/index.json)
+and [regression test](../tests/test_radiance_mesh_reference_evidence.py)
+pin the profile, generated commands, RV64 ELF, target reference, and Spike
+log for each build. This is functional Spike evidence for those shape and
+precision pairs. FP6 target mesh reference derivation and RTL/FPGA execution
+remain separate gates; the earlier Nicolas asymmetric matrices already
+exercise FP6 modes on DIM8 and DIM32 using his mesh-specific source goldens.
+
+```sh
+python -m tools.qualify_radiance_mx_base_profile \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxDim8AllAsymGemminiRocketConfig.json \
+  --case fp8 --case fp4 --out-dir /tmp/mx-radiance-dim8
+# Repeat with MxDim32AllAsymGemminiRocketConfig and a new output directory.
+```
+
 The [31-driver evidence archive](evidence/radiance_mx_gemm_latest_e9ded36_ee22/)
 binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, Nicolas's
 `gemmini-mx-cleanup` RTL `266c593`, and this compiler's `12cb75d` Spike runs.

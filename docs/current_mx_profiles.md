@@ -36,6 +36,12 @@ The [selected-profile matrix](compiled_mx_pipeline.md#selected-legal-modes-in-si
 adds direct Spike evidence for 12 legal Radiance mode/shape pairs across six
 more Rocket profiles. Each selected case matches its full source BF16 golden
 twice; untested legal modes and Chipyard wrappers retain structural status.
+The [DIM8/DIM32 Radiance cases](compiled_mx_pipeline.md#radiance-fp8-and-fp4-on-dim8-and-dim32)
+also compile from the archived model2MLIR captures. Their BF16 references
+are derived from Radiance's pinned host model for each target mesh, because
+the checked-in source golden uses the DIM16 accumulator schedule. Four
+selected FP8/FP4 cases match all **40,960** target mesh reference outputs per
+run on the corresponding Nicolas Spike extensions.
 Four more cells have separate full-output tests from Nicolas's validated
 `gen_asym.py` data model, giving **35 of 36 distinct DIM16 modes** with
 numerical parity on the unmodified Spike extension. The remaining direct
