@@ -1358,6 +1358,15 @@
             64
           ],
           "second_tile_count": 2
+        },
+        {
+          "compared_e8m0_scales": 512,
+          "compared_fp4_codes": 16384,
+          "evidence": "docs/evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/receipt.json",
+          "fresh_checkout_reproduced": true,
+          "issues_fp4_matrix_compute": false,
+          "issues_spad_requant_commands": 2,
+          "kind": "source_fp4_spad_requant_flat_tiled_spike"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1564,6 +1573,15 @@
             64
           ],
           "second_tile_count": 2
+        },
+        {
+          "compared_e8m0_scales": 512,
+          "compared_fp4_codes": 16384,
+          "evidence": "docs/evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json",
+          "fresh_checkout_reproduced": true,
+          "issues_fp4_matrix_compute": false,
+          "issues_spad_requant_commands": 2,
+          "kind": "source_fp4_spad_requant_flat_tiled_spike"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1761,6 +1779,8 @@
     "docs/evidence/nicolas_requantizer_wrapper_266c593/index.json": "03e94ad2790b0c0289e653bf90c1478583c1dfecef33fafa2efd2782a3f9ad86",
     "docs/evidence/nicolas_resident_mm2_128_266c593/index.json": "b487cf714f5d32215a081b7206a157b1408d32a34deaa97bab0c0f02ede695f1",
     "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json": "173abc5f943fe38aff70edd1b6c96eb28911eb1638194a8e716af27f1bf57c6b",
+    "docs/evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json": "ec6aedb2c7f25942ad569d6ede320a4e34b4a308ebf57a9660c217b1edb925e2",
+    "docs/evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/receipt.json": "efa07f6dd9f72446179c82268c40b4b093bd5d1f3b87ac6cfadcb3eb42d553cb",
     "docs/evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json": "e8edcf42a3a02b5db8ff547418d086f10eb80c4794aa7f6a2a7d29e0da84038d",
     "docs/evidence/nicolas_vpu_elementwise_compiled_266c593/index.json": "3ea699c322e2e8ef0243bb315fe4122116fef3d381cf4cd5d686977b69b89c14",
     "docs/evidence/nicolas_vpu_fused_compiled_266c593/index.json": "d108ab06eb30826d2660435dcf404fe1922b19fa271092ee5284d3a73ad72050",

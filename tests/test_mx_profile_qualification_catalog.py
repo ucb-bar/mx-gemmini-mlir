@@ -55,17 +55,19 @@ def test_stock_failure_and_candidate_patch_stay_separate() -> None:
     assert selected["named_profile_spike_evidence"][1]["kind"] == (
         "connected_mx_vpu_narrow_spike")
     base = vpu["MxE4M3VpuGemminiRocketConfig"]
-    assert len(base["named_profile_spike_evidence"]) == 8
+    assert len(base["named_profile_spike_evidence"]) == 9
     assert sum(receipt["cases"] for receipt in
                base["named_profile_spike_evidence"] if "cases" in receipt) == 28
-    assert base["named_profile_spike_evidence"][-4]["kind"] == (
+    assert base["named_profile_spike_evidence"][-5]["kind"] == (
         "connected_mx_vpu_narrow_spike")
-    assert base["named_profile_spike_evidence"][-3]["kind"] == (
+    assert base["named_profile_spike_evidence"][-4]["kind"] == (
         "connected_mx_vpu_two_tile_spike")
-    assert base["named_profile_spike_evidence"][-2]["kind"] == (
+    assert base["named_profile_spike_evidence"][-3]["kind"] == (
         "connected_mx_vpu_two_tile_pipelined_spike")
-    assert base["named_profile_spike_evidence"][-1]["kind"] == (
+    assert base["named_profile_spike_evidence"][-2]["kind"] == (
         "source_preloaded_mx_vpu_two_tile_pipelined_spike")
+    assert base["named_profile_spike_evidence"][-1]["kind"] == (
+        "source_fp4_spad_requant_flat_tiled_spike")
     assert all(not row["named_profile_spike_evidence"] for name, row in vpu.items()
                if name not in {selected["name"], base["name"]})
 
@@ -121,6 +123,22 @@ def test_both_named_vpu_rocket_profiles_have_full_two_tile_receipts() -> None:
         assert preloaded[0]["fresh_checkout_reproduced"] is True
         assert preloaded[0]["compared_fp8_codes"] == 16384
         assert preloaded[0]["compared_e8m0_scales"] == 512
+
+
+def test_fp4_spad_requant_receipts_are_separate_from_fp4_matrix_compute() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    by_name = {row["name"]: row for row in profiles}
+    for name in ("MxE4M3Fp4VpuGemminiRocketConfig",
+                 "MxE4M3VpuGemminiRocketConfig"):
+        receipts = [item for item in by_name[name]["named_profile_spike_evidence"]
+                    if item["kind"] == "source_fp4_spad_requant_flat_tiled_spike"]
+        assert len(receipts) == 1
+        receipt = receipts[0]
+        assert receipt["compared_fp4_codes"] == 16384
+        assert receipt["compared_e8m0_scales"] == 512
+        assert receipt["issues_spad_requant_commands"] == 2
+        assert receipt["issues_fp4_matrix_compute"] is False
+        assert receipt["fresh_checkout_reproduced"] is True
 
 
 def test_dedicated_asymmetric_profiles_have_direct_mode_receipts() -> None:

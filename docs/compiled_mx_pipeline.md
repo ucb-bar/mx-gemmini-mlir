@@ -3545,3 +3545,44 @@ To reproduce either profile, use the compile command above with
 `--issue-schedule pipelined --run-spike` and omit `--include-mm1`. For the
 E4M3-only profile, also select its archived capture and profile JSON as in
 the full-chain command.
+
+### Source FP4 scratchpad requantization on Nicolas's Spike
+
+Nicolas's `spad_requant_fp4.c` generates a 64×128 BF16 tile and checks FP4
+codes against its own E2M1 reference in both flat and operand-A tiled layouts.
+The compiler now lowers one typed `mx_gemmini.spad_requant` operation for each
+layout from the same SSA input. Its data-free RV64 object issues the BF16
+transfer, both FP4 requant commands, and both packed-image readouts. The
+qualification driver retains Nicolas's input generator and every code and
+scale comparison; a recorded [source patch](evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/compiler_driver.patch)
+replaces the handwritten accelerator issue sites with a call to that object.
+The typed module passes native `mx-gemmini-opt` verification. This is a
+target-operation diagnostic; the Radiance workload captures remain the
+model2MLIR source-parity suite.
+
+The [FP4-capable VPU receipt](evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/receipt.json)
+and [E4M3-only VPU receipt](evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json)
+each record zero mismatches for **16,384 FP4 codes and 512 E8M0 scales** in
+both the original source ELF and compiler-issued ELF on Nicolas's pinned
+Spike. The compiler driver poisons all output buffers before issue, so the
+checks also catch incomplete stores. Both compiler objects contain zero
+allocated data bytes. Fresh checkouts of compiler commit `3117049` reproduced
+each complete receipt and
+all ten retained MLIR, command, object, driver, ELF, and log artifacts; see
+the archived [FP4-capable replay](evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/fresh_replay.json)
+and [E4M3-only replay](evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/fresh_replay.json).
+The profile catalog indexes these two runs separately. The E4M3-only profile
+has the FP4 requant instruction even though it does not have FP4 matrix
+compute. The source and compiler cycle measurements cover different regions,
+so they are not a performance comparison or RTL timing evidence.
+
+```sh
+python -m tools.qualify_nicolas_spad_requant_fp4 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/mx-fp4-dual-requant
+```
+
+Add `--profile profiles/gemmini-mx-cleanup-266c593/MxE4M3VpuGemminiRocketConfig.json`
+for the E4M3-only build. Pass `--baseline-receipt` with the matching archived
+receipt to require identical digests from an independent checkout.

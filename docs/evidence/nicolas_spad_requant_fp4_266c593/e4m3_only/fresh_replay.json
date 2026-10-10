@@ -1,0 +1,7 @@
+{
+  "compiler_revision": "3117049f93bfff3a0768968ca12cc93d12d2d950",
+  "matched_artifact_count": 10,
+  "receipt_sha256": "ec6aedb2c7f25942ad569d6ede320a4e34b4a308ebf57a9660c217b1edb925e2",
+  "schema": "mx_gemmini.nicolas_fp4_spad_requant_fresh_replay.v1",
+  "status": "fresh_checkout_identical"
+}

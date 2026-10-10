@@ -256,6 +256,79 @@ def _preloaded_two_tile_vpu_receipt(capture_path: str, compiled_path: str,
     }
 
 
+def _fp4_spad_requant_receipt(relative: str, profile: dict) -> dict:
+    """Index exact flat and tiled FP4 outputs from the source oracle on Spike."""
+    receipt = _read(relative)
+    base = ROOT / relative.rsplit("/", 1)[0]
+    physical = json.loads((base / "physical_program.json").read_text())
+    commands = [item for item in physical["commands"]
+                if item["kind"] == "command"]
+    replay = json.loads((base / "fresh_replay.json").read_text())
+    digest = profile_sha256(profile)
+    if (receipt.get("schema") !=
+            "mx_gemmini.nicolas_fp4_spad_requant_compiler_spike.v1" or
+            receipt.get("status") !=
+            "source_and_compiled_flat_tiled_fp4_matched_on_pinned_spike" or
+            receipt.get("profile_sha256") != digest or
+            receipt.get("rtl_revision") != "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            receipt.get("software_revision") != "350547f9843f46f485d4d1dd4c20b2f52f4844bf" or
+            receipt.get("extension_revision") != "876631072ecc7cc8197df5dc69c4d26bd4cd5f54" or
+            receipt.get("source_sha256") !=
+            "812842fd751d7fa0d8fb98a150df29424bdaba65613531335001f9f2260eb884" or
+            receipt.get("reference_header_sha256") !=
+            "72ed54217ac242f78b24399fb1620c59b5842110290d0ee768e1fbdc84011c3e" or
+            receipt.get("allocated_data_section_bytes") != 0 or
+            receipt.get("command_count") != 101 or
+            len(commands) != 101 or
+            sum(item["funct"] == 34 for item in commands) != 2 or
+            [item["rs1"].get("buffer") for item in commands if item["funct"] == 34] !=
+            ["scales_hw", "scales_hw2"] or
+            any(not (item["rs2"]["immediate"] & (1 << 32)) for item in commands
+                if item["funct"] == 34) or
+            physical.get("profile_sha256") != digest or
+            receipt.get("connected_mlir_sha256") != _digest(
+                str(base.relative_to(ROOT) / "connected.mlir")) or
+            receipt.get("physical_program_sha256") != _digest(
+                str(base.relative_to(ROOT) / "physical_program.json")) or
+            receipt.get("issuer_c_sha256") != _digest(
+                str(base.relative_to(ROOT) / "mx_issue.c")) or
+            receipt.get("object_sha256") != _digest(
+                str(base.relative_to(ROOT) / "mx_issue.o")) or
+            receipt.get("driver_sha256") != _digest(
+                str(base.relative_to(ROOT) / "compiler_driver.c")) or
+            receipt.get("driver_patch_sha256") != _digest(
+                str(base.relative_to(ROOT) / "compiler_driver.patch")) or
+            any(result.get("exit_code") != 0 or
+                result.get("compared_fp4_codes") != 16384 or
+                result.get("compared_e8m0_scales") != 512 or
+                result.get("elf_sha256") != _digest(
+                    str(base.relative_to(ROOT) / stage / "program.elf")) or
+                result.get("spike_log_sha256") != _digest(
+                    str(base.relative_to(ROOT) / stage / "spike.log")) or
+                "spad_requant_fp4 PASSED" not in
+                (base / stage / "spike.log").read_text() or
+                "flat 0, tiled 0 code mismatches; scales 0, 0 mismatches" not in
+                (base / stage / "spike.log").read_text()
+                for stage, result in (("source", receipt.get("source_spike", {})),
+                                      ("compiled", receipt.get("compiler_spike", {})))) or
+            replay.get("status") != "fresh_checkout_identical" or
+            replay.get("receipt_sha256") != _digest(relative) or
+            replay.get("compiler_revision") != receipt.get("compiler_revision") or
+            replay.get("matched_artifact_count") != 10 or
+            not profile["resources"].get("spad_requant") or
+            not profile["resources"].get("requantizer")):
+        raise ValueError(f"FP4 SPAD_REQUANT evidence differs from profile: {relative}")
+    return {
+        "kind": "source_fp4_spad_requant_flat_tiled_spike",
+        "evidence": relative,
+        "compared_fp4_codes": 16384,
+        "compared_e8m0_scales": 512,
+        "issues_spad_requant_commands": 2,
+        "issues_fp4_matrix_compute": False,
+        "fresh_checkout_reproduced": True,
+    }
+
+
 def _stock_modes() -> tuple[dict[int, dict[str, dict]], dict[int, str]]:
     paths = {
         8: "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json",
@@ -550,6 +623,16 @@ def build_report() -> dict:
         profile = load_profile(PROFILE_DIR / f"{name}.json")
         direct_receipts.setdefault(name, []).append(
             _preloaded_two_tile_vpu_receipt(*paths, profile))
+    fp4_requant_paths = {
+        "MxE4M3Fp4VpuGemminiRocketConfig":
+            "docs/evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/receipt.json",
+        "MxE4M3VpuGemminiRocketConfig":
+            "docs/evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json",
+    }
+    for name, path in fp4_requant_paths.items():
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        direct_receipts.setdefault(name, []).append(
+            _fp4_spad_requant_receipt(path, profile))
     profiles = []
     for path in sorted(PROFILE_DIR.glob("*.json")):
         profile = load_profile(path)
@@ -597,6 +680,7 @@ def build_report() -> dict:
                                            for path in paths),
                                          *(path for paths in preloaded_paths.values()
                                            for path in paths),
+                                         *fp4_requant_paths.values(),
                                          *vector_paths})},
         "profile_count": len(profiles),
         "chipyard_wrapper_count": 40,
