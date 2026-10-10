@@ -1282,6 +1282,20 @@ program, generated issuer, Spike log, and manifest for the first run, plus
 receipts for a second independent run. Binary payloads, objects, ELFs, and
 extensions are identified by SHA256 in those manifests and can be rebuilt.
 
+The current Radiance `spatter-workloads` revision `80f84ca` has the same 31
+driver and generated/committed header hashes as the `ee22e0b` baseline.
+Using upstream model2MLIR `e9ded36`, the
+[current-source reproduction](evidence/radiance_mx_gemm_80f84ca_upstream_repro_20261010/reproduction.json)
+recaptured all 31 contractions and rebuilt all 31 Rocket ELFs on Nicolas's
+pinned Spike. The current source generator, source plans, frontend MLIR,
+physical programs, objects, ELFs, and Spike logs match the archived baseline.
+All 23 BF16 and 8 quantized source comparisons pass. The
+[compact archive](evidence/radiance_mx_gemm_80f84ca_upstream_repro_20261010/index.json)
+contains current-revision capture and numerical receipts; the matching
+generated source and Spike logs remain in the baseline archive. An earlier
+independent run also matched every frontend and numerical artifact. This
+equivalence is scoped to the 31 byte-identical drivers and headers.
+
 The [build-selection audit](evidence/radiance_mx_gemm_build_selection_80f84ca.json)
 checks all 31 driver hashes against the newer Radiance `80f84ca` tree and
 reads its pinned [Makefile](evidence/radiance_mx_gemm_build_selection_80f84ca.Makefile).
@@ -1336,12 +1350,20 @@ python -m tools.reproduce_radiance_roster \
   --radiance-opt "$RADIANCE_OPT" --out-dir /new/mx-reproduction --jobs 2
 ```
 
+For Radiance `80f84ca`, append `--compatible-source-revision` to the
+one-command invocation. The flag checks every driver and header hash, source
+generator and plan, frontend artifact, physical command stream, ELF, and
+Spike log against the baseline before writing a success receipt. Append the
+same flag to the separate header-materialization command when using that
+revision. Without the flag, the command requires the exact baseline Radiance
+revision.
+
 A third run used that command at compiler `66df445`. Its
 [reproduction receipt](evidence/radiance_mx_gemm_latest_e9ded36_ee22/one_command_66df445/reproduction.json)
 and per-driver receipts show the same captured MLIR, physical source files,
 objects, ELFs, extensions, and Spike logs as the archived baseline for all
-31 drivers. The command refuses a changed source/tool revision or artifact
-digest before writing a success receipt.
+31 drivers. The default command refuses a changed source/tool revision or
+artifact digest before writing a success receipt.
 
 Repeat the capture and Spike commands with fresh output directories, then run
 `tools.archive_radiance_roster` with both pairs and the header materialization

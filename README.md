@@ -28,6 +28,11 @@ qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
 23 drivers with BF16 output and 8 with requantized output match their source
 goldens. The [one-command reproduction](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 rebuilds and checks those captures and Spike results against archived hashes.
+The same command now accepts the current Radiance `spatter-workloads` revision
+`80f84ca` with `--compatible-source-revision`: all 31 driver and header bytes,
+typed MLIR, physical streams, ELFs, and Spike logs match the pinned roster.
+Its [compact receipt](docs/evidence/radiance_mx_gemm_80f84ca_upstream_repro_20261010/reproduction.json)
+records the current source revision and exact baseline artifact hashes.
 The [source build-selection audit](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 finds that 18 of those named drivers are listed in Radiance's Makefile and 13
 are source recipes excluded from its build.

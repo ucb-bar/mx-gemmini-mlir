@@ -28,6 +28,7 @@ jobs:
             tests/test_target_profile.py::test_lut_projection_selects_mode_per_operand \
             tests/test_radiance_mx_gemm_source_parity_roster.py \
             tests/test_radiance_latest_full_roster_evidence.py \
+            tests/test_current_radiance_roster_reproduction.py \
             tests/test_radiance_mx_build_selection_evidence.py \
             tests/test_generated_nicolas_modes.py \
             tests/test_nicolas_e4m3_lut_pe_evidence.py \
