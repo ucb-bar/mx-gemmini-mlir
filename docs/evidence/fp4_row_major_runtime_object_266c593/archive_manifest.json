@@ -1,0 +1,13 @@
+{
+  "files_sha256": {
+    "index.json": "ea08869fcb8423d8cf7a3cb7c9ea4b88cdab382fa8546eb5288682a3092b94ae",
+    "index_repro.json": "ea08869fcb8423d8cf7a3cb7c9ea4b88cdab382fa8546eb5288682a3092b94ae",
+    "mx_runtime_data.S": "2f88da18b9795f4ab9b2b03448e881625ae243564544d01420719df4d8a26311",
+    "mx_runtime_driver.c": "0aea1c693b802406f436e2271bc7979febbb901a5dc109390a0c5987e1b23084",
+    "mx_runtime_fp4_row_major.elf.gz": "435aed61d3380b91c0b1f580569274bf66e3b34dd8ea2cbe48cf463dccef0cef",
+    "spike.log": "3ac183d65ce729b33373a374a7ea8547b0def3b47b6369018f9594c26642cec3"
+  },
+  "object_evidence": "docs/evidence/bf16_row_major_readout_266c593/fp4_source_cli",
+  "schema": "mx_gemmini.runtime_fp4_row_major_archive.v1",
+  "source_bundle": "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle"
+}

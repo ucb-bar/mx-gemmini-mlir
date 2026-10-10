@@ -2039,6 +2039,27 @@ log. Their linker warning records the output path, so only the `link.log`
 hash differs. This is Rocket/Spike numerical evidence for the MX path; it
 does not qualify Muon, the combined Radiance SoC, RTL timing, or FPGA behavior.
 
+The [runtime object qualifier](../tools/qualify_runtime_fp4_row_major_object.py)
+also links the archived data-free FP4 object to a separate caller. It invokes
+the same `mx_issue` twice with different packed codes and E8M0 scales, then
+compares both output matrices directly in row-major order. Its second payload
+swaps complete M and N halves of the source-derived fixture. Both independent
+builds match **131,072 / 131,072 BF16 values** on pinned Spike, including a
+recheck that the first output survived the second invocation. The
+[two-run receipt](evidence/fp4_row_major_runtime_object_266c593/index.json),
+[generated caller](evidence/fp4_row_major_runtime_object_266c593/mx_runtime_driver.c),
+[Spike log](evidence/fp4_row_major_runtime_object_266c593/spike.log), and
+[audit](../tests/test_fp4_row_major_runtime_object_evidence.py) are archived.
+From this repository, reproduce it with:
+
+```sh
+python -m tools.qualify_runtime_fp4_row_major_object \
+  --object-dir docs/evidence/bf16_row_major_readout_266c593/fp4_source_cli \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp4-row-major-runtime
+```
+
 ### Executed generated FP4 source tiles on Cyclotron
 
 The [source-tile qualifier](../tools/qualify_radiance_fp4_derived_cyclotron_tiles.py)

@@ -1,0 +1,39 @@
+{
+  "compared_bf16_outputs": 131072,
+  "elf_sha256": "77ead7943e4fd16a410bb6b38945fb6b3727a5d1844d32341af897518c684d6c",
+  "extension_sha256": "a91b381e15b9ac86a1c079240b87435c602269c628ddd170fd4bfcbb079a650c",
+  "object_manifest_sha256": "c096eb377a46b2140b4de780b8c724e557d9033683ba1cad6bdea76c55923979",
+  "object_sha256": "57212cd368d9164c721e9494971fa7158fff8599a466427148c210743c69a5c4",
+  "payloads": [
+    {
+      "activation_scales_sha256": "a3770e4212f82c08ac7782a7f884d477f39e589d9925371b4875a4aa3fd0b263",
+      "activation_sha256": "00badb4994a68e4a9f55a1a1b8eee3b3e2838791b41b83ce5892b67e7c372dab",
+      "expected_x2_bf16_sha256": "58649ffd4ba0de74cc624e9fa67f2cecec65cd41dc3744f80ea3849a3a87b9d8",
+      "golden_bf16_sha256": "a3debe096ac8d0a34b585c6ba160c2bd285b2d1e2affd47f575645170dd0819e",
+      "name": "first",
+      "weight_scales_sha256": "cc8fa22a51cc1fcb3d14e01d0f1710de4cd9ac928a5e162387958d35b0cc329f",
+      "weight_sha256": "50585607e317e3192db9116a1a4bb27449e7642f2c2f9ccade4d5c7fca28954a"
+    },
+    {
+      "activation_scales_sha256": "e1e95e3e218b0eb4530023ae02e02e5783ee3815be3105cb8f1d6fb836846671",
+      "activation_sha256": "05d7f39250d7b18b92ffcf2d2250cde5eb39e57053bb5de98cbf539bc35fa6c8",
+      "expected_x2_bf16_sha256": "051baf486b934cd378b35a5b0c242f3af4df925f36ee46bc4efa6b4ac75bf825",
+      "golden_bf16_sha256": "a5a09278fe5059d6d7786600f9204352caa55388afb35b517e3829bbe66a41fa",
+      "name": "second",
+      "weight_scales_sha256": "e36356d9968a8af2df1f7b41d18cbccb6f2894438850437aefc50de5d20fb1f6",
+      "weight_sha256": "ad4b331ea9f97b17a52e35eb0f041df0e6b30c9c541395f56ad2a08d8eb590f7"
+    }
+  ],
+  "permutation": "swap_M_128_rows_and_N_128_columns_v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "qualifier_sha256": "55c565be6e9db63723dff2ed6a8649d8fb1d46f4b3bc7ce4b4b654e731c8cb40",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.runtime_fp4_row_major_object_spike.v1",
+  "scope": "one data-free four-tile MX+VPU Rocket object, two source-derived runtime payloads, direct row-major output comparison; no Muon/RTL/FPGA claim",
+  "source_bundle_manifest_sha256": "36d8946d00844d50c7ef2f8ec4745ce5a8bf438007f5c876343961e9e4966511",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "3ac183d65ce729b33373a374a7ea8547b0def3b47b6369018f9594c26642cec3",
+  "spike_sha256": "a525ba160b7ec8ec21f6c415985c5c4ee6095a102ae69fb84d61849883f0a349",
+  "status": "two_runtime_fp4_row_major_payloads_matched_on_pinned_spike"
+}
