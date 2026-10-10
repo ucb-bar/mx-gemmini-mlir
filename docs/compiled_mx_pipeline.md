@@ -302,17 +302,21 @@ target profile exposes 256 KiB. Operand placement and output bytes were
 checked on Spike; equal scratchpad capacity is not claimed.
 
 ```sh
-python -m tools.generate_radiance_fp6_header \
-  --radiance-root /path/to/radiance-kernels --k 128 \
-  --out /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.data.fp6.m128n128k128.h
 python -m tools.qualify_source_mx \
   --mlir docs/evidence/radiance_fp6_requant_266c593/fp6_128x128x128/profile_bound.mlir \
   --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk128.requant.cpp \
   --profile profiles/gemmini-mx-cleanup-266c593/MxE3M2OnlyGemminiRocketConfig.json \
   --rtl-root /path/to/gemmini-mx-cleanup --riscv-root /path/to/riscv-tools \
-  --out-dir /new/radiance-fp6-source-run --source-header-quantized
-# Use --k 512 and the matching 512 filenames for the other source driver.
+  --out-dir /new/radiance-fp6-source-run --source-header-quantized \
+  --generate-missing-fp6-header
+# Use the matching 512 MLIR and driver filenames for the other source driver.
 ```
+
+The last flag stages the fixture in the output directory, records its
+generation receipt, and leaves the Radiance checkout untouched. The
+Radiance checkout needs its checked-in 2048-K header and a built
+`lib/golden/mx_golden`. The standalone generator remains available for
+inspecting the fixture directly.
 
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.

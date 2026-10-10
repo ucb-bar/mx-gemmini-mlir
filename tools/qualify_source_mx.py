@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 
 from mx_gemmini_support.bind_payload import append_vpu_spad_requant_x2, bind_payload
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from tools.generate_radiance_fp6_header import generate
 
 
 def main() -> None:
@@ -29,20 +33,51 @@ def main() -> None:
     parser.add_argument("--vpu-spad-requant-x2", action="store_true",
                         help="compose BF16 matrix, VPU x2, and tiled resident FP8 requant")
     parser.add_argument("--source-header-quantized", action="store_true",
-                        help="lower the Radiance FP8 C_out convention as a host BF16 epilogue")
+                        help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
+    parser.add_argument("--generate-missing-fp6-header", action="store_true",
+                        help="stage a checked source-derived FP6 requant header without editing Radiance")
     args = parser.parse_args()
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
-    kernel = read_source_gemm(args.driver)
-    plan_source_gemm(kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
-                     profile=profile)
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
-    args.out_dir.mkdir(parents=True)
-    bundle = args.out_dir / "bundle"
-    manifest = write_bundle(bundle, kernel, site_id=args.site_id,
-                            profile_sha256=profile_sha256(profile),
-                            fp6_quantized_specialization=args.fp6_quantized_specialization,
-                            vpu_spad_requant_x2=args.vpu_spad_requant_x2)
+    fixture = None
+    try:
+        selected_driver = args.driver
+        generation = None
+        if args.generate_missing_fp6_header:
+            if args.driver.parent.name != "gemm_mxgemmini":
+                parser.error("FP6 fixture generation requires a Radiance gemm_mxgemmini driver")
+            if read_source_gemm(args.driver).data_header_present:
+                parser.error("FP6 fixture generation requires a missing source header")
+            fixture = TemporaryDirectory(prefix="mx-fp6-source-")
+            selected_driver = Path(fixture.name) / args.driver.name
+            shutil.copy2(args.driver, selected_driver)
+            pending = read_source_gemm(selected_driver)
+            if (pending.data_header_present or pending.datatype != "FP6" or
+                    not pending.quant_output or pending.shape not in {
+                        (128, 128, 128), (128, 128, 512)}):
+                parser.error("FP6 fixture generation requires a missing 128 or 512 depth requant header")
+            generation = generate(args.driver.resolve().parents[2],
+                                  pending.shape[2], pending.data_header)
+        kernel = read_source_gemm(selected_driver)
+        plan_source_gemm(kernel, scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+                         profile=profile)
+        args.out_dir.mkdir(parents=True)
+        bundle = args.out_dir / "bundle"
+        manifest = write_bundle(bundle, kernel, site_id=args.site_id,
+                                profile_sha256=profile_sha256(profile),
+                                fp6_quantized_specialization=args.fp6_quantized_specialization,
+                                vpu_spad_requant_x2=args.vpu_spad_requant_x2)
+        if generation is not None:
+            generated = args.out_dir / "source_fixture"
+            generated.mkdir()
+            shutil.copy2(selected_driver, generated / selected_driver.name)
+            shutil.copy2(kernel.data_header, generated / kernel.data_header.name)
+            (generated / "generation_receipt.json").write_text(
+                json.dumps(generation, indent=2, sort_keys=True) + "\n")
+    finally:
+        if fixture is not None:
+            fixture.cleanup()
     mlir = args.out_dir / "payload_bound.mlir"
     bound = bind_payload(args.mlir.read_text(), profile, manifest,
                          source_header_quantized=args.source_header_quantized)
