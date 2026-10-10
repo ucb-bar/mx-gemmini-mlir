@@ -34,6 +34,14 @@ def _read(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def _semantic_manifest_sha(manifest: dict) -> str:
+    # Link logs include the chosen output directory. The issuer, objects, ELF,
+    # extension, numerical log, and all source digests remain byte identical.
+    stable = dict(manifest)
+    stable.pop("build_log_sha256", None)
+    return hashlib.sha256(json.dumps(stable, sort_keys=True).encode()).hexdigest()
+
+
 def _run(command: list[str], *, cwd: Path, log: Path) -> None:
     result = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, check=False)
@@ -174,7 +182,7 @@ def main() -> None:
                      "elf_sha256": manifest["elf_sha256"],
                      "extension_sha256": manifest["extension_sha256"],
                      "spike_log_sha256": manifest["spike_log_sha256"],
-                     "spike_manifest_sha256": _sha(manifest_path),
+                     "spike_manifest_semantic_sha256": _semantic_manifest_sha(manifest),
                      "compared_bf16_outputs": manifest["compared_bf16_outputs"],
                      **weight})
         print(f"qualified {directory}: {manifest['compared_bf16_outputs']} BF16 outputs, "
