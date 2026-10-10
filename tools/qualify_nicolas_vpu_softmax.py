@@ -1,8 +1,8 @@
 """Capture BF16 softmax with model2MLIR and run compiler-issued VPU ops on Spike.
 
-The copied Nicolas source retains input generation, transfers, and its bit-exact
-reference checker. Its six VPU calls are replaced by six commands lowered from
-the profile-bound MX MLIR; this qualifies the vector compute seam only.
+The copied Nicolas source retains input generation and its bit-exact reference
+checker. Configuration, transfers, VPU compute, and readout are emitted from
+one checked physical MX command stream.
 """
 
 from __future__ import annotations
@@ -14,10 +14,11 @@ import shutil
 import subprocess
 import sys
 
-from mx_gemmini_support.source_softmax import (render_softmax_bound,
-                                               replace_source_commands)
+from mx_gemmini_support.command_ir import emit_c
+from mx_gemmini_support.source_softmax import (lower_softmax_program,
+                                               render_softmax_bound,
+                                               replace_source_program)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
-from mx_gemmini_support.vector_lowering import lower_vector_c
 from tools.compile_mx import _git_revision, _require_gitlink, _run, _sha, _source_closure
 
 
@@ -67,10 +68,12 @@ def main() -> None:
         raise ValueError(f"model2MLIR left an opaque or invalid softmax: {captured.diagnostics}")
     mlir, binding = render_softmax_bound(
         captured.mlir_text, source, profile, CONTRACT.read_bytes())
-    transformed_source = replace_source_commands(source)
-    issuer = lower_vector_c(mlir, profile)
-    if issuer.count(".insn r 0x7b, 3, 33") != 6:
-        raise ValueError("compiler did not emit the six VPU commands")
+    transformed_source = replace_source_program(source)
+    commands = lower_softmax_program(mlir, source, profile)
+    functs = [command.funct for command in commands]
+    if functs != [7, 0, 0, *([2] * 4), *([33] * 6), *([3] * 4)]:
+        raise ValueError("compiler did not emit the complete 17-command softmax")
+    issuer = emit_c(list(commands), transport="rocket_rocc", buffers=("score", "output"))
     out = args.out_dir.resolve()
     out.mkdir(parents=True)
     frontend_path = out / "softmax.model2mlir.mlir"
@@ -128,7 +131,8 @@ def main() -> None:
         "schema": "mx_gemmini.nicolas_vpu_softmax_spike.v1",
         "status": "source_vpu_softmax_matched_on_pinned_spike" if passed else
                   "source_vpu_softmax_failed_on_pinned_spike",
-        "scope": "model2MLIR BF16 softmax capture; six compiler-issued VPU compute commands; Nicolas source transfers and reference checker",
+        "scope": "model2MLIR BF16 softmax capture; compiler-issued configuration, four input transfers, six VPU operations, four output transfers; Nicolas source input and reference checker",
+        "ordered_functs": functs,
         "source_revision": _git_revision(software),
         "source_sha256": _sha(source_path),
         "model2mlir_revision": _git_revision(args.model2mlir_root),

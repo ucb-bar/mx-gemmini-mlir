@@ -10,8 +10,10 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.source_softmax import (audit_frontend, audit_source,
+                                                lower_softmax_program,
                                                 render_softmax_bound,
-                                                replace_source_commands)
+                                                replace_source_commands,
+                                                replace_source_program)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.vector_lowering import lower_vector_commands
 
@@ -70,13 +72,22 @@ def test_softmax_binding_refuses_changed_pinned_source() -> None:
     transformed = replace_source_commands(source)
     assert "gemmini_vpu_" not in transformed
     assert transformed.count("mx_issue();") == 1
+    whole = replace_source_program(source)
+    assert whole.count("mx_issue(S, P_hw);") == 1
+    assert "mvin_rows(S, SP_S, ROWS);" not in whole
+    assert "mvout_rows(P_hw, SP_P, ROWS);" not in whole
     frontend = (EVIDENCE / "softmax.model2mlir.mlir").read_text()
     profile = load_profile(PROFILE, rtl_root=rtl)
     mlir, manifest = render_softmax_bound(
         frontend, source, profile, CONTRACT.read_bytes())
     assert mlir == (EVIDENCE / "softmax.profile_bound.mlir").read_text()
     assert manifest == json.loads((EVIDENCE / "binding_manifest.json").read_text())
+    assert [command.funct for command in lower_softmax_program(mlir, source, profile)] == (
+        [7, 0, 0, *([2] * 4), *([33] * 6), *([3] * 4)])
     with pytest.raises(ValueError, match="schedule"):
         audit_source(source.replace("VPU_RMAX", "VPU_RSUM", 1))
     with pytest.raises(ValueError, match="capture"):
         audit_frontend(frontend.replace("math.exp", "math.expm1", 1))
+    with pytest.raises(ValueError, match="transfer"):
+        lower_softmax_program(mlir, source.replace(
+            "mvin_rows(S, SP_S, ROWS);", "mvin_rows(S, SP_P, ROWS);", 1), profile)

@@ -14,6 +14,7 @@ import re
 
 from .target_profile import profile_sha256
 from .vector_lowering import lower_vector_commands
+from .physical_program import _cmd, _config_ld, _config_st, _transfer
 
 
 ROWS = 64
@@ -134,3 +135,58 @@ def replace_source_commands(source: str) -> str:
         raise ValueError("Nicolas softmax source guard changed")
     return source.replace(marker, "void mx_issue(void);\n\n" + marker, 1).replace(
         block, replacement, 1)
+
+
+def lower_softmax_program(mlir: str, source: str, profile: dict) -> tuple:
+    """Schedule audited DIM16 input/output transfers around the typed VPU ops."""
+    audit_source(source)
+    if any(source.count(line) != 1 for line in (
+            "gemmini_flush(0);", "gemmini_config_ld(DIM);",
+            "gemmini_config_st(DIM);", "mvin_rows(S, SP_S, ROWS);",
+            "mvout_rows(P_hw, SP_P, ROWS);")):
+        raise ValueError("Nicolas softmax transfer schedule changed")
+    vector = lower_vector_commands(mlir, profile)
+    if len(vector) != 6 or any(command.funct != 33 for command in vector):
+        raise ValueError("typed softmax lacks six VPU operations")
+    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+    for row in range(0, ROWS, 16):
+        commands.append(_transfer(2, "score", row * 16, row))
+    commands.extend(vector)
+    for row in range(0, ROWS, 16):
+        commands.append(_transfer(3, "output", row * 16, 0x0400 + row))
+    return tuple(commands)
+
+
+def replace_source_program(source: str) -> str:
+    """Retain Nicolas's data generation and oracle, replacing all MX commands."""
+    audit_source(source)
+    original = "\n".join((
+        "  gemmini_flush(0);",
+        "  gemmini_config_ld(DIM);",
+        "  gemmini_config_st(DIM);",
+        "  uint64_t t0 = read_cycles();",
+        "  mvin_rows(S, SP_S, ROWS);",
+        "  uint64_t t1 = read_cycles();",
+        *("  " + call for call in SOURCE_CALLS),
+        "  gemmini_fence();",
+        "  uint64_t t2 = read_cycles();",
+        "  mvout_rows(P_hw, SP_P, ROWS);",
+        "  gemmini_fence();",
+    ))
+    timing = ('  printf("cycles: mvin %llu, 6 VPU ops %llu\\n", '
+              '(unsigned long long)(t1 - t0), (unsigned long long)(t2 - t1));')
+    marker = "#if !defined(MX_ROCKET) && !defined(SPIKE_SIM)"
+    if source.count(original) != 1 or source.count(timing) != 1 or source.count(marker) != 1:
+        raise ValueError("Nicolas softmax program block or timing output changed")
+    replacement = "\n".join((
+        "  uint64_t t0 = read_cycles();",
+        "  mx_issue(S, P_hw);",
+        "  gemmini_fence();",
+        "  uint64_t t2 = read_cycles();",
+    ))
+    return (source.replace(marker,
+                           "void mx_issue(const void *score, const void *output);\n\n" + marker, 1)
+            .replace(original, replacement, 1)
+            .replace(timing,
+                     '  printf("cycles: compiled MX softmax stream %llu\\n", '
+                     '(unsigned long long)(t2 - t0));', 1))
