@@ -1524,6 +1524,15 @@ separate coverage and are not included in the 31-driver claim. Reproduce
 the run with `tools.reproduce_radiance_roster` below and
 `--compatible-source-revision`.
 
+A [fresh checkout of compiler `4fc4d3a` against Radiance `82be2c7`](evidence/radiance_mx_gemm_fresh_4fc4d3a_82be2c7/index.json)
+rebuilt `mx-gemmini-opt` and reran the guarded one-command roster. All 31
+model2MLIR captures and Spike comparisons passed, covering **466,944 output
+elements** across 23 BF16-output and eight requantized drivers. Every
+driver/header, bound MLIR, physical stream, ELF, and Spike-log hash matched
+the pinned roster. The compact receipt contains the complete fresh frontend
+and Spike indices and source/header census. This checks the published compiler
+after the new connected 128³ chain was added.
+
 The [build-selection audit](evidence/radiance_mx_gemm_build_selection_80f84ca.json)
 checks all 31 driver hashes against the newer Radiance `80f84ca` tree and
 reads its pinned [Makefile](evidence/radiance_mx_gemm_build_selection_80f84ca.Makefile).
@@ -1578,7 +1587,7 @@ python -m tools.reproduce_radiance_roster \
   --radiance-opt "$RADIANCE_OPT" --out-dir /new/mx-reproduction --jobs 2
 ```
 
-For Radiance `80f84ca`, append `--compatible-source-revision` to the
+For Radiance `80f84ca` or `82be2c7`, append `--compatible-source-revision` to the
 one-command invocation. The flag checks every driver and header hash, source
 generator and plan, frontend artifact, physical command stream, ELF, and
 Spike log against the baseline before writing a success receipt. Append the
@@ -3041,8 +3050,8 @@ cases with:
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
-   qualified 64³ Nicolas source case, and lower other typed graphs without a
-   source-specific seam.
+   qualified 64³ MX+VPU and 128³ plain MX Nicolas source cases, and lower
+   other typed graphs without a source-specific seam.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;

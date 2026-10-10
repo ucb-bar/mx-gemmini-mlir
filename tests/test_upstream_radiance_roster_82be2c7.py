@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/radiance_mx_gemm_upstream_82be2c7_20261010"
+FRESH = ROOT / "docs/evidence/radiance_mx_gemm_fresh_4fc4d3a_82be2c7"
 BASELINE = ROOT / "docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22"
 
 
@@ -66,3 +67,42 @@ def test_current_upstream_radiance_reproduces_all_31_mx_gemms() -> None:
                     "compared_count", "status"):
             assert actual[key] == previous[key], (actual["driver"], key)
         assert actual["status"].endswith("_matched_on_pinned_spike")
+
+
+def test_latest_published_compiler_fresh_checkout_reproduces_upstream_roster() -> None:
+    index = _read(FRESH / "index.json")
+    report = _read(FRESH / "reproduction.json")
+    front = _read(FRESH / "frontend_index.json")
+    spike = _read(FRESH / "spike_index.json")
+    headers = _read(FRESH / "headers.json")
+    previous_front = _read(EVIDENCE / "frontend_index.json")
+    previous_spike = _read(EVIDENCE / "spike_index.json")
+    assert index["schema"] == "mx_gemmini.radiance_mx_gemm_fresh_checkout_upstream.v1"
+    assert index["status"] == report["status"] == (
+        "all_31_source_goldens_reproduced_on_pinned_spike")
+    assert index["compiler_revision"] == report["compiler_revision"] == (
+        "4fc4d3a50ea6d1483f5d80b43e65219dc1fe5497")
+    assert index["radiance_source_revision"] == report["source_revision"] == (
+        "82be2c71e5a0ca5d764e08e1b2c6a0e638bff401")
+    assert (index["driver_count"], index["fullout_drivers"],
+            index["requant_drivers"], index["total_compared_elements"]) == (
+            31, 23, 8, 466944)
+    assert (front["captured_drivers"], spike["covered_drivers"],
+            headers["drivers"]) == (31, 31, 31)
+    assert report["compatible_source_revision"] is True
+    assert report["frontend_index_sha256"] == _sha(FRESH / "frontend_index.json")
+    assert report["spike_index_sha256"] == _sha(FRESH / "spike_index.json")
+    for name, digest in index["files_sha256"].items():
+        assert _sha(FRESH / name) == digest
+    for actual, previous in zip(front["rows"], previous_front["rows"], strict=True):
+        for key in ("driver", "driver_sha256", "header_sha256", "shape_mnk",
+                    "tile_mnk", "precision", "quant_output", "profile_sha256",
+                    "source_mlir_sha256", "bound_mlir_sha256"):
+            assert actual[key] == previous[key], (actual["driver"], key)
+    for actual, previous in zip(spike["rows"], previous_spike["rows"], strict=True):
+        for key in ("driver", "source_driver_sha256", "source_header_sha256",
+                    "profile_bound_mlir_sha256", "payload_bound_mlir_sha256",
+                    "elf_sha256", "spike_log_sha256", "comparison",
+                    "compared_count", "status"):
+            assert actual[key] == previous[key], (actual["driver"], key)
+    assert sum(row["compared_count"] for row in spike["rows"]) == 466944
