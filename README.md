@@ -438,7 +438,15 @@ load images are byte-identical to those tested programs for FP8, FP6, and
 FP4. This qualifies only that two-wave shape and command sequence; larger
 capacity-driven wave plans still need simulator checks.
 
-Run `python -m pytest tests -q` from this directory.
+For the full test suite, point Python at the pinned model2MLIR `e9ded36` and
+MXQuant `b4af543` checkouts, then run from this directory:
+
+```sh
+PYTHONPATH="$MODEL2MLIR_ROOT:$MXQUANT_ROOT" python -m pytest tests -q
+```
+
+This also prevents a different editable model2MLIR installation in the active
+virtualenv from supplying an older capture API.
 The [GitHub Actions contract gate](.github/workflows/contract-evidence.yml)
 checks issuer fields, illegal profile modes, and the archived 31-driver and
 108-mode receipts from a fresh Python install. A second job checks all 81
