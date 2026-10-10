@@ -206,7 +206,9 @@ qualified 64³ E4M3 source case; general mixed lowering remains open.
 The [BF16 VPU softmax seam](docs/compiled_mx_pipeline.md#compiler-issued-bf16-vpu-softmax)
 captures `torch.softmax` with model2MLIR, issues configuration, transfers, six
 VPU operations, and readout, and matches all 512 BF16 source-reference outputs
-on Spike.
+on Spike. The [public object compiler qualification](docs/evidence/mx_public_vpu_softmax_3f9af55/README.md)
+now links its data-free `mx_issue.o` into Nicolas's checker through
+`tools.compile_object`; both named Rocket VPU profiles match all 512 outputs.
 Nicolas's [full VPU source oracle](docs/compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations)
 also passes all 29 checks on pinned Spike, including fused EXPSUB/EXPSUM;
 the [base](docs/compiled_mx_pipeline.md#compiler-issued-base-vpu-operations),

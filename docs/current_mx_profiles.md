@@ -70,6 +70,10 @@ comparisons: all 14 opcodes, broadcast, same-bank placement, reduction length
 one, chained VPU operations, DMA write-after-read, and a cross-VPU dependency.
 These are independent source-bound programs rather than one general scheduler
 for the entire source benchmark.
+The [public BF16 softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md)
+lowers its six typed VPU operations plus configuration, transfers, and readout
+to a data-free RV64 object. Nicolas's checker reports zero mismatches across
+all 512 BF16 outputs on each of the two named VPU Rocket profiles.
 `spad_requant` may bind its E8M0 output destination as
 `scale_buffer = "name"` with `scale_dram_address = 0`. The issuer then takes `name` as a
 runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it
