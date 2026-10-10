@@ -1,0 +1,13 @@
+--- a/gemmini.cc
++++ b/gemmini.cc
+@@ -1741,8 +1741,8 @@
+           }
+           for (int r = 0; r < TM; r++)
+             for (int c = 0; c < TN; c++) {
+-              const size_t a_off = group * (size_t)M_DIM + (size_t)(i*TM + r);
+-              const size_t b_off = group * (size_t)N_DIM + (size_t)(j*TN + c);
++              const size_t a_off = gemmini_state.mx_scale_act_sel * 4096 + group * (size_t)M_DIM + (size_t)(i*TM + r);
++              const size_t b_off = gemmini_state.mx_scale_wgt_sel * 4096 + group * (size_t)N_DIM + (size_t)(j*TN + c);
+               const uint8_t sa = (a_off < gemmini_state.mx_scale_a_mem.size()) ? gemmini_state.mx_scale_a_mem[a_off] : 0x7f;
+               const uint8_t sb = (b_off < gemmini_state.mx_scale_b_mem.size()) ? gemmini_state.mx_scale_b_mem[b_off] : 0x7f;
+               int e = (int)sa + (int)sb - 127;

@@ -1,0 +1,12 @@
+MISMATCH 0: got=0xc338 expected=0x429c
+MISMATCH 1: got=0x439c expected=0x43e8
+MISMATCH 2: got=0xc3d1 expected=0xc401
+MISMATCH 3: got=0xc2ac expected=0x425a
+MISMATCH 4: got=0x43e9 expected=0x43a7
+MISMATCH 5: got=0x429c expected=0x43c8
+MISMATCH 6: got=0x4395 expected=0x4346
+MISMATCH 7: got=0x4456 expected=0x44bc
+lowered MX 128x128x2048: 16368 BF16 mismatches
+Gemmini extension configured with:
+    dim = 16
+*** FAILED *** (tohost = 1)

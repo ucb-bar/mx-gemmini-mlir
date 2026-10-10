@@ -212,6 +212,9 @@ needs a documented serial scale-buffer workaround. A
 now runs the compiler's alternating command schedule on an isolated corrected
 Spike model: the same ELF has 16,362 BF16 mismatches on pinned Spike and zero
 on the corrected model. RTL and FPGA execution remain unqualified.
+The same [alternating schedule](docs/compiled_mx_pipeline.md#alternating-fp6-scale-halves-on-nicolass-spike)
+also reproduces all 16,384 BF16 outputs of the checked-in Radiance
+128×128×2048 FP6 driver across 16 K waves on that isolated Spike model.
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json

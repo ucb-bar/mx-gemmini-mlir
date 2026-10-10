@@ -1686,6 +1686,36 @@ python -m tools.qualify_fp6_alternating_spike \
   --out-dir /tmp/fp6-alternating-spike
 ```
 
+The [checked-in Radiance FP6 128×128×2048 driver](evidence/radiance_fp6_alternating_80f84ca/index.json)
+extends this test to all **16 K waves**. Its driver and header at Radiance
+`80f84ca` have the same hashes as the earlier source-qualified serial case.
+The model2MLIR `e9ded36` profile-bound capture is rebound to those exact
+source payload bytes; the archived [physical program](evidence/radiance_fp6_alternating_80f84ca/physical_program.json)
+contains 1,289 commands with alternating scale uploads and selections. The
+1,340 physical steps differ from the archived serial schedule in exactly
+24 places: two scale uploads and one selector command in each odd K wave.
+The compute, LUT, operand-transfer, and readout steps are identical. The
+same compiler ELF has **16,368 / 16,384 BF16 mismatches on pinned Spike** and
+**0 / 16,384 on the isolated corrected Spike extension**. Two fresh runs
+produced identical source, command, ELF, extension, and output-log hashes.
+The [issuer](evidence/radiance_fp6_alternating_80f84ca/mx_issue.c),
+[bound MLIR](evidence/radiance_fp6_alternating_80f84ca/payload_bound.mlir),
+[stock log](evidence/radiance_fp6_alternating_80f84ca/stock_spike.log), and
+[corrected log](evidence/radiance_fp6_alternating_80f84ca/corrected_spike.log)
+are archived. Reproduce with:
+
+```sh
+python -m tools.qualify_fp6_alternating_spike \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --radiance-root /path/to/radiance-kernels \
+  --out-dir /tmp/radiance-fp6-alternating-spike
+```
+
+This is a numerical check against an experimental Spike correction. The
+16-wave scale path still needs RTL or FPGA execution before it can be marked
+hardware-qualified.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
