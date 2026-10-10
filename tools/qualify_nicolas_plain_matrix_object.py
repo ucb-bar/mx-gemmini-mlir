@@ -36,6 +36,7 @@ class Case:
     key: str
     precision: str
     shape: tuple[int, int, int]
+    tile: tuple[int, int, int]
     source_name: str
     header_name: str
     source_sha256: str
@@ -48,7 +49,7 @@ class Case:
 
 CASES = {
     "fp8_128x128x128": Case(
-        "fp8_128x128x128", "FP8", (128, 128, 128),
+        "fp8_128x128x128", "FP8", (128, 128, 128), (128, 128, 128),
         "matmul_tiled_fp8_128x128.c", "matmul_fp8_128x128.h",
         "1a0016d2ca9ebcca5840b31486ed6bda2df4cf3756aec0922781db398c98d5ce",
         "16241671c4df2d4f738e77225063caac4895cdcba4d4495941e599d0db185bcd",
@@ -57,8 +58,18 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 128 cubed"),
+    "fp8_128x128x256": Case(
+        "fp8_128x128x256", "FP8", (128, 128, 256), (128, 128, 128),
+        "matmul_tiled_fp8_128x128x256.c", "matmul_fp8_128x128x256.h",
+        "c4fd2385d9223d4e44c8b69e0305dd0ceb5992e986da73ab5d81ab86dfe8da49",
+        "feab7b991acf85b79819c8d7285ccd236330d1a83f79500a2a7144081591209c",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 128x128x256"),
     "fp4_64x64x64": Case(
-        "fp4_64x64x64", "FP4", (64, 64, 64),
+        "fp4_64x64x64", "FP4", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp4_64x64.c", "matmul_fp4_64x64.h",
         "080d817557d8affdae299b155601b8f3a927970c39542fc6387c1e955492338c",
         "22851fc6ff791f2748a2bbc501aa98176c4cf26b73c7dcea13dcca2a6202c06b",
@@ -68,7 +79,7 @@ CASES = {
         ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP4 64x64x64"),
     "fp6_128x128x512": Case(
-        "fp6_128x128x512", "FP6", (128, 128, 512),
+        "fp6_128x128x512", "FP6", (128, 128, 512), (128, 128, 512),
         "matmul_tiled_fp6_128x128x512.c", "matmul_fp6_128x128x512.h",
         "dec4c96493b1a7eb7b534d6625db135e60f0474807f8688b3b5b79fbfd4203d1",
         "7e499e594e324e48c9f0b17b70a2fe7ec57f7d156af118f9dfa9d59b7e4507fd",
@@ -113,7 +124,7 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     for axis, extent in zip(("M", "N", "K"), case.shape):
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
             raise ValueError("Nicolas source header shape changed")
-    return SourceGemm(driver, header, case.shape, case.shape,
+    return SourceGemm(driver, header, case.shape, case.tile,
                       case.precision, False, False, True)
 
 
