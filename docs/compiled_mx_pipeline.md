@@ -1377,8 +1377,34 @@ python -m tools.qualify_radiance_gqa_qk \
 
 This is an experimental source correction and a **first QK tile** result.
 The patched generator has not been merged into `radiance-kernels`; the full
-mixed MX/Muon attention kernel, its VPU softmax and requantization, PV tiles,
+mixed MX/Muon attention kernel, its Muon softmax and requantization, PV tiles,
 causal masking, and final `O_gold` comparison still need execution evidence.
+
+#### All GQA QK heads and used key blocks
+
+The [QK roster qualification](evidence/radiance_gqa_qk_roster_80f84ca/index.json)
+uses the same regenerated header and model2MLIR capture. It follows the
+source driver's `h / FA_GRP` mapping for **8 query heads × 2 used key blocks**,
+checks each tile against the patched source model, and compiles each contraction
+to a separate standalone RoCC ELF. All **65,536 / 65,536 BF16 outputs** match
+Nicolas's Spike model. Each physical program has 83 steps. The selected source
+arrays contain eight distinct Q tiles and four distinct K tiles, as required
+by the four-query-heads-per-KV-head mapping.
+The archived roster was built from compiler commit `38de229`; its two runs
+have identical indexes, payloads, physical programs, ELFs, and Spike logs.
+
+After running the generated fixture command above, run:
+
+```sh
+python -m tools.qualify_radiance_gqa_qk_roster \
+  --prepared-dir /new/mx-gqa-generated --source-root "$RADIANCE_KERNELS_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-gqa-qk-roster --jobs 4
+```
+
+This covers the MX QK contractions for the source's used blocks. The causal
+mask, Muon online softmax and P requantization, MX PV contractions, and final
+attention output are separate stages and remain to be qualified together.
 
 ## Isolated weight-LUT Spike correction across all legal modes
 
