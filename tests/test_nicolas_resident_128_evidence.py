@@ -29,6 +29,7 @@ PAIR_PLAN = ROOT / "docs/evidence/nicolas_resident_pair_plan_b1b5882"
 ROW_PREFIX = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2"
 ROW_PREFIX_FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_fresh_5cf6e1a"
 PREFIX_LADDER = ROOT / "docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef"
+GENERIC_PAIR = ROOT / "docs/evidence/nicolas_generic_pair_1f8c6ab"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -161,6 +162,23 @@ def test_connected_pair_lowerer_accepts_other_sites_and_runtime_symbols() -> Non
             c1_tiled_observed="runtime_c1_observed", c2_tiled="runtime_c2_tiled")
 
 
+def test_published_reusable_pair_lowerer_preserves_spike_programs() -> None:
+    index = json.loads((GENERIC_PAIR / "index.json").read_text())
+    assert index["schema"] == "mx_gemmini.generic_resident_pair_fresh_reproduction.v1"
+    assert index["compiler_revision"] == (
+        "1f8c6ab33e19a39ae5d5ef8eb93bb2414ce7a763")
+    assert index["fresh_checkout"] == "fresh_m96"
+    assert set(index["cases"]) == {"m16", "m96", "m128", "fresh_m96"}
+    for name, case in index["cases"].items():
+        baseline = json.loads((ROOT / case["baseline"]).read_text())
+        actual = json.loads((GENERIC_PAIR / name / "artifact_manifest.json").read_text())
+        assert actual["compiler_revision"] == index["compiler_revision"]
+        assert actual["status"] == case["status"]
+        assert actual["spike_exit_code"] == 0
+        for field in case["stable_fields_equal_to_baseline"]:
+            assert actual[field] == baseline[field], (name, field)
+        for file, digest in case["files_sha256"].items():
+            assert _sha((GENERIC_PAIR / name / file).read_bytes()) == digest
 def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:
     index = json.loads((ROW_PREFIX / "index.json").read_text())
     first = json.loads((ROW_PREFIX / "artifact_manifest.json").read_text())

@@ -781,6 +781,10 @@ eight row counts remain byte-identical; a renamed 96×128×128 graph also
 passes the native `mx-gemmini-opt` verifier and the reusable lowerer. This
 extracts a shared physical lowering boundary; independent numerical
 qualification remains necessary for new graph shapes and profiles.
+The [published lowerer Spike replay](evidence/nicolas_generic_pair_1f8c6ab/index.json)
+records baseline-identical programs and full C1/C2 output for M = 16, 96,
+and 128. A separate checkout of commit `1f8c6ab` replayed M = 96 against
+the archived baseline with identical command source, objects, ELF, and log.
 
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:

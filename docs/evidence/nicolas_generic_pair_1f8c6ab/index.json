@@ -1,0 +1,119 @@
+{
+  "cases": {
+    "fresh_m96": {
+      "baseline": "docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96/artifact_manifest.json",
+      "files_sha256": {
+        "artifact_manifest.json": "2a4d0771654feb2d4bde8aab4bbc675cddea891ae42550b4c06b64192f5b2ff1",
+        "spike.log": "cc8e995fe16e629df84997b93ebda9381b2fd5f341d4e05c058376878bf84523"
+      },
+      "stable_fields_equal_to_baseline": [
+        "source_sha256",
+        "header_sha256",
+        "profile_sha256",
+        "bound_mlir_sha256",
+        "source_revision",
+        "rtl_revision",
+        "gemmini_extension_revision",
+        "elf_sha256",
+        "extension_sha256",
+        "spike_log_sha256",
+        "spike_exit_code",
+        "compared_fp8_codes",
+        "compared_e8m0_scales",
+        "files_sha256",
+        "object_sha256",
+        "frontend_mlir_sha256",
+        "compared_c1_fp8_codes",
+        "compared_c1_e8m0_scales"
+      ],
+      "status": "source_prefix_connected_chain_matched_on_pinned_spike"
+    },
+    "m128": {
+      "baseline": "docs/evidence/nicolas_connected_plain_chain_128_266c593/artifact_manifest.json",
+      "files_sha256": {
+        "artifact_manifest.json": "041d44ef2e944f479e525c8f91ec7969e2950620db7c169a17192cee37971822",
+        "spike.log": "7e6c31a8a7130ac1df209d884ccd0aae4a33441b2c80598c62dd2a02c012cb57"
+      },
+      "stable_fields_equal_to_baseline": [
+        "source_sha256",
+        "header_sha256",
+        "profile_sha256",
+        "bound_mlir_sha256",
+        "source_revision",
+        "rtl_revision",
+        "gemmini_extension_revision",
+        "elf_sha256",
+        "extension_sha256",
+        "spike_log_sha256",
+        "spike_exit_code",
+        "compared_fp8_codes",
+        "compared_e8m0_scales",
+        "files_sha256",
+        "object_sha256",
+        "frontend_mlir_sha256",
+        "compared_c1_fp8_codes",
+        "compared_c1_e8m0_scales"
+      ],
+      "status": "source_connected_chain_matched_on_pinned_spike"
+    },
+    "m16": {
+      "baseline": "docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m16/artifact_manifest.json",
+      "files_sha256": {
+        "artifact_manifest.json": "e83bfdf338929b3acb0e856ba221e89bd78db08df5ed71d191ddab953710c020",
+        "spike.log": "ab6ae80ab56cda5ac3b2a674d9e553db01cca716f559a1ce2f087dc02f3dafa4"
+      },
+      "stable_fields_equal_to_baseline": [
+        "source_sha256",
+        "header_sha256",
+        "profile_sha256",
+        "bound_mlir_sha256",
+        "source_revision",
+        "rtl_revision",
+        "gemmini_extension_revision",
+        "elf_sha256",
+        "extension_sha256",
+        "spike_log_sha256",
+        "spike_exit_code",
+        "compared_fp8_codes",
+        "compared_e8m0_scales",
+        "files_sha256",
+        "object_sha256",
+        "frontend_mlir_sha256",
+        "compared_c1_fp8_codes",
+        "compared_c1_e8m0_scales"
+      ],
+      "status": "source_prefix_connected_chain_matched_on_pinned_spike"
+    },
+    "m96": {
+      "baseline": "docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96/artifact_manifest.json",
+      "files_sha256": {
+        "artifact_manifest.json": "2a4d0771654feb2d4bde8aab4bbc675cddea891ae42550b4c06b64192f5b2ff1",
+        "spike.log": "cc8e995fe16e629df84997b93ebda9381b2fd5f341d4e05c058376878bf84523"
+      },
+      "stable_fields_equal_to_baseline": [
+        "source_sha256",
+        "header_sha256",
+        "profile_sha256",
+        "bound_mlir_sha256",
+        "source_revision",
+        "rtl_revision",
+        "gemmini_extension_revision",
+        "elf_sha256",
+        "extension_sha256",
+        "spike_log_sha256",
+        "spike_exit_code",
+        "compared_fp8_codes",
+        "compared_e8m0_scales",
+        "files_sha256",
+        "object_sha256",
+        "frontend_mlir_sha256",
+        "compared_c1_fp8_codes",
+        "compared_c1_e8m0_scales"
+      ],
+      "status": "source_prefix_connected_chain_matched_on_pinned_spike"
+    }
+  },
+  "compiler_revision": "1f8c6ab33e19a39ae5d5ef8eb93bb2414ce7a763",
+  "fresh_checkout": "fresh_m96",
+  "schema": "mx_gemmini.generic_resident_pair_fresh_reproduction.v1"
+}
