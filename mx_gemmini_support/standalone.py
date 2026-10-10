@@ -47,10 +47,13 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     packed_fp4 = program.output_format == "fp4_e2m1"
     packed_fp6 = program.output_format == "fp6_e3m2"
     quant_name = "nicolas_fp6" if packed_fp6 else "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
+    source_quant_name = ("source_fp6_packed" if packed_fp6 else
+                         "source_fp4_packed" if packed_fp4 and
+                         "source_fp4_packed" in resources else "golden_fp8")
     quant_bytes = m * n // (2 if packed_fp4 or packed_fp6 else 1)
     if quantized:
         if (quant_name not in resources or "nicolas_output_scales" not in resources or
-                ("source_fp6_packed" if packed_fp6 else "golden_fp8") not in resources or
+                source_quant_name not in resources or
                 "golden_output_scales" not in resources or
                 m * n // 32 > 2048):
             raise ValueError("quantized output needs code and scale goldens within runtime capacity")
@@ -218,8 +221,13 @@ int main(void) {{
             receipt["source_quant_code_differences"] = sum(
                 a != b for a, b in zip(resources["source_fp6_packed"], resources["nicolas_fp6"]))
         elif packed_fp4:
-            receipt["source_quant_code_format"] = "fp8_e4m3"
+            receipt["source_quant_code_format"] = (
+                "packed_fp4_e2m1" if source_quant_name == "source_fp4_packed" else "fp8_e4m3")
             receipt["target_quant_code_format"] = "packed_fp4_e2m1"
+            if source_quant_name == "source_fp4_packed":
+                receipt["source_quant_code_differences"] = sum(
+                    a != b for a, b in zip(resources[source_quant_name],
+                                           resources["nicolas_fp4"]))
         else:
             receipt["source_quant_code_differences"] = sum(
                 a != b for a, b in zip(resources["golden_fp8"], resources["nicolas_fp8"]))

@@ -457,14 +457,29 @@ def read_source_payload(kernel: SourceGemm, *,
     if (kernel.quant_output and kernel.datatype in {"FP8", "FP4"}) or vpu_spad_requant_x2:
         if kernel.datatype not in {"FP8", "FP4"}:
             raise ValueError("source quantized-output golden is qualified only for FP8/FP4")
-        codes = bytes(_array(source, name="C_out", ctype="uint8_t",
-                             dimensions="[MATMUL_M][MATMUL_N]", count=m * n,
-                             maximum=255))
+        packed_fp4_header = (kernel.datatype == "FP4" and
+                             re.search(rf"static const uint8_t C_out\[{m // 2}\]\[{n}\]",
+                                       source) is not None)
+        codes = bytes(_array(
+            source, name="C_out", ctype="uint8_t",
+            dimensions=f"[{m // 2}][{n}]" if packed_fp4_header else
+                       ("[MATMUL_M][MATMUL_N]", f"[{m}][{n}]"),
+            count=m * n // 2 if packed_fp4_header else m * n, maximum=255))
         groups = n // 32
         scales = resources["output_scales"].data
-        row_major_scales = bytes(scales[group * m + row]
-                                 for row in range(m) for group in range(groups))
-        resources["golden_fp8"] = Resource(codes, (m, n), 8, "row_major_fp8_e4m3")
+        if re.search(r"static const uint8_t C_scales_out\[", source):
+            row_major_scales = bytes(_array(
+                source, name="C_scales_out", ctype="uint8_t",
+                dimensions=("[MATMUL_M][MATMUL_GN]", f"[{m}][{groups}]"),
+                count=m * groups, maximum=255))
+        else:
+            row_major_scales = bytes(scales[group * m + row]
+                                     for row in range(m) for group in range(groups))
+        if packed_fp4_header:
+            resources["source_fp4_packed"] = Resource(
+                codes, (m // 2, n), 8, "packed_even_odd_m_fp4_e2m1")
+        else:
+            resources["golden_fp8"] = Resource(codes, (m, n), 8, "row_major_fp8_e4m3")
         resources["golden_output_scales"] = Resource(
             row_major_scales, (m, groups), 8, "row_major_n_group_e8m0")
         if kernel.datatype == "FP8":
@@ -522,7 +537,8 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
         }[kernel.datatype]
         manifest["source_quant_golden_convention"] = "source_header"
         if kernel.datatype == "FP4":
-            manifest["source_quant_header_format"] = "fp8_e4m3"
+            manifest["source_quant_header_format"] = (
+                "packed_fp4_e2m1" if "source_fp4_packed" in resources else "fp8_e4m3")
         if kernel.datatype == "FP6":
             manifest["source_quant_header_format"] = "packed_fp6_lut_index"
     if fp6_quantized_specialization:
@@ -641,7 +657,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
                   "matrix_vpu_x2_spad_requant_fp8" or
                   not vpu_requant_shape_is_legal(tuple(shape), tuple(tile)))) or
                 (precision == "FP4" and
-                 manifest.get("source_quant_header_format") != "fp8_e4m3") or
+                 manifest.get("source_quant_header_format") not in
+                 {"fp8_e4m3", "packed_fp4_e2m1"}) or
                 (precision == "FP6" and
                  manifest.get("source_quant_header_format") != "packed_fp6_lut_index")):
             raise ValueError("source quantized-output golden has an unsupported format")
@@ -649,7 +666,10 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
             "golden_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
             "nicolas_output_scales": ((m, n // 32), 8, "row_major_n_group_e8m0"),
         })
-        if precision != "FP6":
+        if precision == "FP4" and manifest.get("source_quant_header_format") == "packed_fp4_e2m1":
+            expected["source_fp4_packed"] = ((m // 2, n), 8,
+                                              "packed_even_odd_m_fp4_e2m1")
+        elif precision != "FP6":
             expected["golden_fp8"] = ((m, n), 8, "row_major_fp8_e4m3")
         if precision == "FP8":
             expected["nicolas_fp8"] = ((m, n), 8, "row_major_fp8_e4m3")
@@ -667,7 +687,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
                          "output_scales", "activation_lut", "weight_lut", "output_lut",
                          "golden_bf16", "golden_fp8", "golden_output_scales",
                          "nicolas_fp8", "nicolas_fp4", "nicolas_fp6",
-                         "source_fp6_packed", "nicolas_output_scales"} or
+                         "source_fp4_packed", "source_fp6_packed",
+                         "nicolas_output_scales"} or
                 descriptor.get("file") != f"{name}.bin"):
             raise ValueError("MX payload bundle has an unknown resource or unsafe file")
         data = (directory / descriptor["file"]).read_bytes()

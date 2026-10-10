@@ -100,6 +100,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP4 64x64x64"),
+    "fp4_64x64x64_requant": Case(
+        "fp4_64x64x64_requant", "FP4", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp4_64x64_requant.c", "matmul_fp4_64x64.h",
+        "7bc43a4aa97b15834114c9de1c52bbb21a83328daed462c03d18f1350cfcebbc",
+        "22851fc6ff791f2748a2bbc501aa98176c4cf26b73c7dcea13dcca2a6202c06b",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_quantized",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP4 64 requant", True),
     "fp6_128x128x512": Case(
         "fp6_128x128x512", "FP6", (128, 128, 512), (128, 128, 512),
         "matmul_tiled_fp6_128x128x512.c", "matmul_fp6_128x128x512.h",
@@ -214,23 +224,25 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
 
 def _driver(case: Case) -> str:
     if case.quant_output:
-        if case.precision != "FP8":
-            raise ValueError("source quantized driver currently supports FP8 output only")
+        if case.precision not in {"FP8", "FP4"}:
+            raise ValueError("source quantized driver supports FP8 or packed FP4 output")
+        output_rows = "MATMUL_M/2" if case.precision == "FP4" else "MATMUL_M"
+        code_label = "packed-byte" if case.precision == "FP4" else "code"
         return f"""#include <stdint.h>
 #include <stdio.h>
 #include "include/gemmini_testutils.h"
 #include "include/{case.header_name}"
 #include "mx_issue.h"
-static uint8_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
+static uint8_t C_hw[{output_rows}][MATMUL_N] __attribute__((aligned(64)));
 static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));
 int main(void) {{
   mx_issue({', '.join(case.call_arguments)});
   gemmini_fence();
   int code_errors = 0, scale_errors = 0;
-  for (int i = 0; i < MATMUL_M; ++i)
+  for (int i = 0; i < {output_rows}; ++i)
     for (int j = 0; j < MATMUL_N; ++j)
       if (C_hw[i][j] != C_out[i][j]) {{
-        if (code_errors < 8) printf("code mismatch %d,%d got %x want %x\\n",
+        if (code_errors < 8) printf("{code_label} mismatch %d,%d got %x want %x\\n",
                                     i,j,C_hw[i][j],C_out[i][j]);
         ++code_errors;
       }}
@@ -242,8 +254,8 @@ int main(void) {{
                                      C_scales_out[i][g]);
         ++scale_errors;
       }}
-  printf("compiled Nicolas {case.label}: %d code mismatches / %d, %d scale mismatches / %d\\n",
-         code_errors, MATMUL_M*MATMUL_N, scale_errors, MATMUL_M*MATMUL_GN);
+  printf("compiled Nicolas {case.label}: %d {code_label} mismatches / %d, %d scale mismatches / %d\\n",
+         code_errors, {output_rows}*MATMUL_N, scale_errors, MATMUL_M*MATMUL_GN);
   return code_errors != 0 || scale_errors != 0;
 }}
 """
@@ -354,10 +366,13 @@ def main(default_case: str | None = None) -> None:
                             source_origin=NICOLAS_SOURCE_HEADER_ORIGIN)
     if case.quant_output:
         _, resources = load_bundle(bundle)
-        if (manifest.get("output_format") != "fp8_e4m3" or
-                resources["golden_fp8"] != resources["nicolas_fp8"] or
+        output_format = "fp4_e2m1" if case.precision == "FP4" else "fp8_e4m3"
+        source_code = "source_fp4_packed" if case.precision == "FP4" else "golden_fp8"
+        target_code = "nicolas_fp4" if case.precision == "FP4" else "nicolas_fp8"
+        if (manifest.get("output_format") != output_format or
+                resources[source_code] != resources[target_code] or
                 resources["golden_output_scales"] != resources["nicolas_output_scales"]):
-            raise ValueError("Nicolas source FP8 codes/scales differ from target quantization")
+            raise ValueError("Nicolas source codes/scales differ from target quantization")
     bound = bind_handoff(handoff, profile)
     bound = bind_payload(bound, profile, manifest)
     if not case.quant_output:
@@ -373,7 +388,9 @@ def main(default_case: str | None = None) -> None:
     returncode, output, elf = run_spike(rtl_root, args.riscv_root.resolve(),
                                         object_dir, args.out_dir, case)
     m, n, _ = case.shape
-    expected = (f"compiled Nicolas {case.label}: 0 code mismatches / {m * n}, "
+    code_label = "packed-byte" if case.precision == "FP4" else "code"
+    code_count = m * n // 2 if case.precision == "FP4" else m * n
+    expected = (f"compiled Nicolas {case.label}: 0 {code_label} mismatches / {code_count}, "
                 f"0 scale mismatches / {m * n // 32}" if case.quant_output else
                 f"compiled Nicolas {case.label}: 0 mismatches / {m * n} BF16 values")
     passed = returncode == 0 and expected in output
@@ -384,7 +401,7 @@ def main(default_case: str | None = None) -> None:
                   "source_golden_failed_on_pinned_spike",
         "scope": (f"Nicolas {case.source_name}: packed {case.precision} source arrays, "
                   f"{m}x{n}x{case.shape[2]} " +
-                  ("source-header FP8 codes and E8M0 scales" if case.quant_output
+                  (f"source-header {case.precision} codes and E8M0 scales" if case.quant_output
                    else "BF16 output") + "; PyTorch model2MLIR capture, "
                   "typed source binding, public object compiler, full Spike comparison"),
         "source_driver_sha256": _sha(kernel.driver),
@@ -408,8 +425,9 @@ def main(default_case: str | None = None) -> None:
         "spike_sha256": _sha(args.riscv_root.resolve() / "bin/spike"),
         "spike_extension_sha256": _sha(args.out_dir / "run/libgemmini.so"),
         "driver_sha256": _sha(args.out_dir / "run/mx_driver.c"),
-        "outputs_checked": m * n + (m * n // 32 if case.quant_output else 0),
-        "codes_checked": m * n if case.quant_output else None,
+        "outputs_checked": code_count + m * n // 32 if case.quant_output else m * n,
+        "codes_checked": m * n if case.quant_output and case.precision == "FP8" else None,
+        "packed_bytes_checked": code_count if case.quant_output and case.precision == "FP4" else None,
         "scales_checked": m * n // 32 if case.quant_output else None,
         "mismatches": 0 if passed else None,
     }
@@ -417,7 +435,7 @@ def main(default_case: str | None = None) -> None:
                                                            sort_keys=True) + "\n")
     print(output)
     if not passed:
-        raise SystemExit("compiled Nicolas FP8 source did not match its BF16 golden")
+        raise SystemExit("compiled Nicolas source did not match its checked-in golden")
 
 
 if __name__ == "__main__":

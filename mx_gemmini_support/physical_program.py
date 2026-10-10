@@ -446,8 +446,13 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         raise ValueError("physical source quantized golden differs from output shape")
     if quant_output and precision == "FP6" and len(resources["source_fp6_packed"]) != expected_quant_bytes:
         raise ValueError("physical FP6 source projection differs from output shape")
-    if quant_output and precision != "FP6" and len(resources["golden_fp8"]) != m * n:
-        raise ValueError("physical FP8/FP4 source golden differs from output shape")
+    if quant_output and precision != "FP6":
+        source_code = ("source_fp4_packed" if precision == "FP4" and
+                       manifest.get("source_quant_header_format") == "packed_fp4_e2m1"
+                       else "golden_fp8")
+        source_bytes = expected_quant_bytes if source_code == "source_fp4_packed" else m * n
+        if len(resources[source_code]) != source_bytes:
+            raise ValueError("physical FP8/FP4 source golden differs from output shape")
     if host_requant:
         codes, scales = (
             quantize_bf16_radiance_header_fp6(
