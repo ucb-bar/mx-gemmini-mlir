@@ -9,8 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.command_ir import Command
+from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.plain_chain_128 import lower_plain_chain_128
+from mx_gemmini_support.resident_pair_plan import (lower_first_fp8_resident,
+                                                    plan_fp8_resident_pair)
 from mx_gemmini_support.resident_lowering import (lower_single_resident_contract,
                                                   validate_resident_contract)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -121,6 +123,12 @@ def test_connected_plain_chain_executes_both_sites_without_c1_reload() -> None:
             "header_sha256": index["header_sha256"]}
     commands = lower_plain_chain_128(mlir, frontend, manifest, profile, resources,
                                       **args)
+    buffers = tuple(sorted({operand.buffer for command in commands
+                            if isinstance(command, Command)
+                            for operand in (command.rs1, command.rs2)
+                            if operand.buffer is not None}))
+    assert emit_c(commands, transport="rocket_rocc", buffers=buffers).encode() == (
+        _connected("mx_issue.c"))
     uploads = [command.rs1.buffer for command in commands
                if isinstance(command, Command) and command.funct == 2]
     assert uploads.count("a1_activation") == 64
@@ -140,6 +148,45 @@ def test_connected_plain_chain_executes_both_sites_without_c1_reload() -> None:
         resources["a1_activation"][1:])
     with pytest.raises(ValueError, match="source binding differs"):
         lower_plain_chain_128(mlir, frontend, manifest, profile, changed, **args)
+
+
+def test_resident_pair_planner_derives_counts_and_rejects_overlapping_lifetimes() -> None:
+    profile = load_profile(PROFILE)
+    small = plan_fp8_resident_pair(
+        profile, shape=(64, 64, 64), a_row=0, c1_row=512, c2_row=1024)
+    assert (small.a_rows, small.b_rows, small.c_rows, small.b_row) == (
+        256, 256, 256, 16128)
+    assert (small.m_tiles, small.n_tiles, small.k_tiles,
+            small.a_scale_bytes, small.output_scale_bytes) == (4, 4, 4, 128, 128)
+    commands = lower_first_fp8_resident(
+        small, activation_buffer="a1_activation",
+        activation_scales_buffer="a1_scales", weight_buffer="b1_weight",
+        weight_scales_buffer="b1_scales", output_scales_buffer="c1_scales")
+    assert sum(isinstance(item, Command) and item.funct == 2 for item in commands) == 32
+    launch = next(item for item in commands if isinstance(item, Command) and
+                  item.funct == 8)
+    assert launch.rs2.immediate >> 32 == small.c1_row
+    non_square = plan_fp8_resident_pair(
+        profile, shape=(64, 128, 64), a_row=0, c1_row=1024, c2_row=2048)
+    assert non_square.b_row == 15872
+    with pytest.raises(ValueError, match="only for square tiles"):
+        lower_first_fp8_resident(
+            non_square, activation_buffer="a1_activation",
+            activation_scales_buffer="a1_scales", weight_buffer="b1_weight",
+            weight_scales_buffer="b1_scales", output_scales_buffer="c1_scales")
+    with pytest.raises(ValueError, match="row lifetimes overlap"):
+        plan_fp8_resident_pair(
+            profile, shape=(128, 128, 128), a_row=0, c1_row=512, c2_row=4096)
+    with pytest.raises(ValueError, match="DIM16 alignment"):
+        plan_fp8_resident_pair(
+            profile, shape=(128, 128, 128), a_row=0, c1_row=2049, c2_row=4096)
+    with pytest.raises(ValueError, match="accumulator capacity"):
+        plan_fp8_resident_pair(
+            profile, shape=(256, 256, 256), a_row=0, c1_row=4096, c2_row=8192)
+    profile["resources"]["requantizer"] = False
+    with pytest.raises(ValueError, match="requantizer profile"):
+        plan_fp8_resident_pair(
+            profile, shape=(128, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
 
 
 def test_fresh_published_checkout_rebuilds_and_reproduces_connected_chain() -> None:
@@ -190,6 +237,10 @@ def test_wrong_lifetime_or_ssa_handoff_fails_closed() -> None:
     with pytest.raises(ValueError, match="scratchpad tile placement"):
         lower_single_resident_contract(
             mlir.replace("output_row = 4096 : i32", "output_row = 15300 : i32"),
+            profile)
+    with pytest.raises(ValueError, match="scratchpad tile placement"):
+        lower_single_resident_contract(
+            mlir.replace("output_row = 4096 : i32", "output_row = 4097 : i32"),
             profile)
     with pytest.raises(ValueError, match="SSA tensor edges"):
         lower_single_resident_contract(

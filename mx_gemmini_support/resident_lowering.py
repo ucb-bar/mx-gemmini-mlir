@@ -42,7 +42,8 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     rows = profile["resources"]["scratchpad_bytes"] // 16
     a, b, c = (attrs[key] for key in ("activation_row", "weight_row", "output_row"))
     if any(type(value) is not int for value in (a, b, c)) or not (
-            0 <= a and a + activation_rows <= c and
+            0 <= a and all(value % 16 == 0 for value in (a, b, c)) and
+            a + activation_rows <= c and
             c + output_rows <= b and b + weight_rows == rows and
             rows <= 1 << 14):
         raise ValueError("resident MX scratchpad tile placement or lifetime differs")

@@ -5,9 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 
-from .command_ir import Command, Fence, Operand
-from .physical_program import _cmd, _config_ld, _config_st, _transfer
+from .command_ir import Command, Fence
+from .physical_program import _config_st, _transfer
 from .resident_lowering import lower_resident_contract
+from .resident_pair_plan import lower_first_fp8_resident, plan_fp8_resident_pair
 from .target_profile import profile_sha256
 from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
 
@@ -64,6 +65,8 @@ def render_plain_chain_128(frontend_mlir: str, manifest: dict, profile: dict,
     """Bind the two captured sites to Nicolas's packed operands and resident edge."""
     _validate_frontend(frontend_mlir, manifest, profile)
     _validate_resources(resources)
+    plan = plan_fp8_resident_pair(
+        profile, shape=(128, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
     digest = profile_sha256(profile)
     policy = _sha(b"nicolas_plain_fp8_128_resident_chain_v1")
     binding = (f'contract_sha256 = "{source_sha256}", policy_sha256 = "{policy}", '
@@ -88,8 +91,8 @@ def render_plain_chain_128(frontend_mlir: str, manifest: dict, profile: dict,
       site_id = "functional:matmul", output_format = "fp8_e4m3", {binding}}}
       : (tensor<128x128xbf16>) -> (tensor<128x128xi8>, tensor<128x4xi8>)
     %c2, %c2s = "mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s) {{
-      site_id = "functional:matmul_1", activation_row = 2048 : i32,
-      weight_row = 15360 : i32, output_row = 4096 : i32,
+      site_id = "functional:matmul_1", activation_row = {plan.c1_row} : i32,
+      weight_row = {plan.b_row} : i32, output_row = {plan.c2_row} : i32,
       m = 128 : i32, n = 128 : i32, k = 128 : i32,
       activation_format = "fp8_e4m3", weight_format = "fp8_e4m3",
       output_format = "fp8_e4m3", weight_buffer = "b2_weight",
@@ -176,48 +179,33 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
     attrs.update({name: _text_attr(mm2, name) for name in
                   ("activation_format", "weight_format", "output_format",
                    "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
-    if ((attrs["activation_row"], attrs["weight_row"], attrs["output_row"],
-         attrs["m"], attrs["n"], attrs["k"]) !=
-            (2048, 15360, 4096, 128, 128, 128) or
+    if (attrs["m"], attrs["n"], attrs["k"]) != (128, 128, 128):
+        raise ValueError("plain 128³ source qualification needs its checked shape")
+    plan = plan_fp8_resident_pair(
+        profile, shape=(attrs["m"], attrs["n"], attrs["k"]), a_row=0,
+        c1_row=attrs["activation_row"], c2_row=attrs["output_row"])
+    if (attrs["weight_row"] != plan.b_row or
+            plan.c1_row != 2048 or plan.c2_row != 4096 or
             (attrs["weight_buffer"], attrs["weight_scales_buffer"],
              attrs["output_scales_buffer"]) !=
             ("b2_weight", "b2_scales", "c2_scales")):
         raise ValueError("plain 128³ chain resident placement differs")
-    rows = profile["resources"]["scratchpad_bytes"] // 16
-    if rows != 16384 or profile["name"] != "MxGemminiRocketConfig":
+    if plan.rows != 16384 or profile["name"] != "MxGemminiRocketConfig":
         raise ValueError("plain 128³ chain needs Nicolas's 256 KiB plain MX profile")
-    commands: list[Command | Fence] = [
-        _cmd(7, 0, 0),
-        _cmd(0, (1 << 16) | (1 << 2), 1 << 48),
-        _cmd(27, Operand(buffer="a1_scales"), 512),
-        _cmd(27, Operand(buffer="b1_scales"), (1 << 32) | 512),
-        Fence(), _config_ld(128),
-    ]
-    for i in range(8):
-        for k in range(8):
-            commands.append(_transfer(2, "a1_activation", i * 16 * 128 + k * 16,
-                                      (i * 8 + k) * 16))
-    for j in range(8):
-        for k in range(8):
-            commands.append(_transfer(2, "b1_weight", j * 16 * 128 + k * 16,
-                                      15360 + (j * 8 + k) * 16))
-    commands.extend([
-        Fence(), _config_st(2),
-        _cmd(26, Operand(buffer="c1_scales", address_mask=(1 << 33) - 1,
-                         or_bits=(1 << 63) | (8 << 51) | (8 << 42) | (8 << 33)), 1),
-        _cmd(9, 0, (8 << 32) | (8 << 16) | 8),
-        _cmd(24, 0, rows),
-        _cmd(8, 0, (2048 << 32) | 0x200 | 0x38 | (1 << 10)),
-        Fence(),
-        # C1 readback is diagnostic. MM2 consumes the live scratchpad tile.
-        _config_st(16),
-    ])
-    for row in range(0, 1024, 16):
-        commands.append(_transfer(3, "c1_tiled_observed", row * 16, 2048 + row))
+    commands: list[Command | Fence] = list(lower_first_fp8_resident(
+        plan, activation_buffer="a1_activation", activation_scales_buffer="a1_scales",
+        weight_buffer="b1_weight", weight_scales_buffer="b1_scales",
+        output_scales_buffer="c1_scales"))
+    # C1 readback is diagnostic. MM2 still consumes the live scratchpad tile.
+    commands.append(_config_st(plan.dim))
+    for row in range(0, plan.c_rows, plan.dim):
+        commands.append(_transfer(3, "c1_tiled_observed", row * plan.dim,
+                                  plan.c1_row + row))
     commands.append(Fence())
     commands.extend(lower_resident_contract(profile, attrs))
-    commands.append(_config_st(16))
-    for row in range(0, 1024, 16):
-        commands.append(_transfer(3, "c2_tiled", row * 16, 4096 + row))
+    commands.append(_config_st(plan.dim))
+    for row in range(0, plan.c_rows, plan.dim):
+        commands.append(_transfer(3, "c2_tiled", row * plan.dim,
+                                  plan.c2_row + row))
     commands.append(Fence())
     return tuple(commands)

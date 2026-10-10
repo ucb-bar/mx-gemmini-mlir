@@ -723,7 +723,15 @@ codes, 512 C1 scales, 16,384 C2 codes, and 512 C2 scales** against Nicolas's
 checked-in header on stock Spike. An independent build reproduces the MLIR,
 commands, objects, ELF, extension, and log hashes. This is source-bound to
 the 128³ E4M3 plain MX recipe; arbitrary connected graphs still need a
-general lifetime planner.
+graph-wide lifetime planner.
+
+The MM1 emitter now consumes a target-derived resident-pair plan: M/N/K
+determine A, B, C1, and C2 row spans, transfer counts, scale bytes, and loop
+dimensions; the profile determines scratchpad, scale, and accumulator
+capacity. The planner rejects overlapping live ranges, misaligned rows, and
+insufficient memory. Its source weight layout emitter remains scoped to
+square tiles, and 128³ is the numerically qualified plain-MX case. The plan
+emits the same 128³ command bytes as the archived Spike run.
 
 ```sh
 python -m tools.qualify_nicolas_resident_128 \
