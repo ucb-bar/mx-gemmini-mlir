@@ -56,6 +56,8 @@ def main() -> None:
                         help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
     parser.add_argument("--target-mesh-reference", action="store_true",
                         help="derive DIM8/32 BF16 oracle from Radiance's pinned host model")
+    parser.add_argument("--rtl-product-floor-reference", action="store_true",
+                        help="include Nicolas's below-2^-16 product flush in target reference")
     parser.add_argument("--generate-missing-fp6-header", action="store_true",
                         help="stage a checked source-derived FP6 header without editing Radiance")
     parser.add_argument("--physical-mode", choices=("spike_serial", "rtl_alternating"),
@@ -74,6 +76,8 @@ def main() -> None:
             (not args.tilewise_vpu_from_capture and any(path is not None for path in capture_paths))):
         parser.error("capture-derived VPU needs all three capture sidecar paths")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    if args.rtl_product_floor_reference and not args.target_mesh_reference:
+        parser.error("RTL product-floor reference requires --target-mesh-reference")
     if args.target_mesh_reference and (
             profile["geometry"]["mesh_columns"] not in {8, 32} or
             args.physical_mode != "spike_serial" or
@@ -121,7 +125,8 @@ def main() -> None:
             _, resources = load_bundle(bundle)
             target, policy = derive_mesh_reference(
                 selected_driver.resolve().parents[2], resources, kernel.shape,
-                kernel.datatype, profile["geometry"]["mesh_columns"])
+                kernel.datatype, profile["geometry"]["mesh_columns"],
+                product_floor=args.rtl_product_floor_reference)
             (args.out_dir / "source_golden_bf16.bin").write_bytes(resources["golden_bf16"])
             manifest = replace_source_golden_with_mesh_reference(bundle, target, policy)
         if generation is not None:

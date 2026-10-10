@@ -100,9 +100,13 @@ def main() -> None:
     sources = [args.out_dir / name for name in ("mx_issue.c", "mx_driver.c", "mx_data.S")]
     sources += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
     objects = []
+    # Large straight-line issuers make GCC's O2 passes disproportionately slow.
+    # Their inline RoCC instructions carry the physical ordering already.
+    issuer_opt_level = "-O0" if len(program.steps) > 10000 else "-O2"
     for index, source in enumerate(sources):
         obj = args.out_dir / f"mx_{index}.o"
-        _run([str(riscv_cc), *flags, "-c", str(source), "-o", str(obj)],
+        source_flags = ([*flags, issuer_opt_level] if index == 0 else flags)
+        _run([str(riscv_cc), *source_flags, "-c", str(source), "-o", str(obj)],
              cwd=args.out_dir, log=args.out_dir / f"compile_{index}.log")
         objects.append(obj)
     elf = args.out_dir / "mx_program.elf"
@@ -122,6 +126,7 @@ def main() -> None:
         "gemmini_software_source_closure_sha256": _source_closure(
             software, sorted(software.glob("include/*.h")) + sources[3:]),
         "riscv_gcc_sha256": _sha(riscv_cc),
+        "issuer_opt_level": issuer_opt_level,
         "elf_sha256": _sha(elf),
         "object_sha256": {path.name: _sha(path) for path in objects},
         "build_log_sha256": {path.name: _sha(path) for path in

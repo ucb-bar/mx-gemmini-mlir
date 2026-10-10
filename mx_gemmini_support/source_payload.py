@@ -30,13 +30,18 @@ TARGET_MESH_REFERENCE_ORIGIN = "radiance_source_target_mesh_reference"
 
 def validate_target_mesh_reference(manifest: dict) -> None:
     """Keep a derived DIM8/32 numerical reference distinct from source goldens."""
-    from .mesh_reference import _MODEL_CPP_SHA256, _MODEL_MATH_SHA256
+    from .mesh_reference import (_MODEL_CPP_SHA256, _MODEL_MATH_SHA256,
+                                 _MODEL_FLOOR_MATH_SHA256)
 
     policy = manifest.get("target_mesh_reference")
     descriptor = manifest.get("resources", {}).get("golden_bf16", {})
     required = {"schema", "mesh_dim", "source_golden_sha256",
                 "model_cpp_sha256", "model_math_sha256",
                 "transformed_cpp_sha256", "target_golden_sha256"}
+    floor_reference = isinstance(policy, dict) and policy.get("schema") == (
+        "mx_gemmini.radiance_target_mesh_reference.v2")
+    if floor_reference:
+        required |= {"product_floor_exponent", "transformed_math_sha256"}
     if manifest.get("precision") == "FP6":
         required |= {"lut_granularity_shift", "unpacked_activation_lut_sha256",
                      "unpacked_weight_lut_sha256"}
@@ -46,13 +51,19 @@ def validate_target_mesh_reference(manifest: dict) -> None:
             "source_derivation" in manifest or
             not isinstance(policy, dict) or
             set(policy) != required or
-            policy.get("schema") != "mx_gemmini.radiance_target_mesh_reference.v1" or
+            policy.get("schema") not in {
+                "mx_gemmini.radiance_target_mesh_reference.v1",
+                "mx_gemmini.radiance_target_mesh_reference.v2"} or
             policy.get("mesh_dim") not in {8, 32} or
             policy.get("model_cpp_sha256") != _MODEL_CPP_SHA256 or
             policy.get("model_math_sha256") != _MODEL_MATH_SHA256 or
             policy.get("target_golden_sha256") != descriptor.get("sha256") or
             policy.get("source_golden_sha256") == descriptor.get("sha256")):
         raise ValueError("target mesh reference lacks pinned numerical provenance")
+    if floor_reference and (policy.get("product_floor_exponent") != -16 or
+                            policy.get("transformed_math_sha256") !=
+                            _MODEL_FLOOR_MATH_SHA256):
+        raise ValueError("target mesh reference lacks RTL product-floor provenance")
     if manifest["precision"] == "FP6" and (
             policy.get("lut_granularity_shift") != 1 or
             any(re.fullmatch(r"[0-9a-f]{64}", policy.get(f"unpacked_{name}_sha256", "")) is None

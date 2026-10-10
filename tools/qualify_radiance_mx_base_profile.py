@@ -39,14 +39,18 @@ def main() -> None:
     parser.add_argument("--profile", type=Path, default=PROFILE)
     parser.add_argument("--case", action="append", choices=tuple(DRIVERS),
                         help="select a source precision; repeat for several (default: all three)")
+    parser.add_argument("--all-fullout", action="store_true",
+                        help="compile all 23 archived BF16-output Radiance MX GEMM drivers")
+    parser.add_argument("--rtl-product-floor-reference", action="store_true",
+                        help="use the versioned target mesh reference with Nicolas's product floor")
     args = parser.parse_args()
+    if args.all_fullout and args.case:
+        parser.error("--all-fullout cannot be combined with --case")
     source, rtl, riscv, out = (args.source_root.resolve(), args.rtl_root.resolve(),
                                args.riscv_root.resolve(), args.out_dir.resolve())
     if out.exists():
         parser.error(f"refusing to overwrite {out}")
     selected_profile = args.profile.resolve()
-    selected_cases = {name: stem for name, stem in DRIVERS.items()
-                      if args.case is None or name in args.case}
     if args.case is not None and len(set(args.case)) != len(args.case):
         parser.error("each --case may be selected only once")
     profile = load_profile(selected_profile, rtl_root=rtl)
@@ -56,22 +60,31 @@ def main() -> None:
             not profile["legal_compute"]):
         parser.error("selected MX profile needs legal square-mesh Rocket compute")
     mesh_reference = profile["geometry"]["mesh_columns"] != 16
-    base_contract = (selected_profile == PROFILE.resolve() and
-                     len(selected_cases) == len(DRIVERS))
-    if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
-                          len(profile["legal_compute"]) != 3 or
-                          not profile["resources"]["lut"] or
-                          profile["resources"]["vpu"]):
-        parser.error("selected plain MX profile differs from the three-precision RTL config")
+    if args.rtl_product_floor_reference and not mesh_reference:
+        parser.error("RTL product-floor reference requires DIM8 or DIM32")
     frontend_index = json.loads((FRONTEND / "index.json").read_text())
     if (frontend_index["model2mlir_revision"] !=
             "e9ded36eb85abf2d9097ac4dc11457c825853388" or
             frontend_index["rtl_revision"] != _git_revision(rtl)):
         parser.error("archived model2MLIR capture or Nicolas RTL revision differs")
     rows = {Path(row["driver"]).stem: row for row in frontend_index["rows"]}
+    selected_cases = ({stem: stem for stem, row in rows.items()
+                       if not row["quant_output"]} if args.all_fullout else
+                      {name: stem for name, stem in DRIVERS.items()
+                       if args.case is None or name in args.case})
+    if args.all_fullout and len(selected_cases) != 23:
+        parser.error("archived Radiance BF16-output roster differs from 23 drivers")
+    base_contract = (not args.all_fullout and selected_profile == PROFILE.resolve() and
+                     len(selected_cases) == len(DRIVERS))
+    if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
+                          len(profile["legal_compute"]) != 3 or
+                          not profile["resources"]["lut"] or
+                          profile["resources"]["vpu"]):
+        parser.error("selected plain MX profile differs from the three-precision RTL config")
     staged = []
-    for precision, stem in selected_cases.items():
+    for label, stem in selected_cases.items():
         row = rows[stem]
+        precision = row["precision"].lower()
         captured = FRONTEND / stem
         receipt = json.loads((captured / "receipt.json").read_text())
         handoff = captured / "mx_gemm.handoff.mlir"
@@ -89,25 +102,27 @@ def main() -> None:
                 _sha(frontend) != row["source_mlir_sha256"] or
                 _sha(captured / "receipt.json") != row["receipt_sha256"]):
             raise ValueError(f"Radiance source or model2MLIR capture differs: {stem}")
-        staged.append((precision, stem, row, handoff, driver, kernel,
+        staged.append((label, precision, stem, row, handoff, driver, kernel,
                        bind_handoff(handoff.read_text(), profile)))
     out.mkdir(parents=True)
     inputs = out / "inputs"
     inputs.mkdir()
     results = []
-    for precision, stem, row, handoff, driver, kernel, bound_handoff in staged:
+    for label, precision, stem, row, handoff, driver, kernel, bound_handoff in staged:
         selected_mlir = inputs / f"{stem}.mlir"
         selected_mlir.write_text(bound_handoff)
-        result_dir = out / precision
+        result_dir = out / label
         command = [sys.executable, "-m", "tools.qualify_source_mx",
                    "--mlir", str(selected_mlir), "--driver", str(driver),
                    "--profile", str(selected_profile), "--rtl-root", str(rtl),
                    "--riscv-root", str(riscv), "--out-dir", str(result_dir)]
         if mesh_reference:
             command.append("--target-mesh-reference")
+            if args.all_fullout or args.rtl_product_floor_reference:
+                command.append("--rtl-product-floor-reference")
         run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, check=False)
-        (inputs / f"{precision}.compile.log").write_text(run.stdout)
+        (inputs / f"{label}.compile.log").write_text(run.stdout)
         if run.returncode != 0:
             raise RuntimeError(f"MX {precision} qualification failed: {run.stdout[-3000:]}")
         artifact = json.loads((result_dir / "build/artifact_manifest.json").read_text())
@@ -146,11 +161,14 @@ def main() -> None:
             result["target_mesh_reference"] = target_manifest["target_mesh_reference"]
         results.append(result)
     summary = {
-        "schema": ("mx_gemmini.radiance_plain_mx_profile_source_ladder.v1"
-                   if base_contract else
+        "schema": ("mx_gemmini.radiance_target_mesh_fullout_roster.v1"
+                   if args.all_fullout and mesh_reference else
+                   "mx_gemmini.radiance_plain_mx_profile_source_ladder.v1" if base_contract else
                    "mx_gemmini.radiance_target_mesh_reference_cases.v1" if mesh_reference else
                    "mx_gemmini.radiance_selected_mx_profile_source_cases.v1"),
-        "status": ("three_source_precisions_matched_on_pinned_spike"
+        "status": ("fullout_target_mesh_reference_roster_matched_on_pinned_spike"
+                   if args.all_fullout and mesh_reference else
+                   "three_source_precisions_matched_on_pinned_spike"
                    if base_contract else
                    "target_mesh_reference_precisions_matched_on_pinned_spike" if mesh_reference else
                    "selected_source_precisions_matched_on_pinned_spike"),

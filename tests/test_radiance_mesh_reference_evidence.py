@@ -15,7 +15,8 @@ from mx_gemmini_support.bind_payload import bind_payload
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.mesh_reference import derive_mesh_reference
 from mx_gemmini_support.physical_program import lower_bound_source
-from mx_gemmini_support.source_payload import load_bundle
+from mx_gemmini_support.source_payload import (load_bundle,
+                                               validate_target_mesh_reference)
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
@@ -136,3 +137,23 @@ def test_target_mesh_reference_rederives_from_pinned_radiance_model(
         manifest["target_mesh_reference"]["mesh_dim"])
     assert target == (root / "bundle/golden_bf16.bin").read_bytes()
     assert policy == manifest["target_mesh_reference"]
+
+
+@pytest.mark.skipif(not os.getenv("RADIANCE_KERNELS_ROOT"),
+                    reason="set RADIANCE_KERNELS_ROOT to recompile the pinned source host model")
+def test_rtl_product_floor_reference_is_pinned_and_fail_closed():
+    root = EVIDENCE / MATRIX["profiles"][0]["profile_name"] / "fp8"
+    manifest, resources = load_bundle(root / "bundle")
+    resources["golden_bf16"] = _read(root, "source_golden_bf16.bin")
+    target, policy = derive_mesh_reference(
+        Path(os.environ["RADIANCE_KERNELS_ROOT"]), resources,
+        tuple(manifest["shape_mnk"]), "FP8", 8, product_floor=True)
+    assert policy["schema"] == "mx_gemmini.radiance_target_mesh_reference.v2"
+    assert policy["product_floor_exponent"] == -16
+    assert policy["target_golden_sha256"] == _sha(target)
+    manifest["target_mesh_reference"] = policy
+    manifest["resources"]["golden_bf16"]["sha256"] = _sha(target)
+    validate_target_mesh_reference(manifest)
+    manifest["target_mesh_reference"]["product_floor_exponent"] = -15
+    with pytest.raises(ValueError, match="product-floor provenance"):
+        validate_target_mesh_reference(manifest)

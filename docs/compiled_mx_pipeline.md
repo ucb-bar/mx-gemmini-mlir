@@ -2753,6 +2753,42 @@ python -m tools.qualify_radiance_fp4_derived_cyclotron_tiles \
   --out-dir /tmp/radiance-fp4-derived-cyclotron-tiles
 ```
 
+### DIM8/DIM32 source roster on Nicolas's Spike
+
+`tools.qualify_radiance_mx_base_profile --all-fullout` selects all 23
+BF16-output MX GEMM drivers in the pinned model2MLIR `e9ded36` capture. It
+checks each driver and data header byte for byte, rebinds its typed handoff to
+the selected Nicolas Rocket profile, lowers physical MX commands, builds an
+RV64 ELF, and compares every output on the matching `gemmini_dim8` or
+`gemmini_dim32` Spike extension. The eight quantized-output drivers are a
+separate qualification scope.
+
+The checked-in Radiance BF16 goldens use DIM16's accumulator schedule.
+For DIM8/DIM32, the qualifier first recompiles Radiance's pinned host model
+at DIM16 and requires its output to match the source golden. It then changes
+the mesh geometry and accumulator schedule for the target. The full-roster
+reference policy also incorporates Nicolas's `MxFPMul` product floor, which
+flushes a product when its exponent is below −16. That rule is present in
+Nicolas's Spike math header but absent from the older Radiance host header.
+The target golden, source golden, both model digests, the transformed model
+digests, and the product-floor policy are recorded in each bundle. A target
+match is therefore a target-model result, not a claim that the original
+DIM16 source golden bytes are identical.
+
+```sh
+python -m tools.qualify_radiance_mx_base_profile \
+  --all-fullout \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxDim8AllAsymGemminiRocketConfig.json \
+  --out-dir /tmp/mx-dim8-fullout
+```
+
+Large physical streams use `-O0` only for the generated straight-line RoCC
+issuer; the receipt records that choice. Smaller issuers and the runtime
+support retain `-O2`.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
