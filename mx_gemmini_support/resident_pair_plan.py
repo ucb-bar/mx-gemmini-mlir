@@ -91,8 +91,8 @@ def lower_first_fp8_resident(plan: ResidentPairPlan, *,
                             weight_buffer: str, weight_scales_buffer: str,
                             output_scales_buffer: str) -> tuple[Command | Fence, ...]:
     """Emit MM1; leave tiled C1 and its activation scales live for MM2."""
-    if not plan.m == plan.n == plan.k:
-        raise ValueError("resident pair source weight layout is qualified only for square tiles")
+    if plan.n != plan.k:
+        raise ValueError("resident pair source weight layout needs square N/K")
     i, j, kk = plan.m_tiles, plan.n_tiles, plan.k_tiles
     commands: list[Command | Fence] = [
         _cmd(7, 0, 0),

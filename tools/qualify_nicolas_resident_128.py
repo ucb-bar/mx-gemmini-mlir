@@ -29,8 +29,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
-def _source_resources(source: Path, header: Path, *, with_mm1: bool = False
+def _source_resources(source: Path, header: Path, *, with_mm1: bool = False,
+                      source_rows: int = 128
                       ) -> dict[str, bytes]:
+    if source_rows not in (64, 128) or (source_rows != 128 and not with_mm1):
+        raise ValueError("row-prefix specialization requires connected MM1 and MM2")
     text = source.read_text()
     if (source.name != "matmul_tiled_fp8_128x128_chain.c" or
             header.name != "matmul_fp8_128x128_chain.h" or
@@ -73,9 +76,20 @@ def _source_resources(source: Path, header: Path, *, with_mm1: bool = False
     if with_mm1:
         del result["c1_tiled"]
         del result["c1_act_scales"]
+        a1 = codes("A_in", "[MATMUL_M][MATMUL_K]", 16384)
+        a1_scales = codes("A_scales_row", "[MATMUL_GK][MATMUL_M]", 512)
+        if source_rows != 128:
+            c1 = c1[:source_rows * 128]
+            c1_scales = c1_scales[:source_rows * 4]
+            result["c2_codes_ref"] = result["c2_codes_ref"][:source_rows * 128]
+            result["c2_scales_ref"] = result["c2_scales_ref"][:source_rows * 4]
+            a1 = a1[:source_rows * 128]
+            a1_scales = b"".join(
+                a1_scales[group * 128:group * 128 + source_rows]
+                for group in range(4))
         result.update({
-            "a1_activation": codes("A_in", "[MATMUL_M][MATMUL_K]", 16384),
-            "a1_scales": codes("A_scales_row", "[MATMUL_GK][MATMUL_M]", 512),
+            "a1_activation": a1,
+            "a1_scales": a1_scales,
             "b1_weight": codes("B_in", "[MATMUL_K][MATMUL_N]", 16384),
             "b1_scales": codes("B_scales_col", "[MATMUL_GK][MATMUL_N]", 512),
             "c1_codes_ref": c1, "c1_scales_ref": c1_scales,
@@ -140,7 +154,8 @@ def _connected_commands(mlir: str, frontend: str, manifest: dict,
 
 
 def _write_sources(directory: Path, commands: tuple[Command | Fence, ...],
-                   resources: dict[str, bytes], *, with_mm1: bool = False) -> dict:
+                   resources: dict[str, bytes], *, with_mm1: bool = False,
+                   source_rows: int = 128) -> dict:
     directory.mkdir()
     referenced = {operand.buffer for command in commands if isinstance(command, Command)
                   for operand in (command.rs1, command.rs2) if operand.buffer is not None}
@@ -152,30 +167,31 @@ def _write_sources(directory: Path, commands: tuple[Command | Fence, ...],
     (directory / "mx_issue.c").write_text(
         emit_c(commands, transport="rocket_rocc", buffers=names))
     if with_mm1:
+        code_count, scale_count = source_rows * 128, source_rows * 4
         declarations = "\n".join(f"extern const uint8_t {name}[];" for name in sorted(resources))
         driver = f'''#include <stdint.h>
 #include <stdio.h>
 {declarations}
-static uint8_t c1_scales[512] __attribute__((aligned(64)));
-static uint8_t c1_tiled_observed[16384] __attribute__((aligned(64)));
-static uint8_t c2_scales[512] __attribute__((aligned(64)));
-static uint8_t c2_tiled[16384] __attribute__((aligned(64)));
+static uint8_t c1_scales[{scale_count}] __attribute__((aligned(64)));
+static uint8_t c1_tiled_observed[{code_count}] __attribute__((aligned(64)));
+static uint8_t c2_scales[{scale_count}] __attribute__((aligned(64)));
+static uint8_t c2_tiled[{code_count}] __attribute__((aligned(64)));
 void mx_issue({", ".join(f"const void *{name}" for name in names)});
 
 int main(void) {{
   mx_issue({", ".join(names)});
   int c1_codes = 0, c1_scale_errors = 0, c2_codes = 0, c2_scale_errors = 0;
-  for (uint32_t row = 0; row < 128; ++row)
+  for (uint32_t row = 0; row < {source_rows}; ++row)
     for (uint32_t col = 0; col < 128; ++col) {{
       uint32_t tiled = (((row / 16) * 8 + col / 16) * 16 + row % 16) * 16 + col % 16;
       c1_codes += c1_tiled_observed[tiled] != c1_codes_ref[row * 128 + col];
       c2_codes += c2_tiled[tiled] != c2_codes_ref[row * 128 + col];
     }}
-  for (uint32_t i = 0; i < 512; ++i) {{
+  for (uint32_t i = 0; i < {scale_count}; ++i) {{
     c1_scale_errors += c1_scales[i] != c1_scales_ref[i];
     c2_scale_errors += c2_scales[i] != c2_scales_ref[i];
   }}
-  printf("lowered connected 128x128: C1 %d codes %d scales; C2 %d codes %d scales\\n",
+  printf("lowered connected {source_rows}x128: C1 %d codes %d scales; C2 %d codes %d scales\\n",
          c1_codes, c1_scale_errors, c2_codes, c2_scale_errors);
   return c1_codes || c1_scale_errors || c2_codes || c2_scale_errors;
 }}
@@ -217,7 +233,9 @@ int main(void) {{
     assembly.append('.section .note.GNU-stack,"",@progbits')
     (directory / "mx_data.S").write_text("\n".join(assembly) + "\n")
     physical = {
-        "schema": ("mx_gemmini.connected_plain_chain_128_physical.v1" if with_mm1 else
+        "schema": (("mx_gemmini.connected_plain_chain_64x128_physical.v1"
+                    if source_rows != 128 else
+                    "mx_gemmini.connected_plain_chain_128_physical.v1") if with_mm1 else
                    "mx_gemmini.resident_mm2_128_physical.v1"),
         "ordered_functs": [item.funct for item in commands if isinstance(item, Command)],
         "command_count": sum(isinstance(item, Command) for item in commands),
@@ -236,6 +254,8 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--connected-frontend-dir", type=Path,
                         help="capture_nicolas_chain --matrix-dim 128 output or checked-in archive")
+    parser.add_argument("--source-rows", type=int, choices=(64, 128), default=128,
+                        help="row prefix of Nicolas's 128³ source; 64 requires a connected capture")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated program and Spike output")
     args = parser.parse_args()
@@ -253,7 +273,10 @@ def main() -> None:
     source = software / "bareMetalC/matmul_tiled_fp8_128x128_chain.c"
     header = software / "include/matmul_fp8_128x128_chain.h"
     connected = args.connected_frontend_dir is not None
-    resources = _source_resources(source, header, with_mm1=connected)
+    if not connected and args.source_rows != 128:
+        parser.error("--source-rows 64 requires --connected-frontend-dir")
+    resources = _source_resources(source, header, with_mm1=connected,
+                                  source_rows=args.source_rows)
     if connected:
         frontend_dir = args.connected_frontend_dir
 
@@ -270,6 +293,7 @@ def main() -> None:
         if (capture_receipt.get("schema") !=
                 "mx_gemmini.nicolas_chain_128_model2mlir_capture.v1" or
                 capture_receipt.get("matrix_dim") != 128 or
+                capture_receipt.get("output_rows", 128) != args.source_rows or
                 capture_receipt.get("profile_sha256") != profile_sha256(profile) or
                 capture_receipt.get("source_sha256") != _sha(source) or
                 capture_receipt.get("header_sha256") != _sha(header) or
@@ -297,7 +321,8 @@ def main() -> None:
         _run([str(args.mx_opt.resolve()), str(mlir_path), "-o", "/dev/null"],
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
     build = args.out_dir / "build"
-    files = _write_sources(build, commands, resources, with_mm1=connected)
+    files = _write_sources(build, commands, resources, with_mm1=connected,
+                           source_rows=args.source_rows)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -336,15 +361,21 @@ def main() -> None:
                             stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    marker = ("lowered connected 128x128: C1 0 codes 0 scales; C2 0 codes 0 scales"
+    marker = (f"lowered connected {args.source_rows}x128: C1 0 codes 0 scales; "
+              "C2 0 codes 0 scales"
               if connected else
               "lowered resident MM2 128x128: 0 FP8 code mismatches, 0 E8M0 scale mismatches")
     passed = result.returncode == 0 and marker in result.stdout
     receipt = {
-        "schema": ("mx_gemmini.nicolas_connected_plain_chain_128.v1" if connected else
+        "schema": (("mx_gemmini.nicolas_connected_plain_chain_64x128.v1"
+                    if args.source_rows != 128 else
+                    "mx_gemmini.nicolas_connected_plain_chain_128.v1") if connected else
                    "mx_gemmini.nicolas_resident_mm2_128.v1"),
-        "status": ("source_connected_chain_matched_on_pinned_spike" if passed else
-                   "source_connected_chain_failed_on_pinned_spike") if connected else (
+        "status": (("source_prefix_connected_chain_matched_on_pinned_spike" if passed else
+                    "source_prefix_connected_chain_failed_on_pinned_spike")
+                   if args.source_rows != 128 else
+                   ("source_connected_chain_matched_on_pinned_spike" if passed else
+                    "source_connected_chain_failed_on_pinned_spike")) if connected else (
                    "source_resident_mm2_matched_on_pinned_spike" if passed else
                    "source_resident_mm2_failed_on_pinned_spike"),
         "scope": ("typed MM1 quantized C1 and scales remain resident for typed MM2" if connected
@@ -362,13 +393,19 @@ def main() -> None:
         "elf_sha256": _sha(elf), "extension_sha256": _sha(so),
         "object_sha256": {path.name: _sha(path) for path in objects},
         "spike_log_sha256": _sha(log), "spike_exit_code": result.returncode,
-        "compared_fp8_codes": 16384, "compared_e8m0_scales": 512,
+        "compared_fp8_codes": args.source_rows * 128,
+        "compared_e8m0_scales": args.source_rows * 4,
         "files_sha256": files,
     }
     if connected:
         receipt["frontend_mlir_sha256"] = hashlib.sha256(frontend.encode()).hexdigest()
-        receipt["compared_c1_fp8_codes"] = 16384
-        receipt["compared_c1_e8m0_scales"] = 512
+        receipt["compared_c1_fp8_codes"] = args.source_rows * 128
+        receipt["compared_c1_e8m0_scales"] = args.source_rows * 4
+        if args.source_rows != 128:
+            receipt["source_rows"] = args.source_rows
+            receipt["scope"] = (
+                "first 64 independent output rows of Nicolas's 128³ packed source; "
+                "typed MM1 C1 and scales remain resident for typed MM2")
     (build / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     if args.baseline_manifest:

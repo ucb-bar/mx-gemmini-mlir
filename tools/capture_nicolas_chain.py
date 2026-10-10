@@ -33,7 +33,12 @@ def main() -> None:
     parser.add_argument("--mx-opt", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
+    parser.add_argument("--output-rows", type=int, choices=(64, 128),
+                        help="row prefix of Nicolas's 128³ plain MX source")
     args = parser.parse_args()
+    output_rows = args.output_rows or args.matrix_dim
+    if args.matrix_dim == 64 and output_rows != 64:
+        parser.error("the 64³ VPU source has only 64 rows")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     root = Path(__file__).resolve().parents[1]
@@ -80,8 +85,9 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        example = tuple(torch.randn((args.matrix_dim, args.matrix_dim),
-                                    dtype=torch.float32) for _ in range(3))
+        example = (torch.randn((output_rows, args.matrix_dim), dtype=torch.float32),
+                   torch.randn((args.matrix_dim, args.matrix_dim), dtype=torch.float32),
+                   torch.randn((args.matrix_dim, args.matrix_dim), dtype=torch.float32))
     contract = root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = root / "examples/default-policy.yaml"
     result = m2m.convert(
@@ -98,9 +104,9 @@ def main() -> None:
             [(site["site_id"], site["status"], site["format"], site["shape"])
              for site in sites] != [
                  ("functional:matmul", "quantized", "mxfp8",
-                  [args.matrix_dim] * 3),
+                  [output_rows, args.matrix_dim, args.matrix_dim]),
                  ("functional:matmul_1", "quantized", "mxfp8",
-                  [args.matrix_dim] * 3)]):
+                  [output_rows, args.matrix_dim, args.matrix_dim])]):
         raise RuntimeError(f"two MX FP8 contraction sites were not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -135,6 +141,10 @@ def main() -> None:
     }
     if args.matrix_dim == 128:
         receipt["matrix_dim"] = 128
+    if output_rows != args.matrix_dim:
+        receipt["output_rows"] = output_rows
+        receipt["numerical_scope"] = (
+            "row-prefix specialization of Nicolas's checked-in 128³ packed source")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 

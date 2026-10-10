@@ -171,11 +171,22 @@ def test_resident_pair_planner_derives_counts_and_rejects_overlapping_lifetimes(
     non_square = plan_fp8_resident_pair(
         profile, shape=(64, 128, 64), a_row=0, c1_row=1024, c2_row=2048)
     assert non_square.b_row == 15872
-    with pytest.raises(ValueError, match="only for square tiles"):
+    with pytest.raises(ValueError, match="needs square N/K"):
         lower_first_fp8_resident(
             non_square, activation_buffer="a1_activation",
             activation_scales_buffer="a1_scales", weight_buffer="b1_weight",
             weight_scales_buffer="b1_scales", output_scales_buffer="c1_scales")
+    row_prefix = plan_fp8_resident_pair(
+        profile, shape=(64, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
+    assert (row_prefix.a_rows, row_prefix.b_rows, row_prefix.c_rows,
+            row_prefix.a_scale_bytes, row_prefix.output_scale_bytes) == (
+            512, 1024, 512, 256, 256)
+    row_commands = lower_first_fp8_resident(
+        row_prefix, activation_buffer="a1_activation",
+        activation_scales_buffer="a1_scales", weight_buffer="b1_weight",
+        weight_scales_buffer="b1_scales", output_scales_buffer="c1_scales")
+    assert sum(isinstance(item, Command) and item.funct == 2
+               for item in row_commands) == 96
     with pytest.raises(ValueError, match="row lifetimes overlap"):
         plan_fp8_resident_pair(
             profile, shape=(128, 128, 128), a_row=0, c1_row=512, c2_row=4096)

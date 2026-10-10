@@ -26,7 +26,7 @@ def _resource_digest(resources: dict[str, bytes]) -> str:
     return _sha(json.dumps(hashes, sort_keys=True, separators=(",", ":")).encode())
 
 
-def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> None:
+def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> int:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func
@@ -36,10 +36,14 @@ def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> Non
     if (report["contracts"], report["resident_contracts"],
             report["vpu_commands"], report["spad_requants"]) != (2, 0, 0, 0):
         raise ValueError("plain 128³ chain needs two frontend MX contractions")
-    expected = [(site, "quantized", "mxfp8", [128, 128, 128]) for site in
+    sites = manifest.get("sites", [])
+    m = sites[0].get("shape", [None])[0] if sites else None
+    if m not in (64, 128):
+        raise ValueError("plain chain needs a source-qualified row count")
+    expected = [(site, "quantized", "mxfp8", [m, 128, 128]) for site in
                 ("functional:matmul", "functional:matmul_1")]
     if [(row.get("site_id"), row.get("status"), row.get("format"), row.get("shape"))
-            for row in manifest.get("sites", [])] != expected:
+            for row in sites] != expected:
         raise ValueError("plain 128³ frontend sites differ from selected chain")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
@@ -57,16 +61,17 @@ def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> Non
                 ("fp8_e4m3", "fp8_e4m3", "direct", "direct", 8)
                 for op in contracts)):
         raise ValueError("plain 128³ frontend precision or site differs")
+    return m
 
 
 def render_plain_chain_128(frontend_mlir: str, manifest: dict, profile: dict,
                            resources: dict[str, bytes], *, source_sha256: str,
                            header_sha256: str) -> str:
     """Bind the two captured sites to Nicolas's packed operands and resident edge."""
-    _validate_frontend(frontend_mlir, manifest, profile)
-    _validate_resources(resources)
+    m = _validate_frontend(frontend_mlir, manifest, profile)
+    _validate_resources(resources, m)
     plan = plan_fp8_resident_pair(
-        profile, shape=(128, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
+        profile, shape=(m, 128, 128), a_row=0, c1_row=2048, c2_row=4096)
     digest = profile_sha256(profile)
     policy = _sha(b"nicolas_plain_fp8_128_resident_chain_v1")
     binding = (f'contract_sha256 = "{source_sha256}", policy_sha256 = "{policy}", '
@@ -77,30 +82,30 @@ def render_plain_chain_128(frontend_mlir: str, manifest: dict, profile: dict,
   mx.frontend_mlir_sha256 = "{_sha(frontend_mlir.encode())}",
   mx.runtime_resources_sha256 = "{_resource_digest(resources)}"}} {{
   func.func @nicolas_plain_chain_128(
-      %a1: tensor<128x128xi8>, %a1s: tensor<4x128xi8>,
+      %a1: tensor<{m}x128xi8>, %a1s: tensor<4x{m}xi8>,
       %b1: tensor<128x128xi8>, %b1s: tensor<4x128xi8>,
       %b2: tensor<128x128xi8>, %b2s: tensor<4x128xi8>)
-      -> (tensor<128x128xi8>, tensor<128x4xi8>) {{
+      -> (tensor<{m}x128xi8>, tensor<{m}x4xi8>) {{
     %acc = "mx_gemmini.contract"(%a1, %a1s, %b1, %b1s) {{
       site_id = "functional:matmul", activation_format = "fp8_e4m3",
       weight_format = "fp8_e4m3", activation_projection = "direct",
       weight_projection = "direct", pe_mode = 8 : i32, {binding}}}
-      : (tensor<128x128xi8>, tensor<4x128xi8>, tensor<128x128xi8>, tensor<4x128xi8>)
-      -> tensor<128x128xbf16>
+      : (tensor<{m}x128xi8>, tensor<4x{m}xi8>, tensor<128x128xi8>, tensor<4x128xi8>)
+      -> tensor<{m}x128xbf16>
     %c1, %c1s = "mx_gemmini.readout_quantized"(%acc) {{
       site_id = "functional:matmul", output_format = "fp8_e4m3", {binding}}}
-      : (tensor<128x128xbf16>) -> (tensor<128x128xi8>, tensor<128x4xi8>)
+      : (tensor<{m}x128xbf16>) -> (tensor<{m}x128xi8>, tensor<{m}x4xi8>)
     %c2, %c2s = "mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s) {{
       site_id = "functional:matmul_1", activation_row = {plan.c1_row} : i32,
       weight_row = {plan.b_row} : i32, output_row = {plan.c2_row} : i32,
-      m = 128 : i32, n = 128 : i32, k = 128 : i32,
+      m = {m} : i32, n = 128 : i32, k = 128 : i32,
       activation_format = "fp8_e4m3", weight_format = "fp8_e4m3",
       output_format = "fp8_e4m3", weight_buffer = "b2_weight",
       weight_scales_buffer = "b2_scales", output_scales_buffer = "c2_scales",
       {binding}}}
-      : (tensor<128x128xi8>, tensor<128x4xi8>, tensor<128x128xi8>, tensor<4x128xi8>)
-      -> (tensor<128x128xi8>, tensor<128x4xi8>)
-    func.return %c2, %c2s : tensor<128x128xi8>, tensor<128x4xi8>
+      : (tensor<{m}x128xi8>, tensor<{m}x4xi8>, tensor<128x128xi8>, tensor<4x128xi8>)
+      -> (tensor<{m}x128xi8>, tensor<{m}x4xi8>)
+    func.return %c2, %c2s : tensor<{m}x128xi8>, tensor<{m}x4xi8>
   }}
 }}
 '''
@@ -109,8 +114,10 @@ def render_plain_chain_128(frontend_mlir: str, manifest: dict, profile: dict,
     return text
 
 
-def _validate_resources(resources: dict[str, bytes]) -> None:
-    expected = {name: 16384 if name.endswith(("activation", "weight")) else 512
+def _validate_resources(resources: dict[str, bytes], m: int) -> None:
+    expected = {name: (m * 128 if name == "a1_activation" else
+                       m * 4 if name == "a1_scales" else
+                       16384 if name.endswith("weight") else 512)
                 for name in INPUTS}
     if {name: len(resources.get(name, b"")) for name in INPUTS} != expected:
         raise ValueError("plain 128³ source operands or scales differ")
@@ -126,8 +133,8 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
 
-    _validate_frontend(frontend_mlir, manifest, profile)
-    _validate_resources(resources)
+    m = _validate_frontend(frontend_mlir, manifest, profile)
+    _validate_resources(resources, m)
     checked = verify_ir(mlir_text, profile)
     if (checked["contracts"], checked["resident_contracts"],
             checked["vpu_commands"], checked["spad_requants"]) != (1, 1, 0, 0):
@@ -153,18 +160,20 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
     mm1, readout, mm2, ret = ops
     args = list(function.body.block.args)
     if (tuple(str(arg.type) for arg in args) !=
-            ("tensor<128x128xi8>", "tensor<4x128xi8>") * 3 or
+            (f"tensor<{m}x128xi8>", f"tensor<4x{m}xi8>",
+             "tensor<128x128xi8>", "tensor<4x128xi8>",
+             "tensor<128x128xi8>", "tensor<4x128xi8>") or
             list(mm1.operands) != args[:4] or
             list(readout.operands) != list(mm1.results) or
             list(mm2.operands) != [*readout.results, *args[4:]] or
             not isinstance(ret, ReturnOp) or
             list(ret.operands) != list(mm2.results) or
             tuple(str(value.type) for value in mm1.results) !=
-            ("tensor<128x128xbf16>",) or
+            (f"tensor<{m}x128xbf16>",) or
             tuple(str(value.type) for value in readout.results) !=
-            ("tensor<128x128xi8>", "tensor<128x4xi8>") or
+            (f"tensor<{m}x128xi8>", f"tensor<{m}x4xi8>") or
             tuple(str(value.type) for value in mm2.results) !=
-            ("tensor<128x128xi8>", "tensor<128x4xi8>")):
+            (f"tensor<{m}x128xi8>", f"tensor<{m}x4xi8>")):
         raise ValueError("plain 128³ chain SSA tensor edges differ")
     if ([_text_attr(op, "site_id") for op in ops[:-1]] !=
             ["functional:matmul", "functional:matmul", "functional:matmul_1"] or
@@ -179,7 +188,7 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
     attrs.update({name: _text_attr(mm2, name) for name in
                   ("activation_format", "weight_format", "output_format",
                    "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
-    if (attrs["m"], attrs["n"], attrs["k"]) != (128, 128, 128):
+    if (attrs["m"], attrs["n"], attrs["k"]) != (m, 128, 128):
         raise ValueError("plain 128³ source qualification needs its checked shape")
     plan = plan_fp8_resident_pair(
         profile, shape=(attrs["m"], attrs["n"], attrs["k"]), a_row=0,
