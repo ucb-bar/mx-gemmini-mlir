@@ -29,8 +29,8 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
     assert len(names) == len(set(names))
     with_refs = sum(bool(entry["evidence_references"])
                     for entry in inventory["entries"])
-    assert inventory["with_direct_hash_reference"] == with_refs == 97
-    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 74
+    assert inventory["with_direct_hash_reference"] == with_refs == 98
+    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 73
     by_name = {entry["name"]: entry for entry in inventory["entries"]}
     assert not by_name["matmul_tiled_fp8_128x128_dramloop"]["evidence_references"]
     assert any("nicolas_plain_fp8_typed_object_7d7a660" in ref["path"] for ref in
@@ -49,6 +49,8 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
                by_name["matmul_tiled_fp4_64x64_requant"]["evidence_references"])
     assert any("nicolas_fp4_large_requant_typed_object_03490a5" in ref["path"] for ref in
                by_name["matmul_tiled_fp4_128x128x512_requant"]["evidence_references"])
+    assert any("nicolas_fp4_dim32_requant_typed_object_f475d05" in ref["path"] for ref in
+               by_name["matmul_tiled_fp4_128x128_requant_dim32"]["evidence_references"])
     assert any("nicolas_plain_fp6_typed_object_95fc6d5" in ref["path"] for ref in
                by_name["matmul_tiled_fp6_128x128x512"]["evidence_references"])
     assert any("nicolas_fp6_requant_typed_object_b25fa48" in ref["path"] for ref in
