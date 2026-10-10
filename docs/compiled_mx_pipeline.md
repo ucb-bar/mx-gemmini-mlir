@@ -3514,3 +3514,8 @@ on Nicolas's pinned Spike. The profile catalog indexes the pipelined runs
 separately from the fenced program-order runs. These are functional Spike
 results; RTL queue overlap and the source's 405-cycle measurement have not
 been reproduced by a compiler-issued RTL run.
+Fresh checkouts of pushed commit `4262ff3` reproduced the issuer, object,
+ELF, extension, Spike log, and compiler source closure hashes for both the
+[FP4-capable](evidence/nicolas_chain_pipelined_full_266c593/pipelined/fresh_replay_manifest.json)
+and [E4M3-only](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/fresh_replay_manifest.json)
+VPU profiles.

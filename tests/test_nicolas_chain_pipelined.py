@@ -279,6 +279,7 @@ def test_compiler_issues_source_pipeline_order_and_both_profiles_match():
     second_dir = E4M3_ONLY / "compiled_pipelined"
     second = json.loads((second_dir / "object_manifest.json").read_text())
     for directory, manifest in ((pipeline, first), (second_dir, second)):
+        replay = json.loads((directory / "fresh_replay_manifest.json").read_text())
         assert manifest["issue_schedule"] == "pipelined"
         assert manifest["allocated_data_section_bytes"] == 0
         assert manifest["physical_program_sha256"] == _sha(directory / "physical_program.json")
@@ -291,6 +292,14 @@ def test_compiler_issues_source_pipeline_order_and_both_profiles_match():
             directory / "spike.log")
         assert "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" in (
             directory / "spike.log").read_text()
+        assert replay["compiler_revision"] == "4262ff310a2e807f12de4aeffddca0cd6d4f2fbe"
+        for key in ("bound_mlir_sha256", "preloaded_mlir_sha256",
+                    "physical_program_sha256", "issuer_c_sha256", "object_sha256",
+                    "compiler_source_closure_sha256"):
+            assert replay[key] == manifest[key]
+        for key in ("elf_sha256", "extension_sha256", "spike_log_sha256"):
+            assert replay["spike_qualification"][key] == (
+                manifest["spike_qualification"][key])
     assert first["profile_sha256"] != second["profile_sha256"]
     assert first["object_sha256"] == second["object_sha256"]
     assert first["spike_qualification"]["spike_log_sha256"] == (
