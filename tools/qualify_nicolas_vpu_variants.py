@@ -21,7 +21,9 @@ from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.vector_lowering import lower_vector_commands
 from tools.compile_mx import _git_revision, _require_gitlink, _run, _sha, _source_closure
 from tools.qualify_nicolas_vpu_elementwise import capture as capture_base
-from tools.qualify_nicolas_vpu_fused import CONTRACT, PROFILE, SOURCE_RECEIPT
+from tools.qualify_nicolas_vpu_fused import (
+    CONTRACT, PROFILE, SOURCE_RECEIPT, capture as capture_fused,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +57,7 @@ CASES = (
     Case("max_same_bank", "max", "a2", False, 1),
     Case("max_bcast", "max", "b", True, 4),
     Case("sub_bcast_same_bank", "sub", "a2", True, 4),
+    Case("expsub_plain", "expsub", "b", False, 1),
     Case("expsub_bcast", "expsub", "b", True, 4),
     Case("expsub_same_bank", "expsub", "a2", True, 4),
     Case("expsum_bcast", "expsum", "b", True, 4),
@@ -70,6 +73,8 @@ def _digest(data: bytes) -> str:
 def capture(case: Case, m2m, torch) -> str:
     if not case.broadcast and case.kind in {"mul", "max"}:
         return capture_base(case.kind, m2m, torch)
+    if not case.broadcast and case.kind == "expsub":
+        return capture_fused("expsub", m2m, torch)
 
     class Model(torch.nn.Module):
         def forward(self, a, b):
@@ -262,7 +267,7 @@ def main() -> None:
         parser.error("Nicolas VPU source or oracle differs from qualified baseline")
     source_text = source.read_text()
     for label in ('"mul same-bank"', '"mul bcast"', '"max same-bank"',
-                  '"max bcast"', '"sub bcast sb"', '"expsub bcast"',
+                  '"max bcast"', '"sub bcast sb"', '"expsub"', '"expsub bcast"',
                   '"expsub sb"', '"expsum sb"', '"expsum bcast"',
                   '"rsum rlen1"'):
         if source_text.count(label) != 1:
