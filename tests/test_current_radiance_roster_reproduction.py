@@ -5,8 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-
-from tools.compile_mx import _source_closure
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +19,23 @@ def _sha(path: Path) -> str:
 
 def _read(path: Path) -> dict:
     return json.loads(path.read_text())
+
+
+def _source_closure_at_revision(revision: str) -> str:
+    """Rebuild the receipt's closure from its compiler commit, not HEAD."""
+    names = subprocess.check_output(
+        ["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", revision,
+         "--", "mx_gemmini_support", "tools"], text=True).splitlines()
+    selected = sorted(name for name in names if name.endswith(".py") and
+                      len(Path(name).parts) == 2)
+    assert selected
+    digest = hashlib.sha256()
+    for name in selected:
+        source = subprocess.check_output(
+            ["git", "-C", str(ROOT), "show", f"{revision}:{name}"])
+        digest.update(name.encode() + b"\0")
+        digest.update(hashlib.sha256(source).digest())
+    return digest.hexdigest()
 
 
 def test_current_radiance_roster_reproduces_all_31_pinned_spike_artifacts():
@@ -56,9 +72,7 @@ def test_current_radiance_roster_reproduces_all_31_pinned_spike_artifacts():
     assert report["requant_drivers"] == front["requant_drivers"] == spike["requant_drivers"] == 8
     assert headers["drivers"] == 31
     assert spike["frontend_index_sha256"] == _sha(EVIDENCE / "frontend/index.json")
-    source_closure = _source_closure(
-        ROOT, sorted((ROOT / "mx_gemmini_support").glob("*.py")) +
-        sorted((ROOT / "tools").glob("*.py")))
+    source_closure = _source_closure_at_revision(report["compiler_revision"])
 
     for new_f, old_f, new_s, old_s, header in zip(
             front["rows"], old_front["rows"], spike["rows"], old_spike["rows"],
