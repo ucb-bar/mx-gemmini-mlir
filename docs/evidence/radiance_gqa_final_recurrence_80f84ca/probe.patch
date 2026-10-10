@@ -1,0 +1,20 @@
+--- kernel.cpp
++++ kernel.cpp.final_probe
+@@ -174,0 +175,17 @@
++            // Qualification only: snapshot the row correction and denominator.
++            {
++                const uint32_t tile = h * FA_NBLK_USED + j;
++                const volatile __shared uint32_t *corr =
++                    reinterpret_cast<const volatile __shared uint32_t *>(CORR_SMEM);
++                const volatile __shared uint32_t *denom =
++                    reinterpret_cast<const volatile __shared uint32_t *>(LS_SMEM);
++                volatile uint32_t *corr_out = reinterpret_cast<volatile uint32_t *>(0x40080000)
++                    + tile * (FA_SQ / 2);
++                volatile uint32_t *denom_out = reinterpret_cast<volatile uint32_t *>(0x40081000)
++                    + tile * (FA_SQ / 2);
++                for (uint32_t i = tid; i < FA_SQ / 2; i += thr) {
++                    corr_out[i] = corr[i];
++                    denom_out[i] = denom[i];
++                }
++                mu_barrier(7, wpb);
++            }

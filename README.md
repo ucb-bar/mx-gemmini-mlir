@@ -57,7 +57,9 @@ scales, and its first MX PV tile matches all 4,096 Spike BF16 outputs. The
 full [16-tile PV roster](docs/compiled_mx_pipeline.md#all-16-executed-gqa-pv-cutpoints-on-nicolas-spike)
 also matches 65,536 BF16 outputs through one compiler emitted MX object on
 Nicolas Spike, after an isolated Cyclotron overwrite-model correction. The
-full mixed compiler path and RTL FPEX parity remain open.
+source [final recurrence](docs/compiled_mx_pipeline.md#executed-final-gqa-recurrence)
+also reconstructs all 32,768 BF16 O values from executed PV tiles and Muon
+row state. The full mixed compiler path and RTL FPEX parity remain open.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike

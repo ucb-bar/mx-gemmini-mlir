@@ -1,0 +1,22 @@
+{
+  "compared_bf16_outputs": 32768,
+  "cyclotron_binary_sha256": "8f87b4bdf9392304cc7d7c87e793ab6873405f46e5ce756a6ca523300bf3751d",
+  "cyclotron_revision": "2d6adad4ad94d1621fdff9c9a1e5eac871048f24",
+  "executed_final_o_sha256": "19693b4e65fe00a30d4137c58490c0adf9bd06e839ed4c8f698f6c8854d607f5",
+  "muon_finalization_source_sha256": "c7dc2a63bf283a7cb3035983c26f76651569fa43a875d6fde06bcaf8991fa47f",
+  "muon_runtime_archive_sha256": "b6a9028656269125c21f24ffa420cb825045094599b9337d9809d0eab8013554",
+  "probe_elf_sha256": "d410d20cfef1bc1222ee7c907f9564d5e28f45dfaf6d5a6c4ed7cb2738c108df",
+  "probe_patch_sha256": "f4e6fbe64ecb447b79d1a2e96de2ee081aa2a1eafeb02e6ca04425952fce0e6f",
+  "pv_roster_index_sha256": "9085e18cc5ecfa8d50e1b6660dc0582f9c0bc32c198dfa4a1d4dea2735dfa2bf",
+  "pv_tiles_sha256": "dd08e8fc2bbc2a040faeeab1bbba113af2e09610461cbba6e0985f5f3f64c63b",
+  "reconstructed_final_o_sha256": "19693b4e65fe00a30d4137c58490c0adf9bd06e839ed4c8f698f6c8854d607f5",
+  "row_state_sha256": "e3846e6d61f1a9b4c4b61d6b2bff6d578e1a0c3123a4f6e181e54c6418ca61e7",
+  "schema": "mx_gemmini.gqa_final_recurrence_cyclotron.v1",
+  "scope": "all 8 heads and 2 blocks; corrected Cyclotron MX co-model; no compiled mixed Muon/MX kernel or RTL SFU claim",
+  "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+  "source_kernel_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "source_o_gold_bf16_mismatches": 31852,
+  "source_o_gold_sha256": "c390940404e2dbf58a6c626c2612dbaad2f0d364f87b127f4def92bda1418050",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "executed_pv_and_muon_row_state_reconstruct_full_o"
+}

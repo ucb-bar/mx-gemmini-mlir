@@ -1597,6 +1597,37 @@ Cyclotron final O still differs from the generator's `O_gold` in 31,852 of
 32,768 BF16 values, so that generated array remains unsuitable as a full
 attention parity oracle.
 
+#### Executed final GQA recurrence
+
+The [final recurrence qualification](evidence/radiance_gqa_final_recurrence_80f84ca/index.json)
+captures the source Muon kernel's 64 BF16 row corrections and running
+denominators after each of the 16 PV tiles. It combines those row states with
+the independently qualified, executed MX PV tiles above. The source
+`rescale_accumulate` and `finalize_O` formulas, including BF16 rounding of the
+accumulator and reciprocal, reconstruct **32,768 / 32,768 BF16 final O values**
+exactly. A separate run of the diagnostic kernel produces the same final O as
+the unmodified source kernel on the corrected Cyclotron model. The
+[row-state capture](evidence/radiance_gqa_final_recurrence_80f84ca/corr_l.bin.gz),
+[reconstructed O](evidence/radiance_gqa_final_recurrence_80f84ca/reconstructed_o.bin.gz),
+[probe patch](evidence/radiance_gqa_final_recurrence_80f84ca/probe.patch),
+and [RV32 ELF](evidence/radiance_gqa_final_recurrence_80f84ca/probe.elf.gz)
+are archived.
+
+```sh
+"$MODEL2MLIR_PYTHON" -m tools.qualify_radiance_gqa_final_recurrence \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --radiance-lib-root "$RADIANCE_BUILT_LIB_ROOT" \
+  --cyclotron-root /new/cyclotron-mx-probe --llvm-muon "$LLVM_MUON_ROOT" \
+  --riscv-root "$RISCV_ROOT" --out-dir /new/mx-gqa-final-recurrence \
+  --baseline-index docs/evidence/radiance_gqa_final_recurrence_80f84ca/index.json
+```
+
+This establishes a byte-exact **functional-model final-output oracle** for the
+current source kernel. The compiler still does not emit the Muon softmax,
+online accumulation, and finalization around its MX commands. The generated
+`O_gold` remains 31,852 BF16 values away from this executed result, and RTL
+FPEX/FPGA parity remains a separate gate.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)
