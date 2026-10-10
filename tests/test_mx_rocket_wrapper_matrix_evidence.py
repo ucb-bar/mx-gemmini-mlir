@@ -75,6 +75,12 @@ def test_archived_programs_and_both_spike_runs_match_source_goldens() -> None:
 def test_baseline_comparison_tracks_generated_outputs_across_tool_commits() -> None:
     from copy import deepcopy
 
+    reproduced = json.loads((EVIDENCE / "reproduction_7809c82.json").read_text())
+    assert _output_identity(reproduced) == _output_identity(INDEX)
+    assert {row["compiler_revision"] for row in reproduced["rows"]} == {
+        "7809c820e4590b5603e244359363e7c5834d271a"}
+    assert {row["compiler_source_closure_sha256"] for row in reproduced["rows"]} != {
+        row["compiler_source_closure_sha256"] for row in INDEX["rows"]}
     later = deepcopy(INDEX)
     later["rows"][0]["compiler_revision"] = "f" * 40
     later["rows"][0]["compiler_source_closure_sha256"] = "f" * 64

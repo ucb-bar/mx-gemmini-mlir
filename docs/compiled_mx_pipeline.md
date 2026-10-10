@@ -2865,6 +2865,9 @@ receipts. A direct FP4 mode needs no LUT memory: the recipe validator now
 accepts the no-LUT `TestMxGemminiRocketConfig` and the narrower LUT memory in
 `TestRequantizerLutMxGemminiRocketConfig` for that mode. The latter test checks
 its matrix path; its requantizer remains a separate qualification.
+An independent [post-archive reproduction](evidence/nicolas_rocket_wrapper_matrix_266c593/reproduction_7809c82.json)
+from compiler `7809c82` regenerated all eight profiles' bound MLIR, physical
+programs, issuers, ELFs, and Spike logs with the same hashes as the archive.
 
 On a fresh pinned Gemmini checkout with initialized software submodules,
 materialize the two generated-header sets, then reproduce the eight runs:
