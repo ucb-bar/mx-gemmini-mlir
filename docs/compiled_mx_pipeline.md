@@ -2063,6 +2063,40 @@ python -m tools.qualify_runtime_fp4_tilewise_object \
   --out-dir /tmp/fp4-runtime-run
 ```
 
+### Reusable committed-source FP8 object on Spike
+
+The [FP8 object](evidence/radiance_fp8_runtime_source_object_266c593/mx_issue.o)
+comes from the committed Radiance 128×128×512 `tk256` FP8 source fixture's
+bound typed MLIR. Its [manifest](evidence/radiance_fp8_runtime_source_object_266c593/object_manifest.json)
+has no embedded operand or golden bytes and declares row-major BF16 output.
+The [qualifier](../tools/qualify_runtime_fp8_source_object.py) calls the same
+object with the original source codes and scales, then with valid M-row and
+N-column half permutations. It permutes the independent source golden in the
+same logical coordinates. Both runs match **32,768 / 32,768 BF16 outputs** on
+Nicolas's pinned stock Spike extension; the first output remains intact after
+the second call. The [receipt](evidence/radiance_fp8_runtime_source_object_266c593/index.json)
+matches the [repeat](evidence/radiance_fp8_runtime_source_object_266c593/index_repro.json)
+byte for byte. The [driver](evidence/radiance_fp8_runtime_source_object_266c593/mx_runtime_driver.c),
+[ELF](evidence/radiance_fp8_runtime_source_object_266c593/mx_runtime_fp8_source.elf.gz),
+and [Spike log](evidence/radiance_fp8_runtime_source_object_266c593/spike.log)
+are archived. This tests Rocket object rebinding and full output parity for a
+committed source case; Muon, RTL, and FPGA execution remain separate.
+
+```sh
+python -m tools.emit_mx_object \
+  --mlir docs/evidence/radiance_fp8_512_tk256_latest_266c593/bound.mlir \
+  --bundle docs/evidence/radiance_fp8_512_tk256_latest_266c593/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp8-runtime-object
+python -m tools.qualify_runtime_fp8_source_object \
+  --object-dir /tmp/fp8-runtime-object \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp8-runtime-run
+```
+
 Reproduce from a clean Radiance `80f84ca` checkout, its `6fc8ec7` MX software
 submodule, the pinned Cyclotron overwrite-model worktree, and the Muon toolchain:
 

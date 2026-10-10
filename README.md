@@ -56,6 +56,9 @@ test. The source check uses a pinned functional Cyclotron model, not RTL.
 The [runtime object check](docs/compiled_mx_pipeline.md#reusable-four-tile-fp4-mxvpu-object-on-spike)
 issues the same data-free MX+VPU object twice on Nicolas's pinned Spike model
 with distinct source-derived FP4 inputs and matches all 131,072 BF16 outputs.
+The [committed-source FP8 object check](docs/compiled_mx_pipeline.md#reusable-committed-source-fp8-object-on-spike)
+also rebinds one Rocket object to two 128×128×512 FP8 payloads and matches all
+32,768 BF16 outputs on the pinned Spike model.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

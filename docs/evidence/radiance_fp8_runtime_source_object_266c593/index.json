@@ -1,0 +1,37 @@
+{
+  "compared_bf16_outputs": 32768,
+  "elf_sha256": "ec389f9d88d392d516ad2b0d7071346b934aa5a300b1822a33d4781de2ab18ef",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "object_manifest_sha256": "01fddc6ee6b938a5ee43de92f143090bd2674a1fe0657d5e20e828649f2668f4",
+  "object_sha256": "eb15d3a322140fb429bc5ae90c97db8601259ff9fe64cbfa6a170a01966eb470",
+  "payloads": [
+    {
+      "activation_scales_sha256": "7b90ea5e51e7bb3b31d95ada304a486dc71f1224bf6912006590d4ae83956e64",
+      "activation_sha256": "c60cca00dd0e4e82da9333513dfa4a301b0b05025ad76575f9851fba37d7e4e8",
+      "golden_bf16_sha256": "478418246e353aee97840adf94fae7a67b2d29d31c75ed0ba25bfa013f3836a6",
+      "name": "first",
+      "weight_scales_sha256": "91d5b36288d1e37990669713914c8fd46249017dd3def5df43be133fad3e9e3f",
+      "weight_sha256": "53593767143c89709310f332bc88a2265e218cd6ef5ef9e55982ec09fa0c4c66"
+    },
+    {
+      "activation_scales_sha256": "59def8df2d53f9f44a48d201a4656c2198917028f979f89ee599d1f96210e705",
+      "activation_sha256": "86d3d950f0ca27842741e25709f77ae2f6ec2cff6d06a94418aaee12ac02235e",
+      "golden_bf16_sha256": "1a888b6ebe80cb83ce544e3eed543925e080c76559713d69efd2390a2acff3a7",
+      "name": "second",
+      "weight_scales_sha256": "78c27137bd1e119584f6a363e4e61231b8b794549355d9d8b251d25228513408",
+      "weight_sha256": "a1e1d18916a3bc41bf9c1c5bf8f85a14268a7657b472c506cf589048520a7f66"
+    }
+  ],
+  "permutation": "swap_M_64_rows_and_N_64_columns_v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "qualifier_sha256": "b54fd2e44b7f970e485eaee4bea64eb68d43f9664e5699e63ce41f8f343b74c8",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.runtime_fp8_source_object_spike.v1",
+  "scope": "one committed Radiance FP8 source-bound Rocket object with two runtime pointer sets; second payload is a source-derived row/column permutation; no Muon/RTL/FPGA claim",
+  "source_bundle_manifest_sha256": "6409d39a163b557be0a15f2430b5b975a0084346627dd1691ebf5e750a351ca5",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "ca5d04bf7cab6d37b82b0d83c0b61299f482044669d844cf3597d28086495d72",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "two_runtime_fp8_source_payloads_matched_on_pinned_spike"
+}
