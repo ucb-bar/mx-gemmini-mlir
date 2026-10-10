@@ -54,6 +54,9 @@ with a Torch-exp proxy for Muon's exponential unit. An
 [executed Cyclotron cross-check](docs/compiled_mx_pipeline.md#executed-muon-to-mx-pv-cross-check-on-cyclotron)
 now shows the source Muon kernel produces the same 4,096 P codes and 128
 scales, and its first MX PV tile matches all 4,096 Spike BF16 outputs. The
+full [16-tile PV roster](docs/compiled_mx_pipeline.md#all-16-executed-gqa-pv-cutpoints-on-nicolas-spike)
+also matches 65,536 BF16 outputs through one compiler emitted MX object on
+Nicolas Spike, after an isolated Cyclotron overwrite-model correction. The
 full mixed compiler path and RTL FPEX parity remain open.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived

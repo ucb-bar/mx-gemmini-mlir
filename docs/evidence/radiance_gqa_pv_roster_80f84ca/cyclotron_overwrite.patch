@@ -1,0 +1,20 @@
+diff --git a/src/muon/mxgemmini/mod.rs b/src/muon/mxgemmini/mod.rs
+index 059eec0..ad8ca67 100644
+--- a/src/muon/mxgemmini/mod.rs
++++ b/src/muon/mxgemmini/mod.rs
+@@ -473 +473 @@ impl MxGemminiDevice {
+-    fn mx_loop_ws_spad(&mut self, _rs1: u64, rs2: u64, smem: &mut [u8], gmem: &mut [u8]) {
++    fn mx_loop_ws_spad(&mut self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &mut [u8]) {
+@@ -511,0 +512,5 @@ impl MxGemminiDevice {
++        // The source issues each QK/PV compute with ex_accumulate=0. Match
++        // Nicolas's Spike: overwrite the reused C region for a new matmul.
++        if rs1 & 1 == 0 {
++            smem[c_base..c_base + m_dim * n_dim * 2].fill(0);
++        }
+@@ -1223 +1228 @@ mod tests {
+-        // running it again accumulates (16 + 16)
++        // A new matmul overwrites the reused C region.
+@@ -1224,0 +1230,3 @@ mod tests {
++        assert_eq!(fp_math::bf16_to_f32(read_bf16_at(&bytes, c_base)), 16.0);
++        // An explicit K-tile continuation accumulates (16 + 16).
++        cmd(&mut dev, &mut bytes, F_LOOP_WS, 1, loop_ws_rs2(c_spad));

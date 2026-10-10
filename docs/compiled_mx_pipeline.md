@@ -1545,6 +1545,58 @@ and scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
 source-faithful numerical oracle for the full output. This kernel's softmax
 runs on Muon; a separate MX VPU softmax test cannot stand in for it.
 
+#### All 16 executed GQA PV cutpoints on Nicolas Spike
+
+The first-block test exposed an accumulation defect in the local Cyclotron MX
+co-model: it added each new matmul to the prior C scratchpad contents even when
+the source command set `ex_accumulate=0`. Nicolas's
+`gemmini-mx-cleanup` Spike model explicitly clears C for that command. The
+[isolated Cyclotron correction](evidence/radiance_gqa_pv_roster_80f84ca/cyclotron_overwrite.patch)
+implements the same overwrite rule. It is an evidence patch applied to a
+disposable Cyclotron worktree; the main simulator checkout is unchanged. All
+35 MX simulator tests pass with the patch, including a renewed overwrite and
+explicit-accumulation check in the
+[test log](evidence/radiance_gqa_pv_roster_80f84ca/cyclotron_model_tests.log).
+
+The [16-tile receipt](evidence/radiance_gqa_pv_roster_80f84ca/index.json)
+builds the pinned Radiance GQA kernel, executes all eight query heads and two
+key blocks with the corrected Cyclotron model, and captures each Muon P tile,
+its scales, and the resulting MX PV tile. Each PV tile agrees with Nicolas's
+reduced-precision numerical model for **4,096 / 4,096 BF16 values**. A single
+compiler emitted RV64 MX object, originally lowered from the model2MLIR PV
+capture, then accepts all 16 distinct runtime P/V payloads on Nicolas's stock
+Rocket/RoCC Spike extension. Spike matches **65,536 / 65,536 BF16 values**.
+The probe leaves the final source O buffer byte identical to the unmodified
+kernel running on the corrected model.
+
+```sh
+git -C "$CYCLOTRON_ROOT" worktree add --detach /new/cyclotron-mx-probe 2d6adad
+git -C /new/cyclotron-mx-probe apply --unidiff-zero \
+  "$MX_MLIR_ROOT/docs/evidence/radiance_gqa_pv_roster_80f84ca/cyclotron_overwrite.patch"
+(cd /new/cyclotron-mx-probe && cargo build --release)
+
+"$MODEL2MLIR_PYTHON" -m tools.qualify_radiance_gqa_pv_roster \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --radiance-lib-root "$RADIANCE_BUILT_LIB_ROOT" \
+  --cyclotron-root /new/cyclotron-mx-probe --llvm-muon "$LLVM_MUON_ROOT" \
+  --riscv-root "$RISCV_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --out-dir /new/mx-gqa-pv-roster \
+  --baseline-index docs/evidence/radiance_gqa_pv_roster_80f84ca/index.json
+```
+
+The archived [Muon P](evidence/radiance_gqa_pv_roster_80f84ca/p_tiles.bin.gz),
+[P scales](evidence/radiance_gqa_pv_roster_80f84ca/p_scales.bin.gz),
+[MX PV](evidence/radiance_gqa_pv_roster_80f84ca/pv_tiles.bin.gz),
+[runtime payloads](evidence/radiance_gqa_pv_roster_80f84ca/runtime_payloads.tar.gz),
+[Spike ELF](evidence/radiance_gqa_pv_roster_80f84ca/mx_runtime_pv_roster.elf.gz),
+and [Spike log](evidence/radiance_gqa_pv_roster_80f84ca/spike.log)
+pin this result. This qualifies the **MX portions** of the source kernel on
+functional simulators. The compiler does not yet emit the whole mixed Muon/MX
+kernel, and neither simulator proves RTL FPEX or FPGA behavior. The corrected
+Cyclotron final O still differs from the generator's `O_gold` in 31,852 of
+32,768 BF16 values, so that generated array remains unsuitable as a full
+attention parity oracle.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)

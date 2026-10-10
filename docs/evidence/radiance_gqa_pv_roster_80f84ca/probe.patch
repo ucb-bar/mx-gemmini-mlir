@@ -1,0 +1,29 @@
+--- kernel.cpp
++++ kernel.cpp.all_pv_probe
+@@ -151,0 +152,15 @@
++            // Qualification only: capture every tiled P operand and E8M0 scale block.
++            {
++                const uint32_t tile = h * FA_NBLK_USED + j;
++                const volatile __shared uint32_t *p =
++                    reinterpret_cast<const volatile __shared uint32_t *>(P_BYTE[cur]);
++                volatile uint32_t *p_out = reinterpret_cast<volatile uint32_t *>(P_GMEM)
++                    + tile * (FA_SQ * FA_BK / 4);
++                for (uint32_t i = tid; i < FA_SQ * FA_BK / 4; i += thr) p_out[i] = p[i];
++                const volatile __shared uint32_t *scales =
++                    reinterpret_cast<const volatile __shared uint32_t *>(SCALE_SMEM);
++                volatile uint32_t *s_out = reinterpret_cast<volatile uint32_t *>(PS_GMEM)
++                    + tile * (FA_GKB * FA_SQ);
++                for (uint32_t i = tid; i < FA_GKB * FA_SQ; i += thr) s_out[i] = scales[i];
++                mu_barrier(7, wpb);
++            }
+@@ -166,0 +182,10 @@
++            // Qualification only: capture every BF16 MX PV tile before accumulation.
++            {
++                const uint32_t tile = h * FA_NBLK_USED + j;
++                const volatile __shared uint32_t *pv =
++                    reinterpret_cast<const volatile __shared uint32_t *>(PVOUT_SMEM);
++                volatile uint32_t *pv_out = reinterpret_cast<volatile uint32_t *>(0x40060000)
++                    + tile * (FA_SQ * FA_D / 2);
++                for (uint32_t i = tid; i < FA_SQ * FA_D / 2; i += thr) pv_out[i] = pv[i];
++                mu_barrier(7, wpb);
++            }
