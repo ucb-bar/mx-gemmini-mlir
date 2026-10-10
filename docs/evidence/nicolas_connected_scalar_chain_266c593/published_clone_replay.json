@@ -1,0 +1,15 @@
+{
+  "archive_compiler_revision": "00d0b8e3064cefea809d247308010e41d9564b61",
+  "archive_index_sha256": "dd42c2738090daefb5ba24fff417688146ab6eee2826b1f9b2af721fb5517834",
+  "matching_artifact_sha256": {
+    "bound_mlir_sha256": "6db903485fd24ca017810006bbf0922660cee8e62b88f942f092a7bee0e29e31",
+    "elf_sha256": "047a87028e61d6e7052f4b87a8469745ffc5e0ac2812618054d7ae57e1014349",
+    "object_sha256": "5fdece9cac7ed9c9ea60a686ef64bfc8ab22eae208143e36d5f054c5f088cc1e",
+    "spike_log_sha256": "d3c09a3f7107ad3e7c3c643d6f8e94cf870f4c33876712481f6ace201ca00d70"
+  },
+  "published_branch": "handwritten-implementation",
+  "published_clone_index_sha256": "4195be48d389534682386bb7a8e46c69688258cbfbc98fee4e73203d12300ac9",
+  "published_revision": "fde23df423a1cf0750a59d71db2ccd374edf33ab",
+  "schema": "mx_gemmini.connected_scalar_chain_published_replay.v1",
+  "status": "published_checkout_reproduced_object_elf_and_spike_log"
+}

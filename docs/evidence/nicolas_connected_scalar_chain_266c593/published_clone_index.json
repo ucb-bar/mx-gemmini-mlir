@@ -1,0 +1,19 @@
+{
+  "baseline_index_sha256": "d6eaa633ddb8ed90c5ecdfc3340b10d3559dd90f1148adfd088ae8f4b1d9a769",
+  "bound_mlir_sha256": "6db903485fd24ca017810006bbf0922660cee8e62b88f942f092a7bee0e29e31",
+  "compared_c1_bf16_values": 4096,
+  "compared_c1_e8m0_scales": 128,
+  "compared_c1_fp8_codes": 4096,
+  "compared_c2_e8m0_scales": 64,
+  "compared_c2_fp8_codes": 2048,
+  "compiler_revision": "fde23df423a1cf0750a59d71db2ccd374edf33ab",
+  "elf_sha256": "047a87028e61d6e7052f4b87a8469745ffc5e0ac2812618054d7ae57e1014349",
+  "object_manifest_sha256": "fa9832bbad200087efccd83ee3eed86f12924ed6d3f800ebc6c66b52a472084f",
+  "object_sha256": "5fdece9cac7ed9c9ea60a686ef64bfc8ab22eae208143e36d5f054c5f088cc1e",
+  "qualification_manifest_sha256": "45e1daddf14a2a118704a8d89c47a3553178e32eb5560f8dd99491f3952d147b",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.connected_scalar_chain_spike.v1",
+  "scope": "Nicolas source MM1/MM2 plus derived ADDS +0; identity case only",
+  "spike_log_sha256": "d3c09a3f7107ad3e7c3c643d6f8e94cf870f4c33876712481f6ace201ca00d70",
+  "status": "two_ordered_vpu_ops_matched_source_identity_on_pinned_spike"
+}

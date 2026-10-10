@@ -3431,6 +3431,10 @@ BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 2,048 C2 FP8 codes, and 64 C2
 scales**. This proves the second VPU command and resident handoff execute in
 order for the identity case. It does not qualify arbitrary nonzero scalar
 chains or an unchanged source kernel containing two VPU operations.
+An independent checkout of the pushed `handwritten-implementation` branch
+reproduced the bound MLIR, data-free object, linked ELF, and Spike log hashes;
+the [published-clone receipt](evidence/nicolas_connected_scalar_chain_266c593/published_clone_replay.json)
+records both compiler revisions and the matching artifact hashes.
 
 Reproduce the object build, native dialect verification, link, and Spike run
 from the checked-in Nicolas source capture with:

@@ -27,6 +27,8 @@ def _read(path: Path) -> dict:
 
 def test_two_ordered_vpu_commands_match_every_source_identity_reference():
     index = _read(EVIDENCE / "index.json")
+    replay = _read(EVIDENCE / "published_clone_replay.json")
+    published = _read(EVIDENCE / "published_clone_index.json")
     obj = _read(EVIDENCE / "object_manifest.json")
     compiled = _read(EVIDENCE / "compile_manifest.json")
     qualified = _read(EVIDENCE / "qualification_manifest.json")
@@ -44,6 +46,20 @@ def test_two_ordered_vpu_commands_match_every_source_identity_reference():
     assert index["compiler_revision"].startswith("00d0b8e")
     assert index["rtl_revision"] == "266c593f2cb51d7e3fe83fc0317072b585ac3c52"
     assert index["baseline_index_sha256"] == _sha((SOURCE / "index.json").read_bytes())
+    assert replay["schema"] == "mx_gemmini.connected_scalar_chain_published_replay.v1"
+    assert replay["status"] == "published_checkout_reproduced_object_elf_and_spike_log"
+    assert replay["published_branch"] == "handwritten-implementation"
+    assert replay["archive_compiler_revision"] == index["compiler_revision"]
+    assert replay["published_revision"] == published["compiler_revision"]
+    assert replay["published_revision"].startswith("fde23df")
+    assert replay["archive_index_sha256"] == _sha((EVIDENCE / "index.json").read_bytes())
+    assert replay["published_clone_index_sha256"] == _sha(
+        (EVIDENCE / "published_clone_index.json").read_bytes())
+    assert replay["matching_artifact_sha256"] == {
+        key: index[key] for key in ("bound_mlir_sha256", "object_sha256",
+                               "elf_sha256", "spike_log_sha256")}
+    assert all(published[key] == digest for key, digest in
+               replay["matching_artifact_sha256"].items())
     assert index["bound_mlir_sha256"] == obj["bound_mlir_sha256"] == _sha(derived.encode())
     assert index["object_manifest_sha256"] == _sha((EVIDENCE / "object_manifest.json").read_bytes())
     assert index["qualification_manifest_sha256"] == _sha(
