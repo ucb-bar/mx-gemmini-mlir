@@ -1,0 +1,93 @@
+{
+  "activation_format": "fp6_e2m3",
+  "activation_projection": "lut",
+  "build_log_sha256": {
+    "compile_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "extension_build.log": "294da6958e945e6215dc7bdf3058a330746224d208d17142bad6a0ced8fb978a",
+    "link.log": "b7c100b5ab00550b2cc5a599b9ffe4635dd7a746893de247b95cd34ad6b28f2f"
+  },
+  "capture_sites": [
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    }
+  ],
+  "compared_bf16_outputs": 4096,
+  "compiler_revision": "0d7e31be2dbea83b06d2d700bdcb199fdbbc6e3a",
+  "compiler_source_closure_sha256": "fdd734515fb7753f3b182c2513a1180f82d9d2717f71048e3869f74050bc18ee",
+  "elf_sha256": "c0a0484b5677227f5889e0edf2ffd3b825ff316414db0f9c07f8a17af4ca02f2",
+  "extension_sha256": "8decd9cea3d915390a76b608acb13e81e05f251942cd85bd3777715189c14f48",
+  "extension_source_closure_sha256": "01b69bc10aaa921c36d6125717fe9b4fec3ec0d689068d037ea9c0c011802f32",
+  "files_sha256": {
+    "asymmetric_bound.mlir": "59fa2689c7e0974104a85a19f460e92e898a69bb4cddd3c1bd2c5a2ed3c6cbb8",
+    "handoff.mlir": "2c95c06e2911d42c55602ce9afaa70c9598e230f64e540251dc5846b72bace5a",
+    "model2mlir.mlir": "6ddd343dcc4de700079b6034484cb6faf2ae8efba45d66bd652a5a303d2ecadc",
+    "quantization_manifest.json": "ca686238ae7acb347c1e2763ca0f779ed461da8ad8c266e36326b6b80b2ad866",
+    "recipe.json": "b4564ff4d1a5b78d067f617cef98d000b1f9cd2a609ae80e1cb503be10bf539a"
+  },
+  "frontend_contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "generated_c_sha256": "9ca9797a9d43162cf56d0938702b620fc1ba8b46c9d3f07ef5c2f408fec76991",
+  "generated_data_sha256": "50ba1b8ddc3b0b589aa8b8f5981b814bf2c2b18f102326f145578850c9ab4a7f",
+  "generated_driver_sha256": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+  "host_cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+  "mesh_dim": 8,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mx_opt_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "mx_opt_sha256": "1eec481ee214da3e0af56e8eb714093a0967383858a1ebfdad266bbf0b188bdf",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "asymmetric_0.o": "68e8c58772cb56fb761152141d0d536fd92a7da17b10f35b4335682099271664",
+    "asymmetric_1.o": "9af07eb399667492bdd5ad3f03f427c117f75654efd0a30e69df9a00ba2726c8",
+    "asymmetric_2.o": "f9ec757a288c86015a83056488bb22d0f648b67a24b639475179b99f46ae74ec",
+    "asymmetric_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "asymmetric_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "opaque_calls": {},
+  "physical_command_count": 207,
+  "physical_fence_count": 4,
+  "physical_inputs_sha256": {
+    "activation.bin": "d08c77dac60c82488b52b588a92b710863794320525db91a596092fa19c0425a",
+    "activation_lut.bin": "bf6d3fb51e74f57b2f86a99032f60cea4e87791aa83fb33f87ca017bda124890",
+    "activation_scales.bin": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16.bin": "dc80727ad68b1fdf6bd94c7957cef02b11650082686bc681ec2a081ffbc32af2",
+    "mx_data.S": "50ba1b8ddc3b0b589aa8b8f5981b814bf2c2b18f102326f145578850c9ab4a7f",
+    "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+    "mx_issue.c": "9ca9797a9d43162cf56d0938702b620fc1ba8b46c9d3f07ef5c2f408fec76991",
+    "output_lut.bin": "bf6d3fb51e74f57b2f86a99032f60cea4e87791aa83fb33f87ca017bda124890",
+    "physical_program.json": "bba996d6b1fdb2b3087d5b653d4f09692148b17ecdcb8faf5b156578411cf875",
+    "resource_manifest.json": "c0fa9ebab6fd5485c27c2c87fdb669f1ddc04e9077b0e5b4b72dfd92f99bcc0c",
+    "weight.bin": "ec328f4407c171808bff2fdf751405f1dbe4519e015c17eacc364ec9be357730",
+    "weight_lut.bin": "41c13d314ed48a1572a4f1f187da0897821805bff82513a893dd66292890dcaa",
+    "weight_scales.bin": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "physical_program_sha256": "bba996d6b1fdb2b3087d5b653d4f09692148b17ecdcb8faf5b156578411cf875",
+  "profile_name": "MxDim8AllAsymGemminiRocketConfig",
+  "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+  "resource_manifest_sha256": "c0fa9ebab6fd5485c27c2c87fdb669f1ddc04e9077b0e5b4b72dfd92f99bcc0c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+  "scope": "DIM8 64x64x64 e2m3_e2m3 source specialization of one captured PyTorch matmul; new header from Nicolas's pinned gen_asym.py, not a checked-in C test; shared physical command IR and standalone emitter; standalone asymmetric MX profile without VPU",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_generation_manifest_sha256": "59e69806bf30aa562e70946d50f7bdbcc7c1cdf523b217be0b93ed96a6285096",
+  "source_generator_sha256": "b5389b05e639929d4ffc8393496a4251e891fb1f0288035497ae4e1aa0457b6c",
+  "source_header_sha256": "dada9788dacf63db9cecd15e362bda99d9a7d9420c31225ab09455faab4effe7",
+  "spike_exit_code": 0,
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "spike_log_sha256": "99bdb69ce8dc4e3849ec2995852b7427c94964970b965173f953b42ef71c5a21",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_golden_matched_on_pinned_spike"
+}

@@ -1135,6 +1135,31 @@ Spike. It does not cover the mixed MX+Muon HBM FlashAttention kernel, arbitrary
 typed graphs, FPGA execution, or the stock Spike E4M3-direct × E4M3-LUT defect
 described above.
 
+## Isolated weight-LUT Spike correction across all legal modes
+
+The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)
+records a full rerun with the existing
+[weight-LUT lane patch](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
+applied only to an isolated `software/libgemmini` worktree. Its parent Gemmini
+RTL and profiles remain at Nicolas's `266c593`, while the source-built Spike
+extension differs from stock. Latest model2MLIR `e9ded36` captured the
+operations, and compiler `0d7e31b` generated the physical programs and RV64
+ELFs. The archived receipts cover **36 / 36 legal modes on each of DIM8,
+DIM16, and DIM32**, comparing **442,368 / 442,368 BF16 outputs** across 108
+programs. DIM16 combines 35 Nicolas source/generated tests with the Radiance
+direct E4M3×E4M3 driver; DIM8 and DIM32 use 36 Nicolas tests each.
+
+For **105 modes**, the patched run reproduces a stock-passing ELF and Spike
+output log byte for byte. The remaining **three** are direct E4M3 activation
+× E4M3 LUT weight, one per mesh: each keeps the identical stock-failing ELF
+and passes its full 4,096-value source golden only on the patched extension.
+The [archive command](../tools/archive_spike_lut_candidate.py) checks every
+comparison against a pinned stock receipt and preserves the candidate receipt
+and log. Nicolas's RTL `ExecuteController.mx_multi_elem` includes
+`weight_lut_en` in weight-column packing; the isolated patch adds the
+corresponding Spike state check. This experiment does not merge the patch or
+qualify the three cells on stock Spike, RTL simulation, or FPGA.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

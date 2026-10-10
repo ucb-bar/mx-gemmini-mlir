@@ -85,6 +85,11 @@ reports 4,094 mismatches, while a local model correction matching the RTL's
 weight-LUT lane selection reports zero for the same ELF. The
 [generated-mode evidence](docs/compiled_mx_pipeline.md#generated-dim16-mode-probes)
 keeps that patch diagnostic separate from stock-model qualification.
+An [isolated patched-Spike rerun](docs/compiled_mx_pipeline.md#isolated-weight-lut-spike-correction-across-all-legal-modes)
+now matches all 36 legal modes on DIM8, DIM16, and DIM32: 105 stock-passing
+ELFs retain their output logs, and the three stock failures pass with the
+same ELFs. Stock Spike remains at 35 / 36 per mesh; RTL and FPGA qualification
+for the patch remain open.
 The source-bound scheduler also passes Nicolas's larger direct E4M3×FP4
 128×128×128 DIM16 and 128×128×256 DIM32 kernels on Spike, comparing all
 16,384 BF16 outputs in each. Their [generated programs and reproduction
