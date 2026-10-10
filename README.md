@@ -75,6 +75,9 @@ The [BF16 VPU softmax seam](docs/compiled_mx_pipeline.md#compiler-issued-bf16-vp
 captures `torch.softmax` with model2MLIR, issues configuration, transfers, six
 VPU operations, and readout, and matches all 512 BF16 source-reference outputs
 on Spike.
+Nicolas's [full VPU source oracle](docs/compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations)
+also passes all 29 checks on pinned Spike, including fused EXPSUB/EXPSUM;
+compiler-issued coverage remains narrower.
 The two legal E4M3×FP4 modes in Nicolas's standalone asymmetric profile also
 lower through the shared physical command representation and match all 4,096
 BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no

@@ -420,6 +420,27 @@ evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.
 records source, ELF, tool, and log hashes. Compiler-issued VPU coverage now
 includes the following source-audited cases.
 
+### Nicolas VPU source oracle across all operations
+
+The [source VPU receipt](evidence/nicolas_vpu_source_all_ops_266c593/receipt.json)
+builds Nicolas's `bareMetalC/vpu_ops.c` with `VPU_FUSED=1` and runs it on his
+pinned Spike extension. Its [log](evidence/nicolas_vpu_source_all_ops_266c593/spike.log)
+passes **29 / 29** source-reference checks, including all 14 VPU opcodes,
+EXPSUB and EXPSUM, broadcast/reduction forms, same-bank access, and dependent
+VPU/memory ordering. Two clean builds produced identical ELF, extension, and
+log hashes. Reproduce with:
+
+```sh
+python -m tools.qualify_nicolas_vpu_ops_source \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/nicolas-vpu-source
+```
+
+This source executable is the full VPU oracle. The compiler-issued softmax
+and matrix/VPU programs below cover selected operations; compiler-generated
+execution of the other VPU cases remains to be qualified.
+
 ### Compiler-issued BF16 VPU softmax
 
 `tools.qualify_nicolas_vpu_softmax` captures `torch.softmax` on a 16×32 BF16
