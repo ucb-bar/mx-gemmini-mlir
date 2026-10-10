@@ -7,7 +7,8 @@ from io import StringIO
 from pathlib import Path
 
 from .resource_ir import attach_source_resources
-from .source_payload import (load_bundle, manifest_sha256,
+from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN, load_bundle,
+                             manifest_sha256, validate_attention_qk_candidate,
                              vpu_requant_shape_is_legal)
 from .target_profile import load_profile, profile_sha256
 from .verify_profile_ir import _operation_name, _text_attr, verify_ir
@@ -35,7 +36,9 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
     verify_ir(mlir_text, profile)
     if manifest.get("profile_sha256") != profile_sha256(profile):
         raise ValueError("payload profile digest differs from selected target")
-    if manifest.get("origin") != "radiance_source_header_specialization":
+    if manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
+        validate_attention_qk_candidate(manifest)
+    elif manifest.get("origin") != "radiance_source_header_specialization":
         raise ValueError("payload origin is not an explicit source specialization")
     precision = manifest.get("precision")
     if precision not in _FORMAT:

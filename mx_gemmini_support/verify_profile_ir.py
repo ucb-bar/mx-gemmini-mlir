@@ -88,6 +88,12 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 not isinstance(payload_manifest.get("site_id"), str) or
                 not isinstance(payload_manifest.get("resources"), dict)):
             raise ValueError("MX payload resource manifest differs from module binding")
+        from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN,
+                                     validate_attention_qk_candidate)
+        if payload_manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
+            validate_attention_qk_candidate(payload_manifest)
+        elif "source_derivation" in payload_manifest:
+            raise ValueError("derived MX payload must declare its candidate origin")
         for resource_name, descriptor in payload_manifest["resources"].items():
             if (not isinstance(resource_name, str) or
                     re.fullmatch(r"[a-z][a-z0-9_]*", resource_name) is None or
@@ -156,6 +162,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if payload_digest is not None:
                 if local_payload != payload_digest or _text_attr(op, "payload_origin") not in {
                         "radiance_source_header_specialization",
+                        "radiance_source_derived_attention_qk_candidate",
                         "nicolas_source_header_specialization",
                         "nicolas_generated_header_specialization"}:
                     raise ValueError("MX contract payload differs from selected source bundle")

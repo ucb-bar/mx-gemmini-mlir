@@ -74,7 +74,7 @@ def test_fp6_source_needs_a_lut_capable_target():
 def test_read_once_weight_stationary_sources_bind_real_data(tmp_path):
     root = Path(SOURCE)
     report = materialize(root)
-    assert report["generated"] == []
+    assert len(report["rows"]) == 2
     profile = load_profile(Path(__file__).resolve().parents[1] /
                            "profiles/gemmini-mx-cleanup-266c593/"
                            "MxE4M3Fp4VpuGemminiRocketConfig.json")

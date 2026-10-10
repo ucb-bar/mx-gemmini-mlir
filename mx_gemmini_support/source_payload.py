@@ -21,6 +21,32 @@ from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_
 
 
 SCHEMA = "mx_gemmini.source_payload.v1"
+ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
+
+
+def validate_attention_qk_candidate(manifest: dict) -> None:
+    """Keep a requantized attention probe distinct from exact source bytes."""
+    if manifest.get("origin") != ATTENTION_QK_CANDIDATE_ORIGIN:
+        raise ValueError("attention QK candidate has the wrong payload origin")
+    policy = manifest.get("source_derivation")
+    if (not isinstance(policy, dict) or
+            policy.get("schema") != "mx_gemmini.attention_qk_shift.v1" or
+            policy.get("stage") != "gqa_qk_head0_block0" or
+            type(policy.get("e8m0_shift")) is not int or
+            not 1 <= policy["e8m0_shift"] <= 8 or
+            policy.get("oracle") != "dim16_reduced_precision_product_and_accumulator" or
+            policy.get("source_header_sha256") != manifest.get("source_header_sha256") or
+            manifest.get("precision") != "FP8" or
+            manifest.get("shape_mnk") != [64, 64, 64] or
+            manifest.get("tile_mnk") != [64, 64, 64]):
+        raise ValueError("attention QK candidate lacks its explicit source derivation")
+    hashes = policy.get("source_arrays_sha256")
+    if (not isinstance(hashes, dict) or
+            set(hashes) != {"activation", "weight", "activation_scales", "weight_scales"} or
+            any(not isinstance(value, str) or len(value) != 64 or
+                any(c not in "0123456789abcdef" for c in value)
+                for value in hashes.values())):
+        raise ValueError("attention QK candidate lacks pinned source operand hashes")
 
 
 def vpu_requant_shape_is_legal(shape: tuple[int, int, int],
@@ -293,6 +319,10 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
     manifest = json.loads((directory / "manifest.json").read_text())
     if manifest.get("schema") != SCHEMA or not isinstance(manifest.get("resources"), dict):
         raise ValueError("unknown MX payload bundle schema")
+    if manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
+        validate_attention_qk_candidate(manifest)
+    elif "source_derivation" in manifest:
+        raise ValueError("derived MX payload must declare its candidate origin")
     precision = manifest.get("precision")
     shape = manifest.get("shape_mnk")
     tile = manifest.get("tile_mnk")

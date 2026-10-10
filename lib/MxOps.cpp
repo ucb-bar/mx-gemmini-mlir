@@ -136,6 +136,7 @@ LogicalResult ContractOp::verify() {
         modulePayload.getValue() != localPayload.getValue() ||
         localPayload.getValue().size() != 64 ||
         (origin.getValue() != "radiance_source_header_specialization" &&
+         origin.getValue() != "radiance_source_derived_attention_qk_candidate" &&
          origin.getValue() != "nicolas_source_header_specialization" &&
          origin.getValue() != "nicolas_generated_header_specialization"))
       return emitOpError("source payload differs from module binding");
