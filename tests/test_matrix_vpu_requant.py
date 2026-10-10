@@ -82,10 +82,21 @@ def test_compiler_orders_matrix_vpu_requant_and_reuses_dead_operand_rows(tmp_pat
     assert "uint32_t tiled" in driver
     assert "FP8 code mismatches" in driver
     evidence = ROOT / "docs/evidence"
+    assert bound == (evidence / "matrix_vpu_requant_fp8_64x64x128_ssa_bound.mlir").read_text()
+    ssa_saved = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_ssa.json").read_text())
+    ssa_repro = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_ssa_repro.json").read_text())
+    assert ssa_saved["compiler_revision"].startswith("358eb3b")
+    assert ssa_saved["status"] == "nicolas_oracle_matched_on_pinned_spike"
+    assert ssa_saved["bound_mlir_sha256"] == hashlib.sha256(bound.encode()).hexdigest()
+    for field in ("bound_mlir_sha256", "files_sha256", "object_sha256", "elf_sha256",
+                  "extension_sha256", "spike_log_sha256", "compiler_source_closure_sha256"):
+        assert ssa_saved[field] == ssa_repro[field]
     assert manifest == json.loads((evidence / "matrix_vpu_requant_fp8_64x64x128_payload_manifest.json").read_text())
     checked_ir = verify_ir(bound, profile)
     assert (checked_ir["source_resources"], checked_ir["lut_uploads"]) == (4, 0)
     saved = json.loads((evidence / "compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json").read_text())
+    assert ssa_saved["elf_sha256"] == saved["elf_sha256"]
+    assert ssa_saved["spike_log_sha256"] == saved["spike_log_sha256"]
     assert saved["files_sha256"] == receipt["files_sha256"]
     assert saved["compiler_revision"].startswith("9ebbb07")
     assert saved["status"] == "nicolas_oracle_matched_on_pinned_spike"

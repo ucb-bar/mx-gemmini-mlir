@@ -363,7 +363,9 @@ The FP8 64×64×128 Radiance fullout driver has a fresh
 PyTorch→model2MLIR contraction capture and generated source header. The
 `--vpu-spad-requant-x2` specialization binds those exact source operand bytes,
 then appends typed `mx_gemmini.vpu_execute` and
-`mx_gemmini.spad_requant` operations. The physical program computes both
+`mx_gemmini.spad_requant` operations. The current typed function carries
+BF16 and code/scale values along checked SSA edges through readout, VPU,
+requant, and return. The physical program computes both
 K waves in BF16, multiplies the complete BF16 C tile by 2.0 on the VPU, and
 requantizes it to tiled FP8 codes with resident E8M0 scales. The BF16 C
 scratchpad rows are `[256,768)` and the packed destination is `[1024,1280)`;
@@ -379,6 +381,11 @@ ELF, extension, and Spike log hashes. See the [typed MLIR](evidence/matrix_vpu_r
 [qualification](evidence/matrix_vpu_requant_fp8_64x64x128_qualification.json),
 [Spike receipt](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_20261009.json),
 and [second receipt](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_repro_20261009.json).
+The [SSA-connected MLIR](evidence/matrix_vpu_requant_fp8_64x64x128_ssa_bound.mlir)
+has two fresh [first](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_ssa.json)
+and [second](evidence/compiled_matrix_vpu_requant_fp8_64x64x128_ssa_repro.json)
+Spike receipts. Its generated source, RV64 objects, ELF, and Spike log match
+the earlier command-only MLIR path byte for byte.
 The source header's unscaled quantized output differs in 4,094 codes and
 all 128 scales; it is retained as a separate source reference. This is an
 explicit target composition test, not a claim that the handwritten Radiance
