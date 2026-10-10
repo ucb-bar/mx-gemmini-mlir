@@ -3411,3 +3411,24 @@ cases with:
 4. Validate the experimentally matched alternating FP6 scale path against
    RTL, then qualify the Radiance MMIO/FPGA issue path separately from Rocket
    RoCC.
+
+## Nicolas two-tile MX+VPU scheduling source baseline
+
+Nicolas's `chain_pipelined.c` starts from a preloaded 64×64 BF16 C1 tile,
+shares one B2 weight tile, and issues two resident VPU→requant→MM2 chains
+with BF16 scalar factors 2 and 4. Its fenced, program-order, and pipelined
+schedules test the reservation-station issue order. The
+[pinned Spike source receipt](evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json)
+records four successful checks (including warmup), with no clamped scales
+skipped. Spike reported 635, 609, and 405 cycles for those three schedules;
+these are model measurements and do not establish RTL overlap.
+
+The [model2MLIR capture](evidence/nicolas_chain_pipelined_266c593/receipt.json)
+uses pinned upstream `e9ded36` and has three FP8 contraction sites with no
+opaque calls. Its [original graph](evidence/nicolas_chain_pipelined_266c593/original_graph.json)
+shows one MM1 feeding distinct ×2 and ×4 branches, with B2 shared by both
+MM2 sites. The capture's profile-bound MLIR is a three-site handoff; it does
+not preserve branch SSA edges. `audit_chain_pipelined` checks Nicolas's exact
+tile placement and issue-order markers and independently derives full C1 and
+C2 FP8 codes and E8M0 scales for both factors from the source BF16 goldens.
+Compiler-issued two-tile lowering and an object/ELF comparison remain open.
