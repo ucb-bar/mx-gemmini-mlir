@@ -159,7 +159,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
                 output_format != "bf16" or
                 names != ["mx_gemmini.contract", "mx_gemmini.vpu_execute",
                           "mx_gemmini.readout_bf16"] or
-                list(readout[0].operands) != list(contract[0].results) or
+                list(ops[1].operands) != list(contract[0].results) or
+                list(readout[0].operands) != list(ops[1].results) or
                 not isinstance(function, FuncOp) or
                 not isinstance(function.get_return_op(), ReturnOp) or
                 list(function.get_return_op().operands) != list(readout[0].results)):

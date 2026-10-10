@@ -144,7 +144,8 @@ def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str
     effect explicit before the BF16 readout.
     """
     from xdsl.context import Context
-    from xdsl.dialects.builtin import Builtin, BoolAttr, IntegerAttr, StringAttr, UnregisteredOp, i32
+    from xdsl.dialects.builtin import (Builtin, BoolAttr, IntegerAttr, StringAttr,
+                                      TensorType, UnregisteredOp, bf16, i32)
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
     from xdsl.printer import Printer
@@ -192,16 +193,34 @@ def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str
                for name in ("site_id", "profile_sha256", "contract_sha256",
                             "policy_sha256", "manifest_sha256")}
     row = plan["c_spad_dest"]
+    result_type = TensorType(bf16, shape[:2])
+    block = readout.parent
+    assert block is not None
+    new_contract = UnregisteredOp.with_name("mx_gemmini.contract").create(
+        operands=list(contract.operands), result_types=[result_type],
+        attributes=dict(contract.attributes))
+    block.insert_op_before(new_contract, contract)
+    contract.results[0].replace_all_uses_with(new_contract.results[0])
+    block.erase_op(contract)
+    contract = new_contract
     i32attr = lambda value: IntegerAttr(value, i32)
-    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(attributes={
+    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(
+        operands=list(contract.results), result_types=[result_type], attributes={
         **binding, "kind": StringAttr("muls"),
         "src1_row": i32attr(row), "src2_row": i32attr(0),
         "dst_row": i32attr(row), "rows": i32attr(plan["c_rows"]),
         "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
         "immediate_bf16": i32attr(0x4000)})
-    block = readout.parent
-    assert block is not None
+    new_readout = UnregisteredOp.with_name("mx_gemmini.readout_bf16").create(
+        operands=list(vpu.results), result_types=[result_type],
+        attributes=dict(readout.attributes))
+    old_return = function.get_return_op()
     block.insert_op_before(vpu, readout)
+    block.insert_op_before(new_readout, readout)
+    block.insert_op_before(ReturnOp(*new_readout.results), old_return)
+    block.erase_op(old_return)
+    block.erase_op(readout)
+    function.update_function_type()
     module.attributes["mx.vector_tile_policy"] = StringAttr("bf16_muls_x2_each_output_tile_v1")
     output = StringIO()
     Printer(stream=output).print_op(module)
