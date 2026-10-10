@@ -54,8 +54,38 @@ E4M3_DIRECT_E5M2_CELL = {"activation_format": "fp8_e4m3",
                          "activation_projection": "direct",
                          "weight_format": "fp8_e5m2",
                          "weight_projection": "lut", "pe_mode": 7}
+E2M3_E2M3_CELL = {"activation_format": "fp6_e2m3",
+                  "activation_projection": "lut",
+                  "weight_format": "fp6_e2m3",
+                  "weight_projection": "lut", "pe_mode": 9}
+E4M3_E4M3_CELL = {"activation_format": "fp8_e4m3",
+                  "activation_projection": "lut",
+                  "weight_format": "fp8_e4m3",
+                  "weight_projection": "lut", "pe_mode": 9}
+E5M2_E5M2_CELL = {"activation_format": "fp8_e5m2",
+                  "activation_projection": "lut",
+                  "weight_format": "fp8_e5m2",
+                  "weight_projection": "lut", "pe_mode": 4}
 
 _VARIANTS = {
+    "matmul_tiled_fp6_e2m3_lut_64x64.c": {
+        "header": "matmul_data_mx_lut_e2m3_64x64.h",
+        "cell": E2M3_E2M3_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 3, "lut_entry_bits": 6,
+    },
+    "matmul_tiled_fp8_e4m3_lut_64x64.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64.h",
+        "cell": E4M3_E4M3_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+    },
+    "matmul_tiled_fp8_e5m2_64x64.c": {
+        "header": "matmul_data_mx_lut_e5m2_64x64.h",
+        "cell": E5M2_E5M2_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+    },
     "matmul_tiled_asym_e4m3_fp4_64x64.c": {
         "header": "matmul_data_asym_e4m3_fp4.h", "cell": ASYM_CELL,
         "activation_array": "A_in_hw[32][64]", "use_lut": True,

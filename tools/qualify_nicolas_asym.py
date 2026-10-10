@@ -40,6 +40,8 @@ def main() -> None:
                         help="activation format and projection in Nicolas's DIM16 source test")
     parser.add_argument("--source-suffix", type=str,
                         help="Nicolas source pair, for example e2m3_e5m2")
+    parser.add_argument("--symmetric-lut", choices=("e2m3", "e4m3", "e5m2"),
+                        help="Nicolas's named same-format LUT source test")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
     parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
@@ -72,18 +74,28 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    suffix = args.source_suffix or {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
-              "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6",
-              "e4m3_e2m3_lut": "e4m3_e2m3",
-              "e5m2_fp4_lut": "e5m2_fp4",
-              "e4m3_direct_e3m2": "e4m3s_e3m2",
-              "fp4_direct_e4m3": "fp4_e4m3s"}[args.variant]
-    if not re.fullmatch(r"[a-z0-9]+_[a-z0-9]+", suffix):
-        parser.error("source suffix must name one asymmetric source pair")
-    dim_suffix = f"_dim{args.mesh_dim}" if args.mesh_dim != 16 else ""
-    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_{args.source_shape}{dim_suffix}.c"
-    header_suffix = (f"_{args.source_shape}" if args.source_shape != "64x64" else "")
-    header = software / f"include/matmul_data_asym_{suffix}{header_suffix}{dim_suffix}.h"
+    if args.symmetric_lut:
+        if args.source_suffix or args.source_shape != "64x64" or args.mesh_dim != 16:
+            parser.error("same-format LUT source selection needs DIM16 64x64 and no source suffix")
+        name = args.symmetric_lut
+        precision = "fp6" if name == "e2m3" else "fp8"
+        lut_suffix = "_lut" if name != "e5m2" else ""
+        suffix = f"{name}_{name}"
+        source = software / f"bareMetalC/matmul_tiled_{precision}_{name}{lut_suffix}_64x64.c"
+        header = software / f"include/matmul_data_mx_lut_{name}_64x64.h"
+    else:
+        suffix = args.source_suffix or {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
+                  "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6",
+                  "e4m3_e2m3_lut": "e4m3_e2m3",
+                  "e5m2_fp4_lut": "e5m2_fp4",
+                  "e4m3_direct_e3m2": "e4m3s_e3m2",
+                  "fp4_direct_e4m3": "fp4_e4m3s"}[args.variant]
+        if not re.fullmatch(r"[a-z0-9]+_[a-z0-9]+", suffix):
+            parser.error("source suffix must name one asymmetric source pair")
+        dim_suffix = f"_dim{args.mesh_dim}" if args.mesh_dim != 16 else ""
+        source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_{args.source_shape}{dim_suffix}.c"
+        header_suffix = (f"_{args.source_shape}" if args.source_shape != "64x64" else "")
+        header = software / f"include/matmul_data_asym_{suffix}{header_suffix}{dim_suffix}.h"
     recipe = source_recipe(source, header, profile)
     if not args.physical and recipe["shape"] != [64, 64, 64]:
         parser.error("historical C diagnostic is limited to 64-cubed sources")
