@@ -122,3 +122,48 @@ def test_larger_source_matrix_receipts_are_complete_and_reproducible(
         for receipt in (a, b):
             receipt["build_log_sha256"].pop("link.log")
         assert a == b
+
+
+def test_dim16_symmetric_fp4_source_matrix_and_independent_reproduction() -> None:
+    folder = EVIDENCE / "nicolas_asym_matrix_dim16_all_plus_fp4_266c593"
+    profile = json.loads(
+        (PROFILES / "MxAllAsymGemminiRocketConfig.json").read_text())
+    legal = {_cell(cell) for cell in profile["legal_compute"]}
+    matrix = json.loads((folder / "matrix_first.json").read_text())
+    assert (matrix["mesh_dim"], matrix["selected_modes"],
+            matrix["passed_modes"], matrix["legal_mode_count"],
+            matrix["profile_complete"]) == (16, 30, 30, 36, False)
+    assert matrix["all_asym_profile"] is True
+    assert matrix["includes_symmetric_lut"] is True
+    assert matrix["includes_symmetric_fp4"] is True
+    selected = {_cell(row["compute"]) for row in matrix["rows"]}
+    assert len(selected) == 30
+    assert selected <= legal
+    assert {_cell(item["compute"]) for item in
+            matrix["uncovered_legal_compute"]} == legal - selected
+    assert len(matrix["uncovered_legal_compute"]) == 6
+    assert sum(row["matched_bf16_outputs"] for row in matrix["rows"]) == 122880
+    for row in matrix["rows"]:
+        assert row["status"] == "passed"
+        assert row["compiler_revision"].startswith("b6019d0")
+        path = folder / "first" / f"{row['source_suffix']}.json"
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == row["receipt_sha256"]
+        receipt = json.loads(path.read_text())
+        assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+        assert receipt["compared_bf16_outputs"] == 4096
+        assert receipt["rtl_revision"].startswith("266c593")
+
+    # The full 30-mode suite ran once at b6019d0. The new FP4 case also ran
+    # independently; the earlier 29-mode suite has its own two full runs.
+    fp4 = next(row for row in matrix["rows"] if row["source_suffix"] == "fp4_fp4")
+    fp4_matrix = json.loads((folder / "matrix_fp4_repro.json").read_text())
+    assert (fp4_matrix["selected_modes"], fp4_matrix["passed_modes"]) == (1, 1)
+    assert fp4_matrix["rows"][0]["compute"] == fp4["compute"]
+    reproduced = folder / "fp4_repro.json"
+    assert hashlib.sha256(reproduced.read_bytes()).hexdigest() == (
+        fp4_matrix["rows"][0]["receipt_sha256"])
+    original_receipt = json.loads((folder / "first/fp4_fp4.json").read_text())
+    reproduced_receipt = json.loads(reproduced.read_text())
+    for receipt in (original_receipt, reproduced_receipt):
+        receipt["build_log_sha256"].pop("link.log")
+    assert original_receipt == reproduced_receipt

@@ -19,8 +19,11 @@ compares the whole profile to reject source drift or edited capabilities.
 Every exported profile has `qualification: structural_unqualified`. It does
 not certify numerical parity, command scheduling, a bitstream, or throughput.
 Separate [Spike qualification receipts](compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix)
-now cover 29 of 36 legal BF16 source modes in the DIM16 all-asymmetric Rocket
+now cover 30 of 36 legal BF16 source modes in the DIM16 all-asymmetric Rocket
 profile; DIM8 and DIM32 each have 21 of 36 available source modes qualified.
+The Radiance direct E4M3×E4M3 source driver separately qualifies a 31st
+distinct DIM16 mode with two full-output Spike runs; it is not part of
+Nicolas's checked-in source-mode matrix.
 
 Nicolas's public branch includes `MxE4M3VpuGemminiRocketConfig` and
 `MxE4M3Fp4VpuGemminiRocketConfig`. Both build two 8-lane BF16 scratchpad
