@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_resident_mm2_128_266c593"
 FRONTEND = ROOT / "docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36"
 CONNECTED = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_266c593"
+FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -139,6 +140,28 @@ def test_connected_plain_chain_executes_both_sites_without_c1_reload() -> None:
         resources["a1_activation"][1:])
     with pytest.raises(ValueError, match="source binding differs"):
         lower_plain_chain_128(mlir, frontend, manifest, profile, changed, **args)
+
+
+def test_fresh_published_checkout_rebuilds_and_reproduces_connected_chain() -> None:
+    index = json.loads((FRESH / "index.json").read_text())
+    actual = json.loads((FRESH / "artifact_manifest.json").read_text())
+    baseline = json.loads((CONNECTED / "artifact_manifest.json").read_text())
+    assert index["schema"] == "mx_gemmini.nicolas_connected_plain_chain_128_fresh_checkout.v1"
+    assert index["status"] == (
+        "fresh_checkout_built_and_connected_chain_reproduced_on_pinned_spike")
+    assert index["compiler_revision"] == (
+        "ae945d0d10e1234945b2f7bb68242fed54a9295b")
+    assert index["baseline_compiler_revision"] == baseline["compiler_revision"]
+    assert actual["compiler_revision"] == index["compiler_revision"]
+    assert actual["spike_exit_code"] == 0
+    assert (index["compared_c1_fp8_codes"], index["compared_c1_e8m0_scales"],
+            index["compared_c2_fp8_codes"], index["compared_c2_e8m0_scales"]) == (
+            16384, 512, 16384, 512)
+    for key in index["stable_fields_equal_to_baseline"]:
+        assert actual[key] == baseline[key], key
+    for name, digest in index["files_sha256"].items():
+        assert _sha((FRESH / name).read_bytes()) == digest
+    assert index["spike_log_sha256"] == _sha((FRESH / "spike.log").read_bytes())
 
 
 def test_typed_mm2_uses_resident_c1_and_source_placement() -> None:

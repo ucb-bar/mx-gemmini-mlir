@@ -734,6 +734,30 @@ python -m tools.qualify_nicolas_resident_128 \
   --baseline-manifest docs/evidence/nicolas_connected_plain_chain_128_266c593/artifact_manifest.json
 ```
 
+A [fresh GitHub checkout of `ae945d0`](evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
+built `mx-gemmini-opt` from source and ran that exact command with Nicolas's
+RTL and RISC-V toolchain. It reproduced the connected MLIR, physical program,
+objects, ELF, and Spike log hashes from the checked-in baseline. The archive
+records the fresh compiler revision, native tool hash, artifact manifest, and
+full-output Spike result.
+
+```sh
+git clone --single-branch --branch handwritten-implementation \
+  git@github.com:ucb-bar/mx-gemmini-mlir.git /new/mx-gemmini-mlir
+git -C /new/mx-gemmini-mlir checkout --detach \
+  ae945d0d10e1234945b2f7bb68242fed54a9295b
+cmake -S /new/mx-gemmini-mlir -B /new/mx-gemmini-mlir/build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DMLIR_DIR="$MLIR_DIR"
+cmake --build /new/mx-gemmini-mlir/build --target mx-gemmini-opt
+cd /new/mx-gemmini-mlir
+python -m tools.qualify_nicolas_resident_128 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --connected-frontend-dir docs/evidence/nicolas_plain_chain_128_model2mlir_e9ded36 \
+  --out-dir /new/mx-connected-128-run \
+  --baseline-manifest docs/evidence/nicolas_connected_plain_chain_128_266c593/artifact_manifest.json
+```
+
 A [current upstream frontend rerun](evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
 recaptured the two-site graph with model2MLIR `e9ded36` and executed the
 connected SSA chain on the same pinned Spike model. The new frontend and
