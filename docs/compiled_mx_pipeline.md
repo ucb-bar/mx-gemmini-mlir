@@ -1318,6 +1318,44 @@ The materializer preserves committed headers and checks all 31 driver/header
 hashes. The qualifier itself compiles only the three cases above and refuses
 changed source bytes or a drifted RTL profile.
 
+### Selected legal modes in six additional MX Rocket profiles
+
+The same qualifier accepts `--profile` and repeatable `--case` arguments.
+It preflights every selected model2MLIR handoff against the target profile
+before writing output, so unsupported format/profile combinations fail closed.
+On Nicolas's pinned Spike, two independent builds of each selected case from
+compiler `82a8bae` produced identical bound MLIR, physical commands, C
+issuers, ELFs, and simulator logs. All **147,456 / 147,456 BF16 outputs**
+matched the checked Radiance source goldens:
+
+| RTL profile | Source cases | Compared BF16 outputs |
+|---|---|---:|
+| `MxFp4OnlyGemminiRocketConfig` | FP4 | 4,096 |
+| `MxE4M3SingleGemminiRocketConfig` | FP8 | 16,384 |
+| `MxE4M3OnlyGemminiRocketConfig` | FP8 | 16,384 |
+| `MxAllGemminiRocketConfig` | FP8, FP4, FP6 | 36,864 |
+| `MxE4M3LutGemminiRocketConfig` | FP8, FP4, FP6 | 36,864 |
+| `MxE5M2GemminiRocketConfig` | FP8, FP4, FP6 | 36,864 |
+
+The [matrix index](evidence/radiance_selected_mx_profiles_266c593/index.json)
+and [regression test](../tests/test_selected_mx_profiles_evidence.py)
+tie all 12 cases to their exact profile, source capture, bundle, physical
+program, executable, and Spike receipt. FP8 on the FP4-only profile is
+rejected before output creation. These are direct numerical qualifications
+for the listed mode/shape pairs only. Other legal modes in the multi-mode
+profiles and Chipyard wrappers require their own evidence.
+
+For one selected configuration, use the same pinned source, RTL, and RV64
+roots as the plain-profile command above:
+
+```sh
+python -m tools.qualify_radiance_mx_base_profile \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxFp4OnlyGemminiRocketConfig.json \
+  --case fp4 --out-dir /tmp/mx-fp4-only-profile
+```
+
 The [31-driver evidence archive](evidence/radiance_mx_gemm_latest_e9ded36_ee22/)
 binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, Nicolas's
 `gemmini-mx-cleanup` RTL `266c593`, and this compiler's `12cb75d` Spike runs.

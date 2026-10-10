@@ -32,6 +32,9 @@ The [plain MX Rocket profile test](docs/compiled_mx_pipeline.md#nicolass-plain-m
 also runs representative FP8, FP4, and FP6 source kernels on
 `MxGemminiRocketConfig` without VPU. Two runs and a fresh-source rerun match
 all 36,864 BF16 outputs and reproduce the generated ELFs on Nicolas's Spike.
+The [selected-profile matrix](docs/compiled_mx_pipeline.md#selected-legal-modes-in-six-additional-mx-rocket-profiles)
+qualifies 12 more FP8/FP4/FP6 cases across six named Rocket profiles, with
+147,456 matching BF16 outputs and an explicit unsupported-mode rejection.
 The same command now accepts the current Radiance `spatter-workloads` revision
 `80f84ca` with `--compatible-source-revision`: all 31 driver and header bytes,
 typed MLIR, physical streams, ELFs, and Spike logs match the pinned roster.

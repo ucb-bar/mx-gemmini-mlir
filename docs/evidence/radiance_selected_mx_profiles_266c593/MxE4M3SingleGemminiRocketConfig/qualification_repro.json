@@ -1,0 +1,33 @@
+{
+  "compared_bf16_outputs": 16384,
+  "compiler_revision": "82a8bae7ef0413b1978c95fc52bab1f18260cf66",
+  "compiler_source_closure_sha256": "a2fd00d0907c7015a02daf70c777f66b03020b9bce31d904b353e1add5331335",
+  "frontend_index_sha256": "47ef832752288ddeab0a28c1ca1a7a12d0150880d407143512b6aeb3505db8c4",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_name": "MxE4M3SingleGemminiRocketConfig",
+  "profile_sha256": "b2e62a082d442509a2ed88e9b00970b34421db787ef8e3c67fc14e4b567f1e92",
+  "rows": [
+    {
+      "artifact_manifest_sha256": "9d0503121cd5d172c2296e76e42790726f8667c6f98425f4899350c53f5c2d2f",
+      "bundle_manifest_sha256": "b3881c647b3ef65189a460825ba10e33eb7efd143386dcf97ae2bbbfdbc38fda",
+      "compared_bf16_outputs": 16384,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "36d95d08e9118197e73cb776ffd0b0c21f99eb17678dfc539fc262195c7a1bea",
+      "elf_sha256": "78247d3019f03c803ebbc5cab4ebc3cf7fee0d7f462370a22c13548e6cce3d75",
+      "generated_issue_sha256": "76ebd2dd9f998e9dd839755ad9f15ffaec84d1e55fc08b61e873613385aed85e",
+      "handoff_mlir_sha256": "92cb85065e41544bbec21eddc8f5c65678d6f247259547d08e59c0c8f9a73341",
+      "header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "payload_bound_mlir_sha256": "bac49854a3997bed8a234d7e2adc014e8088b70f111d0caa4c43a8d8396fcfb5",
+      "physical_program_sha256": "1f2aab67bfafcc9fadb914525fa617ea866f8c44b63aa7bbff62bf5526b99462",
+      "precision": "FP8",
+      "profile_bound_mlir_sha256": "2e1a12d3c763571015f35369a4c0b4f300930cbfae3a11d71ea3ad90c4a7929b",
+      "spike_log_sha256": "1029e8ac1af6b1c7128dbcc1a7fbe0d569d32302e31d01169aa88fadd50304a4",
+      "status": "source_golden_matched_on_pinned_spike"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_selected_mx_profile_source_cases.v1",
+  "scope": "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; source operands and BF16 goldens from byte-checked Radiance headers",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "selected_source_precisions_matched_on_pinned_spike"
+}

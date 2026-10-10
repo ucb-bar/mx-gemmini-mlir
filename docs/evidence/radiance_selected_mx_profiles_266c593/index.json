@@ -1,0 +1,80 @@
+{
+  "case_count": 12,
+  "compared_bf16_outputs": 147456,
+  "compiler_revision": "82a8bae7ef0413b1978c95fc52bab1f18260cf66",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_count": 6,
+  "profiles": [
+    {
+      "cases": [
+        "FP4"
+      ],
+      "compared_bf16_outputs": 4096,
+      "profile_name": "MxFp4OnlyGemminiRocketConfig",
+      "profile_sha256": "aa8acfb5087e7faf1c83846c51296f83f27cb492d72debaa283640274c8c43a9",
+      "qualification_repro_sha256": "6baca9e3fb10cbe7054272a109304ff0e537549ab55a335cfc452a8fa30f2686",
+      "qualification_sha256": "4b6d80bc5289ef845e2598e23538b0dae37c6545fa45fadae4f13c10c94b2921"
+    },
+    {
+      "cases": [
+        "FP8"
+      ],
+      "compared_bf16_outputs": 16384,
+      "profile_name": "MxE4M3SingleGemminiRocketConfig",
+      "profile_sha256": "b2e62a082d442509a2ed88e9b00970b34421db787ef8e3c67fc14e4b567f1e92",
+      "qualification_repro_sha256": "16956395b88a06986891261755d1606d15b0c756e63e3f9b860840f00e93b28b",
+      "qualification_sha256": "7691f01825786ab386796b74fb8cdd6c86b773c36e28071c803ecbe13d6d7124"
+    },
+    {
+      "cases": [
+        "FP8"
+      ],
+      "compared_bf16_outputs": 16384,
+      "profile_name": "MxE4M3OnlyGemminiRocketConfig",
+      "profile_sha256": "ee329c15fea39f26afa24416fa6929a6a67661a7f41fd1efb3f68704b81eb125",
+      "qualification_repro_sha256": "927c1423e6b56f5c9470dedd3ec77cd42f4148c8865fbfdaf913950b84781b8f",
+      "qualification_sha256": "f1c81e6a089b956a3bca81121c0d4de1ef839eadd3e797fea50685f7e8b24b14"
+    },
+    {
+      "cases": [
+        "FP8",
+        "FP4",
+        "FP6"
+      ],
+      "compared_bf16_outputs": 36864,
+      "profile_name": "MxAllGemminiRocketConfig",
+      "profile_sha256": "2a50c37aeeee35daf49664e5eb8f189c5964177099b806c19e854d771af86a51",
+      "qualification_repro_sha256": "8d39b615b7bad773460494f298c0845a04e3f9ffdd588ac48e9176f981464f6a",
+      "qualification_sha256": "08765c0a9f0c0d08f805ce1e22693dbd8fbe16ec1dc506733d0e1d4adc340b11"
+    },
+    {
+      "cases": [
+        "FP8",
+        "FP4",
+        "FP6"
+      ],
+      "compared_bf16_outputs": 36864,
+      "profile_name": "MxE4M3LutGemminiRocketConfig",
+      "profile_sha256": "b3519f0b21ead0f99ba986cbc3d4d0bd4618cf7199d157015c24bda70cdbc04a",
+      "qualification_repro_sha256": "30da7b02689e5371cabd855eb40ac11b9b8c09710459804348524df289cdeb87",
+      "qualification_sha256": "6ea36cd676605caca03fbb879107a0967eae9095aef67c6ebd10fb52150716c0"
+    },
+    {
+      "cases": [
+        "FP8",
+        "FP4",
+        "FP6"
+      ],
+      "compared_bf16_outputs": 36864,
+      "profile_name": "MxE5M2GemminiRocketConfig",
+      "profile_sha256": "d72cd0a16418117dd22cf65bd79918695c7e9dc7ac4ae92d189f9387be2f3ff1",
+      "qualification_repro_sha256": "d9fcf836fa2e50387f110869cb64bcd81478fc357d8f6ca135d44c3ee7b50d86",
+      "qualification_sha256": "8274ead7b4dc131b7dbb98a6b4dbc4b9c8f8751e10591668193ead2d2704df1c"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_selected_mx_profiles_spike_matrix.v1",
+  "scope": "six named DIM16 Rocket profiles; selected legal Radiance FP8/FP4/FP6 modes, not every mode in each profile",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "six_selected_profiles_matched_on_pinned_spike"
+}

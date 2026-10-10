@@ -32,6 +32,10 @@ now has direct compiler-on-Spike evidence for its three selected FP8, FP4,
 and FP6 Radiance source kernels: 36,864 BF16 outputs match across two builds
 and a fresh-source rerun. This profile has no VPU; the separate VPU profiles
 remain the targets for VPU compositions.
+The [selected-profile matrix](compiled_mx_pipeline.md#selected-legal-modes-in-six-additional-mx-rocket-profiles)
+adds direct Spike evidence for 12 legal Radiance mode/shape pairs across six
+more Rocket profiles. Each selected case matches its full source BF16 golden
+twice; untested legal modes and Chipyard wrappers retain structural status.
 Four more cells have separate full-output tests from Nicolas's validated
 `gen_asym.py` data model, giving **35 of 36 distinct DIM16 modes** with
 numerical parity on the unmodified Spike extension. The remaining direct
