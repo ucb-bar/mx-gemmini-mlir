@@ -89,12 +89,15 @@ joins all 81 exported profiles to the three geometry-specific 36-mode stock
 Spike matrices. It records 35 / 36 passing mode-class probes per geometry;
 16 named profiles expose the one failing direct-E4M3 activation × E4M3-LUT
 weight cell. An isolated patched Spike run passes that cell, but the catalog
-keeps its candidate result separate from stock evidence. Ten named profiles
-have receipts in the catalog's selected execution indexes, including the
-FP8/FP4 VPU-enabled Rocket profile. The other profiles retain their
-structural status; a matching PE mode on another profile is not a direct
-memory-system or VPU qualification. The VPU-profile GEMM roster does not
-issue vector instructions; separate VPU command receipts cover those.
+keeps its candidate result separate from stock evidence. Thirty-two named
+profiles have receipts in the catalog's indexed execution sets: the three
+all-asymmetric mesh profiles, 20 dedicated asymmetric profiles, the plain MX
+profile, six selected Rocket profiles, and both Rocket VPU profiles. All 81
+profile JSONs remain structural descriptions, and 49 have no direct receipts
+in this catalog. A matching PE mode on another profile does not qualify its
+memory system or VPU. The FP8/FP4
+VPU-profile GEMM roster does not issue vector instructions; the base VPU
+profile's compiled source-op receipts cover those separately.
 Regenerate or check the catalog with
 `python -m tools.report_mx_profile_qualification [--check]`.
 The source-bound compiler also orders one in-place BF16 VPU epilogue after

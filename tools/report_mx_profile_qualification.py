@@ -127,6 +127,13 @@ def build_report() -> dict:
     selected = _read(selected_path)
     vpu_path = "docs/evidence/radiance_mx_vpu_legal_roster_266c593/index.json"
     vpu = _read(vpu_path)
+    dedicated_path = "docs/evidence/nicolas_asym_matrix_dim16_266c593/matrix_first.json"
+    dedicated = _read(dedicated_path)
+    plain_path = "docs/evidence/radiance_plain_mx_profile_trio_266c593/index.json"
+    plain = _read(plain_path)
+    vector_paths = [
+        f"docs/evidence/nicolas_vpu_{kind}_compiled_266c593/index.json"
+        for kind in ("elementwise", "fused", "variants", "ordering")]
     direct_receipts: dict[str, list[dict]] = {}
     for dim in (8, 16, 32):
         name = ("MxAllAsymGemminiRocketConfig" if dim == 16 else
@@ -145,6 +152,46 @@ def build_report() -> dict:
             "kind": "selected_radiance_gemm_spike", "evidence": selected_path,
             "precisions": row["cases"], "cases": len(row["cases"]),
             "compared_bf16_outputs": row["compared_bf16_outputs"],
+        })
+    if (dedicated["selected_profiles"], dedicated["selected_modes"],
+            dedicated["passed_modes"]) != (20, 26, 26):
+        raise ValueError("dedicated asymmetric profile matrix changed")
+    dedicated_rows: dict[str, list[dict]] = {}
+    for row in dedicated["rows"]:
+        if row["status"] != "passed" or row["matched_bf16_outputs"] != 4096:
+            raise ValueError("dedicated asymmetric profile has a failed mode")
+        dedicated_rows.setdefault(row["profile_name"], []).append(row["compute"])
+    if len(dedicated_rows) != 20:
+        raise ValueError("dedicated asymmetric profile census changed")
+    for name, cells in dedicated_rows.items():
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        if {_key(cell) for cell in cells} != {_key(cell) for cell in profile["legal_compute"]}:
+            raise ValueError(f"dedicated profile mode coverage changed: {name}")
+        direct_receipts.setdefault(name, []).append({
+            "kind": "complete_dedicated_asymmetric_spike_matrix",
+            "evidence": dedicated_path, "passing_modes": len(cells),
+            "compared_bf16_outputs": 4096 * len(cells),
+        })
+    plain_profile = load_profile(PROFILE_DIR / "MxGemminiRocketConfig.json")
+    if (plain["profile_sha256"] != profile_sha256(plain_profile) or
+            len(plain["rows"]) != 3):
+        raise ValueError("plain MX profile evidence changed")
+    direct_receipts.setdefault(plain_profile["name"], []).append({
+        "kind": "plain_mx_radiance_gemm_spike", "evidence": plain_path,
+        "cases": len(plain["rows"]),
+        "compared_bf16_outputs": plain["compared_bf16_outputs"],
+    })
+    base_vpu = load_profile(PROFILE_DIR / "MxE4M3VpuGemminiRocketConfig.json")
+    for path in vector_paths:
+        index = _read(path)
+        if (index["profile_sha256"] != profile_sha256(base_vpu) or
+                not index["rows"] or
+                any(row["status"] != "source_vpu_reference_matched_on_pinned_spike"
+                    for row in index["rows"])):
+            raise ValueError(f"base VPU profile evidence changed: {path}")
+        direct_receipts.setdefault(base_vpu["name"], []).append({
+            "kind": "compiled_vpu_source_spike", "evidence": path,
+            "cases": len(index["rows"]),
         })
     if vpu["profile_name"] != "MxE4M3Fp4VpuGemminiRocketConfig":
         raise ValueError("VPU roster profile changed")
@@ -185,8 +232,9 @@ def build_report() -> dict:
         "schema": "mx_gemmini.profile_qualification_catalog.v1",
         "scope": "selected indexed evidence; mode-class probes do not qualify other named profiles",
         "rtl_revision": candidate["rtl_revision"],
-        "sources_sha256": {path: _digest(path) for path in
-                           sorted(set(stock_paths.values()) | {candidate_path, selected_path, vpu_path})},
+        "sources_sha256": {path: _digest(path) for path in sorted(
+            set(stock_paths.values()) | {candidate_path, selected_path, vpu_path,
+                                         dedicated_path, plain_path, *vector_paths})},
         "profile_count": len(profiles),
         "named_profiles_with_indexed_spike_evidence": sum(
             bool(row["named_profile_spike_evidence"]) for row in profiles),

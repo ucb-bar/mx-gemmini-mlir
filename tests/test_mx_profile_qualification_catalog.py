@@ -16,7 +16,7 @@ def test_catalog_rederives_from_pinned_profiles_and_receipts() -> None:
     archived = json.loads(CATALOG.read_text())
     assert archived == build_report()
     assert archived["profile_count"] == 81
-    assert archived["named_profiles_with_indexed_spike_evidence"] == 10
+    assert archived["named_profiles_with_indexed_spike_evidence"] == 32
     assert {row["mesh_dim"] for row in archived["profiles"]} == {8, 16, 32}
     assert all(row["profile_qualification"] == "structural_unqualified"
                for row in archived["profiles"])
@@ -46,5 +46,23 @@ def test_stock_failure_and_candidate_patch_stay_separate() -> None:
         "precisions": ["FP4", "FP8"], "cases_per_run": 24, "runs": 2,
         "issues_vpu_commands": False,
     }]
+    base = vpu["MxE4M3VpuGemminiRocketConfig"]
+    assert len(base["named_profile_spike_evidence"]) == 4
+    assert sum(receipt["cases"] for receipt in
+               base["named_profile_spike_evidence"]) == 28
     assert all(not row["named_profile_spike_evidence"] for name, row in vpu.items()
-               if name != selected["name"])
+               if name not in {selected["name"], base["name"]})
+
+
+def test_dedicated_asymmetric_profiles_have_direct_mode_receipts() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    dedicated = [row for row in profiles if row["name"].startswith("MxAsym")]
+    assert len(dedicated) == 20
+    assert sum(row["legal_mode_count"] for row in dedicated) == 26
+    for row in dedicated:
+        assert row["named_profile_spike_evidence"] == [{
+            "kind": "complete_dedicated_asymmetric_spike_matrix",
+            "evidence": "docs/evidence/nicolas_asym_matrix_dim16_266c593/matrix_first.json",
+            "passing_modes": row["legal_mode_count"],
+            "compared_bf16_outputs": 4096 * row["legal_mode_count"],
+        }]
