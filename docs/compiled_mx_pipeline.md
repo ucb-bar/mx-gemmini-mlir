@@ -641,8 +641,8 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 8 \
 Each all-asymmetric profile has **36 legal compute cells**. Nicolas has
 checked-in 64³ tests for 21 of them, leaving **15 unqualified cells per
 profile**; the aggregate receipts list each missing tuple. These tests use
-source-bound packed operands and BF16 goldens. They do not establish general
-PyTorch operand quantization or other shapes on either mesh.
+source-bound packed operands and BF16 goldens. These 64³ tests alone do not
+establish general PyTorch operand quantization or other shapes on either mesh.
 
 ### DIM16 all-asymmetric source matrix
 
@@ -670,9 +670,9 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 16 --all-asym \
 
 The aggregate receipts enumerate the **10 legal cells without source tests**.
 This result qualifies the available 64³ BF16 source cases on Spike; it does
-not establish numerical parity for those 10 cells or other shapes.
+not establish numerical parity for those 10 cells or arbitrary shapes.
 
-### Larger asymmetric direct source shapes
+### Larger asymmetric source shapes
 
 The source-bound scheduler now derives the operand strides, scale byte counts,
 tile loops, scratchpad layout, and BF16 readout size from the selected recipe.
@@ -698,8 +698,27 @@ python -m tools.qualify_nicolas_asym --source-suffix e4m3s_fp4 \
 ```
 
 For DIM16 use `--source-shape 128x128 --mesh-dim 16` and
-`MxAllAsymGemminiRocketConfig.json`. The other checked-in larger asymmetric
-source modes still need their LUT bank layouts and numerical qualification.
+`MxAllAsymGemminiRocketConfig.json`.
+
+The other three checked-in **128×128×256 DIM32** asymmetric source cases also
+compile and match **16,384 / 16,384 BF16 outputs each** on Nicolas's Spike:
+
+| Activation × weight | PE mode | Source LUT banks |
+|---|---:|---|
+| FP6 E2M3 LUT × FP8 E5M2 LUT | 10 | A, B, C: 64 lines each |
+| FP8 E4M3 direct × FP8 E5M2 LUT | 7 | B: 64 lines |
+| FP4 direct × FP6 E3M2 LUT | 1 | A, B, C: 64 lines each |
+
+Two independent post-commit runs per case reproduce their captured and bound
+MLIR, physical commands, resource manifests, generated C, objects, ELFs,
+extensions, and Spike logs. Only path-bearing link log hashes differ. The
+[LUT qualification index](evidence/nicolas_asym_large_lut_266c593/qualification.json)
+links all six receipts and inspectable generated artifacts; it pins compiler
+`563f6eb` and Nicolas RTL `266c593`. Select a row with
+`--source-suffix e2m3_e5m2`, `e4m3s_e5m2`, or `fp4_fp6` while retaining
+`--source-shape 128x128x256 --mesh-dim 32` and the DIM32 all-asymmetric
+profile in the command above. All five checked-in larger asymmetric source
+cases now have full-output Spike parity; arbitrary shapes remain unqualified.
 
 ## Remaining gates
 

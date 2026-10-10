@@ -1,0 +1,77 @@
+{
+  "cases": [
+    {
+      "activation_format": "fp6_e2m3",
+      "activation_projection": "lut",
+      "artifacts_sha256": {
+        "e2m3_e5m2_bound.mlir": "3aca8749244a8b1a6eed711161ad5262174680786bb47bf7738ac88f11894ddd",
+        "e2m3_e5m2_model2mlir.mlir": "aa044cb117700fdf9d76ca045cc5d6d0f1e8f87a89324a2024e542e7cdf48c10",
+        "e2m3_e5m2_mx_issue.c": "e5a144ddee0ed1e10a4f02564757623a3c372edf5f9ce7d4856fef6ada4a4b3f",
+        "e2m3_e5m2_physical_program.json": "1036db85be8ab7a205871043fd654489d74c2acad99997f70b254624904af329",
+        "e2m3_e5m2_resource_manifest.json": "4301f6d134ae39eedea699d9836ede6b87f478811d6600c3be43e5b22e12a45e"
+      },
+      "deterministic_fields_match": true,
+      "first_receipt_sha256": "67fc4484b703661d49c7ae5de9b101e7b32c497b6e9d757fa0b471b102ce743a",
+      "matched_bf16_outputs": 16384,
+      "mesh_dim": 32,
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "repro_receipt_sha256": "7895b9936b0d0eb8dd2e7434fd5dcf392af35e3a1fb05510bf15739127b407eb",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "source_suffix": "e2m3_e5m2"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "artifacts_sha256": {
+        "e4m3s_e5m2_bound.mlir": "224622244d49d035af4711c4b5271ea0a451f55b1c9c87937b9e489ad9a485ec",
+        "e4m3s_e5m2_model2mlir.mlir": "aa044cb117700fdf9d76ca045cc5d6d0f1e8f87a89324a2024e542e7cdf48c10",
+        "e4m3s_e5m2_mx_issue.c": "bd568783af42defd869ad532d13a18b1999cca1587b92651810c849a2e289f63",
+        "e4m3s_e5m2_physical_program.json": "80ecce96a23eaf64bc7daaa547dc3fe0f0918e57e1b6e8915bec62c93ca9d3f8",
+        "e4m3s_e5m2_resource_manifest.json": "7eb2ff03bcddea9bf22b6e65b1db6c5fa60b8e44d7efc0d7ca38c5d3c18d3c70"
+      },
+      "deterministic_fields_match": true,
+      "first_receipt_sha256": "62b9e50747c64a00775b6207bf376a29c6c0d29afdafb1caadccdab36523c155",
+      "matched_bf16_outputs": 16384,
+      "mesh_dim": 32,
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "repro_receipt_sha256": "3e15617c0735c6f85756a30a0fbab59f73cfc3922ce5ef0270cec195524f6f4b",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "source_suffix": "e4m3s_e5m2"
+    },
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "artifacts_sha256": {
+        "fp4_fp6_bound.mlir": "fe9bb681393963a67addde834570b9a81886b192379af09e8b29965ad3aa9ce2",
+        "fp4_fp6_model2mlir.mlir": "aa044cb117700fdf9d76ca045cc5d6d0f1e8f87a89324a2024e542e7cdf48c10",
+        "fp4_fp6_mx_issue.c": "f3a84289fe49b19fb5c7878e810e71b32cfacb014105b66308ba477ed64f9d81",
+        "fp4_fp6_physical_program.json": "5431880709265cc96716825d1f412ad39fc39ef07d91fb7fc9fcd37aa032734b",
+        "fp4_fp6_resource_manifest.json": "13cd20b393f9783d63edf2972eea7c9cf3c5f53a7ae5be9617f424d0e0828069"
+      },
+      "deterministic_fields_match": true,
+      "first_receipt_sha256": "243642c15637578ecd0fc54657071ead85d2f8cef224c4e1f73c5203821b2055",
+      "matched_bf16_outputs": 16384,
+      "mesh_dim": 32,
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "repro_receipt_sha256": "29f31a11721c945cca2fa4e6a018db1103df4ee555178a377d5b279581ac46e7",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "source_suffix": "fp4_fp6"
+    }
+  ],
+  "compiler_revision": "563f6ebab277457664b9ee7438a594aa0928d8f2",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_large_lut_spike_matrix.v1",
+  "source": "Nicolas checked-in source arrays and BF16 goldens"
+}

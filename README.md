@@ -63,8 +63,9 @@ see the [DIM16 all-asymmetric receipts](docs/compiled_mx_pipeline.md#dim16-all-a
 The source-bound scheduler also passes Nicolas's larger direct E4M3×FP4
 128×128×128 DIM16 and 128×128×256 DIM32 kernels on Spike, comparing all
 16,384 BF16 outputs in each. Their [generated programs and reproduction
-receipts](docs/compiled_mx_pipeline.md#larger-asymmetric-direct-source-shapes)
-record the current shape scope.
+receipts](docs/compiled_mx_pipeline.md#larger-asymmetric-source-shapes)
+record the current shape scope. The three other checked-in 128×128×256
+asymmetric DIM32 kernels also pass with 64-line LUT banks.
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.

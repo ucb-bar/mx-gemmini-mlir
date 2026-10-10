@@ -9,6 +9,8 @@ from pathlib import Path
 
 EVIDENCE = (Path(__file__).resolve().parents[1] / "docs/evidence" /
             "nicolas_asym_large_direct_266c593")
+LUT_EVIDENCE = (Path(__file__).resolve().parents[1] / "docs/evidence" /
+                "nicolas_asym_large_lut_266c593")
 
 
 def _sha(path: Path) -> str:
@@ -41,3 +43,37 @@ def test_large_direct_source_receipts_and_generated_artifacts() -> None:
         assert row["deterministic_fields_match"] is True
         for artifact, expected in row["artifacts_sha256"].items():
             assert _sha(EVIDENCE / artifact) == expected
+
+
+def test_large_lut_source_receipts_and_bank_layouts() -> None:
+    manifest = json.loads((LUT_EVIDENCE / "qualification.json").read_text())
+    assert manifest["schema"] == "mx_gemmini.nicolas_asymmetric_large_lut_spike_matrix.v1"
+    assert [row["source_suffix"] for row in manifest["cases"]] == [
+        "e2m3_e5m2", "e4m3s_e5m2", "fp4_fp6"]
+    for row in manifest["cases"]:
+        suffix = row["source_suffix"]
+        assert (row["mesh_dim"], row["shape_mnk"],
+                row["matched_bf16_outputs"]) == (32, [128, 128, 256], 16384)
+        first_path = LUT_EVIDENCE / f"{suffix}_first.json"
+        repro_path = LUT_EVIDENCE / f"{suffix}_repro.json"
+        assert _sha(first_path) == row["first_receipt_sha256"]
+        assert _sha(repro_path) == row["repro_receipt_sha256"]
+        first = json.loads(first_path.read_text())
+        repro = json.loads(repro_path.read_text())
+        for receipt in (first, repro):
+            assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+            assert receipt["compared_bf16_outputs"] == 16384
+            assert receipt["capture_sites"][0]["shape"] == [128, 128, 256]
+            assert receipt["compiler_revision"] == manifest["compiler_revision"]
+            assert receipt["rtl_revision"] == manifest["rtl_revision"]
+            receipt["build_log_sha256"].pop("link.log")
+        assert first == repro
+        assert row["deterministic_fields_match"] is True
+        for artifact, expected in row["artifacts_sha256"].items():
+            assert _sha(LUT_EVIDENCE / artifact) == expected
+        resources = json.loads((LUT_EVIDENCE /
+                                f"{suffix}_resource_manifest.json").read_text())["resources"]
+        expected_banks = ({"weight_lut"} if suffix == "e4m3s_e5m2" else
+                          {"activation_lut", "weight_lut", "output_lut"})
+        assert {name for name in resources if name.endswith("_lut")} == expected_banks
+        assert all(resources[name]["shape"][0] == 64 for name in expected_banks)
