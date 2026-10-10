@@ -67,7 +67,8 @@ LogicalResult ContractOp::verify() {
     if (!modulePayload || !localPayload || !origin ||
         modulePayload.getValue() != localPayload.getValue() ||
         localPayload.getValue().size() != 64 ||
-        origin.getValue() != "radiance_source_header_specialization")
+        (origin.getValue() != "radiance_source_header_specialization" &&
+         origin.getValue() != "nicolas_source_header_specialization"))
       return emitOpError("source payload differs from module binding");
   }
   auto legacy = (*this)->getAttrOfType<StringAttr>("format");
