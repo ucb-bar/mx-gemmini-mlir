@@ -769,6 +769,19 @@ qualification is for independent row prefixes of one checked-in 128³
 source header on one plain MX profile; it does not establish arbitrary N/K,
 graph topology, precision, or hardware parity.
 
+The connected FP8 pair now lowers through
+[`resident_pair_graph.py`](../mx_gemmini_support/resident_pair_graph.py).
+It reads the `contract → readout_quantized → resident_contract` SSA graph,
+checks all six tensor arguments and runtime payload hashes, verifies the
+profile-backed scratchpad plan, and issues both matrix streams plus readout.
+Runtime symbols and contraction site IDs are supplied by the caller rather
+than fixed to Nicolas's names. The Nicolas adapter retains the source/header
+digest, selected profile, and placement checks. Archived commands for all
+eight row counts remain byte-identical; a renamed 96×128×128 graph also
+passes the native `mx-gemmini-opt` verifier and the reusable lowerer. This
+extracts a shared physical lowering boundary; independent numerical
+qualification remains necessary for new graph shapes and profiles.
+
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:
 

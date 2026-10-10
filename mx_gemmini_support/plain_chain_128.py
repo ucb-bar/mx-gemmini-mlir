@@ -6,15 +6,10 @@ import hashlib
 import json
 
 from .command_ir import Command, Fence
-from .physical_program import _config_st, _transfer
-from .resident_lowering import lower_resident_contract
-from .resident_pair_plan import lower_first_fp8_resident, plan_fp8_resident_pair
+from .resident_pair_graph import INPUTS, input_digest, lower_connected_fp8_pair
+from .resident_pair_plan import plan_fp8_resident_pair
 from .target_profile import profile_sha256
 from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
-
-
-INPUTS = ("a1_activation", "a1_scales", "b1_weight", "b1_scales",
-          "b2_weight", "b2_scales")
 
 
 def _sha(data: bytes) -> str:
@@ -22,8 +17,7 @@ def _sha(data: bytes) -> str:
 
 
 def _resource_digest(resources: dict[str, bytes]) -> str:
-    hashes = {name: _sha(resources[name]) for name in INPUTS}
-    return _sha(json.dumps(hashes, sort_keys=True, separators=(",", ":")).encode())
+    return input_digest(resources, {name: name for name in INPUTS})
 
 
 def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> int:
@@ -127,18 +121,14 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
                           profile: dict, resources: dict[str, bytes], *,
                           source_sha256: str, header_sha256: str
                           ) -> tuple[Command | Fence, ...]:
-    """Check typed edges and lower MM1's resident output followed by MM2."""
+    """Bind Nicolas's source to the reusable typed resident-pair lowerer."""
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
-    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.dialects.func import Func, FuncOp
     from xdsl.parser import Parser
 
     m = _validate_frontend(frontend_mlir, manifest, profile)
     _validate_resources(resources, m)
-    checked = verify_ir(mlir_text, profile)
-    if (checked["contracts"], checked["resident_contracts"],
-            checked["vpu_commands"], checked["spad_requants"]) != (1, 1, 0, 0):
-        raise ValueError("plain 128³ chain needs one MM1 and one resident MM2")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
     context.load_dialect(Func)
@@ -151,70 +141,20 @@ def lower_plain_chain_128(mlir_text: str, frontend_mlir: str, manifest: dict,
     functions = [op for op in module.walk() if isinstance(op, FuncOp)]
     if len(functions) != 1 or functions[0].sym_name.data != "nicolas_plain_chain_128":
         raise ValueError("plain 128³ chain needs one connected function")
-    function = functions[0]
-    ops = list(function.body.block.ops)
-    if [_operation_name(op) for op in ops] != ["mx_gemmini.contract",
-            "mx_gemmini.readout_quantized", "mx_gemmini.resident_contract",
-            "func.return"]:
-        raise ValueError("plain 128³ chain operation order differs")
-    mm1, readout, mm2, ret = ops
-    args = list(function.body.block.args)
-    if (tuple(str(arg.type) for arg in args) !=
-            (f"tensor<{m}x128xi8>", f"tensor<4x{m}xi8>",
-             "tensor<128x128xi8>", "tensor<4x128xi8>",
-             "tensor<128x128xi8>", "tensor<4x128xi8>") or
-            list(mm1.operands) != args[:4] or
-            list(readout.operands) != list(mm1.results) or
-            list(mm2.operands) != [*readout.results, *args[4:]] or
-            not isinstance(ret, ReturnOp) or
-            list(ret.operands) != list(mm2.results) or
-            tuple(str(value.type) for value in mm1.results) !=
-            (f"tensor<{m}x128xbf16>",) or
-            tuple(str(value.type) for value in readout.results) !=
-            (f"tensor<{m}x128xi8>", f"tensor<{m}x4xi8>") or
-            tuple(str(value.type) for value in mm2.results) !=
-            (f"tensor<{m}x128xi8>", f"tensor<{m}x4xi8>")):
-        raise ValueError("plain 128³ chain SSA tensor edges differ")
-    if ([_text_attr(op, "site_id") for op in ops[:-1]] !=
-            ["functional:matmul", "functional:matmul", "functional:matmul_1"] or
-            any(_text_attr(mm1, name) != value for name, value in {
-                "activation_format": "fp8_e4m3", "weight_format": "fp8_e4m3",
-                "activation_projection": "direct", "weight_projection": "direct"}.items()) or
-            _int_attr(mm1, "pe_mode") != 8 or
-            _text_attr(readout, "output_format") != "fp8_e4m3"):
-        raise ValueError("plain 128³ chain selected sites or mode differ")
-    attrs = {name: _int_attr(mm2, name) for name in
-             ("activation_row", "weight_row", "output_row", "m", "n", "k")}
-    attrs.update({name: _text_attr(mm2, name) for name in
-                  ("activation_format", "weight_format", "output_format",
-                   "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
-    if (attrs["m"], attrs["n"], attrs["k"]) != (m, 128, 128):
+    pair = lower_connected_fp8_pair(
+        mlir_text, profile, resources, buffers={name: name for name in INPUTS},
+        c1_scales="c1_scales", c1_tiled_observed="c1_tiled_observed",
+        c2_tiled="c2_tiled")
+    plan = pair.plan
+    mm2 = list(functions[0].body.block.ops)[2]
+    if (pair.first_site, pair.second_site) != (
+            "functional:matmul", "functional:matmul_1"):
+        raise ValueError("plain 128³ chain selected sites differ")
+    if (plan.m, plan.n, plan.k) != (m, 128, 128):
         raise ValueError("plain 128³ source qualification needs its checked shape")
-    plan = plan_fp8_resident_pair(
-        profile, shape=(attrs["m"], attrs["n"], attrs["k"]), a_row=0,
-        c1_row=attrs["activation_row"], c2_row=attrs["output_row"])
-    if (attrs["weight_row"] != plan.b_row or
-            plan.c1_row != 2048 or plan.c2_row != 4096 or
-            (attrs["weight_buffer"], attrs["weight_scales_buffer"],
-             attrs["output_scales_buffer"]) !=
-            ("b2_weight", "b2_scales", "c2_scales")):
+    if ((plan.c1_row, plan.c2_row) != (2048, 4096) or
+            _text_attr(mm2, "output_scales_buffer") != "c2_scales"):
         raise ValueError("plain 128³ chain resident placement differs")
     if plan.rows != 16384 or profile["name"] != "MxGemminiRocketConfig":
         raise ValueError("plain 128³ chain needs Nicolas's 256 KiB plain MX profile")
-    commands: list[Command | Fence] = list(lower_first_fp8_resident(
-        plan, activation_buffer="a1_activation", activation_scales_buffer="a1_scales",
-        weight_buffer="b1_weight", weight_scales_buffer="b1_scales",
-        output_scales_buffer="c1_scales"))
-    # C1 readback is diagnostic. MM2 still consumes the live scratchpad tile.
-    commands.append(_config_st(plan.dim))
-    for row in range(0, plan.c_rows, plan.dim):
-        commands.append(_transfer(3, "c1_tiled_observed", row * plan.dim,
-                                  plan.c1_row + row))
-    commands.append(Fence())
-    commands.extend(lower_resident_contract(profile, attrs))
-    commands.append(_config_st(plan.dim))
-    for row in range(0, plan.c_rows, plan.dim):
-        commands.append(_transfer(3, "c2_tiled", row * plan.dim,
-                                  plan.c2_row + row))
-    commands.append(Fence())
-    return tuple(commands)
+    return pair.commands

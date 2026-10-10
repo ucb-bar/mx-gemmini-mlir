@@ -12,6 +12,7 @@ import pytest
 
 from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.plain_chain_128 import lower_plain_chain_128
+from mx_gemmini_support.resident_pair_graph import INPUTS, lower_connected_fp8_pair
 from mx_gemmini_support.resident_pair_plan import (lower_first_fp8_resident,
                                                     plan_fp8_resident_pair)
 from mx_gemmini_support.resident_lowering import (lower_single_resident_contract,
@@ -109,6 +110,55 @@ def test_complete_source_row_prefix_ladder_matches_spike(m: int) -> None:
     readouts = [command.rs1.buffer for command in commands
                 if isinstance(command, Command) and command.funct == 3]
     assert readouts == ["c1_tiled_observed"] * (m // 2) + ["c2_tiled"] * (m // 2)
+
+
+def test_connected_pair_lowerer_accepts_other_sites_and_runtime_symbols() -> None:
+    directory = PREFIX_LADDER / "m96"
+
+    def archived(name: str) -> bytes:
+        return gzip.decompress((directory / f"{name}.gz").read_bytes())
+
+    mlir = archived("connected_chain.mlir").decode()
+    mlir = (mlir.replace("@nicolas_plain_chain_128", "@user_pair")
+            .replace("functional:matmul_1", "user:mm2")
+            .replace("functional:matmul", "user:mm1")
+            .replace('weight_buffer = "b2_weight"',
+                     'weight_buffer = "runtime_b2_weight"')
+            .replace('weight_scales_buffer = "b2_scales"',
+                     'weight_scales_buffer = "runtime_b2_scales"')
+            .replace('output_scales_buffer = "c2_scales"',
+                     'output_scales_buffer = "runtime_c2_scales"'))
+    buffers = {name: f"runtime_{name}" for name in INPUTS}
+    resources = {buffers[name]: archived(f"{name}.bin") for name in INPUTS}
+    profile = load_profile(PROFILE)
+    pair = lower_connected_fp8_pair(
+        mlir, profile, resources, buffers=buffers,
+        c1_scales="runtime_c1_scales",
+        c1_tiled_observed="runtime_c1_observed", c2_tiled="runtime_c2_tiled")
+    assert (pair.first_site, pair.second_site) == ("user:mm1", "user:mm2")
+    assert (pair.plan.m, pair.plan.n, pair.plan.k) == (96, 128, 128)
+    assert pair.plan.b_row == 15360
+    command_buffers = {operand.buffer for command in pair.commands
+                       if isinstance(command, Command)
+                       for operand in (command.rs1, command.rs2)
+                       if operand.buffer is not None}
+    assert command_buffers == set(buffers.values()) | {
+        "runtime_c1_scales", "runtime_c1_observed",
+        "runtime_c2_scales", "runtime_c2_tiled"}
+    with pytest.raises(ValueError, match="SSA tensor edges"):
+        lower_connected_fp8_pair(
+            mlir.replace('"mx_gemmini.contract"(%a1, %a1s, %b1, %b1s)',
+                         '"mx_gemmini.contract"(%a1, %a1s, %b2, %b1s)'),
+            profile, resources, buffers=buffers,
+            c1_scales="runtime_c1_scales",
+            c1_tiled_observed="runtime_c1_observed", c2_tiled="runtime_c2_tiled")
+    with pytest.raises(ValueError, match="MM2 buffers differ"):
+        lower_connected_fp8_pair(
+            mlir.replace('output_scales_buffer = "runtime_c2_scales"',
+                         'output_scales_buffer = "runtime_a1_scales"'),
+            profile, resources, buffers=buffers,
+            c1_scales="runtime_c1_scales",
+            c1_tiled_observed="runtime_c1_observed", c2_tiled="runtime_c2_tiled")
 
 
 def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:
