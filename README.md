@@ -279,7 +279,9 @@ needs a documented serial scale-buffer workaround. A
 [two-wave FP6 experiment](docs/compiled_mx_pipeline.md#alternating-fp6-scale-halves-on-nicolass-spike)
 now runs the compiler's alternating command schedule on an isolated corrected
 Spike model: the same ELF has 16,362 BF16 mismatches on pinned Spike and zero
-on the corrected model. RTL and FPGA execution remain unqualified.
+on the corrected model. A [scoped RTL module probe](docs/evidence/nicolas_scale_mem_rtl_266c593/README.md)
+checks Nicolas's actual scale-memory half selectors at DIM16; full RTL and
+FPGA execution remain unqualified.
 The same [alternating schedule](docs/compiled_mx_pipeline.md#alternating-fp6-scale-halves-on-nicolass-spike)
 also reproduces all 16,384 BF16 outputs of the checked-in Radiance
 128×128×2048 FP6 driver across 16 K waves on that isolated Spike model.

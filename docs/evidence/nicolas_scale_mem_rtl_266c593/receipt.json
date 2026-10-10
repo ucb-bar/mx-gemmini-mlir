@@ -1,0 +1,70 @@
+{
+  "mill_launcher_sha256": "3893a7aab91d35fb9d1196b0d9e1f59371e58fa553885d6a14fd7bd103de2cab",
+  "mxgen_revision": "dba3e7e706efa156d96efe595cd9935c825ea14d",
+  "probe_inputs_sha256": {
+    "build.mill.yaml": "1a1fa5521362c7ece02004af6471060810ebb7e39582cf2132b132a35d74b582",
+    "src/main/scala/gemmini/ScaleFactorStubs.scala": "44f3f2e5cf34433a9cb35f2cefd11653b300baaee457c506ec247aeb981d9901",
+    "test/package.mill.yaml": "3a33eaa80abaa25c9c7289a364cfb1ac6fa7602f7ae4399be296257fc2f8b840",
+    "test/src/gemmini/ScaleHalfSelectorSpec.scala": "82725eaa335a9bc3fe50d3c631546d483766f2950be601d1498d45457f808ddf",
+    "test/src/gemmini/ScaleHalfWaveSpec.scala": "deb97c9ea3423ae71a479672a555c9a79d63524fcc49848975cea5224756f68a"
+  },
+  "probes": [
+    {
+      "command": [
+        "./mill",
+        "test.testOnly",
+        "gemmini.ScaleHalfSelectorSpec"
+      ],
+      "mesh_rows": 16,
+      "name": "dim16",
+      "reset_between_selector_cases": true,
+      "test_log_sha256": "eb048f6a046b81c1f9b57bf6da5e4530c4ec7f0f35e7e43588fa2c02750eff3f"
+    },
+    {
+      "command": [
+        "./mill",
+        "test.testOnly",
+        "gemmini.ScaleHalfWaveSpec"
+      ],
+      "mesh_rows": 4,
+      "name": "wave4",
+      "reset_between_selector_cases": false,
+      "test_log_sha256": "0157fd4bede51a9500b868f724691ee6e81a5345abe9b9760752fd63da96802a"
+    }
+  ],
+  "rtl_interface_sha256": "4fa439ea860da11e61d2e389ee628dc769600c3a7b44f22be465b7dd21d498ce",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "rtl_scale_mem_sha256": "ed44c21427c8fd9e0bd74ea072be7dd971a593827ff59dcd97d0ea6acff2b549",
+  "scale_sram_depth": 16,
+  "scale_sram_width_bits": 128,
+  "schema": "mx_gemmini.nicolas_scale_half_rtl_probe.v1",
+  "scope": "FP6 quad-scale DIM16 selector routing with reset between cases and four-lane natural row-cycle alternation; depth-16 128-bit scale SRAM; module alone, no controller/RoCC/FPGA",
+  "selectors": [
+    {
+      "activation_half": 0,
+      "combined_e8m0": 11,
+      "weight_half": 0
+    },
+    {
+      "activation_half": 0,
+      "combined_e8m0": 14,
+      "weight_half": 1
+    },
+    {
+      "activation_half": 1,
+      "combined_e8m0": 41,
+      "weight_half": 0
+    },
+    {
+      "activation_half": 1,
+      "combined_e8m0": 44,
+      "weight_half": 1
+    },
+    {
+      "activation_half": 0,
+      "combined_e8m0": 11,
+      "weight_half": 0
+    }
+  ],
+  "status": "scale_half_selectors_matched_on_actual_scaling_factor_mem_rtl"
+}

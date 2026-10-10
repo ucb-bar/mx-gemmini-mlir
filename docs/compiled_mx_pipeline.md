@@ -1882,6 +1882,16 @@ are archived with source, physical-program, ELF, and extension hashes. The
 compiler marks this run `source_golden_matched_on_experimental_spike`; it does
 not make the pinned Spike or RTL path qualified.
 
+A [scoped production RTL module probe](evidence/nicolas_scale_mem_rtl_266c593/README.md)
+now compiles Nicolas's unchanged `ScaleFactorMem.scala` in isolation. It
+checks all four activation/weight half combinations at DIM16 with reset
+between cases and complete row-cycle alternation at a four-lane geometry.
+The observed E8M0 sums are 11, 14, 41, and 44, with 11 again after returning
+to half zero. The archived [test](../tests/test_nicolas_scale_mem_rtl_evidence.py)
+also checks that the compiler's 16-wave FP6 stream encodes alternating
+`CONFIG_SCALE_MEM` selector bits `00` and `11`. ExecuteController, DMA timing,
+the full RTL contraction, and FPGA execution still need separate tests.
+
 Reproduce from a checkout with Nicolas's `266c593` RTL and its pinned
 `software/libgemmini` and `software/gemmini-rocc-tests` submodules:
 

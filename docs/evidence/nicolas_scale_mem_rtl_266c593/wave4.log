@@ -1,0 +1,16 @@
+./mill test.testOnly gemmini.ScaleHalfWaveSpec
+135] test.testOnly Running Test Class gemmini.ScaleHalfWaveSpec
+135] [32mScaleHalfWaveSpec:[39m
+135] [32mNicolas ScalingFactorMem FP6 wave alternation[39m
+135] act=0 weight=0 combined_e8m0=11
+135] act=0 weight=1 combined_e8m0=14
+135] act=1 weight=0 combined_e8m0=41
+135] act=1 weight=1 combined_e8m0=44
+135] act=0 weight=0 combined_e8m0=11
+135] [32m- should select activation and weight halves independently[39m
+135] [36mRun completed in 3 seconds, 358 milliseconds.[39m
+135] [36mTotal number of tests run: 1[39m
+135] [36mSuites: completed 1, aborted 0[39m
+135] [36mTests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0[39m
+135] [32mAll tests passed.[39m
+135/135, SUCCESS] ./mill test.testOnly gemmini.ScaleHalfWaveSpec 4s

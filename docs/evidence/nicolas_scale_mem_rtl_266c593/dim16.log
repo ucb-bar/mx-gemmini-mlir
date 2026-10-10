@@ -1,0 +1,36 @@
+./mill test.testOnly gemmini.ScaleHalfSelectorSpec
+build.mill.yaml-67] compile compiling 5 Scala sources to out/mill-build/compile.dest/classes ...
+build.mill.yaml-67] done compiling
+122] compile compiling 2 Scala sources to out/compile.dest/classes ...
+122] done compiling
+127] test.compile compiling 2 Scala sources to out/test/compile.dest/classes ...
+127] done compiling
+135] test.testOnly Running Test Class gemmini.ScaleHalfSelectorSpec
+135] [32mScaleHalfSelectorSpec:[39m
+135] [32mNicolas ScalingFactorMem FP6 scale half selectors[39m
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 60s
+135] test.testOnly 48s gemmini.ScaleHalfSelectorSpec 48s
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 120s
+135] test.testOnly 108s gemmini.ScaleHalfSelectorSpec 108s
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 180s
+135] test.testOnly 168s gemmini.ScaleHalfSelectorSpec 168s
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 240s
+135] test.testOnly 228s gemmini.ScaleHalfSelectorSpec 228s
+135] act=0 weight=0 combined_e8m0=11
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 300s
+135] test.testOnly 288s gemmini.ScaleHalfSelectorSpec 288s
+135] act=0 weight=1 combined_e8m0=14
+135] act=1 weight=0 combined_e8m0=41
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 360s
+135] test.testOnly 348s gemmini.ScaleHalfSelectorSpec 348s
+135] act=1 weight=1 combined_e8m0=44
+135] act=0 weight=0 combined_e8m0=11
+134/135] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 420s
+135] test.testOnly 408s gemmini.ScaleHalfSelectorSpec 408s
+135] [32m- should select activation and weight halves independently[39m
+135] [36mRun completed in 6 minutes, 58 seconds.[39m
+135] [36mTotal number of tests run: 1[39m
+135] [36mSuites: completed 1, aborted 0[39m
+135] [36mTests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0[39m
+135] [32mAll tests passed.[39m
+135/135, SUCCESS] ./mill test.testOnly gemmini.ScaleHalfSelectorSpec 430s
