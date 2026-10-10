@@ -3480,6 +3480,9 @@ FP8 codes**, and **512 E8M0 scales** across the two branches. This closes the
 numerical shared-MM1→VPU→requant→MM2 path for Nicolas's 64³ source data. The
 compiler currently uses dependency fences and program order; the source's
 pipelined schedule and its RTL timing are still unqualified.
+The [fresh checkout replay](evidence/nicolas_chain_pipelined_full_266c593/fresh_replay_manifest.json)
+from pushed commit `495fefe` matched the bound graph, physical commands,
+issuer, object, ELF, extension, Spike log, and compiler source closure hashes.
 
 Append `--include-mm1` to the compile command above to reproduce the complete
 chain. The output includes the bound graph, physical commands, data-free

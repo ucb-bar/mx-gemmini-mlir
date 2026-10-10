@@ -195,6 +195,7 @@ def test_captured_mm1_feeds_both_source_branches():
 
 def test_archived_full_three_site_compiler_spike_outputs():
     manifest = json.loads((FULL / "object_manifest.json").read_text())
+    replay = json.loads((FULL / "fresh_replay_manifest.json").read_text())
     assert manifest["schema"] == "mx_gemmini.full_chain_pipelined_linkable_object.v1"
     assert manifest["first_matmul_scope"] == "captured MM1 issued from Nicolas's packed A1/B1 inputs"
     assert manifest["allocated_data_section_bytes"] == 0
@@ -211,3 +212,10 @@ def test_archived_full_three_site_compiler_spike_outputs():
     assert manifest["spike_qualification"]["spike_log_sha256"] == _sha(FULL / "spike.log")
     assert "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" in (
         FULL / "spike.log").read_text()
+    assert replay["compiler_revision"] == "495fefea01d450a1ca16c53ae04eb8810645f37d"
+    for key in ("bound_mlir_sha256", "preloaded_mlir_sha256",
+                "physical_program_sha256", "issuer_c_sha256", "object_sha256",
+                "compiler_source_closure_sha256"):
+        assert replay[key] == manifest[key]
+    for key in ("elf_sha256", "extension_sha256", "spike_log_sha256"):
+        assert replay["spike_qualification"][key] == manifest["spike_qualification"][key]
