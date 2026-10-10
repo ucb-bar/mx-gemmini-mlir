@@ -1,0 +1,56 @@
+{
+  "generated": [],
+  "generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
+  "rows": [
+    {
+      "data": "kernels/gemv_batched_fp8_m32/data",
+      "data_sha256": "7b72d6d5ef0a69d11aa6df25ee3c191fedee7514bed580e933af216c8aab1398",
+      "driver": "kernels/gemv_batched_fp8_m32/kernel.cpp",
+      "driver_sha256": "393ad997812814bfffdc4f8981a1c53dfa6378c790b644bd279f1fd34ec65361",
+      "precision": "fp8",
+      "shape_mnk": [
+        32,
+        128,
+        2048
+      ]
+    },
+    {
+      "data": "kernels/gemv_batched_fp8_m64/data",
+      "data_sha256": "8705b3f68cd36001125d0cc7c74c79e02b81e78b6c67ffbdf8643c6973cbf4b0",
+      "driver": "kernels/gemv_batched_fp8_m64/kernel.cpp",
+      "driver_sha256": "b7cc19524f6a45fbe5c9100fcdf5aace85a25d08c3edec2fd6dd41841e8db56c",
+      "precision": "fp8",
+      "shape_mnk": [
+        64,
+        128,
+        2048
+      ]
+    },
+    {
+      "data": "kernels/gemv_batched_fp8_m128/data",
+      "data_sha256": "8ccb145e95461b0b25c8f135a221a665724a928d0217cbe0c3b968d7d89db7f2",
+      "driver": "kernels/gemv_batched_fp8_m128/kernel.cpp",
+      "driver_sha256": "6ea00c259362570a03a36c83a897e3c08c02f468371c10264befaac6340ad51c",
+      "precision": "fp8",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ]
+    },
+    {
+      "data": "kernels/gemv_batched_fp4_m128/data",
+      "data_sha256": "e13bd3e79be68ce91592f5d4829c6417fe0ce05281b6df17b16f838391910d64",
+      "driver": "kernels/gemv_batched_fp4_m128/kernel.cpp",
+      "driver_sha256": "a96cc0ce5e77570b80d6b309b5b0a1928ee4462375254b2b8da853cc551e6049",
+      "precision": "fp4",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ]
+    }
+  ],
+  "schema": "mx_gemmini.radiance_batched_gemv_data_materialization.v1",
+  "source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a"
+}

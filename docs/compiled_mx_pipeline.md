@@ -1256,6 +1256,43 @@ python -m tools.qualify_radiance_restream \
   --baseline-index docs/evidence/radiance_restream_1df2c5f/index.json
 ```
 
+### Batched decode GEMV projections
+
+The four `gemv_batched_*` Radiance drivers at `ee22e0b` are matrix
+projections with M=32, 64, or 128, N=128, and K=2048. The first two use
+non-square output tiles. The pinned source generator and `regen_data.sh`
+produce each absent `data` blob, including the verification glue. The
+[fresh-checkout receipt](evidence/radiance_batched_gemv_552a16b/fresh_data_materialization.json)
+checks all four driver and data hashes.
+
+The [qualification index](evidence/radiance_batched_gemv_552a16b/index.json)
+records model2MLIR capture, typed payload binding, physical command lowering,
+standalone Rocket/RoCC ELF emission, and Nicolas Spike comparison. FP8 M32,
+M64, and M128 match **4,096**, **8,192**, and **16,384** source BF16 outputs;
+FP4 M128 matches **16,384**. Each one-tile program uses 16 K waves and loads
+each packed weight byte exactly once: 262,144 bytes for FP8 or 131,072 bytes
+for FP4. The test runs on Nicolas's MX+VPU standalone profile; these four
+matrix programs do not issue VPU operations. The PyTorch capture establishes
+the operation and shape, while the actual quantized input bytes, scales, and
+goldens come from the pinned Radiance generator.
+
+Two runs from the committed compiler revision produce identical captured
+MLIR, physical commands, generated issuer, objects, ELFs, and Spike logs.
+Link logs contain output paths and are excluded from that stable comparison.
+From a clean Radiance checkout at `ee22e0b`, reproduce with:
+
+```sh
+python -m tools.qualify_radiance_batched_gemv_roster \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --source-root "$RADIANCE_KERNELS_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --riscv-root "$RISCV_ROOT" --mx-opt build/tools/mx-gemmini-opt \
+  --radiance-opt "$RADIANCE_OPT" --out-dir /new/mx-batched-gemv \
+  --baseline-index docs/evidence/radiance_batched_gemv_552a16b/index.json
+```
+
+This qualifies the exact batched source kernels and physical traffic on Spike.
+It does not establish mixed MX/Muon scheduling or FPGA cycle counts.
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)

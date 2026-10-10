@@ -139,7 +139,7 @@ def test_restream_source_reloads_weight_for_four_m_tiles(tmp_path):
 
 def test_batched_gemv_sources_bind_nonsquare_tiles_and_goldens(tmp_path):
     root = Path(SOURCE)
-    assert materialize_batched(root)["generated"] == []
+    assert len(materialize_batched(root)["rows"]) == 4
     profile = load_profile(Path(__file__).resolve().parents[1] /
                            "profiles/gemmini-mx-cleanup-266c593/"
                            "MxE4M3Fp4VpuGemminiRocketConfig.json")
