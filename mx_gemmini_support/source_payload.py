@@ -29,7 +29,12 @@ def _sha(data: bytes) -> str:
 
 def manifest_sha256(manifest: dict) -> str:
     """Hash the canonical manifest, excluding any filesystem location."""
-    return _sha(json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode())
+    return _sha(manifest_json(manifest).encode())
+
+
+def manifest_json(manifest: dict) -> str:
+    """Serialize the exact external resources bound to one typed MX site."""
+    return json.dumps(manifest, sort_keys=True, separators=(",", ":"))
 
 
 @dataclass(frozen=True)

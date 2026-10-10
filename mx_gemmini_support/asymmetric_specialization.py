@@ -745,7 +745,7 @@ def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
 
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
-    from .source_payload import manifest_sha256
+    from .source_payload import manifest_json, manifest_sha256
     manifest = _resource_manifest(recipe, resources, header)
     digest = manifest_sha256(manifest)
     context = Context(allow_unregistered=True)
@@ -757,6 +757,7 @@ def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
     contract = next(op for op in module.walk()
                     if _operation_name(op) == "mx_gemmini.contract")
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
+    module.attributes["mx.payload_manifest_json"] = StringAttr(manifest_json(manifest))
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
     output = StringIO()
@@ -777,7 +778,7 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         raise ValueError("asymmetric physical lowering source or target changed")
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
-    from .source_payload import manifest_sha256
+    from .source_payload import manifest_json, manifest_sha256
     resource_manifest = _resource_manifest(recipe, resources, header)
     payload_digest = manifest_sha256(resource_manifest)
     from xdsl.context import Context
@@ -790,6 +791,9 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     module = Parser(context, mlir_text).parse_module()
     contracts = [op for op in module.walk() if _operation_name(op) == "mx_gemmini.contract"]
     if (_text_attr(module, "mx.payload_manifest_sha256") != payload_digest or
+            (_text_attr(module, "mx.payload_manifest_json") is not None and
+             _text_attr(module, "mx.payload_manifest_json") !=
+             manifest_json(resource_manifest)) or
             len(contracts) != 1 or
             _text_attr(contracts[0], "payload_manifest_sha256") != payload_digest or
             _text_attr(contracts[0], "payload_origin") != resource_manifest["origin"]):

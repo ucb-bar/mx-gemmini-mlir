@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
+import re
 import subprocess
 from pathlib import Path
 
@@ -62,6 +65,40 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     if payload_digest is not None and (len(payload_digest) != 64 or
                                        any(c not in "0123456789abcdef" for c in payload_digest)):
         raise ValueError("MX module payload manifest digest is malformed")
+    payload_json = _text_attr(module, "mx.payload_manifest_json")
+    payload_manifest = None
+    if payload_json is not None:
+        try:
+            payload_manifest = json.loads(payload_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("MX payload resource manifest is malformed") from error
+        if (not isinstance(payload_manifest, dict) or
+                json.dumps(payload_manifest, sort_keys=True, separators=(",", ":")) != payload_json or
+                hashlib.sha256(payload_json.encode()).hexdigest() != payload_digest or
+                payload_manifest.get("schema") not in {
+                    "mx_gemmini.source_payload.v1",
+                    "mx_gemmini.asymmetric_resource_manifest.v2"} or
+                payload_manifest.get("profile_sha256") != digest or
+                not isinstance(payload_manifest.get("site_id"), str) or
+                not isinstance(payload_manifest.get("resources"), dict)):
+            raise ValueError("MX payload resource manifest differs from module binding")
+        for resource_name, descriptor in payload_manifest["resources"].items():
+            if (not isinstance(resource_name, str) or
+                    re.fullmatch(r"[a-z][a-z0-9_]*", resource_name) is None or
+                    not isinstance(descriptor, dict) or
+                    descriptor.get("file") != f"{resource_name}.bin" or
+                    not isinstance(descriptor.get("sha256"), str) or
+                    len(descriptor["sha256"]) != 64 or
+                    any(c not in "0123456789abcdef" for c in descriptor["sha256"]) or
+                    not isinstance(descriptor.get("shape"), list) or
+                    not descriptor["shape"] or
+                    any(type(d) is not int or d <= 0 for d in descriptor["shape"]) or
+                    descriptor.get("element_bits") not in {8, 16, 32} or
+                    descriptor.get("bytes") !=
+                    descriptor["element_bits"] // 8 * math.prod(descriptor["shape"]) or
+                    not isinstance(descriptor.get("layout"), str) or
+                    not descriptor["layout"]):
+                raise ValueError(f"MX payload resource {resource_name} descriptor is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
     for op in module.walk():
         name = _operation_name(op)
@@ -86,6 +123,31 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     raise ValueError("MX contract payload differs from selected source bundle")
             elif local_payload is not None or _text_attr(op, "payload_origin") is not None:
                 raise ValueError("MX contract has a payload without module binding")
+            if payload_manifest is not None:
+                if (payload_manifest["site_id"] != _text_attr(op, "site_id") or
+                        payload_manifest.get("origin") != _text_attr(op, "payload_origin")):
+                    raise ValueError("MX contract resource manifest differs from site or origin")
+                resources = payload_manifest["resources"]
+                if not {"activation", "weight", "activation_scales", "weight_scales",
+                        "golden_bf16"} <= set(resources):
+                    raise ValueError("MX contraction is missing source operand resources")
+                for side in ("activation", "weight"):
+                    if (_text_attr(op, f"{side}_projection") == "lut" and
+                            f"{side}_lut" not in resources):
+                        raise ValueError(f"MX {side} LUT is absent from resource manifest")
+                if (payload_manifest["schema"] == "mx_gemmini.source_payload.v1" and
+                        payload_manifest.get("precision") == "FP6"):
+                    expected_luts = {
+                        "activation_lut": "row_pair_lut_6bit",
+                        "weight_lut": "column_pair_lut_6bit",
+                        "output_lut": "output_pair_lut_6bit",
+                    }
+                    if any(name not in resources or
+                           resources[name]["shape"] != [64, 3] or
+                           resources[name]["element_bits"] != 32 or
+                           resources[name]["layout"] != layout
+                           for name, layout in expected_luts.items()):
+                        raise ValueError("MX FP6 per-row LUT banks are incomplete")
             attributes = {name: _text_attr(op, name) for name in (
                 "activation_format", "weight_format", "activation_projection", "weight_projection")}
             if any(value is None for value in attributes.values()):

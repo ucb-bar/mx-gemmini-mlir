@@ -16,7 +16,7 @@ from typing import Mapping
 from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_command
 from .quant_reference import exact_bf16_x2
 from .source_gemm import plan_mx_gemm
-from .source_payload import manifest_sha256
+from .source_payload import manifest_json, manifest_sha256
 from .target_profile import profile_sha256
 from .verify_profile_ir import _bool_attr, _int_attr, _operation_name, _text_attr, verify_ir
 
@@ -114,6 +114,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> list[tuple[
     module = Parser(context, mlir_text).parse_module()
     digest = manifest_sha256(manifest)
     if (_text_attr(module, "mx.payload_manifest_sha256") != digest or
+            (_text_attr(module, "mx.payload_manifest_json") is not None and
+             _text_attr(module, "mx.payload_manifest_json") != manifest_json(manifest)) or
             manifest.get("profile_sha256") != profile_sha256(profile)):
         raise ValueError("physical MX lowering payload or target digest differs")
     ops = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]

@@ -1,6 +1,8 @@
 #include "MxGemmini/MxOps.h"
 #include "MxGemmini/MxDialect.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/Support/SHA256.h"
 using namespace mlir;
 using namespace mlir::mx_gemmini;
 
@@ -61,8 +63,14 @@ LogicalResult ContractOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
   auto module = (*this)->getParentOfType<ModuleOp>();
   auto modulePayload = module->getAttrOfType<StringAttr>("mx.payload_manifest_sha256");
+  auto payloadJson = module->getAttrOfType<StringAttr>("mx.payload_manifest_json");
   auto localPayload = (*this)->getAttrOfType<StringAttr>("payload_manifest_sha256");
   auto origin = (*this)->getAttrOfType<StringAttr>("payload_origin");
+  if (payloadJson && (!modulePayload ||
+      llvm::toHex(llvm::SHA256::hash(
+          llvm::arrayRefFromStringRef(payloadJson.getValue())), true) !=
+          modulePayload.getValue()))
+    return emitOpError("source resource manifest digest differs from module binding");
   if (modulePayload || localPayload || origin) {
     if (!modulePayload || !localPayload || !origin ||
         modulePayload.getValue() != localPayload.getValue() ||

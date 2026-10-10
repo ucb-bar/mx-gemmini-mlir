@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,7 @@ from mx_gemmini_support.bind_payload import bind_payload
 from mx_gemmini_support.source_gemm import read_source_gemm
 from mx_gemmini_support.source_payload import load_bundle, manifest_sha256, write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
-from mx_gemmini_support.verify_profile_ir import verify_ir
+from mx_gemmini_support.verify_profile_ir import _operation_name, verify_ir
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -48,6 +49,44 @@ def test_source_bundle_binds_real_data_to_captured_mlir(
     bound = bind_payload(mlir, profile, manifest)
     assert f'mx.payload_manifest_sha256 = "{manifest_sha256(manifest)}"' in bound
     assert verify_ir(bound, profile)["contracts"] == 1
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin, StringAttr
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+    from xdsl.printer import Printer
+    from io import StringIO
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, bound).parse_module()
+    embedded = json.loads(module.attributes["mx.payload_manifest_json"].data)
+    assert embedded == manifest
+    if precision == "FP6":
+        for name in ("activation_lut", "weight_lut", "output_lut"):
+            assert embedded["resources"][name]["shape"] == [64, 3]
+            assert embedded["resources"][name]["sha256"] == manifest["resources"][name]["sha256"]
+    embedded["resources"]["activation"]["sha256"] = "0" * 64
+    module.attributes["mx.payload_manifest_json"] = StringAttr(
+        json.dumps(embedded, sort_keys=True, separators=(",", ":")))
+    stream = StringIO()
+    Printer(stream=stream).print_op(module)
+    with pytest.raises(ValueError, match="resource manifest differs"):
+        verify_ir(stream.getvalue(), profile)
+    if precision == "FP6":
+        module = Parser(context, bound).parse_module()
+        embedded = json.loads(module.attributes["mx.payload_manifest_json"].data)
+        embedded["resources"].pop("activation_lut")
+        truncated_digest = manifest_sha256(embedded)
+        module.attributes["mx.payload_manifest_sha256"] = StringAttr(truncated_digest)
+        module.attributes["mx.payload_manifest_json"] = StringAttr(
+            json.dumps(embedded, sort_keys=True, separators=(",", ":")))
+        contract = next(op for op in module.walk()
+                        if _operation_name(op) == "mx_gemmini.contract")
+        contract.attributes["payload_manifest_sha256"] = StringAttr(truncated_digest)
+        stream = StringIO()
+        Printer(stream=stream).print_op(module)
+        with pytest.raises(ValueError, match="activation LUT is absent"):
+            verify_ir(stream.getvalue(), profile)
     with pytest.raises(ValueError, match="already payload-bound"):
         bind_payload(bound, profile, manifest)
     target = tmp_path / "bundle" / "activation.bin"

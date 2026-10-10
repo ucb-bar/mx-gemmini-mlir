@@ -17,8 +17,13 @@ the contraction structure. Source numerical data is an **explicit
 specialization**: `source_payload.py` reads the Radiance header's packed A/B
 bytes, E8M0 scales, BF16 golden, and all three 64-line FP6 LUT banks into
 hashed binary resources. `bind_payload.py` attaches their manifest digest and
-origin to the typed `mx_gemmini.contract`. It does not claim that the captured
-PyTorch tensor generated those source bytes.
+origin to the typed `mx_gemmini.contract`. New bound modules also carry the
+canonical manifest in `mx.payload_manifest_json`: resource names, shapes,
+layouts, byte counts, and hashes are inspectable in MLIR. The Python verifier
+checks the manifest structure, per-row FP6 LUT banks, and digest; `mx-opt`
+checks its SHA-256 against the contract binding. Physical lowering compares
+that manifest with the source bundle before using its external byte arrays.
+The capture does not claim that the PyTorch tensor generated those source bytes.
 For an FP8 or FP4 source driver with quantized output, the same binding specializes
 the terminal BF16 readout into typed `mx_gemmini.readout_quantized`, returning
 packed codes and E8M0 scales. The capture receipt identifies this output

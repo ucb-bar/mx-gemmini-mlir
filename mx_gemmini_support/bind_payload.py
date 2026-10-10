@@ -6,7 +6,7 @@ import argparse
 from io import StringIO
 from pathlib import Path
 
-from .source_payload import load_bundle, manifest_sha256
+from .source_payload import load_bundle, manifest_json, manifest_sha256
 from .target_profile import load_profile, profile_sha256
 from .verify_profile_ir import _operation_name, _text_attr, verify_ir
 
@@ -63,6 +63,7 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict) -> str:
     if len(readouts) != 1:
         raise ValueError("source BF16 payload needs a matching MLIR readout")
     module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
+    module.attributes["mx.payload_manifest_json"] = StringAttr(manifest_json(manifest))
     contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
     contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
     if manifest.get("output_format") is not None:
