@@ -141,8 +141,9 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
     return rendered
 
 
-def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str:
-    """Apply one in-place BF16 MULS x2 to each complete MX output tile.
+def _append_tilewise_vpu_muls(mlir_text: str, profile: dict, manifest: dict,
+                              scalar_bf16: int, policy: str) -> str:
+    """Apply one in-place BF16 MULS to each complete MX output tile.
 
     The bound contraction owns the full logical output, while its physical C
     scratchpad tile is reused. The module policy makes this repeated physical
@@ -158,6 +159,13 @@ def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str
     from .source_gemm import plan_mx_gemm
 
     verify_ir(mlir_text, profile)
+    if (not isinstance(scalar_bf16, int) or isinstance(scalar_bf16, bool) or
+            not 0 <= scalar_bf16 <= 0xffff or
+            (scalar_bf16 & 0x7f80) == 0x7f80 or
+            policy not in {"bf16_muls_x2_each_output_tile_v1",
+                           "bf16_muls_scalar_each_output_tile_v1"} or
+            (policy == "bf16_muls_x2_each_output_tile_v1" and scalar_bf16 != 0x4000)):
+        raise ValueError("tilewise VPU MULS needs a finite BF16 scalar and known policy")
     if (manifest.get("output_format", "bf16") != "bf16" or
             manifest.get("precision") not in {"FP8", "FP4"} or
             manifest.get("profile_sha256") != profile_sha256(profile)):
@@ -215,7 +223,7 @@ def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str
         "src1_row": i32attr(row), "src2_row": i32attr(0),
         "dst_row": i32attr(row), "rows": i32attr(plan["c_rows"]),
         "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
-        "immediate_bf16": i32attr(0x4000)})
+        "immediate_bf16": i32attr(scalar_bf16)})
     new_readout = UnregisteredOp.with_name("mx_gemmini.readout_bf16").create(
         operands=list(vpu.results), result_types=[result_type],
         attributes=dict(readout.attributes))
@@ -226,12 +234,29 @@ def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str
     block.erase_op(old_return)
     block.erase_op(readout)
     function.update_function_type()
-    module.attributes["mx.vector_tile_policy"] = StringAttr("bf16_muls_x2_each_output_tile_v1")
+    module.attributes["mx.vector_tile_policy"] = StringAttr(policy)
+    if policy == "bf16_muls_scalar_each_output_tile_v1":
+        module.attributes["mx.vector_scalar_bf16"] = i32attr(scalar_bf16)
     output = StringIO()
     Printer(stream=output).print_op(module)
     rendered = output.getvalue() + "\n"
     verify_ir(rendered, profile)
     return rendered
+
+
+def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str:
+    """Preserve the original exact ×2 source epilogue binding."""
+    return _append_tilewise_vpu_muls(
+        mlir_text, profile, manifest, 0x4000,
+        "bf16_muls_x2_each_output_tile_v1")
+
+
+def append_tilewise_vpu_muls(mlir_text: str, profile: dict, manifest: dict,
+                             scalar_bf16: int) -> str:
+    """Bind a captured finite BF16 scalar MULS across output tiles."""
+    return _append_tilewise_vpu_muls(
+        mlir_text, profile, manifest, scalar_bf16,
+        "bf16_muls_scalar_each_output_tile_v1")
 
 
 def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) -> str:

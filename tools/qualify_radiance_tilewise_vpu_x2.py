@@ -1,8 +1,8 @@
-"""Capture and compile a four-tile Radiance FP8 GEMM with a BF16 VPU x2 epilogue.
+"""Capture and compile a four-tile Radiance FP8 GEMM with a BF16 VPU MULS epilogue.
 
-The PyTorch trace must contain exactly matmul followed by multiplication by
-two. Source operand bytes and the BF16 matrix golden come from the selected
-Radiance header; the compiler derives the x2 reference and emits all RoCC
+The PyTorch trace must contain exactly matmul followed by scalar multiplication.
+Source operand bytes and the BF16 matrix golden come from the selected
+Radiance header; the compiler derives the BF16 reference and emits all RoCC
 commands, including one in-place VPU command for each output tile.
 """
 
@@ -12,10 +12,12 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import struct
 import subprocess
 import sys
 
-from mx_gemmini_support.bind_payload import append_tilewise_vpu_x2, bind_payload
+from mx_gemmini_support.bind_payload import (append_tilewise_vpu_muls,
+                                            append_tilewise_vpu_x2, bind_payload)
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.handoff import render_handoff, validate_handoff
 from mx_gemmini_support.physical_program import lower_bound_source
@@ -40,7 +42,8 @@ def _digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _check_trace(result, *, quant_format: str = "mxfp8") -> None:
+def _check_trace(result, *, quant_format: str = "mxfp8",
+                 scalar: float = 2.0) -> None:
     from m2m.coverage import opaque_report
 
     trace = result.capture_trace or {}
@@ -55,11 +58,11 @@ def _check_trace(result, *, quant_format: str = "mxfp8") -> None:
             [arg.get("node_id") for arg in calls[0]["args"]] != [
                 node["id"] for node in nodes[:2]] or
             calls[1].get("args") != [
-                {"node_id": calls[0]["id"], "value_id": calls[0]["id"] + ":v0"}, 2.0] or
+                {"node_id": calls[0]["id"], "value_id": calls[0]["id"] + ":v0"}, scalar] or
             "linalg.matmul" not in result.mlir_text or
             'prov.aten = "aten.mul.Tensor"' not in result.mlir_text or
-            "2.000000e+00" not in result.mlir_text):
-        raise ValueError("model2MLIR trace does not prove matmul followed by x2")
+            f"{scalar:.6e}" not in result.mlir_text):
+        raise ValueError("model2MLIR trace does not prove matmul followed by selected scalar")
     sites = result.quantization_manifest.get("sites", [])
     if (len(sites) != 1 or sites[0].get("site_id") != "functional:matmul" or
             sites[0].get("status") != "quantized" or
@@ -73,7 +76,13 @@ def main() -> None:
     for name in ("model2mlir-root", "mxq-root", "source-root", "rtl-root",
                  "riscv-root", "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--scalar-bits", type=lambda value: int(value, 0),
+                        default=0x4000, help="finite BF16 scalar bits (default: 0x4000, 2.0)")
     args = parser.parse_args()
+    scalar_bits = args.scalar_bits
+    if not 0 <= scalar_bits <= 0xffff or (scalar_bits & 0x7f80) == 0x7f80:
+        parser.error("--scalar-bits must encode a finite BF16 value")
+    scalar = struct.unpack("<f", (scalar_bits << 16).to_bytes(4, "little"))[0]
     model2mlir, mxq_root, source, rtl, riscv, mx_opt, out = (
         args.model2mlir_root.resolve(), args.mxq_root.resolve(),
         args.source_root.resolve(), args.rtl_root.resolve(),
@@ -106,21 +115,21 @@ def main() -> None:
         parser.error("frontend or MX quantization package resolved to another checkout: "
                      f"{m2m.__file__}, {mxq.__file__}")
 
-    class GemmX2(torch.nn.Module):
+    class GemmScalar(torch.nn.Module):
         def forward(self, lhs, rhs):
-            return torch.matmul(lhs, rhs) * 2.0
+            return torch.matmul(lhs, rhs) * scalar
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
         lhs = torch.randn((256, 256), dtype=torch.float32)
         rhs = torch.randn((256, 256), dtype=torch.float32)
     result = m2m.convert(
-        GemmX2().eval(), (lhs, rhs),
+        GemmScalar().eval(), (lhs, rhs),
         quantization=ExternalQuantizationConfig("mx_gemmini", CONTRACT, POLICY),
         backend="fx_importer", capture_trace=True)
     if not result.ok:
         raise RuntimeError(f"model2MLIR capture failed: {result.diagnostics}")
-    _check_trace(result)
+    _check_trace(result, scalar=scalar)
     validate_handoff(result, CONTRACT.read_bytes(), POLICY.read_bytes())
     handoff = render_handoff(result, CONTRACT.read_bytes(), POLICY.read_bytes())
     selected = bind_handoff(handoff, profile)
@@ -136,7 +145,9 @@ def main() -> None:
                             profile_sha256=profile_sha256(profile))
     _, resources = load_bundle(out / "bundle")
     payload_bound = bind_payload(selected, profile, manifest)
-    bound = append_tilewise_vpu_x2(payload_bound, profile, manifest)
+    bound = (append_tilewise_vpu_x2(payload_bound, profile, manifest)
+             if scalar_bits == 0x4000 else
+             append_tilewise_vpu_muls(payload_bound, profile, manifest, scalar_bits))
     (out / "payload_bound.mlir").write_text(payload_bound)
     (out / "tilewise_bound.mlir").write_text(bound)
     program = lower_bound_source(bound, profile, manifest, resources)
@@ -155,10 +166,15 @@ def main() -> None:
     compiled = json.loads((out / "build/artifact_manifest.json").read_text())
     if (compiled["status"] != "derived_vpu_golden_matched_on_pinned_spike" or
             compiled["compared_bf16_outputs"] != 65536 or
-            compiled["golden_basis"] != "derived_bf16_x2"):
+            compiled["golden_basis"] != (
+                "derived_bf16_x2" if scalar_bits == 0x4000 else "derived_bf16_muls")):
         raise RuntimeError("tilewise VPU full-output Spike qualification failed")
-    index = {"schema": "mx_gemmini.radiance_tilewise_vpu_x2_spike.v1",
-             "status": "source_derived_vpu_x2_matched_on_pinned_spike",
+    index = {"schema": ("mx_gemmini.radiance_tilewise_vpu_x2_spike.v1"
+                         if scalar_bits == 0x4000 else
+                         "mx_gemmini.radiance_tilewise_vpu_scalar_spike.v1"),
+             "status": ("source_derived_vpu_x2_matched_on_pinned_spike"
+                        if scalar_bits == 0x4000 else
+                        "source_derived_vpu_scalar_matched_on_pinned_spike"),
              "source_revision": _git_revision(source),
              "source_driver_sha256": _sha(driver),
              "source_header_sha256": _sha(kernel.data_header),
@@ -182,8 +198,11 @@ def main() -> None:
                  "build/artifact_manifest.json")},
              "elf_sha256": compiled["elf_sha256"],
              "extension_sha256": compiled["extension_sha256"]}
+    if scalar_bits != 0x4000:
+        index["scalar_bf16_bits"] = scalar_bits
+        index["scalar_value"] = scalar
     (out / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
-    print("four-tile FP8 MX+VPU: 65,536/65,536 BF16 outputs matched pinned Spike")
+    print(f"four-tile FP8 MX+VPU MULS {scalar}: 65,536/65,536 BF16 outputs matched pinned Spike")
 
 
 if __name__ == "__main__":

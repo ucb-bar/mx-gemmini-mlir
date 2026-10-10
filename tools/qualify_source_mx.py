@@ -11,7 +11,8 @@ import sys
 from tempfile import TemporaryDirectory
 
 from mx_gemmini_support.bind_payload import (
-    append_tilewise_vpu_x2, append_vpu_spad_requant_x2, bind_payload,
+    append_tilewise_vpu_muls, append_tilewise_vpu_x2,
+    append_vpu_spad_requant_x2, bind_payload,
     select_bf16_output_layout)
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
@@ -36,6 +37,8 @@ def main() -> None:
                         help="compose BF16 matrix, VPU x2, and tiled resident FP8 requant")
     parser.add_argument("--tilewise-vpu-x2", action="store_true",
                         help="apply in-place BF16 VPU x2 before each complete output tile readout")
+    parser.add_argument("--tilewise-vpu-muls-bf16-bits", type=lambda value: int(value, 0),
+                        help="apply in-place BF16 VPU MULS with this finite scalar immediate per output tile")
     parser.add_argument("--bf16-output-layout", choices=("row_major_bf16",
                                                           "output_tile_major_bf16"),
                         help="select the physical memory layout of final BF16 readout")
@@ -50,7 +53,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.physical_mode == "rtl_alternating" and not args.experimental_spike_extension_root:
         parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
-    if args.tilewise_vpu_x2 and args.vpu_spad_requant_x2:
+    if sum((args.tilewise_vpu_x2, args.tilewise_vpu_muls_bf16_bits is not None,
+            args.vpu_spad_requant_x2)) > 1:
         parser.error("select one MX VPU epilogue")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.out_dir.exists():
@@ -106,6 +110,9 @@ def main() -> None:
         bound = append_vpu_spad_requant_x2(bound, profile, manifest)
     if args.tilewise_vpu_x2:
         bound = append_tilewise_vpu_x2(bound, profile, manifest)
+    if args.tilewise_vpu_muls_bf16_bits is not None:
+        bound = append_tilewise_vpu_muls(
+            bound, profile, manifest, args.tilewise_vpu_muls_bf16_bits)
     if args.bf16_output_layout:
         bound = select_bf16_output_layout(
             bound, profile, manifest, layout=args.bf16_output_layout)

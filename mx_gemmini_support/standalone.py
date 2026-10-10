@@ -296,7 +296,9 @@ int main(void) {{
                "files_sha256": {path.name: _sha(path.read_bytes())
                                 for path in sorted(directory.iterdir()) if path.is_file()}}
     if program.derived_expected_bf16 is not None:
-        receipt["golden_basis"] = "derived_bf16_x2"
+        receipt["golden_basis"] = (
+            "derived_bf16_x2" if program.derived_vpu_scalar_bf16 is None
+            else "derived_bf16_muls")
     if quantized:
         receipt["golden_basis"] = (
             "nicolas_vpu_x2_spad_requant_from_source_bf16" if program.tiled_quant_readout else

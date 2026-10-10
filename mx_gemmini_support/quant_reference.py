@@ -41,6 +41,52 @@ def exact_bf16_x2(source: bytes) -> bytes:
     return bytes(output)
 
 
+def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
+    """Multiply BF16 values by a finite BF16 scalar with Nicolas VPU RNE.
+
+    Each BF16 product is exactly representable in binary64. Rounding that
+    product once to BF16 matches the independent vpu_ref.h MULS convention.
+    """
+    if len(source) % 2:
+        raise ValueError("BF16 MULS reference requires complete 16-bit values")
+    if (not isinstance(scalar_bf16, int) or isinstance(scalar_bf16, bool) or
+            not 0 <= scalar_bf16 <= 0xffff or
+            (scalar_bf16 & 0x7f80) == 0x7f80):
+        raise ValueError("BF16 MULS scalar must be finite BF16 bits")
+
+    def as_float(word: int) -> float:
+        return struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
+
+    scalar = as_float(scalar_bf16)
+    output = bytearray()
+    for (word,) in struct.iter_unpack("<H", source):
+        value = as_float(word)
+        if not math.isfinite(value):
+            raise ValueError("BF16 MULS reference needs finite source values")
+        product = value * scalar
+        bits = struct.unpack("<Q", struct.pack("<d", product))[0]
+        sign = (bits >> 48) & 0x8000
+        exponent = (bits >> 52) & 0x7ff
+        if exponent == 0:
+            rounded = sign
+        else:
+            e = exponent - 1023
+            mantissa = (1 << 52) | (bits & ((1 << 52) - 1))
+            shift = 45 if e >= -126 else -81 - e
+            if shift >= 54:
+                n = 0
+            else:
+                n = mantissa >> shift
+                remainder = mantissa & ((1 << shift) - 1)
+                half = 1 << (shift - 1)
+                if remainder > half or (remainder == half and (n & 1)):
+                    n += 1
+            magnitude = (((e + 127) << 7) + n - 128 if e >= -126 else n)
+            rounded = sign | min(magnitude, 0x7f80)
+        output.extend(rounded.to_bytes(2, "little"))
+    return bytes(output)
+
+
 def _e4m3_rne(value: float) -> int:
     sign = 0x80 if math.copysign(1.0, value) < 0 else 0
     magnitude = abs(value)
