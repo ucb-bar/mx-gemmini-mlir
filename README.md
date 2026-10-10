@@ -34,6 +34,11 @@ weight tile once per K wave.
 The [re-stream baseline](docs/compiled_mx_pipeline.md#four-pass-re-stream-comparison)
 matches its committed source golden and shows the expected fourfold weight
 traffic across four M tiles.
+The [four-tile MX+VPU case](docs/compiled_mx_pipeline.md#four-tile-fp8-gemm-with-tilewise-vpu-epilogue)
+captures `matmul * 2.0` through model2MLIR and applies one compiler-issued
+in-place VPU command before each tile readout. All 65,536 BF16 outputs match
+the source-derived ×2 reference on pinned Spike; this selected epilogue is not
+yet a general graph lowering.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

@@ -1870,6 +1870,53 @@ This is a numerical check against an experimental Spike correction. The
 16-wave scale path still needs RTL or FPGA execution before it can be marked
 hardware-qualified.
 
+## Four-tile FP8 GEMM with tilewise VPU epilogue
+
+The [qualifier](../tools/qualify_radiance_tilewise_vpu_x2.py) captures
+`torch.matmul(lhs, rhs) * 2.0` with model2MLIR `e9ded36` and the external MX
+quantization adapter. It requires a complete original graph containing one
+matmul followed by multiplication by the constant 2.0, one quantized FP8 MX
+site, and no opaque operation. The contraction's packed A/B codes, E8M0
+scales, and BF16 reference come from the pinned Radiance
+`mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp` driver and its generated
+header at `80f84ca`. The original source driver tests GEMM alone. The ×2
+epilogue is taken from the captured PyTorch graph; its expected BF16 values
+are derived from the source GEMM golden using exact BF16 multiplication.
+
+The handoff currently exports the matmul site only. The checked payload binder
+adds a typed `mx_gemmini.vpu_execute` with the explicit module policy
+`bf16_muls_x2_each_output_tile_v1`. The physical lowerer applies it to the
+reused C scratchpad tile after each tile's final K wave and before its BF16
+readout. It rejects missing or changed policy, scratchpad row, operation, or
+immediate. This is a narrow, source-bound composition rule for the selected
+DIM16 MX+VPU profile; a general graph-level epilogue lowering and scratchpad
+lifetime planner are still needed.
+
+The [two-run receipt](evidence/radiance_tilewise_vpu_x2_266c593/index.json)
+and [regression test](../tests/test_radiance_tilewise_vpu_x2_evidence.py)
+record four output tiles, four compiler-issued VPU commands, and
+**65,536 / 65,536 matching BF16 values** on Nicolas's pinned Spike. The
+[bound MLIR](evidence/radiance_tilewise_vpu_x2_266c593/tilewise_bound.mlir),
+[physical commands](evidence/radiance_tilewise_vpu_x2_266c593/build/physical_program.json.gz),
+and [Spike log](evidence/radiance_tilewise_vpu_x2_266c593/build/spike.log)
+are archived. The two runs reproduce all source, MLIR, command, object, ELF,
+extension, and numerical hashes. The raw artifact manifests differ only in
+the link-log hash because the linker warning embeds the output directory.
+
+Reproduce from a checkout with the pinned Radiance header materialized by
+`gen_mxgemm_data.py fp8 256 256 256` and its `mx_golden` helper built:
+
+```sh
+python -m tools.qualify_radiance_tilewise_vpu_x2 \
+  --model2mlir-root /path/to/model2MLIR-e9ded36 \
+  --mxq-root /path/to/microscaling-quant-b4af543 \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /tmp/radiance-tilewise-vpu-x2
+```
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
@@ -1877,7 +1924,7 @@ hardware-qualified.
    fixtures because the corresponding headers are absent upstream; check
    future committed headers against them. Qualify remaining configuration
    families and source shapes without receipts, and extend multi-output
-   tiling beyond the qualified FP8 BF16 shape. For GQA, reconcile the
+   vector tiling beyond the qualified FP8 BF16 ×2 epilogue. For GQA, reconcile the
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
