@@ -45,6 +45,12 @@ builds FP4×FP4 mode 0 beside direct E4M3 mode 8. The dialect exposes
 `mx_gemmini.vpu_execute` and `mx_gemmini.spad_requant`; the physical command
 lowerer checks profile gates, row bounds, and the RTL's funct 33/34 bitfields
 before emitting a Rocket RoCC C issuer.
+The [compiler-issued VPU evidence](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations)
+now covers the 12 base opcodes on Nicolas's pinned Spike model; the two
+fused opcodes have a separate [source-bound qualification](compiled_mx_pipeline.md#compiler-issued-fused-expsub-and-expsum).
+Together they cover all 14 VPU opcodes in the selected RTL. Broadcast,
+same-bank, and memory-hazard variants remain source-oracle checks until
+the compiler issues those schedules as well.
 `spad_requant` may bind its E8M0 output destination as
 `scale_buffer = "name"` with `scale_dram_address = 0`. The issuer then takes `name` as a
 runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it
@@ -95,7 +101,9 @@ python -m mx_gemmini_support.verify_profile_ir \
 For an independently authored physical VPU/SPAD_REQUANT MLIR command module,
 `python -m mx_gemmini_support.vector_lowering --mlir ... --profile ...
 --rtl-root ... --mx-opt build/tools/mx-gemmini-opt --out ...` emits a bounded
-Rocket C issuer. The source-bound current model2MLIR test suite passed against
-model2MLIR `7485a829c0195af0ec42820837d609e62e466564`. This is a frontend
-and command encoding check. RTL simulator parity and cycle qualification for
-the latest profiles are still required.
+Rocket C issuer. The original source-bound frontend test suite passed against
+model2MLIR `7485a829c0195af0ec42820837d609e62e466564`; the current VPU
+op qualification above uses model2MLIR
+`e9ded36eb85abf2d9097ac4dc11457c825853388` and executes the emitted
+programs on Spike. RTL simulator parity and cycle qualification for the
+latest profiles are still required.

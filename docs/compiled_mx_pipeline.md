@@ -437,9 +437,46 @@ python -m tools.qualify_nicolas_vpu_ops_source \
   --out-dir /tmp/nicolas-vpu-source
 ```
 
-This source executable is the full VPU oracle. The compiler-issued softmax
-and matrix/VPU programs below cover selected operations; compiler-generated
-execution of the other VPU cases remains to be qualified.
+This source executable is the full VPU oracle. Compiler-issued coverage now
+includes all 14 opcodes in the base and fused sections below. The additional
+source cases for broadcast, same-bank access, chaining, and memory hazards
+still require compiler-issued qualifications.
+
+### Compiler-issued base VPU operations
+
+The [base VPU receipt](evidence/nicolas_vpu_elementwise_compiled_266c593/index.json)
+captures 12 BF16 PyTorch operations through model2MLIR `e9ded36`: add,
+subtract, multiply, maximum, scalar add and multiply, exp, reciprocal,
+reciprocal square root, row maximum, row absolute maximum, and row sum. A
+checked binding selects one typed `mx_gemmini.vpu_execute` per capture on
+Nicolas's two-unit MX+VPU profile. The compiler emits the load/store
+configuration, source transfers, funct-33 VPU command, and output transfers.
+The C driver reproduces the exact `vpu_ops.c` input sequence, including the
+unary special values, and computes its expected output with Nicolas's
+`vpu_ref.h`. No accelerator command is handwritten in that driver.
+
+All **4,992 / 4,992 BF16 outputs** across those 12 operations match on the
+pinned Spike extension. Each elementwise operation checks 512 values; each
+reduction checks 128 replicated-lane values. Two fresh runs with identical
+compiler sources reproduced all 12 frontend captures, bound modules,
+issuers, ELFs, and logs byte for byte
+([reproducibility](evidence/nicolas_vpu_elementwise_compiled_266c593/reproducibility.json)).
+The archived [ADD binding](evidence/nicolas_vpu_elementwise_compiled_266c593/add/bound.mlir)
+and [RSUM binding](evidence/nicolas_vpu_elementwise_compiled_266c593/rsum/bound.mlir)
+show elementwise and reduction examples. Reproduce with:
+
+```sh
+python -m tools.qualify_nicolas_vpu_elementwise \
+  --model2mlir-root /path/to/model2MLIR \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/nicolas-vpu-base
+```
+
+For reductions, the source VPU reduces four scratchpad rows and all eight
+lanes, then replicates the scalar across eight lanes. PyTorch identifies the
+logical reduction while the binding records this physical layout and the
+source BF16 rounding rule. These are Spike results, not RTL or FPGA results.
 
 ### Compiler-issued fused EXPSUB and EXPSUM
 
@@ -466,7 +503,8 @@ python -m tools.qualify_nicolas_vpu_fused \
 
 PyTorch identifies the operation and shapes; the source VPU reference defines
 the rounded BF16 results. These checks qualify the two fused opcodes on
-Nicolas's Spike model, not RTL/FPGA execution or every VPU opcode.
+Nicolas's Spike model. The base-op checks above cover the other 12 opcodes;
+the source ordering variants and RTL/FPGA behavior remain separate gates.
 
 ### Compiler-issued BF16 VPU softmax
 

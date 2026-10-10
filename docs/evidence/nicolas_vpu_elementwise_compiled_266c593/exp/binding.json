@@ -1,0 +1,26 @@
+{
+  "bound_mlir_sha256": "512031f3a18deccc5755aeeb6d4e82731d8f3a213e31f393603c9dd1b98ff3b4",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "360405273be245c4f62743de43bb4acafecbc8ebe73e983e1bd0bafd495a41e1",
+  "manifest_sha256": "0c6aed56fa30042070f7459fb155e69b4223d5461435b6f0ed0ea33e290ac0da",
+  "policy": {
+    "immediate_bf16": 0,
+    "kind": "exp",
+    "reduction_length": 1,
+    "result_shape": [
+      64,
+      8
+    ],
+    "rounding": "Nicolas vpu_ref.h BF16; reduction result replicated across 8 lanes",
+    "source2_array": null,
+    "source_array": "x",
+    "source_shape": [
+      64,
+      8
+    ]
+  },
+  "policy_sha256": "53a79f7012bfe4a9d159928d8b4702cf7252e9d3d3d624607853c6686a24e1f1",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.nicolas_elementwise_vpu_binding.v1",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569"
+}
