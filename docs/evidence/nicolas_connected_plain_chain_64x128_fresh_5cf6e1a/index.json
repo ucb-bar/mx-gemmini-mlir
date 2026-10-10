@@ -1,0 +1,30 @@
+{
+  "baseline_compiler_revision": "d512fc2491ab67ed2b822c39d7897fb0d2976bcf",
+  "compiler_revision": "5cf6e1a1953fdcebe5d7d1819d0a045ece4b8a63",
+  "files_sha256": {
+    "artifact_manifest.json": "eb9f13c85637eeb9f2402b0365facf5aa7fb8749686ee8866738f6a09e890fbe",
+    "spike.log": "26b34fb65890d0e0e0a9d1f408542f120546d8a9db721361ce939def271a5093"
+  },
+  "schema": "mx_gemmini.nicolas_connected_plain_chain_64x128_fresh_reproduction.v1",
+  "stable_fields_equal_to_baseline": [
+    "source_sha256",
+    "header_sha256",
+    "profile_sha256",
+    "bound_mlir_sha256",
+    "source_revision",
+    "rtl_revision",
+    "gemmini_extension_revision",
+    "elf_sha256",
+    "extension_sha256",
+    "spike_log_sha256",
+    "spike_exit_code",
+    "compared_fp8_codes",
+    "compared_e8m0_scales",
+    "compared_c1_fp8_codes",
+    "compared_c1_e8m0_scales",
+    "files_sha256",
+    "object_sha256",
+    "frontend_mlir_sha256"
+  ],
+  "status": "source_prefix_connected_chain_matched_on_pinned_spike"
+}

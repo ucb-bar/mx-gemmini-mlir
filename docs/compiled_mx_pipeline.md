@@ -751,6 +751,9 @@ runs match **8,192 FP8 codes and 256 E8M0 scales at each site**. The archive
 includes the typed MLIR, physical C issuer, source bytes, ELF, hashes, and
 full-output Spike result. This qualifies a source row-prefix specialization;
 it does not assert that Nicolas checked in a separate 64×128×128 C driver.
+A [fresh checkout of the published compiler](evidence/nicolas_connected_plain_chain_64x128_fresh_5cf6e1a/index.json)
+replayed the archived frontend capture and reproduced the generated program,
+ELF, and complete Spike result from commit `5cf6e1a`.
 
 ```sh
 python -m tools.capture_nicolas_chain \

@@ -26,6 +26,7 @@ CONNECTED = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_266c593"
 FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0"
 PAIR_PLAN = ROOT / "docs/evidence/nicolas_resident_pair_plan_b1b5882"
 ROW_PREFIX = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2"
+ROW_PREFIX_FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_fresh_5cf6e1a"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -102,6 +103,24 @@ def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:
     readouts = [command.rs1.buffer for command in commands
                 if isinstance(command, Command) and command.funct == 3]
     assert readouts == ["c1_tiled_observed"] * 32 + ["c2_tiled"] * 32
+
+
+def test_fresh_published_checkout_replays_rectangular_spike_program() -> None:
+    index = json.loads((ROW_PREFIX_FRESH / "index.json").read_text())
+    actual = json.loads((ROW_PREFIX_FRESH / "artifact_manifest.json").read_text())
+    baseline = json.loads((ROW_PREFIX / "artifact_manifest.json").read_text())
+    assert index["schema"] == (
+        "mx_gemmini.nicolas_connected_plain_chain_64x128_fresh_reproduction.v1")
+    assert actual["compiler_revision"] == index["compiler_revision"] == (
+        "5cf6e1a1953fdcebe5d7d1819d0a045ece4b8a63")
+    assert index["baseline_compiler_revision"] == baseline["compiler_revision"]
+    assert actual["status"] == index["status"] == (
+        "source_prefix_connected_chain_matched_on_pinned_spike")
+    assert actual["spike_exit_code"] == 0
+    for key in index["stable_fields_equal_to_baseline"]:
+        assert actual[key] == baseline[key], key
+    for name, digest in index["files_sha256"].items():
+        assert _sha((ROW_PREFIX_FRESH / name).read_bytes()) == digest
 
 
 def test_archived_typed_mm2_and_spike_result_match_source() -> None:
