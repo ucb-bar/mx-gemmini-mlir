@@ -1497,16 +1497,53 @@ also remains part of the fixture. The local Cyclotron Muon model implements
 and interpolation. The proxy is therefore useful for the MX consumer test,
 but RTL P-code parity needs a separate SFU check or device trace.
 
+#### Executed Muon-to-MX PV cross-check on Cyclotron
+
+The [Cyclotron cross-check](evidence/radiance_gqa_cyclotron_pv_80f84ca/index.json)
+builds the **unmodified** GQA source kernel and a copied diagnostic version
+against the archived header. Both execute the complete eight-head, two-block
+kernel with Cyclotron's MX functional co-model enabled. The diagnostic stores
+the first P tile and its scales after Muon requantization, then the first BF16
+PV tile after MX compute. It leaves the source math and MX commands intact;
+the final 32,768-value BF16 O buffer is byte identical between the two runs.
+The [probe patch](evidence/radiance_gqa_cyclotron_pv_80f84ca/probe.patch)
+and both built RV32 ELFs are archived with the receipt.
+
+Muon's tiled scratchpad P yields exactly the same **4,096 E4M3 codes** and
+**128 E8M0 scales** as the compiler's source-derived PV operand after
+untilling. Cyclotron's MX PV result matches **4,096 / 4,096 BF16 values** of
+the compiler's Nicolas-Spike PV golden, byte for byte. The archived
+[P scratch dump](evidence/radiance_gqa_cyclotron_pv_80f84ca/p_scratch.bin.gz),
+[PV tile](evidence/radiance_gqa_cyclotron_pv_80f84ca/pv_bf16.bin), and
+[unmodified final O](evidence/radiance_gqa_cyclotron_pv_80f84ca/baseline_o.bin.gz)
+support the comparisons. A second isolated build produced the same receipt.
+
+```sh
+python -m tools.qualify_radiance_gqa_cyclotron_pv \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --radiance-lib-root "$RADIANCE_BUILT_LIB_ROOT" \
+  --cyclotron-root "$CYCLOTRON_ROOT" --llvm-muon "$LLVM_MUON_ROOT" \
+  --riscv-root "$RISCV_ROOT" --out-dir /new/mx-gqa-cyclotron-pv \
+  --baseline-index docs/evidence/radiance_gqa_cyclotron_pv_80f84ca/index.json
+```
+
+This qualifies one actual Muon-to-MX cutpoint in Cyclotron's functional
+models. It does not establish RTL FPEX parity, FPGA behavior, or final
+attention parity with the generator's `O_gold`. The compiler still needs a
+mixed Muon/MX lowering and runtime buffer handoff to emit the whole attention
+kernel itself. The first-block Q/K fixture also retains its explicit
+headroom correction for Nicolas's reduced-precision MX path.
+
 ```sh
 python -m tools.diagnose_radiance_gqa_pv_handoff \
   --prepared-dir /new/mx-gqa-generated --source-root "$RADIANCE_KERNELS_ROOT" \
   --out-json /new/gqa-pv-handoff.json
 ```
 
-To qualify the actual PV and final output, the compiler needs runtime P codes
+To compile the actual PV and final output, the compiler needs runtime P codes
 and scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
-source-faithful numerical oracle for that handoff. This kernel's softmax runs
-on Muon; a separate MX VPU softmax test cannot stand in for it.
+source-faithful numerical oracle for the full output. This kernel's softmax
+runs on Muon; a separate MX VPU softmax test cannot stand in for it.
 
 ## Isolated weight-LUT Spike correction across all legal modes
 

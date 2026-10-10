@@ -1,0 +1,23 @@
+--- kernel.cpp
++++ kernel.cpp.probe
+@@ -151,0 +152,11 @@
++            // Qualification only: snapshot the first MX input after Muon requantization.
++            if (h == 0 && j == 0 && tid == 0) {
++                const volatile __shared uint32_t *p =
++                    reinterpret_cast<const volatile __shared uint32_t *>(P_BYTE[cur]);
++                volatile uint32_t *p_out = reinterpret_cast<volatile uint32_t *>(P_GMEM);
++                for (uint32_t i = 0; i < FA_SQ * FA_BK / 4; ++i) p_out[i] = p[i];
++                const volatile __shared uint32_t *scales =
++                    reinterpret_cast<const volatile __shared uint32_t *>(SCALE_SMEM);
++                volatile uint32_t *s_out = reinterpret_cast<volatile uint32_t *>(PS_GMEM);
++                for (uint32_t i = 0; i < FA_GKB * FA_SQ; ++i) s_out[i] = scales[i];
++            }
+@@ -166,0 +178,8 @@
++            // Qualification only: snapshot the first BF16 PV result before accumulation.
++            if (h == 0 && j == 0) {
++                const volatile __shared uint32_t *pv =
++                    reinterpret_cast<const volatile __shared uint32_t *>(PVOUT_SMEM);
++                volatile uint32_t *pv_out = reinterpret_cast<volatile uint32_t *>(0x40060000);
++                for (uint32_t i = tid; i < FA_SQ * FA_D / 2; i += thr) pv_out[i] = pv[i];
++                mu_barrier(7, wpb);
++            }

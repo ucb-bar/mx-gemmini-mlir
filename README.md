@@ -50,8 +50,11 @@ remain separate qualification gates.
 The [first PV proxy](docs/compiled_mx_pipeline.md#first-pv-contraction-with-a-muon-p-proxy)
 is captured from PyTorch through model2MLIR and lowered from typed MX MLIR.
 It matches all 4,096 BF16 outputs on Spike using source-derived V and P encoded
-with a Torch-exp proxy for Muon's exponential unit. Actual Muon P bytes and
-shared-memory execution still need target qualification.
+with a Torch-exp proxy for Muon's exponential unit. An
+[executed Cyclotron cross-check](docs/compiled_mx_pipeline.md#executed-muon-to-mx-pv-cross-check-on-cyclotron)
+now shows the source Muon kernel produces the same 4,096 P codes and 128
+scales, and its first MX PV tile matches all 4,096 Spike BF16 outputs. The
+full mixed compiler path and RTL FPEX parity remain open.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike
