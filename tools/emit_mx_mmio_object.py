@@ -87,9 +87,11 @@ def main() -> None:
     header.write_text(
         "#ifndef MX_ISSUE_H\n#define MX_ISSUE_H\n\n"
         "#include <stdint.h>\n"
+        "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n"
         "/* Buffer order and sizes are in object_manifest.json. */\n"
         f"void mx_issue({', '.join(f'const void *{name}' for name in names)}, "
-        "uintptr_t mx_control_base);\n\n#endif\n")
+        "uintptr_t mx_control_base);\n\n"
+        "#ifdef __cplusplus\n}\n#endif\n\n#endif\n")
     physical = args.out_dir / "physical_program.json"
     physical.write_text(json.dumps(program.receipt(), indent=2, sort_keys=True) + "\n")
     obj = args.out_dir / "mx_issue.o"

@@ -1,15 +1,20 @@
 {
   "files_sha256": {
     "disassembly.txt.gz": "1fc8f3b3b0e63b0b54ab5b121a9abe686ec079a4d7f3cdab815d79fc84f72e12",
+    "link_probe/link_manifest.json": "bd7c51cec3ab60923ef84c23da0ad93f613d4aca7df1d1d5e3dc55b03c4183c2",
+    "link_probe/link_manifest_repro.json": "bd7c51cec3ab60923ef84c23da0ad93f613d4aca7df1d1d5e3dc55b03c4183c2",
+    "link_probe/link_probe.cpp": "90d9d6da8a9733e49a314156fbb4a30367854f57ee734230f38c211b3bc83e8c",
+    "link_probe/link_probe.elf": "7ffd272b17ee659d6e48e9e10f10cd921d6187274f48d2d6b50324073412e532",
+    "link_probe/link_probe.o": "8f182bba8f8fbb9202b8f4918786cce27dbb4a3f8ea07fee1c7ef58d51c208fd",
     "mx_issue.c.gz": "173287f20cd12c8848633ad5bf9d7b590ef835e6daf19fff7fa6f8914cb08455",
-    "mx_issue.h": "13adb5c83be05883e230c6650f2fcf9a5dcecb9a4b349de6f35825bf7e7db050",
+    "mx_issue.h": "339ad1355eb3a6cc03acdeed0d32f3a709fa4041cd9d2b56bd86973e7bd26d07",
     "mx_issue.o": "4b52e3df497da687eb6178c4d3023b6009d5dc3de49adfc0aa7e54a0532189b9",
-    "object_manifest.json": "51b264c61af1ac7a843af8f1b39c53d3707190515b5560936c0e98c6c0ca40de",
-    "object_manifest_repro.json": "51b264c61af1ac7a843af8f1b39c53d3707190515b5560936c0e98c6c0ca40de",
+    "object_manifest.json": "a1d2edbd89f8b2d870bededc9e7a0babbd92d09fd54d099d7398ca5e3cb74494",
+    "object_manifest_repro.json": "a1d2edbd89f8b2d870bededc9e7a0babbd92d09fd54d099d7398ca5e3cb74494",
     "physical_program.json.gz": "bd8a0f46ab3f53cedf848b3e52ae8559ac69aca97949ef27cd3eaf16fc077f16"
   },
   "schema": "mx_gemmini.fp8_vpu_muon_mmio_object_archive.v1",
-  "scope": "Muon RV32 MX MMIO issuer from the same checked FP8+VPU physical program; shared-memory gateway instructions verified in disassembly. No Radiance VPU SoC image binding, linked kernel, MMIO numerical execution, RTL, or FPGA parity.",
+  "scope": "Muon RV32 MX MMIO issuer from the checked FP8+VPU physical program; gateway instructions verified in disassembly and C++ ABI linked with the Radiance Muon runtime. No Radiance VPU SoC image binding, data-bound mixed kernel, MMIO numerical execution, RTL, or FPGA parity.",
   "source_bundle": "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle",
   "source_mlir": "docs/evidence/bf16_row_major_readout_266c593/fp8_tilewise_vpu/bound.mlir",
   "status": "structural_object_only"

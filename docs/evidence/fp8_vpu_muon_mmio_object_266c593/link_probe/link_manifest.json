@@ -1,0 +1,24 @@
+{
+  "defined_symbols_checked": [
+    "_start",
+    "main",
+    "mx_issue"
+  ],
+  "gateway_control_base": 540672,
+  "issuer_header_sha256": "339ad1355eb3a6cc03acdeed0d32f3a709fa4041cd9d2b56bd86973e7bd26d07",
+  "link_probe_emitter_sha256": "8961de14e5307289a9e06996eeb9c446f97c12b0e924c064ba16d06adf00d140",
+  "linked_elf_sha256": "7ffd272b17ee659d6e48e9e10f10cd921d6187274f48d2d6b50324073412e532",
+  "muon_clangxx_sha256": "b7c2078d5543e94b4c2e27b92d0ff1b784984af2fc26e7c395d49c65622d3a67",
+  "muon_linker_script_sha256": "ccd89e149603a11557e4014c9840e852678f1708b9448849006efb02669ec59b",
+  "muon_runtime_sha256": "b6a9028656269125c21f24ffa420cb825045094599b9337d9809d0eab8013554",
+  "muon_tohost_sha256": "fb7e1ca77a8b12962740ded8ed2e5c78a4bbc5b41ec3a4e66609d1f16c8fc8d6",
+  "mx_buffer_arguments": 6,
+  "object_manifest_sha256": "a1d2edbd89f8b2d870bededc9e7a0babbd92d09fd54d099d7398ca5e3cb74494",
+  "object_sha256": "4b52e3df497da687eb6178c4d3023b6009d5dc3de49adfc0aa7e54a0532189b9",
+  "probe_object_sha256": "8f182bba8f8fbb9202b8f4918786cce27dbb4a3f8ea07fee1c7ef58d51c208fd",
+  "probe_source_sha256": "90d9d6da8a9733e49a314156fbb4a30367854f57ee734230f38c211b3bc83e8c",
+  "qualification": "structural_link_only",
+  "schema": "mx_gemmini.muon_mmio_link_probe.v1",
+  "status": "runtime_linked_unexecuted",
+  "undefined_symbols": []
+}

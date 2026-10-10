@@ -2081,7 +2081,8 @@ identical [issuer C](evidence/fp8_vpu_muon_mmio_object_266c593/mx_issue.c.gz),
 and [manifest](evidence/fp8_vpu_muon_mmio_object_266c593/object_manifest.json).
 The [audit](../tests/test_muon_mmio_object_evidence.py) checks all 21 fence and
 busy-wait pairs, four VPU commands, the row-major output ABI, and the
-archive hashes. Reproduce the object with:
+archive hashes. The generated header also gives `mx_issue` C linkage when
+included from a C++ Muon kernel. Reproduce the object with:
 
 ```sh
 python -m tools.emit_mx_mmio_object \
@@ -2094,10 +2095,25 @@ python -m tools.emit_mx_mmio_object \
   --out-dir /tmp/fp8-vpu-muon-mmio
 ```
 
-The object has structural compiler and ABI evidence only. No admitted
-Radiance MX+VPU SoC profile, linked Muon kernel, or MMIO numerical execution
-receipt exists for it yet; the pinned Spike results above qualify the Rocket
-path separately.
+The [Muon link probe](../tools/link_mx_muon_probe.py) compiles a C++ caller and
+links the issuer with Radiance's Muon runtime and linker script. Two builds
+produced an identical [RV32 ELF](evidence/fp8_vpu_muon_mmio_object_266c593/link_probe/link_probe.elf)
+and [link receipt](evidence/fp8_vpu_muon_mmio_object_266c593/link_probe/link_manifest.json).
+The probe guards its call with a zero-initialized volatile flag and has null
+operands; it is for ABI and link validation only. Reproduce it after building
+the MMIO object:
+
+```sh
+python -m tools.link_mx_muon_probe \
+  --object-dir /tmp/fp8-vpu-muon-mmio \
+  --radiance-root /path/to/radiance-kernels-80f84ca \
+  --muon-clangxx /path/to/llvm-muon/bin/clang++ \
+  --out-dir /tmp/fp8-vpu-muon-link-probe
+```
+
+No admitted Radiance MX+VPU SoC profile, data-bound mixed kernel, or MMIO
+numerical execution receipt exists for this path yet. The pinned Spike results
+above qualify the Rocket path separately.
 
 ### Executed generated FP4 source tiles on Cyclotron
 

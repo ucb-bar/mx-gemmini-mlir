@@ -98,8 +98,9 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert receipt["shared_gateway_loads"] >= physical_fences
     assert "sw.shared" in source and "lw.shared" in source
     assert "sw.global" not in source and "lw.global" not in source
-    assert "uintptr_t mx_control_base" in (
-        EVIDENCE / "mx_issue.h").read_text()
+    header = (EVIDENCE / "mx_issue.h").read_text()
+    assert "uintptr_t mx_control_base" in header
+    assert '#ifdef __cplusplus\nextern "C" {' in header
 
     with pytest.raises(ValueError, match="completion fence"):
         issuer_commands(replace(program, steps=program.steps[:-1]), "muon_mmio")
@@ -126,3 +127,32 @@ def test_gateway_header_must_match_radiance_register_protocol(tmp_path):
                                                 "GEMMINI_BUSY_OFFSET 0x24"))
     with pytest.raises(ValueError, match="GEMMINI_BUSY_OFFSET"):
         _verify_gateway_header(header)
+
+
+def test_cpp_probe_links_issuer_and_muon_runtime_without_executing_mx():
+    linked = EVIDENCE / "link_probe"
+    receipt = json.loads((linked / "link_manifest.json").read_text())
+    assert receipt == json.loads((linked / "link_manifest_repro.json").read_text())
+    assert receipt["schema"] == "mx_gemmini.muon_mmio_link_probe.v1"
+    assert receipt["status"] == "runtime_linked_unexecuted"
+    assert receipt["qualification"] == "structural_link_only"
+    assert receipt["link_probe_emitter_sha256"] == _sha((
+        ROOT / "tools/link_mx_muon_probe.py").read_bytes())
+    assert receipt["object_manifest_sha256"] == _sha((
+        EVIDENCE / "object_manifest.json").read_bytes())
+    assert receipt["object_sha256"] == _sha((EVIDENCE / "mx_issue.o").read_bytes())
+    assert receipt["issuer_header_sha256"] == _sha((EVIDENCE / "mx_issue.h").read_bytes())
+    assert receipt["gateway_control_base"] == 0x00084000
+    assert receipt["mx_buffer_arguments"] == 6
+    assert receipt["defined_symbols_checked"] == ["_start", "main", "mx_issue"]
+    assert receipt["undefined_symbols"] == []
+    source = (linked / "link_probe.cpp").read_bytes()
+    assert receipt["probe_source_sha256"] == _sha(source)
+    assert b"volatile uint32_t mx_probe_enable = 0;" in source
+    assert b"if (lane == 0 && block == 0 && mx_probe_enable)" in source
+    assert b'extern "C" int main()' in source
+    assert receipt["probe_object_sha256"] == _sha((linked / "link_probe.o").read_bytes())
+    elf = (linked / "link_probe.elf").read_bytes()
+    assert elf[:4] == b"\x7fELF" and elf[4] == 1
+    assert int.from_bytes(elf[18:20], "little") == 243
+    assert receipt["linked_elf_sha256"] == _sha(elf)
