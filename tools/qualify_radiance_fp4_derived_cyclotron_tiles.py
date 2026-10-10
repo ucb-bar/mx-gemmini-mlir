@@ -84,8 +84,6 @@ def _tile_header(resources: dict[str, bytes], tile_m: int, tile_n: int) -> tuple
                            tile_n * 128, 128)
     golden_bytes = _slice_rows(resources["golden_bf16"], 256 * 2,
                                tile_m * 128, 128, tile_n * 128 * 2, 128 * 2)
-    golden_words = [int.from_bytes(golden_bytes[i:i + 2], "little")
-                    for i in range(0, len(golden_bytes), 2)]
     header = ("// Derived from the pinned Radiance 256x256 FP4 generator output.\n"
               "#include <stdint.h>\n"
               "#define MATMUL_M 128\n#define MATMUL_N 128\n#define MATMUL_K 256\n"
@@ -95,7 +93,6 @@ def _tile_header(resources: dict[str, bytes], tile_m: int, tile_n: int) -> tuple
         ("B_in", "uint8_t", 256, 64, b),
         ("A_scales_row", "uint8_t", 8, 128, a_scales),
         ("B_scales_col", "uint8_t", 8, 128, b_scales),
-        ("C_out_bf16", "uint16_t", 128, 128, golden_words),
     ):
         header += _array(name, ctype, rows, columns, values)
     return header, golden_bytes

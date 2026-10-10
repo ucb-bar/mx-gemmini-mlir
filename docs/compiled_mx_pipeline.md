@@ -1997,7 +1997,8 @@ python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
 The [source-tile qualifier](../tools/qualify_radiance_fp4_derived_cyclotron_tiles.py)
 builds four Muon/Radiance 128×128 drivers from the pinned Radiance FP4
 single-tile template. It slices the generated 256×256 fixture's packed A/B
-bytes, E8M0 scales, and BF16 golden for each output tile. On the pinned
+bytes and E8M0 scales for each output tile; the BF16 golden stays outside
+the executable. On the pinned
 Cyclotron functional MX model with the separately qualified accumulator
 overwrite correction, each tile matches **16,384 / 16,384 BF16 outputs**.
 Assembled in matrix order, the four executed outputs match all **65,536**

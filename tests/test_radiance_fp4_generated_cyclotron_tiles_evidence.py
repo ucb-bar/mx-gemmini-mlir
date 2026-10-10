@@ -75,6 +75,7 @@ def test_four_executed_fp4_source_tiles_and_raw_driver_limit():
         build_log = _archived(f"{name}.build.log")
         sim_log = _archived(f"{name}.cyclotron.log")
         assert _archived(f"kernels/gemm_mxgemmini/{name}.h") == header.encode()
+        assert b"C_out_bf16" not in header.encode()
         assert case["header_sha256"] == _sha(header.encode())
         assert case["driver_sha256"] == _sha(driver)
         assert f'#include "{name}.h"'.encode() in driver
