@@ -1,4 +1,4 @@
-"""Lower a typed MM1→BF16 readout→VPU→resident requant→MM2 graph.
+"""Lower a typed MM1→BF16 readout→scalar VPU chain→requant→MM2 graph.
 
 This is the qualified DIM16 E4M3 64³ mode from Nicolas's MX+VPU build.
 The graph and runtime input bytes, rather than a source C fixture, determine
@@ -35,7 +35,7 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
                                  resources: dict[str, bytes], *,
                                  buffers: dict[str, str],
                                  outputs: dict[str, str]) -> ConnectedVpuPair:
-    """Compile one in-place BF16 scalar VPU and resident FP8 matrix pair.
+    """Compile an in-place BF16 scalar VPU chain and resident FP8 matrix pair.
 
     The typed module binds the six input byte streams by digest. The caller
     supplies distinct runtime C symbols for inputs, diagnostic readouts, and
@@ -62,9 +62,10 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
             "b1_weight": 4096, "b1_scales": 128}.items()):
         raise ValueError("connected MX VPU pair MM1 input sizes differ from 64³")
     report = verify_ir(mlir_text, profile)
-    if (report["contracts"], report["vpu_commands"], report["spad_requants"],
-            report["resident_contracts"]) != (1, 1, 1, 1):
-        raise ValueError("connected MX VPU pair needs MM1, VPU, requant, and MM2")
+    vpu_count = report["vpu_commands"]
+    if (report["contracts"] != 1 or not 1 <= vpu_count <= 16 or
+            report["spad_requants"] != 1 or report["resident_contracts"] != 1):
+        raise ValueError("connected MX VPU pair needs MM1, 1..16 VPU ops, requant, and MM2")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
     context.load_dialect(Func)
@@ -79,10 +80,13 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
     ops = list(function.body.block.ops)
     if [_operation_name(op) for op in ops] != [
             "mx_gemmini.contract", "mx_gemmini.readout_bf16",
-            "mx_gemmini.vpu_execute", "mx_gemmini.spad_requant",
-            "mx_gemmini.resident_contract", "func.return"]:
+            *["mx_gemmini.vpu_execute"] * vpu_count,
+            "mx_gemmini.spad_requant", "mx_gemmini.resident_contract",
+            "func.return"]:
         raise ValueError("connected MX VPU pair operation order differs")
-    mm1, readout, vpu, requant, mm2, ret = ops
+    mm1, readout = ops[:2]
+    vpus = ops[2:2 + vpu_count]
+    requant, mm2, ret = ops[2 + vpu_count:]
     n = _int_attr(mm2, "n")
     if n not in (32, 64):
         raise ValueError("connected MX VPU pair needs a qualified MM2 width")
@@ -97,21 +101,24 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
             (f"tensor<64x{n}xi8>", f"tensor<2x{n}xi8>") or
             tuple(str(result.type) for result in mm1.results) != ("tensor<64x64xbf16>",) or
             tuple(str(result.type) for result in readout.results) != ("tensor<64x64xbf16>",) or
-            tuple(str(result.type) for result in vpu.results) != ("tensor<64x64xbf16>",) or
+            any(tuple(str(result.type) for result in vpu.results) !=
+                ("tensor<64x64xbf16>",) for vpu in vpus) or
             tuple(str(result.type) for result in requant.results) != quantized or
             tuple(str(result.type) for result in mm2.results) != final or
             list(mm1.operands) != args[:4] or
             list(readout.operands) != list(mm1.results) or
-            list(vpu.operands) != list(readout.results) or
-            list(requant.operands) != list(vpu.results) or
+            list(vpus[0].operands) != list(readout.results) or
+            any(list(right.operands) != list(left.results)
+                for left, right in zip(vpus, vpus[1:])) or
+            list(requant.operands) != list(vpus[-1].results) or
             list(mm2.operands) != [*requant.results, *args[4:]] or
             not isinstance(ret, ReturnOp) or
             list(ret.operands) != list(mm2.results)):
         raise ValueError("connected MX VPU pair SSA tensor edges differ")
     first_site = _text_attr(mm1, "site_id")
     second_site = _text_attr(mm2, "site_id")
-    if ([_text_attr(op, "site_id") for op in (readout, vpu, requant)] !=
-            [first_site] * 3 or first_site == second_site or
+    if ([_text_attr(op, "site_id") for op in (readout, *vpus, requant)] !=
+            [first_site] * (vpu_count + 2) or first_site == second_site or
             any(_text_attr(mm1, name) != "fp8_e4m3" for name in
                 ("activation_format", "weight_format")) or
             any(_text_attr(mm1, name) != "direct" for name in
@@ -131,8 +138,6 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
             attrs["weight_scales_buffer"] != buffers["b2_scales"] or
             attrs["output_scales_buffer"] != outputs["c2_scales"] or
             _text_attr(requant, "scale_buffer") != outputs["c1_scales"] or
-            _int_attr(vpu, "src1_row") != 0x1000 or
-            _int_attr(vpu, "dst_row") != 0x1000 or
             _int_attr(requant, "source_row") != 0x1000 or
             _int_attr(requant, "destination_row") != 128 or
             _int_attr(requant, "m") != 64 or _int_attr(requant, "n") != 64 or
@@ -140,17 +145,20 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
             not _bool_attr(requant, "tiled") or not _bool_attr(requant, "resident") or
             _int_attr(requant, "scale_dram_address") != 0):
         raise ValueError("connected MX VPU pair placement or ABI differs")
-    if (_text_attr(vpu, "kind") not in {"muls", "adds"} or
-            _int_attr(vpu, "src2_row") != 0 or
-            _int_attr(vpu, "rows") != 512 or
-            _int_attr(vpu, "reduction_length") != 1 or
-            _bool_attr(vpu, "broadcast") or
-            _int_attr(vpu, "second_dst_row") is not None):
-        raise ValueError("connected MX VPU pair needs an in-place scalar operation")
-    vector = vpu_command(
+    if any(_text_attr(vpu, "kind") not in {"muls", "adds"} or
+           _int_attr(vpu, "src1_row") != 0x1000 or
+           _int_attr(vpu, "src2_row") != 0 or
+           _int_attr(vpu, "dst_row") != 0x1000 or
+           _int_attr(vpu, "rows") != 512 or
+           _int_attr(vpu, "reduction_length") != 1 or
+           _bool_attr(vpu, "broadcast") or
+           _int_attr(vpu, "second_dst_row") is not None for vpu in vpus):
+        raise ValueError("connected MX VPU pair needs in-place scalar operations")
+    vectors = tuple(vpu_command(
         profile, kind=_text_attr(vpu, "kind"), src1_row=0x1000, src2_row=0,
         dst_row=0x1000, rows=512, reduction_length=1,
         broadcast=False, immediate_bf16=_int_attr(vpu, "immediate_bf16"))
+        for vpu in vpus)
     quant = spad_requant_command(
         profile, source_row=0x1000, destination_row=128,
         m=64, n=64, output_format="fp8_e4m3", tiled=True,
@@ -161,7 +169,8 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
                      "c1_bf16_observed": outputs["c1_bf16_observed"]}
     first = emit_verified_first_matrix_commands(
         profile, resources, buffers=first_buffers)
+    vector_steps = tuple(step for vector in vectors for step in (vector, Fence()))
     return ConnectedVpuPair(
         first_site, second_site, n,
-        (*first, Fence(), vector, Fence(), quant, Fence(),
+        (*first, Fence(), *vector_steps, quant, Fence(),
          *lower_resident_contract(profile, attrs)))

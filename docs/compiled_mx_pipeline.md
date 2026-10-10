@@ -3415,6 +3415,34 @@ cases with:
   --baseline-index docs/evidence/nicolas_requantizer_wrapper_266c593/index.json
 ```
 
+## Ordered scalar VPU operations between connected MX matrices
+
+The connected 64³→64×32×64 FP8 lowerer now accepts 1–16 SSA-linked,
+in-place BF16 scalar VPU operations before resident requantization and MM2.
+Each operation is issued with a completion fence before the next operation
+uses its scratchpad result. The public `tools.compile_object` command selects
+this graph family and emits a data-free RV64 object.
+
+The [two-operation Spike receipt](evidence/nicolas_connected_scalar_chain_266c593/index.json)
+uses Nicolas's source-qualified MULS ×2 followed by an explicitly derived
+ADDS +0. The independent BF16 reference is unchanged by the second operation.
+On Nicolas's pinned Spike, the compiler-issued object matches all **4,096 C1
+BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 2,048 C2 FP8 codes, and 64 C2
+scales**. This proves the second VPU command and resident handoff execute in
+order for the identity case. It does not qualify arbitrary nonzero scalar
+chains or an unchanged source kernel containing two VPU operations.
+
+Reproduce the object build, native dialect verification, link, and Spike run
+from the checked-in Nicolas source capture with:
+
+```sh
+python -m tools.replay_connected_scalar_chain \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /tmp/mx-connected-scalar-chain
+```
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

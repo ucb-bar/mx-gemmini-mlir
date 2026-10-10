@@ -12,6 +12,7 @@ import subprocess
 from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.narrow_vpu_chain import render_narrow_vpu_chain
 from mx_gemmini_support.narrow_vpu_source import derive_narrow_vpu_resources
+from mx_gemmini_support.quant_reference import bf16_add_scalar
 from mx_gemmini_support.resident_pair_graph import INPUTS
 from mx_gemmini_support.resident_vpu_graph import OUTPUTS, lower_connected_fp8_vpu_pair
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -67,6 +68,28 @@ int main(void) {{
 '''
 
 
+def _append_zero_adds(bound: str) -> str:
+    """Derive a second ordered VPU command whose BF16 source oracle is unchanged."""
+    marker = '    %vpu = "mx_gemmini.vpu_execute"'
+    if bound.count(marker) != 1 or bound.count('"mx_gemmini.spad_requant"(%vpu)') != 1:
+        raise ValueError("narrow source graph lacks its single checked VPU edge")
+    start = bound.index(marker)
+    end = bound.index('    %c1, %c1s =', start)
+    original = bound[start:end]
+    if (original.count('"mx_gemmini.vpu_execute"(%bf16)') != 1 or
+            original.count('kind = "muls"') != 1 or
+            original.count('immediate_bf16 = 16384') != 1):
+        raise ValueError("narrow source VPU differs from the qualified BF16 ×2")
+    second = (original.replace('%vpu =', '%vpu2 =', 1)
+              .replace('"mx_gemmini.vpu_execute"(%bf16)',
+                       '"mx_gemmini.vpu_execute"(%vpu)', 1)
+              .replace('kind = "muls"', 'kind = "adds"', 1)
+              .replace('immediate_bf16 = 16384', 'immediate_bf16 = 0', 1))
+    return (bound[:end] + second + bound[end:]).replace(
+        '"mx_gemmini.spad_requant"(%vpu)',
+        '"mx_gemmini.spad_requant"(%vpu2)', 1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("capture-dir", "bound-dir", "object-dir", "rtl-root",
@@ -74,6 +97,8 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--profile", type=Path, default=PROFILE)
     parser.add_argument("--mx-opt", type=Path)
+    parser.add_argument("--derived-zero-adds-mlir", type=Path,
+                        help="check an SSA-linked ADDS +0 after the source MULS ×2")
     args = parser.parse_args()
     for name in ("capture_dir", "bound_dir", "object_dir", "rtl_root",
                  "riscv_root", "out_dir"):
@@ -120,8 +145,15 @@ def main() -> None:
             any((args.bound_dir / f"{name}.bin").read_bytes() != data
                 for name, data in resources.items())):
         raise ValueError("narrow MX/VPU bound resources differ from source")
+    bound_for_object = bound_path
+    if args.derived_zero_adds_mlir is not None:
+        bound_for_object = args.derived_zero_adds_mlir.resolve()
+        if (bound_for_object.read_text() != _append_zero_adds(bound) or
+                bf16_add_scalar(resources["c1_bf16"], 0) != resources["c1_bf16"]):
+            raise ValueError("derived ADDS +0 graph or BF16 oracle differs from source")
     pair = lower_connected_fp8_vpu_pair(
-        bound, profile, resources, buffers={name: name for name in INPUTS},
+        bound_for_object.read_text(), profile, resources,
+        buffers={name: name for name in INPUTS},
         outputs={name: name for name in OUTPUTS})
     object_manifest_path = args.object_dir / "object_manifest.json"
     object_manifest = json.loads(object_manifest_path.read_text())
@@ -135,7 +167,7 @@ def main() -> None:
             "mx_gemmini.resident_vpu_linkable_object.v1" or
             object_manifest.get("shape_mnk") != [64, 32, 64] or
             object_manifest.get("profile_sha256") != profile_sha256(profile) or
-            object_manifest.get("bound_mlir_sha256") != _sha(bound_path) or
+            object_manifest.get("bound_mlir_sha256") != _sha(bound_for_object) or
             object_manifest.get("object_sha256") != _sha(obj) or
             object_manifest.get("issuer_c_sha256") != hashlib.sha256(
                 emit_c(_readout_commands(pair, {name: name for name in OUTPUTS}),
@@ -152,7 +184,7 @@ def main() -> None:
         raise ValueError("narrow MX/VPU object differs from checked typed source")
     args.out_dir.mkdir(parents=True)
     if args.mx_opt is not None:
-        _run([str(args.mx_opt.resolve()), str(bound_path), "-o", "/dev/null"],
+        _run([str(args.mx_opt.resolve()), str(bound_for_object), "-o", "/dev/null"],
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
     build = args.out_dir / "build"
     build.mkdir()
@@ -206,10 +238,14 @@ def main() -> None:
     passed = result.returncode == 0 and MARKER in result.stdout
     receipt = {
         "schema": "mx_gemmini.nicolas_narrow_vpu_pair_spike.v1",
-        "status": ("source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike" if passed else
+        "status": (("derived_zero_adds_vpu_chain_matched_on_pinned_spike" if
+                    args.derived_zero_adds_mlir else
+                    "source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike") if passed else
                    "narrow_mx_vpu_pair_failed_on_pinned_spike"),
         "first_shape_mnk": [64, 64, 64], "second_shape_mnk": [64, 32, 64],
-        "reference_kind": "unchanged_nicolas_vpu_chain_left_output_block",
+        "reference_kind": ("source_chain_plus_bf16_adds_zero_identity" if
+                           args.derived_zero_adds_mlir else
+                           "unchanged_nicolas_vpu_chain_left_output_block"),
         "compared_c1_bf16_values": 4096,
         "compared_c1_fp8_codes": 4096, "compared_c1_e8m0_scales": 128,
         "compared_c2_fp8_codes": 2048, "compared_c2_e8m0_scales": 64,
@@ -217,7 +253,7 @@ def main() -> None:
         "binding_manifest_sha256": _sha(binding_path),
         "source_sha256": _sha(source), "first_source_sha256": _sha(first_source),
         "header_sha256": _sha(header),
-        "bound_mlir_sha256": _sha(bound_path),
+        "bound_mlir_sha256": _sha(bound_for_object),
         "object_manifest_sha256": _sha(object_manifest_path),
         "object_sha256": _sha(obj), "elf_sha256": _sha(elf),
         "spike_log_sha256": _sha(log), "spike_exit_code": result.returncode,

@@ -60,7 +60,7 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
         return "source_contract", report
     if runtime and counts == (1, 1, 0, 0):
         return "resident_pair", report
-    if runtime and counts == (1, 1, 1, 1):
+    if runtime and counts[0:2] == (1, 1) and 1 <= counts[2] <= 16 and counts[3] == 1:
         return "resident_vpu_pair", report
     raise ValueError(f"MX object has no qualified lowering for graph counts {counts}")
 

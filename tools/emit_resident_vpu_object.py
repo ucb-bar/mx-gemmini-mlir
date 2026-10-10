@@ -1,4 +1,4 @@
-"""Compile a typed MX MM1→VPU→resident MM2 graph to a data-free RV64 object."""
+"""Compile a typed MX MM1→scalar VPU chain→resident MM2 to an RV64 object."""
 
 from __future__ import annotations
 

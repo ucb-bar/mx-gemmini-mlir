@@ -12,7 +12,9 @@ from mx_gemmini_support.resident_pair_graph import input_digest
 from mx_gemmini_support.resident_vpu_graph import (INPUTS, OUTPUTS,
                                                    lower_connected_fp8_vpu_pair)
 from mx_gemmini_support.target_profile import load_profile
+from tools.compile_object import classify
 from tools.emit_resident_vpu_object import _buffer_abi, _readout_commands
+from tools.qualify_narrow_vpu_object import _append_zero_adds
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +39,11 @@ def _fixture():
                   lambda match: match[1] + digest + match[2],
                   MLIR.read_text(), count=1)
     return mlir, load_profile(PROFILE), resources, buffers, outputs
+
+
+def _two_scalar_vpus(mlir: str) -> str:
+    """Keep Nicolas's source graph, with a second SSA-linked BF16 scalar op."""
+    return _append_zero_adds(mlir)
 
 
 def test_typed_vpu_pair_emits_complete_data_free_abi():
@@ -94,3 +101,35 @@ def test_vpu_graph_rejects_wrong_edge_payload_and_vpu_mode():
     with pytest.raises(ValueError, match="placement or ABI differs"):
         lower(mlir.replace('scale_buffer = "c1_scales"',
                            'scale_buffer = "b2_scales"'))
+
+
+def test_connected_scalar_chain_preserves_ssa_order_and_object_dispatch():
+    mlir, profile, resources, buffers, outputs = _fixture()
+    chained = _two_scalar_vpus(mlir)
+    family, report = classify(chained, profile)
+    assert family == "resident_vpu_pair"
+    assert report["vpu_commands"] == 2
+    one = lower_connected_fp8_vpu_pair(
+        mlir, profile, resources, buffers=buffers, outputs=outputs)
+    pair = lower_connected_fp8_vpu_pair(
+        chained, profile, resources, buffers=buffers, outputs=outputs)
+    assert len(pair.commands) == len(one.commands) + 2
+    assert [step.funct for step in pair.commands
+            if isinstance(step, Command) and step.funct in (33, 34)] == [33, 33, 34]
+    vectors = [step for step in pair.commands
+               if isinstance(step, Command) and step.funct == 33]
+    assert [(command.rs2.immediate & 0xf, command.rs2.immediate >> 16)
+            for command in vectors] == [(4, 0x4000), (3, 0)]
+    assert _buffer_abi(_readout_commands(pair, outputs), buffers, outputs) == (
+        _buffer_abi(_readout_commands(one, outputs), buffers, outputs))
+
+    bypass = chained.replace('"mx_gemmini.vpu_execute"(%vpu)',
+                             '"mx_gemmini.vpu_execute"(%bf16)', 1)
+    with pytest.raises(ValueError, match="SSA tensor edges"):
+        lower_connected_fp8_vpu_pair(
+            bypass, profile, resources, buffers=buffers, outputs=outputs)
+    displaced = chained.replace('dst_row = 4096 : i32, rows = 512 : i32',
+                                'dst_row = 3584 : i32, rows = 512 : i32', 1)
+    with pytest.raises(ValueError, match="in-place scalar operations"):
+        lower_connected_fp8_vpu_pair(
+            displaced, profile, resources, buffers=buffers, outputs=outputs)

@@ -79,6 +79,9 @@ The source-bound compiler has also qualified a full
 MM1→VPU×2→SPAD_REQUANT→resident MM2 command chain on Nicolas's Spike.
 Its checked frontend and target inputs now form one SSA-connected typed chain
 for the qualified 64³ E4M3 source case; general scheduling remains pending.
+The same physical path accepts an ordered 1–16 scalar VPU chain. A
+[two-operation source-derived identity probe](compiled_mx_pipeline.md#ordered-scalar-vpu-operations-between-connected-mx-matrices)
+checks the added ADDS command and resident MM2 handoff on pinned Spike.
 
 A separate source-bound BF16 matrix lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU

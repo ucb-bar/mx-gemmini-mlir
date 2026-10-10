@@ -62,6 +62,7 @@ jobs:
             tests/test_radiance_fp6_runtime_source_object_evidence.py \
             tests/test_compile_object.py \
             tests/test_compile_object_evidence.py \
+            tests/test_resident_vpu_graph.py \
             tests/test_host_requant_object_evidence.py \
             tests/test_current_radiance_roster_evidence.py \
             tests/test_bf16_row_major_readout.py \
