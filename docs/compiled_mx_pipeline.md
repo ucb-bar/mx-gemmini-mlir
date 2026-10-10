@@ -2899,6 +2899,41 @@ Its other 41 profiles are Gemmini fragments without a Chipyard wrapper. The
 catalog keeps the three all-asymmetric 36-mode matrices as separate
 mode-class probes and retains the stock Spike weight-LUT failure explicitly.
 
+### The Nicolas requantizer wrapper's three output modes
+
+The [requantizer-wrapper archive](evidence/nicolas_requantizer_wrapper_266c593/index.json)
+exercises `TestRequantizerLutMxGemminiRocketConfig` beyond its BF16 matrix
+receipt. Its FP8 and FP4 cases use the matching Radiance requant drivers,
+captured through model2MLIR `e9ded36`, then bind their original handoff to
+this exact profile. The compiler emits a quantized MX readout, physical RoCC
+commands, and an RV64 ELF. Nicolas's stock Spike reports **4,096 FP8 codes
+and 128 E8M0 scales**, then **2,048 packed FP4 bytes and 128 scales**, all
+matching the profile-specific hardware oracle. The source headers use a
+different output convention; the archive records those differences rather
+than claiming byte parity with the Radiance header. The separate host
+compatibility path does match that header but does not exercise the hardware
+requantizer.
+
+The FP6 case takes the checked-in 128×128×2048 **fullout** driver and
+explicitly derives an E3M2 quantized terminal readout. It checks **8,192
+packed index bytes and 512 scales** against Nicolas's Spike oracle. This is
+direct evidence for the selected profile's FP6 LUT and requantized output
+path, but it is not a captured FP6 Radiance requant source driver. The pinned
+Spike's FP6 scale-selector issue still requires the serial scheduling mode.
+
+Given a current `tools.recapture_radiance_roster` result, reproduce the three
+cases with:
+
+```sh
+"$MODEL2MLIR_PYTHON" -m tools.qualify_nicolas_requantizer_wrapper \
+  --capture-root /path/to/current-roster-capture \
+  --model2mlir-root "$MODEL2MLIR_ROOT" \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --out-dir /new/mx-requantizer-wrapper \
+  --baseline-index docs/evidence/nicolas_requantizer_wrapper_266c593/index.json
+```
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

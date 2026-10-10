@@ -137,6 +137,8 @@ def build_report() -> dict:
         for kind in ("elementwise", "fused", "variants", "ordering")]
     wrapper_path = "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json"
     wrappers = _read(wrapper_path)
+    requant_path = "docs/evidence/nicolas_requantizer_wrapper_266c593/index.json"
+    requant = _read(requant_path)
     direct_receipts: dict[str, list[dict]] = {}
     for dim in (8, 16, 32):
         name = ("MxAllAsymGemminiRocketConfig" if dim == 16 else
@@ -219,6 +221,23 @@ def build_report() -> dict:
             "source_selection": row["source_selection"],
             "runs": 2, "compared_bf16_outputs_per_run": 4096,
         })
+    requant_profile = load_profile(
+        PROFILE_DIR / "TestRequantizerLutMxGemminiRocketConfig.json")
+    if (requant["profile_name"] != requant_profile["name"] or
+            requant["profile_sha256"] != profile_sha256(requant_profile) or
+            requant["rtl_revision"] != candidate["rtl_revision"] or
+            {row["precision"] for row in requant["rows"]} != {"fp8", "fp4", "fp6"} or
+            any(row["profile_sha256"] != requant["profile_sha256"] or
+                row["status"] != "nicolas_oracle_matched_on_pinned_spike" or
+                row["fp6_quantized_readout_derived_from_fullout"] !=
+                (row["precision"] == "fp6") for row in requant["rows"])):
+        raise ValueError("Nicolas requantizer wrapper evidence differs from selected profile")
+    direct_receipts.setdefault(requant_profile["name"], []).append({
+        "kind": "hardware_requantized_output_spike", "evidence": requant_path,
+        "output_precisions": [row["precision"] for row in requant["rows"]],
+        "cases": len(requant["rows"]),
+        "fp6_terminal_readout_derived_from_fullout": True,
+    })
     if vpu["profile_name"] != "MxE4M3Fp4VpuGemminiRocketConfig":
         raise ValueError("VPU roster profile changed")
     vpu_profile = load_profile(PROFILE_DIR / f"{vpu['profile_name']}.json")
@@ -267,6 +286,7 @@ def build_report() -> dict:
         "sources_sha256": {path: _digest(path) for path in sorted(
             set(stock_paths.values()) | {candidate_path, selected_path, vpu_path,
                                          dedicated_path, plain_path, wrapper_path,
+                                         requant_path,
                                          *vector_paths})},
         "profile_count": len(profiles),
         "chipyard_wrapper_count": 40,

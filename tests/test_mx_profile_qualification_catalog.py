@@ -87,3 +87,17 @@ def test_eight_other_wrappers_are_bound_to_their_source_modes() -> None:
             "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json")
         assert (receipt["runs"], receipt["compared_bf16_outputs_per_run"]) == (
             2, 4096)
+
+
+def test_requantizer_wrapper_has_separate_hardware_output_evidence() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    selected = next(row for row in profiles if
+                    row["name"] == "TestRequantizerLutMxGemminiRocketConfig")
+    receipt = selected["named_profile_spike_evidence"][-1]
+    assert receipt == {
+        "kind": "hardware_requantized_output_spike",
+        "evidence": "docs/evidence/nicolas_requantizer_wrapper_266c593/index.json",
+        "output_precisions": ["fp8", "fp4", "fp6"],
+        "cases": 3,
+        "fp6_terminal_readout_derived_from_fullout": True,
+    }
