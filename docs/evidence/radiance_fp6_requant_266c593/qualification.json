@@ -92,6 +92,20 @@
   "compiler_revision": "7224c9a08a997e6a30856b9bd5489e94b862ba35",
   "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
   "output_policy": "radiance_header_fp6_v1",
+  "pristine_cli_reproduction": {
+    "compiler_revision": "e182b42674dc4eab2366fccff66f0075a2b98235",
+    "files_sha256": {
+      "generation_receipt.json": "0d0460a0cd57c6df94e2f547510e4cc0f9d60230fd760be2397783c1b8da266a",
+      "receipt.json": "2a8d0a707d75d2dc2473435656c5da51b9ed4a9a80c33fca01bdedff12143db1",
+      "source_header.h": "21a82706853dedd25cf3a53fda59a16c45a5a72faed72bc58a0004910046afda",
+      "spike.log": "65e2f92e3b25e7deed57380be644d6ed3f2827307774d91b1a2197a4d8ab29bc"
+    },
+    "k": 128,
+    "matching_case": "fp6_128x128x128",
+    "matching_elf_sha256": "6ee8301e9339d98d648d9d632e5c18c84073a1b3e162da8cd204d41b310cecb8",
+    "output_dir": "pristine_cli_128",
+    "source_header_absent_before_and_after": true
+  },
   "profile": "MxE3M2OnlyGemminiRocketConfig",
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
   "schema": "mx_gemmini.radiance_fp6_requant_spike.v1",

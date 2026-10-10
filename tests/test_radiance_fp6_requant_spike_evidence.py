@@ -79,3 +79,17 @@ def test_radiance_fp6_source_requant_spike_evidence(tmp_path):
         bad["output_lut"] = bytes(len(resources["output_lut"]))
         with pytest.raises(ValueError, match="golden differs"):
             lower_bound_source(bound, profile, manifest, bad)
+
+    reproduction = index["pristine_cli_reproduction"]
+    pristine = EVIDENCE / reproduction["output_dir"]
+    for filename, digest in reproduction["files_sha256"].items():
+        assert _sha(pristine / filename) == digest
+    receipt = json.loads((pristine / "receipt.json").read_text())
+    generation = json.loads((pristine / "generation_receipt.json").read_text())
+    first = index["cases"][0]
+    assert receipt["compiler_revision"].startswith("e182b42")
+    assert receipt["status"] == "radiance_header_matched_on_pinned_spike"
+    assert generation["generated_header_sha256"] == first["source_header_sha256"]
+    assert receipt["source_header_sha256"] == first["source_header_sha256"]
+    assert receipt["elf_sha256"] == first["elf_sha256"]
+    assert receipt["spike_log_sha256"] == first["spike_log_sha256"]
