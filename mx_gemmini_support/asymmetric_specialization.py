@@ -138,9 +138,9 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     return result
 
 
-def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
-                   header: Path) -> str:
-    """Emit the bounded physical schedule from a verified asymmetric contract."""
+def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
+                         source: Path, header: Path) -> dict:
+    """Check the typed site, exact profile mode, and named source data."""
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func
@@ -169,6 +169,13 @@ def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
                 if key != "pe_mode") or
             _int_attr(operations[0], "pe_mode") != cell["pe_mode"]):
         raise ValueError("bound asymmetric MLIR compute tuple or site differs from recipe")
+    return cell
+
+
+def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
+                   header: Path) -> str:
+    """Emit the bounded historical C diagnostic from a verified contract."""
+    cell = _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     use_lut = cell["activation_projection"] == "lut"
     activation_array = "A_in_hw" if use_lut else "A_in"
     tile_rows = 32 if use_lut else 16
@@ -246,3 +253,116 @@ int main(void) {{
   return errors != 0;
 }}
 '''
+
+
+def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
+    """Export Nicolas's packed input and BF16 golden arrays as binary resources."""
+    from .source_fp6 import _array, _bytes
+
+    if sha256(header) != recipe.get("source_header_sha256"):
+        raise ValueError("asymmetric source header differs from recipe")
+    text = header.read_text(encoding="ascii")
+    lut = recipe["compute"]["activation_projection"] == "lut"
+    a_name = "A_in_hw" if lut else "A_in"
+    a_shape = "[32][64]" if lut else "[MATMUL_M][MATMUL_K]"
+    resources = {
+        "activation": bytes(_array(text, name=a_name, ctype="uint8_t",
+                                    dimensions=a_shape, count=2048 if lut else 4096,
+                                    maximum=255)),
+        "weight": bytes(_array(text, name="B_in", ctype="uint8_t",
+                                dimensions="[MATMUL_K][MATMUL_N / 2]",
+                                count=2048, maximum=255)),
+        "activation_scales": bytes(_array(text, name="A_scales_row", ctype="uint8_t",
+                                            dimensions="[MATMUL_GK][MATMUL_M]",
+                                            count=128, maximum=255)),
+        "weight_scales": bytes(_array(text, name="B_scales_col", ctype="uint8_t",
+                                        dimensions="[MATMUL_GK][MATMUL_N]",
+                                        count=128, maximum=255)),
+        "golden_bf16": _bytes(_array(text, name="C_out_bf16", ctype="uint16_t",
+                                      dimensions="[MATMUL_M][MATMUL_N]",
+                                      count=4096, maximum=0xffff), 2),
+    }
+    if lut:
+        for c_name, resource in (("A_lut", "activation_lut"),
+                                 ("B_lut", "weight_lut"),
+                                 ("C_lut", "output_lut")):
+            resources[resource] = _bytes(_array(text, name=c_name, ctype="uint32_t",
+                                               dimensions="[32][4]", count=128,
+                                               maximum=0xffffffff), 4)
+    return resources
+
+
+def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
+                              source: Path, header: Path):
+    """Lower both legal E4M3×FP4 modes to the shared physical command IR."""
+    from .command_ir import Fence, Operand
+    from .physical_program import (PhysicalProgram, PhysicalStep, _cmd, _config_ld,
+                                   _config_st, _transfer)
+
+    if recipe != source_recipe(source, header, profile):
+        raise ValueError("asymmetric physical lowering source or target changed")
+    _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
+    resources = read_asymmetric_resources(header, recipe)
+    use_lut = recipe["compute"]["activation_projection"] == "lut"
+    ti, tj, tki = (2 if use_lut else 4), 2, 4
+    dim = 16
+    a_base, b_end, c_base = 0, 8192, 128
+    b_base = b_end - tki * tj * dim
+    steps: list[PhysicalStep] = []
+
+    def issue(phase: str, command) -> None:
+        steps.append(PhysicalStep(phase, None, command))
+
+    issue("configure", _cmd(7, 0, 0))
+    config_ex = (1 << 16) | (2 << 12) | (3 << 14) | (int(use_lut) << 5) | (1 << 2)
+    issue("configure", _cmd(0, config_ex, 1 << 48))
+    if use_lut:
+        for resource, selector in (("weight_lut", 0), ("activation_lut", 1),
+                                   ("output_lut", 2)):
+            issue("upload_lut", _cmd(29, Operand(buffer=resource),
+                                     (8 << 34) | (selector << 32) | 32))
+    else:
+        issue("disable_lut", _cmd(30, 0, 0))
+    issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"), 128))
+    issue("upload_scales", _cmd(27, Operand(buffer="weight_scales"), (1 << 32) | 128))
+    issue("upload_scales", Fence())
+    issue("move_activation", _config_ld(64))
+    for i in range(ti):
+        for k in range(tki):
+            offset = i * dim * 64 + k * dim
+            row = a_base + (i * tki + k) * dim
+            issue("move_activation", _transfer(2, "activation", offset, row))
+    issue("move_weight", _config_ld(32))
+    for k in range(tki):
+        for j in range(tj):
+            offset = k * dim * 32 + j * dim
+            row = b_base + (k * tj + j) * dim
+            issue("move_weight", _transfer(2, "weight", offset, row))
+    issue("move_weight", Fence())
+    issue("configure", _config_st(128))
+    selector_bits = (tki << 51) | (tj << 42) | (ti << 33)
+    issue("select_scales", _cmd(26, Operand(buffer="scratch_output_scales",
+                                            address_mask=(1 << 33) - 1,
+                                            or_bits=selector_bits), 1))
+    issue("compute", _cmd(9, 0, (tki << 32) | (tj << 16) | ti))
+    issue("compute", _cmd(24, a_base, b_end))
+    issue("compute", _cmd(8, 0, (c_base << 32) | 0x200 | 0x38))
+    issue("compute", Fence())
+    issue("readout", _config_st(dim))
+    for row in range(0, 512, dim):
+        issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row))
+    issue("readout", Fence())
+    resource_manifest = {"schema": "mx_gemmini.asymmetric_resource_manifest.v1",
+                         "recipe": recipe,
+                         "resources_sha256": {name: hashlib.sha256(data).hexdigest()
+                                              for name, data in sorted(resources.items())}}
+    payload_digest = hashlib.sha256(json.dumps(resource_manifest, sort_keys=True,
+                                               separators=(",", ":")).encode()).hexdigest()
+    plan = {"shape_mnk": [64, 64, 64], "tile_mnk": [64, 64, 64],
+            "activation_projection": recipe["compute"]["activation_projection"],
+            "weight_projection": "direct", "pe_mode": recipe["compute"]["pe_mode"],
+            "scratchpad_rows": profile["resources"]["scratchpad_bytes"] // dim,
+            "a_row": a_base, "b_row": b_base, "c_row": c_base,
+            "tiles_i": ti, "tiles_j": tj, "tiles_k": tki}
+    return PhysicalProgram(profile_sha256(profile), payload_digest,
+                           "spike_serial", (64, 64, 64), plan, tuple(steps)), resources, resource_manifest
