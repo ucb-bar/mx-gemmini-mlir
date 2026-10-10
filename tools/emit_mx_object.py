@@ -84,6 +84,9 @@ def main() -> None:
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
     program = lower_bound_source(args.mlir.read_text(), profile, manifest, resources)
+    if program.output_format in {"radiance_header_fp8", "radiance_header_fp6"}:
+        raise ValueError("MX linkable object has no host_requantize lowering; "
+                         "use tools.qualify_source_mx for a complete standalone ELF")
     if program.mode != "spike_serial" or profile.get("transport") != "rocket_rocc":
         raise ValueError("linkable MX object currently requires Rocket RoCC serial mode")
     buffers = _referenced_buffers(program, manifest)

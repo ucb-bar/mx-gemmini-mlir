@@ -45,6 +45,8 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     from xdsl.dialects.func import Func
     from xdsl.parser import Parser
 
+    from mx_gemmini_support.verify_profile_ir import _operation_name
+
     report = verify_ir(mlir_text, profile)
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
@@ -54,6 +56,10 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     runtime = module.attributes.get("mx.runtime_resources_sha256") is not None
     if source == runtime:
         raise ValueError("MX object needs exactly one payload binding scheme")
+    if any(_operation_name(op) == "mx_gemmini.host_requantize"
+           for op in module.walk()):
+        raise ValueError("MX linkable object has no host_requantize lowering; "
+                         "use tools.qualify_source_mx for a complete standalone ELF")
     counts = (report["contracts"], report["resident_contracts"],
               report["vpu_commands"], report["spad_requants"])
     if source and counts[0] == 1 and counts[1] == 0 and report["source_resources"]:

@@ -112,7 +112,10 @@ banks. Nicolas's stock Spike matches C1 and C2 codes and scales at 64³ and
 128³; MM2 reuses C1's packed codes, scales, and output LUT.
 `python -m tools.compile_object` is the shared entry point for these object
 paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
-typed graph and reuses the existing physical lowerers.
+typed graph and reuses the existing physical lowerers. Source graphs with
+`mx_gemmini.host_requantize` require the standalone ELF path through
+`tools.qualify_source_mx`: the linkable object path does not yet emit their
+host output stage and rejects them before writing an object.
 The [source object replay](docs/evidence/mx_compile_object_dispatch_d3156e4/index.json)
 links the generated FP4, FP6, and FP8 objects into full-output Spike checks.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)

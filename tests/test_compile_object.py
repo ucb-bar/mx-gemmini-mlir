@@ -22,6 +22,8 @@ PROFILES = ROOT / "profiles/gemmini-mx-cleanup-266c593"
      "MxGemminiRocketConfig", "resident_pair", 0),
     ("docs/evidence/nicolas_fp4_connected_resident_266c593/chain/connected.mlir",
      "MxGemminiRocketConfig", "resident_pair", 0),
+    ("docs/evidence/nicolas_fp6_connected_resident_64_266c593/chain/connected.mlir",
+     "MxGemminiRocketConfig", "resident_pair", 0),
     ("docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/connected_bound.mlir",
      "MxE4M3Fp4VpuGemminiRocketConfig", "resident_vpu_pair", 0),
 ])
@@ -36,6 +38,24 @@ def test_compiler_selects_the_verified_graph_family(mlir_path, profile_name,
     assert report["source_resources"] == resources
     if "nicolas_fp4_connected_resident" in mlir_path:
         assert _resident_pair_precision(content.decode()) == "fp4_e2m1"
+    if "nicolas_fp6_connected_resident" in mlir_path:
+        assert _resident_pair_precision(content.decode()) == "fp6_e3m2"
+
+
+@pytest.mark.parametrize(("name", "profile_name"), [
+    ("mxgemm.fp4.singletile.tm128tn128tk128.requant",
+     "MxE4M3Fp4VpuGemminiRocketConfig"),
+    ("mxgemm.fp6.singletile.tm128tn128tk128.requant",
+     "MxE3M2OnlyGemminiRocketConfig"),
+    ("mxgemm.fp8.singletile.tm128tn128tk128.requant",
+     "MxE4M3Fp4VpuGemminiRocketConfig"),
+])
+def test_compiler_rejects_unlowered_host_requant_object(name, profile_name):
+    path = (ROOT / "docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22/spike" /
+            name / "payload_bound.mlir")
+    profile = load_profile(PROFILES / f"{profile_name}.json")
+    with pytest.raises(ValueError, match="no host_requantize lowering"):
+        classify(path.read_text(), profile)
 
 
 def test_compiler_rejects_ambiguous_or_unsupported_binding():
