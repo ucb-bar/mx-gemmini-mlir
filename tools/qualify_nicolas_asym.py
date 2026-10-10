@@ -39,7 +39,9 @@ def main() -> None:
                                               "e4m3_direct_e3m2", "fp4_direct_e4m3"), default="lut",
                         help="activation format and projection in Nicolas's DIM16 source test")
     parser.add_argument("--source-suffix", type=str,
-                        help="Nicolas DIM16 source pair, for example e2m3_e5m2")
+                        help="Nicolas source pair, for example e2m3_e5m2")
+    parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
+                        help="selected Rocket mesh dimension (default: 16)")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
                        help="compile through shared physical command IR (default)")
@@ -75,9 +77,10 @@ def main() -> None:
               "e4m3_direct_e3m2": "e4m3s_e3m2",
               "fp4_direct_e4m3": "fp4_e4m3s"}[args.variant]
     if not re.fullmatch(r"[a-z0-9]+_[a-z0-9]+", suffix):
-        parser.error("source suffix must name one DIM16 asymmetric source pair")
-    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
-    header = software / f"include/matmul_data_asym_{suffix}.h"
+        parser.error("source suffix must name one asymmetric source pair")
+    dim_suffix = f"_dim{args.mesh_dim}" if args.mesh_dim != 16 else ""
+    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64{dim_suffix}.c"
+    header = software / f"include/matmul_data_asym_{suffix}{dim_suffix}.h"
     recipe = source_recipe(source, header, profile)
 
     class Matmul(torch.nn.Module):
@@ -166,12 +169,15 @@ def main() -> None:
     extension_sources = [extension / "gemmini.cc", extension / "gemmini_perf.cc"]
     extension_sources += sorted((extension / "perf").rglob("*.cc"))
     so = build_dir / "libgemmini.so"
-    _run(["g++", "-L", str(args.riscv_root / "lib"),
+    _run(["g++", *([f"-DGEMMINI_DIM={args.mesh_dim}"] if args.mesh_dim != 16 else []),
+          "-L", str(args.riscv_root / "lib"),
           f"-Wl,-rpath,{args.riscv_root / 'lib'}", "-shared", "-o", str(so),
           "-std=c++17", "-I", str(args.riscv_root / "include"), "-fPIC", "-O3",
           *(str(path) for path in extension_sources)],
          cwd=build_dir, log=build_dir / "extension_build.log")
-    run = subprocess.run([str(spike), f"--extlib={so}", "--extension=gemmini", str(elf)],
+    extension_name = "gemmini" if args.mesh_dim == 16 else f"gemmini_dim{args.mesh_dim}"
+    run = subprocess.run([str(spike), f"--extlib={so}",
+                          f"--extension={extension_name}", str(elf)],
                          cwd=build_dir, text=True, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, check=False)
     (build_dir / "spike.log").write_text(run.stdout)
@@ -183,12 +189,13 @@ def main() -> None:
                    if args.physical else "mx_gemmini.nicolas_asymmetric_spike_qualification.v1"),
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": (f"64-cubed {suffix} source specialization of one captured PyTorch matmul; "
+        "scope": (f"DIM{args.mesh_dim} 64-cubed {suffix} source specialization of one captured PyTorch matmul; "
                   "checked-in packed inputs, not random PyTorch example inputs; " +
                   ("shared physical command IR and standalone emitter; " if args.physical else
                    "bounded C diagnostic; ") +
                   "standalone asymmetric MX profile without VPU"),
         "model2mlir_revision": _revision(model2mlir), "mxq_revision": _revision(mxq_root),
+        "mesh_dim": args.mesh_dim,
         "compiler_revision": _revision(root),
         "compiler_source_closure_sha256": _source_closure(
             root, sorted((root / "mx_gemmini_support").glob("*.py")) +

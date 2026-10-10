@@ -110,13 +110,15 @@ def _source_variant(source: Path, header: Path, profile: dict,
         if header.name != pinned["header"]:
             raise ValueError("selected asymmetric source/header pair differs")
         return pinned
-    match = re.fullmatch(r"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64\.c",
+    match = re.fullmatch(r"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64(?:_dim(8|32))?\.c",
                          source.name)
     if match is None:
         raise ValueError("selected asymmetric specialization needs a named Nicolas 64-cubed test")
-    left, right = match.groups()
+    left, right, dim_suffix = match.groups()
+    mesh_dim = int(dim_suffix) if dim_suffix else 16
     if (left not in _FORMAT_TOKEN or right not in _FORMAT_TOKEN or
-            header.name != f"matmul_data_asym_{left}_{right}.h"):
+            header.name != f"matmul_data_asym_{left}_{right}" +
+            (f"_dim{mesh_dim}.h" if dim_suffix else ".h")):
         raise ValueError("selected asymmetric source/header pair or format differs")
     activation_format, activation_projection = _FORMAT_TOKEN[left]
     weight_format, weight_projection = _FORMAT_TOKEN[right]
@@ -141,7 +143,7 @@ def _source_variant(source: Path, header: Path, profile: dict,
     if (len(words) > 1 or (use_lut and (not words or not lut_arrays)) or
             (not use_lut and lut_arrays)):
         raise ValueError("asymmetric source LUT arrays differ from legal projection")
-    return {"header": header.name, "cell": cells[0],
+    return {"header": header.name, "cell": cells[0], "mesh_dim": mesh_dim,
             "activation_array": activation_array, "use_lut": use_lut,
             "lut_arrays": lut_arrays,
             "lut_words_per_line": next(iter(words), 0),
@@ -160,17 +162,20 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     source_text, header_text = source.read_text(), header.read_text()
     variant = _source_variant(source, header, profile, header_text)
     cell = variant["cell"]
+    mesh_dim = variant.get("mesh_dim", 16)
     require_compute(profile, cell["activation_format"], cell["weight_format"],
                     pe_mode=cell["pe_mode"],
                     activation_projection=cell["activation_projection"],
                     weight_projection=cell["weight_projection"])
-    if (profile["geometry"] != {"mesh_rows": 16, "mesh_columns": 16,
+    if (profile["geometry"] != {"mesh_rows": mesh_dim, "mesh_columns": mesh_dim,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
-            profile["resources"]["lut_config"]["read_data_bits"] !=
+            profile["resources"]["lut_config"]["read_data_bits"] <
             (variant["lut_entry_bits"] or 8) or
             profile["resources"]["lut_config"]["address_bits"] != 4):
-        raise ValueError("selected asymmetric source requires DIM16, 256 KiB SPAD, 4-bit LUT indices")
+        raise ValueError("selected asymmetric source mesh, scratchpad, or LUT differs from profile")
+    if mesh_dim in (8, 32) and f"#define DIM {mesh_dim}" not in source_text:
+        raise ValueError("Nicolas source mesh dimension differs from selected profile")
     for marker in (f'#include "include/{header.name}"',):
         if marker not in source_text:
             raise ValueError(f"Nicolas source command contract changed: {marker}")
@@ -215,6 +220,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     source_layout = {key: value for key, value in variant.items() if key != "cell"}
     source_layout["lut_arrays"] = list(variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")
                                                      if variant["use_lut"] else ()))
+    source_layout["mesh_dim"] = mesh_dim
     source_layout["config_altfmt"] = config_altfmt
     source_layout["weight_altfmt_diff"] = weight_altfmt_diff
     return {"schema": "mx_gemmini.asymmetric_source_recipe.v1",
@@ -558,10 +564,20 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     weight_stride = 64 if variant.get("weight_array") else 32
-    ti, tj, tki = (2 if packed_activation else 4), (4 if weight_stride == 64 else 2), 4
-    dim = 16
-    a_base, b_end, c_base = 0, 8192, 128
+    dim = variant.get("mesh_dim", 16)
+    ti = 64 // (dim * (2 if packed_activation else 1))
+    tj = 64 // (dim * (2 if weight_stride == 32 else 1))
+    tki = 64 // dim
+    if not ti or not tj or 64 % dim:
+        raise ValueError("asymmetric source shape is not tileable on selected mesh")
+    scratchpad_rows = profile["resources"]["scratchpad_bytes"] // dim
+    a_base = 0
+    b_end = 8192 if dim == 16 else min(16384, scratchpad_rows)
+    c_base = 128 if dim == 16 else ti * tki * dim
     b_base = b_end - tki * tj * dim
+    if (b_base < ti * tki * dim or b_end > scratchpad_rows or
+            c_base + 64 * 64 * 2 // dim > b_base):
+        raise ValueError("asymmetric operand and BF16 readout rows exceed profile scratchpad")
     steps: list[PhysicalStep] = []
 
     def issue(phase: str, command) -> None:
@@ -592,18 +608,18 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"), 128))
     issue("upload_scales", _cmd(27, Operand(buffer="weight_scales"), (1 << 32) | 128))
     issue("upload_scales", Fence())
-    issue("move_activation", _config_ld(64))
+    issue("move_activation", _config_ld(64, dim=dim))
     for i in range(ti):
         for k in range(tki):
             offset = i * dim * 64 + k * dim
             row = a_base + (i * tki + k) * dim
-            issue("move_activation", _transfer(2, "activation", offset, row))
-    issue("move_weight", _config_ld(weight_stride))
+            issue("move_activation", _transfer(2, "activation", offset, row, dim=dim))
+    issue("move_weight", _config_ld(weight_stride, dim=dim))
     for k in range(tki):
         for j in range(tj):
             offset = k * dim * weight_stride + j * dim
             row = b_base + (k * tj + j) * dim
-            issue("move_weight", _transfer(2, "weight", offset, row))
+            issue("move_weight", _transfer(2, "weight", offset, row, dim=dim))
     issue("move_weight", Fence())
     issue("configure", _config_st(128))
     selector_bits = (tki << 51) | (tj << 42) | (ti << 33)
@@ -615,14 +631,15 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     issue("compute", _cmd(8, 0, (c_base << 32) | 0x200 | 0x38))
     issue("compute", Fence())
     issue("readout", _config_st(dim))
-    for row in range(0, 512, dim):
-        issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row))
+    for row in range(0, 64 * 64 * 2 // dim, dim):
+        issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row,
+                                   dim=dim))
     issue("readout", Fence())
     plan = {"shape_mnk": [64, 64, 64], "tile_mnk": [64, 64, 64],
             "activation_projection": recipe["compute"]["activation_projection"],
             "weight_projection": recipe["compute"]["weight_projection"],
             "pe_mode": recipe["compute"]["pe_mode"],
-            "scratchpad_rows": profile["resources"]["scratchpad_bytes"] // dim,
+            "scratchpad_rows": scratchpad_rows, "mesh_dim": dim,
             "a_row": a_base, "b_row": b_base, "c_row": c_base,
             "tiles_i": ti, "tiles_j": tj, "tiles_k": tki}
     return PhysicalProgram(profile_sha256(profile), payload_digest,

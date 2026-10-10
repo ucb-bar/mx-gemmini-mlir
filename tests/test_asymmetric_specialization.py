@@ -215,3 +215,46 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
                          (lut_loads if lut_loads else 1) - 3)
     assert generated["command_count"] == expected_commands
     assert "void mx_issue(" in (tmp_path / "lowered/mx_issue.c").read_text()
+
+
+@pytest.mark.parametrize("mesh_dim,expected_tiles,expected_b_end", [
+    (8, (4, 4, 8), 16384),
+    (32, (1, 1, 2), 8192),
+])
+def test_asymmetric_source_layout_uses_selected_mesh_geometry(
+        tmp_path, mesh_dim, expected_tiles, expected_b_end):
+    profile = _profile(f"MxDim{mesh_dim}AllAsymGemminiRocketConfig")
+    source = tmp_path / f"matmul_tiled_asym_fp4_fp6_64x64_dim{mesh_dim}.c"
+    header = tmp_path / f"matmul_data_asym_fp4_fp6_dim{mesh_dim}.h"
+    source.write_text("\n".join((
+        f'#include "include/{header.name}"', f"#define DIM {mesh_dim}",
+        "#define USE_LUT 1", "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
+
+    def array(ctype: str, name: str, shape: str, count: int) -> str:
+        return (f"static const {ctype} {name}{shape} = {{\n" +
+                ",".join("0" for _ in range(count)) + "\n};")
+
+    header.write_text("\n".join((
+        "#define MATMUL_M   64", "#define MATMUL_K   64", "#define MATMUL_N   64",
+        array("uint8_t", "A_in_hw", "[32][64]", 2048),
+        array("uint8_t", "B_in", "[MATMUL_K][MATMUL_N / 2]", 2048),
+        *(array("uint32_t", name, "[32][3]", 96)
+          for name in ("A_lut", "B_lut", "C_lut")),
+        array("uint8_t", "A_scales_row", "[MATMUL_GK][MATMUL_M]", 128),
+        array("uint8_t", "B_scales_col", "[MATMUL_GK][MATMUL_N]", 128),
+        array("uint16_t", "C_out_bf16", "[MATMUL_M][MATMUL_N]", 4096))))
+    recipe = source_recipe(source, header, profile)
+    bound = bind_asymmetric_payload(
+        specialize_handoff(CAPTURE, profile, recipe), profile, recipe,
+        source=source, header=header)
+    program, resources, _ = lower_asymmetric_physical(
+        bound, profile, recipe, source=source, header=header)
+    plan = program.plan
+    assert (plan["tiles_i"], plan["tiles_j"], plan["tiles_k"]) == expected_tiles
+    assert plan["mesh_dim"] == mesh_dim
+    assert plan["b_row"] + expected_tiles[1] * expected_tiles[2] * mesh_dim == expected_b_end
+    assert plan["c_row"] + 8192 // mesh_dim <= plan["b_row"]
+    transfers = [step.command for step in program.steps
+                 if isinstance(step.command, Command) and step.command.funct in (2, 3)]
+    assert transfers and all(command.rs2.immediate >> 48 == mesh_dim for command in transfers)
+    write_standalone_sources(tmp_path / "lowered", program, resources)

@@ -1,4 +1,4 @@
-"""Compile every Nicolas DIM16 asymmetric source mode on its Rocket profile.
+"""Compile Nicolas asymmetric source modes on their matching Rocket mesh profile.
 
 Each row captures a fresh PyTorch matmul through model2MLIR, binds Nicolas's
 checked-in packed arrays to typed MX MLIR, emits a standalone RoCC ELF, and
@@ -29,38 +29,43 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def discover(software: Path, profile_dir: Path,
-             rtl_root: Path) -> list[tuple[str, Path, dict]]:
-    """Preflight every checked-in DIM16 source/header against its legal profile."""
+def discover(software: Path, profile_dir: Path, rtl_root: Path,
+             mesh_dim: int = 16) -> list[tuple[str, Path, dict]]:
+    """Preflight each checked-in source/header against its legal mesh profile."""
     rows = []
-    sources = sorted((software / "bareMetalC").glob("matmul_tiled_asym_*_64x64.c"))
+    dim_suffix = f"_dim{mesh_dim}" if mesh_dim != 16 else ""
+    sources = sorted((software / "bareMetalC").glob(
+        f"matmul_tiled_asym_*_64x64{dim_suffix}.c"))
     if not sources:
         raise ValueError("Nicolas asymmetric 64-cubed source tests are absent")
     for source in sources:
-        match = re.fullmatch(r"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64\.c",
+        match = re.fullmatch(rf"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64{dim_suffix}\.c",
                              source.name)
         if match is None or any(token not in _NAME for token in match.groups()):
             raise ValueError(f"unrecognized Nicolas source test: {source.name}")
         left, right = match.groups()
         suffix = f"{left}_{right}"
-        header = software / "include" / f"matmul_data_asym_{suffix}.h"
-        profile_path = profile_dir / f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig.json"
+        header = software / "include" / f"matmul_data_asym_{suffix}{dim_suffix}.h"
+        profile_path = (profile_dir / f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig.json"
+                        if mesh_dim == 16 else
+                        profile_dir / f"MxDim{mesh_dim}AllAsymGemminiRocketConfig.json")
         profile = load_profile(profile_path, rtl_root=rtl_root)
         recipe = source_recipe(source, header, profile)
         rows.append((suffix, profile_path, recipe["compute"]))
     if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
-    by_profile: dict[Path, list[dict]] = {}
-    for _, profile_path, cell in rows:
-        by_profile.setdefault(profile_path, []).append(cell)
-    dedicated = [path for path in sorted(profile_dir.glob("MxAsym*GemminiRocketConfig.json"))
-                 if load_profile(path, rtl_root=rtl_root)["geometry"]["mesh_rows"] == 16]
-    for profile_path in dedicated:
-        profile = load_profile(profile_path, rtl_root=rtl_root)
-        expected = {json.dumps(cell, sort_keys=True) for cell in profile["legal_compute"]}
-        actual = [json.dumps(cell, sort_keys=True) for cell in by_profile.get(profile_path, ())]
-        if set(actual) != expected or len(actual) != len(expected):
-            raise ValueError(f"Nicolas DIM16 source mode coverage is incomplete: {profile_path.name}")
+    if mesh_dim == 16:
+        by_profile: dict[Path, list[dict]] = {}
+        for _, profile_path, cell in rows:
+            by_profile.setdefault(profile_path, []).append(cell)
+        dedicated = [path for path in sorted(profile_dir.glob("MxAsym*GemminiRocketConfig.json"))
+                     if load_profile(path, rtl_root=rtl_root)["geometry"]["mesh_rows"] == 16]
+        for profile_path in dedicated:
+            profile = load_profile(profile_path, rtl_root=rtl_root)
+            expected = {json.dumps(cell, sort_keys=True) for cell in profile["legal_compute"]}
+            actual = [json.dumps(cell, sort_keys=True) for cell in by_profile.get(profile_path, ())]
+            if set(actual) != expected or len(actual) != len(expected):
+                raise ValueError(f"Nicolas DIM16 source mode coverage is incomplete: {profile_path.name}")
     return rows
 
 
@@ -71,6 +76,8 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--jobs", type=int, default=1,
                         help="independent Spike builds to run concurrently (1–4)")
+    parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
+                        help="Rocket mesh dimension (default: 16)")
     parser.add_argument("--source-suffix", action="append",
                         help="qualify only this named source pair; repeat to select several")
     args = parser.parse_args()
@@ -82,7 +89,8 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     rtl = args.rtl_root.resolve()
     software = rtl / "software/gemmini-rocc-tests"
-    rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593", rtl)
+    rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593",
+                    rtl, args.mesh_dim)
     if args.source_suffix:
         selected = set(args.source_suffix)
         unknown = selected - {suffix for suffix, _, _ in rows}
@@ -96,7 +104,7 @@ def main() -> None:
         suffix, profile, cell = row
         directory = out_dir / suffix
         command = [sys.executable, "-m", "tools.qualify_nicolas_asym",
-                   "--source-suffix", suffix,
+                   "--source-suffix", suffix, "--mesh-dim", str(args.mesh_dim),
                    "--model2mlir-root", str(args.model2mlir_root.resolve()),
                    "--mxq-root", str(args.mxq_root.resolve()),
                    "--rtl-root", str(rtl), "--profile", str(profile),
@@ -125,10 +133,21 @@ def main() -> None:
 
     with ThreadPoolExecutor(max_workers=args.jobs) as executor:
         results = list(executor.map(qualify, rows))
+    legal_cells = {(profile_path.stem, json.dumps(cell, sort_keys=True)): cell
+                   for _, profile_path, _ in rows
+                   for cell in load_profile(profile_path, rtl_root=rtl)["legal_compute"]}
+    selected_cells = {(profile_path.stem, json.dumps(cell, sort_keys=True))
+                      for _, profile_path, cell in rows}
+    missing_cells = [{"profile_name": key[0], "compute": legal_cells[key]}
+                     for key in sorted(legal_cells.keys() - selected_cells)]
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
-                "scope": "named DIM16 64x64x64 asymmetric Rocket/RoCC source tests on pinned Spike",
+                "scope": f"named DIM{args.mesh_dim} 64x64x64 asymmetric Rocket/RoCC source tests on pinned Spike",
+                "mesh_dim": args.mesh_dim,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),
+                "legal_mode_count": len(legal_cells),
+                "uncovered_legal_compute": missing_cells,
+                "profile_complete": not missing_cells,
                 "passed_modes": sum(row["status"] == "passed" for row in results),
                 "rows": results}
     (out_dir / "matrix_receipt.json").write_text(

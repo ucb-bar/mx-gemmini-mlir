@@ -81,18 +81,18 @@ def _cmd(funct: int, rs1: int | Operand, rs2: int | Operand) -> Command:
                    _imm(rs2) if isinstance(rs2, int) else rs2)
 
 
-def _config_ld(stride: int, *, id: int = 0) -> Command:
+def _config_ld(stride: int, *, id: int = 0, dim: int = 16) -> Command:
     # Nicolas gemmini.h gemmini_extended5_config_ld, scale identity = 0.
-    return _cmd(0, (16 << 16) | (1 << 8) | (id << 3) | 1, stride)
+    return _cmd(0, (dim << 16) | (1 << 8) | (id << 3) | 1, stride)
 
 
 def _config_st(stride: int) -> Command:
     return _cmd(0, 2, stride)
 
 
-def _transfer(funct: int, buffer: str, offset: int, row: int) -> Command:
+def _transfer(funct: int, buffer: str, offset: int, row: int, *, dim: int = 16) -> Command:
     return _cmd(funct, Operand(buffer=buffer, byte_offset=offset),
-                (16 << 48) | (16 << 32) | row)
+                (dim << 48) | (dim << 32) | row)
 
 
 def _exact_bf16_x2(source: bytes) -> bytes:
