@@ -1,0 +1,30 @@
+{
+  "command_count": 1289,
+  "compared_bf16_outputs": 16384,
+  "compiler_revision": "c1bf581f09344ff0053c111f98fe5c4d9804e6ca",
+  "files_sha256": {
+    "first.json": "78e692e9aab9cb03aeb4ad0485d9d9c0756af53f370206484e9cf53207d6c1f4",
+    "mx_driver.c": "996af64cc54a3a9870c9e93c1ee25d31f9cae2815b02d30386c2cad58e739b8d",
+    "mx_issue.c": "83167128a5005e33696020ef7bee7cc7e9a22048204a765c8ef800f049e1e1bd",
+    "payload_bound.mlir": "7beb800c480e3309abd2f2d1cbc7bac3b9c37f6830cc971dd7c6681617cf267b",
+    "payload_manifest.json": "db46b6803496f5b32d0c7208e39e955831947c2c1e92f6536ee663aec66597b1",
+    "physical_program.json": "429a619800e9191ef8d47de26ab142b4fe3162c23d1239425243dedbf64035bb",
+    "repro.json": "a9d9670a70fc2a6c1d0be7f537be1ad0a9a10c120c76164307835727564c13e3",
+    "spike.log": "bc68c9af836d42137c6f9787d409725879a5548b396fa8a9fe495cbe59b050af"
+  },
+  "payload_manifest_sha256": "5f8f0f62acc810f5900943319265d918a8f7a88de67d37d014d88b183e815a75",
+  "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+  "reproduction_exact_except_link_log": true,
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fp6_resource_manifest_binding_qualification.v1",
+  "scope": "Radiance FP6 128x128x2048 BF16, serial Spike schedule with scale-selector workaround; no alternating RTL/FPGA claim",
+  "serial_scale_selector_workaround": true,
+  "shape_mnk": [
+    128,
+    128,
+    2048
+  ],
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "spike_mismatches": 0,
+  "status": "source_golden_matched_on_pinned_spike"
+}

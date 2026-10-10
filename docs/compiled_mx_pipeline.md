@@ -105,6 +105,22 @@ generator, not execution of the original driver at that size.
 | FP4 128×128×5632, K tile 128 | MX+VPU E4M3/FP4 | 16,384 | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x5632_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x5632_20261009.json) |
 | FP6 128×128×2048, K tile 128 | E3M2 LUT, no VPU | 16,384 | [receipt](evidence/compiled_mx_fp6_128x128x2048_20261009.json) |
 
+The FP6 case was rebuilt twice from clean compiler `c1bf581` with the
+canonical resource manifest embedded in
+[bound MLIR](evidence/fp6_resource_manifest_binding_266c593/payload_bound.mlir).
+Its [resource manifest](evidence/fp6_resource_manifest_binding_266c593/payload_manifest.json)
+names the packed A/B arrays, E8M0 scales, and all three 64×3 FP6 LUT banks.
+The [physical commands](evidence/fp6_resource_manifest_binding_266c593/physical_program.json)
+and [generated RoCC issuer](evidence/fp6_resource_manifest_binding_266c593/mx_issue.c)
+produce **16,384 / 16,384 BF16 matches** on the pinned Spike extension. The
+[qualification index](evidence/fp6_resource_manifest_binding_266c593/qualification.json)
+links both build receipts and the [Spike log](evidence/fp6_resource_manifest_binding_266c593/spike.log).
+The two builds reproduce the MLIR, physical program, issuer, ELF, and Spike
+log hashes after excluding the path-bearing link log hash. Their 1,289-command
+physical stream has the same hash as the prior FP6 result. This run uses the
+serial Spike schedule with its recorded FP6 scale-selector workaround; it does
+not qualify the alternating-buffer schedule on RTL or FPGA.
+
 Each receipt records a zero-mismatch pinned Spike run. Independent output
 directories reproduced identical payload-bound MLIR, physical source files,
 objects, ELF, extension, and Spike log hashes for FP8 128×128×512 with both
