@@ -30,8 +30,11 @@ def _sha(path: Path) -> str:
 
 
 def discover(software: Path, profile_dir: Path, rtl_root: Path,
-             mesh_dim: int = 16) -> list[tuple[str, Path, dict]]:
+             mesh_dim: int = 16, *, all_asym: bool = False
+             ) -> list[tuple[str, Path, dict]]:
     """Preflight each checked-in source/header against its legal mesh profile."""
+    if all_asym and mesh_dim != 16:
+        raise ValueError("DIM8/DIM32 already select their all-asymmetric profiles")
     rows = []
     dim_suffix = f"_dim{mesh_dim}" if mesh_dim != 16 else ""
     sources = sorted((software / "bareMetalC").glob(
@@ -46,15 +49,18 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
         left, right = match.groups()
         suffix = f"{left}_{right}"
         header = software / "include" / f"matmul_data_asym_{suffix}{dim_suffix}.h"
-        profile_path = (profile_dir / f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig.json"
-                        if mesh_dim == 16 else
-                        profile_dir / f"MxDim{mesh_dim}AllAsymGemminiRocketConfig.json")
+        if mesh_dim == 16:
+            profile_name = ("MxAllAsymGemminiRocketConfig" if all_asym else
+                            f"MxAsym{_NAME[left]}{_NAME[right]}GemminiRocketConfig")
+        else:
+            profile_name = f"MxDim{mesh_dim}AllAsymGemminiRocketConfig"
+        profile_path = profile_dir / f"{profile_name}.json"
         profile = load_profile(profile_path, rtl_root=rtl_root)
         recipe = source_recipe(source, header, profile)
         rows.append((suffix, profile_path, recipe["compute"]))
     if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
-    if mesh_dim == 16:
+    if mesh_dim == 16 and not all_asym:
         by_profile: dict[Path, list[dict]] = {}
         for _, profile_path, cell in rows:
             by_profile.setdefault(profile_path, []).append(cell)
@@ -78,11 +84,15 @@ def main() -> None:
                         help="independent Spike builds to run concurrently (1–4)")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="Rocket mesh dimension (default: 16)")
+    parser.add_argument("--all-asym", action="store_true",
+                        help="select DIM16 MxAllAsymGemminiRocketConfig instead of dedicated profiles")
     parser.add_argument("--source-suffix", action="append",
                         help="qualify only this named source pair; repeat to select several")
     args = parser.parse_args()
     if not 1 <= args.jobs <= 4:
         parser.error("--jobs must be between 1 and 4")
+    if args.all_asym and args.mesh_dim != 16:
+        parser.error("DIM8/DIM32 already select their all-asymmetric profiles")
     out_dir = args.out_dir.resolve()
     if out_dir.exists():
         parser.error(f"refusing to overwrite {out_dir}")
@@ -90,7 +100,7 @@ def main() -> None:
     rtl = args.rtl_root.resolve()
     software = rtl / "software/gemmini-rocc-tests"
     rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593",
-                    rtl, args.mesh_dim)
+                    rtl, args.mesh_dim, all_asym=args.all_asym)
     if args.source_suffix:
         selected = set(args.source_suffix)
         unknown = selected - {suffix for suffix, _, _ in rows}
@@ -141,8 +151,11 @@ def main() -> None:
     missing_cells = [{"profile_name": key[0], "compute": legal_cells[key]}
                      for key in sorted(legal_cells.keys() - selected_cells)]
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
-                "scope": f"named DIM{args.mesh_dim} 64x64x64 asymmetric Rocket/RoCC source tests on pinned Spike",
+                "scope": (f"named DIM{args.mesh_dim} 64x64x64 asymmetric Rocket/RoCC source tests "
+                          "on pinned Spike" + (" using the all-asymmetric profile"
+                                               if args.all_asym else "")),
                 "mesh_dim": args.mesh_dim,
+                "all_asym_profile": args.all_asym or args.mesh_dim != 16,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),
                 "legal_mode_count": len(legal_cells),
