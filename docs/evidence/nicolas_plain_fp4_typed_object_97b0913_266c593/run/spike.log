@@ -1,0 +1,3 @@
+compiled Nicolas FP4 64x64x64: 0 mismatches / 4096 BF16 values
+Gemmini extension configured with:
+    dim = 16

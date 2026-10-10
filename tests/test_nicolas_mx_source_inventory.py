@@ -35,6 +35,8 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
     assert not by_name["matmul_tiled_fp8_128x128_dramloop"]["evidence_references"]
     assert any("nicolas_plain_fp8_typed_object_7d7a660" in ref["path"] for ref in
                by_name["matmul_tiled_fp8_128x128"]["evidence_references"])
+    assert any("nicolas_plain_fp4_typed_object_97b0913" in ref["path"] for ref in
+               by_name["matmul_tiled_fp4_64x64"]["evidence_references"])
     assert any("nicolas_plain_fp6_typed_object_95fc6d5" in ref["path"] for ref in
                by_name["matmul_tiled_fp6_128x128x512"]["evidence_references"])
     assert any("mx_public_vpu_softmax_3f9af55" in ref["path"] for ref in

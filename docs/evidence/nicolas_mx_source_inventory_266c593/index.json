@@ -36,6 +36,20 @@
         },
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_plain_fp4_typed_object_97b0913_266c593/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "939f39161fcf713bdd0c58e70df210875b011ec9e4e88a546ca8fc203ffbc85e",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_plain_fp4_typed_object_97b0913_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "b12ad1a8f0f3b01d897f05ed6804a83e28b5d21c9e67ffaa0f4f97016ecda6e8",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/test_mx/receipt_first.json",
           "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
           "sha256": "a138d610b9f683c5589252e5255cf2d9affa7ba72f8fa72b0daf59b0ba044035",
