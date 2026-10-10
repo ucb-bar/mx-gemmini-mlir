@@ -68,6 +68,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 128x128x256"),
+    "fp8_96x96x64": Case(
+        "fp8_96x96x64", "FP8", (96, 96, 64), (96, 96, 64),
+        "matmul_tiled_fp8_96x96x64.c", "matmul_fp8_96x96x64.h",
+        "e72eeda20f99f8e1b68ba9a967ca69eab9720970ca48f5a2f912f6e70058d500",
+        "2d83916439936348eedd9375dd24bbf5727db5e0facacc02f30c3130bb9abf25",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 96x96x64"),
     "fp4_64x64x64": Case(
         "fp4_64x64x64", "FP4", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp4_64x64.c", "matmul_fp4_64x64.h",
