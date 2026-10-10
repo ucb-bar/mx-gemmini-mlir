@@ -366,9 +366,11 @@ def read_source_payload(kernel: SourceGemm, *,
         restream = kernel.driver.parent.name == "gemm_mxgemmini_ws_restream"
         a_name = "A_in_hw" if packed else "A_in_data" if restream else "A_in"
         a_shape = (m // 2, k) if packed else (m, k)
-        a_decl = "[MATMUL_M / 2][MATMUL_K]" if packed else "[MATMUL_M][MATMUL_K]"
+        a_decl = (("[MATMUL_M / 2][MATMUL_K]", f"[{m // 2}][{k}]")
+                  if packed else "[MATMUL_M][MATMUL_K]")
         b_shape = (k, n // 2) if packed else (k, n)
-        b_decl = "[MATMUL_K][MATMUL_N / 2]" if packed else "[MATMUL_K][MATMUL_N]"
+        b_decl = (("[MATMUL_K][MATMUL_N / 2]", f"[{k}][{n // 2}]")
+                  if packed else "[MATMUL_K][MATMUL_N]")
         if restream:
             row = _array(source, name="A_scales_row", ctype="uint8_t",
                          dimensions="[MATMUL_GK][MATMUL_M]", count=k // 32 * m,
@@ -389,21 +391,25 @@ def read_source_payload(kernel: SourceGemm, *,
                                             dimensions=b_decl, count=_product(b_shape), maximum=255)),
                                b_shape, 8, "packed_even_odd_n_nibbles" if packed else "row_major_codes"),
             "activation_scales": Resource(bytes(_array(source, name="A_scales_row", ctype="uint8_t",
-                                                        dimensions="[MATMUL_GK][MATMUL_M]",
+                                                        dimensions=("[MATMUL_GK][MATMUL_M]",
+                                                                    f"[{k // 32}][{m}]"),
                                                         count=k // 32 * m, maximum=255)),
                                           (k // 32, m), 8, "k_group_row_e8m0"),
             "weight_scales": Resource(bytes(_array(source, name="B_scales_col", ctype="uint8_t",
-                                                    dimensions="[MATMUL_GK][MATMUL_N]",
+                                                    dimensions=("[MATMUL_GK][MATMUL_N]",
+                                                                f"[{k // 32}][{n}]"),
                                                     count=k // 32 * n, maximum=255)),
                                       (k // 32, n), 8, "k_group_column_e8m0"),
             "golden_bf16": Resource(_bytes(_array(source, name="C_out_bf16", ctype="uint16_t",
-                                                  dimensions="[MATMUL_M][MATMUL_N]",
+                                                  dimensions=("[MATMUL_M][MATMUL_N]",
+                                                              f"[{m}][{n}]"),
                                                   count=m * n, maximum=65535), 2),
                                     (m, n), 16, "row_major_bf16"),
         }
     resources["output_scales"] = Resource(bytes(_array(
         source, name="C_scales_row", ctype="uint8_t",
-        dimensions="[MATMUL_GN][MATMUL_M]", count=n // 32 * m, maximum=255)),
+        dimensions=("[MATMUL_GN][MATMUL_M]", f"[{n // 32}][{m}]"),
+        count=n // 32 * m, maximum=255)),
         (n // 32, m), 8, "n_group_row_e8m0")
     if kernel.quant_output and kernel.datatype == "FP6":
         projected = bytes(_array(source, name="C_proj_hw", ctype="uint8_t",

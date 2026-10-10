@@ -1,4 +1,4 @@
-"""Compile pinned Nicolas plain FP8/FP6 source data through typed MX MLIR.
+"""Compile pinned Nicolas plain FP8/FP4/FP6 source data through typed MX MLIR.
 
 The structural matmul comes from a fresh PyTorch -> model2MLIR capture. The
 packed operands and BF16 reference come from Nicolas's checked-in C header.
@@ -57,6 +57,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 128 cubed"),
+    "fp4_64x64x64": Case(
+        "fp4_64x64x64", "FP4", (64, 64, 64),
+        "matmul_tiled_fp4_64x64.c", "matmul_fp4_64x64.h",
+        "080d817557d8affdae299b155601b8f3a927970c39542fc6387c1e955492338c",
+        "22851fc6ff791f2748a2bbc501aa98176c4cf26b73c7dcea13dcca2a6202c06b",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP4 64x64x64"),
     "fp6_128x128x512": Case(
         "fp6_128x128x512", "FP6", (128, 128, 512),
         "matmul_tiled_fp6_128x128x512.c", "matmul_fp6_128x128x512.h",
@@ -135,6 +145,8 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
                    torch.randn((k, n), dtype=torch.float32))
     contract = ROOT / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = ROOT / "examples/default-policy.yaml"
+    if kernel.datatype == "FP4":
+        policy = ROOT / "examples/fp4-policy.yaml"
     if kernel.datatype == "FP6":
         fp6 = read_source_fp6_payload(kernel)
         policy = directory / "source_line0_policy.yaml"
@@ -156,7 +168,8 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
     if [(site["site_id"], site["status"], site["format"], site["shape"])
             for site in sites] != [
                 ("functional:matmul", "quantized",
-                 {"FP8": "mxfp8", "FP6": "mxfp6"}[kernel.datatype], [m, n, k])]:
+                 {"FP8": "mxfp8", "FP4": "mxfp4",
+                  "FP6": "mxfp6"}[kernel.datatype], [m, n, k])]:
         raise ValueError(f"model2MLIR did not capture the selected matmul: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)

@@ -40,9 +40,14 @@ class SourceFp6Payload:
         }
 
 
-def _array(source: str, *, name: str, ctype: str, dimensions: str,
+def _array(source: str, *, name: str, ctype: str,
+           dimensions: str | tuple[str, ...],
            count: int, maximum: int) -> tuple[int, ...]:
-    declaration = (rf"static const {ctype} {name}{re.escape(dimensions)}"
+    dimension_forms = (dimensions,) if isinstance(dimensions, str) else dimensions
+    if not dimension_forms or any(not isinstance(form, str) for form in dimension_forms):
+        raise ValueError("source array dimensions must name literal declarations")
+    escaped_dimensions = "|".join(re.escape(form) for form in dimension_forms)
+    declaration = (rf"static const {ctype} {name}(?:{escaped_dimensions})"
                    rf"(?:\s+__attribute__\s*\(\(aligned\(\d+\)\)\))?"
                    rf"\s*=\s*\{{(.*?)\n\}};")
     found = re.search(declaration, source, re.DOTALL)

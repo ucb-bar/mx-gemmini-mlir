@@ -36,6 +36,16 @@ def test_header_reader_accepts_only_literal_aligned_arrays():
                ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
 
 
+def test_header_reader_accepts_only_declared_symbolic_or_literal_dimensions():
+    declaration = "static const uint8_t A[2][2] = {{1, 2}, {3, 4}\n};"
+    dimensions = ("[MATMUL_M / 2][MATMUL_K]", "[2][2]")
+    assert _array(declaration, name="A", ctype="uint8_t",
+                  dimensions=dimensions, count=4, maximum=255) == (1, 2, 3, 4)
+    with pytest.raises(ValueError, match="declaration"):
+        _array(declaration.replace("[2][2]", "[1][4]"), name="A", ctype="uint8_t",
+               dimensions=dimensions, count=4, maximum=255)
+
+
 @pytest.mark.skipif(not DRIVER.is_file() or
                     not DRIVER.with_name("mxgemm.data.fp6.m128n128k2048.h").is_file(),
                     reason="requires the checked-in FP6 Radiance source header")
