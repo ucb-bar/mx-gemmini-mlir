@@ -204,18 +204,38 @@ checker compares both codes and scales on Nicolas's pinned Spike.
 | FP8 128×128×256, K tile 256 | 16,384 codes + 512 scales exact | 16,376 codes + 512 scales differ | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x256_tk256_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x256_tk256_quant_20261009.json) |
 | FP4 128×128×512, K tile 512 | 8,192 packed bytes + 512 scales exact | Header codes are FP8; 512 scales differ | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x512_tk512_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x512_tk512_quant_20261009.json) |
 
-The discrepancy is an upstream convention change, not a passing source-golden
-test: `radiance-kernels/lib/golden/mx_golden.cpp` uses `log2_pmax = 8` for FP8
-requant output, whereas Nicolas's current
+The discrepancy is a convention difference: `radiance-kernels/lib/golden/mx_golden.cpp`
+uses `log2_pmax = 8` for FP8 output, whereas Nicolas's current
 `src/main/scala/gemmini/MxRequantizer.scala` and pinned Spike use
-`log2_pmax_floor = 0`. The generated Radiance codes and scales therefore
-cannot match this MX+VPU configuration until that source golden is updated or
-the selected hardware convention changes. The 128×128×256 source driver also
-cannot stage its C tile in the original 128 KiB scratchpad; its generated
-golden is still usable, and Nicolas's 256 KiB profile admits the tile.
-The Radiance generator's `C_out` currently uses FP8 output even for generated
-FP4 headers. The compiler qualifies FP4 against the separately named current
-reference and records this source format mismatch.
+`log2_pmax_floor = 0`. The hardware requant path above retains Nicolas's
+convention. The 128×128×256 source driver cannot stage its C tile in the
+original 128 KiB scratchpad; Nicolas's 256 KiB profile admits the tile.
+The Radiance generator's `C_out` uses FP8 output even for generated FP4
+headers, so a source-compatible FP4-input run produces FP8 codes.
+
+For exact source-header output, `--source-header-quantized` binds the
+model2MLIR contraction to `mx_gemmini.readout_bf16` followed by the typed
+`mx_gemmini.host_requantize` op with policy `radiance_header_fp8_v1`.
+The physical lowering emits BF16 MX commands and a generated RV64 C epilogue
+that implements the source header's scale and FP8 code rule. It uses neither
+LLVM nor handwritten matrix commands. The compiler checks the derived codes
+and scales against the source bundle before building the ELF; the standalone
+driver compares the computed codes and scales on Spike. This is a compatibility
+path with a host epilogue, so its performance is not hardware requant
+performance. The separate hardware path remains available for resident MX
+consumers. See the [source-header Spike evidence](evidence/radiance_header_requant_266c593/qualification.json)
+for FP8 and FP4 input runs at 64×64 and 128×128.
+
+```sh
+python -m tools.qualify_source_mx \
+  --mlir docs/evidence/model2mlir_radiance_mx_fp8_64x64x64_quant_bound.mlir \
+  --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm64tn64tk64.requant.cpp \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /new/radiance-header-fp8-run \
+  --source-header-quantized
+```
 
 ## FP6 LUT-indexed quantized readout on Nicolas's Spike
 
@@ -959,8 +979,9 @@ profiles; these missing lists are specific to each source shape.
 
 ## Remaining gates
 
-1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
-   then qualify the actual FP6 requant source drivers once their missing data
+1. Qualify the source-compatible FP8 host epilogue on additional shapes and
+   on RTL or FPGA if that execution path is needed there. Qualify actual FP6
+   requant source drivers once their missing data
    headers are available, the remaining configuration families, and any
    source shapes without receipts. Extend multi-output tiling beyond the
    qualified FP8 BF16 shape.
