@@ -1,4 +1,4 @@
-"""Capture Nicolas's two 64-cubed MX contractions through current model2MLIR.
+"""Capture Nicolas's two 64³ MX+VPU or 128³ plain MX contractions.
 
 The PyTorch graph establishes the two contraction sites. Nicolas's checked-in
 packed tensors and scales are separate source specializations; this command
@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("--profile", required=True, type=Path)
     parser.add_argument("--mx-opt", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
+    parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -55,13 +56,20 @@ def main() -> None:
         raise ValueError("model2MLIR or MXQuant resolved to another checkout")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if profile["geometry"]["mesh_columns"] != 16 or \
-            "fp8_e4m3" not in profile["candidate_output_modes"] or \
-            not profile["resources"].get("vpu") or \
-            not profile["resources"].get("spad_requant"):
+            "fp8_e4m3" not in profile["candidate_output_modes"]:
+        raise ValueError("selected profile cannot execute Nicolas's FP8 chain")
+    if args.matrix_dim == 64 and (not profile["resources"].get("vpu") or
+                                  not profile["resources"].get("spad_requant")):
         raise ValueError("selected profile cannot execute Nicolas's FP8 VPU chain")
+    if args.matrix_dim == 128 and (profile["name"] != "MxGemminiRocketConfig" or
+                                   profile["resources"].get("vpu") or
+                                   not profile["resources"].get("requantizer")):
+        raise ValueError("selected profile cannot execute Nicolas's plain FP8 chain")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    source = software / "bareMetalC/chain_vpu_spad_requant.c"
-    header = software / "include/matmul_fp8_64x64_chain.h"
+    source = software / ("bareMetalC/chain_vpu_spad_requant.c" if args.matrix_dim == 64
+                         else "bareMetalC/matmul_tiled_fp8_128x128_chain.c")
+    header = software / ("include/matmul_fp8_64x64_chain.h" if args.matrix_dim == 64
+                         else "include/matmul_fp8_128x128_chain.h")
     if not source.is_file() or not header.is_file():
         raise ValueError("Nicolas's checked-in chain source/header is absent")
 
@@ -72,7 +80,8 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        example = tuple(torch.randn((64, 64), dtype=torch.float32) for _ in range(3))
+        example = tuple(torch.randn((args.matrix_dim, args.matrix_dim),
+                                    dtype=torch.float32) for _ in range(3))
     contract = root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = root / "examples/default-policy.yaml"
     result = m2m.convert(
@@ -88,8 +97,10 @@ def main() -> None:
     if (len(sites) != 2 or
             [(site["site_id"], site["status"], site["format"], site["shape"])
              for site in sites] != [
-                 ("functional:matmul", "quantized", "mxfp8", [64, 64, 64]),
-                 ("functional:matmul_1", "quantized", "mxfp8", [64, 64, 64])]):
+                 ("functional:matmul", "quantized", "mxfp8",
+                  [args.matrix_dim] * 3),
+                 ("functional:matmul_1", "quantized", "mxfp8",
+                  [args.matrix_dim] * 3)]):
         raise RuntimeError(f"two MX FP8 contraction sites were not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -107,7 +118,8 @@ def main() -> None:
         raise RuntimeError("profile-bound handoff lost a contraction site")
     subprocess.run([str(args.mx_opt.resolve()), str(bound), "-o", "/dev/null"], check=True)
     receipt = {
-        "schema": "mx_gemmini.nicolas_chain_model2mlir_capture.v1",
+        "schema": ("mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
+                   else "mx_gemmini.nicolas_chain_128_model2mlir_capture.v1"),
         "status": "two_site_frontend_handoff_only",
         "model2mlir_revision": _git(m2m_root), "mxq_revision": _git(mxq_root),
         "rtl_revision": _git(args.rtl_root), "software_revision": _git(software),
@@ -121,6 +133,8 @@ def main() -> None:
         "numerical_scope": "source A1/B1/B2 packed bytes and scales are not PyTorch example inputs",
         "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
     }
+    if args.matrix_dim == 128:
+        receipt["matrix_dim"] = 128
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 
