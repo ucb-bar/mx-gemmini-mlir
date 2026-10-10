@@ -340,12 +340,53 @@ and
 `--frontend-receipt docs/evidence/model2mlir_nicolas_chain_two_site_capture_20261009.json`.
 The output directory must be new.
 
+## Nicolas's standalone asymmetric mode
+
+`MxAsymE4M3Fp4GemminiRocketConfig` admits E4M3 activation through the
+4-bit-addressed, 8-bit-entry LUT with direct FP4 weights (`pe_mode=10`).
+`MxE4M3Fp4VpuGemminiRocketConfig` admits only symmetric FP8 and symmetric
+FP4; it cannot execute this asymmetric mode. A target profile is therefore
+selected before emitting the command sequence.
+
+`tools.qualify_nicolas_asym` captures a fresh 64×64×64 PyTorch matmul through
+the pinned model2MLIR checkout, then requires an explicit recipe naming
+Nicolas's `matmul_tiled_asym_e4m3_fp4_64x64.c`, its packed data header, the
+frontend site ID, the selected profile digest, and the exact legal compute
+tuple. The ordinary symmetric handoff binder continues to reject this mode.
+The specialized MLIR is accepted by `mx-gemmini-opt`; the source-bound
+lowerer emits LUT, scale, operand DMA, compute, and BF16 readback commands
+into a standalone RV64 ELF. On Nicolas's pinned Spike extension, the ELF
+matches **all 4,096 BF16 source golden values**. Two fresh captures and builds
+match the model2MLIR artifacts, generated issue source, RV64 objects and ELF,
+Spike extension, and Spike log hashes. The
+[receipt](evidence/compiled_nicolas_asym_e4m3_fp4_20261009.json) and
+[independent reproduction](evidence/compiled_nicolas_asym_e4m3_fp4_repro_20261009.json),
+[specialized MLIR](evidence/model2mlir_nicolas_asym_e4m3_fp4_bound_20261009.mlir),
+and [generated issue source](evidence/compiled_nicolas_asym_e4m3_fp4_issue_20261009.c)
+record the command and provenance checks. The random PyTorch examples
+establish graph structure and shape; Nicolas's header supplies the physical
+packed operands and scales. This is a bounded source specialization for the
+standalone asymmetric config, not a claim that model2MLIR currently emits
+mixed-operand quantization or that the MX+VPU profile supports it.
+
+Reproduce with a new output directory:
+
+```sh
+python -m tools.qualify_nicolas_asym \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAsymE4M3Fp4GemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/output-directory
+```
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
    then qualify the actual FP6 requant source drivers once their missing data
-   headers are available, asymmetric legal modes, and the remaining source
-   shapes. Extend multi-output tiling beyond the qualified FP8 BF16 shape.
+   headers are available, the other asymmetric legal mode classes, and any
+   source shapes without receipts. Extend multi-output tiling beyond the
+   qualified FP8 BF16 shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
