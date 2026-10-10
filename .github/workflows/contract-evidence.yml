@@ -28,13 +28,15 @@ jobs:
             tests/test_target_profile.py::test_lut_projection_selects_mode_per_operand \
             tests/test_radiance_mx_gemm_source_parity_roster.py \
             tests/test_radiance_latest_full_roster_evidence.py \
+            tests/test_generated_nicolas_modes.py \
             tests/test_spike_weight_lut_candidate_all_modes_evidence.py \
             tests/test_source_softmax.py \
             tests/test_radiance_ws_read_once_evidence.py \
             tests/test_radiance_restream_evidence.py \
             tests/test_radiance_batched_gemv_evidence.py \
             tests/test_source_attention_qk.py \
-            tests/test_radiance_gqa_qk_evidence.py
+            tests/test_radiance_gqa_qk_evidence.py \
+            tests/test_radiance_tilewise_vpu_x2_evidence.py
 
   pinned-rtl-profiles:
     runs-on: ubuntu-latest
