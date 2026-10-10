@@ -31,14 +31,15 @@ def _sha(path: Path) -> str:
 
 def discover(software: Path, profile_dir: Path, rtl_root: Path,
              mesh_dim: int = 16, *, all_asym: bool = False,
-             source_shape: str = "64x64", include_symmetric_lut: bool = False
+             source_shape: str = "64x64", include_symmetric_lut: bool = False,
+             include_symmetric_fp4: bool = False
              ) -> list[tuple[str, Path, dict]]:
     """Preflight each checked-in source/header against its legal mesh profile."""
     if all_asym and mesh_dim != 16:
         raise ValueError("DIM8/DIM32 already select their all-asymmetric profiles")
-    if include_symmetric_lut and (mesh_dim != 16 or source_shape != "64x64" or
-                                  not all_asym):
-        raise ValueError("same-format LUT source tests need DIM16 all-asymmetric 64x64")
+    if (include_symmetric_lut or include_symmetric_fp4) and (
+            mesh_dim != 16 or source_shape != "64x64" or not all_asym):
+        raise ValueError("same-format source tests need DIM16 all-asymmetric 64x64")
     rows = []
     dim_suffix = f"_dim{mesh_dim}" if mesh_dim != 16 else ""
     sources = sorted((software / "bareMetalC").glob(
@@ -74,6 +75,13 @@ def discover(software: Path, profile_dir: Path, rtl_root: Path,
             header = software / "include" / f"matmul_data_mx_lut_{name}_64x64.h"
             recipe = source_recipe(source, header, profile)
             rows.append((f"{name}_{name}", profile_path, recipe["compute"]))
+    if include_symmetric_fp4:
+        profile_path = profile_dir / "MxAllAsymGemminiRocketConfig.json"
+        profile = load_profile(profile_path, rtl_root=rtl_root)
+        source = software / "bareMetalC/matmul_tiled_fp4_64x64.c"
+        header = software / "include/matmul_fp4_64x64.h"
+        recipe = source_recipe(source, header, profile)
+        rows.append(("fp4_fp4", profile_path, recipe["compute"]))
     if len({suffix for suffix, _, _ in rows}) != len(rows):
         raise ValueError("Nicolas asymmetric source suffixes are not unique")
     if mesh_dim == 16 and not all_asym and source_shape == "64x64":
@@ -106,6 +114,8 @@ def main() -> None:
                         help="select DIM16 MxAllAsymGemminiRocketConfig instead of dedicated profiles")
     parser.add_argument("--include-symmetric-lut", action="store_true",
                         help="include Nicolas's three same-format DIM16 LUT source tests")
+    parser.add_argument("--include-symmetric-fp4", action="store_true",
+                        help="include Nicolas's direct FP4 by FP4 DIM16 BF16 source test")
     parser.add_argument("--source-suffix", action="append",
                         help="qualify only this named source pair; repeat to select several")
     args = parser.parse_args()
@@ -113,10 +123,9 @@ def main() -> None:
         parser.error("--jobs must be between 1 and 4")
     if args.all_asym and args.mesh_dim != 16:
         parser.error("DIM8/DIM32 already select their all-asymmetric profiles")
-    if args.include_symmetric_lut and (args.mesh_dim != 16 or
-                                       args.source_shape != "64x64" or
-                                       not args.all_asym):
-        parser.error("same-format LUT tests need --mesh-dim 16 --all-asym --source-shape 64x64")
+    if (args.include_symmetric_lut or args.include_symmetric_fp4) and (
+            args.mesh_dim != 16 or args.source_shape != "64x64" or not args.all_asym):
+        parser.error("same-format tests need --mesh-dim 16 --all-asym --source-shape 64x64")
     out_dir = args.out_dir.resolve()
     if out_dir.exists():
         parser.error(f"refusing to overwrite {out_dir}")
@@ -126,7 +135,8 @@ def main() -> None:
     rows = discover(software, root / "profiles/gemmini-mx-cleanup-266c593",
                     rtl, args.mesh_dim, all_asym=args.all_asym,
                     source_shape=args.source_shape,
-                    include_symmetric_lut=args.include_symmetric_lut)
+                    include_symmetric_lut=args.include_symmetric_lut,
+                    include_symmetric_fp4=args.include_symmetric_fp4)
     if args.source_suffix:
         selected = set(args.source_suffix)
         unknown = selected - {suffix for suffix, _, _ in rows}
@@ -141,7 +151,9 @@ def main() -> None:
         directory = out_dir / suffix
         same_format = (suffix.split("_")[0] if args.include_symmetric_lut and
                        suffix in {"e2m3_e2m3", "e4m3_e4m3", "e5m2_e5m2"} else None)
-        source_selection = (["--symmetric-lut", same_format] if same_format else
+        source_selection = (["--symmetric-fp4"] if args.include_symmetric_fp4 and
+                            suffix == "fp4_fp4" else
+                            ["--symmetric-lut", same_format] if same_format else
                             ["--source-suffix", suffix])
         command = [sys.executable, "-m", "tools.qualify_nicolas_asym",
                    *source_selection, "--mesh-dim", str(args.mesh_dim),
@@ -184,13 +196,15 @@ def main() -> None:
                      for key in sorted(legal_cells.keys() - selected_cells)]
     manifest = {"schema": "mx_gemmini.nicolas_asymmetric_mode_matrix.v1",
                 "scope": (f"named DIM{args.mesh_dim} {args.source_shape} " +
-                          ("asymmetric and same-format LUT" if args.include_symmetric_lut
+                          ("asymmetric and same-format" if
+                           args.include_symmetric_lut or args.include_symmetric_fp4
                            else "asymmetric") + " Rocket/RoCC source tests on pinned Spike" +
                           (" using the all-asymmetric profile" if args.all_asym else "")),
                 "mesh_dim": args.mesh_dim,
                 "source_shape": args.source_shape,
                 "all_asym_profile": args.all_asym or args.mesh_dim != 16,
                 "includes_symmetric_lut": args.include_symmetric_lut,
+                "includes_symmetric_fp4": args.include_symmetric_fp4,
                 "selected_modes": len(rows),
                 "selected_profiles": len({profile for _, profile, _ in rows}),
                 "legal_mode_count": len(legal_cells),

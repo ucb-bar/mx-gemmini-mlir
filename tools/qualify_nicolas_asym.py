@@ -42,6 +42,8 @@ def main() -> None:
                         help="Nicolas source pair, for example e2m3_e5m2")
     parser.add_argument("--symmetric-lut", choices=("e2m3", "e4m3", "e5m2"),
                         help="Nicolas's named same-format LUT source test")
+    parser.add_argument("--symmetric-fp4", action="store_true",
+                        help="Nicolas's named direct FP4 by FP4 BF16 source test")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
     parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
@@ -74,7 +76,14 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    if args.symmetric_lut:
+    if args.symmetric_fp4:
+        if (args.source_suffix or args.symmetric_lut or args.source_shape != "64x64" or
+                args.mesh_dim != 16):
+            parser.error("direct FP4 source selection needs DIM16 64x64 and no other source")
+        suffix = "fp4_fp4"
+        source = software / "bareMetalC/matmul_tiled_fp4_64x64.c"
+        header = software / "include/matmul_fp4_64x64.h"
+    elif args.symmetric_lut:
         if args.source_suffix or args.source_shape != "64x64" or args.mesh_dim != 16:
             parser.error("same-format LUT source selection needs DIM16 64x64 and no source suffix")
         name = args.symmetric_lut

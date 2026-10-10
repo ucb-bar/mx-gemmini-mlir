@@ -66,8 +66,23 @@ E5M2_E5M2_CELL = {"activation_format": "fp8_e5m2",
                   "activation_projection": "lut",
                   "weight_format": "fp8_e5m2",
                   "weight_projection": "lut", "pe_mode": 4}
+FP4_FP4_CELL = {"activation_format": "fp4_e2m1",
+                "activation_projection": "direct",
+                "weight_format": "fp4_e2m1",
+                "weight_projection": "direct", "pe_mode": 0}
 
 _VARIANTS = {
+    "matmul_tiled_fp4_64x64.c": {
+        "header": "matmul_fp4_64x64.h", "cell": FP4_FP4_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": False,
+        "lut_words_per_line": 0, "lut_entry_bits": 0,
+        "weight_decl": "B_in[64][32]",
+        "activation_scales_decl": "A_scales_row[2][64]",
+        "weight_scales_decl": "B_scales_col[2][64]",
+        "golden_decl": "C_out_bf16[64][64]",
+        "source_config_marker": ("gemmini_extended3_config_ex(WEIGHT_STATIONARY, 0, 0, "
+                                 "ACC_SCALE_IDENTITY, 1, 1, 0, 0, false, 2, 2, 3, 0)"),
+    },
     "matmul_tiled_fp6_e2m3_lut_64x64.c": {
         "header": "matmul_data_mx_lut_e2m3_64x64.h",
         "cell": E2M3_E2M3_CELL,
@@ -250,17 +265,22 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
         if marker not in source_text:
             raise ValueError(f"Nicolas source command contract changed: {marker}")
     lut_marker = f'#define USE_LUT {int(variant["use_lut"])}'
+    config_marker = variant.get("source_config_marker")
     if lut_marker not in source_text and not (
-            not variant["use_lut"] and "((uint64_t)(0) << 5)" in source_text):
+            not variant["use_lut"] and "((uint64_t)(0) << 5)" in source_text) and not (
+            config_marker and config_marker in source_text):
         raise ValueError(f"Nicolas source command contract changed: {lut_marker}")
     if not re.search(r"gemmini_loop_ws_spad\(\s*tiles_I,\s*tiles_J,\s*tiles_K", source_text):
         raise ValueError("Nicolas source loop schedule changed")
     for marker in (f"#define MATMUL_M   {m}", f"#define MATMUL_K   {k}",
                    f"#define MATMUL_N   {n}", variant["activation_array"],
-                   variant.get("weight_array", "B_in[MATMUL_K][MATMUL_N / 2]"),
-                   "A_scales_row[MATMUL_GK][MATMUL_M]",
-                   "B_scales_col[MATMUL_GK][MATMUL_N]",
-                   "C_out_bf16[MATMUL_M][MATMUL_N]"):
+                   variant.get("weight_decl", variant.get(
+                       "weight_array", "B_in[MATMUL_K][MATMUL_N / 2]")),
+                   variant.get("activation_scales_decl",
+                               "A_scales_row[MATMUL_GK][MATMUL_M]"),
+                   variant.get("weight_scales_decl",
+                               "B_scales_col[MATMUL_GK][MATMUL_N]"),
+                   variant.get("golden_decl", "C_out_bf16[MATMUL_M][MATMUL_N]")):
         if marker not in header_text:
             raise ValueError(f"Nicolas source data contract changed: {marker}")
     if cell["activation_format"] in {"fp8_e4m3", "fp8_e5m2"}:
@@ -497,8 +517,18 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     a_name = "A_in_hw" if packed_activation else "A_in"
     a_shape = (variant["activation_array"].removeprefix("A_in_hw") if packed_activation
                else "[MATMUL_M][MATMUL_K]")
-    weight_shape = ("[MATMUL_K][MATMUL_N]" if variant.get("weight_array") else
+    weight_shape = (variant["weight_decl"].removeprefix("B_in") if
+                    variant.get("weight_decl") else
+                    "[MATMUL_K][MATMUL_N]" if variant.get("weight_array") else
                     "[MATMUL_K][MATMUL_N / 2]")
+    activation_scales_shape = variant.get(
+        "activation_scales_decl", "A_scales_row[MATMUL_GK][MATMUL_M]").removeprefix(
+            "A_scales_row")
+    weight_scales_shape = variant.get(
+        "weight_scales_decl", "B_scales_col[MATMUL_GK][MATMUL_N]").removeprefix(
+            "B_scales_col")
+    golden_shape = variant.get(
+        "golden_decl", "C_out_bf16[MATMUL_M][MATMUL_N]").removeprefix("C_out_bf16")
     weight_count = k * n if variant.get("weight_array") else k * n // 2
     resources = {
         "activation": bytes(_array(text, name=a_name, ctype="uint8_t",
@@ -508,13 +538,13 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
                                 dimensions=weight_shape,
                                 count=weight_count, maximum=255)),
         "activation_scales": bytes(_array(text, name="A_scales_row", ctype="uint8_t",
-                                            dimensions="[MATMUL_GK][MATMUL_M]",
+                                            dimensions=activation_scales_shape,
                                             count=k // 32 * m, maximum=255)),
         "weight_scales": bytes(_array(text, name="B_scales_col", ctype="uint8_t",
-                                        dimensions="[MATMUL_GK][MATMUL_N]",
+                                        dimensions=weight_scales_shape,
                                         count=k // 32 * n, maximum=255)),
         "golden_bf16": _bytes(_array(text, name="C_out_bf16", ctype="uint16_t",
-                                      dimensions="[MATMUL_M][MATMUL_N]",
+                                      dimensions=golden_shape,
                                       count=m * n, maximum=0xffff), 2),
     }
     if variant["use_lut"]:
