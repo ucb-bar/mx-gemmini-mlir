@@ -1227,6 +1227,35 @@ python -m tools.qualify_radiance_ws_roster \
   --baseline-index docs/evidence/radiance_ws_read_once_1a7bc9c/index.json
 ```
 
+### Four-pass re-stream comparison
+
+The committed `gemm_mxgemmini_ws_restream/kernel.cpp` uses four M=64 output
+tiles. Its `A_scales_tiled` array is checked as an exact block-contiguous
+reordering of the committed canonical E8M0 scales before binding the typed
+contraction. A model2MLIR capture of the actual 256×64×2048 source shape
+lowers to four output-tile programs, and its standalone ELF matches all
+**16,384 BF16 values** in that source's committed golden on pinned Spike. The
+[physical trace](evidence/radiance_restream_1df2c5f/physical_program.json.gz)
+has four complete reads of B: **128 logical weight-tile reads** and 524,288
+transferred weight bytes, versus 32 reads and 131,072 bytes in the read-once
+case. Two clean runs have identical
+[artifact indices](evidence/radiance_restream_1df2c5f/index.json).
+
+The committed re-stream `data` has a different hash from the regenerated
+read-once data. The comparison establishes each source's own numerical parity
+and the fourfold weight-traffic difference for their equal shapes; it does not
+claim that they used identical operand values or that their cycle counts match
+on the Radiance SoC. Reproduce the re-stream case with:
+
+```sh
+python -m tools.qualify_radiance_restream \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --source-root "$RADIANCE_KERNELS_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --riscv-root "$RISCV_ROOT" --mx-opt build/tools/mx-gemmini-opt \
+  --radiance-opt "$RADIANCE_OPT" --out-dir /new/mx-restream \
+  --baseline-index docs/evidence/radiance_restream_1df2c5f/index.json
+```
+
 ## Isolated weight-LUT Spike correction across all legal modes
 
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)

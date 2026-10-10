@@ -31,6 +31,9 @@ rebuilds and checks those captures and Spike results against archived hashes.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
+The [re-stream baseline](docs/compiled_mx_pipeline.md#four-pass-re-stream-comparison)
+matches its committed source golden and shows the expected fourfold weight
+traffic across four M tiles.
 The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
 goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike
