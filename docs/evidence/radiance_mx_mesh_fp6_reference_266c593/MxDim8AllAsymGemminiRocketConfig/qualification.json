@@ -1,0 +1,47 @@
+{
+  "compared_bf16_outputs": 16384,
+  "compiler_revision": "7944c9eb42eab3d2897514e55f9f65b8567e926d",
+  "compiler_source_closure_sha256": "0669245ec63b4a36def1277d51ac66390bb3a9aece470d5db96e96f69f42b9fd",
+  "frontend_index_sha256": "47ef832752288ddeab0a28c1ca1a7a12d0150880d407143512b6aeb3505db8c4",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_name": "MxDim8AllAsymGemminiRocketConfig",
+  "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+  "rows": [
+    {
+      "artifact_manifest_sha256": "eab805d84dbd2155ee9c029bda2a3ed616a3a396935e4fe30fa8269fbec7a01c",
+      "bundle_manifest_sha256": "05508e704148f71a244cedbef96265a575f05996437cae7c9eb0cbfdb4312098",
+      "compared_bf16_outputs": 16384,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "18bfc5d0af4687bd965f546508d945adcfbfee5d242e6269ec442889888e02ed",
+      "elf_sha256": "5b7dd38863e5f51f4c48145a413d8f67d1bfbfcaec71ff3b5015e91c90b9875c",
+      "generated_issue_sha256": "9e988c9852ed6bc87d171005addae56884e92683dbae8064cea557c2b9fa03a8",
+      "handoff_mlir_sha256": "13e51c66a1f7cbcf062fe2dc9bf6393974d4f118e9f8c7614425f9dfe5d7c7d3",
+      "header_sha256": "b57ef75fc634acd21750db45202bf12ced04569701f74e0607e0f06c974da93e",
+      "payload_bound_mlir_sha256": "6cd6cb1365143beebc487cf6ad7fd7f749d8684d30e156a2e73f96c395424f95",
+      "physical_program_sha256": "e00cf9c94f2ef469077380bfded4b9054b30c97f8c95037b89b5456e46ccc1bb",
+      "precision": "FP6",
+      "profile_bound_mlir_sha256": "b20a3d73682f09ea48703109813e43643cac03a2784d5656b43bb1af1a848cab",
+      "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+      "spike_log_sha256": "aecb16227071c3aaf9b2908bfbf0c3d2a8b4dff99df63423aad9e3d504dfde92",
+      "status": "target_mesh_reference_matched_on_pinned_spike",
+      "target_golden_sha256": "103840a6d2ee9aee5de5c1feb054aa810c5d85040a53b8bf64837b4141c93969",
+      "target_mesh_reference": {
+        "lut_granularity_shift": 1,
+        "mesh_dim": 8,
+        "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+        "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+        "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
+        "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+        "target_golden_sha256": "103840a6d2ee9aee5de5c1feb054aa810c5d85040a53b8bf64837b4141c93969",
+        "transformed_cpp_sha256": "06d6b5a2cb59910c666a8ad174d6e376d291c73130026ee7347aa7f1a9b28156",
+        "unpacked_activation_lut_sha256": "fc76911d8532d11663c783dfacf89dd881e4f1d7e92e91033f07ac5f722ee6d4",
+        "unpacked_weight_lut_sha256": "d325161ba85d9dcbf72d4bdc8e0791f9b83ed46c7f9463dab99a97ae7ff9f4a4"
+      }
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_target_mesh_reference_cases.v1",
+  "scope": "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; byte-checked Radiance operands and derived target mesh BF16 reference",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "target_mesh_reference_precisions_matched_on_pinned_spike"
+}

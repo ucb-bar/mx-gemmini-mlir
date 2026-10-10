@@ -1356,7 +1356,7 @@ python -m tools.qualify_radiance_mx_base_profile \
   --case fp4 --out-dir /tmp/mx-fp4-only-profile
 ```
 
-### Radiance FP8 and FP4 on DIM8 and DIM32
+### Radiance FP8, FP4, and FP6 on DIM8 and DIM32
 
 The source planner and physical command lowerer now derive scratchpad rows,
 operand transfers, tile counts, and BF16 readout from the selected square
@@ -1369,7 +1369,8 @@ those bytes would be an invalid qualification. The mesh reference path first
 recompiles Radiance's pinned `mx_golden.cpp` for DIM16 and requires a byte-for-byte
 match with the source header. It then changes only the mesh dimension, PE tile
 extent, and accumulator schedule to derive a target mesh reference from the
-**same source operand codes and E8M0 scales**. The source golden bytes, model
+**same source operand codes and E8M0 scales**. For FP6, it also unpacks the
+source's A/B 64-line LUT banks at the source granularity. The source golden bytes, model
 source hashes, transformed model hash, and target reference hash remain in the
 bundle provenance. A target mesh reference is labeled separately from source
 golden parity throughout the physical receipt and Spike artifact manifest.
@@ -1382,16 +1383,20 @@ Radiance `80f84ca` data. The
 and [regression test](../tests/test_radiance_mesh_reference_evidence.py)
 pin the profile, generated commands, RV64 ELF, target reference, and Spike
 log for each build. This is functional Spike evidence for those shape and
-precision pairs. FP6 target mesh reference derivation and RTL/FPGA execution
-remain separate gates; the earlier Nicolas asymmetric matrices already
-exercise FP6 modes on DIM8 and DIM32 using his mesh-specific source goldens.
+precision pairs. A separate two-run [FP6 qualification index](evidence/radiance_mx_mesh_fp6_reference_266c593/index.json)
+and [test](../tests/test_radiance_mesh_fp6_reference_evidence.py) cover
+FP6 128×128×2048 on both meshes, comparing another **32,768 / 32,768 BF16
+outputs per run**. Across the six selected cases, **73,728** target mesh BF16
+outputs match per run. RTL and FPGA execution remain separate gates; the
+earlier Nicolas asymmetric matrices independently exercise FP6 modes on
+DIM8 and DIM32 using his mesh-specific source goldens.
 
 ```sh
 python -m tools.qualify_radiance_mx_base_profile \
   --source-root "$RADIANCE_KERNELS_ROOT" \
   --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxDim8AllAsymGemminiRocketConfig.json \
-  --case fp8 --case fp4 --out-dir /tmp/mx-radiance-dim8
+  --case fp8 --case fp4 --case fp6 --out-dir /tmp/mx-radiance-dim8
 # Repeat with MxDim32AllAsymGemminiRocketConfig and a new output directory.
 ```
 

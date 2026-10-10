@@ -1,0 +1,61 @@
+{
+  "case_count": 2,
+  "compared_bf16_outputs_per_run": 32768,
+  "compiler_revision": "7944c9eb42eab3d2897514e55f9f65b8567e926d",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_count": 2,
+  "profiles": [
+    {
+      "compared_bf16_outputs": 16384,
+      "elf_sha256": "5b7dd38863e5f51f4c48145a413d8f67d1bfbfcaec71ff3b5015e91c90b9875c",
+      "mesh_dim": 8,
+      "profile_name": "MxDim8AllAsymGemminiRocketConfig",
+      "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+      "qualification_repro_sha256": "560c90476fda55f894355c927d7fd67426bfc0bdc9879324ff676decbac1eb09",
+      "qualification_sha256": "0b82d8c13f68d45dbe527390c7d4f50b94c1bb27d6666d10a4203b13d178efab",
+      "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+      "spike_log_sha256": "aecb16227071c3aaf9b2908bfbf0c3d2a8b4dff99df63423aad9e3d504dfde92",
+      "target_golden_sha256": "103840a6d2ee9aee5de5c1feb054aa810c5d85040a53b8bf64837b4141c93969",
+      "target_mesh_reference": {
+        "lut_granularity_shift": 1,
+        "mesh_dim": 8,
+        "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+        "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+        "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
+        "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+        "target_golden_sha256": "103840a6d2ee9aee5de5c1feb054aa810c5d85040a53b8bf64837b4141c93969",
+        "transformed_cpp_sha256": "06d6b5a2cb59910c666a8ad174d6e376d291c73130026ee7347aa7f1a9b28156",
+        "unpacked_activation_lut_sha256": "fc76911d8532d11663c783dfacf89dd881e4f1d7e92e91033f07ac5f722ee6d4",
+        "unpacked_weight_lut_sha256": "d325161ba85d9dcbf72d4bdc8e0791f9b83ed46c7f9463dab99a97ae7ff9f4a4"
+      }
+    },
+    {
+      "compared_bf16_outputs": 16384,
+      "elf_sha256": "033704410069ca0f075d38dbbe47a3273709f71b76cd6a720b719b4f50714852",
+      "mesh_dim": 32,
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+      "qualification_repro_sha256": "58badb9ce461ee964aaefed0db662d7f621cd916f5c51f9620df6a7f942410a4",
+      "qualification_sha256": "ae441447e04445c7a93fdc62e6519ff894019ef00dd7db4639863bfd938d39e4",
+      "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+      "spike_log_sha256": "9339996acf1bbadd821e1c350a6289bf4ede191645faaee0c52f2b1185738d7c",
+      "target_golden_sha256": "497eddf1544f7653bf31ba123c20caa45c4d5de55492f483efa33298f07a7d85",
+      "target_mesh_reference": {
+        "lut_granularity_shift": 1,
+        "mesh_dim": 32,
+        "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+        "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+        "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
+        "source_golden_sha256": "6dfa0bfa2eedeaed8112e1ad1f24e7ec5c6d6b780da8c63a330c1a0bff5b3bd0",
+        "target_golden_sha256": "497eddf1544f7653bf31ba123c20caa45c4d5de55492f483efa33298f07a7d85",
+        "transformed_cpp_sha256": "576dac7cd585552904458f01d855890145d9b4e75a7ce136d9408c0942b01266",
+        "unpacked_activation_lut_sha256": "fc76911d8532d11663c783dfacf89dd881e4f1d7e92e91033f07ac5f722ee6d4",
+        "unpacked_weight_lut_sha256": "d325161ba85d9dcbf72d4bdc8e0791f9b83ed46c7f9463dab99a97ae7ff9f4a4"
+      }
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_mesh_fp6_reference_spike_matrix.v1",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "two_fp6_target_mesh_reference_cases_matched_twice_on_pinned_spike"
+}
