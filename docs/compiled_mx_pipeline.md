@@ -1273,6 +1273,51 @@ profiles; these missing lists are specific to each source shape.
 
 ## Latest complete Radiance MX GEMM roster
 
+### Nicolas's plain MX Rocket profile across FP8, FP4, and FP6
+
+The [plain-profile qualifier](../tools/qualify_radiance_mx_base_profile.py)
+rebinds three archived model2MLIR `e9ded36` captures to Nicolas's
+`MxGemminiRocketConfig` at RTL `266c593`. This is the MX-only Rocket
+configuration with three legal compute modes and no VPU. The selected
+Radiance sources are FP8 128×128×512, FP4 64×64×128, and FP6 128×128×2048.
+The qualifier checks each driver and data header against the capture roster,
+binds actual packed codes, E8M0 scales, and, for FP6, all three 64-line LUT
+banks. It lowers the typed contractions to physical commands, builds RV64
+ELFs, and compares every BF16 output on Nicolas's pinned Spike extension.
+
+Two independent runs from compiler `48fbb89` matched **16,384 FP8**, **4,096
+FP4**, and **16,384 FP6** BF16 outputs, **36,864 total**. A third run used a
+fresh Radiance `80f84ca` worktree after generating only missing headers; its
+bound MLIR, bundles, physical commands, generated C, ELFs, and Spike logs
+match the first two byte for byte. The
+[qualification index](evidence/radiance_plain_mx_profile_trio_266c593/index.json),
+[fresh materialization receipt](evidence/radiance_plain_mx_profile_trio_266c593/fresh_materialization.json),
+and [regression test](../tests/test_plain_mx_profile_trio_evidence.py)
+record the inputs and all three executions. Exact ELF bytes are archived for
+each precision; only path-bearing link log hashes differ between builds.
+This qualifies the three selected mode/shape combinations on the plain
+Rocket profile's pinned functional simulator. It does not certify every
+profile, RTL timing, or an FPGA image.
+
+From a fresh compatible Radiance checkout, build its golden generator and
+materialize missing headers before the MX qualification command:
+
+```sh
+make -C "$RADIANCE_KERNELS_ROOT/lib/golden" mx_golden
+python -m tools.materialize_radiance_roster_headers \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --expected-index docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22/frontend/index.json \
+  --compatible-source-revision --out /tmp/mx-header-materialization.json
+python -m tools.qualify_radiance_mx_base_profile \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --out-dir /tmp/mx-plain-profile-trio
+```
+
+The materializer preserves committed headers and checks all 31 driver/header
+hashes. The qualifier itself compiles only the three cases above and refuses
+changed source bytes or a drifted RTL profile.
+
 The [31-driver evidence archive](evidence/radiance_mx_gemm_latest_e9ded36_ee22/)
 binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, Nicolas's
 `gemmini-mx-cleanup` RTL `266c593`, and this compiler's `12cb75d` Spike runs.

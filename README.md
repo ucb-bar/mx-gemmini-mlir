@@ -28,6 +28,10 @@ qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
 23 drivers with BF16 output and 8 with requantized output match their source
 goldens. The [one-command reproduction](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 rebuilds and checks those captures and Spike results against archived hashes.
+The [plain MX Rocket profile test](docs/compiled_mx_pipeline.md#nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6)
+also runs representative FP8, FP4, and FP6 source kernels on
+`MxGemminiRocketConfig` without VPU. Two runs and a fresh-source rerun match
+all 36,864 BF16 outputs and reproduce the generated ELFs on Nicolas's Spike.
 The same command now accepts the current Radiance `spatter-workloads` revision
 `80f84ca` with `--compatible-source-revision`: all 31 driver and header bytes,
 typed MLIR, physical streams, ELFs, and Spike logs match the pinned roster.

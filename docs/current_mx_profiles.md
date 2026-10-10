@@ -27,6 +27,11 @@ reproductions. See the [mesh qualification index](compiled_mx_pipeline.md#dim8-a
 The Radiance direct E4M3×E4M3 source driver separately qualifies a 31st
 distinct DIM16 mode with two full-output Spike runs; it is not part of
 Nicolas's checked-in source-mode matrix.
+The [plain MX Rocket profile](compiled_mx_pipeline.md#nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6)
+now has direct compiler-on-Spike evidence for its three selected FP8, FP4,
+and FP6 Radiance source kernels: 36,864 BF16 outputs match across two builds
+and a fresh-source rerun. This profile has no VPU; the separate VPU profiles
+remain the targets for VPU compositions.
 Four more cells have separate full-output tests from Nicolas's validated
 `gen_asym.py` data model, giving **35 of 36 distinct DIM16 modes** with
 numerical parity on the unmodified Spike extension. The remaining direct
