@@ -1,12 +1,12 @@
 // Generated from model2MLIR site functional:matmul and explicit source recipe.
-// Source driver SHA-256: 2405a800afdb6554721e9c405cd2f3c1842d97c0a173ad3f53ff1ea309d74eaf
-// Source header SHA-256: 020d5825f08a525ae274f4d0803607aaae89b2f7e8262c9a1fe74de2f7c5488e
+// Source driver SHA-256: 438ec91a72317bd21dde8e32196aeca7b81a67c698f4c46b64e61b2ef009d9d5
+// Source header SHA-256: b8fe147ba3f5e19f1a2bbe941d99253759edfaa1dbb3bfc27290c7d44e723f17
 // MX profile SHA-256: fb0e0e5a6bb0bca2fa215ac58fe81e6d430421c0a55a1859c6500b5575122826
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "include/gemmini_testutils.h"
-#include "include/matmul_data_asym_e4m3_fp4.h"
+#include "include/matmul_data_asym_e4m3s_fp4.h"
 
 _Static_assert(DIM == 16 && BANK_NUM == 4 && BANK_ROWS == 4096,
                "selected asymmetric MX software geometry changed");
@@ -14,7 +14,7 @@ static uint16_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
 static uint32_t output_scales[512] __attribute__((aligned(64)));
 
 int main(void) {
-  const int tiles_i = MATMUL_M / 32;
+  const int tiles_i = MATMUL_M / 16;
   const int tiles_j = MATMUL_N / 32;
   const int tiles_k = MATMUL_K / DIM;
   const uint32_t a_base = 0;
@@ -23,19 +23,17 @@ int main(void) {
   const uint32_t c_base = 128;
   memset(C_hw, 0, sizeof C_hw);
   gemmini_flush(0);
-  // E4M3 activation (lut), direct FP4 weight, BF16 output.
+  // E4M3 activation (direct), direct FP4 weight, BF16 output.
   gemmini_extended3_config_ex(WEIGHT_STATIONARY, 0, 0, ACC_SCALE_IDENTITY,
-                              1, 1, 0, 0, false, 0, 2, 3, true);
-  gemmini_mx_load_lut_dt((uint64_t)B_lut, MATMUL_N / 2, 0, 8);
-  gemmini_mx_load_lut_dt((uint64_t)A_lut, MATMUL_M / 2, 1, 8);
-  gemmini_mx_load_lut_dt((uint64_t)C_lut, MATMUL_M / 2, 2, 8);
+                              1, 1, 0, 0, false, 0, 2, 3, false);
+  gemmini_mx_lut_disable();
   gemmini_mx_load_scales((uint64_t)A_scales_row, sizeof A_scales_row, 0);
   gemmini_mx_load_scales((uint64_t)B_scales_col, sizeof B_scales_col, 1);
   gemmini_fence();
   gemmini_config_ld(MATMUL_K);
   for (int i = 0; i < tiles_i; ++i)
     for (int k = 0; k < tiles_k; ++k)
-      gemmini_extended_mvin((void *)&A_in_hw[i * DIM][k * DIM],
+      gemmini_extended_mvin((void *)&A_in[i * DIM][k * DIM],
                             a_base + (i * tiles_k + k) * DIM, DIM, DIM);
   gemmini_config_ld(MATMUL_N / 2);
   for (int k = 0; k < tiles_k; ++k)

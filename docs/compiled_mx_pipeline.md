@@ -343,7 +343,8 @@ The output directory must be new.
 ## Nicolas's standalone asymmetric mode
 
 `MxAsymE4M3Fp4GemminiRocketConfig` admits E4M3 activation through the
-4-bit-addressed, 8-bit-entry LUT with direct FP4 weights (`pe_mode=10`).
+4-bit-addressed, 8-bit-entry LUT with direct FP4 weights (`pe_mode=10`), and
+direct 8-bit E4M3 activation with direct FP4 weights (`pe_mode=6`).
 `MxE4M3Fp4VpuGemminiRocketConfig` admits only symmetric FP8 and symmetric
 FP4; it cannot execute this asymmetric mode. A target profile is therefore
 selected before emitting the command sequence.
@@ -369,6 +370,19 @@ packed operands and scales. This is a bounded source specialization for the
 standalone asymmetric config, not a claim that model2MLIR currently emits
 mixed-operand quantization or that the MX+VPU profile supports it.
 
+The same command with `--variant direct` selects Nicolas's separate
+`matmul_tiled_asym_e4m3s_fp4_64x64.c` and data header. This changes the
+activation projection, physical PE mode, operand layout, and number of M
+tiles. Its generated ELF also matches **all 4,096 BF16 source values** on
+pinned Spike. Two fresh builds reproduce the captured frontend artifacts,
+generated source, objects, ELF, extension, and Spike log hashes. See the
+[direct-mode receipt](evidence/compiled_nicolas_asym_direct_e4m3_fp4_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_direct_e4m3_fp4_repro_20261009.json),
+[bound MLIR](evidence/model2mlir_nicolas_asym_direct_e4m3_fp4_bound_20261009.mlir),
+and [generated issue source](evidence/compiled_nicolas_asym_direct_e4m3_fp4_issue_20261009.c).
+The source PyTorch capture and unbound handoff hashes equal those in the LUT
+mode evidence; the recipes and bound contracts differ.
+
 Reproduce with a new output directory:
 
 ```sh
@@ -379,6 +393,8 @@ python -m tools.qualify_nicolas_asym \
   --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
   --out-dir /new/output-directory
 ```
+
+Use `--variant direct` for mode 6. The default `lut` selects mode 10.
 
 ## Remaining gates
 
