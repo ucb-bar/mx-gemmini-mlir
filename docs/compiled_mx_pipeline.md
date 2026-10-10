@@ -3487,3 +3487,16 @@ issuer, object, ELF, extension, Spike log, and compiler source closure hashes.
 Append `--include-mm1` to the compile command above to reproduce the complete
 chain. The output includes the bound graph, physical commands, data-free
 object, standalone ELF, and full-output Spike check.
+
+The separate
+[E4M3-only VPU profile archive](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled/object_manifest.json)
+repeats the latest-model2MLIR capture, handwritten source oracle, and full
+three-site compiler run under `MxE4M3VpuGemminiRocketConfig`. Its compiler
+program also matches **4,096 C1 BF16 values**, **16,384 FP8 codes**, and
+**512 scales** on Nicolas's pinned Spike. A second build reproduced its
+bound graph, commands, object, ELF, and log hashes. The E4M3-only and
+FP4-capable VPU profiles bind different profile hashes, while this FP8
+program's issuer, object, ELF, and log are byte-identical. The
+[profile qualification catalog](evidence/mx_profile_qualification_catalog_266c593/index.json)
+indexes these as separate named-profile receipts; it does not infer FP4 or
+FP6 VPU support from the shared FP8 result.

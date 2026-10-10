@@ -1,0 +1,60 @@
+{
+  "bound_mlir_sha256": "636980213f08b27b2737718e32cbab5e652427eb0428c070d7dc3f405f7198c9",
+  "capture_trace_sha256": "c8858f033e22fe46c50d964d155c8369ad1d12c1fa5b7100ce3467fe72480c62",
+  "compiler_revision": "74da80a78fefc7deb16c1308cef49125c8e7f417",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "handoff_mlir_sha256": "18a6b80288f0bc8cdf7750a40db9e5cfdf818ab9726d3b02ad5f0adbdb72b876",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "manifest_sha256": "6e99b52d68aa4a95a779415d69473436806ef6e9703bb31c1bbef1ebde4e35b4",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "opaque_calls": {},
+  "original_graph_sha256": "df231a7624fd91f2da7718ae90d34880c6faaf3a20c9fd3b204d3fb5db9e33a0",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_chain_pipelined_model2mlir_capture.v1",
+  "scope": "shared MM1 followed by two scalar branches and MM2 sites; source driver preloads C1 and tests three schedules",
+  "sites": [
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    },
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul_1",
+      "status": "quantized"
+    },
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul_2",
+      "status": "quantized"
+    }
+  ],
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_mlir_sha256": "32c407ac990b485a955a768c958fa3226cdf0dbf555cbc63f66b9ef8e274b084",
+  "source_sha256": "6bbcf587aa5ccfdf99ff2b1a46a08117067ed056a68c3bc30b267ee7fcd350d4",
+  "status": "three_site_frontend_handoff_only"
+}

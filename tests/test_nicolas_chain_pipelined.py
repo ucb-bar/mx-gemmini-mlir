@@ -25,6 +25,7 @@ RTL = Path(os.environ.get("MX_GEMMINI_RTL_ROOT", "/nonexistent"))
 EVIDENCE = ROOT / "docs/evidence/nicolas_chain_pipelined_266c593"
 COMPILED = ROOT / "docs/evidence/nicolas_chain_pipelined_compiled_266c593"
 FULL = ROOT / "docs/evidence/nicolas_chain_pipelined_full_266c593"
+E4M3_ONLY = ROOT / "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
 
 
@@ -219,3 +220,29 @@ def test_archived_full_three_site_compiler_spike_outputs():
         assert replay[key] == manifest[key]
     for key in ("elf_sha256", "extension_sha256", "spike_log_sha256"):
         assert replay["spike_qualification"][key] == manifest["spike_qualification"][key]
+
+
+def test_e4m3_only_profile_has_its_own_capture_and_full_spike_receipt():
+    capture = json.loads((E4M3_ONLY / "capture/receipt.json").read_text())
+    obj = json.loads((E4M3_ONLY / "compiled/object_manifest.json").read_text())
+    source = json.loads((E4M3_ONLY / "source_spike_receipt.json").read_text())
+    selected = json.loads((FULL / "object_manifest.json").read_text())
+    assert capture["profile_sha256"] == obj["profile_sha256"] == source["profile_sha256"]
+    assert obj["profile_sha256"] != selected["profile_sha256"]
+    assert capture["bound_mlir_sha256"] == _sha(
+        E4M3_ONLY / "capture/chain_pipelined.profile_bound.mlir")
+    assert capture["original_graph_sha256"] == _sha(
+        E4M3_ONLY / "capture/original_graph.json")
+    assert obj["bound_mlir_sha256"] == _sha(E4M3_ONLY / "compiled/connected.mlir")
+    assert obj["object_sha256"] == _sha(E4M3_ONLY / "compiled/mx_issue.o")
+    assert obj["issuer_c_sha256"] == selected["issuer_c_sha256"]
+    assert obj["object_sha256"] == selected["object_sha256"]
+    assert obj["spike_qualification"]["status"] == "full_three_site_chain_matched_on_pinned_spike"
+    assert obj["spike_qualification"]["elf_sha256"] == _sha(
+        E4M3_ONLY / "compiled/mx_program.elf")
+    assert obj["spike_qualification"]["spike_log_sha256"] == _sha(
+        E4M3_ONLY / "compiled/spike.log")
+    assert obj["spike_qualification"]["spike_log_sha256"] == (
+        selected["spike_qualification"]["spike_log_sha256"])
+    assert source["status"] == "four_source_checks_matched_on_pinned_spike"
+    assert source["spike_log_sha256"] == _sha(E4M3_ONLY / "source_spike.log")

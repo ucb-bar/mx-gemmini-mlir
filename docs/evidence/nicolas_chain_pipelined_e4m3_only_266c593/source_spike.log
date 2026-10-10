@@ -1,0 +1,11 @@
+warmup    check: ok (0 clamped scales skipped)
+fenced    check: ok (0 clamped scales skipped)
+program   check: ok (0 clamped scales skipped)
+pipelined check: ok (0 clamped scales skipped)
+PERF chain_pipelined (2 tiles: mvin 8 KB, vpu 512 rows, spad_requant 128 blocks, mm2 64x64x64 each):
+PERF   fenced       635 cycles (100% of fenced)
+PERF   program      609 cycles (95% of fenced)
+PERF   pipelined    405 cycles (63% of fenced)
+chain_pipelined PASSED
+Gemmini extension configured with:
+    dim = 16

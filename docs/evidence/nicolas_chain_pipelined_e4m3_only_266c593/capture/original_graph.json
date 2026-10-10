@@ -1,0 +1,614 @@
+{
+  "by_target": {
+    "aten.matmul.default": 3,
+    "aten.mul.Tensor": 2
+  },
+  "call_count": 5,
+  "counting_unit": "static_captured_call_sites",
+  "edges": [
+    {
+      "argument_path": "args/0",
+      "consumer_node_id": "g:original:root:n3",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n0",
+      "producer_value_id": "g:original:root:n0:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/1",
+      "consumer_node_id": "g:original:root:n3",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n1",
+      "producer_value_id": "g:original:root:n1:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0",
+      "consumer_node_id": "g:original:root:n4",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n3",
+      "producer_value_id": "g:original:root:n3:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0",
+      "consumer_node_id": "g:original:root:n5",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n4",
+      "producer_value_id": "g:original:root:n4:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/1",
+      "consumer_node_id": "g:original:root:n5",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n2",
+      "producer_value_id": "g:original:root:n2:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0",
+      "consumer_node_id": "g:original:root:n6",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n3",
+      "producer_value_id": "g:original:root:n3:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0",
+      "consumer_node_id": "g:original:root:n7",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n6",
+      "producer_value_id": "g:original:root:n6:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/1",
+      "consumer_node_id": "g:original:root:n7",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n2",
+      "producer_value_id": "g:original:root:n2:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0/0",
+      "consumer_node_id": "g:original:root:n8",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n5",
+      "producer_value_id": "g:original:root:n5:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    },
+    {
+      "argument_path": "args/0/1",
+      "consumer_node_id": "g:original:root:n8",
+      "dtype": "float32",
+      "producer_node_id": "g:original:root:n7",
+      "producer_value_id": "g:original:root:n7:v0",
+      "shape": [
+        64,
+        64
+      ],
+      "value_kind": "tensor"
+    }
+  ],
+  "eliminations": [],
+  "graph_id": "g:original:root",
+  "graph_signature": "\n# inputs\na: USER_INPUT\nb1: USER_INPUT\nb2: USER_INPUT\n\n# outputs\nmatmul_1: USER_OUTPUT\nmatmul_2: USER_OUTPUT\n",
+  "nodes": [
+    {
+      "args": [],
+      "classification": "structural",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n0",
+      "input_kind": "USER_INPUT",
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {},
+      "op": "placeholder",
+      "ordinal": 0,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n0:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n0:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "a",
+      "transformation": null
+    },
+    {
+      "args": [],
+      "classification": "structural",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n1",
+      "input_kind": "USER_INPUT",
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {},
+      "op": "placeholder",
+      "ordinal": 1,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n1:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n1:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "b1",
+      "transformation": null
+    },
+    {
+      "args": [],
+      "classification": "structural",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n2",
+      "input_kind": "USER_INPUT",
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {},
+      "op": "placeholder",
+      "ordinal": 2,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n2:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n2:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "b2",
+      "transformation": null
+    },
+    {
+      "args": [
+        {
+          "node_id": "g:original:root:n0",
+          "value_id": "g:original:root:n0:v0"
+        },
+        {
+          "node_id": "g:original:root:n1",
+          "value_id": "g:original:root:n1:v0"
+        }
+      ],
+      "classification": "aten",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n3",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {
+        "L__self__": [
+          "",
+          "__main__.main.<locals>.Chain"
+        ]
+      },
+      "op": "call_function",
+      "ordinal": 3,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n3:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n3:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "aten.matmul.default",
+      "transformation": null
+    },
+    {
+      "args": [
+        {
+          "node_id": "g:original:root:n3",
+          "value_id": "g:original:root:n3:v0"
+        },
+        2.0
+      ],
+      "classification": "aten",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n4",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {
+        "L__self__": [
+          "",
+          "__main__.main.<locals>.Chain"
+        ]
+      },
+      "op": "call_function",
+      "ordinal": 4,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n4:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n4:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "aten.mul.Tensor",
+      "transformation": null
+    },
+    {
+      "args": [
+        {
+          "node_id": "g:original:root:n4",
+          "value_id": "g:original:root:n4:v0"
+        },
+        {
+          "node_id": "g:original:root:n2",
+          "value_id": "g:original:root:n2:v0"
+        }
+      ],
+      "classification": "aten",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n5",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {
+        "L__self__": [
+          "",
+          "__main__.main.<locals>.Chain"
+        ]
+      },
+      "op": "call_function",
+      "ordinal": 5,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n5:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n5:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "aten.matmul.default",
+      "transformation": null
+    },
+    {
+      "args": [
+        {
+          "node_id": "g:original:root:n3",
+          "value_id": "g:original:root:n3:v0"
+        },
+        4.0
+      ],
+      "classification": "aten",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n6",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {
+        "L__self__": [
+          "",
+          "__main__.main.<locals>.Chain"
+        ]
+      },
+      "op": "call_function",
+      "ordinal": 6,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n6:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n6:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "aten.mul.Tensor",
+      "transformation": null
+    },
+    {
+      "args": [
+        {
+          "node_id": "g:original:root:n6",
+          "value_id": "g:original:root:n6:v0"
+        },
+        {
+          "node_id": "g:original:root:n2",
+          "value_id": "g:original:root:n2:v0"
+        }
+      ],
+      "classification": "aten",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n7",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {
+        "L__self__": [
+          "",
+          "__main__.main.<locals>.Chain"
+        ]
+      },
+      "op": "call_function",
+      "ordinal": 7,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "container": "single",
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "observed",
+        "values": [
+          {
+            "kind": "tensor",
+            "result_id": "g:original:root:n7:v0"
+          }
+        ]
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": "cpu",
+          "dtype": "float32",
+          "id": "g:original:root:n7:v0",
+          "kind": "tensor",
+          "layout": "torch.strided",
+          "shape": [
+            64,
+            64
+          ],
+          "storage_dtype": "float32",
+          "stride": [
+            64,
+            1
+          ]
+        }
+      ],
+      "target": "aten.matmul.default",
+      "transformation": null
+    },
+    {
+      "args": [
+        [
+          {
+            "node_id": "g:original:root:n5",
+            "value_id": "g:original:root:n5:v0"
+          },
+          {
+            "node_id": "g:original:root:n7",
+            "value_id": "g:original:root:n7:v0"
+          }
+        ]
+      ],
+      "classification": "structural",
+      "graph_id": "g:original:root",
+      "id": "g:original:root:n8",
+      "input_kind": null,
+      "input_target": null,
+      "kwargs": {},
+      "module_stack": {},
+      "op": "output",
+      "ordinal": 8,
+      "origin_node_ids": [],
+      "result_metadata": {
+        "schema": "m2m.frontend_result_metadata.v1",
+        "status": "unobserved"
+      },
+      "results": [
+        {
+          "compute_dtype": null,
+          "device": null,
+          "dtype": null,
+          "id": "g:original:root:n8:v0",
+          "kind": "unknown",
+          "layout": null,
+          "shape": null,
+          "storage_dtype": null,
+          "stride": null
+        }
+      ],
+      "target": "output",
+      "transformation": null
+    }
+  ],
+  "operator_schemas": {
+    "aten.matmul.default": "aten::matmul(Tensor self, Tensor other) -> Tensor",
+    "aten.mul.Tensor": "aten::mul.Tensor(Tensor self, Tensor other) -> Tensor"
+  },
+  "range_constraints": {},
+  "runtime_versions": {
+    "torch": "2.10.0+cu128"
+  },
+  "schema": "m2m.frontend_graph.v1",
+  "sha256": "f3e3cc4607811aaedbc547e9cdcb1bc038918c3a7a05b4d1c0473f787f677ba0",
+  "stage": "original",
+  "status": "complete"
+}

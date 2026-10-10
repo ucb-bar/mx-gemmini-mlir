@@ -95,6 +95,84 @@ def _narrow_vpu_receipt(relative: str, profile: dict) -> dict:
             "issues_vpu_commands": True}
 
 
+def _two_tile_vpu_receipt(capture_path: str, compiled_path: str,
+                          source_path: str, source_log_path: str,
+                          profile: dict) -> dict:
+    """Check the full three-site program under this exact named VPU profile."""
+    capture, obj, source = (_read(path) for path in
+                            (capture_path, compiled_path, source_path))
+    base = ROOT / compiled_path.rsplit("/", 1)[0]
+    digest = profile_sha256(profile)
+    spike = obj.get("spike_qualification", {})
+    physical = json.loads((base / "physical_program.json").read_text())
+    commands = [item for item in physical["commands"] if item["kind"] == "command"]
+    if (capture.get("schema") !=
+            "mx_gemmini.nicolas_chain_pipelined_model2mlir_capture.v1" or
+            capture.get("status") != "three_site_frontend_handoff_only" or
+            capture.get("model2mlir_revision") !=
+            "e9ded36eb85abf2d9097ac4dc11457c825853388" or
+            capture.get("profile_sha256") != digest or
+            obj.get("schema") != "mx_gemmini.full_chain_pipelined_linkable_object.v1" or
+            obj.get("status") != "rv64_rocc_two_tile_object_built" or
+            obj.get("profile_sha256") != digest or
+            obj.get("capture_receipt_sha256") != _digest(capture_path) or
+            obj.get("bound_mlir_sha256") != _digest(
+                str(base.relative_to(ROOT) / "connected.mlir")) or
+            obj.get("preloaded_mlir_sha256") != _digest(
+                str(base.relative_to(ROOT) / "preloaded.mlir")) or
+            obj.get("physical_program_sha256") != _digest(
+                str(base.relative_to(ROOT) / "physical_program.json")) or
+            obj.get("issuer_c_sha256") != _digest(
+                str(base.relative_to(ROOT) / "mx_issue.c")) or
+            obj.get("object_sha256") != _digest(
+                str(base.relative_to(ROOT) / "mx_issue.o")) or
+            spike.get("elf_sha256") != _digest(
+                str(base.relative_to(ROOT) / "mx_program.elf")) or
+            spike.get("spike_log_sha256") != _digest(
+                str(base.relative_to(ROOT) / "spike.log")) or
+            spike.get("status") != "full_three_site_chain_matched_on_pinned_spike" or
+            spike.get("spike_exit_code") != 0 or
+            (spike.get("compared_c1_bf16_values"),
+             spike.get("compared_fp8_codes"),
+             spike.get("compared_e8m0_scales")) != (4096, 16384, 512) or
+            any(obj.get(name) != 0 for name in
+                ("allocated_data_section_bytes", "embedded_operand_bytes",
+                 "embedded_golden_bytes")) or
+            obj.get("issue_schedule") != "program_order_with_dependency_fences" or
+            physical.get("profile_sha256") != digest or
+            source.get("profile_sha256") != digest or
+            source.get("status") != "four_source_checks_matched_on_pinned_spike" or
+            source.get("spike_log_sha256") != _digest(source_log_path) or
+            [item.get("schedule") for item in source.get("checks", [])] !=
+            ["warmup", "fenced", "program", "pipelined"] or
+            len(commands) != obj.get("command_count") or
+            sum(item["funct"] == 8 for item in commands) != 3 or
+            sum(item["funct"] == 33 for item in commands) != 2 or
+            sum(item["funct"] == 34 for item in commands) != 2 or
+            sum(item["rs1"].get("buffer") == "b2_weight" for item in commands) != 16 or
+            "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" not in
+            (base / "spike.log").read_text() or
+            not profile["resources"]["vpu"] or
+            not profile["resources"]["spad_requant"] or
+            _key(DIRECT_E4M3) not in {_key(cell) for cell in profile["legal_compute"]}):
+        raise ValueError(f"full two-tile VPU qualification differs from profile: {compiled_path}")
+    return {
+        "kind": "connected_mx_vpu_two_tile_spike",
+        "evidence": compiled_path,
+        "capture": capture_path,
+        "source": source_path,
+        "first_shape_mnk": [64, 64, 64],
+        "second_shape_mnk": [64, 64, 64],
+        "second_tile_count": 2,
+        "compared_c1_bf16_values": 4096,
+        "compared_fp8_codes": 16384,
+        "compared_e8m0_scales": 512,
+        "issues_vpu_commands": True,
+        "issues_captured_mm1": True,
+        "schedule": "program_order_with_dependency_fences",
+    }
+
+
 def _stock_modes() -> tuple[dict[int, dict[str, dict]], dict[int, str]]:
     paths = {
         8: "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json",
@@ -347,6 +425,22 @@ def build_report() -> dict:
     for name, path in narrow_vpu_paths.items():
         profile = load_profile(PROFILE_DIR / f"{name}.json")
         direct_receipts.setdefault(name, []).append(_narrow_vpu_receipt(path, profile))
+    two_tile_paths = {
+        "MxE4M3Fp4VpuGemminiRocketConfig": (
+            "docs/evidence/nicolas_chain_pipelined_266c593/receipt.json",
+            "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json",
+            "docs/evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json",
+            "docs/evidence/nicolas_chain_pipelined_266c593/spike.log"),
+        "MxE4M3VpuGemminiRocketConfig": (
+            "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/capture/receipt.json",
+            "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled/object_manifest.json",
+            "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike_receipt.json",
+            "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike.log"),
+    }
+    for name, paths in two_tile_paths.items():
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        direct_receipts.setdefault(name, []).append(
+            _two_tile_vpu_receipt(*paths, profile))
     profiles = []
     for path in sorted(PROFILE_DIR.glob("*.json")):
         profile = load_profile(path)
@@ -388,6 +482,8 @@ def build_report() -> dict:
                                          wrapper_path,
                                          requant_path,
                                          *narrow_vpu_paths.values(),
+                                         *(path for paths in two_tile_paths.values()
+                                           for path in paths),
                                          *vector_paths})},
         "profile_count": len(profiles),
         "chipyard_wrapper_count": 40,

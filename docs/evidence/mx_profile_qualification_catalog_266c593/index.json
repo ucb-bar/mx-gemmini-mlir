@@ -1295,6 +1295,29 @@
             32,
             64
           ]
+        },
+        {
+          "capture": "docs/evidence/nicolas_chain_pipelined_266c593/receipt.json",
+          "compared_c1_bf16_values": 4096,
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json",
+          "first_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "issues_captured_mm1": true,
+          "issues_vpu_commands": true,
+          "kind": "connected_mx_vpu_two_tile_spike",
+          "schedule": "program_order_with_dependency_fences",
+          "second_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "second_tile_count": 2,
+          "source": "docs/evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1438,6 +1461,29 @@
             32,
             64
           ]
+        },
+        {
+          "capture": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/capture/receipt.json",
+          "compared_c1_bf16_values": 4096,
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled/object_manifest.json",
+          "first_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "issues_captured_mm1": true,
+          "issues_vpu_commands": true,
+          "kind": "connected_mx_vpu_two_tile_spike",
+          "schedule": "program_order_with_dependency_fences",
+          "second_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "second_tile_count": 2,
+          "source": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike_receipt.json"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1614,6 +1660,14 @@
   "scope": "selected indexed evidence; mode-class probes do not qualify other named profiles",
   "sources_sha256": {
     "docs/evidence/nicolas_asym_matrix_dim16_266c593/matrix_first.json": "245be615adfc2bacf11ba8b0250baff555e416a044eae9317044d235e9cee51b",
+    "docs/evidence/nicolas_chain_pipelined_266c593/receipt.json": "c7a1bdd2b41f025725c1599594505158fc4ccac9cdb8c12561386ef47daee856",
+    "docs/evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json": "a9c584f0d85f917fc1cb5c46775844a55730b8cf4e54c4d041d67f07df4fde21",
+    "docs/evidence/nicolas_chain_pipelined_266c593/spike.log": "fbec49f76408fe92e2161da9468ba9d226a403a1dfeb5c06e3293239ee487b89",
+    "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/capture/receipt.json": "1e965b70fd563a421e40c0d83b9200478028fc82b79acb40368f0c750b925823",
+    "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled/object_manifest.json": "b9132ae5b02caaaecfcbcb4fc41b80ce47e5deb83d9416100f8c0f82631ab70c",
+    "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike.log": "fbec49f76408fe92e2161da9468ba9d226a403a1dfeb5c06e3293239ee487b89",
+    "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike_receipt.json": "d2a9fa300f5d0d6862251442a8f350b0edf8b58045cca703da27fdd5c24e414b",
+    "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json": "1590f25f412d9989cca94fbc671174b5834dcc851a33177106db4df1e4d31c06",
     "docs/evidence/nicolas_connected_plain_chain_128_266c593/index.json": "03d752daa7bcd1ae20f83a28a5637fe5874a270ff314e34b2dd7513b74d5811a",
     "docs/evidence/nicolas_generated_mesh_dim32_266c593/qualification.json": "f6282646a29a193d9d6bb064d43544724e2c60a5a542822d19d2b1378ee917b1",
     "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json": "da3bb2965e0de5ffcddcb2c09dd9b9549645b513e27dc4272e546f987f593372",
