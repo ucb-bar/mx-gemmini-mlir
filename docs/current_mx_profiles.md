@@ -18,6 +18,9 @@ not a Scala elaboration. `load_profile(..., rtl_root=...)` regenerates and
 compares the whole profile to reject source drift or edited capabilities.
 Every exported profile has `qualification: structural_unqualified`. It does
 not certify numerical parity, command scheduling, a bitstream, or throughput.
+Separate [Spike qualification receipts](compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix)
+now cover 26 of 36 legal BF16 source modes in the DIM16 all-asymmetric Rocket
+profile; DIM8 and DIM32 each have 21 of 36 available source modes qualified.
 
 Nicolas's public branch includes `MxE4M3VpuGemminiRocketConfig` and
 `MxE4M3Fp4VpuGemminiRocketConfig`. Both build two 8-lane BF16 scratchpad

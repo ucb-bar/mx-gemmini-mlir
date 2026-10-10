@@ -18,10 +18,18 @@ def _cell(cell: dict) -> str:
     return json.dumps(cell, sort_keys=True)
 
 
-@pytest.mark.parametrize("dim", [8, 32])
-def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(dim: int) -> None:
-    folder = EVIDENCE / f"nicolas_asym_matrix_dim{dim}_266c593"
-    profile_name = f"MxDim{dim}AllAsymGemminiRocketConfig"
+@pytest.mark.parametrize("dim,folder_name,profile_name,mode_count,missing_count,compiler", [
+    (8, "nicolas_asym_matrix_dim8_266c593",
+     "MxDim8AllAsymGemminiRocketConfig", 21, 15, "de188c1"),
+    (16, "nicolas_asym_matrix_dim16_all_266c593",
+     "MxAllAsymGemminiRocketConfig", 26, 10, "0e03168"),
+    (32, "nicolas_asym_matrix_dim32_266c593",
+     "MxDim32AllAsymGemminiRocketConfig", 21, 15, "de188c1"),
+])
+def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(
+        dim: int, folder_name: str, profile_name: str, mode_count: int,
+        missing_count: int, compiler: str) -> None:
+    folder = EVIDENCE / folder_name
     profile = json.loads((PROFILES / f"{profile_name}.json").read_text())
     legal = {_cell(cell) for cell in profile["legal_compute"]}
     manifests = [json.loads((folder / f"matrix_{run}.json").read_text())
@@ -30,10 +38,13 @@ def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(dim: int) ->
         assert (manifest["mesh_dim"], manifest["selected_modes"],
                 manifest["passed_modes"], manifest["selected_profiles"],
                 manifest["legal_mode_count"], manifest["profile_complete"]) == (
-                    dim, 21, 21, 1, 36, False)
+                    dim, mode_count, mode_count, 1, 36, False)
+        if dim == 16:
+            assert manifest["all_asym_profile"] is True
         selected = {_cell(row["compute"]) for row in manifest["rows"]}
-        assert len(selected) == 21
+        assert len(selected) == mode_count
         assert selected <= legal
+        assert len(manifest["uncovered_legal_compute"]) == missing_count
         assert {(_cell(item["compute"]), item["profile_name"])
                 for item in manifest["uncovered_legal_compute"]} == {
                     (cell, profile_name) for cell in legal - selected}
@@ -49,7 +60,7 @@ def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(dim: int) ->
             assert receipt["status"] == "source_golden_matched_on_pinned_spike"
             assert receipt["compared_bf16_outputs"] == 4096
             assert receipt["rtl_revision"].startswith("266c593")
-            assert receipt["compiler_revision"].startswith("de188c1")
+            assert receipt["compiler_revision"].startswith(compiler)
 
     first, repro = manifests
     assert first["uncovered_legal_compute"] == repro["uncovered_legal_compute"]

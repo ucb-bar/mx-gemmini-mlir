@@ -606,8 +606,8 @@ python -m tools.qualify_nicolas_asym_matrix \
 ```
 
 This matrix qualifies the dedicated DIM16 Rocket profiles and their BF16
-64³ source tests. It does not cover the separate all-asymmetric or MX+VPU
-configurations.
+64³ source tests. The following sections separately qualify the available
+all-asymmetric source modes. MX+VPU evidence appears above.
 
 ### DIM8 and DIM32 all-asymmetric source matrices
 
@@ -644,6 +644,34 @@ profile**; the aggregate receipts list each missing tuple. These tests use
 source-bound packed operands and BF16 goldens. They do not establish general
 PyTorch operand quantization or other shapes on either mesh.
 
+### DIM16 all-asymmetric source matrix
+
+Nicolas's `MxAllAsymGemminiRocketConfig` selects one DIM16 Rocket profile with
+36 legal compute cells. All 26 checked-in DIM16 asymmetric 64³ source/header
+pairs bind to this profile. The matrix command selects it with `--all-asym`;
+without that flag, DIM16 selects the dedicated per-pair profiles above.
+
+Two independent runs passed **26 / 26 available source modes** and
+**106,496 / 106,496 BF16 outputs per run** on the pinned DIM16 Spike
+extension. Every frontend artifact, bound payload, physical program, generated
+source, object, ELF, extension, and Spike log hash agrees across runs. Only
+path-bearing link log hashes differ. The [first matrix receipt](evidence/nicolas_asym_matrix_dim16_all_266c593/matrix_first.json)
+and [reproduction](evidence/nicolas_asym_matrix_dim16_all_266c593/matrix_repro.json)
+index 52 per-mode receipts and pin compiler `0e03168` and Nicolas RTL
+`266c593`.
+
+```sh
+python -m tools.qualify_nicolas_asym_matrix --mesh-dim 16 --all-asym \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/dim16-all-asym-output --jobs 4
+```
+
+The aggregate receipts enumerate the **10 legal cells without source tests**.
+This result qualifies the available 64³ BF16 source cases on Spike; it does
+not establish numerical parity for those 10 cells or other shapes.
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
@@ -654,8 +682,9 @@ PyTorch operand quantization or other shapes on either mesh.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
-3. Qualify the 15 untested cells on each DIM8/DIM32 all-asymmetric profile
-   and every other legal mode class on the matching Spike/RTL configuration,
+3. Qualify the 10 untested DIM16 and 15 untested cells on each DIM8/DIM32
+   all-asymmetric profile, and every other legal mode class on the matching
+   Spike/RTL configuration,
    and keep unsupported profile combinations rejected. FP6+VPU requires a
    new RTL configuration and profile before it can be advertised.
 4. Validate the alternating FP6 scale path against RTL, then qualify the
