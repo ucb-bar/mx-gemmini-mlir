@@ -9,7 +9,8 @@ from pathlib import Path
 
 from .resource_ir import attach_source_resources
 from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN, ATTENTION_PV_PROXY_ORIGIN,
-                             DERIVED_GEMM_FIXTURE_ORIGIN, TARGET_MESH_REFERENCE_ORIGIN,
+                             DERIVED_GEMM_FIXTURE_ORIGIN, NICOLAS_SOURCE_HEADER_ORIGIN,
+                             TARGET_MESH_REFERENCE_ORIGIN,
                              TARGET_MESH_QUANT_CONVENTION,
                              load_bundle, manifest_sha256,
                              validate_attention_qk_candidate, validate_attention_pv_proxy,
@@ -51,7 +52,8 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
         validate_target_mesh_reference(manifest)
         if manifest["target_mesh_reference"]["mesh_dim"] != profile["geometry"]["mesh_columns"]:
             raise ValueError("target mesh reference differs from selected profile")
-    elif (manifest.get("origin") != "radiance_source_header_specialization" or
+    elif (manifest.get("origin") not in {"radiance_source_header_specialization",
+                                          NICOLAS_SOURCE_HEADER_ORIGIN} or
           "source_derivation" in manifest):
         raise ValueError("payload origin is not an explicit source specialization")
     precision = manifest.get("precision")

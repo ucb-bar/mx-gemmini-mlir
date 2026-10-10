@@ -24,6 +24,18 @@ def test_header_reader_rejects_nonliteral_and_wrong_sized_arrays():
                name="A", ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
 
 
+def test_header_reader_accepts_only_literal_aligned_arrays():
+    declaration = "static const uint8_t A[2][2] __attribute__((aligned(64))) = {{1, 2}, {3, 4}\n};"
+    assert _array(declaration, name="A", ctype="uint8_t",
+                  dimensions="[2][2]", count=4, maximum=255) == (1, 2, 3, 4)
+    with pytest.raises(ValueError, match="declaration"):
+        _array(declaration.replace("aligned(64)", "section(64)"), name="A",
+               ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
+    with pytest.raises(ValueError, match="nonliteral"):
+        _array(declaration.replace("{3, 4}", "{3, x}"), name="A",
+               ctype="uint8_t", dimensions="[2][2]", count=4, maximum=255)
+
+
 @pytest.mark.skipif(not DRIVER.is_file() or
                     not DRIVER.with_name("mxgemm.data.fp6.m128n128k2048.h").is_file(),
                     reason="requires the checked-in FP6 Radiance source header")

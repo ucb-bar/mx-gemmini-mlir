@@ -24,6 +24,7 @@ from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_
 
 
 SCHEMA = "mx_gemmini.source_payload.v1"
+NICOLAS_SOURCE_HEADER_ORIGIN = "nicolas_source_header_specialization"
 ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
 ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
 DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
@@ -482,16 +483,20 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
                   site_id: str, profile_sha256: str,
                   fp6_quantized_specialization: bool = False,
                   vpu_spad_requant_x2: bool = False,
-                  source_derivation: dict | None = None) -> dict:
+                  source_derivation: dict | None = None,
+                  source_origin: str = "radiance_source_header_specialization") -> dict:
     if not site_id or len(profile_sha256) != 64:
         raise ValueError("payload needs a site ID and target profile digest")
+    if source_origin not in {"radiance_source_header_specialization",
+                             NICOLAS_SOURCE_HEADER_ORIGIN}:
+        raise ValueError("unknown MX source header origin")
     manifest = {
         "schema": SCHEMA, "site_id": site_id, "precision": kernel.datatype,
         "shape_mnk": list(kernel.shape), "tile_mnk": list(kernel.tile),
         "source_driver_sha256": _sha(kernel.driver.read_bytes()),
         "source_header_sha256": _sha(kernel.data_header.read_bytes()),
         "profile_sha256": profile_sha256,
-        "origin": "radiance_source_header_specialization",
+        "origin": source_origin,
         "resources": {name: resource.descriptor(name)
                       for name, resource in sorted(resources.items())},
     }
@@ -541,7 +546,8 @@ def write_bundle(directory: Path, kernel: SourceGemm, *, site_id: str,
                  profile_sha256: str,
                  fp6_quantized_specialization: bool = False,
                  vpu_spad_requant_x2: bool = False,
-                 source_derivation: dict | None = None) -> dict:
+                 source_derivation: dict | None = None,
+                 source_origin: str = "radiance_source_header_specialization") -> dict:
     resources = read_source_payload(
         kernel, fp6_quantized_specialization=fp6_quantized_specialization,
         vpu_spad_requant_x2=vpu_spad_requant_x2)
@@ -549,7 +555,8 @@ def write_bundle(directory: Path, kernel: SourceGemm, *, site_id: str,
                              profile_sha256=profile_sha256,
                              fp6_quantized_specialization=fp6_quantized_specialization,
                              vpu_spad_requant_x2=vpu_spad_requant_x2,
-                             source_derivation=source_derivation)
+                             source_derivation=source_derivation,
+                             source_origin=source_origin)
     directory.mkdir(parents=True, exist_ok=False)
     for name, resource in resources.items():
         (directory / f"{name}.bin").write_bytes(resource.data)
@@ -569,6 +576,9 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         validate_derived_gemm_fixture(manifest)
     elif manifest.get("origin") == TARGET_MESH_REFERENCE_ORIGIN:
         validate_target_mesh_reference(manifest)
+    elif manifest.get("origin") not in {"radiance_source_header_specialization",
+                                        NICOLAS_SOURCE_HEADER_ORIGIN}:
+        raise ValueError("unknown MX payload origin")
     elif "source_derivation" in manifest:
         raise ValueError("derived MX payload must declare its candidate origin")
     precision = manifest.get("precision")

@@ -42,7 +42,9 @@ class SourceFp6Payload:
 
 def _array(source: str, *, name: str, ctype: str, dimensions: str,
            count: int, maximum: int) -> tuple[int, ...]:
-    declaration = rf"static const {ctype} {name}{re.escape(dimensions)}\s*=\s*\{{(.*?)\n\}};"
+    declaration = (rf"static const {ctype} {name}{re.escape(dimensions)}"
+                   rf"(?:\s+__attribute__\s*\(\(aligned\(\d+\)\)\))?"
+                   rf"\s*=\s*\{{(.*?)\n\}};")
     found = re.search(declaration, source, re.DOTALL)
     if found is None:
         raise ValueError(f"source header lacks expected {name} declaration")
