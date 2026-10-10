@@ -2633,7 +2633,8 @@ python -m tools.qualify_radiance_fp4_derived_cyclotron_tiles \
    fixtures because the corresponding headers are absent upstream; check
    future committed headers against them. Qualify remaining configuration
    families and source shapes without receipts, and extend multi-output
-   vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2 epilogues.
+   vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2, scalar
+   ADDS, and ordered affine epilogues.
    For GQA, reconcile the
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
