@@ -83,6 +83,20 @@ for the qualified 64³ E4M3 source case; general scheduling remains pending.
 A separate source-bound BF16 matrix lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
 profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
+
+The [machine-readable qualification catalog](evidence/mx_profile_qualification_catalog_266c593/index.json)
+joins all 81 exported profiles to the three geometry-specific 36-mode stock
+Spike matrices. It records 35 / 36 passing mode-class probes per geometry;
+16 named profiles expose the one failing direct-E4M3 activation × E4M3-LUT
+weight cell. An isolated patched Spike run passes that cell, but the catalog
+keeps its candidate result separate from stock evidence. Ten named profiles
+have receipts in the catalog's selected execution indexes, including the
+FP8/FP4 VPU-enabled Rocket profile. The other profiles retain their
+structural status; a matching PE mode on another profile is not a direct
+memory-system or VPU qualification. The VPU-profile GEMM roster does not
+issue vector instructions; separate VPU command receipts cover those.
+Regenerate or check the catalog with
+`python -m tools.report_mx_profile_qualification [--check]`.
 The source-bound compiler also orders one in-place BF16 VPU epilogue after
 the matrix K waves; FP8 and FP4 ×2 runs match their exact derived goldens on
 Spike. A 64×64×128 FP8 program composes the matrix, VPU×2, and tiled resident

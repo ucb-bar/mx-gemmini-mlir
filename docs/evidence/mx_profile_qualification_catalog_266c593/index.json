@@ -1,0 +1,1216 @@
+{
+  "named_profiles_with_indexed_spike_evidence": 10,
+  "profile_count": 81,
+  "profiles": [
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "GemminiMxFPAllAsymStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b9af364914dffbb049462ee42bb400eacbbf59a5ef9470722ad701e25da4affa",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "GemminiMxFPAllStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "320fd857934ba853a7d1da53474aba2125e5003534375309af040f5e83b03a08",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE2M3E3M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "920ef07ec34f6f7ec402c1e7fffd91758a8e08645f47a2e882acc6be7d48d86e",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE2M3E4M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "2f8186207809d858f893c4c5a0299850f68abc23ce7ccf4370daa0d80c56ff50",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE2M3E5M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "c1ec511b44deb8d94d1ce32c3b04fa49650dd020afa2fb444e330d1f7e60bc8c",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE2M3Fp4StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "29451a3d134aa98c3f23354798262c43883dfe0364d4234efb20fca001b234a7",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE3M2E2M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "e5f2066bad6d1e7b256fc58cba7f1343081230a035416c816a1c1044885aa4ff",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymE3M2E4M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "1b93fcf24f595937ef6d94356bb9c7328f59e62618497526ee1a50a330d31a4e",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE3M2E5M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b12645017b60a6dda440e6cfa80fc4441fff81a4da1ee301c0c58c6ddfe207ef",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE4M3E2M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "22b02881076a81f110b11ddfe7c5c4f795342b3cc46846d02aa66260f2399af2",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymE4M3E3M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "fb83264998d567601fbf61602aa03b391fad552a6b9276629ed201f58309915a",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymE4M3E5M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "bec55861de7c962a9d055e5356268b0832fd8e534acacce0ca4d0474a32f15fe",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymE4M3Fp4StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "0f98180f3523865e39f56a553e0643503077af85582e1aba420f2b1be3416c60",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE5M2E2M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "4a79f468e87db7775cfaaf7f9337a8d67eb949e10216a7dbbb06eee7393524e3",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE5M2E3M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "9381bcd46520c15af7bbf69eb62b04f71a04617e3a3f45a593776251d3ec8779",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymE5M2E4M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "3099a6b6687f68294d55f2f1458f48c771e0486cc270bd36ba75e5b1aee6f7cb",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymE5M2Fp4StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "741602023d39f54d1378623584d739ad1adce11acbb3e3fb7125f3448f150ec9",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymFp4E2M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "f1f95e21d68f9fbd451b526edcc092cd9ea757ec1bb9357e18d1a5c0d1ca7e5f",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPAsymFp4E4M3StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "8254083a8fac5e3f9b19b442260d05f23bc0fba92cf4c58774adc7989f8c6729",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymFp4E5M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "4427def3237febb9b800c68ef8e7a9a3394e88ed533df8b604efa60621e58057",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymFp4Fp6StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "a0b2b9a1d62bcfde890ce470a67d03832747d6aecad4d6b4f15889ca1e7c402d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPAsymFp6Fp4StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "0736032c22843bd24f7f301bcad40a23ac47c0f28b32b8a4cd13f6ad2b5c49ad",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPDefaultConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "60557952c4d834e04d0bbff3e81edbb4ae10fd4431f9af0878e88574075f5bc8",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "GemminiMxFPDim32AllAsymStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "193fa32c3d9c0561b605fa10802aaabf743f66c6603f5307c3b42a0c0f8ef26c",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "GemminiMxFPDim32AllStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "d95ce40fce8afbef7155c07d38bd7d5da0f5ddbdabd553ae6c6098d87b687830",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "GemminiMxFPDim32StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "f40067e68ec6303856824a78ec94c21ea6f4d3642733e5a299212de611fc608d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 8,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "GemminiMxFPDim8AllAsymStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "ebbcc992224fa41e2f24fad89a3a4e803b542f028da108974abdc2593b5d9c21",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 8,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "GemminiMxFPDim8AllStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "f94ce5e578ee862180a176aa0d144079687b2beab489562e439a1cd886d73c75",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPE2M3OnlyStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "353be72e1bcd813b14b5ddeae853473bb1c073bbf5e44e1c066e039a0b92b93e",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPE3M2OnlyStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b7f7f80e4d303b263209657b2001ea2fd3542d3382830ce0f26d85a2b90990e3",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPE4M3Fp4TrimmedStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "7a2dd640cee6266a0d1e405dcbf09c7402abca81e694bf73318c69b54751ce0b",
+      "vpu": true
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "GemminiMxFPE4M3LutStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "510ab371efb65946ffe0f03ee0a553a9c37661b84c4bfa8a72a4e44050781101",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 4,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 4,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 3,
+      "name": "GemminiMxFPE4M3OnlyStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "d3132bff0fcb4d532ecdababbac9915050b2c1f9c44a6adbaa6c613d99196ea6",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPE4M3SingleNoLutStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "e8468da10ab6ad948bfb51ca5fb1c4246461988942153bb763581cd74b8eddb0",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPE4M3TrimmedStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "f8eb05132774fb783289202baaafaf9372f8737687ac2f12dc5c0fe398f8e44c",
+      "vpu": true
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPE5M2OnlyStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "6f81aed2ecd898ba979f2e9da3b8301ccc3de4fef635ae51179d7848ea76773b",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 6,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 6,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 6,
+      "name": "GemminiMxFPE5M2StandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "2965b2288b21f5c11a5673af1216c0dfa10ba1be47edb5d4c9da5811a60bfeca",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "GemminiMxFPFp4OnlyStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "0f93837c7b5d8b150fd8a548013446591564afcd87eb8791f5b372ea3b8b9d6c",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "GemminiMxFPStandaloneConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "231b43aa22064629f5a71ff728ca70a5fad2102f8527bd50fb29e537ab6db106",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "GemminiMxFPTestConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "94d178cb3f5d9f4a48d94767db4400fffae99e0160225a8779179232c957c685",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "GemminiRequantizerLutMxFPTestConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "7afd4729083ac3fec7f048ee650d6d7717e5297ad1abd8e787c846ac0fa115bd",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "MxAllAsymGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "evidence": "docs/evidence/nicolas_generated_modes_266c593/qualification.json",
+          "failing_modes": 1,
+          "kind": "all_mode_stock_spike_matrix",
+          "passing_modes": 35
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "62d75d427674bf21bae5ba3ad49e52f62d14db9ef61a865030d4ae2c7c8c8a5e",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "MxAllGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 3,
+          "compared_bf16_outputs": 36864,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP8",
+            "FP4",
+            "FP6"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "2a50c37aeeee35daf49664e5eb8f189c5964177099b806c19e854d771af86a51",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE2M3E3M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "c584d6122c66113ee806d9f31968b5b7be38495b925723030103399f0161070d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE2M3E4M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "932ceb38a2da0bbce907272cbab8216a46ca47468499a5de40c27a3585cadfdd",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE2M3E5M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "c7e48d316ebbc231b0f4a0216942d006081fd795cf1ad4af2e88a7934f3c9b14",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE2M3Fp4GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "84fe28452046bc23a1dc7930cd3653bdf4604ca3408732f39c36906a5fc5ea3c",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE3M2E2M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "764f8c046f28b791322341f6d069300e0f5706c3b2d3369ba249ff81bfd4eaef",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymE3M2E4M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "c19aaa8f7d1729900df1fa1c8ea52869f8c765bfb75b3ac1dd35cd115ae70e31",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE3M2E5M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "53f81ebe05b0db89e7c52dc340887c3749726a7f9d29fb1cbd01ef8387012199",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE4M3E2M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "1078ea490919171fa8f524038a110364356f82269270dc4b1ab9236fde63ad1d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymE4M3E3M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "0e02f245b829551fdccff33f2d1fc66da76c3e83e862cf830db0879c858df6f9",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymE4M3E5M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "2063d32cd106fe69120e6200e86899bdf65114e310a594fd873a244822aea609",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymE4M3Fp4GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "fb0e0e5a6bb0bca2fa215ac58fe81e6d430421c0a55a1859c6500b5575122826",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE5M2E2M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "1c0e72f024c555b33c1d63054cb80a89031425c4c61b37d826905e58ac8e3b19",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE5M2E3M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "d0edf1e93038960bfe5173801664788a220a055d26c03180c63afe3615a37ac8",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymE5M2E4M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "cc0a0cb1eeea7b6da429c2f441fce067ab5987e358f82ccd7c725e2853a511b0",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymE5M2Fp4GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "c56ce2c1df4c3ada240cee9dafe1fb9b7997167fb9a9e8b7b469a1726a62ce0b",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymFp4E2M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b7b83220acadbec04214f51b5898f9ff2260fa8e9cd90c92b47a0c61c8cfbb44",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxAsymFp4E4M3GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "9323c7e482ab0bf2811d2b0322bcfd2b97deb83e7f6ec8bcbeaebbb5a008ce4f",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymFp4E5M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "99c936eff19b5d00f16d5fc4b1a291c60aba9136fd5f16a521dcc7586be94d9e",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymFp4Fp6GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "454ada731acede7a6c3a422ec8e87dc1a12652ff01b39ba2099502f78d4e4566",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxAsymFp6Fp4GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b5557461dbed0f4cfc1d0a0a750b70ade68416fcbc2d3ac5fce199d10d346876",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "MxDim32AllAsymGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "evidence": "docs/evidence/nicolas_generated_mesh_dim32_266c593/qualification.json",
+          "failing_modes": 1,
+          "kind": "all_mode_stock_spike_matrix",
+          "passing_modes": 35
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "MxDim32AllGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "05503daf9003b20811efcd0d91da19f08b7ae0ec51a2c167992fff7c2e484780",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 32,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "MxDim32GemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "653ab9233ff955856a369fd75abcd36ead3bdd5e85b94380df255321e718ee2d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 36,
+      "mesh_dim": 8,
+      "mode_class_candidate_spike_passes": 36,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 35,
+      "name": "MxDim8AllAsymGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "evidence": "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json",
+          "failing_modes": 1,
+          "kind": "all_mode_stock_spike_matrix",
+          "passing_modes": 35
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 8,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "MxDim8AllGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "29da32388a217e55e50764bd2503a2b733f815ff34053d4f95a8a397269d2b9d",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxE2M3OnlyGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "1f1aecc7cbfbd3294466cbfa48cb9d9a11af76191694426a8b8957df796571ca",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxE3M2OnlyGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "MxE4M3Fp4VpuGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases_per_run": 24,
+          "evidence": "docs/evidence/radiance_mx_vpu_legal_roster_266c593/index.json",
+          "issues_vpu_commands": false,
+          "kind": "radiance_gemm_roster_spike",
+          "precisions": [
+            "FP4",
+            "FP8"
+          ],
+          "runs": 2
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "vpu": true
+    },
+    {
+      "legal_mode_count": 14,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 14,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 13,
+      "name": "MxE4M3LutGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 3,
+          "compared_bf16_outputs": 36864,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP8",
+            "FP4",
+            "FP6"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b3519f0b21ead0f99ba986cbc3d4d0bd4618cf7199d157015c24bda70cdbc04a",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 4,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 4,
+      "mode_class_stock_spike_failures": [
+        {
+          "activation_format": "fp8_e4m3",
+          "activation_projection": "direct",
+          "pe_mode": 8,
+          "weight_format": "fp8_e4m3",
+          "weight_projection": "lut"
+        }
+      ],
+      "mode_class_stock_spike_passes": 3,
+      "name": "MxE4M3OnlyGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 1,
+          "compared_bf16_outputs": 16384,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP8"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "ee329c15fea39f26afa24416fa6929a6a67661a7f41fd1efb3f68704b81eb125",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxE4M3SingleGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 1,
+          "compared_bf16_outputs": 16384,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP8"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "b2e62a082d442509a2ed88e9b00970b34421db787ef8e3c67fc14e4b567f1e92",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxE4M3VpuGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+      "vpu": true
+    },
+    {
+      "legal_mode_count": 6,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 6,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 6,
+      "name": "MxE5M2GemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 3,
+          "compared_bf16_outputs": 36864,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP8",
+            "FP4",
+            "FP6"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "d72cd0a16418117dd22cf65bd79918695c7e9dc7ac4ae92d189f9387be2f3ff1",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxE5M2OnlyGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "2d1870775c7bd1ca09438a8df137ff62455b3aa4b3cd54666a8bcb40af18a176",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 1,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 1,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 1,
+      "name": "MxFp4OnlyGemminiRocketConfig",
+      "named_profile_spike_evidence": [
+        {
+          "cases": 1,
+          "compared_bf16_outputs": 4096,
+          "evidence": "docs/evidence/radiance_selected_mx_profiles_266c593/index.json",
+          "kind": "selected_radiance_gemm_spike",
+          "precisions": [
+            "FP4"
+          ]
+        }
+      ],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "aa8acfb5087e7faf1c83846c51296f83f27cb492d72debaa283640274c8c43a9",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "MxGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 2,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 2,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 2,
+      "name": "TestMxGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "4b6d472ed0d730b001e05306e5240f257a7f90b8abe9dd260f0f0c20f8a00d42",
+      "vpu": false
+    },
+    {
+      "legal_mode_count": 3,
+      "mesh_dim": 16,
+      "mode_class_candidate_spike_passes": 3,
+      "mode_class_stock_spike_failures": [],
+      "mode_class_stock_spike_passes": 3,
+      "name": "TestRequantizerLutMxGemminiRocketConfig",
+      "named_profile_spike_evidence": [],
+      "profile_qualification": "structural_unqualified",
+      "profile_sha256": "514a0225f77acbec7cfa8fddef3de97721a6b5214dc40c2da0d87372c31dc509",
+      "vpu": false
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.profile_qualification_catalog.v1",
+  "scope": "selected indexed evidence; mode-class probes do not qualify other named profiles",
+  "sources_sha256": {
+    "docs/evidence/nicolas_generated_mesh_dim32_266c593/qualification.json": "f6282646a29a193d9d6bb064d43544724e2c60a5a542822d19d2b1378ee917b1",
+    "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json": "da3bb2965e0de5ffcddcb2c09dd9b9549645b513e27dc4272e546f987f593372",
+    "docs/evidence/nicolas_generated_modes_266c593/qualification.json": "beca2bf9f6d2a345cc694dc88b394f314ecf1eec3d2b1a11e32a7aa8cc2869c6",
+    "docs/evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json": "e8edcf42a3a02b5db8ff547418d086f10eb80c4794aa7f6a2a7d29e0da84038d",
+    "docs/evidence/radiance_mx_vpu_legal_roster_266c593/index.json": "cdd398002b523aaa5ce770a744748839459dd31ef4051edc76f1f1b0c8ccdeef",
+    "docs/evidence/radiance_selected_mx_profiles_266c593/index.json": "7dc30badff9767b8f25eb2bebb31e9c1164e0910b7e1ee57c7321c780ca0eb1f"
+  }
+}
