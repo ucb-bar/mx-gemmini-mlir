@@ -22,7 +22,7 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
         raise ValueError("resident MX contraction requires the qualified DIM16 layout")
     shape = (attrs["m"], attrs["n"], attrs["k"])
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
-                   shape[1] == shape[2] and shape[1] in (96, 128))
+                   shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
     if shape != (64, 64, 64) and not plain_shape:
         raise ValueError("resident MX contraction needs a supported complete tile")
     if shape == (64, 64, 64) and not profile["resources"].get("spad_requant"):
@@ -73,12 +73,16 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
         # B2 is row-major in DRAM and operand-B tile-major in bank 3.
         cmd(0, (16 << 16) | (1 << 8) | 1, n),
     ]
-    for tj in range(j):
-        for tk in range(kk):
-            offset = tj * 16 * n + tk * 16
-            row = b + (tj * kk + tk) * 16
-            commands.append(cmd(2, Operand(buffer=attrs["weight_buffer"], byte_offset=offset),
-                                (16 << 48) | (16 << 32) | row))
+    # Nicolas's square chain used j-major source traversal. For a rectangular
+    # B matrix the model and RTL consume tile (k,j) at k*j+j, so preserve the
+    # source's row-major K×N layout when K and N differ.
+    tiles = ((tk, tj) for tk in range(kk) for tj in range(j)) if n != k else (
+        (tk, tj) for tj in range(j) for tk in range(kk))
+    for tk, tj in tiles:
+        offset = (tk * 16 * n + tj * 16) if n != k else (tj * 16 * n + tk * 16)
+        row = b + ((tk * j + tj) if n != k else (tj * kk + tk)) * 16
+        commands.append(cmd(2, Operand(buffer=attrs["weight_buffer"], byte_offset=offset),
+                            (16 << 48) | (16 << 32) | row))
     commands += [
         Fence(),
         cmd(0, 2, 2),  # gemmini_config_st(sizeof(uint16_t))

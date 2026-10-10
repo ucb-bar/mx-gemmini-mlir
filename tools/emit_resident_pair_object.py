@@ -56,15 +56,17 @@ def _load_mlir(path: Path) -> bytes:
 
 def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str]) -> list[dict]:
     m, n, k = pair.plan.m, pair.plan.n, pair.plan.k
+    first_k = getattr(pair.plan, "first_k", k)
+    first_n = k if hasattr(pair.plan, "first_k") else n
     slots = {
-        "a1_activation": (m * k, "read", "row_major_fp8"),
-        "a1_scales": (m * k // 32, "read", "k_group_major_a_scales"),
-        "b1_weight": (k * n, "read", "row_major_fp8"),
-        "b1_scales": (k * n // 32, "read", "k_group_major_b_scales"),
+        "a1_activation": (m * first_k, "read", "row_major_fp8"),
+        "a1_scales": (m * first_k // 32, "read", "k_group_major_a_scales"),
+        "b1_weight": (first_k * first_n, "read", "row_major_fp8"),
+        "b1_scales": (first_k * first_n // 32, "read", "k_group_major_b_scales"),
         "b2_weight": (k * n, "read", "row_major_fp8"),
         "b2_scales": (k * n // 32, "read", "k_group_major_b_scales"),
-        "c1_scales": (m * n // 32, "write", "row_major_e8m0_scales"),
-        "c1_tiled_observed": (m * n, "write", "tile_major_fp8"),
+        "c1_scales": (m * first_n // 32, "write", "row_major_e8m0_scales"),
+        "c1_tiled_observed": (m * first_n, "write", "tile_major_fp8"),
         "c2_scales": (m * n // 32, "write", "row_major_e8m0_scales"),
         "c2_tiled": (m * n, "write", "tile_major_fp8"),
     }
@@ -205,7 +207,7 @@ def main() -> None:
         f"void mx_issue({', '.join(f'const void *{name}' for name in names)});\n\n"
         "#endif\n")
     physical = args.out_dir / "physical_program.json"
-    physical.write_text(json.dumps({
+    physical_record = {
         "schema": "mx_gemmini.resident_pair_physical.v1",
         "shape_mnk": [pair.plan.m, pair.plan.n, pair.plan.k],
         "first_site": pair.first_site, "second_site": pair.second_site,
@@ -213,7 +215,11 @@ def main() -> None:
         "plan": asdict(pair.plan),
         "commands": [({"kind": "command", **asdict(item)} if isinstance(item, Command)
                       else {"kind": "fence"}) for item in pair.commands],
-    }, indent=2, sort_keys=True) + "\n")
+    }
+    if hasattr(pair.plan, "first_k"):
+        physical_record["first_shape_mnk"] = [pair.plan.m, pair.plan.k,
+                                              pair.plan.first_k]
+    physical.write_text(json.dumps(physical_record, indent=2, sort_keys=True) + "\n")
     obj, data_bytes = _compile_object(args.out_dir, args.riscv_root)
     cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     manifest = {
@@ -243,6 +249,9 @@ def main() -> None:
         "riscv_gcc_sha256": _file_sha(cc),
         "defined_symbol": "mx_issue", "undefined_symbols": [],
     }
+    if hasattr(pair.plan, "first_k"):
+        manifest["first_shape_mnk"] = [pair.plan.m, pair.plan.k,
+                                        pair.plan.first_k]
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     if args.baseline_manifest is not None:

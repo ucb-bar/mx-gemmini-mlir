@@ -35,6 +35,143 @@ class ResidentPairPlan:
     output_scale_bytes: int
 
 
+@dataclass(frozen=True)
+class RectangularPairPlan:
+    """MM1 M×K1 by K1×N1, followed by MM2 M×N1 by N1×N2."""
+
+    m: int
+    n: int  # N2, the final output width.
+    k: int  # N1, the resident activation width and MM2 reduction.
+    first_k: int
+    dim: int
+    rows: int
+    a_row: int
+    b1_row: int
+    b_row: int  # B2, required by the resident MM2 command.
+    c1_row: int
+    c2_row: int
+    a_rows: int
+    b1_rows: int
+    b_rows: int
+    c1_rows: int
+    c_rows: int
+    m_tiles: int
+    first_n_tiles: int
+    first_k_tiles: int
+    n_tiles: int
+    k_tiles: int
+    first_a_scale_bytes: int
+    first_b_scale_bytes: int
+    c1_scale_bytes: int
+    b2_scale_bytes: int
+    output_scale_bytes: int
+
+
+def plan_fp8_rectangular_pair(profile: dict, *,
+                              first_shape: tuple[int, int, int],
+                              second_shape: tuple[int, int, int],
+                              a_row: int, c1_row: int, c2_row: int
+                              ) -> RectangularPairPlan:
+    """Place both B matrices at the tail, reusing that region after MM1."""
+    resources = profile["resources"]
+    dim = profile["geometry"]["mesh_columns"]
+    if (profile.get("transport") != "rocket_rocc" or
+            profile["geometry"]["mesh_rows"] != dim or dim != 16 or
+            not resources.get("requantizer") or
+            profile["name"] != "MxGemminiRocketConfig" or
+            resources.get("spad_requant") or resources.get("vpu") or
+            "fp8_e4m3" not in profile["candidate_output_modes"]):
+        raise ValueError("rectangular pair needs Nicolas's plain DIM16 RoCC FP8 profile")
+    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+                    activation_projection="direct", weight_projection="direct")
+    if (len(first_shape) != 3 or len(second_shape) != 3 or
+            any(type(value) is not int or value <= 0
+                for value in (*first_shape, *second_shape))):
+        raise ValueError("rectangular pair needs positive integer dimensions")
+    m, n1, k1 = first_shape
+    m2, n2, k2 = second_shape
+    if (m != m2 or n1 != k2 or m % dim or
+            any(value % 32 for value in (n1, n2, k1)) or
+            any(value // dim > 0xffff for value in (m, n1, n2, k1))):
+        raise ValueError("rectangular pair SSA shapes or scale groups differ")
+    if (any(type(row) is not int or row < 0 or row % dim
+            for row in (a_row, c1_row, c2_row)) or
+            resources["scratchpad_bytes"] % dim or
+            resources["scale_mem_config"]["size_bytes"] % 4):
+        raise ValueError("rectangular pair target memory geometry is unsupported")
+    rows = resources["scratchpad_bytes"] // dim
+    if rows > 1 << 14:
+        raise ValueError("rectangular pair exceeds the RoCC row address field")
+    a_rows, b1_rows, b2_rows = m * k1 // dim, k1 * n1 // dim, n1 * n2 // dim
+    c1_rows, c2_rows = m * n1 // dim, m * n2 // dim
+    b1_row, b2_row = rows - b1_rows, rows - b2_rows
+    ranges = {"A": (a_row, a_row + a_rows),
+              "C1": (c1_row, c1_row + c1_rows),
+              "C2": (c2_row, c2_row + c2_rows),
+              "B tail": (min(b1_row, b2_row), rows)}
+    if (min(b1_row, b2_row) < 0 or
+            any(end > rows for _, end in ranges.values()) or
+            any(not (left[1] <= right[0] or right[1] <= left[0])
+                for i, left in enumerate(ranges.values())
+                for right in list(ranges.values())[i + 1:])):
+        raise ValueError("rectangular pair scratchpad row lifetimes overlap")
+    scale_half = resources["scale_mem_config"]["size_bytes"] // 4
+    a_scales, b1_scales, c1_scales = m * k1 // 32, k1 * n1 // 32, m * n1 // 32
+    b2_scales, c2_scales = n1 * n2 // 32, m * n2 // 32
+    if (max(a_scales, b1_scales, c1_scales, b2_scales, c2_scales) > scale_half or
+            max(m * n1, m * n2) * 2 > resources["accumulator_bytes"]):
+        raise ValueError("rectangular pair scale or accumulator capacity is exceeded")
+    return RectangularPairPlan(
+        m, n2, n1, k1, dim, rows, a_row, b1_row, b2_row, c1_row, c2_row,
+        a_rows, b1_rows, b2_rows, c1_rows, c2_rows,
+        m // dim, n1 // dim, k1 // dim, n2 // dim, n1 // dim,
+        a_scales, b1_scales, c1_scales, b2_scales, c2_scales)
+
+
+def lower_first_fp8_rectangular(plan: RectangularPairPlan, *,
+                                activation_buffer: str,
+                                activation_scales_buffer: str,
+                                weight_buffer: str,
+                                weight_scales_buffer: str,
+                                output_scales_buffer: str
+                                ) -> tuple[Command | Fence, ...]:
+    """Use Nicolas's rectangular k-major B tile layout for MM1."""
+    i, j, kk = plan.m_tiles, plan.first_n_tiles, plan.first_k_tiles
+    commands: list[Command | Fence] = [
+        _cmd(7, 0, 0),
+        _cmd(0, (1 << 16) | (1 << 2), 1 << 48),
+        _cmd(27, Operand(buffer=activation_scales_buffer),
+             plan.first_a_scale_bytes),
+        _cmd(27, Operand(buffer=weight_scales_buffer),
+             (1 << 32) | plan.first_b_scale_bytes),
+        Fence(), _config_ld(plan.first_k),
+    ]
+    for mi in range(i):
+        for ki in range(kk):
+            commands.append(_transfer(
+                2, activation_buffer,
+                mi * plan.dim * plan.first_k + ki * plan.dim,
+                plan.a_row + (mi * kk + ki) * plan.dim))
+    commands.append(_config_ld(plan.k))
+    for ki in range(kk):
+        for nj in range(j):
+            commands.append(_transfer(
+                2, weight_buffer,
+                ki * plan.dim * plan.k + nj * plan.dim,
+                plan.b1_row + (ki * j + nj) * plan.dim))
+    commands.extend([
+        Fence(), _config_st(2),
+        _cmd(26, Operand(buffer=output_scales_buffer,
+                         address_mask=(1 << 33) - 1,
+                         or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
+        _cmd(9, 0, (kk << 32) | (j << 16) | i),
+        _cmd(24, plan.a_row, plan.rows),
+        _cmd(8, 0, (plan.c1_row << 32) | 0x200 | 0x38 | (1 << 10)),
+        Fence(),
+    ])
+    return tuple(commands)
+
+
 def plan_fp8_resident_pair(profile: dict, *, shape: tuple[int, int, int],
                            a_row: int, c1_row: int, c2_row: int
                            ) -> ResidentPairPlan:

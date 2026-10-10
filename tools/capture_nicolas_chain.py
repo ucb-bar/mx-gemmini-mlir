@@ -34,10 +34,20 @@ def main() -> None:
     parser.add_argument("--mx-opt", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--matrix-dim", type=int, choices=(64, 96, 128), default=64)
+    parser.add_argument("--first-k", type=int,
+                        help="MM1 K dimension; 64 with matrix-dim 96 selects Nicolas's rectangular source")
+    parser.add_argument("--second-width", type=int,
+                        help="MM2 N dimension; 64 with matrix-dim 96 selects the rectangular pair")
     parser.add_argument("--output-rows", type=int, choices=tuple(range(16, 129, 16)),
                         help="row prefix of Nicolas's 128³ plain MX source")
     args = parser.parse_args()
     output_rows = args.output_rows or args.matrix_dim
+    first_k = args.first_k or args.matrix_dim
+    second_width = args.second_width or args.matrix_dim
+    rectangular = (first_k, args.matrix_dim, second_width) == (64, 96, 64)
+    if ((first_k, second_width) != (args.matrix_dim, args.matrix_dim) and
+            (not rectangular or output_rows != 64)):
+        parser.error("only Nicolas's 64x96x64 → 64x64x96 rectangular pair is selected")
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
     if args.out_dir.exists():
@@ -72,9 +82,11 @@ def main() -> None:
                                    not profile["resources"].get("requantizer")):
         raise ValueError("selected profile cannot execute Nicolas's plain FP8 chain")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    source = software / ("bareMetalC/chain_vpu_spad_requant.c" if args.matrix_dim == 64
+    source = software / ("bareMetalC/matmul_tiled_fp8_64x96x64.c" if rectangular else
+                         "bareMetalC/chain_vpu_spad_requant.c" if args.matrix_dim == 64
                          else "bareMetalC/matmul_tiled_fp8_128x128_chain.c")
-    header = software / ("include/matmul_fp8_64x64_chain.h" if args.matrix_dim == 64
+    header = software / ("include/matmul_fp8_64x96x64.h" if rectangular else
+                         "include/matmul_fp8_64x64_chain.h" if args.matrix_dim == 64
                          else "include/matmul_fp8_128x128_chain.h")
     if not source.is_file() or not header.is_file():
         raise ValueError("Nicolas's checked-in chain source/header is absent")
@@ -86,9 +98,9 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        example = (torch.randn((output_rows, args.matrix_dim), dtype=torch.float32),
-                   torch.randn((args.matrix_dim, args.matrix_dim), dtype=torch.float32),
-                   torch.randn((args.matrix_dim, args.matrix_dim), dtype=torch.float32))
+        example = (torch.randn((output_rows, first_k), dtype=torch.float32),
+                   torch.randn((first_k, args.matrix_dim), dtype=torch.float32),
+                   torch.randn((args.matrix_dim, second_width), dtype=torch.float32))
     contract = root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = root / "examples/default-policy.yaml"
     result = m2m.convert(
@@ -105,9 +117,9 @@ def main() -> None:
             [(site["site_id"], site["status"], site["format"], site["shape"])
              for site in sites] != [
                  ("functional:matmul", "quantized", "mxfp8",
-                  [output_rows, args.matrix_dim, args.matrix_dim]),
+                  [output_rows, args.matrix_dim, first_k]),
                  ("functional:matmul_1", "quantized", "mxfp8",
-                  [output_rows, args.matrix_dim, args.matrix_dim])]):
+                  [output_rows, second_width, args.matrix_dim])]):
         raise RuntimeError(f"two MX FP8 contraction sites were not selected: {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -125,7 +137,9 @@ def main() -> None:
         raise RuntimeError("profile-bound handoff lost a contraction site")
     subprocess.run([str(args.mx_opt.resolve()), str(bound), "-o", "/dev/null"], check=True)
     receipt = {
-        "schema": ("mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
+        "schema": ("mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
+                   if rectangular else
+                   "mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
                    else f"mx_gemmini.nicolas_chain_{args.matrix_dim}_model2mlir_capture.v1"),
         "status": "two_site_frontend_handoff_only",
         "model2mlir_revision": _git(m2m_root), "mxq_revision": _git(mxq_root),
@@ -150,6 +164,14 @@ def main() -> None:
         receipt["numerical_scope"] = (
             "96-wide slice of Nicolas's checked-in 128³ packed inputs; "
             "both outputs require a separate pinned mesh-model reference")
+    if rectangular:
+        receipt["first_shape_mnk"] = [output_rows, args.matrix_dim, first_k]
+        receipt["second_shape_mnk"] = [output_rows, second_width, args.matrix_dim]
+        receipt["b2_header_sha256"] = _sha(
+            software / "include/matmul_fp8_128x128_chain.h")
+        receipt["numerical_scope"] = (
+            "MM1 codes/scales have an unchanged Nicolas 64x96x64 source golden; "
+            "MM2 uses a checked 128³ B2 wire slice and a pinned mesh-model reference")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 
