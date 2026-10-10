@@ -455,11 +455,17 @@ source, objects, ELF, extension, and Spike log hashes. See the
 [source-bound typed chain](evidence/nicolas_full_chain_source_bound_20261009.mlir),
 [Spike receipt](evidence/compiled_nicolas_full_chain_20261009.json), and
 [reproduction](evidence/compiled_nicolas_full_chain_repro_20261009.json).
-This is the qualified 64×64×64 E4M3 MX+VPU mode; the two-site frontend MLIR
-and the typed source specialization are separate checked compiler inputs.
-They are bound by site IDs and hashed source/profile receipts, and the
-physical lowering produces one program. A connected SSA-level chain and
-generalization across shapes and mode classes remain to be implemented.
+This is the qualified 64×64×64 E4M3 MX+VPU mode. The two-site frontend MLIR
+and typed source specialization are checked compiler inputs. The connected
+specialization combines them into one function with explicit SSA edges for
+MM1→BF16 readout→VPU×2→resident requant→MM2. Its lowerer checks each edge,
+the profile and source digests, and equality with the source-audited physical
+commands. The generated ELF and Spike log match the earlier two-input build
+byte for byte. See the [connected MLIR](evidence/nicolas_connected_chain_266c593.mlir),
+[Spike receipt](evidence/compiled_nicolas_connected_chain_266c593.json), and
+[reproduction](evidence/compiled_nicolas_connected_chain_266c593_repro.json).
+This remains a source-bound 64³ specialization. General shape scheduling and
+independent lowering of arbitrary `mx_gemmini.contract` graphs remain open.
 
 Reproduce the seam with:
 
@@ -475,6 +481,7 @@ program. To reproduce the full chain, also supply
 `--frontend-bound-mlir docs/evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir`
 and
 `--frontend-receipt docs/evidence/model2mlir_nicolas_chain_two_site_capture_20261009.json`.
+Add `--connected-ssa` to emit and compile the single SSA-connected function.
 The output directory must be new.
 
 ## Nicolas's standalone asymmetric mode
@@ -1054,9 +1061,9 @@ profiles; these missing lists are specific to each source shape.
    future committed headers against them. Qualify remaining configuration
    families and source shapes without receipts, and extend multi-output
    tiling beyond the qualified FP8 BF16 shape.
-2. Consolidate the two checked MLIR inputs into one connected chain, then
-   generalize its explicit scratchpad lifetimes beyond the qualified 64³
-   Nicolas source case.
+2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
+   qualified 64³ Nicolas source case, and lower other typed graphs without a
+   source-specific seam.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;

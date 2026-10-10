@@ -52,8 +52,8 @@ into funct 34, and keeps the source/destination scratchpad fields separate.
 The fixed-address form remains available for known baremetal mappings.
 The source-bound compiler has also qualified a full
 MM1→VPU×2→SPAD_REQUANT→resident MM2 command chain on Nicolas's Spike.
-Its two frontend/target MLIR inputs are joined by site ID and source hashes;
-one connected SSA-level chain and general scheduling remain pending.
+Its checked frontend and target inputs now form one SSA-connected typed chain
+for the qualified 64³ E4M3 source case; general scheduling remains pending.
 
 A separate source-bound BF16 matrix lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU

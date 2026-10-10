@@ -217,6 +217,24 @@ def test_connected_full_chain_reuses_checked_commands_and_rejects_broken_ssa(tmp
         tmp_path / "legacy/mx_issue.c").read_bytes()
     assert receipt["schema"] == "mx_gemmini.connected_full_chain_sources.v1"
     assert receipt["connected_mlir_sha256"] == hashlib.sha256(connected.encode()).hexdigest()
+    evidence = ROOT / "docs/evidence"
+    assert connected == (evidence / "nicolas_connected_chain_266c593.mlir").read_text()
+    saved = json.loads((evidence / "compiled_nicolas_connected_chain_266c593.json").read_text())
+    reproduced = json.loads((evidence / "compiled_nicolas_connected_chain_266c593_repro.json").read_text())
+    assert saved["status"] == "source_connected_full_chain_matched_on_pinned_spike"
+    assert saved["compiler_revision"].startswith("ed22642")
+    assert saved["files_sha256"] == receipt["files_sha256"]
+    assert saved["connected_bound_mlir_sha256"] == receipt["connected_mlir_sha256"]
+    assert saved["compared_bf16_values"] == 4096
+    assert saved["compared_fp8_codes"] == 8192
+    assert saved["compared_e8m0_scales"] == 256
+    for field in ("connected_bound_mlir_sha256", "files_sha256", "object_sha256",
+                  "elf_sha256", "extension_sha256", "spike_log_sha256",
+                  "compiler_source_closure_sha256"):
+        assert saved[field] == reproduced[field]
+    legacy_receipt = json.loads((evidence / "compiled_nicolas_full_chain_20261009.json").read_text())
+    assert saved["elf_sha256"] == legacy_receipt["elf_sha256"]
+    assert saved["spike_log_sha256"] == legacy_receipt["spike_log_sha256"]
     wrong_edge = connected.replace(
         '"mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s)',
         '"mx_gemmini.resident_contract"(%c1, %c1s, %b2, %a1s)')

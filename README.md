@@ -34,9 +34,9 @@ older or different conventions, so
 [quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
 The source-bound full
 MM1→VPU×2→SPAD_REQUANT→resident MM2 chain now runs in one compiler-generated
-RV64 program and matches the C1/C2 source outputs on Spike. The two frontend
-and target MLIR inputs are checked and joined by site ID and source hashes;
-one connected SSA-level chain and general mixed lowering remain open.
+RV64 program and matches the C1/C2 source outputs on Spike. The checked
+frontend and target inputs now form one SSA-connected typed chain for the
+qualified 64³ E4M3 source case; general mixed lowering remains open.
 The two legal E4M3×FP4 modes in Nicolas's standalone asymmetric profile also
 lower through the shared physical command representation and match all 4,096
 BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no
