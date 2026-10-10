@@ -57,6 +57,10 @@ jobs:
             tests/test_radiance_fp4_runtime_tilewise_object_evidence.py \
             tests/test_radiance_fp8_runtime_source_object_evidence.py \
             tests/test_radiance_fp6_runtime_source_object_evidence.py \
+            tests/test_compile_object.py \
+            tests/test_compile_object_evidence.py \
+            tests/test_host_requant_object_evidence.py \
+            tests/test_current_radiance_roster_evidence.py \
             tests/test_bf16_row_major_readout.py \
             tests/test_bf16_row_major_spike_evidence.py \
             tests/test_fp4_row_major_runtime_object_evidence.py \
