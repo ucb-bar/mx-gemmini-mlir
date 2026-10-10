@@ -3462,3 +3462,25 @@ tools.compile_nicolas_chain_pipelined --capture-dir
 docs/evidence/nicolas_chain_pipelined_266c593 --rtl-root <Nicolas RTL>
 --riscv-root <RISC-V tools> --mx-opt build/tools/mx-gemmini-opt --out-dir
 <new output directory> --run-spike` from this repository.
+
+### Compiler-issued complete shared-MM1 chain
+
+`--include-mm1` extends the same compile command to the
+[complete three-site typed graph](evidence/nicolas_chain_pipelined_full_266c593/connected.mlir).
+The compiler issues MM1 from Nicolas's checked packed A1/B1 codes and scales,
+reads its BF16 C1 tile, keeps tile 0 resident, and reloads that computed BF16
+tile for the ×4 branch. Both branches share one B2 transfer. The source
+driver's BF16 C1 preload is absent from the issuer command stream.
+
+The [full object manifest](evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json)
+records zero allocated data bytes in the linkable issuer object and the six
+runtime input hashes. The [pinned Spike log](evidence/nicolas_chain_pipelined_full_266c593/spike.log)
+reports **0 mismatches** for all **4,096 MM1 BF16 values**, **16,384 C1/C2
+FP8 codes**, and **512 E8M0 scales** across the two branches. This closes the
+numerical shared-MM1→VPU→requant→MM2 path for Nicolas's 64³ source data. The
+compiler currently uses dependency fences and program order; the source's
+pipelined schedule and its RTL timing are still unqualified.
+
+Append `--include-mm1` to the compile command above to reproduce the complete
+chain. The output includes the bound graph, physical commands, data-free
+object, standalone ELF, and full-output Spike check.

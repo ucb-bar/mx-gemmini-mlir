@@ -13,6 +13,9 @@ from mx_gemmini_support.chain_pipelined_source import audit_chain_pipelined
 from mx_gemmini_support.chain_pipelined_graph import (
     lower_chain_pipelined, render_chain_pipelined,
     validate_original_branch_trace)
+from mx_gemmini_support.full_chain_pipelined import (
+    audit_full_chain_pipelined, lower_full_chain_pipelined,
+    render_full_chain_pipelined)
 from mx_gemmini_support.command_ir import Command
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
@@ -21,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RTL = Path(os.environ.get("MX_GEMMINI_RTL_ROOT", "/nonexistent"))
 EVIDENCE = ROOT / "docs/evidence/nicolas_chain_pipelined_266c593"
 COMPILED = ROOT / "docs/evidence/nicolas_chain_pipelined_compiled_266c593"
+FULL = ROOT / "docs/evidence/nicolas_chain_pipelined_full_266c593"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
 
 
@@ -144,3 +148,66 @@ def test_archived_compiler_object_and_spike_full_outputs():
         assert replay[key] == manifest[key]
     for key in ("elf_sha256", "extension_sha256", "spike_log_sha256"):
         assert replay["spike_qualification"][key] == manifest["spike_qualification"][key]
+
+
+def test_captured_mm1_feeds_both_source_branches():
+    software = RTL / "software/gemmini-rocc-tests"
+    source = software / "bareMetalC/chain_pipelined.c"
+    header = software / "include/matmul_fp8_64x64_chain.h"
+    if not source.is_file() or not header.is_file():
+        pytest.skip("requires Nicolas's pinned chain source and header")
+    profile = load_profile(PROFILE, rtl_root=RTL)
+    resources, facts = audit_full_chain_pipelined(
+        source, header, software / "bareMetalC/matmul_tiled_fp8_64x64_chain.c",
+        software / "bareMetalC/chain_vpu_spad_requant.c", profile)
+    assert all(len(resources[name]) == length for name, length in
+               (("a1_activation", 4096), ("a1_scales", 128),
+                ("b1_weight", 4096), ("b1_scales", 128)))
+    trace = {"graphs": {"original": json.loads(
+        (EVIDENCE / "original_graph.json").read_text())}}
+    full, preloaded = render_full_chain_pipelined(
+        (EVIDENCE / "chain_pipelined.profile_bound.mlir").read_text(),
+        trace, json.loads((EVIDENCE / "quantization_manifest.json").read_text()),
+        profile, resources, facts)
+    assert full == (FULL / "connected.mlir").read_text()
+    assert preloaded == (FULL / "preloaded.mlir").read_text()
+    commands = [item for item in lower_full_chain_pipelined(
+        full, preloaded, profile, resources).commands if isinstance(item, Command)]
+    assert sum(item.funct == 8 for item in commands) == 3
+    assert sum(item.funct == 33 for item in commands) == 2
+    assert sum(item.funct == 34 for item in commands) == 2
+    assert sum(item.rs1.buffer == "b2_weight" for item in commands) == 16
+    assert sum(item.rs1.buffer == "c1_bf16_observed" and item.funct == 2
+               for item in commands) == 32
+    assert all(item.rs1.buffer != "c1_bf16" for item in commands)
+    altered = full.replace('"mx_gemmini.vpu_execute"(%bf16)',
+                           '"mx_gemmini.vpu_execute"(%v0)', 1)
+    with pytest.raises(ValueError, match="differs from captured MM1 binding"):
+        lower_full_chain_pipelined(altered, preloaded, profile, resources)
+    bad = dict(resources)
+    bad["b1_weight"] = bytes([resources["b1_weight"][0] ^ 1]) + resources["b1_weight"][1:]
+    with pytest.raises(ValueError, match="resources differ"):
+        render_full_chain_pipelined(
+            (EVIDENCE / "chain_pipelined.profile_bound.mlir").read_text(),
+            trace, json.loads((EVIDENCE / "quantization_manifest.json").read_text()),
+            profile, bad, facts)
+
+
+def test_archived_full_three_site_compiler_spike_outputs():
+    manifest = json.loads((FULL / "object_manifest.json").read_text())
+    assert manifest["schema"] == "mx_gemmini.full_chain_pipelined_linkable_object.v1"
+    assert manifest["first_matmul_scope"] == "captured MM1 issued from Nicolas's packed A1/B1 inputs"
+    assert manifest["allocated_data_section_bytes"] == 0
+    assert manifest["embedded_operand_bytes"] == 0
+    assert manifest["embedded_golden_bytes"] == 0
+    assert manifest["bound_mlir_sha256"] == _sha(FULL / "connected.mlir")
+    assert manifest["preloaded_mlir_sha256"] == _sha(FULL / "preloaded.mlir")
+    assert manifest["object_sha256"] == _sha(FULL / "mx_issue.o")
+    assert manifest["spike_qualification"]["status"] == "full_three_site_chain_matched_on_pinned_spike"
+    assert manifest["spike_qualification"]["compared_c1_bf16_values"] == 4096
+    assert manifest["spike_qualification"]["compared_fp8_codes"] == 16384
+    assert manifest["spike_qualification"]["compared_e8m0_scales"] == 512
+    assert manifest["spike_qualification"]["elf_sha256"] == _sha(FULL / "mx_program.elf")
+    assert manifest["spike_qualification"]["spike_log_sha256"] == _sha(FULL / "spike.log")
+    assert "C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" in (
+        FULL / "spike.log").read_text()
