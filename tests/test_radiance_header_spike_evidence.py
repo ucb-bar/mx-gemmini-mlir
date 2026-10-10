@@ -26,10 +26,12 @@ def test_radiance_header_spike_matrix_is_source_bound_and_reproducible(tmp_path)
     index = json.loads((EVIDENCE / "qualification.json").read_text())
     assert index["schema"] == "mx_gemmini.radiance_header_requant_spike.v1"
     assert index["compiler_revision"].startswith("6a09dee")
+    assert len(index["compiler_revisions"]) == 2
     assert index["rtl_revision"] == "266c593f2cb51d7e3fe83fc0317072b585ac3c52"
     assert index["output_policy"] == "radiance_header_fp8_v1"
     assert {case["case"] for case in index["cases"]} == {
-        "fp8_64x64x64", "fp4_64x64x64", "fp8_128x128x256", "fp4_128x128x128"}
+        "fp8_64x64x64", "fp4_64x64x64", "fp8_128x128x256",
+        "fp4_128x128x128", "fp8_128x128x128", "fp4_128x128x512"}
     profile = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593" /
                            f"{index['profile']}.json")
     for row in index["cases"]:
@@ -41,7 +43,10 @@ def test_radiance_header_spike_matrix_is_source_bound_and_reproducible(tmp_path)
         bound = (folder / "bound.mlir").read_text()
         m, n, k = row["shape_mnk"]
         assert manifest_sha256(manifest) == row["payload_manifest_sha256"]
-        assert receipt["compiler_revision"] == index["compiler_revision"]
+        assert receipt["compiler_revision"] == row["compiler_revision"]
+        assert receipt["compiler_revision"] in index["compiler_revisions"]
+        assert receipt["compiler_source_closure_sha256"] == (
+            index["compiler_source_closure_sha256"])
         assert receipt["rtl_revision"] == index["rtl_revision"]
         assert receipt["status"] == "radiance_header_matched_on_pinned_spike"
         assert receipt["spike_exit_code"] == 0

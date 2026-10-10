@@ -5,6 +5,7 @@
       "case": "fp8_64x64x64",
       "compared_e8m0_scales": 128,
       "compared_fp8_codes": 4096,
+      "compiler_revision": "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
       "elf_sha256": "8f9d1ab9ad373b8d56559ef2dbf186892228c9c0e1733f8a7e8f447072ebdb9e",
       "files_sha256": {
         "bound.mlir": "928dbcf33d32a081cb83417e63695263e78a62fd2b7e1f42099ef39585c7270f",
@@ -43,6 +44,7 @@
       "case": "fp4_64x64x64",
       "compared_e8m0_scales": 128,
       "compared_fp8_codes": 4096,
+      "compiler_revision": "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
       "elf_sha256": "daf4d5b87ff7f9553bd3684968fc62b1a256af950f187083f95658afee47b857",
       "files_sha256": {
         "bound.mlir": "43f082d12bf4f6cf7b7a0dd21f61c89385d56b60f0e93f278757d03fdcd3f870",
@@ -81,6 +83,7 @@
       "case": "fp8_128x128x256",
       "compared_e8m0_scales": 512,
       "compared_fp8_codes": 16384,
+      "compiler_revision": "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
       "elf_sha256": "dccac8f013ac003db7a67946c877aed46d6f813dab826268f333517078bdc420",
       "files_sha256": {
         "bound.mlir": "e60785d6a2a1a1cdc856b348b32d5707c21a6dd8fc092eb512b3ce94f0addde5",
@@ -119,6 +122,7 @@
       "case": "fp4_128x128x128",
       "compared_e8m0_scales": 512,
       "compared_fp8_codes": 16384,
+      "compiler_revision": "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
       "elf_sha256": "c88615157bacef442636e93083f457754756394a65e2cb3cd491ac7ba241ab0d",
       "files_sha256": {
         "bound.mlir": "38d2110d924cb97dfb5ca5a2e0dc39ab27152638ab5b16c0d211ba0d604fdf1e",
@@ -151,9 +155,90 @@
       "source_header_sha256": "be8b5db02a2a90c32f8d2b35b70ac9d47d1a699ca85ccadfb705012fce050ed6",
       "spike_log_sha256": "cbcdfd92e4c23473c95779070983171498003a123c50d1ddf455de032888f8b8",
       "stable_elf_and_spike_log_across_verifier_update": true
+    },
+    {
+      "bound_mlir_sha256": "c16559bc70d8a7fdcc4ab7e01259bb7aa5fe18e9c8b782f68acb275b6a5c6cb4",
+      "case": "fp8_128x128x128",
+      "compared_e8m0_scales": 512,
+      "compared_fp8_codes": 16384,
+      "compiler_revision": "e40afac98b75d21ff8f83b52eb06dd54967e4a26",
+      "elf_sha256": "1e4b47824d5fc11ed0217048d564b3b52fd23e062e2546d9f1deb83b1f884d6a",
+      "files_sha256": {
+        "bound.mlir": "c16559bc70d8a7fdcc4ab7e01259bb7aa5fe18e9c8b782f68acb275b6a5c6cb4",
+        "bundle/activation.bin": "64582c06cd7c49684acf763ddffbd4feba576c487be464b5aa2e5e4d4e120b00",
+        "bundle/activation_scales.bin": "fa16bf5571d7e93fdab8210017cec9f3990d120bf4b304b37a5145623255cffb",
+        "bundle/golden_bf16.bin": "c9eaf91734937061e801b63d1820898828017e27a8a8edab3221f1dbc3f4e678",
+        "bundle/golden_fp8.bin": "1c8df9cf533782ad9e31c75cd55469304d1b6420f7e5ff2fc411652288f1ecbe",
+        "bundle/golden_output_scales.bin": "64b0b32728f7e78145da7078916c5d960d946f4cb4aa4c16b060e64dbe806bbc",
+        "bundle/manifest.json": "173c3122a97f38addae9e89ac4a9704403e52df4d3865bc3949cfb1c408a0c32",
+        "bundle/nicolas_fp8.bin": "c060c9d9e4de7817d4f94a2bc1b0881d39e3b8d7a481e73d76e8bff8a8003ca9",
+        "bundle/nicolas_output_scales.bin": "83139222dec13c5e6be9735960d9ab75b208fb0f7b8d176754fdefbd86b70861",
+        "bundle/output_scales.bin": "41bf03ddce49ae4ee2bf4927a930a6c2d3ba7958c0db02fdd8e0a77567434079",
+        "bundle/weight.bin": "db6e25e5c1434b3ad88a81cec4336b1b704356bae73fc383932c7903a4edd1aa",
+        "bundle/weight_scales.bin": "acb8a1357eaa628c57195839c55667b8a6658287e38be88461b5902a699028d4",
+        "mx_driver.c": "70af088e096f502f11ea138b69a57d3934570a1d2313dd3f500c34781c8d3007",
+        "mx_issue.c": "c26035ac74d256c7afbee698920ab204c36019407be6bf2465cad08ef789cfbb",
+        "physical_program.json": "1d1148e5ef965b57483bb5c2eaf6a474d38d248594b51cc477177c6f1819b326",
+        "receipt.json": "207aad64d14d99c2cafab83419a222739135ce28a018f4b59d85107fdf95b1a9",
+        "spike.log": "cbcdfd92e4c23473c95779070983171498003a123c50d1ddf455de032888f8b8"
+      },
+      "payload_manifest_sha256": "39e31f66c3b527823b6addd549ddc7471ef2ead804222b22a4715a910d0b7054",
+      "precision": "fp8",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "source_driver_sha256": "294d68402fc3eb1d5c2e47dfc09da218a7fc3845a237b70693ad8c4d4c49869c",
+      "source_header_generation": "python kernels/gemm_mxgemmini/gen_mxgemm_data.py fp8 128 128 128",
+      "source_header_sha256": "5cb6ca13479a3d56ec3e493a3000009d1dbd869594bf52bda4bcb7ef6d7aec0f",
+      "spike_log_sha256": "cbcdfd92e4c23473c95779070983171498003a123c50d1ddf455de032888f8b8"
+    },
+    {
+      "bound_mlir_sha256": "d40e84e20506513b657685d6891b1b4584cf7bca067ae7e4cfa5ec40c384c584",
+      "case": "fp4_128x128x512",
+      "compared_e8m0_scales": 512,
+      "compared_fp8_codes": 16384,
+      "compiler_revision": "e40afac98b75d21ff8f83b52eb06dd54967e4a26",
+      "elf_sha256": "5da4584974d9556ecd3964d64176f3c702c08cd642d111e22368f51fafcee0f5",
+      "files_sha256": {
+        "bound.mlir": "d40e84e20506513b657685d6891b1b4584cf7bca067ae7e4cfa5ec40c384c584",
+        "bundle/activation.bin": "2f41d5b99d20640cfe340b3875e287e4f6e7232adf3d9f6f3e7913ebc80d13a8",
+        "bundle/activation_scales.bin": "8cb1c2473e08fabfd09f31118ac966212dbaa1f25cf541b576bd31c510f1b62b",
+        "bundle/golden_bf16.bin": "8387d43b7d1cfa3cf70da48090292279a745bc3cfdad8c407bdc76dd2e3571c7",
+        "bundle/golden_fp8.bin": "2f803a75c46947373534fcf0ed147890e9925272ab5d8af0aea8dc6a88c5d637",
+        "bundle/golden_output_scales.bin": "df7321edce5d502a2c769fff92156eb0300865c0847013296d6ab217e8731288",
+        "bundle/manifest.json": "2d30ae90bc376e8c1224bcd8a96c99ad200b529beae9203c928b54cf663d977e",
+        "bundle/nicolas_fp4.bin": "327f77316242bff4290d093d6230ddb2f7ff2a7a4b09e5bed22b3ebb2d45ba6f",
+        "bundle/nicolas_output_scales.bin": "2e6cfe583234843bab0087225415676a6e139a4ba9b2f2465e6a562b5bfddd0f",
+        "bundle/output_scales.bin": "9c30883e7cd3875ac0dc05928bd63da4011f0ff30c06a5b253321723f7bcfc15",
+        "bundle/weight.bin": "8f0655c74b4ffd7caab8430da573b05e6d5e1aade0d172d326d2b0e0226131dd",
+        "bundle/weight_scales.bin": "2a94a41708269ed510c6ddb04126a22af24d1ce2fcc62dde0d677958d5ba0bf0",
+        "mx_driver.c": "049cf05de8d857706803b2cd8621aecbc1c526c0c9dd9a058ff9b1d07d59d9ca",
+        "mx_issue.c": "edd6a178b548b0e38b091fea82e830c4a57fec56aa976e5913358aa58ecc37ed",
+        "physical_program.json": "a89c9364987ccf1efc7724718b60e0244ccdd6b446a3a273b93ceaf1acc6e261",
+        "receipt.json": "019af174ff38b86fa1164bf50fab1f959e2f3c607a47ad94ac134209c02f9cd8",
+        "spike.log": "45612157424698553032b0c4a63f12f6ecfcdd1fbbb23eeb69b9e18f89c92ab9"
+      },
+      "payload_manifest_sha256": "89aa3a89fdb6f82026d33df34451aab5cca124045bb73c1fe12b7e749c86155d",
+      "precision": "fp4",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "source_driver_sha256": "49908237ac02fd377729ea8921c54d276f95d0bd96e170c5cbf43b8405975d8e",
+      "source_header_generation": "python kernels/gemm_mxgemmini/gen_mxgemm_data.py fp4 128 128 512",
+      "source_header_sha256": "0461cc975949db7d5a153fa40b3240a48c306f2ca5061bd4e69a3231a8b1528f",
+      "spike_log_sha256": "45612157424698553032b0c4a63f12f6ecfcdd1fbbb23eeb69b9e18f89c92ab9"
     }
   ],
   "compiler_revision": "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
+  "compiler_revisions": [
+    "6a09dee6c068a3d81fba03e68f880638ae5a0ad4",
+    "e40afac98b75d21ff8f83b52eb06dd54967e4a26"
+  ],
+  "compiler_source_closure_sha256": "1de7d42b8aabf77fc1930bf30109954a6a92a14567489d4c00f4e9628e82d822",
   "output_policy": "radiance_header_fp8_v1",
   "profile": "MxE4M3Fp4VpuGemminiRocketConfig",
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",

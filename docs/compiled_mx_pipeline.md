@@ -224,7 +224,11 @@ driver compares the computed codes and scales on Spike. This is a compatibility
 path with a host epilogue, so its performance is not hardware requant
 performance. The separate hardware path remains available for resident MX
 consumers. See the [source-header Spike evidence](evidence/radiance_header_requant_266c593/qualification.json)
-for FP8 and FP4 input runs at 64×64 and 128×128.
+for all six buildable FP8/FP4 quantized drivers in this source snapshot:
+FP8 64×64×64, 128×128×128, and 128×128×256; FP4 input 64×64×64,
+128×128×128, and 128×128×512. Every FP8 header code and E8M0 output scale
+matched on the pinned Spike. The FP4-input source headers also specify FP8
+output codes.
 
 ```sh
 python -m tools.qualify_source_mx \
