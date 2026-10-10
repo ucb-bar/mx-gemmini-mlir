@@ -26,7 +26,7 @@ def test_radiance_fp6_fullout_spike_evidence(tmp_path):
     assert index["schema"] == "mx_gemmini.radiance_fp6_fullout_spike.v1"
     assert index["compiler_revision"].startswith("8fa6822")
     assert index["rtl_revision"] == "266c593f2cb51d7e3fe83fc0317072b585ac3c52"
-    assert {row["k"] for row in index["cases"]} == {128, 512}
+    assert {row["k"] for row in index["cases"]} == {128, 256, 512, 1024}
     profile = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593" /
                            f"{index['profile']}.json")
     for row in index["cases"]:
@@ -39,12 +39,16 @@ def test_radiance_fp6_fullout_spike_evidence(tmp_path):
         m, n, k = manifest["shape_mnk"]
         assert (m, n, k) == (128, 128, row["k"])
         assert manifest_sha256(manifest) == row["payload_manifest_sha256"]
-        assert receipt["compiler_revision"] == index["compiler_revision"]
+        assert receipt["compiler_revision"] == row["compiler_revision"]
+        assert receipt["compiler_revision"] in index["compiler_revisions"]
         assert receipt["status"] == "source_golden_matched_on_pinned_spike"
         assert receipt["spike_exit_code"] == 0
         assert receipt["elf_sha256"] == row["elf_sha256"]
         assert receipt["source_header_sha256"] == _sha(
             ROOT / "docs/evidence" / row["source_header_path"])
+        if (folder / "generation_receipt.json").is_file():
+            generation = json.loads((folder / "generation_receipt.json").read_text())
+            assert generation["generated_header_sha256"] == receipt["source_header_sha256"]
         assert receipt["source_driver_sha256"] == _sha(folder / "source_driver.cpp")
         assert receipt["bound_mlir_sha256"] == _sha(folder / "bound.mlir")
         assert receipt["compared_bf16_outputs"] == m * n
@@ -56,3 +60,14 @@ def test_radiance_fp6_fullout_spike_evidence(tmp_path):
         regenerated = write_standalone_sources(tmp_path / row["case"], program, resources)
         for name in ("mx_issue.c", "mx_driver.c", "physical_program.json"):
             assert regenerated["files_sha256"][name] == _sha(folder / name)
+
+    pristine = EVIDENCE / "pristine_cli_1024"
+    reproduction = index["pristine_cli_reproduction"]
+    for filename, digest in reproduction["files_sha256"].items():
+        assert _sha(pristine / filename) == digest
+    receipt = json.loads((pristine / "receipt.json").read_text())
+    case = next(row for row in index["cases"] if row["k"] == 1024)
+    assert receipt["compiler_revision"] == reproduction["compiler_revision"]
+    assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+    assert receipt["elf_sha256"] == case["elf_sha256"]
+    assert receipt["spike_log_sha256"] == case["spike_log_sha256"]

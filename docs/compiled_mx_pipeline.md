@@ -318,14 +318,17 @@ Radiance checkout needs its checked-in 2048-K header and a built
 `lib/golden/mx_golden`. The standalone generator remains available for
 inspecting the fixture directly.
 
-The sibling FP6 **fullout** drivers at 128×128×128 and 128×128×512 use the
-same generated operand headers and separate fresh PyTorch→model2MLIR
-captures. Their typed contractions lower to standalone BF16 MX readout
-programs. All **16,384 BF16 values per driver** matched the source golden
-on Nicolas's pinned Spike. The [fullout qualification](evidence/radiance_fp6_fullout_266c593/qualification.json)
-archives both frontend captures, bound MLIR, packed payloads, physical
-commands, generated issuers, receipts, and Spike logs. These runs also use
-the E3M2-only profile and the 256 KiB target scratchpad.
+The sibling FP6 **fullout** drivers at 128×128×128, 128×128×256,
+128×128×512, and 128×128×1024 use generated operand headers and separate
+fresh PyTorch→model2MLIR captures. Their typed contractions lower to
+standalone BF16 MX readout programs. All **16,384 BF16 values per driver**
+matched the source golden on Nicolas's pinned Spike. The
+[fullout qualification](evidence/radiance_fp6_fullout_266c593/qualification.json)
+archives all four frontend captures, bound MLIR, packed payloads, physical
+commands, generated issuers, receipts, and Spike logs. The 1024-depth case
+also reproduced from a source tree without its generated header using the
+one-command staged fixture path, with identical ELF and Spike log hashes.
+These runs use the E3M2-only profile and the 256 KiB target scratchpad.
 
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
