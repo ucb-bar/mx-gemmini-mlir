@@ -21,11 +21,13 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     if profile["geometry"].get("mesh_columns") != 16:
         raise ValueError("resident MX contraction requires the qualified DIM16 layout")
     shape = (attrs["m"], attrs["n"], attrs["k"])
-    if shape not in {(64, 64, 64), (64, 128, 128), (128, 128, 128)}:
+    plain_shape = (shape[1:] == (128, 128) and
+                   type(shape[0]) is int and shape[0] in range(16, 129, 16))
+    if shape != (64, 64, 64) and not plain_shape:
         raise ValueError("resident MX contraction needs a source-qualified tile")
     if shape == (64, 64, 64) and not profile["resources"].get("spad_requant"):
         raise ValueError("64³ resident MX contraction needs the qualified SPAD_REQUANT profile")
-    if shape in {(64, 128, 128), (128, 128, 128)} and (
+    if plain_shape and (
             profile["name"] != "MxGemminiRocketConfig" or
             profile["resources"].get("spad_requant") or
             profile["resources"].get("vpu")):

@@ -33,7 +33,7 @@ def main() -> None:
     parser.add_argument("--mx-opt", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
-    parser.add_argument("--output-rows", type=int, choices=(64, 128),
+    parser.add_argument("--output-rows", type=int, choices=tuple(range(16, 129, 16)),
                         help="row prefix of Nicolas's 128³ plain MX source")
     args = parser.parse_args()
     output_rows = args.output_rows or args.matrix_dim

@@ -32,7 +32,8 @@ PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json
 def _source_resources(source: Path, header: Path, *, with_mm1: bool = False,
                       source_rows: int = 128
                       ) -> dict[str, bytes]:
-    if source_rows not in (64, 128) or (source_rows != 128 and not with_mm1):
+    if (type(source_rows) is not int or source_rows not in range(16, 129, 16) or
+            (source_rows != 128 and not with_mm1)):
         raise ValueError("row-prefix specialization requires connected MM1 and MM2")
     text = source.read_text()
     if (source.name != "matmul_tiled_fp8_128x128_chain.c" or
@@ -233,7 +234,7 @@ int main(void) {{
     assembly.append('.section .note.GNU-stack,"",@progbits')
     (directory / "mx_data.S").write_text("\n".join(assembly) + "\n")
     physical = {
-        "schema": (("mx_gemmini.connected_plain_chain_64x128_physical.v1"
+        "schema": ((f"mx_gemmini.connected_plain_chain_{source_rows}x128_physical.v1"
                     if source_rows != 128 else
                     "mx_gemmini.connected_plain_chain_128_physical.v1") if with_mm1 else
                    "mx_gemmini.resident_mm2_128_physical.v1"),
@@ -254,8 +255,9 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--connected-frontend-dir", type=Path,
                         help="capture_nicolas_chain --matrix-dim 128 output or checked-in archive")
-    parser.add_argument("--source-rows", type=int, choices=(64, 128), default=128,
-                        help="row prefix of Nicolas's 128³ source; 64 requires a connected capture")
+    parser.add_argument("--source-rows", type=int, choices=tuple(range(16, 129, 16)),
+                        default=128,
+                        help="complete 16-row prefix of Nicolas's 128³ source; prefixes require a connected capture")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated program and Spike output")
     args = parser.parse_args()
@@ -274,7 +276,7 @@ def main() -> None:
     header = software / "include/matmul_fp8_128x128_chain.h"
     connected = args.connected_frontend_dir is not None
     if not connected and args.source_rows != 128:
-        parser.error("--source-rows 64 requires --connected-frontend-dir")
+        parser.error("a source row prefix requires --connected-frontend-dir")
     resources = _source_resources(source, header, with_mm1=connected,
                                   source_rows=args.source_rows)
     if connected:
@@ -367,7 +369,7 @@ def main() -> None:
               "lowered resident MM2 128x128: 0 FP8 code mismatches, 0 E8M0 scale mismatches")
     passed = result.returncode == 0 and marker in result.stdout
     receipt = {
-        "schema": (("mx_gemmini.nicolas_connected_plain_chain_64x128.v1"
+        "schema": ((f"mx_gemmini.nicolas_connected_plain_chain_{args.source_rows}x128.v1"
                     if args.source_rows != 128 else
                     "mx_gemmini.nicolas_connected_plain_chain_128.v1") if connected else
                    "mx_gemmini.nicolas_resident_mm2_128.v1"),
@@ -404,7 +406,7 @@ def main() -> None:
         if args.source_rows != 128:
             receipt["source_rows"] = args.source_rows
             receipt["scope"] = (
-                "first 64 independent output rows of Nicolas's 128³ packed source; "
+                f"first {args.source_rows} independent output rows of Nicolas's 128³ packed source; "
                 "typed MM1 C1 and scales remain resident for typed MM2")
     (build / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")

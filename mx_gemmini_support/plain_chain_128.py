@@ -38,7 +38,7 @@ def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict) -> int
         raise ValueError("plain 128³ chain needs two frontend MX contractions")
     sites = manifest.get("sites", [])
     m = sites[0].get("shape", [None])[0] if sites else None
-    if m not in (64, 128):
+    if type(m) is not int or m not in range(16, 129, 16):
         raise ValueError("plain chain needs a source-qualified row count")
     expected = [(site, "quantized", "mxfp8", [m, 128, 128]) for site in
                 ("functional:matmul", "functional:matmul_1")]
