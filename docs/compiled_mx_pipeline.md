@@ -441,6 +441,33 @@ This source executable is the full VPU oracle. The compiler-issued softmax
 and matrix/VPU programs below cover selected operations; compiler-generated
 execution of the other VPU cases remains to be qualified.
 
+### Compiler-issued fused EXPSUB and EXPSUM
+
+The [fused VPU receipt](evidence/nicolas_vpu_fused_compiled_266c593/index.json)
+captures `exp(a - b)` and `exp(a - b)` plus a grouped sum from BF16 PyTorch
+with model2MLIR `e9ded36`, then binds each graph to one typed VPU operation
+on Nicolas's fused two-unit profile. The compiler emits all configuration,
+input transfers, funct-33 compute, and output transfers. The C driver only
+reproduces the source test's input generator and calls `vpu_ref.h` for the
+BF16 golden. The [EXPSUB](evidence/nicolas_vpu_fused_compiled_266c593/expsub/bound.mlir)
+program matches **512 / 512 BF16 outputs**; the
+[EXPSUM](evidence/nicolas_vpu_fused_compiled_266c593/expsum/bound.mlir)
+program matches **512 / 512 outputs and 128 / 128 grouped-sum values** on
+pinned Spike. Two fresh builds reproduce both frontend captures, bound MLIR,
+issuers, ELFs, extension, and output logs byte for byte.
+
+```sh
+python -m tools.qualify_nicolas_vpu_fused \
+  --model2mlir-root /path/to/model2MLIR \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/nicolas-vpu-fused
+```
+
+PyTorch identifies the operation and shapes; the source VPU reference defines
+the rounded BF16 results. These checks qualify the two fused opcodes on
+Nicolas's Spike model, not RTL/FPGA execution or every VPU opcode.
+
 ### Compiler-issued BF16 VPU softmax
 
 `tools.qualify_nicolas_vpu_softmax` captures `torch.softmax` on a 16×32 BF16

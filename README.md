@@ -78,6 +78,10 @@ on Spike.
 Nicolas's [full VPU source oracle](docs/compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations)
 also passes all 29 checks on pinned Spike, including fused EXPSUB/EXPSUM;
 compiler-issued coverage remains narrower.
+The [fused VPU compiler path](docs/compiled_mx_pipeline.md#compiler-issued-fused-expsub-and-expsum)
+now lowers model2MLIR `e9ded36` captures of EXPSUB and EXPSUM to executable
+commands; Nicolas's Spike matches all 512 outputs for each and all 128 EXPSUM
+sum values.
 The two legal E4M3×FP4 modes in Nicolas's standalone asymmetric profile also
 lower through the shared physical command representation and match all 4,096
 BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no
