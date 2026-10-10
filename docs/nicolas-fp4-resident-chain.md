@@ -57,6 +57,8 @@ python -m tools.compile_object \
 The [evidence archive](evidence/nicolas_fp4_connected_resident_266c593/index.json)
 records the captured MLIR, bound graph, physical commands, data-free object,
 both ELFs, and Spike logs. The pinned run matched 4,096 FP4 nibble codes and
-128 E8M0 scale bytes in each of C1 and C2. This is a source and Spike
+128 E8M0 scale bytes in each of C1 and C2. A fresh checkout rebuilt the native
+verifier and reproduced the capture, commands, object, ELFs, and both Spike
+logs byte for byte. This is a source and Spike
 qualification for the plain MX profile; it does not qualify RTL timing or the
 FPGA image.

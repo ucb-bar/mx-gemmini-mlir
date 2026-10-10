@@ -83,6 +83,11 @@
       "compressed": false,
       "sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
     },
+    "fresh_checkout.json": {
+      "bytes": 1853,
+      "compressed": false,
+      "sha256": "5cf591398c8d96e283a4e618d2a64814602a7e99fc221339881cb37cf63d4990"
+    },
     "object/a1_activation.bin.gz": {
       "bytes": 2048,
       "compressed": true,
