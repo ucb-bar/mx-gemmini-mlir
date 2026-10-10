@@ -53,6 +53,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin, IntegerType, TensorType
     from xdsl.dialects.func import Func
+    from xdsl.ir import Operation
     from xdsl.parser import Parser
 
     context = Context(allow_unregistered=True)
@@ -231,6 +232,21 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     _text_attr(module, "mx.output_specialization") !=
                     "radiance_header_fp8_host_requant"):
                 raise ValueError("MX host requantize requires the Radiance FP8 header policy")
+            shape = payload_manifest.get("shape_mnk") if payload_manifest else None
+            if (not isinstance(shape, list) or len(shape) != 3 or
+                    any(type(d) is not int or d <= 0 for d in shape) or
+                    shape[1] % 32 or len(op.operands) != 1 or len(op.results) != 2 or
+                    not isinstance(op.operands[0].owner, Operation) or
+                    _operation_name(op.operands[0].owner) != "mx_gemmini.readout_bf16"):
+                raise ValueError("MX host requantize lacks a source-bound BF16 readout")
+            for result, expected_shape in zip(op.results,
+                                              (shape[:2], [shape[0], shape[1] // 32])):
+                result_type = result.type
+                if (not isinstance(result_type, TensorType) or
+                        list(result_type.get_shape()) != expected_shape or
+                        not isinstance(result_type.element_type, IntegerType) or
+                        result_type.element_type.width.data != 8):
+                    raise ValueError("MX host requantize result shape differs from source payload")
         elif name == "mx_gemmini.vpu_execute":
             vpu_command(profile, kind=_text_attr(op, "kind"),
                         src1_row=_int_attr(op, "src1_row"), src2_row=_int_attr(op, "src2_row"),

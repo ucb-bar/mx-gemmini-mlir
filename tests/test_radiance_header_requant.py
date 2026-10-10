@@ -74,6 +74,13 @@ def test_source_header_epilogue_is_typed_and_byte_exact(tmp_path, precision):
     with pytest.raises(ValueError, match="Radiance FP8 header policy"):
         verify_ir(bound.replace('quant_policy = "radiance_header_fp8_v1"',
                                 'quant_policy = "unknown"'), profile)
+    bad_shape = bound.replace(
+            '-> (tensor<64x64xi8>, tensor<64x2xi8>)',
+            '-> (tensor<32x64xi8>, tensor<64x2xi8>)').replace(
+            'func.return %4, %5 : tensor<64x64xi8>, tensor<64x2xi8>',
+            'func.return %4, %5 : tensor<32x64xi8>, tensor<64x2xi8>')
+    with pytest.raises(ValueError, match="result shape differs"):
+        verify_ir(bad_shape, profile)
     bad = dict(resources)
     bad["golden_fp8"] = bytes([0]) + resources["golden_fp8"][1:]
     if bad["golden_fp8"] == resources["golden_fp8"]:
