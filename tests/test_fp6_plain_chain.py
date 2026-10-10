@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
+import json
 import os
 from pathlib import Path
 
@@ -14,6 +16,7 @@ from mx_gemmini_support.fp6_plain_chain import (
 from mx_gemmini_support.resident_pair_graph import FP6_INPUTS, lower_connected_pair
 from mx_gemmini_support.resident_pair_plan import plan_fp6_resident_pair
 from mx_gemmini_support.target_profile import load_profile
+from mx_gemmini_support.verify_profile_ir import verify_ir
 from tools.emit_resident_pair_object import _buffer_abi
 from tools.qualify_nicolas_fp6_resident_chain import compiler_driver
 
@@ -97,3 +100,33 @@ def test_fp6_resident_pair_rejects_lut_tampering(dimension: int):
             mlir.replace('lut_groups = 32 : i32', 'lut_groups = 31 : i32') if dimension == 64
             else mlir.replace('lut_groups = 64 : i32', 'lut_groups = 63 : i32'),
             profile, resources, dimension=dimension)
+
+
+@pytest.mark.parametrize("dimension", (64, 128))
+def test_fp6_archived_spike_evidence(dimension: int):
+    archive = (ROOT / "docs/evidence" /
+               f"nicolas_fp6_connected_resident_{dimension}_266c593")
+    index = json.loads((archive / "index.json").read_text())
+    assert index["status"] == "source_and_compiler_matched_on_pinned_spike"
+    assert index["fresh_remote_checkout_reproduced"] is True
+    assert index["compared_fp6_codes_each_output"] == dimension * dimension
+    assert index["compared_e8m0_scales_each_output"] == dimension * dimension // 32
+    for filename, descriptor in index["files"].items():
+        raw = (archive / filename).read_bytes()
+        data = gzip.decompress(raw) if filename.endswith(".gz") else raw
+        assert len(data) == descriptor["bytes"]
+        assert hashlib.sha256(data).hexdigest() == descriptor["sha256"]
+    receipt = json.loads((archive / "chain/receipt.json").read_text())
+    obj = json.loads((archive / "object/object_manifest.json").read_text())
+    replay = json.loads((archive / "fresh_checkout.json").read_text())
+    assert receipt["source_spike"]["matched"]
+    assert receipt["compiler_spike"]["matched"]
+    assert receipt["compiler_revision"] == replay["compiler_revision"]
+    assert obj["allocated_data_section_bytes"] == 0
+    assert obj["embedded_operand_bytes"] == 0
+    assert obj["embedded_golden_bytes"] == 0
+    assert obj["object_sha256"] == index["files"]["object/mx_issue.o.gz"]["sha256"]
+    report = verify_ir((archive / "chain/connected.mlir").read_text(),
+                       load_profile(PROFILE))
+    assert (report["contracts"], report["resident_contracts"],
+            report["runtime_luts"]) == (1, 1, 6)
