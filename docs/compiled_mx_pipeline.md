@@ -956,6 +956,16 @@ physical program, object, ELF, and Spike log matched the first run byte for
 byte. The archived compressed MLIR and inputs also recompile to the same
 object, issuer, and physical program.
 
+The same narrow graph was independently captured, bound, compiled, and run
+under Nicolas's **E4M3-only VPU** profile. Its
+[configuration receipt](evidence/nicolas_narrow_vpu_pair_e4m3_only_103acdc/index.json)
+records the distinct profile hash and zero mismatches on stock Spike for all
+the outputs above. The source payloads, generated issuer/object, ELF, and
+Spike log match the FP4-capable VPU profile's FP8 run byte for byte; the
+physical program receipt differs in its profile hash. This qualifies the
+shared FP8/VPU path on both selected Rocket profiles. FP4 execution remains
+legal only on the FP4-capable profile.
+
 To reproduce, capture with `--matrix-dim 64 --first-k 64 --second-width 32
 --output-rows 64` and the VPU profile, then use `tools.bind_narrow_vpu_chain`,
 `tools.compile_object` with `examples/resident-vpu-abi.json`, and

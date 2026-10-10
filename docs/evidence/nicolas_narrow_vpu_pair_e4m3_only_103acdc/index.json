@@ -1,0 +1,174 @@
+{
+  "compared": {
+    "c1_bf16_values": 4096,
+    "c1_e8m0_scales": 128,
+    "c1_fp8_codes": 4096,
+    "c2_e8m0_scales": 64,
+    "c2_fp8_codes": 2048
+  },
+  "compiler_revision": "103acdc2edd39683ff7719801248fc4a11435c12",
+  "files": {
+    "bound/a1_activation.bin.gz": {
+      "bytes": 4096,
+      "compressed": true,
+      "sha256": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905"
+    },
+    "bound/a1_scales.bin.gz": {
+      "bytes": 128,
+      "compressed": true,
+      "sha256": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6"
+    },
+    "bound/b1_scales.bin.gz": {
+      "bytes": 128,
+      "compressed": true,
+      "sha256": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f"
+    },
+    "bound/b1_weight.bin.gz": {
+      "bytes": 4096,
+      "compressed": true,
+      "sha256": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40"
+    },
+    "bound/b2_scales.bin.gz": {
+      "bytes": 64,
+      "compressed": true,
+      "sha256": "833ece6c467608242389533021c61aa7f2fbb9c4dbf8017c483f983f3417b57c"
+    },
+    "bound/b2_weight.bin.gz": {
+      "bytes": 2048,
+      "compressed": true,
+      "sha256": "f3db2f7e94b8bf3d5987a76be56c897d4d44e815160ac214fa06b7dc8907afff"
+    },
+    "bound/binding_manifest.json": {
+      "bytes": 2064,
+      "compressed": false,
+      "sha256": "06291e5362aadca6e408bfbf5d46f5788978a57977767a3140084c984149c325"
+    },
+    "bound/c1_bf16.bin.gz": {
+      "bytes": 8192,
+      "compressed": true,
+      "sha256": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619"
+    },
+    "bound/c1_codes_ref.bin.gz": {
+      "bytes": 4096,
+      "compressed": true,
+      "sha256": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95"
+    },
+    "bound/c1_scales_ref.bin.gz": {
+      "bytes": 128,
+      "compressed": true,
+      "sha256": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c"
+    },
+    "bound/c2_codes_ref.bin.gz": {
+      "bytes": 2048,
+      "compressed": true,
+      "sha256": "cf0f72ed358c74cf8d66922eb5f4663d79a98ff29428ed440d1d422bc7d076fb"
+    },
+    "bound/c2_scales_ref.bin.gz": {
+      "bytes": 64,
+      "compressed": true,
+      "sha256": "8fd4627017d9ae183af47313f9aef97af4102a504f94e1c8032b1c6313c6bfae"
+    },
+    "bound/connected.mlir.gz": {
+      "bytes": 4378,
+      "compressed": true,
+      "sha256": "9d5dba3293de1b2e45d65411d97bbd802b038de2c87c241e782627a70b645ad5"
+    },
+    "capture/nicolas_chain.handoff.mlir.gz": {
+      "bytes": 2410,
+      "compressed": true,
+      "sha256": "812ffc00ae5029069714f8c052c37f5b6c5ea17ff253aee7bf81be776a57c3ee"
+    },
+    "capture/nicolas_chain.model2mlir.mlir.gz": {
+      "bytes": 245771,
+      "compressed": true,
+      "sha256": "a554cb5437f2ff698fdf8e5f83c688099f9137d1f613b1104a078adb1aa2aff4"
+    },
+    "capture/nicolas_chain.profile_bound.mlir.gz": {
+      "bytes": 3096,
+      "compressed": true,
+      "sha256": "4adb752a23d8456f444912ebf921b0874b7b07cf1b4b1bc0e04de5a90c6cfb04"
+    },
+    "capture/quantization_manifest.json.gz": {
+      "bytes": 1010,
+      "compressed": true,
+      "sha256": "071e99d1e3bde94a14b0f74b298bbc077320242d27af4c4f3cbe2fc06494df6f"
+    },
+    "capture/receipt.json": {
+      "bytes": 2104,
+      "compressed": false,
+      "sha256": "baf10843515a572b0e174e4b6d7a357ab2e0883e0826354069888d3c22d15714"
+    },
+    "object/compile_manifest.json": {
+      "bytes": 1088,
+      "compressed": false,
+      "sha256": "7fe63c9848f41324990997c467d56b07fe97ddf2a912469da55132fe3eb7d52a"
+    },
+    "object/mx_issue.c.gz": {
+      "bytes": 19975,
+      "compressed": true,
+      "sha256": "6957769dbc08121e40a9884cb868e83eb314a23918ebe2834aadfa826a92dd33"
+    },
+    "object/mx_issue.h": {
+      "bytes": 392,
+      "compressed": false,
+      "sha256": "ac84ce03b8a1aad3ae14b65a18f50e62cd6de42065b9acd70c8896b33ce4395f"
+    },
+    "object/mx_issue.o.gz": {
+      "bytes": 3432,
+      "compressed": true,
+      "sha256": "050023a461410a06c507b5cb52a8d078c1e521f6736157b18d95b0a00a6099a3"
+    },
+    "object/object_manifest.json": {
+      "bytes": 5114,
+      "compressed": false,
+      "sha256": "bb4815600c6817ec0e939c6763e8621bed6b4c124d1b07fd92ba976f86084cd8"
+    },
+    "object/physical_program.json.gz": {
+      "bytes": 52127,
+      "compressed": true,
+      "sha256": "db0a5f00c1d006f98d80ca303c27fd0c819b9ec2d690e8d2e892aafe49d04300"
+    },
+    "spike/mx_data.S.gz": {
+      "bytes": 807,
+      "compressed": true,
+      "sha256": "7badce73f81066135b3c56488bf1dae361bf40332d1d3dc40aee440c5fb8f13d"
+    },
+    "spike/mx_driver.c.gz": {
+      "bytes": 2278,
+      "compressed": true,
+      "sha256": "ab0f797b7444dd309668c722de8e5e5c15feb2d31cc9f78188cf5512f8442fb1"
+    },
+    "spike/mx_program.elf.gz": {
+      "bytes": 45920,
+      "compressed": true,
+      "sha256": "2842a29f2fcd812b1a284073c90fbe60c09f32b022d57a5512b447c597994aa3"
+    },
+    "spike/qualification_manifest.json": {
+      "bytes": 2968,
+      "compressed": false,
+      "sha256": "f5822d5ea1808707ae9d4911195f663f74f25d465b5c646889aea74fc1c060f5"
+    },
+    "spike/spike.log": {
+      "bytes": 123,
+      "compressed": false,
+      "sha256": "d3c09a3f7107ad3e7c3c643d6f8e94cf870f4c33876712481f6ace201ca00d70"
+    }
+  },
+  "first_shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_name": "MxE4M3VpuGemminiRocketConfig",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "reference_kind": "unchanged_nicolas_vpu_chain_left_output_block",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_narrow_vpu_pair_profile_spike.v1",
+  "second_shape_mnk": [
+    64,
+    32,
+    64
+  ],
+  "status": "source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike"
+}

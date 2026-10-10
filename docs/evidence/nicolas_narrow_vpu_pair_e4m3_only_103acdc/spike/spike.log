@@ -1,0 +1,3 @@
+lowered narrow MX/VPU: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales
+Gemmini extension configured with:
+    dim = 16
