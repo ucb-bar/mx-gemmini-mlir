@@ -57,6 +57,14 @@ def _verify_gateway_header(path: Path) -> None:
             raise ValueError("Radiance MX gateway instruction encoding differs")
 
 
+def _verify_address_header(path: Path) -> None:
+    source = path.read_text()
+    if (re.search(r"^#define\s+RAD_HOST_GPU_DRAM_BASE\s+0x100000000ul\s*$",
+                  source, re.MULTILINE) is None or
+            "static_cast<uint64_t>(addr) | RAD_HOST_GPU_DRAM_BASE" not in source):
+        raise ValueError("Radiance Muon-to-MX global address conversion differs")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("mlir", "bundle", "profile", "rtl-root", "radiance-root",
@@ -72,6 +80,8 @@ def main() -> None:
         parser.error("selected Muon compiler does not exist")
     gateway = args.radiance_root / "lib/include/mxgemmini_mmio.h"
     _verify_gateway_header(gateway)
+    address_header = args.radiance_root / "lib/include/radiance.h"
+    _verify_address_header(address_header)
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
     program = lower_bound_source(args.mlir.read_text(), profile, manifest,
@@ -167,6 +177,8 @@ def main() -> None:
         "object_sha256": _sha(obj), "muon_clang_sha256": _sha(args.muon_clang),
         "radiance_gateway_header_sha256": _sha(gateway),
         "radiance_gateway_control_base": 0x00084000,
+        "radiance_address_header_sha256": _sha(address_header),
+        "radiance_host_gpu_dram_base": 0x100000000,
         "radiance_revision": _revision(args.radiance_root),
         "rtl_revision": _revision(args.rtl_root),
         "defined_symbol": "mx_issue", "undefined_symbols": [],

@@ -17,6 +17,9 @@ def test_rocket_and_muon_issue_same_command_fields():
     assert f"0x{command.instruction_word:08x}" in muon
     assert "(uintptr_t)scales + UINT64_C(64)" in rocket
     assert "(uintptr_t)scales + UINT64_C(64)" in muon
+    assert "| UINT64_C(0x100000000)" in muon
+    assert "| UINT64_C(0x100000000)" not in rocket
+    assert ">= UINT64_C(0x100000000)" in muon
 
 
 def test_issuer_refuses_unbound_or_truncated_operands():

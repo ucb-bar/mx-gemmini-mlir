@@ -2069,7 +2069,10 @@ selects `rtl_alternating` scale scheduling for hardware, checks Radiance's
 physical completion fence to a CPU fence followed by a poll of the MX gateway
 busy register. Gateway transactions use Muon's `sw.shared` and `lw.shared`
 instructions. The emitter checks their disassembly counts against the physical
-command stream. The caller supplies every operand, scratch, output, and gateway
+command stream. It also verifies `radiance.h` and applies its
+`0x100000000` GPU-local to MX-visible global address bit to every buffer
+operand, rejecting a pointer plus offset outside RV32 local address space.
+The caller supplies every operand, scratch, output, and gateway
 base address at runtime. It uses Muon's `rv32im_zfinx_zhinx` compiler with
 the Vortex target feature, matching the source kernel build flags.
 

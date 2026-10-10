@@ -15,7 +15,7 @@ from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.transport_lowering import issuer_commands
-from tools.emit_mx_mmio_object import _verify_gateway_header
+from tools.emit_mx_mmio_object import _verify_address_header, _verify_gateway_header
 from tools.emit_mx_object import _referenced_buffers
 
 
@@ -44,6 +44,7 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert receipt["transport"] == "muon_mmio"
     assert receipt["physical_mode"] == "rtl_alternating"
     assert receipt["radiance_gateway_control_base"] == 0x00084000
+    assert receipt["radiance_host_gpu_dram_base"] == 0x100000000
     assert receipt["rtl_revision"] == "266c593f2cb51d7e3fe83fc0317072b585ac3c52"
     assert receipt["object_emitter_sha256"] == _sha((
         ROOT / "tools/emit_mx_mmio_object.py").read_bytes())
@@ -98,6 +99,7 @@ def test_vpu_mmio_object_matches_physical_program_and_waits_for_gateway():
     assert receipt["shared_gateway_loads"] >= physical_fences
     assert "sw.shared" in source and "lw.shared" in source
     assert "sw.global" not in source and "lw.global" not in source
+    assert "| UINT64_C(0x100000000)" in source
     header = (EVIDENCE / "mx_issue.h").read_text()
     assert "uintptr_t mx_control_base" in header
     assert '#ifdef __cplusplus\nextern "C" {' in header
@@ -127,6 +129,16 @@ def test_gateway_header_must_match_radiance_register_protocol(tmp_path):
                                                 "GEMMINI_BUSY_OFFSET 0x24"))
     with pytest.raises(ValueError, match="GEMMINI_BUSY_OFFSET"):
         _verify_gateway_header(header)
+
+
+def test_address_header_must_match_radiance_muon_global_mapping(tmp_path):
+    header = tmp_path / "radiance.h"
+    header.write_text("#define RAD_HOST_GPU_DRAM_BASE 0x100000000ul\n"
+                      "return (static_cast<uint64_t>(addr) | RAD_HOST_GPU_DRAM_BASE);\n")
+    _verify_address_header(header)
+    header.write_text(header.read_text().replace("0x100000000ul", "0x200000000ul"))
+    with pytest.raises(ValueError, match="global address conversion"):
+        _verify_address_header(header)
 
 
 def test_cpp_probe_links_issuer_and_muon_runtime_without_executing_mx():

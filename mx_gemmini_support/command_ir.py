@@ -16,6 +16,7 @@ from typing import Mapping
 _NAME = re.compile(r"[A-Za-z_][A-Za-z_0-9]*\Z")
 _OPCODE = 0x7B
 _FUNCT3 = 3
+_RADIANCE_HOST_GPU_DRAM_BASE = 1 << 32
 
 
 @dataclass(frozen=True)
@@ -51,10 +52,12 @@ class Operand:
                     (self.address_mask is None and (self.or_bits or self.address_shift))):
                 raise ValueError("MX pointer field mask or command bits are invalid")
 
-    def c_expr(self) -> str:
+    def c_expr(self, *, host_global_base: int = 0) -> str:
         if self.immediate is not None:
             return f"UINT64_C(0x{self.immediate:016x})"
         address = f"((uint64_t)(uintptr_t){self.buffer} + UINT64_C({self.byte_offset}))"
+        if host_global_base:
+            address = f"({address} | UINT64_C(0x{host_global_base:x}))"
         if self.address_mask is None:
             return address
         masked = f"({address} & UINT64_C(0x{self.address_mask:x}))"
@@ -241,13 +244,22 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
         if not isinstance(command, Command):
             continue
         for operand in (command.rs1, command.rs2):
+            if operand.buffer is None:
+                continue
+            address = f"((uint64_t)(uintptr_t){operand.buffer} + UINT64_C({operand.byte_offset}))"
+            if transport == "muon_mmio":
+                key = (operand.buffer, operand.byte_offset, "local_rv32")
+                if key not in checked:
+                    checked.add(key)
+                    lines.append(f"  if ({address} >= UINT64_C(0x100000000)) __builtin_trap();")
             if operand.address_mask is None:
                 continue
             key = (operand.buffer, operand.byte_offset, operand.address_mask)
             if key in checked:
                 continue
             checked.add(key)
-            address = f"((uint64_t)(uintptr_t){operand.buffer} + UINT64_C({operand.byte_offset}))"
+            if transport == "muon_mmio":
+                address = f"({address} | UINT64_C(0x{_RADIANCE_HOST_GPU_DRAM_BASE:x}))"
             lines.append(f"  if ({address} & ~UINT64_C(0x{operand.address_mask:x})) __builtin_trap();")
     for command in commands:
         if isinstance(command, Fence):
@@ -275,8 +287,8 @@ def emit_c(commands: list[Command | WaitIdle | Fence], *, transport: str,
         else:
             lines.extend((
                 "  {",
-                f"    uint64_t mx_rs1 = {command.rs1.c_expr()};",
-                f"    uint64_t mx_rs2 = {command.rs2.c_expr()};",
+                f"    uint64_t mx_rs1 = {command.rs1.c_expr(host_global_base=_RADIANCE_HOST_GPU_DRAM_BASE)};",
+                f"    uint64_t mx_rs2 = {command.rs2.c_expr(host_global_base=_RADIANCE_HOST_GPU_DRAM_BASE)};",
                 "    MX_STORE_SHARED(mx_control_base, 0x10, mx_rs1);",
                 "    MX_STORE_SHARED(mx_control_base, 0x14, mx_rs1 >> 32);",
                 "    MX_STORE_SHARED(mx_control_base, 0x18, mx_rs2);",
