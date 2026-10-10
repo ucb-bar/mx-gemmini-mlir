@@ -1,0 +1,15 @@
+{
+  "compiler_revision": "73c652562b238a3d97b2f826fa4d0a251c9821bb",
+  "covered_drivers": 31,
+  "files_sha256": {
+    "frontend_index.json": "d8f61669d51b027c249cbd53310f783d5d82f3a9b933076250facdcd57d58e53",
+    "headers.json": "3ff0e6a17dc477e4ba8ec2585945c06be8c501f24427c29fd8271437c53d9386",
+    "reproduction.json": "9f8ff3a59f7b53b357c42f92625b7fe54dc9d73406edc3d1da2c84b968fed990",
+    "spike_index.json": "d557d0bbb456113b848dcb977c29ed0fef6e6b4629e0a561706903d2d0e5cd88"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.upstream_radiance_mx_gemm_reproduction.v1",
+  "scope": "31 unchanged GEMM source drivers on ucb-bar/radiance-kernels main; excludes newly changed nightly mixed-engine kernels",
+  "source_revision": "82be2c71e5a0ca5d764e08e1b2c6a0e638bff401"
+}

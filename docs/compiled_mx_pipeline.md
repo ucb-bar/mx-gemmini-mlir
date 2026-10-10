@@ -1431,6 +1431,18 @@ generated source and Spike logs remain in the baseline archive. An earlier
 independent run also matched every frontend and numerical artifact. This
 equivalence is scoped to the 31 byte-identical drivers and headers.
 
+The newer `ucb-bar/radiance-kernels` main revision `82be2c7` still has those
+same 31 MX GEMM driver, generator, and materialized-header bytes. The
+[new-upstream receipt](evidence/radiance_mx_gemm_upstream_82be2c7_20261010/index.json)
+records a fresh full run with model2MLIR `e9ded36` and Nicolas RTL `266c593`:
+all 31 PyTorch captures, physical command programs, RV64 ELFs, and stock
+Spike outputs match the archived baseline. The guard compared each source
+golden, not just the aggregate status. This receipt covers the MX GEMM roster;
+upstream's newer nightly HBM, attention, and layernorm workloads require
+separate coverage and are not included in the 31-driver claim. Reproduce
+the run with `tools.reproduce_radiance_roster` below and
+`--compatible-source-revision`.
+
 The [build-selection audit](evidence/radiance_mx_gemm_build_selection_80f84ca.json)
 checks all 31 driver hashes against the newer Radiance `80f84ca` tree and
 reads its pinned [Makefile](evidence/radiance_mx_gemm_build_selection_80f84ca.Makefile).
