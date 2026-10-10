@@ -3342,6 +3342,10 @@ now indexes direct Spike evidence for all 40 Chipyard Rocket MX wrappers.
 Its other 41 profiles are Gemmini fragments without a Chipyard wrapper. The
 catalog keeps the three all-asymmetric 36-mode matrices as separate
 mode-class probes and retains the stock Spike weight-LUT failure explicitly.
+It also indexes the two named VPU Rocket profiles' connected 64³→64×32×64
+full-output Spike receipts separately from the FP8/FP4 GEMM roster, which
+contains no VPU commands. These simulator receipts do not change either
+profile's structural qualification state or establish RTL/FPGA parity.
 
 ### The Nicolas requantizer wrapper's three output modes
 

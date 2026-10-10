@@ -46,18 +46,39 @@ def test_stock_failure_and_candidate_patch_stay_separate() -> None:
     selected = vpu["MxE4M3Fp4VpuGemminiRocketConfig"]
     assert selected["legal_mode_count"] == 2
     assert selected["mode_class_stock_spike_passes"] == 2
-    assert selected["named_profile_spike_evidence"] == [{
+    assert selected["named_profile_spike_evidence"][0] == {
         "kind": "radiance_gemm_roster_spike",
         "evidence": "docs/evidence/radiance_mx_vpu_legal_roster_266c593/index.json",
         "precisions": ["FP4", "FP8"], "cases_per_run": 24, "runs": 2,
         "issues_vpu_commands": False,
-    }]
+    }
+    assert selected["named_profile_spike_evidence"][1]["kind"] == (
+        "connected_mx_vpu_narrow_spike")
     base = vpu["MxE4M3VpuGemminiRocketConfig"]
-    assert len(base["named_profile_spike_evidence"]) == 4
+    assert len(base["named_profile_spike_evidence"]) == 5
     assert sum(receipt["cases"] for receipt in
-               base["named_profile_spike_evidence"]) == 28
+               base["named_profile_spike_evidence"] if "cases" in receipt) == 28
+    assert base["named_profile_spike_evidence"][-1]["kind"] == (
+        "connected_mx_vpu_narrow_spike")
     assert all(not row["named_profile_spike_evidence"] for name, row in vpu.items()
                if name not in {selected["name"], base["name"]})
+
+
+def test_both_named_vpu_rocket_profiles_have_connected_output_receipts() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    vpu = {row["name"]: row for row in profiles if row["vpu"]}
+    expected = {"c1_bf16_values": 4096, "c1_fp8_codes": 4096,
+                "c1_e8m0_scales": 128, "c2_fp8_codes": 2048,
+                "c2_e8m0_scales": 64}
+    for name in ("MxE4M3Fp4VpuGemminiRocketConfig",
+                 "MxE4M3VpuGemminiRocketConfig"):
+        receipts = [item for item in vpu[name]["named_profile_spike_evidence"]
+                    if item["kind"] == "connected_mx_vpu_narrow_spike"]
+        assert len(receipts) == 1
+        assert receipts[0]["issues_vpu_commands"] is True
+        assert receipts[0]["first_shape_mnk"] == [64, 64, 64]
+        assert receipts[0]["second_shape_mnk"] == [64, 32, 64]
+        assert receipts[0]["compared"] == expected
 
 
 def test_dedicated_asymmetric_profiles_have_direct_mode_receipts() -> None:

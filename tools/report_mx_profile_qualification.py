@@ -39,6 +39,62 @@ def _key(cell: dict) -> str:
     return json.dumps(cell, sort_keys=True, separators=(",", ":"))
 
 
+def _narrow_vpu_receipt(relative: str, profile: dict) -> dict:
+    """Index only the named VPU profile that produced this full-output run."""
+    directory = ROOT / relative.rsplit("/", 1)[0]
+    index = _read(relative)
+    capture = json.loads((directory / "capture/receipt.json").read_text())
+    binding = json.loads((directory / "bound/binding_manifest.json").read_text())
+    obj = json.loads((directory / "object/object_manifest.json").read_text())
+    spike = json.loads((directory / "spike/qualification_manifest.json").read_text())
+    expected = {"c1_bf16_values": 4096, "c1_fp8_codes": 4096,
+                "c1_e8m0_scales": 128, "c2_fp8_codes": 2048,
+                "c2_e8m0_scales": 64}
+    digest = profile_sha256(profile)
+    if (index["status"] != "source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike" or
+            index["compared"] != expected or
+            index["first_shape_mnk"] != [64, 64, 64] or
+            index["second_shape_mnk"] != [64, 32, 64] or
+            index["model2mlir_revision"] != capture["model2mlir_revision"] or
+            capture["profile_sha256"] != digest or
+            binding["profile_sha256"] != digest or
+            obj["profile_sha256"] != digest or
+            spike["profile_sha256"] != digest or
+            binding["bound_mlir_sha256"] != obj["bound_mlir_sha256"] or
+            obj["bound_mlir_sha256"] != spike["bound_mlir_sha256"] or
+            obj["shape_mnk"] != [64, 32, 64] or
+            spike["object_sha256"] != obj["object_sha256"] or
+            spike["spike_exit_code"] != 0 or
+            any(obj.get(name) != 0 for name in
+                ("allocated_data_section_bytes", "embedded_operand_bytes",
+                 "embedded_golden_bytes")) or
+            not profile["resources"]["vpu"] or
+            not profile["resources"]["spad_requant"] or
+            _key(DIRECT_E4M3) not in {_key(cell) for cell in profile["legal_compute"]}):
+        raise ValueError(f"narrow VPU qualification differs from selected profile: {relative}")
+    if "profile_sha256" in index and index["profile_sha256"] != digest:
+        raise ValueError(f"narrow VPU index profile differs: {relative}")
+    for name, descriptor in index["files"].items():
+        raw = (directory / name).read_bytes()
+        data = gzip.decompress(raw) if name.endswith(".gz") else raw
+        if (len(data) != descriptor["bytes"] or
+                hashlib.sha256(data).hexdigest() != descriptor["sha256"]):
+            raise ValueError(f"narrow VPU archive file differs: {relative}/{name}")
+    if (hashlib.sha256(gzip.decompress(
+            (directory / "object/mx_issue.o.gz").read_bytes())).hexdigest() !=
+            obj["object_sha256"]):
+        raise ValueError(f"narrow VPU object differs from manifest: {relative}")
+    log = (directory / "spike/spike.log").read_text()
+    if ("lowered narrow MX/VPU: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales" not in log or
+            hashlib.sha256(log.encode()).hexdigest() != spike["spike_log_sha256"]):
+        raise ValueError(f"narrow VPU Spike output differs: {relative}")
+    return {"kind": "connected_mx_vpu_narrow_spike", "evidence": relative,
+            "first_shape_mnk": [64, 64, 64],
+            "second_shape_mnk": [64, 32, 64],
+            "compared": expected,
+            "issues_vpu_commands": True}
+
+
 def _stock_modes() -> tuple[dict[int, dict[str, dict]], dict[int, str]]:
     paths = {
         8: "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json",
@@ -282,6 +338,15 @@ def build_report() -> dict:
         "cases_per_run": vpu["case_count_per_run"], "runs": 2,
         "issues_vpu_commands": False,
     })
+    narrow_vpu_paths = {
+        "MxE4M3Fp4VpuGemminiRocketConfig":
+        "docs/evidence/nicolas_narrow_vpu_pair_64x64x64_64x32x64_9cd918c/index.json",
+        "MxE4M3VpuGemminiRocketConfig":
+        "docs/evidence/nicolas_narrow_vpu_pair_e4m3_only_103acdc/index.json",
+    }
+    for name, path in narrow_vpu_paths.items():
+        profile = load_profile(PROFILE_DIR / f"{name}.json")
+        direct_receipts.setdefault(name, []).append(_narrow_vpu_receipt(path, profile))
     profiles = []
     for path in sorted(PROFILE_DIR.glob("*.json")):
         profile = load_profile(path)
@@ -322,6 +387,7 @@ def build_report() -> dict:
                                          connected_path,
                                          wrapper_path,
                                          requant_path,
+                                         *narrow_vpu_paths.values(),
                                          *vector_paths})},
         "profile_count": len(profiles),
         "chipyard_wrapper_count": 40,

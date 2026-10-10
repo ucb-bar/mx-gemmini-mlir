@@ -1273,6 +1273,28 @@
             "FP8"
           ],
           "runs": 2
+        },
+        {
+          "compared": {
+            "c1_bf16_values": 4096,
+            "c1_e8m0_scales": 128,
+            "c1_fp8_codes": 4096,
+            "c2_e8m0_scales": 64,
+            "c2_fp8_codes": 2048
+          },
+          "evidence": "docs/evidence/nicolas_narrow_vpu_pair_64x64x64_64x32x64_9cd918c/index.json",
+          "first_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "issues_vpu_commands": true,
+          "kind": "connected_mx_vpu_narrow_spike",
+          "second_shape_mnk": [
+            64,
+            32,
+            64
+          ]
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1394,6 +1416,28 @@
           "cases": 3,
           "evidence": "docs/evidence/nicolas_vpu_ordering_compiled_266c593/index.json",
           "kind": "compiled_vpu_source_spike"
+        },
+        {
+          "compared": {
+            "c1_bf16_values": 4096,
+            "c1_e8m0_scales": 128,
+            "c1_fp8_codes": 4096,
+            "c2_e8m0_scales": 64,
+            "c2_fp8_codes": 2048
+          },
+          "evidence": "docs/evidence/nicolas_narrow_vpu_pair_e4m3_only_103acdc/index.json",
+          "first_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "issues_vpu_commands": true,
+          "kind": "connected_mx_vpu_narrow_spike",
+          "second_shape_mnk": [
+            64,
+            32,
+            64
+          ]
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1574,6 +1618,8 @@
     "docs/evidence/nicolas_generated_mesh_dim32_266c593/qualification.json": "f6282646a29a193d9d6bb064d43544724e2c60a5a542822d19d2b1378ee917b1",
     "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json": "da3bb2965e0de5ffcddcb2c09dd9b9549645b513e27dc4272e546f987f593372",
     "docs/evidence/nicolas_generated_modes_266c593/qualification.json": "beca2bf9f6d2a345cc694dc88b394f314ecf1eec3d2b1a11e32a7aa8cc2869c6",
+    "docs/evidence/nicolas_narrow_vpu_pair_64x64x64_64x32x64_9cd918c/index.json": "d6eaa633ddb8ed90c5ecdfc3340b10d3559dd90f1148adfd088ae8f4b1d9a769",
+    "docs/evidence/nicolas_narrow_vpu_pair_e4m3_only_103acdc/index.json": "122ff39ab162dc5f3dfce35b439420622e89cbeedc9a744c09248d1d522b24bb",
     "docs/evidence/nicolas_requantizer_wrapper_266c593/index.json": "03e94ad2790b0c0289e653bf90c1478583c1dfecef33fafa2efd2782a3f9ad86",
     "docs/evidence/nicolas_resident_mm2_128_266c593/index.json": "b487cf714f5d32215a081b7206a157b1408d32a34deaa97bab0c0f02ede695f1",
     "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json": "173abc5f943fe38aff70edd1b6c96eb28911eb1638194a8e716af27f1bf57c6b",
