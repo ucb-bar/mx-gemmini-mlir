@@ -449,6 +449,36 @@ python -m tools.qualify_nicolas_asym --variant fp6_lut \
   --out-dir /new/output-directory
 ```
 
+### FP4 activation with FP6 E3M2 weights
+
+Nicolas's `MxAsymFp4Fp6GemminiRocketConfig` reverses the mixed pair:
+direct FP4 activation, FP6 E3M2 weights through a 6-bit-entry LUT, and PE
+mode 1. `--variant fp4_fp6_lut` binds
+`matmul_tiled_asym_fp4_fp6_64x64.c` and its checked-in data header to a fresh
+64×64×64 model2MLIR matmul capture. The source recipe explicitly specializes
+the structural FP8 handoff to this mixed operand contract; it does not imply
+that model2MLIR produced the packed FP4/FP6 values. The shared physical
+lowerer emits 63 commands, including the weight LUT loads. The standalone
+ELF matches **all 4,096 BF16 source values** on the pinned Spike extension.
+Two independent builds match the captured frontend artifacts, resources,
+physical program, generated issuer, objects, ELF, extension, and Spike log
+hashes: [receipt](evidence/compiled_nicolas_asym_physical_fp4_fp6_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_physical_fp4_fp6_repro_20261009.json),
+[bound MLIR](evidence/model2mlir_nicolas_asym_fp4_fp6_bound_20261009.mlir),
+[source recipe](evidence/model2mlir_nicolas_asym_fp4_fp6_recipe_20261009.json),
+and [physical program](evidence/compiled_nicolas_asym_physical_fp4_fp6_program_20261009.json).
+This mode belongs to the standalone FP4×FP6 profile; the selected MX+VPU
+profile has no asymmetric mode.
+
+```sh
+python -m tools.qualify_nicolas_asym --variant fp4_fp6_lut \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAsymFp4Fp6GemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/output-directory
+```
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,

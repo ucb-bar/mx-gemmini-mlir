@@ -1,0 +1,33 @@
+{
+  "recipe": {
+    "compute": {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 1,
+      "weight_format": "fp6_e3m2",
+      "weight_projection": "lut"
+    },
+    "frontend_capture_format": "mxfp8",
+    "profile_sha256": "454ada731acede7a6c3a422ec8e87dc1a12652ff01b39ba2099502f78d4e4566",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_driver_sha256": "9d27cc36ef14f3a7091d4639cddc473b615123395565e54bc415f7aaddb5d21f",
+    "source_header_sha256": "3e708e94856b97a09ebf61b4fa51664aad7e3e9c7650310b0d0935b084de5de6"
+  },
+  "resources_sha256": {
+    "activation": "d407bf5b2e7d5fc2df893f6c6359a9c229ed38fe2a8a1a46180b69412b6cb97d",
+    "activation_lut": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+    "activation_scales": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16": "8bc7b87204b3f64c2e61ed256342ae7b5bcff2db566603d2f1f11a2385cd5dc4",
+    "output_lut": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+    "weight": "99980f8a63faa881fe8f0f410ed566f379aa6a94aa524908a643041e2ee50530",
+    "weight_lut": "17ddedbe5cfa8d050e2ac40521a4842048d10347afa730d3fa0daf3bfa3bd20d",
+    "weight_scales": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v1"
+}
