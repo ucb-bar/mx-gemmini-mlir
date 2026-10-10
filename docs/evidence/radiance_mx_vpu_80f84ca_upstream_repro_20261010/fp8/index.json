@@ -1,0 +1,43 @@
+{
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "d548fd7f3beb2dfbda3465fca9eb79ba381ea93c",
+  "compiler_source_closure_sha256": "0ba5e22be03e226c31da66b514b48568174c7502f8078fc4fc39390225f5a0d1",
+  "elf_sha256": "7361017ab362eb5404712350b7860b0c54b373e812db1c9ca8e2033ab3534135",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "build/artifact_manifest.json": "7d883a8e39e2dc696308d0b084c76f32d7443241e0cde9d936726689b09341cd",
+    "build/mx_driver.c": "cdc9c80d6df6b7a90d931791bd516e3c45cb7216f451780dbee3c37744c5d413",
+    "build/mx_issue.c": "e36267515b58890483c7805430fc42956ff2b0451f58f75949e8406ef8168cd7",
+    "build/physical_program.json": "f8acf37b83fcda1591c2c2e46f6f128e3f30f58bfded6a555a9c56f7b870c3b6",
+    "build/spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+    "bundle/manifest.json": "60666977db968c962a51481f9e4ac8217c5f723e1bed68611c99ae0f4d671d91",
+    "capture_trace.json": "8be59c5d363d11229520b999bb7ee1b85b825402b04a1a2e844dd5a28c246c80",
+    "frontend.mlir": "89aab429ad7fa52ab07d0cbbad562be953a3c722e849f8508e5cc9348a76df13",
+    "handoff.mlir": "56d903ec770024971d838c3b7d8e63bd559ac770b93a0c936a5d73664a6269a4",
+    "payload_bound.mlir": "f6c29f648dc7f99a995f59ce7d4154a0140041beab92dfa8e050336d4b7d1439",
+    "profile_bound.mlir": "fffb31c51d72cab03dfd0101df30e829e180da706ed57b1cb98bebc524c4f911",
+    "quantization_manifest.json": "036836a40aabd9858f534841925dce0d672c292d67f0b30708532b0abc7ea014",
+    "tilewise_bound.mlir": "a02855eb29786d97f23ed5251d628a259cbb77e1fc975821d9be888fe3ccba70"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "output_tiles": 4,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_tilewise_vpu_x2_spike.v1",
+  "shape_mnk": [
+    256,
+    256,
+    256
+  ],
+  "source_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+  "source_header_sha256": "d61f5358db4f6e39e51e0cf7f9867e393a67ce0c1b4d41c596d73a72d2496c70",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "source_derived_vpu_x2_matched_on_pinned_spike",
+  "tile_mnk": [
+    128,
+    128,
+    256
+  ],
+  "vpu_commands": 4
+}

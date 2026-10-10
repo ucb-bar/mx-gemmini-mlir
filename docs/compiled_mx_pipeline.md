@@ -1952,6 +1952,15 @@ are archived. The two runs reproduce all source, MLIR, command, object, ELF,
 extension, and numerical hashes. The raw artifact manifests differ only in
 the link-log hash because the linker warning embeds the output directory.
 
+A [fresh current-compiler rerun](evidence/radiance_mx_vpu_80f84ca_upstream_repro_20261010/README.md)
+repeated both this FP8 case and the generated FP4 case below with Radiance
+`80f84ca`, upstream model2MLIR `e9ded36`, Nicolas RTL/Spike `266c593`, and
+compiler `d548fd7`. Each again matched all 65,536 BF16 values. The frontend,
+bound MLIR, physical stream, generated source, ELF, extension, and Spike log
+hashes are identical to the original archives; only compiler provenance and
+the linker log digest changed. The [receipt check](../tests/test_current_radiance_vpu_reproduction.py)
+keeps the FP4 derived-fixture scope explicit.
+
 Reproduce from a checkout with the pinned Radiance header materialized by
 `gen_mxgemm_data.py fp8 256 256 256` and its `mx_golden` helper built:
 
