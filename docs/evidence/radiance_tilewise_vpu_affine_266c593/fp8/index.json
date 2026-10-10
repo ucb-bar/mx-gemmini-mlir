@@ -1,0 +1,48 @@
+{
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "3935032f37f192e3eb02a43bd981baa4c15f2d92",
+  "compiler_source_closure_sha256": "258a2b600b23c0e9cb35242483bd61fb2d5c2057c09038a860a92ccdf2824ca2",
+  "elf_sha256": "a5241fa86e848af311ed53157acb1485dd21c8c52166137d7399be251ed7e9fb",
+  "epilogue": "affine",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "build/artifact_manifest.json": "f814f45d717db0b1f44a3201513ce4ab9b432a2f12f364beca0a1750dc8080b8",
+    "build/mx_driver.c": "cdc9c80d6df6b7a90d931791bd516e3c45cb7216f451780dbee3c37744c5d413",
+    "build/mx_issue.c": "c732fe5088cfccd3b1daff96a74fbf5a2af155a4595b2b2d80122ccf21b4ea88",
+    "build/physical_program.json": "767740e78ac674edf6981832bc07ce15ce268918fbd7329f22400c42510e52eb",
+    "build/spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+    "bundle/manifest.json": "60666977db968c962a51481f9e4ac8217c5f723e1bed68611c99ae0f4d671d91",
+    "capture_trace.json": "f952e5d9a903d7aeaa4513e32458826fa420d935969c1949857251b6592a3b29",
+    "frontend.mlir": "4d731d77c9c5ef39133843c7e8b724d94cccbc519c1462eb3ce65102e4a9c0f3",
+    "handoff.mlir": "123ae07e52948acbf7de66075999d7aa7d65e99fa9aa17ab6aa0d3c46b2d35b9",
+    "payload_bound.mlir": "da870853c1fa5646f25d9a51d1843d168c5c8d1d7a1d2baa15e58fc19a96378c",
+    "profile_bound.mlir": "60f9f98a8affef67fd462d9960b73c503aed3e0f4c09fe93d60ef6d563bc4cfc",
+    "quantization_manifest.json": "416b0e717b00dddf7d02fdaebdab10d3712612a19ac7b3e389a82a63512d13b0",
+    "tilewise_bound.mlir": "ac79da00ffefb596eee124aea71405f2c4e397fb882def6a7b9c38b419cc1d0b"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "output_tiles": 4,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "scalar_bf16_bits": 16384,
+  "scalar_value": 2.0,
+  "schema": "mx_gemmini.radiance_tilewise_vpu_affine_spike.v1",
+  "second_scalar_bf16_bits": 16320,
+  "second_scalar_value": 1.5,
+  "shape_mnk": [
+    256,
+    256,
+    256
+  ],
+  "source_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+  "source_header_sha256": "d61f5358db4f6e39e51e0cf7f9867e393a67ce0c1b4d41c596d73a72d2496c70",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "source_derived_vpu_affine_matched_on_pinned_spike",
+  "tile_mnk": [
+    128,
+    128,
+    256
+  ],
+  "vpu_commands": 8
+}

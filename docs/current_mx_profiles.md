@@ -90,6 +90,11 @@ The [captured scalar ADDS case](compiled_mx_pipeline.md#captured-bf16-scalar-add
 binds `matmul + 1.5` to one VPU command per output tile. FP8 and generated FP4
 each match all 65,536 BF16 outputs on Nicolas's pinned Spike in two builds.
 The FP8 general source CLI independently reproduces the captured program.
+The [ordered affine case](compiled_mx_pipeline.md#ordered-scalar-mx-vpu-chain-from-a-pytorch-capture)
+keeps each BF16 output tile resident for captured `* 2.0` then `+ 1.5`.
+Both FP8 and generated FP4 match all 65,536 outputs on pinned Spike twice;
+the general FP8 source CLI independently reproduces the same eight VPU
+commands. Intermediate BF16 rounding is part of this execution contract.
 General scheduling remains open. Selected FP8+VPU and FP4+VPU physical
 programs issue through Muon MMIO and each match all 65,536 BF16 outputs on
 an isolated patched Cyclotron functional model in two independent builds.

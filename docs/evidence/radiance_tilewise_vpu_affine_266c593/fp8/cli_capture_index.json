@@ -1,0 +1,28 @@
+{
+  "artifact_manifest_sha256": [
+    "b038e920236930cde762fa206738b898cc8db63eb272c2a4ea90358f50e59db2",
+    "b87e490d6b2b76af83763a275feb03e90facffa8947df6a27750eae143232b73"
+  ],
+  "bound_mlir_sha256": "ac79da00ffefb596eee124aea71405f2c4e397fb882def6a7b9c38b419cc1d0b",
+  "capture_scalar_chain": [
+    {
+      "immediate_bf16": 16384,
+      "kind": "muls"
+    },
+    {
+      "immediate_bf16": 16320,
+      "kind": "adds"
+    }
+  ],
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "3935032f37f192e3eb02a43bd981baa4c15f2d92",
+  "compiler_source_closure_sha256": "258a2b600b23c0e9cb35242483bd61fb2d5c2057c09038a860a92ccdf2824ca2",
+  "elf_sha256": "a5241fa86e848af311ed53157acb1485dd21c8c52166137d7399be251ed7e9fb",
+  "generated_issue_sha256": "c732fe5088cfccd3b1daff96a74fbf5a2af155a4595b2b2d80122ccf21b4ea88",
+  "physical_program_sha256": "767740e78ac674edf6981832bc07ce15ce268918fbd7329f22400c42510e52eb",
+  "schema": "mx_gemmini.capture_derived_source_cli_affine_spike.v1",
+  "scope": "Radiance FP8 matrix source and captured scalar affine epilogue; source driver has no VPU affine operation",
+  "source_index_sha256": "7b41129cf5431b1ac4092be50d7407c2ca5bcd32188851f2acfee080d9752924",
+  "spike_log_sha256": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+  "status": "two_capture_derived_affine_cli_runs_matched_on_pinned_spike"
+}

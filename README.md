@@ -80,6 +80,10 @@ now lowers `matmul + 1.5` through four VPU ADDS commands for FP8 and generated
 FP4. Two independent Spike builds per precision match all 65,536 derived BF16
 outputs. The general source CLI also reproduces the FP8 capture-driven program
 and result twice.
+An [ordered captured affine epilogue](docs/compiled_mx_pipeline.md#ordered-scalar-mx-vpu-chain-from-a-pytorch-capture)
+now issues `matmul * 2.0 + 1.5` as eight VPU commands over four tiles.
+Two Spike builds each for FP8 and generated FP4 match all 65,536 BF16 outputs,
+with BF16 rounding after each scalar operation.
 The [Cyclotron source check](docs/compiled_mx_pipeline.md#executed-generated-fp4-source-tiles-on-cyclotron)
 finds that the derived 256×256 Muon driver builds but computes only one output
 tile. Four separately built source-derived 128×128 tiles reassemble to the

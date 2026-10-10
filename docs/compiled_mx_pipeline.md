@@ -2019,8 +2019,9 @@ of six scalar values (`0x3f00`, `0x3fc0`, `0x4000`, `0xbf80`, `0x0001`,
 The Radiance C driver supplies the GEMM operands and BF16 matrix golden; its
 source does not contain the scalar epilogue. The 1.5 result is therefore parity
 with the captured graph's derived BF16 output on the selected source operands,
-not parity with a source-built Radiance ELF. The current binder recognizes one
-scalar MULS or ADDS epilogue after one contraction. General graph-level epilogue
+not parity with a source-built Radiance ELF. The binder recognizes scalar
+MULS and ADDS epilogues after one contraction, including the ordered chain
+qualified below. General graph-level epilogue
 lowering and scratchpad lifetime planning remain open.
 
 Reproduce with the same pinned checkouts and generated source header as the ×2
@@ -2115,6 +2116,61 @@ The generated FP4 fixture uses the same options with
 `tools.qualify_radiance_fp4_derived_tilewise_vpu_x2`. The general
 `tools.qualify_source_mx --tilewise-vpu-from-capture` invocation above selects
 ADDS directly from its supplied capture sidecars.
+
+## Ordered scalar MX VPU chain from a PyTorch capture
+
+The capture adapter accepts up to 16 digest-checked finite, exactly
+representable BF16 `aten.mul.Tensor` and `aten.add.Tensor` literals after one
+matmul. Its typed MX result is a single SSA chain: contraction, ordered
+in-place VPU operations, then BF16 readout. Physical lowering checks the
+sequence against a module policy and every command immediate, keeps the
+accumulator tile live across the operations, and repeats the chain after each
+output tile's final K wave. It derives the expected output by rounding to
+BF16 **after each operation**, matching the selected VPU model. An unrounded
+PyTorch FP32 intermediate has different numerical semantics.
+
+For captured `matmul * 2.0 + 1.5`, compiler `3935032` produced eight VPU
+commands across four output tiles for both source-bound FP8 and generated
+FP4. Two independent builds per precision matched **65,536 / 65,536 BF16
+outputs** on Nicolas's RTL `266c593` pinned Spike model. Their bound MLIR,
+physical commands, generated C, ELF, simulator logs, and full-output receipts
+match between runs. See the [FP8 evidence](evidence/radiance_tilewise_vpu_affine_266c593/fp8/index.json),
+[FP4 evidence](evidence/radiance_tilewise_vpu_affine_266c593/fp4/index.json),
+and [regression test](../tests/test_tilewise_vpu_chain_evidence.py). The
+[general source CLI receipt](evidence/radiance_tilewise_vpu_affine_266c593/fp8/cli_capture_index.json)
+adds two capture-driven FP8 Spike builds with the same executable and result.
+Only path-bearing link log hashes vary.
+
+The FP8 matrix operands and starting BF16 golden come from the selected
+Radiance C source, while the affine epilogue comes from the captured PyTorch
+graph. The FP4 fixture is generated from pinned Radiance code. Neither
+source driver contains this affine VPU sequence, so these runs establish
+parity against a source-derived BF16 reference with VPU rounding, rather than
+source ELF parity.
+The current policy supports ordered in-place scalar operations on one
+contraction's BF16 output tiles; it does not yet schedule arbitrary tensors,
+broadcasts, reductions, or cross-engine dependencies. These results are
+Spike evidence, not an FPGA result.
+
+Reproduce the FP8 capture and execution with the pinned roots above:
+
+```sh
+python -m tools.qualify_radiance_tilewise_vpu_x2 \
+  --model2mlir-root /path/to/model2MLIR-e9ded36 \
+  --mxq-root /path/to/microscaling-quant-b4af543 \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --epilogue affine --scalar-bits 0x4000 \
+  --second-scalar-bits 0x3fc0 \
+  --out-dir /tmp/radiance-tilewise-vpu-affine
+```
+
+Use `tools.qualify_radiance_fp4_derived_tilewise_vpu_x2` with the same options
+for the generated FP4 fixture. The general `tools.qualify_source_mx` command
+with `--tilewise-vpu-from-capture` shown above also recognizes the ordered
+chain directly from these sidecars.
 
 ## Generated four-tile FP4 GEMM with tilewise VPU epilogue
 
