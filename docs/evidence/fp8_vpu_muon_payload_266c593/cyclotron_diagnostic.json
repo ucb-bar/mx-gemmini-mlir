@@ -1,0 +1,18 @@
+{
+  "completed": 1,
+  "cyclotron_binary_sha256": "180a55b1117d6bdca305aa60a1a3eef220d0791eb93c288cc5cde01411b37a5d",
+  "cyclotron_log_sha256": "c643444cee5829c7640c6294f7eee6f30b663b69f8594ce836dba760c9b72b06",
+  "cyclotron_model_sha256": "3bbb9ba9f1f61d838b240f0bca3571f9f17a2717b12d819b8f42c6d78d56e3ea",
+  "cyclotron_revision": "2d6adad4ad94d1621fdff9c9a1e5eac871048f24",
+  "expected_bf16_sha256": "b2f13c8b235533d6c4d100bd05b034325c9b459329b49f2e5cb09fb9b092d2d3",
+  "gmem_dump_sha256": "d6bc82cd18c33cf9c44ebf462c7ff5fb1e378680a8a994d4a08f4dba292ad2d3",
+  "independently_counted_bf16_mismatches": 65517,
+  "linked_elf_sha256": "0ce108e7e0cf061793230c02fe361b4d69d49411f9ed6b4b48953e784c9c4f4b",
+  "nonzero_output_bytes": 0,
+  "output_address": 268439680,
+  "reported_bf16_mismatches": 65517,
+  "schema": "mx_gemmini.muon_payload_cyclotron_diagnostic.v1",
+  "scope": "Current Cyclotron MX model has no handlers for compiler physical funct 2, 3, or 33; funct 27 is a no-op. This diagnostic does not qualify RTL or the compiler Muon MMIO path.",
+  "status": "executed_but_numerical_parity_failed_on_current_cyclotron",
+  "status_address": 268439624
+}

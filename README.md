@@ -53,8 +53,10 @@ to distinct source-derived payloads and matches 131,072 BF16 outputs without
 host output rearrangement.
 The [Muon MMIO object path](docs/compiled_mx_pipeline.md#muon-mmio-issuer-handoff)
 reuses the checked physical FP8+VPU schedule and builds a data-free RV32
-issuer with gateway busy waits. Its current evidence is structural; a matched
-Radiance SoC profile and execution receipt are still needed.
+issuer with gateway busy waits. A [source-bound Muon ELF](docs/compiled_mx_pipeline.md#source-bound-muon-kernel-and-simulator-gap)
+now links checked operands and a full BF16 verifier. The current Cyclotron
+co-model lacks the emitted move-in, move-out, and VPU commands, so this path
+still needs numerical execution on a matching model or SoC.
 The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4-gemm-with-tilewise-vpu-epilogue)
 also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
 generator and golden model to create a new 256×256 FP4 fixture; Radiance has

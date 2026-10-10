@@ -1,0 +1,16 @@
+{
+  "files_sha256": {
+    "cyclotron.log": "c643444cee5829c7640c6294f7eee6f30b663b69f8594ce836dba760c9b72b06",
+    "cyclotron_diagnostic.json": "62ecdf4c4cde957523801fb2df86b0726275ddbf5b4ffffad581f80c4dca2e06",
+    "mx_kernel.cpp": "6461494dd47daa9cc9be4849a4768820b702814e3a73556125b8b1d56f6ec003",
+    "mx_kernel.elf": "0ce108e7e0cf061793230c02fe361b4d69d49411f9ed6b4b48953e784c9c4f4b",
+    "mx_payload.S": "c379313a386859c3d675a9b12ab319e0186300f54783347a75da0fc63a133e50",
+    "payload_manifest.json": "9d45c06bf64d5fc2820d8d30e6b8ee01d92422a2085cc4483a38864fa23439ac",
+    "payload_manifest_repro.json": "9d45c06bf64d5fc2820d8d30e6b8ee01d92422a2085cc4483a38864fa23439ac"
+  },
+  "schema": "mx_gemmini.fp8_vpu_muon_payload_archive.v1",
+  "scope": "Generated Muon MX RV32 ELF with checked source payload and BF16 verifier; current Cyclotron run finished but failed numerical parity due to unsupported compiler command path. No RTL or FPGA qualification.",
+  "source_bundle": "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle",
+  "source_object": "docs/evidence/fp8_vpu_muon_mmio_object_266c593",
+  "status": "source_payload_bound_muon_elf_unexecuted_on_qualified_target"
+}

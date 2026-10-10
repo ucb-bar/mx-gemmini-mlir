@@ -2114,9 +2114,39 @@ python -m tools.link_mx_muon_probe \
   --out-dir /tmp/fp8-vpu-muon-link-probe
 ```
 
-No admitted Radiance MX+VPU SoC profile, data-bound mixed kernel, or MMIO
-numerical execution receipt exists for this path yet. The pinned Spike results
-above qualify the Rocket path separately.
+No admitted Radiance MX+VPU SoC profile or MMIO numerical execution receipt
+exists for this path yet. The pinned Spike results above qualify the Rocket
+path separately.
+
+### Source-bound Muon kernel and simulator gap
+
+The [payload linker](../tools/link_mx_muon_payload.py) binds the same checked
+FP8 source bundle to the generated Muon issuer. It embeds the four operand and
+scale arrays, allocates row-major BF16 output and scale scratch, and derives the
+VPU×2 BF16 reference from the source golden. Its kernel counts mismatches across
+all 65,536 BF16 outputs after `mx_issue` completes. Two independent builds
+produced identical [RV32 ELFs](evidence/fp8_vpu_muon_payload_266c593/mx_kernel.elf)
+and [manifests](evidence/fp8_vpu_muon_payload_266c593/payload_manifest.json).
+Reproduce after emitting the MMIO object above:
+
+```sh
+python -m tools.link_mx_muon_payload \
+  --object-dir /tmp/fp8-vpu-muon-mmio \
+  --bundle docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle \
+  --radiance-root /path/to/radiance-kernels-80f84ca \
+  --muon-clangxx /path/to/llvm-muon/bin/clang++ \
+  --out-dir /tmp/fp8-vpu-muon-payload
+```
+
+The current Cyclotron model completes this ELF but produces zero output bytes:
+the kernel reports 65,517 BF16 mismatches, confirmed independently from the
+memory dump. The [diagnostic](evidence/fp8_vpu_muon_payload_266c593/cyclotron_diagnostic.json)
+records the exact model and binary digests. Cyclotron's MX co-model implements
+the source kernel's `loop_ws` path; it has no handlers for this compiler stream's
+move-in (funct 2), move-out (funct 3), or VPU (funct 33), and treats scale DMA
+(funct 27) as a no-op. This is a simulator coverage gap, not numerical
+qualification of the Muon MMIO path. The linked ELF still needs execution on a
+model or SoC that supports those commands.
 
 ### Executed generated FP4 source tiles on Cyclotron
 

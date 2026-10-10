@@ -48,6 +48,7 @@ jobs:
             tests/test_bf16_row_major_spike_evidence.py \
             tests/test_fp4_row_major_runtime_object_evidence.py \
             tests/test_muon_mmio_object_evidence.py
+            tests/test_muon_payload_elf_evidence.py
 
   pinned-rtl-profiles:
     runs-on: ubuntu-latest
