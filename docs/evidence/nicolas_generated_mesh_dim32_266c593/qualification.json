@@ -1,0 +1,678 @@
+{
+  "checked_in_source_passes": 21,
+  "compiler_revision": "d8d2f558c4b36aa439e3f76139056d40ee3e733f",
+  "distinct_stock_spike_passes": 35,
+  "full_matrix_sha256": "7a93804d1edfef518b715f5c7a16b57f35057706dffda9be37b8045d7ea605b6",
+  "generated_mode_stock_spike_failures": 1,
+  "generated_mode_stock_spike_passes": 14,
+  "generated_repro_matrix_sha256": "e3c135d7c277be9ba609162200baaf48fa7516699ff2db56e8f0b65978519ef3",
+  "generation_manifest_sha256": "7e12c842e47e904ac448bd880d1a4585bce2ae103ee912d84dab4eb7d1304cbb",
+  "legal_mode_count": 36,
+  "mesh_dim": 32,
+  "patch_diagnostic_sha256": "0d201f71687afb6af385d747d01959991ee11882d84075058a02e4e6b72fff12",
+  "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+  "rows": [
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "ee60737689bc43fb203dbdec1f6188bd1d4fd94d056c7f7e328a90371b62d9a7",
+      "header_origin": "generated",
+      "mode": "e2m3_e2m3",
+      "repro_receipt_sha256": "4f807e5b62300cc637e36b6afbfbac17211c290b2dbaf4f7035f704bda8a08a7",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "948740fa526501135b331c81315736ff80102794d1f34e5dd2d40c9a34a30844",
+      "header_origin": "checked_in",
+      "mode": "e2m3_e3m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "1fc4b647ce3c7046bdfa9b0e29d2131ab79caca566e6527bb759dfcd77b810b7",
+      "header_origin": "checked_in",
+      "mode": "e2m3_e4m3",
+      "repro_receipt_sha256": "5bf9bdc1837f35451d58e98c149ce9ededc17e39c81661867404bafc0da6134c",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "4eb301732e1af6878557128a78e2a38eb0e9285bc5ac16a365bd23d0aca44fe0",
+      "header_origin": "generated",
+      "mode": "e2m3_e4m3s",
+      "repro_receipt_sha256": "ba4db2bcccf182bb0762243c0af56263bb0edf2b8ee8f294ce467918757a702f",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "66b43404527aad8306f39e93efb91964a1befc084d60c0c5119016c4dd5e03b6",
+      "header_origin": "checked_in",
+      "mode": "e2m3_e5m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "bcbcce797ed9a0c112cb7ccf062a15aff24dc2c0caa574a1a31682b1d02507a3",
+      "header_origin": "checked_in",
+      "mode": "e2m3_fp4",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "b538f0c3435c82c605636f280d283a72d82743576464b572283c8fb6d55ee56b",
+      "header_origin": "checked_in",
+      "mode": "e3m2_e2m3",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "3de25a2ab4948e243a9c1f4f373ced49645318e8ebbbd5f46f953d49d8ca122f",
+      "header_origin": "generated",
+      "mode": "e3m2_e3m2",
+      "repro_receipt_sha256": "57f619e6a2a17bc3b8b255824900c777a7dde383d471d0a724241cbcac9cbcf6",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "fd3b2b68d68e2d6430150aa7800a234e5f5efb319403a575debf13f61f3f3909",
+      "header_origin": "checked_in",
+      "mode": "e3m2_e4m3",
+      "repro_receipt_sha256": "6d6d1fb6470f29c669239dcb5f4b54508228f97db9252086a7a1ac1d671ea86a",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "0f0b4fcc9c8077dfd347ccd14f43a00b63c19e50ac8dadcd4e7699e0fd193a9a",
+      "header_origin": "checked_in",
+      "mode": "e3m2_e4m3s",
+      "repro_receipt_sha256": "acd3b100bbcb4523b27bbe6e5768200e84bd861124dcd97f049c479732b77827",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "0364759bc293e82865b19cda782fc8d4d8409daf4fb12c0ce0aa2794e1ec3c4f",
+      "header_origin": "checked_in",
+      "mode": "e3m2_e5m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "32af2c5a80adb80cbda4b233bdd2c04e7f243f58d652e59a99333e0f4fa3bd74",
+      "header_origin": "checked_in",
+      "mode": "e4m3_e2m3",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "16b4395d680d58767462b27cb3204b0d33283921b442f6f030a2a9aca31bb6f0",
+      "header_origin": "checked_in",
+      "mode": "e4m3_e3m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 9,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "db26264163bf2db88d752235621540cb804955e07c1429af26345cdcb7a7bb42",
+      "header_origin": "generated",
+      "mode": "e4m3_e4m3",
+      "repro_receipt_sha256": "4f64da4f8997e6f43fd4801a0159c8a1cbf1ffa214108e09cc6ded728448a749",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "18d838fa0bf17c3f9b4f132733e6ce37c1bc013cad17433d4b6b77509e2eb17a",
+      "header_origin": "generated",
+      "mode": "e4m3_e4m3s",
+      "repro_receipt_sha256": "db7392fb415fa8525b425d1f83e88da20605d0d8308206dcebdad9bbda64345e",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "760db6985e4cb13b059dae157a3840ed168bced62ff2230552a9bfa2658a58b0",
+      "header_origin": "checked_in",
+      "mode": "e4m3_e5m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 10,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "149c188c60e987acbb4dfec03bef1b740ddc984532e9444c077087a3e93b1dfd",
+      "header_origin": "checked_in",
+      "mode": "e4m3_fp4",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "199b2019ffa7a2a92853c5d5c4faaf6198dfff8ec57d005d0f4d2bfa2c5641f6",
+      "header_origin": "generated",
+      "mode": "e4m3s_e2m3",
+      "repro_receipt_sha256": "c37eef288dea73407bf7886174fc1d22b3aed9c6a2eb52aaf29a9f65acaf0b01",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "6844a128a4cace03afdc78a6025e88faa369fbd7dee2ea0c6bb23a51bb1da59b",
+      "header_origin": "checked_in",
+      "mode": "e4m3s_e3m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "3dd1bd82b3b9b6a7a9f1cafe09bcc9ec40431afc1f08fde6d0ffa0c89b8939d3",
+      "header_origin": "generated",
+      "mode": "e4m3s_e4m3",
+      "repro_receipt_sha256": "40b65625fdf98b6115359bd4f281b02d4d7fd7de626070a37ee017d1c8651bc5",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 4096,
+      "stock_status": "failed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "9b85c88dfd28a5d5f83f9a254202092e7966a5c98a07c858f2d82abd04db01a6",
+      "header_origin": "generated",
+      "mode": "e4m3s_e4m3s",
+      "repro_receipt_sha256": "f7e44a80f74779e1dd5666d0862a04e9ae9626a21316459286e995c319021cf2",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 7,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "00041b586c053234fe90d0937593202ec0f6f8f4cbed78bea750a8df332eff8e",
+      "header_origin": "checked_in",
+      "mode": "e4m3s_e5m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 6,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "3db02c2df1dd5951ebbad92c6b054c77d87e2b5596608997dd8d9a87ebba345f",
+      "header_origin": "checked_in",
+      "mode": "e4m3s_fp4",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "fa09c1dd639a18908e7c64a305401fe92cf449c2ed9fda174ef19515bafe9490",
+      "header_origin": "checked_in",
+      "mode": "e5m2_e2m3",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "0c237a294888f0eb873c963234fd8a6211aabf0243e82c979939462b3c833925",
+      "header_origin": "checked_in",
+      "mode": "e5m2_e3m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "68fbe7931cd249fb0538bc05fa4420453456989beb0bd93d53b3c55e0d8c5242",
+      "header_origin": "checked_in",
+      "mode": "e5m2_e4m3",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 5,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "74fc8ef53bd085934f0dac971efeb75b1c089199f01509b67da76fb99bd00040",
+      "header_origin": "checked_in",
+      "mode": "e5m2_e4m3s",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "72efbc85552e6670b54419068bdacbb5b75d9368237cc1fef0d3a8d0e5a24665",
+      "header_origin": "generated",
+      "mode": "e5m2_e5m2",
+      "repro_receipt_sha256": "f64ab0795c7f1167a3c0f87e724e374ba24f8dda8f7f2956422ee5ed2e4c6888",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e5m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "9227491f20e7dbee195fcb602787f0181734a332c811282a35878d6760c81fbc",
+      "header_origin": "checked_in",
+      "mode": "e5m2_fp4",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "df2d1cd3f24c4be53777078c6c5f87cfd4c5c4189f27b5be8d6c3f3389130abc",
+      "header_origin": "checked_in",
+      "mode": "fp4_e2m3",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 11,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "de13f90438af6aeb346667ccf37fc104d2e907706167473ec338c5d35a30df83",
+      "header_origin": "checked_in",
+      "mode": "fp4_e4m3",
+      "repro_receipt_sha256": "b7fc9435f0eefa7b27dab704b71935ba9f97640c703a5eeb007eca28485b53a8",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 2,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "0449976df35829f7a632bd5e8f27cc0a638c5702301676abbf252f7af7595de1",
+      "header_origin": "checked_in",
+      "mode": "fp4_e4m3s",
+      "repro_receipt_sha256": "ee362df8b3b4932b569f03c388b660535017a552d392e54481f9115d3bf01607",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp8_e5m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "ad13a0e70d583345a767e813fbc72f69b45ed281a0c2a833b5aaf01cc9ebb32b",
+      "header_origin": "checked_in",
+      "mode": "fp4_e5m2",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 0,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "08bedf0b972c8c4dfdecc4012b96c3ced4fa22d67ec5fc452da8c6da9cf1d108",
+      "header_origin": "generated",
+      "mode": "fp4_fp4",
+      "repro_receipt_sha256": "7924524a8f9b4e2e89df1ad114081a173906821c3d5dcef08cff48c3746c8d64",
+      "reproduction_exact_except_link_log": true,
+      "source_driver": "generated_mode",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp4_e2m1",
+        "activation_projection": "direct",
+        "pe_mode": 1,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "54c1f5add0b0d33ccc094512dd8e6a638cf840b1a2d4f1882643e0a53da9f7ac",
+      "header_origin": "checked_in",
+      "mode": "fp4_fp6",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 3,
+        "weight_format": "fp4_e2m1",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "61d4f09e8fa4a5492a5bdddc53a94ff1f5cb21e2cc58b9c3708f172da299226f",
+      "header_origin": "checked_in",
+      "mode": "fp6_fp4",
+      "repro_receipt_sha256": null,
+      "reproduction_exact_except_link_log": null,
+      "source_driver": "checked_in_nicolas_test",
+      "stock_mismatches": 0,
+      "stock_status": "passed"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_generated_mesh_mode_matrix.v1",
+  "scope": "64x64x64 BF16 source-golden checks on Nicolas pinned stock Spike; local patch result separate",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "unqualified_legal_compute": [
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    }
+  ]
+}

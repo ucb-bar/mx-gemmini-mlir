@@ -20,7 +20,10 @@ Every exported profile has `qualification: structural_unqualified`. It does
 not certify numerical parity, command scheduling, a bitstream, or throughput.
 Separate [Spike qualification receipts](compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix)
 now cover 30 of 36 legal BF16 source modes in the DIM16 all-asymmetric Rocket
-profile; DIM8 and DIM32 each have 21 of 36 available source modes qualified.
+profile. The DIM8 and DIM32 checked-in source sets cover 21 of 36 modes each;
+generated-mode tests from Nicolas's pinned model bring each mesh to **35 of 36**
+BF16 modes passing on unmodified Spike, with independent generated-mode
+reproductions. See the [mesh qualification index](compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices).
 The Radiance direct E4M3×E4M3 source driver separately qualifies a 31st
 distinct DIM16 mode with two full-output Spike runs; it is not part of
 Nicolas's checked-in source-mode matrix.
@@ -31,6 +34,9 @@ E4M3 × E4M3-LUT cell fails on that extension because its weight-lane packing
 ignores a loaded E4M3 weight LUT; a local diagnostic patch matches the golden
 but is not a qualified upstream model or FPGA result. See
 [generated DIM16 probes](compiled_mx_pipeline.md#generated-dim16-mode-probes).
+The corresponding DIM8/DIM32 direct-E4M3 × E4M3-LUT cells fail on the same
+stock Spike branch and pass with the same isolated model correction; they
+remain unqualified on the stock model.
 
 Nicolas's public branch includes `MxE4M3VpuGemminiRocketConfig` and
 `MxE4M3Fp4VpuGemminiRocketConfig`. Both build two 8-lane BF16 scratchpad

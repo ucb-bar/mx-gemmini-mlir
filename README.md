@@ -54,9 +54,13 @@ matrix run and an independent full reproduction. The
 [matrix qualification](docs/compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix)
 records the exact scope and pinned receipts.
 The DIM8 and DIM32 all-asymmetric Rocket profiles each pass all 21 checked-in
-source modes on Nicolas's Spike, with independent reproductions. Each profile
-has 36 legal modes, so 15 modes per profile still need source tests and numerical
-qualification; see the [mesh matrix receipts](docs/compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices).
+source modes on Nicolas's Spike, with independent reproductions. Nicolas's
+pinned generator supplies the other 15 mode tests per mesh. Fourteen of those
+pass twice, bringing stock Spike coverage to **35 / 36 legal modes** on each
+mesh. Direct E4M3 activation × E4M3 LUT weights fails on the stock model; the
+same ELF passes with an isolated weight-LUT model correction. The
+[mesh matrix receipts](docs/compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices)
+keep that diagnostic separate from stock qualification.
 The separate DIM16 all-asymmetric Rocket profile passes 30 source modes:
 26 asymmetric pairs, three same-format LUT tests, and direct FP4×FP4. The
 29-mode subset has two full reproductions; the 30-mode suite ran once and

@@ -1,0 +1,21 @@
+{
+  "compared_bf16_outputs": 4096,
+  "compiler_revision": "d8d2f558c4b36aa439e3f76139056d40ee3e733f",
+  "elf_sha256": "5e4ceb8994943c91ba54fde4a756447a1dbaf37843fdd7e8767343acade91569",
+  "mesh_dim": 8,
+  "mode": "e4m3s_e4m3",
+  "patch_sha256": "125e58205dcf03c139eae1d37439f8bc17e99be84246feae69b535cc32ce3c32",
+  "patched_extension_sha256": "aca58968a6cbf8972b4fb6292962280831afdc62b235222a263ba2fbbe082ae3",
+  "patched_gemmini_cc_sha256": "c2a6989215a65ab894ece5eb155b879fd8a476ac069eb6d3c94a3d5bdd9550e6",
+  "patched_mismatches": 0,
+  "patched_spike_log_sha256": "99bdb69ce8dc4e3849ec2995852b7427c94964970b965173f953b42ef71c5a21",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.local_spike_model_patch_diagnostic.v1",
+  "scope": "same compiler ELF; local Spike extension patch only; no upstream RTL or FPGA qualification",
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "stock_extension_sha256": "26e1df7be56e8ad66d78b208e496fb3a5aeadb2f4c2bc60f70bdb31e06bc808c",
+  "stock_extension_source_closure_sha256": "dbbc62171a9393691c575ec278dfdd75ca20fd6a2c9b52825380dad4e5d0af3f",
+  "stock_mismatches": 4095,
+  "stock_qualification": "failed",
+  "stock_spike_log_sha256": "acc254cfec583b81eb6109b491d97a70920e8d1516c1c154759e541c11dfed2d"
+}

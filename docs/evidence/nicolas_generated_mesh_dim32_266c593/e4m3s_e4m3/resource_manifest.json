@@ -1,0 +1,116 @@
+{
+  "origin": "nicolas_generated_header_specialization",
+  "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+  "recipe": {
+    "compute": {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    },
+    "frontend_capture_format": "mxfp8",
+    "origin": "nicolas_generated_header",
+    "profile_sha256": "5c4f4a09e358443260e602c260a0d4369b2f7755d520a24d5236d87c566055b9",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_generation_manifest_sha256": "7e12c842e47e904ac448bd880d1a4585bce2ae103ee912d84dab4eb7d1304cbb",
+    "source_generator_sha256": "b5389b05e639929d4ffc8393496a4251e891fb1f0288035497ae4e1aa0457b6c",
+    "source_header_sha256": "c3e4b8252e174225515a299804702f672089f0a4a1c682bd9f31fc4e7d59e923",
+    "source_layout": {
+      "activation_array": "A_in[MATMUL_M][MATMUL_K]",
+      "cell": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "config_altfmt": 0,
+      "header": "matmul_data_asym_e4m3s_e4m3_dim32.h",
+      "lut_arrays": [
+        "B_lut"
+      ],
+      "lut_entry_bits": 8,
+      "lut_words_per_line": 4,
+      "mesh_dim": 32,
+      "use_lut": true,
+      "weight_altfmt_diff": 0
+    }
+  },
+  "resources": {
+    "activation": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "1b90d71c55743b2ca0535ae3f884106f58359153b412dea1684c17ba2d042f94",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "b343886497bf438472ff0f67017c9b6439ebd08cead95a5d5e595559124d8ab0",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "weight": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "75550282d7ae03d782b29f4d302ccbeea9301c0c66d749fa18654c96c52f42b0",
+      "shape": [
+        64,
+        32
+      ]
+    },
+    "weight_lut": {
+      "bytes": 512,
+      "element_bits": 32,
+      "file": "weight_lut.bin",
+      "layout": "column_pair_lut_8bit",
+      "sha256": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+      "shape": [
+        32,
+        4
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v2",
+  "site_id": "functional:matmul"
+}

@@ -638,11 +638,59 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 8 \
 # Repeat with --mesh-dim 32 and a new output directory.
 ```
 
-Each all-asymmetric profile has **36 legal compute cells**. Nicolas has
-checked-in 64³ tests for 21 of them, leaving **15 unqualified cells per
-profile**; the aggregate receipts list each missing tuple. These tests use
-source-bound packed operands and BF16 goldens. These 64³ tests alone do not
-establish general PyTorch operand quantization or other shapes on either mesh.
+Each all-asymmetric profile has **36 legal compute cells**. Nicolas checks in
+64³ source tests for 21 of them. The
+[generation wrapper](../tools/generate_nicolas_mesh_headers.py) regenerates a
+checked-in header byte for byte at each mesh before obtaining the 15 missing
+mode tests from his pinned `gen_asym.py` and microxcaling `7bc41952`. On
+DIM32, five of those headers already existed without named source C tests;
+the DIM8 headers are all newly generated. The
+[DIM8 header manifest](evidence/nicolas_generated_mesh_dim8_266c593/generation_manifest.json)
+and [DIM32 header manifest](evidence/nicolas_generated_mesh_dim32_266c593/generation_manifest.json)
+record their origins and hashes. Each mode is bound to a fresh model2MLIR
+matmul capture; the compiler emits the physical MX commands and standalone
+RV64 RoCC ELF. No handwritten replacement contraction enters the output.
+
+The full 36-mode stock Spike matrix passed **35 / 36** modes on both DIM8 and
+DIM32. Every passing test compared **4,096 / 4,096 BF16 outputs** against its
+source header, for **143,360 matching outputs per mesh**. An independent
+15-mode generated-mode matrix reproduced the 14 passing modes on each mesh;
+the frontend, bound payload, physical program, issuer, ELF, and Spike log
+hashes agree between runs after omitting the path-bearing link log hash. The
+[DIM8 full matrix](evidence/nicolas_generated_mesh_dim8_266c593/matrix_first.json),
+[DIM8 generated reproduction](evidence/nicolas_generated_mesh_dim8_266c593/matrix_generated_repro.json),
+[DIM32 full matrix](evidence/nicolas_generated_mesh_dim32_266c593/matrix_first.json),
+and [DIM32 generated reproduction](evidence/nicolas_generated_mesh_dim32_266c593/matrix_generated_repro.json)
+pin compiler `d8d2f55`, Nicolas RTL `266c593`, model2MLIR `7485a82`,
+MXQuant `b4af543`, source headers, and simulator hashes. The
+[DIM8 qualification index](evidence/nicolas_generated_mesh_dim8_266c593/qualification.json)
+and [DIM32 qualification index](evidence/nicolas_generated_mesh_dim32_266c593/qualification.json)
+link all 36 first-run receipts and 15 generated-mode reruns per mesh.
+
+The sole failing mode on both meshes is **direct E4M3 activation × E4M3 LUT
+weights**. The stock model reports **4,095 mismatches on DIM8** and **4,096
+on DIM32**. The same respective compiler ELFs report **zero mismatches** with
+the [isolated Spike model correction](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
+that includes RTL `weight_lut_en` in weight lane selection. The
+[DIM8 diagnostic](evidence/nicolas_generated_mesh_dim8_266c593/e4m3s_e4m3/patch_diagnostic.json)
+and [DIM32 diagnostic](evidence/nicolas_generated_mesh_dim32_266c593/e4m3s_e4m3/patch_diagnostic.json)
+include both extension and log hashes. That change is not merged into
+Nicolas's Spike branch. These two legal cells remain unqualified on the
+pinned stock model. These 64³ BF16 tests do not establish general PyTorch
+operand quantization, arbitrary shapes, quantized readouts, timing, or FPGA.
+
+```sh
+python -m tools.generate_nicolas_mesh_headers --mesh-dim 8 \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --microxcaling-root /path/to/microxcaling-at-7bc41952
+python -m tools.qualify_nicolas_asym_matrix --mesh-dim 8 \
+  --include-generated --source-shape 64x64 \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/dim8-generated-matrix-output --jobs 4
+# Repeat both commands with --mesh-dim 32 and a new output directory.
+```
 
 ### DIM16 all-asymmetric source matrix
 
