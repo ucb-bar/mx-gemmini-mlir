@@ -58,6 +58,18 @@ _VARIANTS = {
         "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
         "lut_words_per_line": 0, "lut_entry_bits": 0,
     },
+    "matmul_tiled_asym_e4m3s_fp4_128x128x256_dim32.c": {
+        "header": "matmul_data_asym_e4m3s_fp4_128x128x256_dim32.h",
+        "cell": DIRECT_CELL, "mesh_dim": 32, "shape": [128, 128, 256],
+        "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
+        "lut_words_per_line": 0, "lut_entry_bits": 0,
+    },
+    "matmul_tiled_asym_e4m3s_fp4_128x128.c": {
+        "header": "matmul_data_asym_e4m3s_fp4_128x128.h",
+        "cell": DIRECT_CELL, "mesh_dim": 16, "shape": [128, 128, 128],
+        "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
+        "lut_words_per_line": 0, "lut_entry_bits": 0,
+    },
     "matmul_tiled_asym_fp6_fp4_64x64.c": {
         "header": "matmul_data_asym_fp6_fp4.h", "cell": FP6_FP4_CELL,
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
@@ -163,6 +175,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     variant = _source_variant(source, header, profile, header_text)
     cell = variant["cell"]
     mesh_dim = variant.get("mesh_dim", 16)
+    m, n, k = variant.get("shape", [64, 64, 64])
     require_compute(profile, cell["activation_format"], cell["weight_format"],
                     pe_mode=cell["pe_mode"],
                     activation_projection=cell["activation_projection"],
@@ -185,8 +198,8 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
         raise ValueError(f"Nicolas source command contract changed: {lut_marker}")
     if not re.search(r"gemmini_loop_ws_spad\(\s*tiles_I,\s*tiles_J,\s*tiles_K", source_text):
         raise ValueError("Nicolas source loop schedule changed")
-    for marker in ("#define MATMUL_M   64", "#define MATMUL_K   64",
-                   "#define MATMUL_N   64", variant["activation_array"],
+    for marker in (f"#define MATMUL_M   {m}", f"#define MATMUL_K   {k}",
+                   f"#define MATMUL_N   {n}", variant["activation_array"],
                    variant.get("weight_array", "B_in[MATMUL_K][MATMUL_N / 2]"),
                    "A_scales_row[MATMUL_GK][MATMUL_M]",
                    "B_scales_col[MATMUL_GK][MATMUL_N]",
@@ -224,7 +237,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     source_layout["config_altfmt"] = config_altfmt
     source_layout["weight_altfmt_diff"] = weight_altfmt_diff
     return {"schema": "mx_gemmini.asymmetric_source_recipe.v1",
-            "site_id": "functional:matmul", "shape": [64, 64, 64],
+            "site_id": "functional:matmul", "shape": [m, n, k],
             "frontend_capture_format": "mxfp8",
             "source_driver_sha256": sha256(source),
             "source_header_sha256": sha256(header),
@@ -242,7 +255,8 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
 
     if (recipe.get("schema") != "mx_gemmini.asymmetric_source_recipe.v1" or
             recipe.get("site_id") != "functional:matmul" or
-            recipe.get("shape") != [64, 64, 64] or
+            recipe.get("shape") not in ([64, 64, 64], [128, 128, 128],
+                                        [128, 128, 256]) or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
             (recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
@@ -420,29 +434,30 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]
     if variant["header"] != header.name:
         raise ValueError("asymmetric source layout names a different data header")
+    m, n, k = recipe["shape"]
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     lut_words = variant["lut_words_per_line"]
     a_name = "A_in_hw" if packed_activation else "A_in"
     a_shape = "[32][64]" if packed_activation else "[MATMUL_M][MATMUL_K]"
     weight_shape = ("[MATMUL_K][MATMUL_N]" if variant.get("weight_array") else
                     "[MATMUL_K][MATMUL_N / 2]")
-    weight_count = 4096 if variant.get("weight_array") else 2048
+    weight_count = k * n if variant.get("weight_array") else k * n // 2
     resources = {
         "activation": bytes(_array(text, name=a_name, ctype="uint8_t",
-                                    dimensions=a_shape, count=2048 if packed_activation else 4096,
+                                    dimensions=a_shape, count=m * k // (2 if packed_activation else 1),
                                     maximum=255)),
         "weight": bytes(_array(text, name="B_in", ctype="uint8_t",
                                 dimensions=weight_shape,
                                 count=weight_count, maximum=255)),
         "activation_scales": bytes(_array(text, name="A_scales_row", ctype="uint8_t",
                                             dimensions="[MATMUL_GK][MATMUL_M]",
-                                            count=128, maximum=255)),
+                                            count=k // 32 * m, maximum=255)),
         "weight_scales": bytes(_array(text, name="B_scales_col", ctype="uint8_t",
                                         dimensions="[MATMUL_GK][MATMUL_N]",
-                                        count=128, maximum=255)),
+                                        count=k // 32 * n, maximum=255)),
         "golden_bf16": _bytes(_array(text, name="C_out_bf16", ctype="uint16_t",
                                       dimensions="[MATMUL_M][MATMUL_N]",
-                                      count=4096, maximum=0xffff), 2),
+                                      count=m * n, maximum=0xffff), 2),
     }
     if variant["use_lut"]:
         for c_name, resource in (("A_lut", "activation_lut"),
@@ -461,16 +476,17 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
     from .source_payload import Resource
 
     variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]
+    m, n, k = recipe["shape"]
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
     shapes = {
-        "activation": ((32, 64) if packed_activation else (64, 64), 8,
+        "activation": ((m // 2, k) if packed_activation else (m, k), 8,
                        "packed_even_odd_m_nibbles" if packed_activation else "row_major_codes"),
-        "weight": ((64, 64) if variant.get("weight_array") else (64, 32), 8,
+        "weight": ((k, n) if variant.get("weight_array") else (k, n // 2), 8,
                    "row_major_codes" if variant.get("weight_array") else
                    "packed_even_odd_n_nibbles"),
-        "activation_scales": ((2, 64), 8, "k_group_row_e8m0"),
-        "weight_scales": ((2, 64), 8, "k_group_column_e8m0"),
-        "golden_bf16": ((64, 64), 16, "row_major_bf16"),
+        "activation_scales": ((k // 32, m), 8, "k_group_row_e8m0"),
+        "weight_scales": ((k // 32, n), 8, "k_group_column_e8m0"),
+        "golden_bf16": ((m, n), 16, "row_major_bf16"),
     }
     if variant["use_lut"]:
         words = variant["lut_words_per_line"]
@@ -533,7 +549,7 @@ def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
 
 def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
                               source: Path, header: Path):
-    """Lower a source-bound DIM16 asymmetric mode to physical MX commands."""
+    """Lower a source-bound asymmetric matmul to physical MX commands."""
     from .command_ir import Fence, Operand
     from .physical_program import (PhysicalProgram, PhysicalStep, _cmd, _config_ld,
                                    _config_st, _transfer)
@@ -563,20 +579,22 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     variant = recipe.get("source_layout") or _VARIANTS[source.name]
     use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
     packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
-    weight_stride = 64 if variant.get("weight_array") else 32
+    m, n, k_dim = recipe["shape"]
+    weight_stride = n if variant.get("weight_array") else n // 2
     dim = variant.get("mesh_dim", 16)
-    ti = 64 // (dim * (2 if packed_activation else 1))
-    tj = 64 // (dim * (2 if weight_stride == 32 else 1))
-    tki = 64 // dim
-    if not ti or not tj or 64 % dim:
+    ti = m // (dim * (2 if packed_activation else 1))
+    tj = n // (dim * (2 if weight_stride == n // 2 else 1))
+    tki = k_dim // dim
+    if (not ti or not tj or not tki or m % (dim * (2 if packed_activation else 1))
+            or n % (dim * (2 if weight_stride == n // 2 else 1)) or k_dim % dim):
         raise ValueError("asymmetric source shape is not tileable on selected mesh")
     scratchpad_rows = profile["resources"]["scratchpad_bytes"] // dim
     a_base = 0
     b_end = 8192 if dim == 16 else min(16384, scratchpad_rows)
-    c_base = 128 if dim == 16 else ti * tki * dim
+    c_base = 128 if recipe["shape"] == [64, 64, 64] and dim == 16 else ti * tki * dim
     b_base = b_end - tki * tj * dim
     if (b_base < ti * tki * dim or b_end > scratchpad_rows or
-            c_base + 64 * 64 * 2 // dim > b_base):
+            c_base + m * n * 2 // dim > b_base):
         raise ValueError("asymmetric operand and BF16 readout rows exceed profile scratchpad")
     steps: list[PhysicalStep] = []
 
@@ -605,13 +623,15 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
                                      (lut_entry_bits << 34) | (selector << 32) | 32))
     else:
         issue("disable_lut", _cmd(30, 0, 0))
-    issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"), 128))
-    issue("upload_scales", _cmd(27, Operand(buffer="weight_scales"), (1 << 32) | 128))
+    issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"),
+                                len(resources["activation_scales"])))
+    issue("upload_scales", _cmd(27, Operand(buffer="weight_scales"),
+                                (1 << 32) | len(resources["weight_scales"])))
     issue("upload_scales", Fence())
-    issue("move_activation", _config_ld(64, dim=dim))
+    issue("move_activation", _config_ld(k_dim, dim=dim))
     for i in range(ti):
         for k in range(tki):
-            offset = i * dim * 64 + k * dim
+            offset = i * dim * k_dim + k * dim
             row = a_base + (i * tki + k) * dim
             issue("move_activation", _transfer(2, "activation", offset, row, dim=dim))
     issue("move_weight", _config_ld(weight_stride, dim=dim))
@@ -631,11 +651,11 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     issue("compute", _cmd(8, 0, (c_base << 32) | 0x200 | 0x38))
     issue("compute", Fence())
     issue("readout", _config_st(dim))
-    for row in range(0, 64 * 64 * 2 // dim, dim):
+    for row in range(0, m * n * 2 // dim, dim):
         issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row,
                                    dim=dim))
     issue("readout", Fence())
-    plan = {"shape_mnk": [64, 64, 64], "tile_mnk": [64, 64, 64],
+    plan = {"shape_mnk": [m, n, k_dim], "tile_mnk": [m, n, k_dim],
             "activation_projection": recipe["compute"]["activation_projection"],
             "weight_projection": recipe["compute"]["weight_projection"],
             "pe_mode": recipe["compute"]["pe_mode"],
@@ -643,4 +663,4 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
             "a_row": a_base, "b_row": b_base, "c_row": c_base,
             "tiles_i": ti, "tiles_j": tj, "tiles_k": tki}
     return PhysicalProgram(profile_sha256(profile), payload_digest,
-                           "spike_serial", (64, 64, 64), plan, tuple(steps)), resources, resource_manifest
+                           "spike_serial", (m, n, k_dim), plan, tuple(steps)), resources, resource_manifest

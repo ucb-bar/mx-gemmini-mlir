@@ -42,6 +42,8 @@ def main() -> None:
                         help="Nicolas source pair, for example e2m3_e5m2")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
+    parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
+                        default="64x64", help="named Nicolas source shape")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
                        help="compile through shared physical command IR (default)")
@@ -79,9 +81,13 @@ def main() -> None:
     if not re.fullmatch(r"[a-z0-9]+_[a-z0-9]+", suffix):
         parser.error("source suffix must name one asymmetric source pair")
     dim_suffix = f"_dim{args.mesh_dim}" if args.mesh_dim != 16 else ""
-    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64{dim_suffix}.c"
-    header = software / f"include/matmul_data_asym_{suffix}{dim_suffix}.h"
+    source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_{args.source_shape}{dim_suffix}.c"
+    header_suffix = (f"_{args.source_shape}" if args.source_shape != "64x64" else "")
+    header = software / f"include/matmul_data_asym_{suffix}{header_suffix}{dim_suffix}.h"
     recipe = source_recipe(source, header, profile)
+    if not args.physical and recipe["shape"] != [64, 64, 64]:
+        parser.error("historical C diagnostic is limited to 64-cubed sources")
+    m, n, k = recipe["shape"]
 
     class Matmul(torch.nn.Module):
         def forward(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -89,8 +95,8 @@ def main() -> None:
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
-        example = (torch.randn((64, 64), dtype=torch.float32),
-                   torch.randn((64, 64), dtype=torch.float32))
+        example = (torch.randn((m, k), dtype=torch.float32),
+                   torch.randn((k, n), dtype=torch.float32))
     contract = root / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = root / "examples/default-policy.yaml"
     result = m2m.convert(
@@ -103,7 +109,7 @@ def main() -> None:
     sites = result.quantization_manifest["sites"]
     if opaque or [(site["site_id"], site["status"], site["format"], site["shape"])
                   for site in sites] != [
-                      ("functional:matmul", "quantized", "mxfp8", [64, 64, 64])]:
+                      ("functional:matmul", "quantized", "mxfp8", [m, n, k])]:
         raise RuntimeError(f"frontend did not capture one FP8 matmul: {opaque}, {sites}")
     contract_bytes, policy_bytes = contract.read_bytes(), policy.read_bytes()
     validate_handoff(result, contract_bytes, policy_bytes)
@@ -181,7 +187,7 @@ def main() -> None:
                          cwd=build_dir, text=True, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, check=False)
     (build_dir / "spike.log").write_text(run.stdout)
-    expected = ("lowered MX 64x64x64: 0 BF16 mismatches" if args.physical else
+    expected = (f"lowered MX {m}x{n}x{k}: 0 BF16 mismatches" if args.physical else
                 "lowered asymmetric E4M3xFP4 64x64x64: 0 BF16 mismatches")
     passed = run.returncode == 0 and expected in run.stdout
     receipt = {
@@ -189,7 +195,7 @@ def main() -> None:
                    if args.physical else "mx_gemmini.nicolas_asymmetric_spike_qualification.v1"),
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": (f"DIM{args.mesh_dim} 64-cubed {suffix} source specialization of one captured PyTorch matmul; "
+        "scope": (f"DIM{args.mesh_dim} {m}x{n}x{k} {suffix} source specialization of one captured PyTorch matmul; "
                   "checked-in packed inputs, not random PyTorch example inputs; " +
                   ("shared physical command IR and standalone emitter; " if args.physical else
                    "bounded C diagnostic; ") +
@@ -225,7 +231,7 @@ def main() -> None:
         "object_sha256": {obj.name: sha256(obj) for obj in objects},
         "spike_log_sha256": sha256(build_dir / "spike.log"),
         "spike_exit_code": run.returncode,
-        "compared_bf16_outputs": 4096,
+        "compared_bf16_outputs": m * n,
     }
     if standalone_receipt is not None:
         receipt["physical_program_sha256"] = sha256(build_dir / "physical_program.json")
