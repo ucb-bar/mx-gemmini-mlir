@@ -17,7 +17,8 @@ from .command_ir import Command, Fence, Operand, spad_requant_command, vpu_comma
 from .quant_reference import (exact_bf16_x2, quantize_bf16_radiance_header_fp8,
                               quantize_bf16_radiance_header_fp6)
 from .source_gemm import plan_mx_gemm
-from .source_payload import manifest_json, manifest_sha256
+from .source_payload import (manifest_json, manifest_sha256,
+                             vpu_requant_shape_is_legal)
 from .target_profile import profile_sha256
 from .verify_profile_ir import _bool_attr, _int_attr, _operation_name, _text_attr, verify_ir
 
@@ -159,6 +160,7 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
     if vector_requant:
         first, bf16_readout, vpu, requant = ops
         function = requant.parent_op()
+        m, n, _ = manifest["shape_mnk"]
         if (manifest.get("output_format") != "fp8_e4m3" or
                 list(bf16_readout.operands) != list(first.results) or
                 list(vpu.operands) != list(bf16_readout.results) or
@@ -168,8 +170,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                 list(function.get_return_op().operands) != list(requant.results) or
                 [str(result.type) for result in (*bf16_readout.results, *vpu.results,
                                                  *requant.results)] != [
-                    "tensor<64x64xbf16>", "tensor<64x64xbf16>",
-                    "tensor<64x64xi8>", "tensor<64x2xi8>"]):
+                    f"tensor<{m}x{n}xbf16>", f"tensor<{m}x{n}xbf16>",
+                    f"tensor<{m}x{n}xi8>", f"tensor<{m}x{n // 32}xi8>"]):
             raise ValueError("physical MX VPU/SPAD SSA handoff differs from source specialization")
     if host_requant:
         host = ops[-1]
@@ -273,7 +275,9 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     if quant_output and (len(output_tiles) != 1 or vector_ops and not vector_requant):
         raise ValueError("physical quantized output needs one tile without vector epilogues")
     if vector_requant:
-        if (precision != "FP8" or shape != (64, 64, 128) or len(vector_ops) != 2 or
+        if (precision != "FP8" or
+                not vpu_requant_shape_is_legal(shape, tile) or
+                len(vector_ops) != 2 or
                 vector_ops[0][0] != "vpu" or vector_ops[1][0] != "spad_requant"):
             raise ValueError("physical VPU/SPAD composition requires selected FP8 source shape and ops")
         vpu, requant = vector_ops[0][1], vector_ops[1][1]

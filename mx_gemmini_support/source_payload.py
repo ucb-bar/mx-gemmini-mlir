@@ -23,6 +23,16 @@ from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_
 SCHEMA = "mx_gemmini.source_payload.v1"
 
 
+def vpu_requant_shape_is_legal(shape: tuple[int, int, int],
+                               tile: tuple[int, int, int]) -> bool:
+    """Check the one-output-tile FP8 geometry accepted by SPAD_REQUANT."""
+    m, n, k = shape
+    blocks = m * n // 32
+    return (m == tile[0] and n == tile[1] and m % 16 == 0 and
+            n % 32 == 0 and k % 32 == 0 and
+            32 <= blocks <= 2048 and blocks % 32 == 0)
+
+
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -77,8 +87,9 @@ def read_source_payload(kernel: SourceGemm, *,
     if fp6_quantized_specialization and (kernel.datatype != "FP6" or kernel.quant_output):
         raise ValueError("FP6 quantized specialization requires the checked-in fullout driver")
     if vpu_spad_requant_x2 and (kernel.datatype != "FP8" or kernel.quant_output or
-                                fp6_quantized_specialization or kernel.shape != (64, 64, 128)):
-        raise ValueError("VPU/SPAD x2 specialization requires the 64x64x128 FP8 fullout driver")
+                                fp6_quantized_specialization or
+                                not vpu_requant_shape_is_legal(kernel.shape, kernel.tile)):
+        raise ValueError("VPU/SPAD x2 specialization requires a single-tile FP8 fullout driver")
     if kernel.datatype == "FP6":
         fp6 = read_source_fp6_payload(kernel)
         resources = {
@@ -235,8 +246,9 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
             "output_specialization": "bf16_fullout_to_fp6_lut_quantized",
         })
     if vpu_spad_requant_x2:
-        if kernel.datatype != "FP8" or kernel.quant_output or kernel.shape != (64, 64, 128):
-            raise ValueError("VPU/SPAD x2 output specialization requires FP8 fullout source")
+        if (kernel.datatype != "FP8" or kernel.quant_output or
+                not vpu_requant_shape_is_legal(kernel.shape, kernel.tile)):
+            raise ValueError("VPU/SPAD x2 output specialization requires single-tile FP8 fullout source")
         manifest.update({
             "output_format": "fp8_e4m3",
             "output_oracle": "nicolas_vpu_x2_spad_requant_fp8_v1",
@@ -317,7 +329,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
                  manifest.get("output_oracle") != "nicolas_vpu_x2_spad_requant_fp8_v1") or
                 (manifest.get("output_oracle") == "nicolas_vpu_x2_spad_requant_fp8_v1" and
                  (precision != "FP8" or manifest.get("output_specialization") !=
-                  "matrix_vpu_x2_spad_requant_fp8" or shape != [64, 64, 128])) or
+                  "matrix_vpu_x2_spad_requant_fp8" or
+                  not vpu_requant_shape_is_legal(tuple(shape), tuple(tile)))) or
                 (precision == "FP4" and
                  manifest.get("source_quant_header_format") != "fp8_e4m3") or
                 (precision == "FP6" and

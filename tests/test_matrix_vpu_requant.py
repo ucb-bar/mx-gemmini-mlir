@@ -14,7 +14,8 @@ from mx_gemmini_support.bind_payload import append_vpu_spad_requant_x2, bind_pay
 from mx_gemmini_support.command_ir import Command
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_gemm import read_source_gemm
-from mx_gemmini_support.source_payload import load_bundle, write_bundle
+from mx_gemmini_support.source_payload import (load_bundle, write_bundle,
+                                               vpu_requant_shape_is_legal)
 from mx_gemmini_support.standalone import write_standalone_sources
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.verify_profile_ir import verify_ir
@@ -136,3 +137,44 @@ def test_matrix_vpu_requant_bundle_rejects_oracle_downgrade(tmp_path):
     path.write_text(json.dumps(manifest))
     with pytest.raises(ValueError, match="unsupported format"):
         load_bundle(tmp_path / "bundle")
+
+
+@pytest.mark.parametrize(("driver", "capture", "shape"), [
+    ("mxgemm.fp8.singletile.tm64tn64tk64.fullout.cpp",
+     "model2mlir_radiance_mx_fp8_64x64x64_tk64_fullout_bound.mlir", (64, 64, 64)),
+    ("mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout.cpp",
+     "model2mlir_radiance_mx_fp8_128x128x128_tk128_fullout_bound.mlir", (128, 128, 128)),
+])
+def test_single_tile_vpu_requant_shape_lowering(tmp_path, driver, capture, shape):
+    source = SOURCE / "kernels/gemm_mxgemmini" / driver
+    if not source.is_file() or not source.with_name(
+            "mxgemm.data.fp8.m%dn%dk%d.h" % shape).is_file() or not RTL.is_dir():
+        pytest.skip("requires the matching Radiance FP8 source header and Nicolas RTL")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json",
+        rtl_root=RTL)
+    manifest = write_bundle(
+        tmp_path / "bundle", read_source_gemm(source),
+        site_id="functional:matmul", profile_sha256=profile_sha256(profile),
+        vpu_spad_requant_x2=True)
+    checked, resources = load_bundle(tmp_path / "bundle")
+    assert checked == manifest
+    bound = append_vpu_spad_requant_x2(
+        bind_payload((ROOT / "docs/evidence" / capture).read_text(), profile, manifest),
+        profile, manifest)
+    program = lower_bound_source(bound, profile, manifest, resources)
+    assert program.shape == shape
+    assert program.tiled_quant_readout
+    assert f"tensor<{shape[0]}x{shape[1]}xbf16>" in bound
+    assert f"tensor<{shape[0]}x{shape[1] // 32}xi8>" in bound
+    assert len([step for step in program.steps if step.phase == "spad_requant"]) == 1
+    opt = ROOT / "build/tools/mx-gemmini-opt"
+    if opt.is_file():
+        path = tmp_path / "bound.mlir"
+        path.write_text(bound)
+        subprocess.run([str(opt), str(path), "-o", "/dev/null"], check=True)
+
+
+def test_vpu_requant_rejects_multiple_output_tiles_and_excessive_blocks():
+    assert not vpu_requant_shape_is_legal((128, 128, 128), (64, 64, 64))
+    assert not vpu_requant_shape_is_legal((256, 288, 256), (256, 288, 256))

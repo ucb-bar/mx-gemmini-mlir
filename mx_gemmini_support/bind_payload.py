@@ -7,7 +7,8 @@ from io import StringIO
 from pathlib import Path
 
 from .resource_ir import attach_source_resources
-from .source_payload import load_bundle, manifest_sha256
+from .source_payload import (load_bundle, manifest_sha256,
+                             vpu_requant_shape_is_legal)
 from .target_profile import load_profile, profile_sha256
 from .verify_profile_ir import _operation_name, _text_attr, verify_ir
 
@@ -138,9 +139,13 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
     from xdsl.parser import Parser
     from xdsl.printer import Printer
 
+    shape = manifest.get("shape_mnk")
+    tile = manifest.get("tile_mnk")
     if (manifest.get("output_specialization") != "matrix_vpu_x2_spad_requant_fp8" or
-            manifest.get("shape_mnk") != [64, 64, 128]):
-        raise ValueError("VPU/SPAD x2 composition needs the selected FP8 source specialization")
+            not isinstance(shape, list) or not isinstance(tile, list) or
+            len(shape) != 3 or len(tile) != 3 or
+            not vpu_requant_shape_is_legal(tuple(shape), tuple(tile))):
+        raise ValueError("VPU/SPAD x2 composition needs a single-tile FP8 specialization")
     verify_ir(mlir_text, profile)
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
@@ -154,13 +159,14 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
     if [_operation_name(op) for op in ops] != ["mx_gemmini.contract", "mx_gemmini.readout_quantized"]:
         raise ValueError("VPU/SPAD x2 composition needs one bare contraction and readout")
     from .source_gemm import plan_mx_gemm
-    plan = plan_mx_gemm(shape=(64, 64, 128), tile=tuple(manifest["tile_mnk"]),
+    m, n, k = shape
+    plan = plan_mx_gemm(shape=(m, n, k), tile=tuple(tile),
                         datatype="FP8", quant_output=False, acc_to_gmem=False,
                         scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
                         profile=profile)
     source_row, rows = plan["c_spad_dest"], plan["c_rows"]
     destination_row = source_row + rows + 256
-    if destination_row + 256 > plan["scratchpad_rows"]:
+    if destination_row + m * n // 16 > plan["scratchpad_rows"]:
         raise ValueError("VPU/SPAD x2 output has no nonoverlapping scratchpad lifetime")
     readout = ops[-1]
     block = readout.parent
@@ -175,9 +181,9 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
                for name in ("site_id", "profile_sha256", "contract_sha256",
                             "policy_sha256", "manifest_sha256")}
     i32attr = lambda value: IntegerAttr(value, i32)
-    bf16_type = TensorType(bf16, [64, 64])
-    codes_type = TensorType(i8, [64, 64])
-    scales_type = TensorType(i8, [64, 2])
+    bf16_type = TensorType(bf16, [m, n])
+    codes_type = TensorType(i8, [m, n])
+    scales_type = TensorType(i8, [m, n // 32])
     bf16_readout = UnregisteredOp.with_name("mx_gemmini.readout_bf16").create(
         operands=list(ops[0].results), result_types=[bf16_type], attributes=binding)
     vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(
@@ -191,7 +197,7 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
         operands=list(vpu.results), result_types=[codes_type, scales_type], attributes={
         **binding, "source_row": i32attr(source_row),
         "destination_row": i32attr(destination_row),
-        "m": i32attr(64), "n": i32attr(64),
+        "m": i32attr(m), "n": i32attr(n),
         "output_format": StringAttr("fp8_e4m3"),
         "tiled": BoolAttr.from_bool(True), "resident": BoolAttr.from_bool(True),
         "scale_dram_address": IntegerAttr(0, i64),
