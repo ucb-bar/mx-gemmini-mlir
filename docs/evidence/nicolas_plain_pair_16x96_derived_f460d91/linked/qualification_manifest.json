@@ -1,0 +1,26 @@
+{
+  "compared_c1_e8m0_scales": 48,
+  "compared_c1_fp8_codes": 1536,
+  "compared_c2_e8m0_scales": 48,
+  "compared_c2_fp8_codes": 1536,
+  "compiler_revision": "f460d91f6256d7a6087f26124d6bb491edffb762",
+  "linked_elf_sha256": "b34bc7397ac3308c7d72a860ba5e2d3165ee97b89f9f764accd5978b3cf848c4",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "object_manifest_sha256": "44272fc2477039cfaff2993516d1cc2b040f298d1dafff255b9655c4b493295f",
+  "object_sha256": "bf0b57ceb047887068ec896db9999072976a654c9a15355726547df42f74cf0e",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "reference_kind": "source_wire_slice_with_pinned_mesh_model_outputs",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.resident_pair_object_spike.v1",
+  "shape_mnk": [
+    16,
+    96,
+    96
+  ],
+  "source_issuer_sha256": "80e8552a4373c2b845b1718c448b1dd9244b9712b0d035a5b48af20bccbcf67b",
+  "source_reference_manifest_sha256": "00c366a662977c3e9c7f6c5a62b2a2de1891ee39f142aa058faad6773223a6bd",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "c68ff00e01f9e34f6a6b9146c5b2eb790eedf0659ea29985934868dacc716582",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "derived_source_connected_object_matched_on_pinned_spike"
+}

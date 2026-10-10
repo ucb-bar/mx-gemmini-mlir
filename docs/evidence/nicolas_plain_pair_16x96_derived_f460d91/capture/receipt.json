@@ -1,0 +1,49 @@
+{
+  "schema": "mx_gemmini.nicolas_chain_96_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "f460d91f6256d7a6087f26124d6bb491edffb762",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "source_mlir_sha256": "9b14095d9e4b85c30bc9897db1df3cba943a1251358c935b26519e9acd45936c",
+  "handoff_mlir_sha256": "ee5e3656ab92c8d5ded6ff40b517b612707955e9ddce9d02d08a35c5a39c01c4",
+  "bound_mlir_sha256": "3a5cbaa50b00270bdf7a6c3d6ca5e8af0defb910eb12095b77866465fd5b0dbe",
+  "manifest_sha256": "ea2663cf24f416a8850d8b2bb175c6f1ec1ce7f54d44b2ad294f075a31b95463",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        16,
+        96,
+        96
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        16,
+        96,
+        96
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "96-wide slice of Nicolas's checked-in 128\u00b3 packed inputs; both outputs require a separate pinned mesh-model reference",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "matrix_dim": 96,
+  "output_rows": 16
+}

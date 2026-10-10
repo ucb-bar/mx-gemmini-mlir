@@ -825,6 +825,45 @@ input but does not link those bytes into the object. The Spike harness is a
 separate source parity gate. This plain FP8 path qualifies the direct
 requantized pair on the selected profile and row counts.
 
+The [16×96×96 connected pair archive](evidence/nicolas_plain_pair_16x96_derived_f460d91/index.json)
+adds a changed N/K width to the plain MX path. A fresh checkout of
+`f460d91` captured both contractions through model2MLIR `e9ded36`, compiled
+the typed `contract → readout_quantized → resident_contract` graph, emitted a
+data-free RV64 object, and linked that object as the sole MX issuer. Nicolas's
+stock Spike matched **1,536 C1 and 1,536 C2 FP8 codes**, plus **48 scales per
+site**, with zero mismatches. The inputs are a 96-wide slice of the checked-in
+128³ source wire data. The pinned Nicolas mesh model first reproduced the
+unchanged 128³ C1 and C2 source goldens; it then produced the 96-wide reference.
+This is a source-derived numerical check for one new shape, not an unchanged
+96-wide source golden or RTL/FPGA qualification. The archived capture, input
+bytes, generated issuer, object, ELF, and Spike log carry SHA-256 digests.
+
+```sh
+python -m tools.capture_nicolas_chain \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQ_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --matrix-dim 96 --output-rows 16 --out-dir /new/mx-front-16x96
+python -m tools.qualify_nicolas_resident_128 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --connected-frontend-dir /new/mx-front-16x96 \
+  --source-rows 16 --source-width 96 --out-dir /new/mx-reference-16x96
+python -m tools.compile_object \
+  --mlir /new/mx-reference-16x96/connected_chain.mlir \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --resources-dir /new/mx-reference-16x96/build \
+  --abi-json examples/resident-pair-abi.json \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-object-16x96
+python -m tools.qualify_resident_pair_object \
+  --object-dir /new/mx-object-16x96 --frontend-dir /new/mx-front-16x96 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --source-rows 16 --source-width 96 --out-dir /new/mx-object-spike-16x96
+```
+
 The MX+VPU 64³ connected graph now has a parallel object path through
 [`resident_vpu_graph.py`](../mx_gemmini_support/resident_vpu_graph.py). It
 checks the `contract → readout_bf16 → vpu_execute → spad_requant →
@@ -3260,8 +3299,10 @@ cases with:
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
    qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
-   Nicolas's 128³ source. Lower other typed graphs without a source-specific
-   seam, including changed N/K dimensions and mixed-engine graphs.
+   Nicolas's 128³ source and the one source-derived 16×96×96 plain MX case.
+   Lower other typed graphs without a source-specific seam, including
+   rectangular MM1/MM2 dimensions, broader changed N/K dimensions, and
+   mixed-engine graphs.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;

@@ -1,0 +1,162 @@
+{
+  "compared": {
+    "c1_e8m0_scales": 48,
+    "c1_fp8_codes": 1536,
+    "c2_e8m0_scales": 48,
+    "c2_fp8_codes": 1536
+  },
+  "compiler_revision": "f460d91f6256d7a6087f26124d6bb491edffb762",
+  "files": {
+    "capture/nicolas_chain.handoff.mlir.gz": {
+      "bytes": 2410,
+      "compressed": true,
+      "sha256": "ee5e3656ab92c8d5ded6ff40b517b612707955e9ddce9d02d08a35c5a39c01c4"
+    },
+    "capture/nicolas_chain.model2mlir.mlir.gz": {
+      "bytes": 245769,
+      "compressed": true,
+      "sha256": "9b14095d9e4b85c30bc9897db1df3cba943a1251358c935b26519e9acd45936c"
+    },
+    "capture/nicolas_chain.profile_bound.mlir.gz": {
+      "bytes": 3096,
+      "compressed": true,
+      "sha256": "3a5cbaa50b00270bdf7a6c3d6ca5e8af0defb910eb12095b77866465fd5b0dbe"
+    },
+    "capture/quantization_manifest.json.gz": {
+      "bytes": 1010,
+      "compressed": true,
+      "sha256": "ea2663cf24f416a8850d8b2bb175c6f1ec1ce7f54d44b2ad294f075a31b95463"
+    },
+    "capture/receipt.json": {
+      "bytes": 2028,
+      "compressed": false,
+      "sha256": "06eb953616966f04c4dcf272d2418dea9892c45d6a8bc386b3a33de98826bda0"
+    },
+    "linked/linked.elf.gz": {
+      "bytes": 44256,
+      "compressed": true,
+      "sha256": "b34bc7397ac3308c7d72a860ba5e2d3165ee97b89f9f764accd5978b3cf848c4"
+    },
+    "linked/qualification_manifest.json": {
+      "bytes": 1356,
+      "compressed": false,
+      "sha256": "f3732e42ca90906366a99bf44971c9c1672703d7bb68834e4007483d11b51952"
+    },
+    "linked/spike.log": {
+      "bytes": 114,
+      "compressed": false,
+      "sha256": "c68ff00e01f9e34f6a6b9146c5b2eb790eedf0659ea29985934868dacc716582"
+    },
+    "object/compile_manifest.json": {
+      "bytes": 1085,
+      "compressed": false,
+      "sha256": "c328ab79f68dfc32ea9887f51fe39340af17b0550e5743c1fb35d243c0341594"
+    },
+    "object/mx_issue.c.gz": {
+      "bytes": 18304,
+      "compressed": true,
+      "sha256": "80e8552a4373c2b845b1718c448b1dd9244b9712b0d035a5b48af20bccbcf67b"
+    },
+    "object/mx_issue.h": {
+      "bytes": 371,
+      "compressed": false,
+      "sha256": "872a702ab7e8d6a8de76efb325a27f98a409b38f921c08c683c26bac240261d7"
+    },
+    "object/mx_issue.o.gz": {
+      "bytes": 3248,
+      "compressed": true,
+      "sha256": "bf0b57ceb047887068ec896db9999072976a654c9a15355726547df42f74cf0e"
+    },
+    "object/object_manifest.json": {
+      "bytes": 4844,
+      "compressed": false,
+      "sha256": "44272fc2477039cfaff2993516d1cc2b040f298d1dafff255b9655c4b493295f"
+    },
+    "object/physical_program.json.gz": {
+      "bytes": 48677,
+      "compressed": true,
+      "sha256": "18512b71203d82ed18e9e030860da106b941fb7b3ddf3506d5f5e169bd583d25"
+    },
+    "reference/a1_activation.bin.gz": {
+      "bytes": 1536,
+      "compressed": true,
+      "sha256": "e5f188700f7612deae1cb1b96b9989df1a219cca7442dc87cbab7c86b3d9d9c4"
+    },
+    "reference/a1_scales.bin.gz": {
+      "bytes": 48,
+      "compressed": true,
+      "sha256": "94527e52911579bbbdfa333d54d778aa8af37be9cf6f4798a67b8192aab22e33"
+    },
+    "reference/artifact_manifest.json": {
+      "bytes": 3615,
+      "compressed": false,
+      "sha256": "00c366a662977c3e9c7f6c5a62b2a2de1891ee39f142aa058faad6773223a6bd"
+    },
+    "reference/b1_scales.bin.gz": {
+      "bytes": 288,
+      "compressed": true,
+      "sha256": "84f763b22b6155a62c87202a5d3326fabb17da45e42cba646b65537884a82b96"
+    },
+    "reference/b1_weight.bin.gz": {
+      "bytes": 9216,
+      "compressed": true,
+      "sha256": "380faaceaffcb84f8a98798c42bb39ce024d6a7489e9518efa25a75242391fd8"
+    },
+    "reference/b2_scales.bin.gz": {
+      "bytes": 288,
+      "compressed": true,
+      "sha256": "09289e74e699595e6e070c4e97f314f515828b9fd54b05eb7d9f2b71dacf23a2"
+    },
+    "reference/b2_weight.bin.gz": {
+      "bytes": 9216,
+      "compressed": true,
+      "sha256": "b665e788fe3d6a57e5157c95a31a087fd536ca518a4ad7645ab61378da1aa714"
+    },
+    "reference/c1_codes_ref.bin.gz": {
+      "bytes": 1536,
+      "compressed": true,
+      "sha256": "4ff967b867403e2b0b04e6af1f36e7f61f89572a7b0657fe6c2cbd89c006a250"
+    },
+    "reference/c1_scales_ref.bin.gz": {
+      "bytes": 48,
+      "compressed": true,
+      "sha256": "bfa5beea842938a4bfa97ddac52e1d93f4d87d910611db3c8854916606978e39"
+    },
+    "reference/c2_codes_ref.bin.gz": {
+      "bytes": 1536,
+      "compressed": true,
+      "sha256": "f7d935a5a8ff2666269c14ac221a76bd94f3a5e3eb7605ac437269d7d19d30ee"
+    },
+    "reference/c2_scales_ref.bin.gz": {
+      "bytes": 48,
+      "compressed": true,
+      "sha256": "51b485a891261d196bc3a27b24857dde68d20b4793e31dcded877677ae433bd4"
+    },
+    "reference/connected_chain.mlir.gz": {
+      "bytes": 3045,
+      "compressed": true,
+      "sha256": "cc936fb296e7002070f10f16b6e3062aa642d7b9a38395d46eb53b42887706c9"
+    },
+    "reference/mx_issue.c.gz": {
+      "bytes": 18304,
+      "compressed": true,
+      "sha256": "80e8552a4373c2b845b1718c448b1dd9244b9712b0d035a5b48af20bccbcf67b"
+    },
+    "reference/spike.log": {
+      "bytes": 114,
+      "compressed": false,
+      "sha256": "c68ff00e01f9e34f6a6b9146c5b2eb790eedf0659ea29985934868dacc716582"
+    }
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "reference_kind": "source_wire_slice_with_pinned_mesh_model_outputs",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.derived_plain_pair_16x96_fresh_spike.v1",
+  "shape_mnk": [
+    16,
+    96,
+    96
+  ],
+  "status": "derived_source_connected_object_matched_on_pinned_spike"
+}
