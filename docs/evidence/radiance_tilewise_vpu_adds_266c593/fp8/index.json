@@ -1,0 +1,46 @@
+{
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "8478ac25e7165516fedaf45a8c29d8ac4de9b3e2",
+  "compiler_source_closure_sha256": "301506fd763b8a7d3475e3d399f3faaae57ac27dceb21f6fdc182e86f0fcb458",
+  "elf_sha256": "6b9485f5ed96880fb6215ad399660f7c21cc2a12e7f8c54caf14368d73845765",
+  "epilogue": "adds",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "build/artifact_manifest.json": "ed67e8da76e496834c2e4ce2d31da88fe6ac800f6c3956fac48ac509875cd56a",
+    "build/mx_driver.c": "cdc9c80d6df6b7a90d931791bd516e3c45cb7216f451780dbee3c37744c5d413",
+    "build/mx_issue.c": "b30d2deb7e956e10625c62e62acf1f60d9e4645f1fc7811ca2e3a1b8e4a223bc",
+    "build/physical_program.json": "2a6eae93c8fb85f3287cdadcd90b69da857cc7a213f38be9494f462a9d5571ff",
+    "build/spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+    "bundle/manifest.json": "60666977db968c962a51481f9e4ac8217c5f723e1bed68611c99ae0f4d671d91",
+    "capture_trace.json": "99f5d04e957b3d007ad14bf359f3dbcfe4ce8ac7631dd218cc81f83a60a1fef3",
+    "frontend.mlir": "13430b0192d3cb067fbb72e0bb139599221b6a8c74029c9df38b473e8b1d53b9",
+    "handoff.mlir": "f4138279bf04843b24963cd927ee29f48ae778fad9874a843dccb3c8d57be4c3",
+    "payload_bound.mlir": "77cc7c58a4396e7707341f3bf8a7ee2bf7d6e039be8d89cfd09e26b34a7ec8b4",
+    "profile_bound.mlir": "e07635f700cb117bf47b9b33af602457937bd5dd947ff13e59915e0c8ce8a62b",
+    "quantization_manifest.json": "893761ab2974c0b4b6f69a80431ef70a7df146edfc4a414c91263486abce9622",
+    "tilewise_bound.mlir": "35018a75f0c34d5602058a33d7b28c0c3c4ab07d76644103ef1a1242c1a8c093"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "output_tiles": 4,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "scalar_bf16_bits": 16320,
+  "scalar_value": 1.5,
+  "schema": "mx_gemmini.radiance_tilewise_vpu_adds_spike.v1",
+  "shape_mnk": [
+    256,
+    256,
+    256
+  ],
+  "source_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+  "source_header_sha256": "d61f5358db4f6e39e51e0cf7f9867e393a67ce0c1b4d41c596d73a72d2496c70",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "source_derived_vpu_adds_matched_on_pinned_spike",
+  "tile_mnk": [
+    128,
+    128,
+    256
+  ],
+  "vpu_commands": 4
+}

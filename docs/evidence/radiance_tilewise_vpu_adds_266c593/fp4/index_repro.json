@@ -1,0 +1,58 @@
+{
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "8478ac25e7165516fedaf45a8c29d8ac4de9b3e2",
+  "compiler_source_closure_sha256": "301506fd763b8a7d3475e3d399f3faaae57ac27dceb21f6fdc182e86f0fcb458",
+  "elf_sha256": "fa7108cb00bc9ca2d3ba95b47c99bfc2c2e6a5d1e63194644c03e102360560e1",
+  "epilogue": "adds",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "build/artifact_manifest.json": "3060062bf3f3f658e3e85182e63626c8a81d52c992d777588ae1c4f905e2eeb3",
+    "build/mx_driver.c": "cdc9c80d6df6b7a90d931791bd516e3c45cb7216f451780dbee3c37744c5d413",
+    "build/mx_issue.c": "a0a3bab2acd3257fbf6bb7bcf563bb5989576b7e4abdbe7444fafb977809ac63",
+    "build/physical_program.json": "665f3909ae0536d68af2d636bd7ee6e7e8c847cdbf47e075a812cf84c8ca9253",
+    "build/spike.log": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+    "bundle/manifest.json": "98a8976a536d5826940bdc21d9a6f8feee395d0b446ac7e6354718d50a58cd21",
+    "capture_trace.json": "6f8ceab7d1bceb74f262eb2f4b1df50dfbf32e4134c384c6bdf0ac139fb03e2b",
+    "fixture/kernels/gemm_mxgemmini/mxgemm.data.fp4.m256n256k256.h": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+    "fixture/kernels/gemm_mxgemmini/mxgemm.fp4.m256n256k256.tm128tn128tk128.fullout.cpp": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
+    "frontend.mlir": "e5d5290a1e184872ebb1a151ad99abdb0df0799a39565df61af2020a6cbd5921",
+    "handoff.mlir": "b94d641b8331bb15f7f163aaf0f8e07b4c90231af60bd6545a3d3d52ce744fc0",
+    "payload_bound.mlir": "7476d2026f95946341bac83013dce4baf15e07d00342f99b2bae6eb544bd5bbd",
+    "profile_bound.mlir": "8898bd533a4537620506d2a1890c780063c524101c5dffdab1bd6bf710baab9e",
+    "quantization_manifest.json": "570e5f3513814c6e4ca632749c1a6ce34fb77f4bdfa0eaba94a7306220b72a02",
+    "tilewise_bound.mlir": "27fa11d64585669426a5249b549f86febd5159f73655fbb15252212639548d38"
+  },
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "output_tiles": 4,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "scalar_bf16_bits": 16320,
+  "scalar_value": 1.5,
+  "schema": "mx_gemmini.radiance_generated_fp4_tilewise_vpu_adds_spike.v1",
+  "scope": "derived FP4 fixture; no committed Radiance driver or source ELF parity",
+  "shape_mnk": [
+    256,
+    256,
+    256
+  ],
+  "source_derivation": {
+    "base_driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+    "derived_driver_sha256": "e8e5d52682a32b2e22a52611f6bf5607a2c4f9a02f6b3274946f8bf83dc55ebb",
+    "generated_header_sha256": "5eaa3b83ca451eea8ddad9d74c4f1c103b0adfa83f3af8082dfba68e9c98fc25",
+    "golden_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "golden_model_sha256": "da25bd520b0a1d694743a3224cc3f368dcc102902044c1c8a8da583cd4431747",
+    "schema": "mx_gemmini.radiance_generated_fp4_gemm_fixture.v1",
+    "source_generator_sha256": "5e405988edf10a9c25a12a6111599cfa93963b0e2586bc9fc2fad30f7b4abef7",
+    "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+    "transformation": "fp8_m256n256k256_tk256_to_fp4_tk128_with_activation_alias_v2"
+  },
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "generated_fp4_fixture_vpu_adds_matched_on_pinned_spike",
+  "tile_mnk": [
+    128,
+    128,
+    128
+  ],
+  "vpu_commands": 4
+}

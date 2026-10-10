@@ -86,6 +86,10 @@ The [executed source-tile check](compiled_mx_pipeline.md#executed-generated-fp4-
 confirms four separate Muon/MX tiles against the same generated golden on
 Cyclotron. The naive 256×256 source driver itself does not implement four
 output tiles, so this is a derived source decomposition.
+The [captured scalar ADDS case](compiled_mx_pipeline.md#captured-bf16-scalar-adds-across-four-mx-output-tiles)
+binds `matmul + 1.5` to one VPU command per output tile. FP8 and generated FP4
+each match all 65,536 BF16 outputs on Nicolas's pinned Spike in two builds.
+The FP8 general source CLI independently reproduces the captured program.
 General scheduling remains open. Selected FP8+VPU and FP4+VPU physical
 programs issue through Muon MMIO and each match all 65,536 BF16 outputs on
 an isolated patched Cyclotron functional model in two independent builds.

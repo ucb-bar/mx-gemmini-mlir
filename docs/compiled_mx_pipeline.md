@@ -2020,7 +2020,7 @@ The Radiance C driver supplies the GEMM operands and BF16 matrix golden; its
 source does not contain the scalar epilogue. The 1.5 result is therefore parity
 with the captured graph's derived BF16 output on the selected source operands,
 not parity with a source-built Radiance ELF. The current binder recognizes one
-scalar MULS epilogue after one contraction. General graph-level epilogue
+scalar MULS or ADDS epilogue after one contraction. General graph-level epilogue
 lowering and scratchpad lifetime planning remain open.
 
 Reproduce with the same pinned checkouts and generated source header as the ×2
@@ -2062,6 +2062,59 @@ from compiler `b5637a3` reproduce the previously archived bound MLIR, source
 bundle, physical program, generated issuer, ELF, Spike log, and all 65,536
 outputs. This is a supported narrow graph pattern; the general source CLI
 still requires an explicit source payload and selected target profile.
+
+## Captured BF16 scalar ADDS across four MX output tiles
+
+The capture adapter also recognizes a single `torch.matmul(lhs, rhs) + scalar`
+graph and lowers the captured addition to one in-place VPU `ADDS` command per
+output tile. It verifies the original `aten.add.Tensor` node, its scalar and
+empty keyword arguments, the model2MLIR handoff digest, and the BF16 immediate
+before binding the typed MX operations. A nondefault `alpha` is rejected.
+The physical lowerer checks the scalar against the VPU command and derives
+the full BF16 output with Nicolas's round-to-nearest-even scalar arithmetic.
+
+For **1.5** (`0x3fc0`), two independent builds of each FP8 and FP4 program
+from compiler `8478ac2` matched **65,536 / 65,536 BF16 outputs** on Nicolas's
+RTL `266c593` pinned Spike extension. The [FP8 evidence](evidence/radiance_tilewise_vpu_adds_266c593/fp8/index.json),
+[FP4 evidence](evidence/radiance_tilewise_vpu_adds_266c593/fp4/index.json), and
+[regression test](../tests/test_tilewise_vpu_adds_evidence.py) connect the
+PyTorch capture, typed MLIR, bound payload, four physical ADDS commands,
+generated C, ELF, and simulator receipts. An independent host comparison
+matched `vpu_ref.h` for every **65,280 finite BF16 input code** with each of
+five scalars: `0x3fc0`, `0x3f00`, `0xbf80`, `0x0001`, and `0x7f7f`.
+The [general source CLI receipt](evidence/radiance_tilewise_vpu_adds_266c593/fp8/cli_capture_index.json)
+records two more capture-driven FP8 Spike builds; their MLIR, bundle,
+physical commands, C issuer, ELF, Spike log, and full output match the FP8
+qualifier. The only receipt difference is the path-bearing link log hash.
+
+The FP8 GEMM operands and matrix golden come from Radiance source `80f84ca`;
+the addition exists in the captured PyTorch graph, not in that C driver.
+The FP4 256×256 fixture is generated from pinned Radiance code and has no
+committed matching C driver. These results establish source-derived numerical
+parity for this graph pattern, not source ELF parity, arbitrary epilogues,
+or a qualified FPGA bitstream. Nicolas's checked-in FP4+VPU profile includes
+direct FP8 and FP4 modes. His separate FP6 LUT profile has no VPU, so this
+work does not imply an FP6+VPU hardware configuration.
+
+With the same pinned inputs shown in the scalar MULS example, reproduce the
+selected addition by adding `--epilogue adds`:
+
+```sh
+python -m tools.qualify_radiance_tilewise_vpu_x2 \
+  --model2mlir-root /path/to/model2MLIR-e9ded36 \
+  --mxq-root /path/to/microscaling-quant-b4af543 \
+  --source-root /path/to/radiance-kernels-80f84ca \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --epilogue adds --scalar-bits 0x3fc0 \
+  --out-dir /tmp/radiance-tilewise-vpu-adds-1p5
+```
+
+The generated FP4 fixture uses the same options with
+`tools.qualify_radiance_fp4_derived_tilewise_vpu_x2`. The general
+`tools.qualify_source_mx --tilewise-vpu-from-capture` invocation above selects
+ADDS directly from its supplied capture sidecars.
 
 ## Generated four-tile FP4 GEMM with tilewise VPU epilogue
 

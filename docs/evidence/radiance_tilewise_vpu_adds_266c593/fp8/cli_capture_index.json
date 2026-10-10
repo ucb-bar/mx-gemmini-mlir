@@ -1,0 +1,19 @@
+{
+  "artifact_manifest_sha256": [
+    "b82383aa30c26e98871154f5aff9d5e0e32ba934f92fa0a9c24654fd58683833",
+    "7d32d6e5fbd443a3f8b7b25a515588e9bc48fea3554b9b9e78b997589c97894a"
+  ],
+  "bound_mlir_sha256": "35018a75f0c34d5602058a33d7b28c0c3c4ab07d76644103ef1a1242c1a8c093",
+  "capture_scalar_bf16": 16320,
+  "compared_bf16_outputs": 65536,
+  "compiler_revision": "8478ac25e7165516fedaf45a8c29d8ac4de9b3e2",
+  "compiler_source_closure_sha256": "301506fd763b8a7d3475e3d399f3faaae57ac27dceb21f6fdc182e86f0fcb458",
+  "elf_sha256": "6b9485f5ed96880fb6215ad399660f7c21cc2a12e7f8c54caf14368d73845765",
+  "generated_issue_sha256": "b30d2deb7e956e10625c62e62acf1f60d9e4645f1fc7811ca2e3a1b8e4a223bc",
+  "physical_program_sha256": "2a6eae93c8fb85f3287cdadcd90b69da857cc7a213f38be9494f462a9d5571ff",
+  "schema": "mx_gemmini.capture_derived_source_cli_adds_spike.v1",
+  "scope": "Radiance FP8 matrix source and captured scalar addition; source driver does not contain VPU scalar operation",
+  "source_index_sha256": "786e65284d34dc52ccdafb9ced0a1a13d904786c963e8fa1ce34cdc3e44feaf1",
+  "spike_log_sha256": "2b92852eb2490169a16f9ae398140fc81478a724215482411c1f508c93c5aa09",
+  "status": "two_capture_derived_adds_cli_runs_matched_on_pinned_spike"
+}

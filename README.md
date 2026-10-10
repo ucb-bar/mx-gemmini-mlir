@@ -75,6 +75,11 @@ The [four-tile FP4 variant](docs/compiled_mx_pipeline.md#generated-four-tile-fp4
 also matches 65,536 BF16 outputs on pinned Spike. It uses Radiance's pinned
 generator and golden model to create a new 256×256 FP4 fixture; Radiance has
 no committed driver for this case, so this result does not claim source ELF parity.
+The [captured scalar addition](docs/compiled_mx_pipeline.md#captured-bf16-scalar-adds-across-four-mx-output-tiles)
+now lowers `matmul + 1.5` through four VPU ADDS commands for FP8 and generated
+FP4. Two independent Spike builds per precision match all 65,536 derived BF16
+outputs. The general source CLI also reproduces the FP8 capture-driven program
+and result twice.
 The [Cyclotron source check](docs/compiled_mx_pipeline.md#executed-generated-fp4-source-tiles-on-cyclotron)
 finds that the derived 256×256 Muon driver builds but computes only one output
 tile. Four separately built source-derived 128×128 tiles reassemble to the
