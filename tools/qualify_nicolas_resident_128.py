@@ -1,8 +1,11 @@
-"""Lower Nicolas's typed 128³ resident MM2 and check all outputs on Spike.
+"""Lower Nicolas's typed plain resident pair and check all outputs on Spike.
 
 This source-bound stage preloads the checked C1 codes and transposed C1 scales.
 It proves the resident MM2 command lowering, not compilation of MM1. The
-source's complete MM1→MM2 chain is a separate connected-graph gate.
+source's complete MM1→MM2 chain is a separate connected-graph gate. The
+16x96x96 mode slices the checked 128³ wire inputs and uses a pinned numerical
+model to derive new C1/C2 outputs, after validating that model against the
+unchanged 128³ source goldens.
 """
 
 from __future__ import annotations
@@ -17,8 +20,7 @@ import subprocess
 
 from mx_gemmini_support.command_ir import Command, Fence, Operand, emit_c
 from mx_gemmini_support.physical_program import _cmd, _config_ld, _config_st, _transfer
-from mx_gemmini_support.plain_chain_128 import (lower_plain_chain_128,
-                                                render_plain_chain_128)
+from mx_gemmini_support.plain_chain_128 import lower_plain_chain, render_plain_chain
 from mx_gemmini_support.resident_lowering import lower_single_resident_contract
 from mx_gemmini_support.source_fp6 import _array
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -148,15 +150,15 @@ def _commands(mlir: str, profile: dict) -> tuple[Command | Fence, ...]:
 
 def _connected_commands(mlir: str, frontend: str, manifest: dict,
                         profile: dict, resources: dict[str, bytes],
-                        source: Path, header: Path) -> tuple[Command | Fence, ...]:
-    return lower_plain_chain_128(
+                        source: Path, header: Path, *, width: int = 128) -> tuple[Command | Fence, ...]:
+    return lower_plain_chain(
         mlir, frontend, manifest, profile, resources,
-        source_sha256=_sha(source), header_sha256=_sha(header))
+        source_sha256=_sha(source), header_sha256=_sha(header), width=width)
 
 
 def _write_sources(directory: Path, commands: tuple[Command | Fence, ...],
                    resources: dict[str, bytes], *, with_mm1: bool = False,
-                   source_rows: int = 128) -> dict:
+                   source_rows: int = 128, width: int = 128) -> dict:
     directory.mkdir()
     referenced = {operand.buffer for command in commands if isinstance(command, Command)
                   for operand in (command.rs1, command.rs2) if operand.buffer is not None}
@@ -168,7 +170,7 @@ def _write_sources(directory: Path, commands: tuple[Command | Fence, ...],
     (directory / "mx_issue.c").write_text(
         emit_c(commands, transport="rocket_rocc", buffers=names))
     if with_mm1:
-        code_count, scale_count = source_rows * 128, source_rows * 4
+        code_count, scale_count = source_rows * width, source_rows * (width // 32)
         declarations = "\n".join(f"extern const uint8_t {name}[];" for name in sorted(resources))
         driver = f'''#include <stdint.h>
 #include <stdio.h>
@@ -183,16 +185,16 @@ int main(void) {{
   mx_issue({", ".join(names)});
   int c1_codes = 0, c1_scale_errors = 0, c2_codes = 0, c2_scale_errors = 0;
   for (uint32_t row = 0; row < {source_rows}; ++row)
-    for (uint32_t col = 0; col < 128; ++col) {{
-      uint32_t tiled = (((row / 16) * 8 + col / 16) * 16 + row % 16) * 16 + col % 16;
-      c1_codes += c1_tiled_observed[tiled] != c1_codes_ref[row * 128 + col];
-      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * 128 + col];
+    for (uint32_t col = 0; col < {width}; ++col) {{
+      uint32_t tiled = (((row / 16) * {width // 16} + col / 16) * 16 + row % 16) * 16 + col % 16;
+      c1_codes += c1_tiled_observed[tiled] != c1_codes_ref[row * {width} + col];
+      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * {width} + col];
     }}
   for (uint32_t i = 0; i < {scale_count}; ++i) {{
     c1_scale_errors += c1_scales[i] != c1_scales_ref[i];
     c2_scale_errors += c2_scales[i] != c2_scales_ref[i];
   }}
-  printf("lowered connected {source_rows}x128: C1 %d codes %d scales; C2 %d codes %d scales\\n",
+  printf("lowered connected {source_rows}x{width}: C1 %d codes %d scales; C2 %d codes %d scales\\n",
          c1_codes, c1_scale_errors, c2_codes, c2_scale_errors);
   return c1_codes || c1_scale_errors || c2_codes || c2_scale_errors;
 }}
@@ -234,8 +236,8 @@ int main(void) {{
     assembly.append('.section .note.GNU-stack,"",@progbits')
     (directory / "mx_data.S").write_text("\n".join(assembly) + "\n")
     physical = {
-        "schema": ((f"mx_gemmini.connected_plain_chain_{source_rows}x128_physical.v1"
-                    if source_rows != 128 else
+        "schema": ((f"mx_gemmini.connected_plain_chain_{source_rows}x{width}_physical.v1"
+                    if (source_rows, width) != (128, 128) else
                     "mx_gemmini.connected_plain_chain_128_physical.v1") if with_mm1 else
                    "mx_gemmini.resident_mm2_128_physical.v1"),
         "ordered_functs": [item.funct for item in commands if isinstance(item, Command)],
@@ -258,6 +260,8 @@ def main() -> None:
     parser.add_argument("--source-rows", type=int, choices=tuple(range(16, 129, 16)),
                         default=128,
                         help="complete 16-row prefix of Nicolas's 128³ source; prefixes require a connected capture")
+    parser.add_argument("--source-width", type=int, choices=(96, 128), default=128,
+                        help="96 uses a pinned model-derived slice of the 128³ source wire data")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated program and Spike output")
     args = parser.parse_args()
@@ -275,10 +279,17 @@ def main() -> None:
     source = software / "bareMetalC/matmul_tiled_fp8_128x128_chain.c"
     header = software / "include/matmul_fp8_128x128_chain.h"
     connected = args.connected_frontend_dir is not None
+    if args.source_width == 96 and (not connected or args.source_rows != 16):
+        parser.error("the 96-wide derived fixture requires a connected 16-row capture")
     if not connected and args.source_rows != 128:
         parser.error("a source row prefix requires --connected-frontend-dir")
     resources = _source_resources(source, header, with_mm1=connected,
                                   source_rows=args.source_rows)
+    if args.source_width == 96:
+        from mx_gemmini_support.derived_plain_chain import derive_16x96_from_128
+
+        resources = derive_16x96_from_128(
+            resources, model_path=software / "fp8_matmul_model.py")
     if connected:
         frontend_dir = args.connected_frontend_dir
 
@@ -293,8 +304,8 @@ def main() -> None:
         frontend_manifest = json.loads(manifest_bytes)
         capture_receipt = json.loads(frontend_bytes("receipt.json"))
         if (capture_receipt.get("schema") !=
-                "mx_gemmini.nicolas_chain_128_model2mlir_capture.v1" or
-                capture_receipt.get("matrix_dim") != 128 or
+                f"mx_gemmini.nicolas_chain_{args.source_width}_model2mlir_capture.v1" or
+                capture_receipt.get("matrix_dim") != args.source_width or
                 capture_receipt.get("output_rows", 128) != args.source_rows or
                 capture_receipt.get("profile_sha256") != profile_sha256(profile) or
                 capture_receipt.get("source_sha256") != _sha(source) or
@@ -308,11 +319,13 @@ def main() -> None:
                 capture_receipt.get("handoff_mlir_sha256") != hashlib.sha256(
                     frontend_bytes("nicolas_chain.handoff.mlir")).hexdigest()):
             raise ValueError("connected frontend capture or source provenance differs")
-        mlir = render_plain_chain_128(
+        mlir = render_plain_chain(
             frontend, frontend_manifest, profile, resources,
-            source_sha256=_sha(source), header_sha256=_sha(header))
+            source_sha256=_sha(source), header_sha256=_sha(header),
+            width=args.source_width)
         commands = _connected_commands(
-            mlir, frontend, frontend_manifest, profile, resources, source, header)
+            mlir, frontend, frontend_manifest, profile, resources, source, header,
+            width=args.source_width)
     else:
         mlir = _render_mlir(profile, source, header)
         commands = _commands(mlir, profile)
@@ -324,7 +337,7 @@ def main() -> None:
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
     build = args.out_dir / "build"
     files = _write_sources(build, commands, resources, with_mm1=connected,
-                           source_rows=args.source_rows)
+                           source_rows=args.source_rows, width=args.source_width)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -363,14 +376,14 @@ def main() -> None:
                             stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    marker = (f"lowered connected {args.source_rows}x128: C1 0 codes 0 scales; "
+    marker = (f"lowered connected {args.source_rows}x{args.source_width}: C1 0 codes 0 scales; "
               "C2 0 codes 0 scales"
               if connected else
               "lowered resident MM2 128x128: 0 FP8 code mismatches, 0 E8M0 scale mismatches")
     passed = result.returncode == 0 and marker in result.stdout
     receipt = {
-        "schema": ((f"mx_gemmini.nicolas_connected_plain_chain_{args.source_rows}x128.v1"
-                    if args.source_rows != 128 else
+        "schema": ((f"mx_gemmini.nicolas_connected_plain_chain_{args.source_rows}x{args.source_width}.v1"
+                    if (args.source_rows, args.source_width) != (128, 128) else
                     "mx_gemmini.nicolas_connected_plain_chain_128.v1") if connected else
                    "mx_gemmini.nicolas_resident_mm2_128.v1"),
         "status": (("source_prefix_connected_chain_matched_on_pinned_spike" if passed else
@@ -395,19 +408,28 @@ def main() -> None:
         "elf_sha256": _sha(elf), "extension_sha256": _sha(so),
         "object_sha256": {path.name: _sha(path) for path in objects},
         "spike_log_sha256": _sha(log), "spike_exit_code": result.returncode,
-        "compared_fp8_codes": args.source_rows * 128,
-        "compared_e8m0_scales": args.source_rows * 4,
+        "compared_fp8_codes": args.source_rows * args.source_width,
+        "compared_e8m0_scales": args.source_rows * (args.source_width // 32),
         "files_sha256": files,
     }
     if connected:
         receipt["frontend_mlir_sha256"] = hashlib.sha256(frontend.encode()).hexdigest()
-        receipt["compared_c1_fp8_codes"] = args.source_rows * 128
-        receipt["compared_c1_e8m0_scales"] = args.source_rows * 4
+        receipt["compared_c1_fp8_codes"] = args.source_rows * args.source_width
+        receipt["compared_c1_e8m0_scales"] = args.source_rows * (args.source_width // 32)
         if args.source_rows != 128:
             receipt["source_rows"] = args.source_rows
             receipt["scope"] = (
                 f"first {args.source_rows} independent output rows of Nicolas's 128³ packed source; "
                 "typed MM1 C1 and scales remain resident for typed MM2")
+    if args.source_width == 96:
+        receipt["status"] = ("derived_source_connected_chain_matched_on_pinned_spike"
+                             if passed else "derived_source_connected_chain_failed_on_pinned_spike")
+        receipt["scope"] = (
+            "16x96x96 wire slice of Nicolas's 128³ source; 128³ model outputs first "
+            "rechecked against unchanged source goldens, then 96-wide C1/C2 "
+            "compared against the pinned mesh-model derived reference")
+        receipt["source_width"] = 96
+        receipt["model_sha256"] = _sha(software / "fp8_matmul_model.py")
     (build / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     if args.baseline_manifest:

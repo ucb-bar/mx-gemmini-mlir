@@ -1,8 +1,9 @@
-"""Link a data-free resident-pair object to Nicolas's source comparison harness.
+"""Link a data-free resident-pair object to Nicolas's comparison harness.
 
 The checked source frontend and packed header build the harness. The linked
 program uses the supplied object as its only MX command issuer, then compares
-all C1/C2 codes and scales on the selected stock Spike extension.
+all C1/C2 codes and scales on the selected stock Spike extension. The 96-wide
+case uses a checked source-wire slice and a pinned model-derived reference.
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--source-rows", type=int, choices=tuple(range(16, 129, 16)),
                         required=True)
+    parser.add_argument("--source-width", type=int, choices=(96, 128), default=128)
     parser.add_argument("--baseline-manifest", type=Path)
     args = parser.parse_args()
     if args.out_dir.exists():
@@ -43,7 +45,8 @@ def main() -> None:
     if (object_receipt.get("schema") !=
             "mx_gemmini.resident_pair_linkable_object.v1" or
             object_receipt.get("status") != "rv64_rocc_resident_pair_object_built" or
-            object_receipt.get("shape_mnk") != [args.source_rows, 128, 128] or
+            object_receipt.get("shape_mnk") != [args.source_rows, args.source_width,
+                                                 args.source_width] or
             object_receipt.get("profile_sha256") != profile_sha256(profile) or
             object_receipt.get("object_sha256") != _sha(obj) or
             object_receipt.get("allocated_data_section_bytes") != 0 or
@@ -63,6 +66,7 @@ def main() -> None:
                "--profile", str(args.profile.resolve()),
                "--connected-frontend-dir", str(args.frontend_dir.resolve()),
                "--source-rows", str(args.source_rows),
+               "--source-width", str(args.source_width),
                "--out-dir", str(reference)]
     if args.mx_opt:
         command += ["--mx-opt", str(args.mx_opt.resolve())]
@@ -71,8 +75,9 @@ def main() -> None:
     reference_receipt = json.loads(reference_receipt_path.read_text())
     source_issuer = reference / "build/mx_issue.c"
     if (reference_receipt["spike_exit_code"] != 0 or
-            reference_receipt["compared_fp8_codes"] != args.source_rows * 128 or
-            reference_receipt["compared_e8m0_scales"] != args.source_rows * 4 or
+            reference_receipt["compared_fp8_codes"] != args.source_rows * args.source_width or
+            reference_receipt["compared_e8m0_scales"] !=
+            args.source_rows * (args.source_width // 32) or
             object_receipt["issuer_c_sha256"] != _sha(source_issuer) or
             object_receipt["bound_mlir_sha256"] !=
             reference_receipt["bound_mlir_sha256"] or
@@ -99,18 +104,21 @@ def main() -> None:
         stderr=subprocess.STDOUT, check=False)
     log = args.out_dir / "spike.log"
     log.write_text(result.stdout)
-    marker = (f"lowered connected {args.source_rows}x128: C1 0 codes 0 scales; "
+    marker = (f"lowered connected {args.source_rows}x{args.source_width}: C1 0 codes 0 scales; "
               "C2 0 codes 0 scales")
     passed = result.returncode == 0 and marker in result.stdout
     receipt = {
         "schema": "mx_gemmini.resident_pair_object_spike.v1",
-        "status": ("source_connected_object_matched_on_pinned_spike" if passed else
-                   "source_connected_object_failed_on_pinned_spike"),
-        "shape_mnk": [args.source_rows, 128, 128],
-        "compared_c1_fp8_codes": args.source_rows * 128,
-        "compared_c1_e8m0_scales": args.source_rows * 4,
-        "compared_c2_fp8_codes": args.source_rows * 128,
-        "compared_c2_e8m0_scales": args.source_rows * 4,
+        "status": (("derived_source_connected_object_matched_on_pinned_spike" if passed else
+                    "derived_source_connected_object_failed_on_pinned_spike")
+                   if args.source_width == 96 else
+                   ("source_connected_object_matched_on_pinned_spike" if passed else
+                    "source_connected_object_failed_on_pinned_spike")),
+        "shape_mnk": [args.source_rows, args.source_width, args.source_width],
+        "compared_c1_fp8_codes": args.source_rows * args.source_width,
+        "compared_c1_e8m0_scales": args.source_rows * (args.source_width // 32),
+        "compared_c2_fp8_codes": args.source_rows * args.source_width,
+        "compared_c2_e8m0_scales": args.source_rows * (args.source_width // 32),
         "object_manifest_sha256": _sha(object_manifest_path),
         "object_sha256": _sha(obj),
         "source_reference_manifest_sha256": _sha(reference_receipt_path),
@@ -122,6 +130,9 @@ def main() -> None:
         "rtl_revision": _git_revision(args.rtl_root),
         "spike_sha256": _sha(spike),
     }
+    if args.source_width == 96:
+        receipt["reference_kind"] = "source_wire_slice_with_pinned_mesh_model_outputs"
+        receipt["model_sha256"] = reference_receipt["model_sha256"]
     (args.out_dir / "qualification_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     if args.baseline_manifest is not None:

@@ -1,8 +1,9 @@
-"""Capture Nicolas's two 64³ MX+VPU or 128³ plain MX contractions.
+"""Capture Nicolas's two MX contractions at 64, 96, or 128 width.
 
 The PyTorch graph establishes the two contraction sites. Nicolas's checked-in
-packed tensors and scales are separate source specializations; this command
-does not claim that random PyTorch example inputs generate those bytes.
+packed tensors and scales are separate source specializations. The 96-wide
+case derives its wire bytes from the 128³ source and has model-derived outputs.
+Random PyTorch example inputs do not generate those bytes.
 """
 
 from __future__ import annotations
@@ -32,13 +33,15 @@ def main() -> None:
     parser.add_argument("--profile", required=True, type=Path)
     parser.add_argument("--mx-opt", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
-    parser.add_argument("--matrix-dim", type=int, choices=(64, 128), default=64)
+    parser.add_argument("--matrix-dim", type=int, choices=(64, 96, 128), default=64)
     parser.add_argument("--output-rows", type=int, choices=tuple(range(16, 129, 16)),
                         help="row prefix of Nicolas's 128³ plain MX source")
     args = parser.parse_args()
     output_rows = args.output_rows or args.matrix_dim
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
+    if args.matrix_dim == 96 and output_rows != 16:
+        parser.error("the 96³ source-derived fixture has only 16 rows")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     root = Path(__file__).resolve().parents[1]
@@ -66,7 +69,7 @@ def main() -> None:
     if args.matrix_dim == 64 and (not profile["resources"].get("vpu") or
                                   not profile["resources"].get("spad_requant")):
         raise ValueError("selected profile cannot execute Nicolas's FP8 VPU chain")
-    if args.matrix_dim == 128 and (profile["name"] != "MxGemminiRocketConfig" or
+    if args.matrix_dim != 64 and (profile["name"] != "MxGemminiRocketConfig" or
                                    profile["resources"].get("vpu") or
                                    not profile["resources"].get("requantizer")):
         raise ValueError("selected profile cannot execute Nicolas's plain FP8 chain")
@@ -125,7 +128,7 @@ def main() -> None:
     subprocess.run([str(args.mx_opt.resolve()), str(bound), "-o", "/dev/null"], check=True)
     receipt = {
         "schema": ("mx_gemmini.nicolas_chain_model2mlir_capture.v1" if args.matrix_dim == 64
-                   else "mx_gemmini.nicolas_chain_128_model2mlir_capture.v1"),
+                   else f"mx_gemmini.nicolas_chain_{args.matrix_dim}_model2mlir_capture.v1"),
         "status": "two_site_frontend_handoff_only",
         "model2mlir_revision": _git(m2m_root), "mxq_revision": _git(mxq_root),
         "rtl_revision": _git(args.rtl_root), "software_revision": _git(software),
@@ -139,12 +142,16 @@ def main() -> None:
         "numerical_scope": "source A1/B1/B2 packed bytes and scales are not PyTorch example inputs",
         "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
     }
-    if args.matrix_dim == 128:
-        receipt["matrix_dim"] = 128
+    if args.matrix_dim != 64:
+        receipt["matrix_dim"] = args.matrix_dim
     if output_rows != args.matrix_dim:
         receipt["output_rows"] = output_rows
         receipt["numerical_scope"] = (
             "row-prefix specialization of Nicolas's checked-in 128³ packed source")
+    if args.matrix_dim == 96:
+        receipt["numerical_scope"] = (
+            "96-wide slice of Nicolas's checked-in 128³ packed inputs; "
+            "both outputs require a separate pinned mesh-model reference")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 
