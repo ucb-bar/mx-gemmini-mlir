@@ -86,7 +86,20 @@ def main() -> None:
          cwd=out, log=out / "native_verify.log")
     build = out / "build"
     build.mkdir()
-    (build / "mx_issue.c").write_text(issuer)
+    abi = out / "softmax_buffer_abi.json"
+    abi.write_text(json.dumps({
+        "schema": "mx_gemmini.vpu_softmax_buffer_map.v1",
+        "inputs": {"score": "score"}, "outputs": {"output": "output"},
+    }, indent=2, sort_keys=True) + "\n")
+    compiled = out / "object"
+    _run([sys.executable, "-m", "tools.compile_object", "--mlir", str(bound_path),
+          "--profile", str(args.profile), "--rtl-root", str(args.rtl_root),
+          "--riscv-root", str(args.riscv_root), "--abi-json", str(abi),
+          "--mx-opt", str(args.mx_opt), "--out-dir", str(compiled)],
+         cwd=ROOT, log=out / "object_compile.log")
+    if (compiled / "mx_issue.c").read_text() != issuer:
+        raise ValueError("public object compiler changed the checked softmax issuer")
+    shutil.copyfile(compiled / "mx_issue.c", build / "mx_issue.c")
     (build / "mx_driver.c").write_text(transformed_source)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
@@ -99,9 +112,9 @@ def main() -> None:
              "-I", str(software / "riscv-tests"),
              "-I", str(software / "riscv-tests/env"),
              "-I", str(software), "-I", str(bench)]
-    sources = [build / "mx_issue.c", build / "mx_driver.c"]
+    sources = [build / "mx_driver.c"]
     sources += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
-    objects = []
+    objects = [compiled / "mx_issue.o"]
     for index, path in enumerate(sources):
         obj = build / f"mx_{index}.o"
         _run([str(riscv_cc), *flags, "-c", str(path), "-o", str(obj)],
@@ -146,6 +159,8 @@ def main() -> None:
         "frontend_mlir_sha256": _sha(frontend_path),
         "bound_mlir_sha256": _sha(bound_path),
         "binding_manifest_sha256": _sha(out / "binding_manifest.json"),
+        "object_compile_manifest_sha256": _sha(compiled / "compile_manifest.json"),
+        "object_manifest_sha256": _sha(compiled / "object_manifest.json"),
         "files_sha256": {path.name: _sha(path) for path in
                          (build / "mx_issue.c", build / "mx_driver.c")},
         "object_sha256": {path.name: _sha(path) for path in objects},

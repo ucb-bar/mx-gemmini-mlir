@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 
+from .command_ir import vpu_command
 from .target_profile import profile_sha256
 from .vector_lowering import lower_vector_commands
 from .physical_program import _cmd, _config_ld, _config_st, _transfer
@@ -137,24 +138,60 @@ def replace_source_commands(source: str) -> str:
         block, replacement, 1)
 
 
+def lower_softmax_program_from_ir(mlir: str, profile: dict, *,
+                                  score_buffer: str = "score",
+                                  output_buffer: str = "output") -> tuple:
+    """Schedule the exact typed BF16 softmax graph without a source C fixture."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.parser import Parser
+
+    from .verify_profile_ir import _operation_name, _text_attr
+
+    if score_buffer == output_buffer:
+        raise ValueError("MX softmax input and output buffers must be distinct")
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir).parse_module()
+    functions = [op for op in module.walk() if isinstance(op, FuncOp)]
+    top_level = list(module.body.block.ops)
+    if (len(functions) != 1 or len(top_level) != 1 or
+            top_level[0] is not functions[0] or len(functions[0].body.block.args) != 0):
+        raise ValueError("MX softmax object needs one argument-free function")
+    ops = list(functions[0].body.block.ops)
+    if ([_operation_name(op) for op in ops] !=
+            ["mx_gemmini.vpu_execute"] * len(STEPS) + ["func.return"] or
+            not isinstance(ops[-1], ReturnOp) or len(ops[-1].operands) != 0 or
+            any(_text_attr(op, "site_id") != f"softmax:{index}"
+                for index, op in enumerate(ops[:-1]))):
+        raise ValueError("MX softmax typed operation graph differs")
+    vector = lower_vector_commands(mlir, profile)
+    expected = tuple(vpu_command(
+        profile, kind=kind, src1_row=src1, src2_row=src2,
+        dst_row=dst, rows=rows, reduction_length=rlen, broadcast=broadcast)
+        for kind, src1, src2, dst, rows, rlen, broadcast in STEPS)
+    if vector != expected:
+        raise ValueError("typed softmax VPU schedule differs from selected lowering")
+    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+    for row in range(0, ROWS, 16):
+        commands.append(_transfer(2, score_buffer, row * 16, row))
+    commands.extend(vector)
+    for row in range(0, ROWS, 16):
+        commands.append(_transfer(3, output_buffer, row * 16, 0x0400 + row))
+    return tuple(commands)
+
+
 def lower_softmax_program(mlir: str, source: str, profile: dict) -> tuple:
-    """Schedule audited DIM16 input/output transfers around the typed VPU ops."""
+    """Check Nicolas's source schedule, then lower the typed VPU graph."""
     audit_source(source)
     if any(source.count(line) != 1 for line in (
             "gemmini_flush(0);", "gemmini_config_ld(DIM);",
             "gemmini_config_st(DIM);", "mvin_rows(S, SP_S, ROWS);",
             "mvout_rows(P_hw, SP_P, ROWS);")):
         raise ValueError("Nicolas softmax transfer schedule changed")
-    vector = lower_vector_commands(mlir, profile)
-    if len(vector) != 6 or any(command.funct != 33 for command in vector):
-        raise ValueError("typed softmax lacks six VPU operations")
-    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
-    for row in range(0, ROWS, 16):
-        commands.append(_transfer(2, "score", row * 16, row))
-    commands.extend(vector)
-    for row in range(0, ROWS, 16):
-        commands.append(_transfer(3, "output", row * 16, 0x0400 + row))
-    return tuple(commands)
+    return lower_softmax_program_from_ir(mlir, profile)
 
 
 def replace_source_program(source: str) -> str:

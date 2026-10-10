@@ -27,12 +27,14 @@ EMITTERS = {
     "resident_pair": "tools.emit_resident_pair_object",
     "resident_vpu_pair": "tools.emit_resident_vpu_object",
     "full_vpu_branch": "tools.emit_full_vpu_branch_object",
+    "vpu_softmax": "tools.emit_vpu_softmax_object",
 }
 MANIFEST_SCHEMAS = {
     "source_contract": "mx_gemmini.linkable_object.v1",
     "resident_pair": "mx_gemmini.resident_pair_linkable_object.v1",
     "resident_vpu_pair": "mx_gemmini.resident_vpu_linkable_object.v1",
     "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
+    "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
 }
 
 
@@ -54,10 +56,12 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     module = Parser(context, mlir_text).parse_module()
     source = module.attributes.get("mx.payload_binding_schema") is not None
     runtime = module.attributes.get("mx.runtime_resources_sha256") is not None
-    if source == runtime:
-        raise ValueError("MX object needs exactly one payload binding scheme")
     counts = (report["contracts"], report["resident_contracts"],
               report["vpu_commands"], report["spad_requants"])
+    if not source and not runtime and counts == (0, 0, 6, 0):
+        return "vpu_softmax", report
+    if source == runtime:
+        raise ValueError("MX object needs exactly one payload binding scheme")
     if source and counts[0] == 1 and counts[1] == 0 and report["source_resources"]:
         return "source_contract", report
     if runtime and counts == (1, 1, 0, 0):
@@ -131,6 +135,10 @@ def main() -> None:
         if args.mlir.name.endswith(".gz"):
             raise ValueError("source MX object currently needs plain .mlir")
         extra = ["--bundle", str(args.bundle.resolve())]
+    elif family == "vpu_softmax":
+        if args.bundle or args.resources_dir or args.abi_json is None:
+            raise ValueError("VPU softmax object needs --abi-json only")
+        extra = ["--abi-json", str(args.abi_json.resolve())]
     else:
         if args.bundle or args.resources_dir is None or args.abi_json is None:
             raise ValueError("connected MX object needs --resources-dir and --abi-json only")
