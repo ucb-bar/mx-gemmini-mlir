@@ -1,9 +1,10 @@
-"""Capture PyTorch matmul, specialize Nicolas's E4M3-LUT x FP4 source, run Spike.
+"""Capture PyTorch matmul, bind a Nicolas MX header, and run Spike.
 
 The PyTorch graph supplies the contraction site and shape. Its random example
-inputs do not produce the checked-in packed operands; the explicit source
-recipe changes the captured symmetric MX policy to the source's asymmetric
-formats and binds the checked-in data header separately.
+inputs do not produce the packed operands; the explicit source recipe changes
+the captured symmetric MX policy to the selected profile's formats. Named C
+tests use checked-in headers. Generated modes use Nicolas's pinned data model
+with a separate generation manifest and no replacement handwritten kernel.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import sys
 
 from mx_gemmini_support.asymmetric_specialization import (bind_asymmetric_payload,
                                                            emit_baremetal,
+                                                           generated_header_recipe,
                                                            lower_asymmetric_physical,
                                                            sha256, source_recipe,
                                                            specialize_handoff)
@@ -44,6 +46,10 @@ def main() -> None:
                         help="Nicolas's named same-format LUT source test")
     parser.add_argument("--symmetric-fp4", action="store_true",
                         help="Nicolas's named direct FP4 by FP4 BF16 source test")
+    parser.add_argument("--generated-mode", choices=(
+        "e2m3_e4m3s", "e3m2_e3m2", "e4m3s_e2m3",
+        "e4m3s_e4m3", "e4m3_e4m3s"),
+        help="DIM16 header generated with Nicolas's pinned gen_asym.py")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
     parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
@@ -76,7 +82,15 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    if args.symmetric_fp4:
+    if args.generated_mode:
+        if (args.source_suffix or args.symmetric_lut or args.symmetric_fp4 or
+                args.source_shape != "64x64" or args.mesh_dim != 16 or
+                not args.physical):
+            parser.error("generated MX mode needs DIM16 64x64 physical lowering only")
+        suffix = args.generated_mode
+        source = software / "gen_asym.py"
+        header = software / f"include/matmul_data_asym_{suffix}.h"
+    elif args.symmetric_fp4:
         if (args.source_suffix or args.symmetric_lut or args.source_shape != "64x64" or
                 args.mesh_dim != 16):
             parser.error("direct FP4 source selection needs DIM16 64x64 and no other source")
@@ -105,7 +119,8 @@ def main() -> None:
         source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_{args.source_shape}{dim_suffix}.c"
         header_suffix = (f"_{args.source_shape}" if args.source_shape != "64x64" else "")
         header = software / f"include/matmul_data_asym_{suffix}{header_suffix}{dim_suffix}.h"
-    recipe = source_recipe(source, header, profile)
+    recipe = (generated_header_recipe(source, header, profile) if args.generated_mode
+              else source_recipe(source, header, profile))
     if not args.physical and recipe["shape"] != [64, 64, 64]:
         parser.error("historical C diagnostic is limited to 64-cubed sources")
     m, n, k = recipe["shape"]
@@ -216,8 +231,10 @@ def main() -> None:
                    if args.physical else "mx_gemmini.nicolas_asymmetric_spike_qualification.v1"),
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": (f"DIM{args.mesh_dim} {m}x{n}x{k} {suffix} source specialization of one captured PyTorch matmul; "
-                  "checked-in packed inputs, not random PyTorch example inputs; " +
+        "scope": (f"DIM{args.mesh_dim} {m}x{n}x{k} {suffix} source specialization of one captured PyTorch matmul; " +
+                  ("new header from Nicolas's pinned gen_asym.py, not a checked-in C test; "
+                   if args.generated_mode else
+                   "checked-in packed inputs, not random PyTorch example inputs; ") +
                   ("shared physical command IR and standalone emitter; " if args.physical else
                    "bounded C diagnostic; ") +
                   "standalone asymmetric MX profile without VPU"),
@@ -233,7 +250,11 @@ def main() -> None:
         "profile_name": profile["name"], "profile_sha256": profile_sha256(profile),
         "activation_projection": recipe["compute"]["activation_projection"],
         "activation_format": recipe["compute"]["activation_format"],
-        "source_driver_sha256": sha256(source), "source_header_sha256": sha256(header),
+        "source_header_sha256": sha256(header),
+        **({"source_generator_sha256": sha256(source)} if args.generated_mode else
+           {"source_driver_sha256": sha256(source)}),
+        **({"source_generation_manifest_sha256":
+            recipe["source_generation_manifest_sha256"]} if args.generated_mode else {}),
         "frontend_contract_sha256": sha256(contract), "frontend_policy_sha256": sha256(policy),
         "capture_sites": sites, "opaque_calls": opaque,
         "files_sha256": {name: sha256(args.out_dir / name) for name in outputs},

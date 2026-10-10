@@ -322,6 +322,99 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             "source_layout": source_layout}
 
 
+_GENERATED_MODES = {
+    "e2m3_e4m3s", "e3m2_e3m2", "e4m3s_e2m3",
+    "e4m3s_e4m3", "e4m3_e4m3s",
+}
+
+
+def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dict:
+    """Bind a new Nicolas-model header without claiming a checked-in C driver.
+
+    The generator is the pinned gen_asym.py. The five added format pairs are
+    selected explicitly; the header bytes and every required array are checked
+    before the typed contraction can be lowered.
+    """
+    if generator.name != "gen_asym.py" or not generator.is_file() or not header.is_file():
+        raise ValueError("generated MX recipe needs Nicolas's generator and its header")
+    match = re.fullmatch(r"matmul_data_asym_([a-z0-9]+)_([a-z0-9]+)\.h", header.name)
+    if match is None or f"{match[1]}_{match[2]}" not in _GENERATED_MODES:
+        raise ValueError("generated MX header names an unregistered format pair")
+    generation_manifest = header.parent / "mx_gemmini_generated_modes_manifest.json"
+    if not generation_manifest.is_file():
+        raise ValueError("generated MX header lacks its pinned generation manifest")
+    provenance = json.loads(generation_manifest.read_text())
+    if (provenance.get("schema") !=
+            "mx_gemmini.nicolas_generated_asymmetric_headers.v1" or
+            provenance.get("rtl_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            provenance.get("software_revision") !=
+            "350547f9843f46f485d4d1dd4c20b2f52f4844bf" or
+            provenance.get("microxcaling_revision") !=
+            "7bc41952de394f5cc5e782baf132e7c7542eb4e4" or
+            provenance.get("microxcaling_elemwise_sha256") !=
+            "57a825c801ec551d63a2aa6c827372b5ab420ff7b0f76c4d599d7d5050e83130" or
+            provenance.get("baseline_sha256") !=
+            "b4c7f87d11a0e096bc8ccfe2234c88c992ac5d2bccdb7b4d09c9aca0d770d8dc" or
+            provenance.get("wrapper_sha256") != sha256(
+                Path(__file__).resolve().parents[1] /
+                "tools/generate_nicolas_missing_headers.py") or
+            provenance.get("generator_sha256") != sha256(generator) or
+            provenance.get("headers_sha256", {}).get(f"{match[1]}_{match[2]}") !=
+            sha256(header)):
+        raise ValueError("generated MX header differs from its pinned generation manifest")
+    synthetic_name = f"matmul_tiled_asym_{match[1]}_{match[2]}_64x64.c"
+    variant = _source_variant(Path(synthetic_name), header, profile, header.read_text())
+    cell = variant["cell"]
+    require_compute(profile, cell["activation_format"], cell["weight_format"],
+                    pe_mode=cell["pe_mode"],
+                    activation_projection=cell["activation_projection"],
+                    weight_projection=cell["weight_projection"])
+    if (profile["geometry"] != {"mesh_rows": 16, "mesh_columns": 16,
+                                "tile_rows": 1, "tile_columns": 1} or
+            profile["resources"]["scratchpad_bytes"] != 262144 or
+            profile["resources"]["lut_config"]["read_data_bits"] <
+            variant["lut_entry_bits"]):
+        raise ValueError("generated MX header differs from selected mesh or LUT")
+    text = header.read_text()
+    for marker in ("#define MATMUL_M   64", "#define MATMUL_K   64",
+                   "#define MATMUL_N   64", variant["activation_array"],
+                   variant.get("weight_array", "B_in[MATMUL_K][MATMUL_N / 2]"),
+                   "A_scales_row[MATMUL_GK][MATMUL_M]",
+                   "B_scales_col[MATMUL_GK][MATMUL_N]",
+                   "C_out_bf16[MATMUL_M][MATMUL_N]"):
+        if marker not in text:
+            raise ValueError(f"generated MX header lacks {marker}")
+    recipe = {
+        "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+        "origin": "nicolas_generated_header",
+        "site_id": "functional:matmul", "shape": [64, 64, 64],
+        "frontend_capture_format": "mxfp8",
+        "source_generator_sha256": sha256(generator),
+        "source_generation_manifest_sha256": sha256(generation_manifest),
+        "source_header_sha256": sha256(header),
+        "profile_sha256": profile_sha256(profile),
+        "compute": cell.copy(),
+        "source_layout": {**variant, "mesh_dim": 16,
+                          "lut_arrays": list(variant.get("lut_arrays", ())),
+                          "config_altfmt": int(cell["activation_format"] in
+                                               {"fp8_e5m2", "fp6_e2m3"}),
+                          "weight_altfmt_diff": int(
+                              cell["activation_format"] in {"fp8_e5m2", "fp6_e2m3"}) ^
+                              int(cell["weight_format"] in {"fp8_e5m2", "fp6_e2m3"})},
+    }
+    # Parse every named array now so malformed or wrong-size headers fail
+    # before capture, rather than after the physical program is emitted.
+    read_asymmetric_resources(header, recipe)
+    return recipe
+
+
+def _recheck_recipe(recipe: dict, source: Path, header: Path, profile: dict) -> dict:
+    if recipe.get("origin") == "nicolas_generated_header":
+        return generated_header_recipe(source, header, profile)
+    return source_recipe(source, header, profile)
+
+
 def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     """Change a captured site's MX semantics only with an explicit source recipe."""
     from xdsl.context import Context
@@ -343,7 +436,9 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
              not isinstance(recipe.get("source_layout"), dict)) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
-                for key in ("source_driver_sha256", "source_header_sha256"))):
+                for key in (("source_generator_sha256" if recipe.get("origin") ==
+                             "nicolas_generated_header" else "source_driver_sha256"),
+                            "source_header_sha256"))):
         raise ValueError("asymmetric recipe does not identify the selected source and profile")
     cell = recipe["compute"]
     require_compute(profile, cell["activation_format"], cell["weight_format"],
@@ -368,7 +463,12 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     recipe_digest = hashlib.sha256(json.dumps(recipe, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     module.attributes["mx.profile_sha256"] = StringAttr(digest)
     module.attributes["mx.asymmetric_recipe_sha256"] = StringAttr(recipe_digest)
-    module.attributes["mx.source_driver_sha256"] = StringAttr(recipe["source_driver_sha256"])
+    source_key = ("source_generator_sha256" if recipe.get("origin") ==
+                  "nicolas_generated_header" else "source_driver_sha256")
+    module.attributes[f"mx.{source_key}"] = StringAttr(recipe[source_key])
+    if recipe.get("origin") == "nicolas_generated_header":
+        module.attributes["mx.source_generation_manifest_sha256"] = StringAttr(
+            recipe["source_generation_manifest_sha256"])
     module.attributes["mx.source_header_sha256"] = StringAttr(recipe["source_header_sha256"])
     del contract.attributes["format"]
     for key, value in cell.items():
@@ -390,7 +490,7 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
     from xdsl.dialects.func import Func
     from xdsl.parser import Parser
 
-    if recipe != source_recipe(source, header, profile):
+    if recipe != _recheck_recipe(recipe, source, header, profile):
         raise ValueError("asymmetric source bytes, profile, or recipe changed")
     checked = verify_ir(mlir_text, profile)
     if checked["contracts"] != 1 or checked["encodes"] or checked["requantizes"]:
@@ -400,8 +500,13 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
     context.load_dialect(Func)
     module = Parser(context, mlir_text).parse_module()
     recipe_digest = hashlib.sha256(json.dumps(recipe, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    source_key = ("source_generator_sha256" if recipe.get("origin") ==
+                  "nicolas_generated_header" else "source_driver_sha256")
     if (_text_attr(module, "mx.asymmetric_recipe_sha256") != recipe_digest or
-            _text_attr(module, "mx.source_driver_sha256") != recipe["source_driver_sha256"] or
+            _text_attr(module, f"mx.{source_key}") != recipe[source_key] or
+            (recipe.get("origin") == "nicolas_generated_header" and
+             _text_attr(module, "mx.source_generation_manifest_sha256") !=
+             recipe["source_generation_manifest_sha256"]) or
             _text_attr(module, "mx.source_header_sha256") != recipe["source_header_sha256"]):
         raise ValueError("profile-bound MLIR lacks matching asymmetric source provenance")
     operations = [op for op in module.walk() if _operation_name(op).startswith("mx_gemmini.")]
@@ -597,7 +702,8 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
         "schema": "mx_gemmini.asymmetric_resource_manifest.v2",
         "site_id": recipe["site_id"],
         "profile_sha256": recipe["profile_sha256"],
-        "origin": "nicolas_source_header_specialization",
+        "origin": ("nicolas_generated_header_specialization" if recipe.get("origin") ==
+                   "nicolas_generated_header" else "nicolas_source_header_specialization"),
         "recipe": recipe,
         "resources": {
             name: Resource(resources[name], *shapes[name]).descriptor(name)
@@ -645,7 +751,7 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     from .physical_program import (PhysicalProgram, PhysicalStep, _cmd, _config_ld,
                                    _config_st, _transfer)
 
-    if recipe != source_recipe(source, header, profile):
+    if recipe != _recheck_recipe(recipe, source, header, profile):
         raise ValueError("asymmetric physical lowering source or target changed")
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
