@@ -117,6 +117,16 @@ The FP4 program uses a generated Radiance fixture and tile-major output.
 The stock model lacks the compiler DMA/VPU command subset. See
 [Muon MMIO qualification](compiled_mx_pipeline.md#source-bound-muon-kernel-and-simulator-gap).
 
+The [full BF16 source roster](compiled_mx_pipeline.md#dim8dim32-source-roster-on-nicolass-spike)
+now runs from the pinned model2MLIR capture through compiler-generated
+RV64 ELFs on Nicolas's DIM8 and DIM32 Spike extensions. Each mesh matches
+all 23 FP4/FP6/FP8 drivers and 376,832 target-model BF16 outputs in two
+runs. The target reference records the geometry-specific accumulator schedule
+and Nicolas's product floor. The separate VPU-enabled Rocket profile matches
+the selected FP8 and FP4 matrix drivers twice; its vector instruction
+coverage is documented above. The eight quantized-output source drivers are
+not yet part of the DIM8/DIM32 roster.
+
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config
 before the compiler issues these commands through Muon MMIO. The physical

@@ -1,0 +1,134 @@
+{
+  "origin": "radiance_source_target_mesh_reference",
+  "precision": "FP6",
+  "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+  "resources": {
+    "activation": {
+      "bytes": 32768,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "4b0d4252e3e3dfac964ca22f9a83a8b2526fe029ab0a63d813b9d50260f84894",
+      "shape": [
+        64,
+        512
+      ]
+    },
+    "activation_lut": {
+      "bytes": 768,
+      "element_bits": 32,
+      "file": "activation_lut.bin",
+      "layout": "row_pair_lut_6bit",
+      "sha256": "17198b4bc2b08e148dc514081295700246b6231dbe291489961a152de0d99a03",
+      "shape": [
+        64,
+        3
+      ]
+    },
+    "activation_scales": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "85375af625ce4d5f4cc1fcf21f16a7f8cc37a7cf9342586ffde29150fd79ca2e",
+      "shape": [
+        16,
+        128
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 32768,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "2f497df14dce57f5758713330e0bc2b992794a12fe9a3476ad99d7fc6884eb5a",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "output_lut": {
+      "bytes": 768,
+      "element_bits": 32,
+      "file": "output_lut.bin",
+      "layout": "output_pair_lut_6bit",
+      "sha256": "933df9147277278bbce96d799ab8f6ce133ed0cb06a1d9acccd380600e2b45e1",
+      "shape": [
+        64,
+        3
+      ]
+    },
+    "output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "32e5026eb31174e72da65102603f862df04423fe2eb9cb9c12777c852d0d0b5d",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "weight": {
+      "bytes": 32768,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "28e82985d1f94c9dfd1a2bd951bdfc6dade974ab6b2f2127a76ca0dd4031dd06",
+      "shape": [
+        512,
+        64
+      ]
+    },
+    "weight_lut": {
+      "bytes": 768,
+      "element_bits": 32,
+      "file": "weight_lut.bin",
+      "layout": "column_pair_lut_6bit",
+      "sha256": "e37aec2f3b634810541da65b54605943841593a749a291c82abb4ad78c3b678c",
+      "shape": [
+        64,
+        3
+      ]
+    },
+    "weight_scales": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "8ab99d8b49e0b9c1d70f1586991494b074454250c5143dcf4bff2bf41f0ca2f5",
+      "shape": [
+        16,
+        128
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    128,
+    128,
+    512
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "e9ffb31e8792ba282aa670f99288d5ac175513e728737a64d9f4d64d3025da25",
+  "source_header_sha256": "8528beef2d4fded29c9023876d62490568707b4db69f3d33fe08d16f5ecc4bc7",
+  "target_mesh_reference": {
+    "lut_granularity_shift": 1,
+    "mesh_dim": 8,
+    "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+    "product_floor_exponent": -16,
+    "schema": "mx_gemmini.radiance_target_mesh_reference.v2",
+    "source_golden_sha256": "cac55d3a964a8efe0fb07772ba2aff38bd0029f83b4ab0c1ce35f625bbf431e4",
+    "target_golden_sha256": "2f497df14dce57f5758713330e0bc2b992794a12fe9a3476ad99d7fc6884eb5a",
+    "transformed_cpp_sha256": "06d6b5a2cb59910c666a8ad174d6e376d291c73130026ee7347aa7f1a9b28156",
+    "transformed_math_sha256": "e79560d4ba22f6dab76a2e70a1f7db9db574b7cbc16553c194c80a44fc9bf3d6",
+    "unpacked_activation_lut_sha256": "fc76911d8532d11663c783dfacf89dd881e4f1d7e92e91033f07ac5f722ee6d4",
+    "unpacked_weight_lut_sha256": "d325161ba85d9dcbf72d4bdc8e0791f9b83ed46c7f9463dab99a97ae7ff9f4a4"
+  },
+  "tile_mnk": [
+    128,
+    128,
+    512
+  ]
+}

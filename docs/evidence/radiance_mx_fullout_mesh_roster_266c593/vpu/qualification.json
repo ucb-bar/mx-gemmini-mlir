@@ -1,0 +1,50 @@
+{
+  "compared_bf16_outputs": 20480,
+  "compiler_revision": "a541a65aaff2704ca3ac1697c0d8fb1c903a9fc5",
+  "compiler_source_closure_sha256": "f99f04917c15e3ffc1ec82a4c04c60823b64ce88f26730d7ae37b9c5526739f7",
+  "frontend_index_sha256": "47ef832752288ddeab0a28c1ca1a7a12d0150880d407143512b6aeb3505db8c4",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rows": [
+    {
+      "artifact_manifest_sha256": "ca0568af4b055a34272e42117a21a027336f66ba36ce31b93340e8aca9a33428",
+      "bundle_manifest_sha256": "a1118a152e96e15afd37ebaad4cfa64941a154fd2b18d983dd7db24052ca594f",
+      "compared_bf16_outputs": 16384,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "36d95d08e9118197e73cb776ffd0b0c21f99eb17678dfc539fc262195c7a1bea",
+      "elf_sha256": "78247d3019f03c803ebbc5cab4ebc3cf7fee0d7f462370a22c13548e6cce3d75",
+      "generated_issue_sha256": "76ebd2dd9f998e9dd839755ad9f15ffaec84d1e55fc08b61e873613385aed85e",
+      "handoff_mlir_sha256": "92cb85065e41544bbec21eddc8f5c65678d6f247259547d08e59c0c8f9a73341",
+      "header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "payload_bound_mlir_sha256": "803b9d5769a4417f9f13ada100fb3276970a685d712d9c56ed5990f7b5509f8d",
+      "physical_program_sha256": "ec7163b24d0ffdc17962be7efd8d906bcf6559dc16f272538c6f67197a9a4b8b",
+      "precision": "FP8",
+      "profile_bound_mlir_sha256": "ce17b274f829b45999293f54d59a42c42c81c4719e0befe2993d28d85de4619a",
+      "spike_log_sha256": "1029e8ac1af6b1c7128dbcc1a7fbe0d569d32302e31d01169aa88fadd50304a4",
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "artifact_manifest_sha256": "b6653d7b3ea5b58fa3ccf28fb5182f3b883beaa022d62ad9642b86a248aa45b7",
+      "bundle_manifest_sha256": "c64b15fa222c2faf28707c51ba5efe1f25cd3e78821dadbd20e83a8411c47f21",
+      "compared_bf16_outputs": 4096,
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "8781fddbff19c5a17a0e671e8cc4787526ddecbb5daf9528b1106872c30667d0",
+      "elf_sha256": "0abcc5854975c7b6b99a884d3905910dd17302c5ce308e8a775d5f1b0159abd4",
+      "generated_issue_sha256": "2bb036ba96c0267f7f5a77416378997f0bf1c59f89f38f9a67108423ed925e37",
+      "handoff_mlir_sha256": "3f82c9b70d83c73c0d6fa83029a8e4aa47022352b1b1a543ae01017fde63477c",
+      "header_sha256": "2ee4ca3372077130ae589e816523f4892a30233269b8e0123809a2864fc0ffcc",
+      "payload_bound_mlir_sha256": "895fe1d3be3cdb1b60763b09e05857988d15257cc7f7fa9de13fcb757e27a45b",
+      "physical_program_sha256": "2ea9c3d32f45a58c2a5061976868cfb8cbf6af24f0924f5fd85b23fc83a65d54",
+      "precision": "FP4",
+      "profile_bound_mlir_sha256": "749d44a8e2483cfeb0c184915050129bc66ab736c1d848415908c23a26569b23",
+      "spike_log_sha256": "74924c0416c95bdb090404c12e29c693d8c6ec0fb9c4833e34817f4abb829b44",
+      "status": "source_golden_matched_on_pinned_spike"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_selected_mx_profile_source_cases.v1",
+  "scope": "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; source operands and BF16 goldens from byte-checked Radiance headers",
+  "source_revision": "80f84caedbabc663a7433c1da4455b936cca41f3",
+  "status": "selected_source_precisions_matched_on_pinned_spike"
+}

@@ -1,0 +1,3 @@
+lowered MX 128x128x256: 0 BF16 mismatches
+Gemmini extension configured with:
+    dim = 8

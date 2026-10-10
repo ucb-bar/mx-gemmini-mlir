@@ -1,0 +1,98 @@
+{
+  "origin": "radiance_source_target_mesh_reference",
+  "precision": "FP8",
+  "profile_sha256": "130a3f50ec66e52c0b5be8490bd2e10595742326a452fdeb9724c4d6068fd445",
+  "resources": {
+    "activation": {
+      "bytes": 16384,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "64582c06cd7c49684acf763ddffbd4feba576c487be464b5aa2e5e4d4e120b00",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "activation_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "fa16bf5571d7e93fdab8210017cec9f3990d120bf4b304b37a5145623255cffb",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 32768,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "1cbf36b4d36d5f589d9ffdd1eac9af64f3b1843ac1063f836b22cae3158cc5f4",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "41bf03ddce49ae4ee2bf4927a930a6c2d3ba7958c0db02fdd8e0a77567434079",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "weight": {
+      "bytes": 16384,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "db6e25e5c1434b3ad88a81cec4336b1b704356bae73fc383932c7903a4edd1aa",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "weight_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "acb8a1357eaa628c57195839c55667b8a6658287e38be88461b5902a699028d4",
+      "shape": [
+        4,
+        128
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "64568f62f9686c7497d205dd9a434d5efd424dc339190f022af16c8caeaf31e4",
+  "source_header_sha256": "5cb6ca13479a3d56ec3e493a3000009d1dbd869594bf52bda4bcb7ef6d7aec0f",
+  "target_mesh_reference": {
+    "mesh_dim": 8,
+    "model_cpp_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "model_math_sha256": "e91f2f83ff58c8d6a4c5c1161c9df4a63fc34e7052528a0b87f4dc27116e7b60",
+    "product_floor_exponent": -16,
+    "schema": "mx_gemmini.radiance_target_mesh_reference.v2",
+    "source_golden_sha256": "c9eaf91734937061e801b63d1820898828017e27a8a8edab3221f1dbc3f4e678",
+    "target_golden_sha256": "1cbf36b4d36d5f589d9ffdd1eac9af64f3b1843ac1063f836b22cae3158cc5f4",
+    "transformed_cpp_sha256": "06d6b5a2cb59910c666a8ad174d6e376d291c73130026ee7347aa7f1a9b28156",
+    "transformed_math_sha256": "e79560d4ba22f6dab76a2e70a1f7db9db574b7cbc16553c194c80a44fc9bf3d6"
+  },
+  "tile_mnk": [
+    128,
+    128,
+    128
+  ]
+}

@@ -2789,13 +2789,33 @@ Large physical streams use `-O0` only for the generated straight-line RoCC
 issuer; the receipt records that choice. Smaller issuers and the runtime
 support retain `-O2`.
 
+The [archived matrix](evidence/radiance_mx_fullout_mesh_roster_266c593/index.json)
+contains two independent Spike runs for every case. On each run, DIM8 and
+DIM32 each matched all **23 / 23 drivers and 376,832 / 376,832 BF16 outputs**
+across FP4, FP6, and FP8. The generated issuer, physical program, RV64 ELF,
+payload provenance, and Spike log are saved per case; repeat receipts agree
+after excluding build logs that embed their output directory. The DIM8
+128×128×5632 FP8 case changes exactly one target-model value when Nicolas's
+product floor is applied; the corrected target golden and the compiler ELF
+then match all 16,384 values. DIM32 target goldens are unchanged by that
+rule across this roster.
+
+These two all-precision profiles do not include the VPU. A separate check
+on Nicolas's `MxE4M3Fp4VpuGemminiRocketConfig` matched the selected FP8 and
+FP4 source contractions twice, **20,480 / 20,480 BF16 outputs per run**.
+The archive includes those two VPU-profile matrix cases; the vector command
+tests above exercise the VPU instructions themselves. Nicolas's current
+VPU profile supports FP8 and FP4, while FP6 uses a LUT-capable profile
+without the VPU.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
    if those paths are needed there. The FP6 requant receipts use generated
    fixtures because the corresponding headers are absent upstream; check
-   future committed headers against them. Qualify remaining configuration
-   families and source shapes without receipts, and extend multi-output
+   future committed headers against them. Qualify the eight source
+   quantized-output drivers on DIM8/DIM32 and remaining configuration
+   families without receipts, and extend multi-output
    vector tiling beyond the qualified FP8 and generated FP4 BF16 ×2, scalar
    ADDS, and ordered affine epilogues.
    For GQA, reconcile the
