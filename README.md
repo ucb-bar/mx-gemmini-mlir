@@ -43,6 +43,8 @@ The reverse FP4 direct × FP6 E3M2 LUT profile does as well, with its own
 source-bound mode and 4,096 / 4,096 BF16 Spike match.
 The separate E4M3 LUT × E2M3 LUT profile also passes all 4,096 source BF16
 outputs, including the weight alternate-format command bit.
+Nicolas's E5M2 LUT × FP4 direct profile passes the same full-output Spike
+check and exercises the activation alternate-format bit.
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.

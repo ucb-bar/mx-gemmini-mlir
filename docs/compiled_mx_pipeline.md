@@ -506,6 +506,31 @@ python -m tools.qualify_nicolas_asym --variant e4m3_e2m3_lut \
   --out-dir /new/output-directory
 ```
 
+### E5M2 activation with FP4 weights
+
+Nicolas's `MxAsymE5M2Fp4GemminiRocketConfig` selects E5M2 activation through
+an 8-bit LUT, direct FP4 weights, and PE mode 3. This exercises the FP8
+alternate-format bit in `CONFIG_EX` independently of the E4M3 cases. The
+source-bound typed contraction lowers to 63 physical commands. Two fresh
+model2MLIR captures and builds each match **all 4,096 BF16 source values**
+on the pinned Spike extension; their bound MLIR, resource manifests,
+command streams, objects, ELF, and Spike logs have matching hashes:
+[receipt](evidence/compiled_nicolas_asym_payload_e5m2_fp4_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_payload_e5m2_fp4_repro_20261009.json),
+[typed MLIR](evidence/model2mlir_nicolas_asym_payload_e5m2_fp4_bound_20261009.mlir),
+and [physical program](evidence/compiled_nicolas_asym_payload_e5m2_fp4_program_20261009.json).
+The source recipe supplies packed data and mixed precision; model2MLIR
+captures the PyTorch matmul graph. This standalone profile has no VPU.
+
+```sh
+python -m tools.qualify_nicolas_asym --variant e5m2_fp4_lut \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAsymE5M2Fp4GemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/output-directory
+```
+
 ### Typed binding of Nicolas's packed source resources
 
 The asymmetric CLI now materializes an external resource manifest before
