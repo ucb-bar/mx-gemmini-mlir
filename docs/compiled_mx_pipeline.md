@@ -417,6 +417,38 @@ python -m tools.qualify_nicolas_asym \
 
 Use `--variant direct` for mode 6. The default `lut` selects mode 10.
 
+### FP6 E3M2 activation with FP4 weights
+
+Nicolas's `MxAsymFp6Fp4GemminiRocketConfig` has a separate legal mode:
+FP6 E3M2 activation through a 6-bit-entry LUT, direct FP4 weights, and PE
+mode 3. `--variant fp6_lut` selects his
+`matmul_tiled_asym_fp6_fp4_64x64.c` and checked-in data header. The compiler
+exports the 32 activation, weight, and output LUT lines as 384-byte resources
+each, binds their source hash to typed MLIR, and lowers the contraction to
+63 physical commands. The generated standalone ELF matches **all 4,096 BF16
+source values** on pinned Spike. Two independent builds reproduce the
+frontend artifacts, resources, physical program, issuer, objects, ELF,
+extension, and Spike log hashes: [receipt](evidence/compiled_nicolas_asym_physical_fp6_fp4_20261009.json),
+[reproduction](evidence/compiled_nicolas_asym_physical_fp6_fp4_repro_20261009.json),
+[bound MLIR](evidence/model2mlir_nicolas_asym_fp6_fp4_bound_20261009.mlir),
+and [physical program](evidence/compiled_nicolas_asym_physical_fp6_fp4_program_20261009.json).
+
+The current frontend policy captures an FP8 matmul site as a structural
+starting point. The explicit source recipe changes that site's activation to
+FP6 E3M2 LUT and its weight to FP4 direct; model2MLIR has not yet generated
+this mixed quantization or the source's row-specific LUTs from PyTorch data.
+This qualification belongs to the standalone FP6×FP4 profile; the selected
+MX+VPU profile does not contain the mode.
+
+```sh
+python -m tools.qualify_nicolas_asym --variant fp6_lut \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAsymFp6Fp4GemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/output-directory
+```
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,

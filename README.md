@@ -37,6 +37,8 @@ lower through the shared physical command representation and match all 4,096
 BF16 source outputs each on pinned Spike. The selected MX+VPU profile has no
 asymmetric compute mode; see
 [asymmetric qualification](docs/compiled_mx_pipeline.md#nicolass-standalone-asymmetric-mode).
+Nicolas's separate FP6 E3M2 LUT × FP4 direct profile also runs through that
+physical path and matches all 4,096 BF16 source outputs on pinned Spike.
 The physical `WaitIdle` primitive polls the Muon gateway busy register at offset `0x20`;
 the standalone Rocket path has no proven equivalent completion endpoint and
 refuses that primitive.
