@@ -3428,13 +3428,26 @@ uses Nicolas's source-qualified MULS ×2 followed by an explicitly derived
 ADDS +0. The independent BF16 reference is unchanged by the second operation.
 On Nicolas's pinned Spike, the compiler-issued object matches all **4,096 C1
 BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 2,048 C2 FP8 codes, and 64 C2
-scales**. This proves the second VPU command and resident handoff execute in
-order for the identity case. It does not qualify arbitrary nonzero scalar
-chains or an unchanged source kernel containing two VPU operations.
+scales**. The BF16 readout is taken before the VPU operations; the quantized
+C1 and C2 readouts are taken after them. This proves the second VPU command
+and resident handoff execute in order for the identity case.
 An independent checkout of the pushed `handwritten-implementation` branch
 reproduced the bound MLIR, data-free object, linked ELF, and Spike log hashes;
 the [published-clone receipt](evidence/nicolas_connected_scalar_chain_266c593/published_clone_replay.json)
 records both compiler revisions and the matching artifact hashes.
+
+The [nonzero ADDS receipt](evidence/nicolas_connected_scalar_chain_nonzero_266c593/index.json)
+replays the same source-bound graph with a derived second VPU operation,
+`ADDS +1.5` (`0x3fc0` BF16). The qualifier first checks that Nicolas's pinned
+FP8 matrix model reproduces the unmodified C2 source golden. It then applies
+the VPU BF16 reference, quantizes C1, and feeds those changed C1 codes and
+scales plus the source B2 operands to the model for fresh C2 references.
+Compared with the original source goldens, **4,082 C1 codes, 128 C1 scales,
+2,015 C2 codes, and 64 C2 scales change**. A clean checkout of commit
+`f492142` generated the data-free object and linked ELF; pinned Spike matched
+every C1/C2 value against those derived references. This qualifies one
+nonidentity ordered scalar chain on Spike. The extra ADDS is a derived
+candidate, not an unchanged Nicolas source kernel.
 
 Reproduce the object build, native dialect verification, link, and Spike run
 from the checked-in Nicolas source capture with:
@@ -3446,6 +3459,10 @@ python -m tools.replay_connected_scalar_chain \
   --mx-opt build/tools/mx-gemmini-opt \
   --out-dir /tmp/mx-connected-scalar-chain
 ```
+
+For the nonzero candidate, use a Python environment with PyTorch and add
+`--adds-bf16 0x3fc0`. The replay refuses a changed Nicolas FP8 model and
+records the source, model, profile, object, ELF, and Spike hashes.
 
 ## Remaining gates
 
