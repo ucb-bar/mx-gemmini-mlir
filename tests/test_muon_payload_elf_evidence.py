@@ -90,3 +90,51 @@ def test_current_cyclotron_result_is_explicitly_a_numerical_failure():
     assert diagnostic["independently_counted_bf16_mismatches"] == 65517
     assert diagnostic["nonzero_output_bytes"] == 0
     assert b"simulation finished" in (EVIDENCE / "cyclotron.log").read_bytes()
+
+
+def test_isolated_patched_cyclotron_matches_all_compiler_bf16_outputs():
+    first = json.loads((EVIDENCE / "patched_cyclotron_qualification.json").read_text())
+    repro = json.loads((EVIDENCE / "patched_cyclotron_qualification_repro.json").read_text())
+    assert first["schema"] == repro["schema"] == (
+        "mx_gemmini.muon_payload_patched_cyclotron.v1")
+    assert first["status"] == repro["status"] == (
+        "all_65536_bf16_outputs_matched_on_isolated_patched_cyclotron")
+    assert first["qualification"] == repro["qualification"] == "experimental_functional_model_only"
+    assert first["scope"] == repro["scope"]
+    assert first["qualifier_sha256"] == repro["qualifier_sha256"] == _sha((
+        ROOT / "tools/qualify_mx_muon_cyclotron.py").read_bytes())
+    assert first["patch_sha256"] == repro["patch_sha256"] == _sha((
+        EVIDENCE / "cyclotron_compiler_stream.patch").read_bytes())
+    assert first["compiler_elf_sha256"] == repro["compiler_elf_sha256"] == _sha((
+        EVIDENCE / "mx_kernel.elf").read_bytes())
+    assert first["payload_manifest_sha256"] == repro["payload_manifest_sha256"] == _sha((
+        EVIDENCE / "payload_manifest.json").read_bytes())
+    assert first["cyclotron_binary_sha256"] == repro["cyclotron_binary_sha256"]
+    assert first["patched_model_sha256"] == repro["patched_model_sha256"]
+    assert first["cyclotron_mx_tests_passed"] == repro["cyclotron_mx_tests_passed"] == 35
+    assert first["cyclotron_mx_tests_sha256"] == _sha((
+        EVIDENCE / "mxgemmini_tests.log").read_bytes())
+    assert first["bf16_outputs_checked"] == repro["bf16_outputs_checked"] == 65536
+    _, resources = load_bundle(ROOT / "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle")
+    expected = exact_bf16_x2(resources["golden_bf16"])
+    dump = gzip.decompress((EVIDENCE / "patched_cyclotron_gmem.bin.gz").read_bytes())
+    base = min(first["output_address"], first["mismatch_address"], first["completed_address"])
+    output = dump[first["output_address"]-base:first["output_address"]-base+len(expected)]
+    mismatch = dump[first["mismatch_address"]-base:first["mismatch_address"]-base+4]
+    completed = dump[first["completed_address"]-base:first["completed_address"]-base+4]
+    assert output == expected
+    assert int.from_bytes(mismatch, "little") == 0
+    assert int.from_bytes(completed, "little") == 1
+    for qualification in (first, repro):
+        assert qualification["expected_bf16_sha256"] == _sha(expected)
+        assert len(qualification["runs"]) == 2
+        for run in qualification["runs"]:
+            assert run["gmem_sha256"] == _sha(dump)
+            assert run["output_sha256"] == _sha(expected)
+            assert run["completed"] == 1
+            assert run["reported_bf16_mismatches"] == 0
+            assert run["independent_bf16_mismatches"] == 0
+    assert first["runs"][0]["cyclotron_log_sha256"] == _sha((
+        EVIDENCE / "first.cyclotron.log").read_bytes())
+    assert first["runs"][1]["cyclotron_log_sha256"] == _sha((
+        EVIDENCE / "repro.cyclotron.log").read_bytes())

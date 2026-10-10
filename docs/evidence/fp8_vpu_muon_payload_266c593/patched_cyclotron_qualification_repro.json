@@ -1,0 +1,41 @@
+{
+  "bf16_outputs_checked": 65536,
+  "compiler_elf_sha256": "0ce108e7e0cf061793230c02fe361b4d69d49411f9ed6b4b48953e784c9c4f4b",
+  "completed_address": 268439628,
+  "cyclotron_binary_sha256": "f0c6fb8b7eba3935cf0725848f9a6b9acf8eda5104ed37c37e43bcaa57b8d6d3",
+  "cyclotron_mx_tests_passed": 35,
+  "cyclotron_mx_tests_sha256": "a3ebd455e921c5bd8595a7ba86e6ea76dbc7deb078aba8a7517bd01197f471f0",
+  "cyclotron_revision": "2d6adad4ad94d1621fdff9c9a1e5eac871048f24",
+  "expected_bf16_sha256": "b2f13c8b235533d6c4d100bd05b034325c9b459329b49f2e5cb09fb9b092d2d3",
+  "mismatch_address": 268439624,
+  "output_address": 268439680,
+  "patch_sha256": "24951e45d89ed9859e91b0991e1ea19aec7cfd4d3c8b46685c8d4247600515a5",
+  "patched_model_sha256": "1d79c83ff4d461af14b927eec4c7ff29a1bd49b29d131463ca86f1a3b5046b8b",
+  "payload_manifest_sha256": "9d45c06bf64d5fc2820d8d30e6b8ee01d92422a2085cc4483a38864fa23439ac",
+  "qualification": "experimental_functional_model_only",
+  "qualifier_sha256": "b760455a171c88a4fbd14028b6ba287209b2579a6cd3e03ef2d1559e1ecefa65",
+  "runs": [
+    {
+      "completed": 1,
+      "cyclotron_log_sha256": "4f59c4792d9d144e8ccdece70f8068e5c733cfb7831094d0251ef1954d87ba26",
+      "gmem_sha256": "ac099ef8c0cdd16d0c2fbd9322a596c8efcfec6a33ab0d54563a312acc4f18ec",
+      "independent_bf16_mismatches": 0,
+      "label": "first",
+      "output_sha256": "b2f13c8b235533d6c4d100bd05b034325c9b459329b49f2e5cb09fb9b092d2d3",
+      "reported_bf16_mismatches": 0
+    },
+    {
+      "completed": 1,
+      "cyclotron_log_sha256": "685515092f18addee888f27e968e9d4cc25cf3ac036e51c9aa63ceb9b3ae0fb4",
+      "gmem_sha256": "ac099ef8c0cdd16d0c2fbd9322a596c8efcfec6a33ab0d54563a312acc4f18ec",
+      "independent_bf16_mismatches": 0,
+      "label": "repro",
+      "output_sha256": "b2f13c8b235533d6c4d100bd05b034325c9b459329b49f2e5cb09fb9b092d2d3",
+      "reported_bf16_mismatches": 0
+    }
+  ],
+  "schema": "mx_gemmini.muon_payload_patched_cyclotron.v1",
+  "scope": "FP8 256x256x256 MX+VPU compiler Muon MMIO path; no RTL or FPGA claim",
+  "status": "all_65536_bf16_outputs_matched_on_isolated_patched_cyclotron",
+  "stock_model_sha256": "3bbb9ba9f1f61d838b240f0bca3571f9f17a2717b12d819b8f42c6d78d56e3ea"
+}

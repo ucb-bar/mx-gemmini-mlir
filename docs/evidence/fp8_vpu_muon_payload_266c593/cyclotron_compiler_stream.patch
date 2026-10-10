@@ -1,0 +1,186 @@
+diff --git a/src/muon/mxgemmini/mod.rs b/src/muon/mxgemmini/mod.rs
+index 059eec0..6e58840 100644
+--- a/src/muon/mxgemmini/mod.rs
++++ b/src/muon/mxgemmini/mod.rs
+@@ -130,6 +130,8 @@ fn k_dma() -> u64 {
+ // RoCC funct codes (spike libgemmini gemmini.h).
+ const F_CONFIG: u32 = 0;
+ const F_FLUSH: u32 = 7;
++const F_MVIN: u32 = 2;
++const F_MVOUT: u32 = 3;
+ const F_LOOP_WS: u32 = 8;
+ const F_LOOP_WS_CONFIG_BOUNDS: u32 = 9;
+ const F_LOOP_WS_CONFIG_ADDRS_AB: u32 = 10;
+@@ -140,6 +142,11 @@ const F_MXQUANT_CONFIG_MVOUT: u32 = 26;
+ const F_MX_LOAD_SCALES: u32 = 27;
+ const F_MX_READ_SMEM: u32 = 28;
+ const F_MX_LOAD_LUT: u32 = 29;
++const F_VPU_EXEC: u32 = 33;
++
++fn compiler_stream_enabled() -> bool {
++    std::env::var("CYCLOTRON_MXGEMMINI_COMPILER").is_ok()
++}
+ 
+ #[derive(Debug, Clone)]
+ pub struct MxConfig {
+@@ -248,6 +255,8 @@ impl MxGemminiDevice {
+     ) {
+         match funct {
+             F_CONFIG => self.config(rs1, rs2),
++            F_MVIN if compiler_stream_enabled() => self.compiler_mvin(rs1, rs2, smem, gmem),
++            F_MVOUT if compiler_stream_enabled() => self.compiler_mvout(rs1, rs2, smem, gmem),
+             F_LOOP_WS_CONFIG_BOUNDS => self.loop_ws_config_bounds(rs1, rs2),
+             F_LOOP_WS_CONFIG_ADDRS_AB => {
+                 self.st.loop_ws_a_dram = rs1;
+@@ -266,6 +275,10 @@ impl MxGemminiDevice {
+             }
+             F_MXQUANT_CONFIG_MVOUT => self.mxquant_config_mvout(rs1, rs2),
+             F_MX_LOAD_SCALES => {
++                if compiler_stream_enabled() {
++                    self.compiler_load_scales(rs1, rs2, smem, gmem);
++                    return;
++                }
+                 // Scales are staged into SMEM (SF_MEM_A/B) by SIMT stores in the
+                 // shared-ext-mem deployment, so there is nothing to DMA here; the
+                 // matmul reads them from SMEM directly.
+@@ -276,6 +289,7 @@ impl MxGemminiDevice {
+                 // the shared-ext-mem deployment, so there is nothing to DMA here.
+                 let _ = (rs1, rs2);
+             }
++            F_VPU_EXEC if compiler_stream_enabled() => self.compiler_vpu(rs1, rs2, smem),
+             F_LOOP_WS => {
+                 // rs2[9] marks the MX-spad variant; the Radiance kernel always sets it.
+                 if (rs2 >> 9) & 0x1 == 0 {
+@@ -344,6 +358,69 @@ impl MxGemminiDevice {
+         }
+     }
+ 
++    fn compiler_mvin(&self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &[u8]) {
++        let rows = ((rs2 >> 48) & 0xffff) as usize;
++        let cols = ((rs2 >> 32) & 0xffff) as usize;
++        let row = (rs2 & 0xffff_ffff) as usize;
++        assert!(cols <= DIM && rows <= DIM, "unsupported compiler MX mvin rectangle");
++        let base = gpu_dram(rs1);
++        let stride = self.st.ld_stride as usize;
++        for r in 0..rows {
++            copy_row(smem, (row + r) * DIM, gmem, base + r * stride, cols);
++        }
++    }
++
++    fn compiler_mvout(&self, rs1: u64, rs2: u64, smem: &[u8], gmem: &mut [u8]) {
++        let rows = ((rs2 >> 48) & 0xffff) as usize;
++        let cols = ((rs2 >> 32) & 0xffff) as usize;
++        let row = (rs2 & 0xffff_ffff) as usize;
++        assert!(cols <= DIM && rows <= DIM, "unsupported compiler MX mvout rectangle");
++        let base = gpu_dram(rs1);
++        let stride = self.st.st_stride as usize;
++        for r in 0..rows {
++            let src = (row + r) * DIM;
++            let dst = base + r * stride;
++            if src + cols <= smem.len() && dst + cols <= gmem.len() {
++                gmem[dst..dst + cols].copy_from_slice(&smem[src..src + cols]);
++            }
++        }
++    }
++
++    fn compiler_load_scales(&self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &[u8]) {
++        let pitch = (rs1 >> 40) as usize;
++        let base = gpu_dram(rs1 & 0xffffffffff);
++        let groups = ((rs2 >> 46) & 0x3ffff) as usize;
++        let dest = ((rs2 >> 33) & 0x1fff) as usize;
++        let sel = ((rs2 >> 32) & 1) as usize;
++        let width = (rs2 & 0xffff_ffff) as usize;
++        assert!(width > 0 && groups > 0 && dest + groups * width <= 0x2000,
++                "unsupported compiler MX scale DMA span");
++        let sf = if sel == 0 { SF_MEM_A } else { SF_MEM_B };
++        for group in 0..groups {
++            copy_row(smem, sf + dest + group * width, gmem, base + group * pitch, width);
++        }
++    }
++
++    fn compiler_vpu(&self, rs1: u64, rs2: u64, smem: &mut [u8]) {
++        let src = (rs1 & 0x3fff) as usize;
++        let dst = ((rs1 >> 28) & 0x3fff) as usize;
++        let rows = ((rs1 >> 42) & 0xffff) as usize;
++        let op = rs2 & 0xf;
++        let imm = ((rs2 >> 16) & 0xffff) as u16;
++        assert_eq!(op, 4, "compiler MX model currently handles only MULS VPU");
++        let scalar = fp_math::bf16_to_f32(imm);
++        for row in 0..rows {
++            for lane in 0..(DIM / 2) {
++                let source = (src + row) * DIM + lane * 2;
++                let target = (dst + row) * DIM + lane * 2;
++                assert!(source + 2 <= smem.len() && target + 2 <= smem.len());
++                let value = u16::from_le_bytes([smem[source], smem[source + 1]]);
++                let product = fp_math::f32_to_bf16_rne(fp_math::bf16_to_f32(value) * scalar);
++                smem[target..target + 2].copy_from_slice(&product.to_le_bytes());
++            }
++        }
++    }
++
+     // --- loop_ws load phase: DMA operand tiles DRAM -> scratchpad (== SMEM) ---
+     //
+     // Mirrors gemmini's LoopMatmul mvin of A/B. FP8 = 1 byte/elem, so a spad row is
+@@ -387,7 +464,6 @@ impl MxGemminiDevice {
+     // --- config handlers (subset of spike gemmini_t::config / *_config_*) ---
+ 
+     fn config(&mut self, rs1: u64, rs2: u64) {
+-        let _ = rs2;
+         match rs1 & 0b11 {
+             0 => {
+                 // config_ex
+@@ -400,6 +476,9 @@ impl MxGemminiDevice {
+                     self.st.mx_out_fmt = ((rs1 >> 14) & 0x3) as u8;
+                 }
+             }
++            1 if compiler_stream_enabled() => {
++                self.st.ld_stride = rs2;
++            }
+             3 => {
+                 // config_norm: I-BERT constants + the activation MSB. Setting that MSB is
+                 // the ONLY way acc_act becomes SOFTMAX(4) -- config_mvout can only encode
+@@ -419,6 +498,9 @@ impl MxGemminiDevice {
+                 }
+             }
+             2 => {
++                if compiler_stream_enabled() {
++                    self.st.st_stride = rs2;
++                }
+                 // config_mvout: acc activation
+                 let sel = (rs1 >> 2) & 0b11;
+                 self.st.acc_act = match sel {
+@@ -470,7 +552,7 @@ impl MxGemminiDevice {
+     //               kernel (LUT0 = weights/B, LUT1 = activations/A); which LUT a row/col
+     //               uses is `(global_index >> lut_update_granularity)`.
+ 
+-    fn mx_loop_ws_spad(&mut self, _rs1: u64, rs2: u64, smem: &mut [u8], gmem: &mut [u8]) {
++    fn mx_loop_ws_spad(&mut self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &mut [u8]) {
+         let c_spad = ((rs2 >> 32) & 0xFFFF_FFFF) as u32;
+         let ti = self.st.loop_ws_i as usize;
+         let tj = self.st.loop_ws_j as usize;
+@@ -509,6 +591,11 @@ impl MxGemminiDevice {
+         let b_sp = (self.st.mx_loop_b_spad as usize).wrapping_sub(tk * tj * DIM);
+         let m_dim = ti * tile;
+         let n_dim = tj * tile;
++        if compiler_stream_enabled() && rs1 & 1 == 0 {
++            let end = c_base + m_dim * n_dim * 2;
++            assert!(end <= smem.len(), "compiler MX accumulator exceeds scratchpad");
++            smem[c_base..end].fill(0);
++        }
+ 
+         // FP6 LUTs, staged in SMEM by the kernel. One LUT per `1 << G` rows/cols.
+         let g = self.st.mx_lut_update_granularity as usize;
+diff --git a/src/muon/mxgemmini/state.rs b/src/muon/mxgemmini/state.rs
+index ccc4c87..c2b6551 100644
+--- a/src/muon/mxgemmini/state.rs
++++ b/src/muon/mxgemmini/state.rs
+@@ -22,6 +22,9 @@ impl Default for AccAct {
+ 
+ #[derive(Debug, Clone, Default)]
+ pub struct MxGemminiState {
++    /// Compiler-issued ordinary DMA row strides (config_ld/config_st).
++    pub ld_stride: u64,
++    pub st_stride: u64,
+     // --- CONFIG_EX (funct 0, rs1[1:0]==00): MX formats ---
+     /// 0 = FP8 E4M3, 1 = FP6 E3M2 (LUT), 2 = FP4 E2M1, 3 = full/bf16.
+     pub mx_act_fmt: u8,

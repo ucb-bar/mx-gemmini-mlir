@@ -2114,9 +2114,9 @@ python -m tools.link_mx_muon_probe \
   --out-dir /tmp/fp8-vpu-muon-link-probe
 ```
 
-No admitted Radiance MX+VPU SoC profile or MMIO numerical execution receipt
-exists for this path yet. The pinned Spike results above qualify the Rocket
-path separately.
+No admitted Radiance MX+VPU SoC profile or RTL/FPGA execution receipt exists
+for this path yet. The pinned Spike results above qualify the Rocket path
+separately; a scoped Muon functional-model qualification follows below.
 
 ### Source-bound Muon kernel and simulator gap
 
@@ -2144,9 +2144,33 @@ memory dump. The [diagnostic](evidence/fp8_vpu_muon_payload_266c593/cyclotron_di
 records the exact model and binary digests. Cyclotron's MX co-model implements
 the source kernel's `loop_ws` path; it has no handlers for this compiler stream's
 move-in (funct 2), move-out (funct 3), or VPU (funct 33), and treats scale DMA
-(funct 27) as a no-op. This is a simulator coverage gap, not numerical
-qualification of the Muon MMIO path. The linked ELF still needs execution on a
-model or SoC that supports those commands.
+(funct 27) as a no-op. The stock-model result is a simulator coverage gap.
+
+An [isolated Cyclotron patch](evidence/fp8_vpu_muon_payload_266c593/cyclotron_compiler_stream.patch)
+adds config strides, operand DMA, scale DMA, this fixture's scalar-multiply
+VPU operation, and per-output-tile accumulator clearing. The
+[qualifier](../tools/qualify_mx_muon_cyclotron.py) clones pinned Cyclotron,
+applies the patch, builds it, runs its 35 existing MX tests, then executes the
+compiler-issued Muon ELF twice. Two independent fresh builds produced the same
+simulator binary and memory dump. The [qualification receipt](evidence/fp8_vpu_muon_payload_266c593/patched_cyclotron_qualification.json)
+and [archived memory dump](evidence/fp8_vpu_muon_payload_266c593/patched_cyclotron_gmem.bin.gz)
+show **0 / 65,536 BF16 mismatches**, both from the kernel's verifier and an
+independent byte-for-byte comparison with the derived source golden. Reproduce
+this experimental result with:
+
+```sh
+python -m tools.qualify_mx_muon_cyclotron \
+  --cyclotron-root /path/to/cyclotron-2d6adad \
+  --payload-dir docs/evidence/fp8_vpu_muon_payload_266c593 \
+  --bundle docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle \
+  --muon-llvm /path/to/llvm-muon \
+  --out-dir /tmp/fp8-vpu-muon-cyclotron
+```
+
+This qualifies the selected FP8 256×256×256 MX+VPU compiler Muon MMIO path on
+an explicitly patched functional model. The patch handles the op subset used
+by this fixture; other precisions, VPU operations, RTL cycles, and FPGA
+execution remain separate gates.
 
 ### Executed generated FP4 source tiles on Cyclotron
 
