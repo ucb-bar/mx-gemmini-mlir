@@ -42,13 +42,22 @@ def lower_first_matrix_commands(frontend_mlir: str, profile: dict,
 
 def emit_verified_first_matrix_commands(profile: dict,
                                         resources: dict[str, bytes], *,
-                                        output_row: int = 0x1000
+                                        output_row: int = 0x1000,
+                                        buffers: dict[str, str] | None = None
                                         ) -> tuple[Command | Fence, ...]:
     """Emit MM1 after a frontend or connected-chain validator checked its site."""
-    if {name: len(resources.get(name, b"")) for name in
-            ("a1_activation", "b1_weight", "a1_scales", "b1_scales", "c1_bf16")
-            } != {"a1_activation": 4096, "b1_weight": 4096,
-                  "a1_scales": 128, "b1_scales": 128, "c1_bf16": 8192}:
+    names = {name: name for name in
+             ("a1_activation", "b1_weight", "a1_scales", "b1_scales",
+              "c1_scales", "c1_bf16_observed")}
+    if buffers is not None:
+        if set(buffers) != set(names):
+            raise ValueError("first MX matrix buffer map differs")
+        names = buffers
+    expected = {"a1_activation": 4096, "b1_weight": 4096,
+                "a1_scales": 128, "b1_scales": 128}
+    if any(len(resources.get(names[slot], b"")) != length
+           for slot, length in expected.items()) or (
+               buffers is None and len(resources.get("c1_bf16", b"")) != 8192):
         raise ValueError("first MX matrix source payload differs from 64x64x64")
     rows = profile["resources"]["scratchpad_bytes"] // 16
     b_base = rows - 256
@@ -67,25 +76,25 @@ def emit_verified_first_matrix_commands(profile: dict,
         # E4M3 inputs, BF16 output, WS. Source uses the same mode with
         # E4M3 output; the BF16 specialization preserves the VPU input tile.
         cmd(0, (1 << 16) | (3 << 14) | (1 << 2), 1 << 48),
-        cmd(27, Operand(buffer="a1_scales"), 128),
-        cmd(27, Operand(buffer="b1_scales"), (1 << 32) | 128),
+        cmd(27, Operand(buffer=names["a1_scales"]), 128),
+        cmd(27, Operand(buffer=names["b1_scales"]), (1 << 32) | 128),
         Fence(),
         cmd(0, (16 << 16) | (1 << 8) | 1, 64),
     ]
     for i in range(4):
         for k in range(4):
-            commands.append(cmd(2, Operand(buffer="a1_activation",
+            commands.append(cmd(2, Operand(buffer=names["a1_activation"],
                                            byte_offset=i * 16 * 64 + k * 16),
                                 (16 << 48) | (16 << 32) | (i * 4 + k) * 16))
     for j in range(4):
         for k in range(4):
-            commands.append(cmd(2, Operand(buffer="b1_weight",
+            commands.append(cmd(2, Operand(buffer=names["b1_weight"],
                                            byte_offset=j * 16 * 64 + k * 16),
                                 (16 << 48) | (16 << 32) | (b_base + (j * 4 + k) * 16)))
     commands += [
         Fence(),
         cmd(0, 2, 2),
-        cmd(26, Operand(buffer="c1_scales", address_mask=(1 << 33) - 1,
+        cmd(26, Operand(buffer=names["c1_scales"], address_mask=(1 << 33) - 1,
                         or_bits=(4 << 51) | (4 << 42) | (4 << 33)), 1),
         cmd(9, 0, (4 << 32) | (4 << 16) | 4),
         cmd(24, 0, rows),
@@ -95,7 +104,7 @@ def emit_verified_first_matrix_commands(profile: dict,
         cmd(0, 2, 16),
     ]
     for row in range(0, 512, 16):
-        commands.append(cmd(3, Operand(buffer="c1_bf16_observed", byte_offset=row * 16),
+        commands.append(cmd(3, Operand(buffer=names["c1_bf16_observed"], byte_offset=row * 16),
                             (16 << 48) | (16 << 32) | (output_row + row)))
     commands.append(Fence())
     return tuple(commands)

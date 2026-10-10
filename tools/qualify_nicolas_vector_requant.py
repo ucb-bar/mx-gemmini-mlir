@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -31,6 +32,8 @@ def main() -> None:
                         help="capture receipt binding the frontend handoff to Nicolas's source")
     parser.add_argument("--connected-ssa", action="store_true",
                         help="compile one SSA-connected MM1/VPU/requant/MM2 MLIR function")
+    parser.add_argument("--issuer-object", type=Path,
+                        help="link a separately compiled data-free MX issuer object")
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -40,6 +43,8 @@ def main() -> None:
         parser.error("the frontend chain requires --with-resident-matmul")
     if args.connected_ssa and not args.frontend_bound_mlir:
         parser.error("--connected-ssa requires the checked two-site frontend capture")
+    if args.issuer_object and not args.connected_ssa:
+        parser.error("--issuer-object requires --connected-ssa")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     software = args.rtl_root / "software/gemmini-rocc-tests"
     extension = args.rtl_root / "software/libgemmini"
@@ -89,6 +94,20 @@ def main() -> None:
         receipt = writer(build, mlir, profile, resources, facts,
                          frontend_mlir=frontend_mlir,
                          connected_mlir=connected_mlir)
+    issuer_manifest = None
+    if args.issuer_object is not None:
+        issuer_path = args.issuer_object.resolve()
+        issuer_manifest = json.loads((issuer_path.parent / "object_manifest.json").read_text())
+        if (issuer_manifest.get("schema") != "mx_gemmini.resident_vpu_linkable_object.v1" or
+                issuer_manifest.get("bound_mlir_sha256") != _sha(args.out_dir / "connected_bound.mlir") or
+                issuer_manifest.get("profile_sha256") != profile_sha256(profile) or
+                issuer_manifest.get("issuer_c_sha256") != _sha(build / "mx_issue.c") or
+                issuer_manifest.get("object_sha256") != _sha(issuer_path) or
+                issuer_manifest.get("input_sha256") != {
+                    name: hashlib.sha256(resources[name]).hexdigest()
+                    for name in ("a1_activation", "a1_scales", "b1_weight",
+                                 "b1_scales", "b2_weight", "b2_scales")}):
+            raise ValueError("linkable MX VPU object differs from source-qualified graph")
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -102,9 +121,10 @@ def main() -> None:
              "-I", str(software / "riscv-tests"),
              "-I", str(software / "riscv-tests/env"),
              "-I", str(software), "-I", str(bench)]
-    sources = [build / name for name in ("mx_issue.c", "mx_driver.c", "mx_data.S")]
+    sources = [build / name for name in (("mx_driver.c", "mx_data.S")
+               if args.issuer_object else ("mx_issue.c", "mx_driver.c", "mx_data.S"))]
     sources += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
-    objects = []
+    objects = [args.issuer_object.resolve()] if args.issuer_object else []
     for index, path in enumerate(sources):
         obj = build / f"mx_{index}.o"
         _run([str(riscv_cc), *flags, "-c", str(path), "-o", str(obj)],
@@ -163,6 +183,10 @@ def main() -> None:
         receipt["frontend_capture_receipt_sha256"] = _sha(args.frontend_receipt)
     if connected_mlir is not None:
         receipt["connected_bound_mlir_sha256"] = _sha(args.out_dir / "connected_bound.mlir")
+    if issuer_manifest is not None:
+        receipt["issuer_origin"] = "linkable_resident_vpu_object"
+        receipt["issuer_object_manifest_sha256"] = _sha(
+            args.issuer_object.resolve().parent / "object_manifest.json")
     (build / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
     if not passed:

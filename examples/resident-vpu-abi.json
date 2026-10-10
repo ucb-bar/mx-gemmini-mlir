@@ -1,0 +1,18 @@
+{
+  "schema": "mx_gemmini.resident_vpu_buffer_map.v1",
+  "inputs": {
+    "a1_activation": "a1_activation",
+    "a1_scales": "a1_scales",
+    "b1_weight": "b1_weight",
+    "b1_scales": "b1_scales",
+    "b2_weight": "b2_weight",
+    "b2_scales": "b2_scales"
+  },
+  "outputs": {
+    "c1_scales": "c1_scales",
+    "c1_bf16_observed": "c1_bf16_observed",
+    "c1_tiled": "c1_tiled",
+    "c2_scales": "c2_scales",
+    "c2_tiled": "c2_tiled"
+  }
+}

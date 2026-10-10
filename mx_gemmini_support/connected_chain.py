@@ -11,11 +11,11 @@ from __future__ import annotations
 import hashlib
 import json
 
-from .command_ir import Command, Fence, spad_requant_command, vpu_command
-from .first_matrix_lowering import (emit_verified_first_matrix_commands,
-                                    lower_first_matrix_commands)
-from .resident_lowering import (lower_resident_chain_commands,
-                                lower_resident_contract)
+from .command_ir import Command, Fence
+from .first_matrix_lowering import lower_first_matrix_commands
+from .resident_lowering import lower_resident_chain_commands
+from .resident_vpu_graph import (INPUTS, OUTPUTS,
+                                 lower_connected_fp8_vpu_pair)
 from .target_profile import profile_sha256
 from .verify_profile_ir import (_bool_attr, _int_attr, _operation_name,
                                 _text_attr, verify_ir)
@@ -203,29 +203,11 @@ def lower_connected_chain_commands(mlir_text: str, profile: dict,
             _int_attr(second, "activation_row") != facts["sp_c1"] or
             not _bool_attr(requant, "tiled") or not _bool_attr(requant, "resident")):
         raise ValueError("connected MX chain source placement differs")
-    vector = vpu_command(
-        profile, kind=_text_attr(vpu, "kind"), src1_row=_int_attr(vpu, "src1_row"),
-        src2_row=_int_attr(vpu, "src2_row"), dst_row=_int_attr(vpu, "dst_row"),
-        rows=_int_attr(vpu, "rows"), reduction_length=_int_attr(vpu, "reduction_length"),
-        broadcast=_bool_attr(vpu, "broadcast"),
-        immediate_bf16=_int_attr(vpu, "immediate_bf16"),
-        second_dst_row=_int_attr(vpu, "second_dst_row"))
-    quant = spad_requant_command(
-        profile, source_row=_int_attr(requant, "source_row"),
-        destination_row=_int_attr(requant, "destination_row"),
-        m=_int_attr(requant, "m"), n=_int_attr(requant, "n"),
-        output_format=_text_attr(requant, "output_format"),
-        tiled=_bool_attr(requant, "tiled"), resident=_bool_attr(requant, "resident"),
-        scale_dram_address=_int_attr(requant, "scale_dram_address"),
-        scale_buffer=_text_attr(requant, "scale_buffer"))
-    attrs = {key: _int_attr(second, key) for key in
-             ("activation_row", "weight_row", "output_row", "m", "n", "k")}
-    attrs.update({key: _text_attr(second, key) for key in
-                  ("activation_format", "weight_format", "output_format",
-                   "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
-    connected_body = (vector, Fence(), quant, Fence(),
-                      *lower_resident_contract(profile, attrs))
-    if connected_body != source_body:
+    pair = lower_connected_fp8_vpu_pair(
+        mlir_text, profile, resources,
+        buffers={name: name for name in INPUTS},
+        outputs={name: name for name in OUTPUTS})
+    first_count = len(lower_first_matrix_commands(frontend_mlir, profile, resources))
+    if pair.commands[first_count + 1:] != source_body:
         raise ValueError("connected MX chain target commands differ from source seam")
-    first_commands = emit_verified_first_matrix_commands(profile, resources)
-    return (*first_commands, Fence(), *connected_body)
+    return pair.commands

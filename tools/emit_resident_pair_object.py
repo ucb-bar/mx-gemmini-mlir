@@ -50,7 +50,7 @@ def _load_mlir(path: Path) -> bytes:
     if path.name.endswith(".mlir.gz"):
         return gzip.decompress(data)
     if path.suffix != ".mlir":
-        raise ValueError("resident pair input must be .mlir or .mlir.gz")
+        raise ValueError("MX object input must be .mlir or .mlir.gz")
     return data
 
 
@@ -110,13 +110,13 @@ def _compile_object(directory: Path, riscv_root: Path) -> tuple[Path, int]:
                             check=False)
     (directory / "compile.log").write_text(result.stdout)
     if result.returncode:
-        raise RuntimeError("resident pair object build failed; see compile.log")
+        raise RuntimeError("MX issuer object build failed; see compile.log")
     defined = subprocess.check_output([str(nm), "-g", "--defined-only", str(obj)],
                                       text=True).splitlines()
     undefined = subprocess.check_output([str(nm), "-u", str(obj)],
                                         text=True).splitlines()
     if len(defined) != 1 or defined[0].split()[-2:] != ["T", "mx_issue"] or undefined:
-        raise ValueError("resident pair object has unexpected symbols")
+        raise ValueError("MX issuer object has unexpected symbols")
     sections = subprocess.check_output([str(readelf), "-SW", str(obj)], text=True)
     allocated_data_bytes = 0
     for line in sections.splitlines():
@@ -126,7 +126,7 @@ def _compile_object(directory: Path, riscv_root: Path) -> tuple[Path, int]:
                                                  ".sdata", ".sbss")):
             allocated_data_bytes += int(found.group(2), 16)
     if allocated_data_bytes:
-        raise ValueError("resident pair object embeds runtime or golden data")
+        raise ValueError("MX issuer object embeds runtime or golden data")
     return obj, allocated_data_bytes
 
 
