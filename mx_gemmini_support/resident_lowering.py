@@ -1,8 +1,8 @@
-"""Profile-checked physical lowering for an FP8 resident second contraction.
+"""Profile-checked physical lowering for a DIM16 FP8 resident contraction.
 
-The typed operation names the live scratchpad tile and its source buffers.
-This scheduler implements the DIM16, 64-cubed Nicolas VPU/requant chain;
-other geometries and formats remain fail-closed until independently qualified.
+The typed operation names the live scratchpad tile and source buffers. The
+64-cubed VPU/requant and 128-cubed direct requant chains use the same physical
+MM2 schedule with different source-checked scratchpad lifetimes.
 """
 
 from __future__ import annotations
@@ -16,22 +16,34 @@ _BUFFER = re.compile(r"[A-Za-z_][A-Za-z_0-9]*\Z")
 
 
 def validate_resident_contract(profile: dict, attrs: dict) -> None:
-    if profile.get("transport") != "rocket_rocc" or not profile["resources"].get("spad_requant"):
-        raise ValueError("resident MX contraction needs the selected RoCC SPAD_REQUANT profile")
+    if profile.get("transport") != "rocket_rocc" or not profile["resources"].get("requantizer"):
+        raise ValueError("resident MX contraction needs a selected RoCC requantizer profile")
     if profile["geometry"].get("mesh_columns") != 16:
         raise ValueError("resident MX contraction requires the qualified DIM16 layout")
-    if (attrs["m"], attrs["n"], attrs["k"]) != (64, 64, 64):
-        raise ValueError("resident MX contraction is qualified only for 64x64x64")
+    shape = (attrs["m"], attrs["n"], attrs["k"])
+    if shape not in {(64, 64, 64), (128, 128, 128)}:
+        raise ValueError("resident MX contraction needs a source-qualified 64³ or 128³ tile")
+    if shape == (64, 64, 64) and not profile["resources"].get("spad_requant"):
+        raise ValueError("64³ resident MX contraction needs the qualified SPAD_REQUANT profile")
+    if shape == (128, 128, 128) and (
+            profile["name"] != "MxGemminiRocketConfig" or
+            profile["resources"].get("spad_requant") or
+            profile["resources"].get("vpu")):
+        raise ValueError("128³ resident MX contraction needs Nicolas's plain MX profile")
     if any(attrs[key] != "fp8_e4m3" for key in
            ("activation_format", "weight_format", "output_format")):
         raise ValueError("resident MX contraction requires E4M3 inputs and output")
     for key in ("weight_buffer", "weight_scales_buffer", "output_scales_buffer"):
         if not isinstance(attrs[key], str) or not _BUFFER.fullmatch(attrs[key]):
             raise ValueError(f"resident MX {key} must name a runtime buffer")
+    m, n, k = shape
+    activation_rows, weight_rows, output_rows = (m * k // 16, k * n // 16,
+                                                  m * n // 16)
     rows = profile["resources"]["scratchpad_bytes"] // 16
     a, b, c = (attrs[key] for key in ("activation_row", "weight_row", "output_row"))
     if any(type(value) is not int for value in (a, b, c)) or not (
-            0 <= a and a + 256 <= c and c + 256 <= b and b + 256 == rows and
+            0 <= a and a + activation_rows <= c and
+            c + output_rows <= b and b + weight_rows == rows and
             rows <= 1 << 14):
         raise ValueError("resident MX scratchpad tile placement or lifetime differs")
     if "fp8_e4m3" not in profile["candidate_output_modes"]:
@@ -67,17 +79,63 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
     commands += [
         Fence(),
         cmd(0, 2, 2),  # gemmini_config_st(sizeof(uint16_t))
-        # gemmini_mxquant_config_mvout_resident; A scales were written by
-        # SPAD_REQUANT, so do not upload or select a different activation half.
+        # gemmini_mxquant_config_mvout_resident; A scales are already resident
+        # from the preceding requant operation or source C1 preload.
         cmd(26, Operand(buffer=attrs["output_scales_buffer"],
                         address_mask=(1 << 33) - 1,
                         or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
         cmd(9, 0, (kk << 32) | (j << 16) | i),
-        cmd(24, a, b + 256),
+        cmd(24, a, b + k * n // 16),
         cmd(8, 0, (c << 32) | 0x200 | 0x38 | (1 << 10)),
         Fence(),
     ]
     return tuple(commands)
+
+
+def lower_single_resident_contract(mlir_text: str, profile: dict
+                                   ) -> tuple[Command | Fence, ...]:
+    """Lower one SSA-bound resident MM2 without a source-specific VPU seam."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.parser import Parser
+
+    from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
+
+    report = verify_ir(mlir_text, profile)
+    if (report["contracts"], report["vpu_commands"], report["spad_requants"],
+            report["resident_contracts"]) != (0, 0, 0, 1):
+        raise ValueError("standalone resident MX lowering needs exactly one MM2 op")
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    functions = [op for op in module.walk() if isinstance(op, FuncOp)]
+    if len(functions) != 1:
+        raise ValueError("standalone resident MX lowering needs one function")
+    function = functions[0]
+    ops = list(function.body.block.ops)
+    if [_operation_name(op) for op in ops] != [
+            "mx_gemmini.resident_contract", "func.return"]:
+        raise ValueError("standalone resident MX function contains an unexpected op")
+    contract, ret = ops
+    attrs = {key: _int_attr(contract, key) for key in
+             ("activation_row", "weight_row", "output_row", "m", "n", "k")}
+    attrs.update({key: _text_attr(contract, key) for key in
+                  ("activation_format", "weight_format", "output_format",
+                   "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
+    m, n, k = attrs["m"], attrs["n"], attrs["k"]
+    expected = (f"tensor<{m}x{k}xi8>", f"tensor<{m}x{k // 32}xi8>",
+                f"tensor<{k}x{n}xi8>", f"tensor<{k // 32}x{n}xi8>")
+    results = (f"tensor<{m}x{n}xi8>", f"tensor<{m}x{n // 32}xi8>")
+    args = list(function.body.block.args)
+    if (tuple(str(arg.type) for arg in args) != expected or
+            tuple(str(result.type) for result in contract.results) != results or
+            list(contract.operands) != args or
+            not isinstance(ret, ReturnOp) or
+            list(ret.operands) != list(contract.results)):
+        raise ValueError("standalone resident MX SSA tensor edges differ from MM2")
+    return lower_resident_contract(profile, attrs)
 
 
 def lower_resident_chain_commands(mlir_text: str, profile: dict, *,
