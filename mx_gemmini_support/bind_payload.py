@@ -136,6 +136,80 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
     return rendered
 
 
+def append_tilewise_vpu_x2(mlir_text: str, profile: dict, manifest: dict) -> str:
+    """Apply one in-place BF16 MULS x2 to each complete MX output tile.
+
+    The bound contraction owns the full logical output, while its physical C
+    scratchpad tile is reused. The module policy makes this repeated physical
+    effect explicit before the BF16 readout.
+    """
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin, BoolAttr, IntegerAttr, StringAttr, UnregisteredOp, i32
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.parser import Parser
+    from xdsl.printer import Printer
+
+    from .source_gemm import plan_mx_gemm
+
+    verify_ir(mlir_text, profile)
+    if (manifest.get("output_format", "bf16") != "bf16" or
+            manifest.get("precision") not in {"FP8", "FP4"} or
+            manifest.get("profile_sha256") != profile_sha256(profile)):
+        raise ValueError("tilewise VPU x2 needs a BF16 FP8/FP4 source-bound target")
+    shape, tile = manifest.get("shape_mnk"), manifest.get("tile_mnk")
+    if (not isinstance(shape, list) or not isinstance(tile, list) or
+            len(shape) != 3 or len(tile) != 3):
+        raise ValueError("tilewise VPU x2 needs a complete source shape and tile")
+    plan = plan_mx_gemm(shape=tuple(shape), tile=tuple(tile),
+                        datatype=manifest["precision"], quant_output=False,
+                        acc_to_gmem=False,
+                        scratchpad_bytes=profile["resources"]["scratchpad_bytes"],
+                        profile=profile)
+    if len(plan.get("output_tiles", [])) <= 1:
+        raise ValueError("tilewise VPU x2 needs multiple output tiles")
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    if (_text_attr(module, "mx.payload_manifest_sha256") != manifest_sha256(manifest) or
+            _text_attr(module, "mx.vector_tile_policy") is not None):
+        raise ValueError("tilewise VPU x2 needs one unmodified source payload binding")
+    ops = [op for op in module.walk()
+           if _operation_name(op).startswith("mx_gemmini.") and
+           _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
+    if [_operation_name(op) for op in ops] != ["mx_gemmini.contract", "mx_gemmini.readout_bf16"]:
+        raise ValueError("tilewise VPU x2 needs one bare contraction and BF16 readout")
+    contract, readout = ops
+    function = readout.parent_op()
+    if (not isinstance(function, FuncOp) or
+            not isinstance(function.get_return_op(), ReturnOp) or
+            list(readout.operands) != list(contract.results) or
+            list(function.get_return_op().operands) != list(readout.results) or
+            _text_attr(contract, "site_id") != manifest.get("site_id") or
+            _text_attr(readout, "site_id") != manifest.get("site_id")):
+        raise ValueError("tilewise VPU x2 needs a matching returned contraction")
+    binding = {name: readout.attributes[name]
+               for name in ("site_id", "profile_sha256", "contract_sha256",
+                            "policy_sha256", "manifest_sha256")}
+    row = plan["c_spad_dest"]
+    i32attr = lambda value: IntegerAttr(value, i32)
+    vpu = UnregisteredOp.with_name("mx_gemmini.vpu_execute").create(attributes={
+        **binding, "kind": StringAttr("muls"),
+        "src1_row": i32attr(row), "src2_row": i32attr(0),
+        "dst_row": i32attr(row), "rows": i32attr(plan["c_rows"]),
+        "reduction_length": i32attr(1), "broadcast": BoolAttr.from_bool(False),
+        "immediate_bf16": i32attr(0x4000)})
+    block = readout.parent
+    assert block is not None
+    block.insert_op_before(vpu, readout)
+    module.attributes["mx.vector_tile_policy"] = StringAttr("bf16_muls_x2_each_output_tile_v1")
+    output = StringIO()
+    Printer(stream=output).print_op(module)
+    rendered = output.getvalue() + "\n"
+    verify_ir(rendered, profile)
+    return rendered
+
+
 def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) -> str:
     """Compose typed VPU and resident requant after one source-bound matmul."""
     from xdsl.context import Context

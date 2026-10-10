@@ -102,7 +102,8 @@ def _exact_bf16_x2(source: bytes) -> bytes:
     return exact_bf16_x2(source)
 
 
-def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[tuple[str, dict]], str | None]:
+def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
+        list[tuple[str, dict]], str | None, str | None]:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
@@ -138,6 +139,7 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                     else "mx_gemmini.readout_quantized")
     readout = [op for op in ops if _operation_name(op) == readout_name]
     names = [_operation_name(op) for op in ops]
+    tilewise_policy = _text_attr(module, "mx.vector_tile_policy")
     if (len(contract) != 1 or len(readout) != 1 or
             names[0] != "mx_gemmini.contract" or
             names[-1] != ("mx_gemmini.spad_requant" if vector_requant else
@@ -151,6 +153,17 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                                          "mx_gemmini.spad_requant"]) or
             (host_requant and (names[-2] != readout_name or len(names) != 3))):
         raise ValueError("physical MX lowering requires a matching output readout")
+    if tilewise_policy is not None:
+        function = readout[0].parent_op()
+        if (tilewise_policy != "bf16_muls_x2_each_output_tile_v1" or
+                output_format != "bf16" or
+                names != ["mx_gemmini.contract", "mx_gemmini.vpu_execute",
+                          "mx_gemmini.readout_bf16"] or
+                list(readout[0].operands) != list(contract[0].results) or
+                not isinstance(function, FuncOp) or
+                not isinstance(function.get_return_op(), ReturnOp) or
+                list(function.get_return_op().operands) != list(readout[0].results)):
+            raise ValueError("physical MX tilewise VPU policy differs from bound contraction")
     if (manifest.get("site_id") != _text_attr(contract[0], "site_id") or
             manifest.get("site_id") != _text_attr(readout[0], "site_id") or
             _text_attr(contract[0], "payload_manifest_sha256") != digest):
@@ -230,14 +243,14 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[list[
                 "scale_dram_address": _int_attr(op, "scale_dram_address"),
                 "scale_buffer": _text_attr(op, "scale_buffer"),
             }))
-    return vector_ops, host_kind
+    return vector_ops, host_kind, tilewise_policy
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
-    vector_ops, host_kind = _check_binding(mlir_text, profile, manifest)
+    vector_ops, host_kind, tilewise_policy = _check_binding(mlir_text, profile, manifest)
     host_requant = host_kind is not None
     if mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown MX physical scheduling mode")
@@ -269,8 +282,25 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     if dim != 16 or m % tm or n % tn or tk % 16 or plan["c_rows"] % 16:
         raise ValueError("physical source lowering needs complete DIM16 output tiles")
     output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
+    if tilewise_policy and len(output_tiles) == 1:
+        raise ValueError("physical MX tilewise VPU policy needs multiple output tiles")
     if len(output_tiles) != 1 and vector_ops:
-        raise ValueError("physical MX vector epilogues need a single output tile")
+        # The C tile is reused across output tiles. A pointwise, in-place VPU
+        # operation can run after each tile's final K wave and before its
+        # readout; an operation spanning tiles or producing another resident
+        # tensor needs a separate lifetime planner.
+        tilewise = (tilewise_policy == "bf16_muls_x2_each_output_tile_v1" and
+                    len(vector_ops) == 1 and vector_ops[0][0] == "vpu" and
+                    output_format == "bf16" and
+                    vector_ops[0][1] == {
+                        "kind": "muls", "src1_row": plan["c_spad_dest"],
+                        "src2_row": 0, "dst_row": plan["c_spad_dest"],
+                        "rows": plan["c_rows"], "reduction_length": 1,
+                        "broadcast": False, "immediate_bf16": 0x4000,
+                        "second_dst_row": None})
+        if not tilewise:
+            raise ValueError("multi-output MX vector epilogue needs an in-place BF16 MULS x2 per tile")
+        plan = {**plan, "vector_tile_policy": tilewise_policy}
     if host_requant and len(output_tiles) != 1:
         raise ValueError("Radiance header epilogue requires a single BF16 output tile")
     if quant_output and (len(output_tiles) != 1 or vector_ops and not vector_requant):
