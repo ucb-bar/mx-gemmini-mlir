@@ -53,6 +53,10 @@ legal modes across 20 Rocket profiles, with 106,496 source BF16 outputs per
 matrix run and an independent full reproduction. The
 [matrix qualification](docs/compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix)
 records the exact scope and pinned receipts.
+The DIM8 and DIM32 all-asymmetric Rocket profiles each pass all 21 checked-in
+source modes on Nicolas's Spike, with independent reproductions. Each profile
+has 36 legal modes, so 15 modes per profile still need source tests and numerical
+qualification; see the [mesh matrix receipts](docs/compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices).
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.

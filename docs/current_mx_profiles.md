@@ -31,17 +31,20 @@ before emitting a Rocket RoCC C issuer.
 runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it
 into funct 34, and keeps the source/destination scratchpad fields separate.
 The fixed-address form remains available for known baremetal mappings.
-This pointer binding is command-level support; a compiler-generated numerical
-VPU→requant→matmul chain is still pending.
+The source-bound compiler has also qualified a full
+MM1→VPU×2→SPAD_REQUANT→resident MM2 command chain on Nicolas's Spike.
+Its two frontend/target MLIR inputs are joined by site ID and source hashes;
+one connected SSA-level chain and general scheduling remain pending.
 
 A separate source-bound BF16 matrix lowering now compiles FP8 and FP4 contractions with the MX+VPU profile to
 standalone RV64 ELFs. FP6 needs its separate LUT profile; no current VPU
 profile contains FP6 E3M2 compute. See [compiled source parity](compiled_mx_pipeline.md).
 The source-bound compiler also orders one in-place BF16 VPU epilogue after
 the matrix K waves; FP8 and FP4 ×2 runs match their exact derived goldens on
-Spike. A 64×64×128 FP8 program now composes the matrix, VPU×2, and tiled
-resident SPAD_REQUANT with numerical parity on Spike. The following resident
-matrix stage, general scheduling, and Radiance MMIO composition remain open.
+Spike. A 64×64×128 FP8 program composes the matrix, VPU×2, and tiled resident
+SPAD_REQUANT; a separate 64×64×64 source-bound program also includes the
+following resident matrix stage. Both have numerical parity on Spike.
+General scheduling and Radiance MMIO composition remain open.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config
