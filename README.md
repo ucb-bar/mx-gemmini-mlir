@@ -50,6 +50,11 @@ The same command now accepts the current Radiance `spatter-workloads` revision
 typed MLIR, physical streams, ELFs, and Spike logs match the pinned roster.
 Its [compact receipt](docs/evidence/radiance_mx_gemm_80f84ca_upstream_repro_20261010/reproduction.json)
 records the current source revision and exact baseline artifact hashes.
+The [current compiler replay](docs/evidence/radiance_mx_gemm_current_9b3a6b9_80f84ca/index.json)
+rebuilds all 31 drivers on `spatter-workloads` with model2MLIR `e9ded36` and
+checks 466,944 BF16 values or quantized code bytes plus 3,328 scales on Spike.
+A published-checkout rerun reproduces every frontend, object, ELF, and Spike
+log hash; only path-bearing build logs differ.
 A [fresh published compiler run](docs/evidence/radiance_mx_gemm_fresh_4fc4d3a_82be2c7/index.json)
 also reproduces all 31 drivers from upstream Radiance `82be2c7` on Nicolas's
 Spike, comparing 466,944 output elements across BF16 and requantized cases.
