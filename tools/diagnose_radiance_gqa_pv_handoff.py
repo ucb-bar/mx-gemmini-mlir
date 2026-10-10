@@ -15,30 +15,15 @@ import sys
 
 from mx_gemmini_support.source_attention_qk import (
     HARDWARE_SHIFT, decode_e4m3, read_gqa_qk_tile)
+from mx_gemmini_support.source_attention_pv import (
+    MUON_REQUANT_SOURCE_SHA256, source_e4m3_scaled)
 from mx_gemmini_support.source_fp6 import _array
 from tools.qualify_radiance_gqa_qk import HARDWARE_PATCH
 from tools.qualify_radiance_ws_roster import _revision
 
 
-MUON_REQUANT_SOURCE_SHA256 = "c7dc2a63bf283a7cb3035983c26f76651569fa43a875d6fde06bcaf8991fa47f"
-
-
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _source_e4m3_scaled(bf16: int, scale_exponent: int) -> int:
-    """Translate bf16_to_e4m3_scaled from the pinned Muon source verbatim."""
-    exp = (bf16 >> 7) & 0xff
-    exponent = exp - 127 - scale_exponent
-    mantissa = (bf16 >> 4) & 7
-    if exp == 0 or exponent < -6:
-        return 0
-    if exponent > 8:
-        exponent, mantissa = 8, 6
-    if exponent == 8 and mantissa > 6:
-        mantissa = 6
-    return (((bf16 >> 8) & 0x80) | ((exponent + 7) << 3) | mantissa) & 0xff
 
 
 def main() -> None:
@@ -104,8 +89,8 @@ def main() -> None:
     p_bits = (probability.to(torch.bfloat16).view(torch.int16)
               .to(torch.int32).numpy() & 0xffff)
     source_codes = np.asarray([
-        [_source_e4m3_scaled(int(p_bits[row, col]),
-                             int(scale_exponents[row, col // 32]))
+        [source_e4m3_scaled(int(p_bits[row, col]),
+                            int(scale_exponents[row, col // 32]))
          for col in range(64)] for row in range(64)], dtype=np.uint8)
 
     v_values, v_scales = fa_model.mx_quantize_cols(v[0, :64].t().contiguous())

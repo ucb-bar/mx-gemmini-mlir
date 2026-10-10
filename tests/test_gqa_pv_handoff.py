@@ -10,8 +10,8 @@ import subprocess
 
 import pytest
 
-from tools.diagnose_radiance_gqa_pv_handoff import (
-    MUON_REQUANT_SOURCE_SHA256, _source_e4m3_scaled)
+from mx_gemmini_support.source_attention_pv import (
+    MUON_REQUANT_SOURCE_SHA256, source_e4m3_scaled)
 
 
 def test_source_muon_e4m3_encoder_matches_python_translation(tmp_path):
@@ -39,6 +39,6 @@ def test_source_muon_e4m3_encoder_matches_python_translation(tmp_path):
                     str(executable)], check=True)
     actual = subprocess.run([str(executable)], check=True,
                             stdout=subprocess.PIPE).stdout
-    expected = bytes(_source_e4m3_scaled(b, se)
+    expected = bytes(source_e4m3_scaled(b, se)
                      for se in range(-6, 1) for b in range(0x7f80))
     assert actual == expected

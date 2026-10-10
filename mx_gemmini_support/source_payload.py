@@ -23,6 +23,7 @@ from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_
 
 SCHEMA = "mx_gemmini.source_payload.v1"
 ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
+ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
 
 
 def validate_attention_qk_candidate(manifest: dict) -> None:
@@ -49,6 +50,35 @@ def validate_attention_qk_candidate(manifest: dict) -> None:
                 any(c not in "0123456789abcdef" for c in value)
                 for value in hashes.values())):
         raise ValueError("attention QK candidate lacks pinned source operand hashes")
+
+
+def validate_attention_pv_proxy(manifest: dict) -> None:
+    """Keep a Torch-exp Muon boundary probe distinct from executed Muon bytes."""
+    if manifest.get("origin") != ATTENTION_PV_PROXY_ORIGIN:
+        raise ValueError("attention PV proxy has the wrong payload origin")
+    policy = manifest.get("source_derivation")
+    if (not isinstance(policy, dict) or
+            policy.get("schema") != "mx_gemmini.attention_pv_proxy.v1" or
+            policy.get("stage") != "gqa_pv_head0_block0" or
+            policy.get("exp_policy") != "torch_exp_bf16_proxy_for_mu_fexp" or
+            policy.get("causal_mask") != "first_key_block_fully_visible" or
+            policy.get("output_oracle") != "dim16_reduced_precision_product_and_accumulator" or
+            policy.get("source_header_sha256") != manifest.get("source_header_sha256") or
+            manifest.get("precision") != "FP8" or
+            manifest.get("shape_mnk") != [64, 64, 64] or
+            manifest.get("tile_mnk") != [64, 64, 64] or
+            manifest.get("output_format") is not None):
+        raise ValueError("attention PV proxy lacks its explicit source derivation")
+    for field in ("qk_golden_bf16_sha256", "muon_requant_source_sha256"):
+        value = policy.get(field)
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise ValueError(f"attention PV proxy lacks {field}")
+    hashes = policy.get("source_arrays_sha256")
+    if (not isinstance(hashes, dict) or
+            set(hashes) != {"activation", "activation_scales", "weight", "weight_scales"} or
+            any(hashes[name] != manifest.get("resources", {}).get(name, {}).get("sha256")
+                for name in hashes)):
+        raise ValueError("attention PV proxy operand hashes differ from its bundle")
 
 
 def vpu_requant_shape_is_legal(shape: tuple[int, int, int],
@@ -323,6 +353,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         raise ValueError("unknown MX payload bundle schema")
     if manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
         validate_attention_qk_candidate(manifest)
+    elif manifest.get("origin") == ATTENTION_PV_PROXY_ORIGIN:
+        validate_attention_pv_proxy(manifest)
     elif "source_derivation" in manifest:
         raise ValueError("derived MX payload must declare its candidate origin")
     precision = manifest.get("precision")
