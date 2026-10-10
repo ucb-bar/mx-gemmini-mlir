@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "artifacts_sha256": {
+        "dim16_bound.mlir": "0a4e6f1f5da14d57c43d050fc59ae1db4beee3104740cdd19dd6af801512e38e",
+        "dim16_model2mlir.mlir": "051711f6d17dc785a439167b5ee30cbee6ee083ffa6692ba5220d0a562ba4409",
+        "dim16_mx_issue.c": "95f32dc9d3e3bf697c6726ff46fd91de8702457047349194981bed8a5a81a7ee",
+        "dim16_physical_program.json": "aa0657d2af73eacb461c8eb3c1c5b4493852de205a05a328e89fe430aa0232c8",
+        "dim16_resource_manifest.json": "9095499a3dcf6edc7c0e007d0e61f9a81997bb4cfc297f1ed121279ddc169a8d"
+      },
+      "deterministic_fields_match": true,
+      "first_receipt_sha256": "a52f889ca90d5a31cd90f4b406b5bb61c66ace9b566a8dd4ca862992b3517af3",
+      "matched_bf16_outputs": 16384,
+      "mesh_dim": 16,
+      "profile_name": "MxAllAsymGemminiRocketConfig",
+      "repro_receipt_sha256": "071307bf12bf38f5cd45b96b3896f757e10b14fa1db005b319b851cd4527d3d5",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "artifacts_sha256": {
+        "dim32_bound.mlir": "9d84cfc75e8a5e23e30b836690484421f8cae665f35e76384fbbf6c4cbcd883e",
+        "dim32_model2mlir.mlir": "aa044cb117700fdf9d76ca045cc5d6d0f1e8f87a89324a2024e542e7cdf48c10",
+        "dim32_mx_issue.c": "f25a9c03ac2987a3217cb973b3f1a3332b51ae85dcec904da1ed50d06bc7c2de",
+        "dim32_physical_program.json": "f677511f5218d90b0c9e1f21b0b2d88ff24e03b3a8054d26ab3f53bf8e1dc15b",
+        "dim32_resource_manifest.json": "41fe0bbcb246c1f03ad5066fdb27ea23b69d7dbf60e8e5925d85083bc92a829b"
+      },
+      "deterministic_fields_match": true,
+      "first_receipt_sha256": "07cd0108bc35ce157997bdb0d90fdd1fc2e7ee572248561fc7ff14b328c84929",
+      "matched_bf16_outputs": 16384,
+      "mesh_dim": 32,
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "repro_receipt_sha256": "197731689aab65d5682d8bc96615c3fe5f91fae6d5543192d6ca474f374a9c78",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ]
+    }
+  ],
+  "compiler_revision": "64cb4549c4d046528a67d8b119a9582fc0084260",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_large_direct_spike_matrix.v1",
+  "source": "Nicolas checked-in source arrays and BF16 goldens"
+}

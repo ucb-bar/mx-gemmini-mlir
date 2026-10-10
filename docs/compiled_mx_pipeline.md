@@ -672,6 +672,35 @@ The aggregate receipts enumerate the **10 legal cells without source tests**.
 This result qualifies the available 64³ BF16 source cases on Spike; it does
 not establish numerical parity for those 10 cells or other shapes.
 
+### Larger asymmetric direct source shapes
+
+The source-bound scheduler now derives the operand strides, scale byte counts,
+tile loops, scratchpad layout, and BF16 readout size from the selected recipe.
+Nicolas's direct E4M3 activation × FP4 weight sources at **128×128×128 on
+DIM16** and **128×128×256 on DIM32** each compile from a fresh model2MLIR
+PyTorch matmul capture to typed MX MLIR, physical commands, and an RV64 RoCC
+ELF. Each generated program matches **16,384 / 16,384 BF16 source outputs**
+on the corresponding pinned Spike extension. Two independent builds per
+shape reproduce all recorded artifacts and Spike logs; only path-bearing
+link log hashes differ. The [qualification index](evidence/nicolas_asym_large_direct_266c593/qualification.json)
+links the four receipts, captured and bound MLIR, physical programs, resource
+manifests, and generated C issuers. It pins compiler `64cb454` and Nicolas
+RTL `266c593`.
+
+```sh
+python -m tools.qualify_nicolas_asym --source-suffix e4m3s_fp4 \
+  --source-shape 128x128x256 --mesh-dim 32 \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxDim32AllAsymGemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/large-asym-output
+```
+
+For DIM16 use `--source-shape 128x128 --mesh-dim 16` and
+`MxAllAsymGemminiRocketConfig.json`. The other checked-in larger asymmetric
+source modes still need their LUT bank layouts and numerical qualification.
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,

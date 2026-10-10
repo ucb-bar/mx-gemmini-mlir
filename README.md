@@ -60,6 +60,11 @@ qualification; see the [mesh matrix receipts](docs/compiled_mx_pipeline.md#dim8-
 The separate DIM16 all-asymmetric Rocket profile passes all 26 available source
 modes in two fresh runs. Its 36 legal modes leave 10 without source tests;
 see the [DIM16 all-asymmetric receipts](docs/compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix).
+The source-bound scheduler also passes Nicolas's larger direct E4M3×FP4
+128×128×128 DIM16 and 128×128×256 DIM32 kernels on Spike, comparing all
+16,384 BF16 outputs in each. Their [generated programs and reproduction
+receipts](docs/compiled_mx_pipeline.md#larger-asymmetric-direct-source-shapes)
+record the current shape scope.
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.
