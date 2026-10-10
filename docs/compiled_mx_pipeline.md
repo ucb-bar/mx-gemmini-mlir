@@ -1492,7 +1492,10 @@ python -m tools.qualify_radiance_gqa_pv_proxy \
 This is an MX-side PV qualification for **proxy P bytes**. The simulator run
 does not execute Muon, prove `mu_fexp` bit parity, or exercise the tiled
 Muon-to-MX shared-memory handoff. The experimental Q/K headroom correction
-also remains part of the fixture.
+also remains part of the fixture. The local Cyclotron Muon model implements
+`fexp.h` as rounded host `exp`, while the Muon RTL FPEX uses a fixed-point LUT
+and interpolation. The proxy is therefore useful for the MX consumer test,
+but RTL P-code parity needs a separate SFU check or device trace.
 
 ```sh
 python -m tools.diagnose_radiance_gqa_pv_handoff \
