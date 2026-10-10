@@ -111,6 +111,12 @@ _VARIANTS = {
         "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
         "lut_words_per_line": 0, "lut_entry_bits": 0,
     },
+    "matmul_tiled_asym_e4m3s_fp4_16x32.c": {
+        "header": "matmul_data_asym_e4m3s_fp4_16x32.h", "cell": DIRECT_CELL,
+        "mesh_dim": 16, "shape": [16, 32, 32],
+        "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
+        "lut_words_per_line": 0, "lut_entry_bits": 0,
+    },
     "matmul_tiled_asym_e4m3s_fp4_128x128x256_dim32.c": {
         "header": "matmul_data_asym_e4m3s_fp4_128x128x256_dim32.h",
         "cell": DIRECT_CELL, "mesh_dim": 32, "shape": [128, 128, 256],
@@ -456,7 +462,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
 
     if (recipe.get("schema") != "mx_gemmini.asymmetric_source_recipe.v1" or
             recipe.get("site_id") != "functional:matmul" or
-            recipe.get("shape") not in ([64, 64, 64], [128, 128, 128],
+            recipe.get("shape") not in ([16, 32, 32], [64, 64, 64], [128, 128, 128],
                                         [128, 128, 256]) or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or

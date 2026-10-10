@@ -57,7 +57,7 @@ def main() -> None:
         help="header generated with Nicolas's pinned gen_asym.py")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="selected Rocket mesh dimension (default: 16)")
-    parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
+    parser.add_argument("--source-shape", choices=("16x32", "64x64", "128x128", "128x128x256"),
                         default="64x64", help="named Nicolas source shape")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,

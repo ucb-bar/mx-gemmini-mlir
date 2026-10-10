@@ -125,7 +125,7 @@ def main() -> None:
                         help="independent Spike builds to run concurrently (1–4)")
     parser.add_argument("--mesh-dim", type=int, choices=(8, 16, 32), default=16,
                         help="Rocket mesh dimension (default: 16)")
-    parser.add_argument("--source-shape", choices=("64x64", "128x128", "128x128x256"),
+    parser.add_argument("--source-shape", choices=("16x32", "64x64", "128x128", "128x128x256"),
                         default="64x64", help="named Nicolas source shape")
     parser.add_argument("--all-asym", action="store_true",
                         help="select DIM16 MxAllAsymGemminiRocketConfig instead of dedicated profiles")
@@ -205,7 +205,8 @@ def main() -> None:
         (directory / "matrix_run.log").write_text(run.stdout)
         receipt_path = directory / "receipt.json"
         receipt = json.loads(receipt_path.read_text()) if receipt_path.is_file() else {}
-        expected_outputs = 4096 if args.source_shape == "64x64" else 16384
+        expected_outputs = {"16x32": 512, "64x64": 4096,
+                            "128x128": 16384, "128x128x256": 16384}[args.source_shape]
         passed = (run.returncode == 0 and
                   receipt.get("status") == "source_golden_matched_on_pinned_spike" and
                   receipt.get("compared_bf16_outputs") == expected_outputs and
