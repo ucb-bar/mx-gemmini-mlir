@@ -64,7 +64,7 @@ and [128³ archive](evidence/nicolas_fp4_connected_resident_128_266c593/index.js
 record the captured MLIR, bound graphs, physical commands, data-free objects,
 ELFs, and Spike logs. The pinned runs matched 4,096 and 16,384 FP4 codes,
 plus 128 and 512 E8M0 scale bytes, respectively, at each of C1 and C2. The
-64³ fresh checkout rebuilt the native verifier and reproduced the capture,
-commands, object, ELFs, and both Spike logs byte for byte. This is a source
+fresh checkouts for both sizes rebuilt the native verifier and reproduced the
+capture, commands, object, ELFs, and both Spike logs byte for byte. This is a source
 and Spike qualification for the plain MX profile; it does not qualify RTL
 timing or the FPGA image.

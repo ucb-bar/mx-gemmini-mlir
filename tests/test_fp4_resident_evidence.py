@@ -11,6 +11,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/nicolas_fp4_connected_resident_266c593"
 ARCHIVE_128 = ROOT / "docs/evidence/nicolas_fp4_connected_resident_128_266c593"
+FRESH_ARCHIVE_PATHS = {
+    "capture/source.mlir.gz": "capture/nicolas_fp4_chain.model2mlir.mlir",
+    "capture/handoff.mlir.gz": "capture/nicolas_fp4_chain.handoff.mlir",
+    "capture/profile_bound.mlir.gz": "capture/nicolas_fp4_chain.profile_bound.mlir",
+    "capture/quantization_manifest.json": "capture/quantization_manifest.json",
+    "chain/connected.mlir": "chain/connected.mlir",
+    "chain/physical_program.json.gz": "chain/physical_program.json",
+    "chain/mx_issue.c.gz": "chain/mx_issue.c",
+    "chain/mx_issue.o.gz": "chain/mx_issue.o",
+    "chain/source_spike.log": "chain/source/spike.log",
+    "chain/compiled_spike.log": "chain/compiled/spike.log",
+    "chain/source.elf.gz": "chain/source/program.elf",
+    "chain/compiled.elf.gz": "chain/compiled/program.elf",
+    "object/mx_issue.c.gz": "object/mx_issue.c",
+    "object/mx_issue.o.gz": "object/mx_issue.o",
+    "object/physical_program.json.gz": "object/physical_program.json",
+}
 
 
 def _read(path: str) -> bytes:
@@ -64,23 +81,7 @@ def test_connected_fp4_archive_integrity_and_spike_results():
     assert fresh["schema"] == "mx_gemmini.nicolas_fp4_connected_resident_fresh_checkout.v1"
     assert fresh["status"] == "fresh_checkout_reproduced_capture_commands_object_elf_and_spike"
     assert fresh["source_spike_exit_code"] == fresh["compiler_spike_exit_code"] == 0
-    for archive_path, fresh_path in {
-        "capture/source.mlir.gz": "capture/nicolas_fp4_chain.model2mlir.mlir",
-        "capture/handoff.mlir.gz": "capture/nicolas_fp4_chain.handoff.mlir",
-        "capture/profile_bound.mlir.gz": "capture/nicolas_fp4_chain.profile_bound.mlir",
-        "capture/quantization_manifest.json": "capture/quantization_manifest.json",
-        "chain/connected.mlir": "chain/connected.mlir",
-        "chain/physical_program.json.gz": "chain/physical_program.json",
-        "chain/mx_issue.c.gz": "chain/mx_issue.c",
-        "chain/mx_issue.o.gz": "chain/mx_issue.o",
-        "chain/source_spike.log": "chain/source/spike.log",
-        "chain/compiled_spike.log": "chain/compiled/spike.log",
-        "chain/source.elf.gz": "chain/source/program.elf",
-        "chain/compiled.elf.gz": "chain/compiled/program.elf",
-        "object/mx_issue.c.gz": "object/mx_issue.c",
-        "object/mx_issue.o.gz": "object/mx_issue.o",
-        "object/physical_program.json.gz": "object/physical_program.json",
-    }.items():
+    for archive_path, fresh_path in FRESH_ARCHIVE_PATHS.items():
         assert fresh["checks_sha256"][fresh_path] == index["files"][archive_path]["sha256"]
 
 
@@ -99,6 +100,7 @@ def test_connected_fp4_128_archive_and_full_output_spike():
     chain = json.loads(_read_128("chain/receipt.json"))
     obj = json.loads(_read_128("object/object_manifest.json"))
     dispatch = json.loads(_read_128("object/compile_manifest.json"))
+    fresh = json.loads(_read_128("fresh_checkout.json"))
     assert capture["matrix_dim"] == chain["matrix_dim"] == 128
     assert [site["format"] for site in capture["sites"]] == ["mxfp4", "mxfp4"]
     assert capture["opaque_calls"] == []
@@ -118,3 +120,8 @@ def test_connected_fp4_128_archive_and_full_output_spike():
     assert obj["bound_mlir_sha256"] == chain["bound_mlir_sha256"]
     assert b"fp4 chain test PASSED" in _read_128("chain/source_spike.log")
     assert b"fp4 chain test PASSED" in _read_128("chain/compiled_spike.log")
+    assert fresh["schema"] == "mx_gemmini.nicolas_fp4_connected_resident_128_fresh_checkout.v1"
+    assert fresh["status"] == "fresh_checkout_reproduced_capture_commands_object_elf_and_spike"
+    assert fresh["source_spike_exit_code"] == fresh["compiler_spike_exit_code"] == 0
+    for archive_path, fresh_path in FRESH_ARCHIVE_PATHS.items():
+        assert fresh["checks_sha256"][fresh_path] == index["files"][archive_path]["sha256"]
