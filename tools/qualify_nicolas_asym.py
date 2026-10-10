@@ -16,7 +16,8 @@ import shutil
 import subprocess
 import sys
 
-from mx_gemmini_support.asymmetric_specialization import (emit_baremetal,
+from mx_gemmini_support.asymmetric_specialization import (bind_asymmetric_payload,
+                                                           emit_baremetal,
                                                            lower_asymmetric_physical,
                                                            sha256, source_recipe,
                                                            specialize_handoff)
@@ -96,6 +97,8 @@ def main() -> None:
     validate_handoff(result, contract_bytes, policy_bytes)
     handoff = render_handoff(result, contract_bytes, policy_bytes)
     bound = specialize_handoff(handoff, profile, recipe)
+    bound = bind_asymmetric_payload(bound, profile, recipe,
+                                    source=source, header=header)
     physical = (lower_asymmetric_physical(bound, profile, recipe,
                                           source=source, header=header)
                 if args.physical else None)

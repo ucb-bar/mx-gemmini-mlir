@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
+                                                           bind_asymmetric_payload,
                                                            emit_baremetal, lower_asymmetric_physical,
                                                            source_recipe,
                                                            specialize_handoff)
@@ -163,6 +164,15 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     header.write_text(header_text)
     recipe = source_recipe(source, header, profile)
     bound = specialize_handoff(CAPTURE, profile, recipe)
+    with pytest.raises(ValueError, match="payload differs from typed MLIR"):
+        lower_asymmetric_physical(bound, profile, recipe,
+                                  source=source, header=header)
+    bound = bind_asymmetric_payload(bound, profile, recipe,
+                                    source=source, header=header)
+    assert 'mx.payload_manifest_sha256 = "' in bound
+    with pytest.raises(ValueError, match="already payload-bound"):
+        bind_asymmetric_payload(bound, profile, recipe,
+                                source=source, header=header)
     program, resources, resource_manifest = lower_asymmetric_physical(
         bound, profile, recipe, source=source, header=header)
     assert program.plan["pe_mode"] == mode
@@ -174,7 +184,7 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     assert len(resources["activation"]) == activation_bytes
     assert len(resources["golden_bf16"]) == 8192
     assert {"activation", "weight", "activation_scales", "weight_scales"} <= set(
-        resource_manifest["resources_sha256"])
+        resource_manifest["resources"])
     assert sum(isinstance(step.command, Command) and step.command.funct == 29
                for step in program.steps) == lut_loads
     assert sum(isinstance(step.command, Command) and step.command.funct == 30

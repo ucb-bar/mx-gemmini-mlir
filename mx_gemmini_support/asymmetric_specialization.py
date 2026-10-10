@@ -335,6 +335,75 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
     return resources
 
 
+def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) -> dict:
+    """Describe every Nicolas source byte array with its physical shape."""
+    from .source_payload import Resource
+
+    variant = _VARIANTS_BY_HEADER[header.name]
+    packed_activation = variant["activation_array"] == "A_in_hw[32][64]"
+    shapes = {
+        "activation": ((32, 64) if packed_activation else (64, 64), 8,
+                       "packed_even_odd_m_nibbles" if packed_activation else "row_major_codes"),
+        "weight": ((64, 32), 8, "packed_even_odd_n_nibbles"),
+        "activation_scales": ((2, 64), 8, "k_group_row_e8m0"),
+        "weight_scales": ((2, 64), 8, "k_group_column_e8m0"),
+        "golden_bf16": ((64, 64), 16, "row_major_bf16"),
+    }
+    if variant["use_lut"]:
+        words = variant["lut_words_per_line"]
+        bits = variant["lut_entry_bits"]
+        shapes.update({
+            "activation_lut": ((32, words), 32, f"row_pair_lut_{bits}bit"),
+            "weight_lut": ((32, words), 32, f"column_pair_lut_{bits}bit"),
+            "output_lut": ((32, words), 32, f"output_pair_lut_{bits}bit"),
+        })
+    if set(resources) != set(shapes):
+        raise ValueError("asymmetric source resource set differs from selected mode")
+    return {
+        "schema": "mx_gemmini.asymmetric_resource_manifest.v2",
+        "site_id": recipe["site_id"],
+        "profile_sha256": recipe["profile_sha256"],
+        "origin": "nicolas_source_header_specialization",
+        "recipe": recipe,
+        "resources": {
+            name: Resource(resources[name], *shapes[name]).descriptor(name)
+            for name in sorted(resources)
+        },
+    }
+
+
+def bind_asymmetric_payload(mlir_text: str, profile: dict, recipe: dict, *,
+                            source: Path, header: Path) -> str:
+    """Bind source operand, scale, LUT, and golden bytes to the typed MLIR site."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin, StringAttr
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+    from xdsl.printer import Printer
+
+    _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
+    resources = read_asymmetric_resources(header, recipe)
+    from .source_payload import manifest_sha256
+    manifest = _resource_manifest(recipe, resources, header)
+    digest = manifest_sha256(manifest)
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    if "mx.payload_manifest_sha256" in module.attributes:
+        raise ValueError("asymmetric MLIR is already payload-bound")
+    contract = next(op for op in module.walk()
+                    if _operation_name(op) == "mx_gemmini.contract")
+    module.attributes["mx.payload_manifest_sha256"] = StringAttr(digest)
+    contract.attributes["payload_manifest_sha256"] = StringAttr(digest)
+    contract.attributes["payload_origin"] = StringAttr(manifest["origin"])
+    output = StringIO()
+    Printer(stream=output).print_op(module)
+    bound = output.getvalue() + "\n"
+    verify_ir(bound, profile)
+    return bound
+
+
 def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
                               source: Path, header: Path):
     """Lower a source-bound DIM16 asymmetric mode to physical MX commands."""
@@ -346,6 +415,23 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         raise ValueError("asymmetric physical lowering source or target changed")
     _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     resources = read_asymmetric_resources(header, recipe)
+    from .source_payload import manifest_sha256
+    resource_manifest = _resource_manifest(recipe, resources, header)
+    payload_digest = manifest_sha256(resource_manifest)
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    contracts = [op for op in module.walk() if _operation_name(op) == "mx_gemmini.contract"]
+    if (_text_attr(module, "mx.payload_manifest_sha256") != payload_digest or
+            len(contracts) != 1 or
+            _text_attr(contracts[0], "payload_manifest_sha256") != payload_digest or
+            _text_attr(contracts[0], "payload_origin") != resource_manifest["origin"]):
+        raise ValueError("asymmetric physical lowering payload differs from typed MLIR")
     cell = recipe["compute"]
     use_lut = cell["activation_projection"] == "lut" or cell["weight_projection"] == "lut"
     packed_activation = cell["activation_format"] != "fp8_e4m3" or use_lut
@@ -405,12 +491,6 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     for row in range(0, 512, dim):
         issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row))
     issue("readout", Fence())
-    resource_manifest = {"schema": "mx_gemmini.asymmetric_resource_manifest.v1",
-                         "recipe": recipe,
-                         "resources_sha256": {name: hashlib.sha256(data).hexdigest()
-                                              for name, data in sorted(resources.items())}}
-    payload_digest = hashlib.sha256(json.dumps(resource_manifest, sort_keys=True,
-                                               separators=(",", ":")).encode()).hexdigest()
     plan = {"shape_mnk": [64, 64, 64], "tile_mnk": [64, 64, 64],
             "activation_projection": recipe["compute"]["activation_projection"],
             "weight_projection": recipe["compute"]["weight_projection"],

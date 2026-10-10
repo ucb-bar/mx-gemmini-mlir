@@ -79,8 +79,9 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         if name == "mx_gemmini.contract":
             local_payload = _text_attr(op, "payload_manifest_sha256")
             if payload_digest is not None:
-                if local_payload != payload_digest or _text_attr(op, "payload_origin") != \
-                        "radiance_source_header_specialization":
+                if local_payload != payload_digest or _text_attr(op, "payload_origin") not in {
+                        "radiance_source_header_specialization",
+                        "nicolas_source_header_specialization"}:
                     raise ValueError("MX contract payload differs from selected source bundle")
             elif local_payload is not None or _text_attr(op, "payload_origin") is not None:
                 raise ValueError("MX contract has a payload without module binding")
