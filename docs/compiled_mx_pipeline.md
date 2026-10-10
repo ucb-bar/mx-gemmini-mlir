@@ -128,6 +128,26 @@ physical stream has the same hash as the prior FP6 result. This run uses the
 serial Spike schedule with its recorded FP6 scale-selector workaround; it does
 not qualify the alternating-buffer schedule on RTL or FPGA.
 
+Compiler `0d6460c` adds SSA source resources. Its
+[six-case qualification index](evidence/ssa_source_binding_266c593/qualification.json)
+links two independent builds each for
+[FP6 BF16](evidence/ssa_source_binding_266c593/fp6/bound.mlir),
+[FP4 BF16](evidence/ssa_source_binding_266c593/fp4/bound.mlir),
+[FP8 matrix→VPU→requant](evidence/ssa_source_binding_266c593/fp8_vpu/bound.mlir),
+Nicolas's [generated FP6 asymmetric mode](evidence/ssa_source_binding_266c593/asym_fp6_e3m2_e3m2/bound.mlir),
+and FP4×E4M3 mixed modes on
+[DIM8](evidence/ssa_source_binding_266c593/asym_dim8_fp4_e4m3/bound.mlir)
+and [DIM32](evidence/ssa_source_binding_266c593/asym_dim32_fp4_e4m3/bound.mlir).
+Their pinned stock Spike results match **16,384 FP6 BF16 outputs**, **4,096
+FP4 BF16 outputs**, **4,096 FP8 codes plus 128 E8M0 scales** from the VPU
+program, and **4,096 BF16 outputs in each asymmetric case**, respectively.
+Each pair reproduces bound MLIR, physical commands, issuer, ELF, and Spike
+log hashes after excluding only the path-bearing link log. All six physical
+program hashes equal their previously qualified streams. The VPU result uses
+Nicolas's current quantized oracle; the FP6 source run retains the serial
+Spike scale-selector workaround. These are Rocket/Spike results and do not
+qualify a Radiance FPGA image.
+
 Each receipt records a zero-mismatch pinned Spike run. Independent output
 directories reproduced identical payload-bound MLIR, physical source files,
 objects, ELF, extension, and Spike log hashes for FP8 128×128×512 with both

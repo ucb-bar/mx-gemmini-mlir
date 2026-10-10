@@ -1,0 +1,186 @@
+{
+  "cases": [
+    {
+      "case": "fp6",
+      "comparisons": {
+        "bf16": 16384
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "586d644560b3b60dfee79bbe2324520da832e0c919e5cf436eb58af1e82c673a",
+      "files_sha256": {
+        "bound.mlir": "e80da90adf18402bd98de2bb3340506a0893c91edab7a798f73b7910d7817676",
+        "first.json": "55d64c842e898066295efb47bf7dea8dcb91917e5177357d60210b7a9dc53089",
+        "mx_driver.c": "996af64cc54a3a9870c9e93c1ee25d31f9cae2815b02d30386c2cad58e739b8d",
+        "mx_issue.c": "83167128a5005e33696020ef7bee7cc7e9a22048204a765c8ef800f049e1e1bd",
+        "physical_program.json": "429a619800e9191ef8d47de26ab142b4fe3162c23d1239425243dedbf64035bb",
+        "repro.json": "151f3b8aafd6f13e863e0605a2fabde1b8621e486ec7131246f81f33f7d5a27d",
+        "resource_manifest.json": "db46b6803496f5b32d0c7208e39e955831947c2c1e92f6536ee663aec66597b1",
+        "spike.log": "bc68c9af836d42137c6f9787d409725879a5548b396fa8a9fe495cbe59b050af"
+      },
+      "oracle": "radiance_bf16",
+      "payload_manifest_sha256": "5f8f0f62acc810f5900943319265d918a8f7a88de67d37d014d88b183e815a75",
+      "profile_name": "MxE3M2OnlyGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "case": "fp8_vpu",
+      "comparisons": {
+        "e8m0_scales": 128,
+        "fp8_codes": 4096
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "304e2fe2a2d8d2297fcf3d94423b13416d1bb8e6aed732100c46c29231b2a96d",
+      "files_sha256": {
+        "bound.mlir": "489c8fbe4a660d9429023d8d048f724763096e6aef096b6563d5ccad2b6ad53d",
+        "first.json": "2bb6599499f6fdaecc5895b67480f200ea0490f93679ead81fa4fbeb310d900b",
+        "mx_driver.c": "b8c4c3cf9f26a294f69909090e7142d6f9864864569356d0ce8ae22338605cee",
+        "mx_issue.c": "350419ea7645cd274cbe8e3d5b66da937857a71a4d73cb268ab4309541a538a9",
+        "physical_program.json": "62f7c31d6104477e71f4adac43aca80db29f01374955b2a61c37786bb34d5860",
+        "repro.json": "c876855b38d07d43838b15cda861c97f3f24500ac3e76dc4a0e82171abd5323c",
+        "resource_manifest.json": "ae4ac6ffa0558cba6d6eb088df63cb24d00cf6b5928629b04bec6a45a3298284",
+        "spike.log": "5d39838b5b5a4acf31592226ba99baa81e82a712a151e25442291fb95216ea46"
+      },
+      "oracle": "nicolas_quantized_vpu",
+      "payload_manifest_sha256": "b860d11275dc3b77f8a4dddf0f257ed14e31f8c2518b58f931f302300309d8a6",
+      "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        64,
+        64,
+        128
+      ],
+      "status": "nicolas_oracle_matched_on_pinned_spike"
+    },
+    {
+      "case": "fp4",
+      "comparisons": {
+        "bf16": 4096
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "0abcc5854975c7b6b99a884d3905910dd17302c5ce308e8a775d5f1b0159abd4",
+      "files_sha256": {
+        "bound.mlir": "df4bc8f49c543f8cef55bf022389d60340f1547b74ca5fb49195e257c12d04a1",
+        "first.json": "a9e9607d897377c917d30430c2689d2a9faade14b282824420e91507730cb732",
+        "mx_driver.c": "81c6763caf39ae064d8ebce2ab68e44453495dc9e7f853e39ec8f3ea9370ac0e",
+        "mx_issue.c": "2bb036ba96c0267f7f5a77416378997f0bf1c59f89f38f9a67108423ed925e37",
+        "physical_program.json": "2ea9c3d32f45a58c2a5061976868cfb8cbf6af24f0924f5fd85b23fc83a65d54",
+        "repro.json": "e290cc1f38296d2f504a8827eac054ec7183955ea40d65058001f68f8d81d458",
+        "resource_manifest.json": "c64b15fa222c2faf28707c51ba5efe1f25cd3e78821dadbd20e83a8411c47f21",
+        "spike.log": "74924c0416c95bdb090404c12e29c693d8c6ec0fb9c4833e34817f4abb829b44"
+      },
+      "oracle": "radiance_bf16",
+      "payload_manifest_sha256": "3c4b68c4a0605c218f767dc1a71adee93c3c9a3cb4c923340c5db632427af69a",
+      "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        64,
+        64,
+        128
+      ],
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "case": "asym_fp6_e3m2_e3m2",
+      "comparisons": {
+        "bf16": 4096
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "3a9edcb6f47ed8fee35ef543b35576efc80a92719d56372a7599d973ecd3c9cd",
+      "files_sha256": {
+        "bound.mlir": "966110145567a526d6f86999953a596d92b8d8d085bd27cd92305a4d16a0132e",
+        "first.json": "ab83860d2f3f4b99fb14c588e69090c73623015f04939df0c2e64d90be3e9b34",
+        "model2mlir.mlir": "adf5c2afb3940637d6202b2910eefcb5c232a31232e5b867cb26ed4bce690205",
+        "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+        "mx_issue.c": "d8234e57bd8700b59721a5ab616eca694454b6d489b40cdacac5c2401812a79e",
+        "physical_program.json": "9d4b1acdf74b3155b57ba68b7fec53e873cf1ad24a56a937673048041a28c870",
+        "repro.json": "5c33b55e0d838f4b0211fb2915654ce7a73e5ce5cd496c83edc5882e692ce393",
+        "resource_manifest.json": "88c769669556a13180405ecf81a3ec03713ce07db88a3b2d51461d3145f3458e",
+        "spike.log": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356"
+      },
+      "oracle": "nicolas_generated_bf16",
+      "payload_manifest_sha256": "5eccfef4444611283c8607dc813978dc39c9af39f636aa691e224c42f907a5f4",
+      "profile_name": "MxAllAsymGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "case": "asym_dim8_fp4_e4m3",
+      "comparisons": {
+        "bf16": 4096
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "aef5ef284763a1412befff3a865358abca4feb63d5b4aca39a6d371aa9d46484",
+      "files_sha256": {
+        "bound.mlir": "9ad594030c8fc22a4282a4f4e742d1addace56c0ddc62ad936f0f5dc06a5500c",
+        "first.json": "9cd0cba16e0e51fa482a46fb9d13ef815635d54fe1443a249b06e4ca98f1bf0d",
+        "model2mlir.mlir": "adf5c2afb3940637d6202b2910eefcb5c232a31232e5b867cb26ed4bce690205",
+        "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+        "mx_issue.c": "374ad7825c0070ca7476f36e98dea30c621c3886c1bda45ed8808b5f1de760cc",
+        "physical_program.json": "67b38949a6282c301b5c3647065d4b0e81b865026567864c9256585b751b615a",
+        "repro.json": "dbadf77546d3d2e9ae701f90f72d06c4e0a3a48b91ffdf80738b8c4080dac1a6",
+        "resource_manifest.json": "136c8a8f9089b45db437025124d80f4832b22bc859eeb412322d1328103ab37a",
+        "spike.log": "99bdb69ce8dc4e3849ec2995852b7427c94964970b965173f953b42ef71c5a21"
+      },
+      "oracle": "nicolas_generated_bf16",
+      "payload_manifest_sha256": "ce4de3666826e080eaf36d7df97e4a077a1bfca75a004aa6528baede0531dfab",
+      "profile_name": "MxDim8AllAsymGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "case": "asym_dim32_fp4_e4m3",
+      "comparisons": {
+        "bf16": 4096
+      },
+      "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+      "elf_sha256": "06d0dd04efde0c9d492e86924298501e3ae17259ae7bd2601dcffa220fda2b34",
+      "files_sha256": {
+        "bound.mlir": "8f690729eb6f7561ec5a77ad0611fc7d70476c9c18d0063f0cfeabce47f3d0fe",
+        "first.json": "32f235e47eeb706e9ae9765d52308cc95dadeb6e733c98b1b7be23485662a0e3",
+        "model2mlir.mlir": "adf5c2afb3940637d6202b2910eefcb5c232a31232e5b867cb26ed4bce690205",
+        "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+        "mx_issue.c": "0e58f0fc58f15bdcf54cb60fff7663b19a55693d6edde5d429fb08ba3dc68b6a",
+        "physical_program.json": "81a313f6b37eed395e8bc9dd113cf79faa14bda00580eba8ebda372103726fe9",
+        "repro.json": "816977a80b8cf1a86619a263cb8056c317625fba6adec47accdd35591a280b20",
+        "resource_manifest.json": "3342b3ed81696571e65d31e96dc645976fb905d92949790ddf97231a02188b4e",
+        "spike.log": "052e2e65b132d2bd2c6e98a8ed72e2d4fe86faef1aa1a9ec82699d8dd867e835"
+      },
+      "oracle": "nicolas_generated_bf16",
+      "payload_manifest_sha256": "2b8daf2fabf542c80d3ad2a7537e5530170c30a83ce62d0f76719928f96e83bb",
+      "profile_name": "MxDim32AllAsymGemminiRocketConfig",
+      "reproduced_except_link_log": true,
+      "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "status": "source_golden_matched_on_pinned_spike"
+    }
+  ],
+  "compiler_revision": "0d6460c15a55508cbd185c48d4dbc35f2ed5f1d9",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.ssa_source_binding_spike_matrix.v1",
+  "scope": "Six clean-checkout source specializations on Nicolas pinned stock Spike; FP6 serial scale-selector workaround; FP8 VPU quantized result uses Nicolas current oracle"
+}
