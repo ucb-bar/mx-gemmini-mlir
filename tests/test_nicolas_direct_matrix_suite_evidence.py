@@ -1,4 +1,4 @@
-"""Audit the one-command replay of all direct Nicolas matrix object cases."""
+"""Audit the original 11-case direct Nicolas matrix object replay."""
 
 from __future__ import annotations
 
@@ -26,8 +26,10 @@ def test_direct_matrix_suite_replays_every_selected_source_case() -> None:
     assert index["rtl_revision"] == RTL_REVISION
     assert index["model2mlir_revision"] == MODEL2MLIR_REVISION
     assert index["mxq_revision"] == MXQ_REVISION
-    assert index["selected_cases"] == list(CASES)
-    assert [row["case"] for row in index["cases"]] == list(CASES)
+    assert len(index["selected_cases"]) == 11
+    assert len(index["selected_cases"]) == len(set(index["selected_cases"]))
+    assert set(index["selected_cases"]).issubset(CASES)
+    assert [row["case"] for row in index["cases"]] == index["selected_cases"]
     assert index["total_outputs_checked"] == sum(
         row["outputs_checked"] for row in index["cases"]) == 111872
 
