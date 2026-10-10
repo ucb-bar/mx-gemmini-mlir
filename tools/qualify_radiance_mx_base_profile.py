@@ -43,11 +43,17 @@ def main() -> None:
                         help="compile all 23 archived BF16-output Radiance MX GEMM drivers")
     parser.add_argument("--all-requant", action="store_true",
                         help="compile all eight archived quantized-output Radiance MX GEMM drivers")
+    parser.add_argument("--precision", action="append", choices=("FP4", "FP6", "FP8"),
+                        help="restrict an all-fullout or all-requant roster to this precision")
     parser.add_argument("--rtl-product-floor-reference", action="store_true",
                         help="use the versioned target mesh reference with Nicolas's product floor")
     args = parser.parse_args()
     if int(args.all_fullout) + int(args.all_requant) + int(bool(args.case)) > 1:
         parser.error("choose one of --all-fullout, --all-requant, or --case")
+    if args.precision and not (args.all_fullout or args.all_requant):
+        parser.error("--precision requires --all-fullout or --all-requant")
+    if args.precision and len(args.precision) != len(set(args.precision)):
+        parser.error("each --precision may be selected only once")
     source, rtl, riscv, out = (args.source_root.resolve(), args.rtl_root.resolve(),
                                args.riscv_root.resolve(), args.out_dir.resolve())
     if out.exists():
@@ -76,9 +82,18 @@ def main() -> None:
                        if row["quant_output"]} if args.all_requant else
                       {name: stem for name, stem in DRIVERS.items()
                        if args.case is None or name in args.case})
-    if args.all_fullout and len(selected_cases) != 23:
+    if args.precision:
+        selected_cases = {label: stem for label, stem in selected_cases.items()
+                          if rows[stem]["precision"] in args.precision}
+        expected_counts = ({"FP4": 3, "FP6": 2, "FP8": 3} if args.all_requant else
+                           {"FP4": 8, "FP6": 5, "FP8": 10})
+        if len(selected_cases) != sum(expected_counts[name] for name in args.precision):
+            parser.error("archived selected-precision roster differs from source capture")
+    if not selected_cases:
+        parser.error("selected precision roster has no captured drivers")
+    if args.all_fullout and not args.precision and len(selected_cases) != 23:
         parser.error("archived Radiance BF16-output roster differs from 23 drivers")
-    if args.all_requant and len(selected_cases) != 8:
+    if args.all_requant and not args.precision and len(selected_cases) != 8:
         parser.error("archived Radiance requant roster differs from eight drivers")
     base_contract = (not args.all_fullout and not args.all_requant and
                      selected_profile == PROFILE.resolve() and
@@ -187,7 +202,15 @@ def main() -> None:
                 result["target_quant_reference"] = target_manifest["target_quant_reference"]
         results.append(result)
     summary = {
-        "schema": ("mx_gemmini.radiance_target_mesh_requant_roster.v1"
+        "schema": ("mx_gemmini.radiance_target_mesh_requant_subset.v1"
+                   if args.precision and args.all_requant and mesh_reference else
+                   "mx_gemmini.radiance_source_requant_subset.v1"
+                   if args.precision and args.all_requant else
+                   "mx_gemmini.radiance_target_mesh_fullout_subset.v1"
+                   if args.precision and mesh_reference else
+                   "mx_gemmini.radiance_source_fullout_subset.v1"
+                   if args.precision else
+                   "mx_gemmini.radiance_target_mesh_requant_roster.v1"
                    if args.all_requant and mesh_reference else
                    "mx_gemmini.radiance_source_requant_roster.v1"
                    if args.all_requant else
@@ -196,7 +219,15 @@ def main() -> None:
                    "mx_gemmini.radiance_plain_mx_profile_source_ladder.v1" if base_contract else
                    "mx_gemmini.radiance_target_mesh_reference_cases.v1" if mesh_reference else
                    "mx_gemmini.radiance_selected_mx_profile_source_cases.v1"),
-        "status": ("requant_target_mesh_reference_roster_matched_on_pinned_spike"
+        "status": ("selected_precision_requant_reference_matched_on_pinned_spike"
+                   if args.precision and mesh_reference and args.all_requant else
+                   "selected_precision_requant_source_matched_on_pinned_spike"
+                   if args.precision and args.all_requant else
+                   "selected_precision_fullout_reference_matched_on_pinned_spike"
+                   if args.precision and mesh_reference else
+                   "selected_precision_fullout_source_matched_on_pinned_spike"
+                   if args.precision else
+                   "requant_target_mesh_reference_roster_matched_on_pinned_spike"
                    if args.all_requant and mesh_reference else
                    "requant_source_header_roster_matched_on_pinned_spike"
                    if args.all_requant else
@@ -233,6 +264,8 @@ def main() -> None:
     else:
         summary["compared_bf16_outputs"] = sum(
             row["compared_bf16_outputs"] for row in results)
+    if args.precision:
+        summary["selected_precisions"] = sorted(args.precision)
     if not base_contract:
         summary["profile_name"] = profile["name"]
     (out / "qualification.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
