@@ -175,8 +175,9 @@ selected 256 KiB MX+VPU scratchpad where the original 128 KiB source layout
 cannot place that C tile beside double-buffered A/B tiles.
 For FP6, the selected Spike LUT path ignores the alternating scale selector;
 the compiler's explicitly named `spike_serial` mode reloads scale half zero.
-`rtl_alternating` plans the target's intended halves but is not a numerical
-qualification for RTL or FPGA.
+`rtl_alternating` plans the target's intended halves. An isolated corrected
+Spike experiment now tests its two-wave FP6 schedule below; RTL and FPGA
+qualification remain open.
 
 ## FP8 and FP4 quantized readout
 
@@ -1653,6 +1654,38 @@ and log. Nicolas's RTL `ExecuteController.mx_multi_elem` includes
 corresponding Spike state check. This experiment does not merge the patch or
 qualify the three cells on stock Spike, RTL simulation, or FPGA.
 
+## Alternating FP6 scale halves on Nicolas's Spike
+
+The [reproducible qualifier](../tools/qualify_fp6_alternating_spike.py) compiles
+the source-bound Radiance FP6 128×128×1024 generated-header fixture with K
+tile 512 and
+`rtl_alternating` physical scheduling. It copies Nicolas's pinned
+`software/libgemmini` into an isolated directory and applies the
+[two-line selector correction](evidence/fp6_alternating_spike_266c593/spike_fp6_scale_selector.patch)
+only there. The RTL `ExecuteController.scala` takes activation and weight
+scale selectors from command bits 60 and 61; `ScaleFactorMem.scala` uses those
+selectors to choose the read banks. Stock Spike already applies the selectors
+in its other MX compute paths, but the FP6 LUT path read half zero.
+
+The [receipt](evidence/fp6_alternating_spike_266c593/index.json) records the
+same RV64 ELF under both extensions: **16,362 / 16,384 BF16 mismatches on stock
+Spike**, and **0 / 16,384 on the isolated corrected extension**. The
+[stock](evidence/fp6_alternating_spike_266c593/stock_spike.log) and
+[corrected](evidence/fp6_alternating_spike_266c593/corrected_spike.log) logs
+are archived with source, physical-program, ELF, and extension hashes. The
+compiler marks this run `source_golden_matched_on_experimental_spike`; it does
+not make the pinned Spike or RTL path qualified.
+
+Reproduce from a checkout with Nicolas's `266c593` RTL and its pinned
+`software/libgemmini` and `software/gemmini-rocc-tests` submodules:
+
+```sh
+python -m tools.qualify_fp6_alternating_spike \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/fp6-alternating-spike
+```
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
@@ -1672,5 +1705,6 @@ qualify the three cells on stock Spike, RTL simulation, or FPGA.
    further RTL qualification remains separate. Keep unsupported profile
    combinations rejected. FP6+VPU requires a new RTL configuration and
    profile before it can be advertised.
-4. Validate the alternating FP6 scale path against RTL, then qualify the
-   Radiance MMIO/FPGA issue path separately from Rocket RoCC.
+4. Validate the experimentally matched alternating FP6 scale path against
+   RTL, then qualify the Radiance MMIO/FPGA issue path separately from Rocket
+   RoCC.

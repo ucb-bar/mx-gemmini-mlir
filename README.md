@@ -207,7 +207,11 @@ now binds all row-specific LUTs and packed operands to a typed MX contract;
 its serial diagnostic matched all 16,384 BF16 golden outputs. The FP6 frontend
 policy captures structure with only the source's first LUT line, while the
 source payload supplies the actual per-row data. The pinned Spike LUT path
-needs a documented serial scale-buffer workaround.
+needs a documented serial scale-buffer workaround. A
+[two-wave FP6 experiment](docs/compiled_mx_pipeline.md#alternating-fp6-scale-halves-on-nicolass-spike)
+now runs the compiler's alternating command schedule on an isolated corrected
+Spike model: the same ELF has 16,362 BF16 mismatches on pinned Spike and zero
+on the corrected model. RTL and FPGA execution remain unqualified.
 
 Verify the standalone source binding with
 `python3 tools/check_profile.py --profile profiles/mx-gemmini-rocket-2029218.json

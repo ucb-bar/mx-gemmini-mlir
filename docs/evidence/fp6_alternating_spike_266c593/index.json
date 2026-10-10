@@ -1,0 +1,21 @@
+{
+  "compared_bf16_outputs": 16384,
+  "corrected_bf16_mismatches": 0,
+  "corrected_extension_sha256": "3cbdb8b53b861345a53310c63bfea94aae7a0ced56f43d41d11f78b87df9c315",
+  "corrected_gemmini_cc_sha256": "1bb1131bebdf727c332a0a9cad31355039c92cfaf2a4bf140c70cee5c5fc303f",
+  "corrected_spike_log_sha256": "e24d6e078fcaca3def104e9fa5f014c51ee6a2d065d783d11b658b1646a59a11",
+  "elf_sha256": "be27f56721d5c8aac769253349b516cd3f8a37b9aecd58e2a3b197d259b1f125",
+  "gemmini_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "model_patch_sha256": "48a76125dce0fbb573b7e7acffa0f7088b3a884bc14d4f6200c5a25ba6eab46f",
+  "original_gemmini_cc_sha256": "92627314fb30593eee63f86da7baf6b00d911a1e79a107ed184378a3baef830e",
+  "physical_program_sha256": "0e74c47b937e385415e7f1ade3c55db92d618248ffd59c03c305b3759e737732",
+  "profile_file_sha256": "9d46af6ae69445c10b87414683033d95f602f8014fe10b545383860c840d9c20",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fp6_alternating_spike_experiment.v1",
+  "source_bound_mlir_sha256": "c5f7f6aa30d2a02dc47302db361ea5edbe723edbde93dd8a3731762340e04598",
+  "source_bundle_manifest_sha256": "31f89fad7780a826a2daf5e050eded49a2c4f9cfd358d891d5f2eb963deb4993",
+  "status": "same_elf_failed_stock_and_matched_corrected_spike",
+  "stock_bf16_mismatches": 16362,
+  "stock_extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "stock_spike_log_sha256": "f8cdc02357be051cb7fc4558b5be799544f643dfd934a0db49d23e9d4bc1ff02"
+}
