@@ -101,13 +101,15 @@ def _qualify_case(args: argparse.Namespace, case: tuple) -> dict:
     repro, b = _one_run(args, case, "repro")
     stable = (
         "compiler_revision", "compiler_source_closure_sha256", "model2mlir_revision",
-        "mxq_revision", "rtl_revision", "software_revision", "source_driver_sha256",
+        "mxq_revision", "rtl_revision", "software_revision",
         "source_header_sha256", "profile_sha256", "physical_program_sha256",
         "generated_c_sha256", "elf_sha256", "spike_log_sha256",
         "extension_source_closure_sha256", "physical_command_count",
         "physical_fence_count", "compared_bf16_outputs",
     )
     if (any(a[key] != b[key] for key in stable) or
+            any(a.get(key) != b.get(key) for key in
+                ("source_driver_sha256", "source_generation_manifest_sha256")) or
             a["profile_sha256"] != profile_sha256(profile) or
             a["rtl_revision"] != _revision(args.rtl_root)):
         raise ValueError(f"{name} did not reproduce its pinned profile and output")
@@ -124,7 +126,9 @@ def _qualify_case(args: argparse.Namespace, case: tuple) -> dict:
         "compiler_source_closure_sha256": a["compiler_source_closure_sha256"],
         "model2mlir_revision": a["model2mlir_revision"],
         "rtl_revision": a["rtl_revision"],
-        "source_driver_sha256": a["source_driver_sha256"],
+        "source_driver_sha256": a.get("source_driver_sha256"),
+        "source_generation_manifest_sha256": a.get(
+            "source_generation_manifest_sha256"),
         "source_header_sha256": a["source_header_sha256"],
         "compared_bf16_outputs_per_run": 4096,
         "artifact_sha256": files,
