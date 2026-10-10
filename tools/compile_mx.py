@@ -61,11 +61,20 @@ def main() -> None:
     parser.add_argument("--riscv-root", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--run-spike", action="store_true")
+    parser.add_argument("--physical-mode", choices=("spike_serial", "rtl_alternating"),
+                        default="spike_serial")
+    parser.add_argument("--experimental-spike-extension-root", type=Path,
+                        help="isolated modified libgemmini source; receipts are experimental")
     args = parser.parse_args()
+    if args.physical_mode == "rtl_alternating" and args.run_spike and not args.experimental_spike_extension_root:
+        parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
+    if args.experimental_spike_extension_root and not args.run_spike:
+        parser.error("experimental Spike extension requires --run-spike")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
     mlir_text = args.mlir.read_text()
-    program = lower_bound_source(mlir_text, profile, manifest, resources)
+    program = lower_bound_source(mlir_text, profile, manifest, resources,
+                                 mode=args.physical_mode)
     software = args.rtl_root / "software/gemmini-rocc-tests"
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     bench = software / "riscv-tests/benchmarks/common"
@@ -115,8 +124,12 @@ def main() -> None:
                              sorted(args.out_dir.glob("compile_*.log")) + [args.out_dir / "link.log"]},
     })
     if args.run_spike:
-        extension = args.rtl_root / "software/libgemmini"
+        pinned_extension = args.rtl_root / "software/libgemmini"
         _require_gitlink(args.rtl_root, "software/libgemmini")
+        extension = (args.experimental_spike_extension_root.resolve()
+                     if args.experimental_spike_extension_root else pinned_extension)
+        if not (extension / "gemmini.cc").is_file() or not (extension / "gemmini_perf.cc").is_file():
+            parser.error("selected Spike extension lacks gemmini.cc or gemmini_perf.cc")
         spike = args.riscv_root / "bin/spike"
         if not spike.is_file() or shutil.which("g++") is None:
             parser.error("Spike run requires pinned spike and host g++")
@@ -126,6 +139,8 @@ def main() -> None:
         _run(["g++", "-L", str(args.riscv_root / "lib"),
               f"-Wl,-rpath,{args.riscv_root / 'lib'}", "-shared", "-o", str(so),
               "-std=c++17", "-I", str(args.riscv_root / "include"), "-fPIC", "-O3",
+              *([f"-ffile-prefix-map={extension}=software/libgemmini"]
+                if args.experimental_spike_extension_root else []),
               *(str(path) for path in extension_sources)],
              cwd=args.out_dir, log=args.out_dir / "extension_build.log")
         result = subprocess.run([str(spike), f"--extlib={so}", "--extension=gemmini", str(elf)],
@@ -151,17 +166,20 @@ def main() -> None:
                      "derived_vpu_golden" if program.derived_expected_bf16 is not None else
                      "source_golden")
         receipt.update({
-            "status": f"{qualifier}_matched_on_pinned_spike" if passed else
-                      f"{qualifier}_failed_on_pinned_spike",
-            "gemmini_extension_revision": _git_revision(extension),
+            "status": f"{qualifier}_{'matched' if passed else 'failed'}_on_"
+                      f"{'experimental' if args.experimental_spike_extension_root else 'pinned'}_spike",
+            "gemmini_extension_revision": _git_revision(pinned_extension),
             "gemmini_extension_source_closure_sha256": _source_closure(
                 extension, extension_sources + sorted(extension.rglob("*.h"))),
             "host_cxx_sha256": _sha(Path(shutil.which("g++"))),
             "spike_sha256": _sha(spike), "extension_sha256": _sha(so),
             "spike_exit_code": result.returncode,
             "spike_log_sha256": _sha(args.out_dir / "spike.log"),
-            "fp6_spike_scale_selector_workaround": manifest["precision"] == "FP6",
+            "fp6_spike_scale_selector_workaround": (manifest["precision"] == "FP6" and
+                                                     program.mode == "spike_serial"),
         })
+        if args.experimental_spike_extension_root:
+            receipt["experimental_spike_extension"] = True
         if program.output_format == "radiance_header_fp8":
             receipt["compared_source_fp8_codes"] = program.shape[0] * program.shape[1]
             receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
@@ -182,7 +200,7 @@ def main() -> None:
     (args.out_dir / "artifact_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
-    if receipt["status"].endswith("_failed_on_pinned_spike"):
+    if receipt["status"].endswith(("_failed_on_pinned_spike", "_failed_on_experimental_spike")):
         raise SystemExit(1)
 
 

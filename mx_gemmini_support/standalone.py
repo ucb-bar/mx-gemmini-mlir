@@ -18,8 +18,8 @@ def _sha(data: bytes) -> str:
 def write_standalone_sources(directory: Path, program: PhysicalProgram,
                              resources: dict[str, bytes]) -> dict:
     """Write a source-independent command issuer, data object, and receipt."""
-    if program.mode != "spike_serial":
-        raise ValueError("standalone execution is qualified only for the serial Spike mode")
+    if program.mode not in {"spike_serial", "rtl_alternating"}:
+        raise ValueError("unknown standalone MX physical mode")
     if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2",
                                      "radiance_header_fp8", "radiance_header_fp6"}:
         raise ValueError("standalone MX output format is not qualified")

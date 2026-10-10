@@ -4,7 +4,8 @@ The stream is source-independent after payload export. The Spike serial mode
 uses explicit operand DMA because the pinned Spike model does not execute the
 source loop-FSM DMA-only launches. FP6 also reloads scale half zero because
 the pinned model ignores the alternating selector in LUT compute. The RTL
-mode keeps alternating halves and is structurally checked, not yet qualified.
+mode keeps alternating halves; an isolated corrected Spike experiment covers
+the two-wave FP6 source case without qualifying the RTL or pinned model.
 """
 
 from __future__ import annotations
