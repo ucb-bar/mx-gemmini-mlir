@@ -197,8 +197,6 @@ def main() -> None:
         "program_order_with_dependency_fences", "pipelined"),
         default="program_order_with_dependency_fences")
     args = parser.parse_args()
-    if args.issue_schedule == "pipelined" and not args.include_mm1:
-        parser.error("pipelined issue requires the compiler-issued MM1 BF16 tile")
     out, rtl, riscv = (args.out_dir.resolve(), args.rtl_root.resolve(),
                        args.riscv_root.resolve())
     if out.exists():
@@ -241,7 +239,8 @@ def main() -> None:
     else:
         bound = render_chain_pipelined(
             frontend, trace, captured_manifest, profile, resources, facts)
-        chain = lower_chain_pipelined(bound, profile, resources)
+        chain = lower_chain_pipelined(
+            bound, profile, resources, issue_schedule=args.issue_schedule)
         required_inputs, required_outputs = INPUTS, OUTPUTS
     out.mkdir(parents=True)
     mlir = out / "connected.mlir"

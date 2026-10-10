@@ -170,8 +170,10 @@ class TwoTileChain:
 
 
 def lower_chain_pipelined(mlir_text: str, profile: dict,
-                          resources: dict[str, bytes]) -> TwoTileChain:
-    """Issue the typed program-order branches with B2 loaded once."""
+                          resources: dict[str, bytes], *,
+                          issue_schedule: str = "program_order_with_dependency_fences"
+                          ) -> TwoTileChain:
+    """Issue the typed branches with B2 loaded once."""
     from xdsl.dialects.func import FuncOp, ReturnOp
 
     report = verify_ir(mlir_text, profile)
@@ -278,4 +280,76 @@ def lower_chain_pipelined(mlir_text: str, profile: dict,
             for row in range(0, 256, 16):
                 commands.append(_transfer(3, name, row * 16, start + row))
     commands.append(Fence())
-    return TwoTileChain(tuple(commands), tuple(sites))
+    serial = TwoTileChain(tuple(commands), tuple(sites))
+    if issue_schedule == "program_order_with_dependency_fences":
+        return serial
+    if issue_schedule != "pipelined":
+        raise ValueError("unknown two-tile MX issue schedule")
+    return pipeline_two_tile_commands(serial, reload_buffer="c1_bf16")
+
+
+def pipeline_two_tile_commands(serial: TwoTileChain, *,
+                               reload_buffer: str) -> TwoTileChain:
+    """Issue both BF16 transfers before VPU and overlap the two branches."""
+    commands = serial.commands
+
+    def indices(funct: int) -> list[int]:
+        return [i for i, item in enumerate(commands)
+                if isinstance(item, Command) and item.funct == funct]
+
+    vpu, quant, loops = indices(33), indices(34), indices(8)
+    if len(vpu) != 2 or len(quant) != 2 or len(loops) not in (2, 3) or not (
+            vpu[0] < quant[0] < loops[-2] < vpu[1] < quant[1] < loops[-1]):
+        raise ValueError("two-tile serial stages cannot form source pipeline")
+    first_reload = next((i for i in range(loops[-2] + 1, vpu[1])
+                         if isinstance(commands[i], Command) and
+                         commands[i].funct == 2 and
+                         commands[i].rs1.buffer == reload_buffer), None)
+    if first_reload is None:
+        raise ValueError("second tile lacks BF16 reload")
+    reload_start = max((i for i in range(loops[-2] + 1, first_reload)
+                        if isinstance(commands[i], Command) and
+                        commands[i].funct == 0 and
+                        commands[i].rs1.immediate == (16 << 16) | (1 << 8) | 1 and
+                        commands[i].rs2.immediate == 16), default=-1)
+    first_output = next((i for i in range(loops[-1] + 1, len(commands))
+                         if isinstance(commands[i], Command) and
+                         commands[i].funct == 3 and
+                         commands[i].rs1.buffer == "c1_tiled_0"), None)
+    if (reload_start < 0 or first_reload - reload_start != 2 or
+            first_output is None or first_output < 1 or
+            not isinstance(commands[first_output - 1], Command) or
+            commands[first_output - 1].funct != 0 or
+            sum(isinstance(item, Command) and item.rs1.buffer == reload_buffer
+                for item in commands[reload_start:vpu[1]]) != 32):
+        raise ValueError("two-tile pipeline preload or readout boundary differs")
+    def without_fences(values: tuple[Command | Fence, ...]) -> list[Command]:
+        return [item for item in values if isinstance(item, Command)]
+
+    prefix: tuple[Command | Fence, ...] = commands[:vpu[0]]
+    if reload_buffer == "c1_bf16":
+        first_load = next((i for i, item in enumerate(prefix)
+                           if isinstance(item, Command) and item.funct == 2 and
+                           item.rs1.buffer == reload_buffer), None)
+        first_config = max((i for i in range(first_load or 0)
+                            if isinstance(prefix[i], Command) and
+                            prefix[i].funct == 0 and
+                            prefix[i].rs1.immediate == (16 << 16) | (1 << 8) | 1 and
+                            prefix[i].rs2.immediate == 16), default=-1)
+        if first_load is None or first_config < 0:
+            raise ValueError("first tile lacks BF16 source load")
+        prefix = (*prefix[:first_config], *without_fences(prefix[first_config:]))
+
+    pipelined = (
+        *prefix,
+        *without_fences(commands[reload_start:vpu[1]]),
+        commands[vpu[0]], commands[quant[0]], commands[vpu[1]],
+        *without_fences(commands[quant[0] + 1:loops[-2] + 1]),
+        commands[quant[1]],
+        *without_fences(commands[quant[1] + 1:loops[-1] + 1]),
+        Fence(), *commands[first_output - 1:],
+    )
+    if ([item.funct for item in pipelined if isinstance(item, Command)
+         and item.funct in (33, 34, 8)][-6:] != [33, 34, 33, 8, 34, 8]):
+        raise ValueError("two-tile pipeline command order differs from source")
+    return TwoTileChain(pipelined, serial.sites)

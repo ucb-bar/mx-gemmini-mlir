@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from collections import Counter
 
 import pytest
 
@@ -122,6 +123,44 @@ def test_typed_two_branch_graph_and_shared_b2_physical_commands():
                             'weight_buffer = "wrong_weight"', 1)
     with pytest.raises(ValueError, match="shared B2 differs"):
         lower_chain_pipelined(changed, profile, resources)
+
+
+def test_preloaded_source_pipeline_reorders_only_issue_commands():
+    source = RTL / "software/gemmini-rocc-tests/bareMetalC/chain_pipelined.c"
+    header = RTL / "software/gemmini-rocc-tests/include/matmul_fp8_64x64_chain.h"
+    if not source.is_file() or not header.is_file():
+        pytest.skip("requires Nicolas's pinned chain source and header")
+    profile = load_profile(PROFILE, rtl_root=RTL)
+    resources, facts = audit_chain_pipelined(source, header, profile)
+    graph = render_chain_pipelined(
+        (EVIDENCE / "chain_pipelined.profile_bound.mlir").read_text(),
+        {"graphs": {"original": json.loads(
+            (EVIDENCE / "original_graph.json").read_text())}},
+        json.loads((EVIDENCE / "quantization_manifest.json").read_text()),
+        profile, resources, facts)
+    serial = lower_chain_pipelined(graph, profile, resources)
+    pipelined = lower_chain_pipelined(
+        graph, profile, resources, issue_schedule="pipelined")
+    serial_commands = [item for item in serial.commands if isinstance(item, Command)]
+    pipeline_commands = [item for item in pipelined.commands if isinstance(item, Command)]
+    assert Counter(serial_commands) == Counter(pipeline_commands)
+    assert [item.funct for item in pipeline_commands if item.funct in (33, 34, 8)] == [
+        33, 34, 33, 8, 34, 8]
+    stages = [i for i, item in enumerate(pipelined.commands)
+              if isinstance(item, Command) and item.funct in (33, 34, 8)]
+    assert not any(isinstance(item, Fence) for item in
+                   pipelined.commands[stages[0]:stages[-1]])
+    assert sum(item.funct == 2 and item.rs1.buffer == "c1_bf16"
+               for item in pipelined.commands[:stages[0]]
+               if isinstance(item, Command)) == 64
+    first_load_config = next(i for i, item in enumerate(pipelined.commands)
+                             if isinstance(item, Command) and item.funct == 0 and
+                             item.rs1.immediate == (16 << 16) | (1 << 8) | 1 and
+                             item.rs2.immediate == 16)
+    assert not any(isinstance(item, Fence) for item in
+                   pipelined.commands[first_load_config:stages[0]])
+    with pytest.raises(ValueError, match="unknown two-tile MX issue schedule"):
+        lower_chain_pipelined(graph, profile, resources, issue_schedule="invalid")
 
 
 def test_archived_compiler_object_and_spike_full_outputs():
