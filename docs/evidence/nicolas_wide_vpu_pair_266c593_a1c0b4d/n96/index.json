@@ -1,0 +1,50 @@
+{
+  "bound_mlir_sha256": "f5a429a968b0d1c3052cbc76e3ac9674912090652c7c2835ee6ab83d38860348",
+  "capture_receipt_sha256": "1ca002bcfd3f01f37b836850ba5be4ed462258d2492d81c9b46ceef67b58ff7f",
+  "compared_c1_bf16_values": 4096,
+  "compared_c1_e8m0_scales": 128,
+  "compared_c1_fp8_codes": 4096,
+  "compared_c2_e8m0_scales": 192,
+  "compared_c2_fp8_codes": 6144,
+  "compiler_revision": "a1c0b4ded11a9fa2bed26d9088da443cc07e849a",
+  "elf_sha256": "2929547a0f573fb47baeaf18e4ea4140f2e42d3e661111743dec479953b1d457",
+  "first_shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_manifest_sha256": "d7823e588466f2a479642e748374aec0d6db8ef834f9d22f0bee3faa65570356",
+  "object_sha256": "03f0d9bde8d916abdb9f9022868e4bc8b26b4cdc73a63fac2b31e3d68b3f2582",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources_sha256": {
+    "a1_activation": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905",
+    "a1_scales": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6",
+    "b1_scales": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f",
+    "b1_weight": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40",
+    "b2_scales": "4f05d45190746d7ae0d1f9ca86208c3cf3d4741c374b17e54f8f2c2d81b46a8d",
+    "b2_weight": "39347b2cc5592958cbb24f610ad6d5deca85b6066aeafb463dbc844dccfb59ed",
+    "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "c2_bf16_ref": "df0372585a849395170fe4dbce70f0a10c03e805269e22f2fb46bca44c2e9918",
+    "c2_codes_ref": "1f89a8022a92f56af4434c5734d43f51fcf6601a323c4fbc9c660e443832cbc4",
+    "c2_scales_ref": "a6350b1bedbab323f46495789d349b3ea4e0a3caf3197defe0306d5c4ca4a9c6"
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.derived_wide_vpu_pair_spike.v1",
+  "second_shape_mnk": [
+    64,
+    96,
+    64
+  ],
+  "second_width": 96,
+  "source_scope": "checked Nicolas 64\u00b3 MM1/VPU plus sign-flipped source B2 columns and model-derived wide MM2 outputs",
+  "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "d3c09a3f7107ad3e7c3c643d6f8e94cf870f4c33876712481f6ace201ca00d70",
+  "status": "source_derived_wide_vpu_pair_matched_on_pinned_spike"
+}

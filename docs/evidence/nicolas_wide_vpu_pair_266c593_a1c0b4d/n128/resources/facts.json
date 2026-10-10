@@ -1,0 +1,35 @@
+{
+  "bf16_scalar": 16384,
+  "contract_sha256": "9e1fc8343e7a1d99568fc442c5844527547e87e03d498203e1563b383934282c",
+  "derived_weight_columns": 64,
+  "first_source_sha256": "54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "model_sha256": "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071",
+  "original_c2_bf16_sha256": "1ffa772787eb1cf424067a06e824714d976f93745097cbb02d3b26fba38e879d",
+  "policy_sha256": "04dc8f73257310f916ed8d6b0d48e49d57d32c928a561a08d42da1594317b186",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "resource_sha256": {
+    "a1_activation": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905",
+    "a1_scales": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6",
+    "b1_scales": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f",
+    "b1_weight": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40",
+    "b2_scales": "ac0a7ad1f7bfc807d2f0345b4039dce111a0e3e297059a1ba27d73ae74936297",
+    "b2_weight": "0dd5ad2eff691781f92937d8410b4ae45f43de385541d0b0ca2c3ecb4ff30c2a",
+    "c1_bf16": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+    "c1_codes_ref": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+    "c1_scales_ref": "d7e69505d4dfeea07809451877813b19374d829c2ffb0a535b1950a21a5d1a6c",
+    "c2_bf16_ref": "be8f36e41713ab86f2928cfadea4555f3f72b57466e3f4cc1d6a2060de0eeeab",
+    "c2_codes_ref": "20c8f02403c7cfa34e41c9a42fe98db24bfcfad92c4d4100f3e2569ade1932f3",
+    "c2_scales_ref": "ee32d30b7e7717150b54f24bff21cc65adaa341bec57aa9fb1b8af84f228e7b7"
+  },
+  "second_width": 128,
+  "shape_mn": [
+    64,
+    64
+  ],
+  "source_scope": "checked Nicolas 64\u00b3 MM1/VPU plus sign-flipped source B2 columns and model-derived wide MM2 outputs",
+  "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+  "sp_bf16": 4096,
+  "sp_c1": 128,
+  "typed_mlir_sha256": "e9e7d69a5533058f22a673b14217d229ff52e98641e629a541fae2f1501dcbe2"
+}

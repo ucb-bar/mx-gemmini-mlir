@@ -1,0 +1,57 @@
+{
+  "schema": "mx_gemmini.nicolas_derived_wide_vpu_chain_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "a1c0b4ded11a9fa2bed26d9088da443cc07e849a",
+  "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "source_mlir_sha256": "f4f732a6fed820e3469e1515803823fb802b610a56f26f12d2d61c2457db4fbd",
+  "handoff_mlir_sha256": "d7b68ff39d5f6ac328940ea25a090dffb075e8d6434e84a4138326d4ffca6c98",
+  "bound_mlir_sha256": "9e6be88fe88c703bce77ae73b0b051d46daa54715b3c862409d1e30b5b56909f",
+  "manifest_sha256": "8e08a70d4e0bc4b228dd3e5264f937c12b96d22d47aedcd36f4591e919ab53a4",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        128,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "MM1 and VPU use Nicolas's checked 64\u00b3 source; the wider MM2 weight columns are derived from its B2 wire bytes and require a separately checked pinned mesh-model output reference",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "first_shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "second_shape_mnk": [
+    64,
+    128,
+    64
+  ]
+}

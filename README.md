@@ -514,6 +514,10 @@ PYTHONPATH="$MODEL2MLIR_ROOT:$MXQUANT_ROOT" python -m pytest tests -q
 
 This also prevents a different editable model2MLIR installation in the active
 virtualenv from supplying an older capture API.
+The [connected FP8 MX/VPU width archive](docs/evidence/nicolas_wide_vpu_pair_266c593_a1c0b4d/README.md)
+records two fresh-checkout, full-output Spike runs at 96 and 128 MM2 columns.
+The extra columns are explicitly source-derived, and their output references
+come from Nicolas's pinned mesh model.
 The [GitHub Actions contract gate](.github/workflows/contract-evidence.yml)
 checks issuer fields, illegal profile modes, and the archived 31-driver and
 108-mode receipts from a fresh Python install. A second job checks all 81

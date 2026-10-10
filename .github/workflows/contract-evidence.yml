@@ -66,6 +66,7 @@ jobs:
             tests/test_connected_scalar_chain_evidence.py \
             tests/test_connected_scalar_chain_nonzero_evidence.py \
             tests/test_full_vpu_branch_public_evidence.py \
+            tests/test_wide_vpu_pair_evidence.py \
             tests/test_host_requant_object_evidence.py \
             tests/test_current_radiance_roster_evidence.py \
             tests/test_bf16_row_major_readout.py \
