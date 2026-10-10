@@ -1,0 +1,17 @@
+{
+  "command": [
+    "./mill",
+    "test.testOnly",
+    "mxgen.MxFpMul_MxGemminiE4M3Lut_Mode9_Spec"
+  ],
+  "controller_source_sha256": "b99add3039d5c64425670cfee15fa5c9eb3aa7fd49e505b93d37562cd9abd7df",
+  "gemmini_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "mxgen_revision": "dba3e7e706efa156d96efe595cd9935c825ea14d",
+  "schema": "mx_gemmini.nicolas_e4m3_lut_pe_rtl_test.v1",
+  "scope": "MxGen PE arithmetic; no LUT DMA, ExecuteController simulation, full RoCC loop, or FPGA claim",
+  "status": "pe_mode9_lut_enable_arithmetic_passed",
+  "test_class": "mxgen.MxFpMul_MxGemminiE4M3Lut_Mode9_Spec",
+  "test_exit_code": 0,
+  "test_log_sha256": "9f85a89e079961d1b559c0b93ba13bd1b54f6f2bee703b8c1bb580145d7af8a9",
+  "test_source_sha256": "90a191936865e390fa1b04c368d83f342fd18b77fad842100195da2f674591fc"
+}

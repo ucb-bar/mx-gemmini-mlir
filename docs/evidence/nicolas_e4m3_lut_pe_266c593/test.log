@@ -1,0 +1,11 @@
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009...tOnly mxgen.MxFpMul_MxGemminiE4M3Lut_Mode9_Spec
+135] test.testOnly Running Test Class mxgen.MxFpMul_MxGemminiE4M3Lut_Mode9_Spec
+135] [32mMxFpMul_MxGemminiE4M3Lut_Mode9_Spec:[39m
+135] [32mMxFpMul mxGemminiE4M3Lut mode9 (E4M3 4-wide)[39m
+135] [32m- should compute 4 independent E4M3 products with lut_en[39m
+135] [36mRun completed in 46 seconds, 760 milliseconds.[39m
+135] [36mTotal number of tests run: 1[39m
+135] [36mSuites: completed 1, aborted 0[39m
+135] [36mTests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0[39m
+135] [32mAll tests passed.[39m
+135/135, SUCCESS] /scratch/agustin/tmp/gemmini-mx-clean....MxFpMul_MxGemminiE4M3Lut_Mode9_Spec 49s

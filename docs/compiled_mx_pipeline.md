@@ -1796,6 +1796,17 @@ FPEX/FPGA parity remains a separate gate.
 
 ## Isolated weight-LUT Spike correction across all legal modes
 
+Nicolas's pinned MxGen submodule has a
+[mode-9 Chisel test](evidence/nicolas_e4m3_lut_pe_266c593/receipt.json)
+for E4M3 quad arithmetic. Its harness forces `lut_en` and checks 300
+randomized two-activation × two-weight trials, or 1,200 BF16 lane results.
+The [saved test log](evidence/nicolas_e4m3_lut_pe_266c593/test.log) passes on
+MxGen `dba3e7e` under Gemmini `266c593`. The receipt also pins the
+`ExecuteController.scala` source that includes `weight_lut_en` in output-column
+packing. This is PE arithmetic evidence; the harness does not simulate LUT
+DMA, the ExecuteController, the full RoCC loop, or FPGA execution. Reproduce
+it with [`tools.qualify_nicolas_e4m3_lut_pe`](../tools/qualify_nicolas_e4m3_lut_pe.py).
+
 The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json)
 records a full rerun with the existing
 [weight-LUT lane patch](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
