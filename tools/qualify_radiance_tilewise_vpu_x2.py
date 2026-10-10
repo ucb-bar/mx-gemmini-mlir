@@ -40,7 +40,7 @@ def _digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _check_trace(result) -> None:
+def _check_trace(result, *, quant_format: str = "mxfp8") -> None:
     from m2m.coverage import opaque_report
 
     trace = result.capture_trace or {}
@@ -63,7 +63,7 @@ def _check_trace(result) -> None:
     sites = result.quantization_manifest.get("sites", [])
     if (len(sites) != 1 or sites[0].get("site_id") != "functional:matmul" or
             sites[0].get("status") != "quantized" or
-            sites[0].get("format") != "mxfp8" or
+            sites[0].get("format") != quant_format or
             sites[0].get("shape") != [256, 256, 256]):
         raise ValueError("model2MLIR MX site differs from selected Radiance source")
 

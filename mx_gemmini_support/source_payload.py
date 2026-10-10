@@ -24,6 +24,35 @@ from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_
 SCHEMA = "mx_gemmini.source_payload.v1"
 ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
 ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
+DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
+
+
+def validate_derived_gemm_fixture(manifest: dict) -> None:
+    """Require explicit provenance for a generated, uncommitted MX GEMM case."""
+    policy = manifest.get("source_derivation")
+    if (manifest.get("origin") != DERIVED_GEMM_FIXTURE_ORIGIN or
+            manifest.get("precision") != "FP4" or
+            manifest.get("shape_mnk") != [256, 256, 256] or
+            manifest.get("tile_mnk") != [128, 128, 128] or
+            manifest.get("output_format") is not None or
+            not isinstance(policy, dict) or
+            set(policy) != {"schema", "transformation", "source_revision",
+                            "base_driver_sha256", "source_generator_sha256",
+                            "golden_model_sha256", "golden_cpp_sha256",
+                            "derived_driver_sha256", "generated_header_sha256"} or
+            policy.get("schema") != "mx_gemmini.radiance_generated_fp4_gemm_fixture.v1" or
+            policy.get("transformation") != "fp8_m256n256k256_tk256_to_fp4_tk128_v1" or
+            policy.get("derived_driver_sha256") != manifest.get("source_driver_sha256") or
+            policy.get("generated_header_sha256") != manifest.get("source_header_sha256")):
+        raise ValueError("derived FP4 GEMM fixture lacks its explicit source transformation")
+    for field in ("source_revision", "base_driver_sha256", "source_generator_sha256",
+                  "golden_model_sha256", "golden_cpp_sha256",
+                  "derived_driver_sha256", "generated_header_sha256"):
+        value = policy[field]
+        size = 40 if field == "source_revision" else 64
+        if not isinstance(value, str) or len(value) != size or any(
+                char not in "0123456789abcdef" for char in value):
+            raise ValueError(f"derived FP4 GEMM fixture lacks {field}")
 
 
 def validate_attention_qk_candidate(manifest: dict) -> None:
@@ -280,7 +309,8 @@ def read_source_payload(kernel: SourceGemm, *,
 def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
                   site_id: str, profile_sha256: str,
                   fp6_quantized_specialization: bool = False,
-                  vpu_spad_requant_x2: bool = False) -> dict:
+                  vpu_spad_requant_x2: bool = False,
+                  source_derivation: dict | None = None) -> dict:
     if not site_id or len(profile_sha256) != 64:
         raise ValueError("payload needs a site ID and target profile digest")
     manifest = {
@@ -293,6 +323,12 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
         "resources": {name: resource.descriptor(name)
                       for name, resource in sorted(resources.items())},
     }
+    if source_derivation is not None:
+        if kernel.quant_output or fp6_quantized_specialization or vpu_spad_requant_x2:
+            raise ValueError("derived FP4 GEMM fixture requires plain BF16 output")
+        manifest["origin"] = DERIVED_GEMM_FIXTURE_ORIGIN
+        manifest["source_derivation"] = source_derivation
+        validate_derived_gemm_fixture(manifest)
     if kernel.quant_output:
         manifest["output_format"] = {"FP8": "fp8_e4m3", "FP4": "fp4_e2m1",
                                      "FP6": "fp6_e3m2"}[kernel.datatype]
@@ -332,14 +368,16 @@ def make_manifest(kernel: SourceGemm, resources: dict[str, Resource], *,
 def write_bundle(directory: Path, kernel: SourceGemm, *, site_id: str,
                  profile_sha256: str,
                  fp6_quantized_specialization: bool = False,
-                 vpu_spad_requant_x2: bool = False) -> dict:
+                 vpu_spad_requant_x2: bool = False,
+                 source_derivation: dict | None = None) -> dict:
     resources = read_source_payload(
         kernel, fp6_quantized_specialization=fp6_quantized_specialization,
         vpu_spad_requant_x2=vpu_spad_requant_x2)
     manifest = make_manifest(kernel, resources, site_id=site_id,
                              profile_sha256=profile_sha256,
                              fp6_quantized_specialization=fp6_quantized_specialization,
-                             vpu_spad_requant_x2=vpu_spad_requant_x2)
+                             vpu_spad_requant_x2=vpu_spad_requant_x2,
+                             source_derivation=source_derivation)
     directory.mkdir(parents=True, exist_ok=False)
     for name, resource in resources.items():
         (directory / f"{name}.bin").write_bytes(resource.data)
@@ -355,6 +393,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         validate_attention_qk_candidate(manifest)
     elif manifest.get("origin") == ATTENTION_PV_PROXY_ORIGIN:
         validate_attention_pv_proxy(manifest)
+    elif manifest.get("origin") == DERIVED_GEMM_FIXTURE_ORIGIN:
+        validate_derived_gemm_fixture(manifest)
     elif "source_derivation" in manifest:
         raise ValueError("derived MX payload must declare its candidate origin")
     precision = manifest.get("precision")
