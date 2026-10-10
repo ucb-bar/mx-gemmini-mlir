@@ -28,6 +28,9 @@ qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
 23 drivers with BF16 output and 8 with requantized output match their source
 goldens. The [one-command reproduction](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
 rebuilds and checks those captures and Spike results against archived hashes.
+The [source build-selection audit](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
+finds that 18 of those named drivers are listed in Radiance's Makefile and 13
+are source recipes excluded from its build.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
@@ -39,7 +42,8 @@ captures `matmul * 2.0` through model2MLIR and connects contraction, VPU, and
 readout in typed SSA. It applies one compiler-issued in-place VPU command
 before each tile readout. All 65,536 BF16 outputs match
 the source-derived ×2 reference on pinned Spike; this selected epilogue is not
-yet a general graph lowering.
+yet a general graph lowering. The selected source `tk256` driver is excluded
+from Radiance's 128 KiB build; this test uses Nicolas's 256 KiB MX+VPU profile.
 The [batched decode projections](docs/compiled_mx_pipeline.md#batched-decode-gemv-projections)
 match all source BF16 outputs for FP8 batches 32, 64, and 128 and FP4 batch
 128, including the two non-square output tiles.

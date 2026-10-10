@@ -1282,6 +1282,17 @@ program, generated issuer, Spike log, and manifest for the first run, plus
 receipts for a second independent run. Binary payloads, objects, ELFs, and
 extensions are identified by SHA256 in those manifests and can be rebuilt.
 
+The [build-selection audit](evidence/radiance_mx_gemm_build_selection_80f84ca.json)
+checks all 31 driver hashes against the newer Radiance `80f84ca` tree and
+reads its pinned [Makefile](evidence/radiance_mx_gemm_build_selection_80f84ca.Makefile).
+It finds **18 named drivers selected by `MU_SRCS`** and **13 source recipes
+excluded from that build**. All 31 have compiler-on-Spike numerical receipts;
+the receipt count does not mean Radiance built 31 source ELFs. The excluded
+recipes include tiles that exceed its 128 KiB scratchpad layout and FP6 cases
+without a source data header. Reproduce this audit with
+[`tools.audit_radiance_mx_build_selection`](../tools/audit_radiance_mx_build_selection.py)
+using the two roster `index.json` files and the selected Radiance checkout.
+
 The two frontend captures produce identical source and profile-bound MLIR. The
 first frontend receipts name compiler `2ad71ab`, and the second name
 `12cb75d`, because the roster commands were committed between captures. Apart
@@ -1879,7 +1890,11 @@ matmul followed by multiplication by the constant 2.0, one quantized FP8 MX
 site, and no opaque operation. The contraction's packed A/B codes, E8M0
 scales, and BF16 reference come from the pinned Radiance
 `mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp` driver and its generated
-header at `80f84ca`. The original source driver tests GEMM alone. The ×2
+header at `80f84ca`. Radiance excludes this `tk256` driver from its 128 KiB
+build because the C tile does not fit beside double-buffered operands. The
+selected Nicolas MX+VPU profile has 256 KiB, so this is a compiler execution
+against a source-generated golden, not parity with a source-built ELF. The
+original source driver describes GEMM alone. The ×2
 epilogue is taken from the captured PyTorch graph; its expected BF16 values
 are derived from the source GEMM golden using exact BF16 multiplication.
 
