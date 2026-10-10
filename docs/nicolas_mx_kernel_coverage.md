@@ -12,7 +12,7 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **96 programs have at least one direct source-hash reference; 75
+exact hash. **97 programs have at least one direct source-hash reference; 74
 have none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
@@ -27,6 +27,7 @@ with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 | Deeper Nicolas FP8 through public object compiler | [128×128×256 two-wave replay](evidence/nicolas_plain_fp8_256_two_wave_object_9250250_266c593/README.md) | The checked-in source arrays and all 16,384 BF16 goldens match with a compiler-selected two-wave K schedule. This establishes numerical output parity, not exact source instruction or performance parity. |
 | Irregular Nicolas FP8 through public object compiler | [96×96×64 replay](evidence/nicolas_plain_fp8_96x96x64_object_52dcc4d_266c593/README.md) | The checked-in source arrays and all 9,216 BF16 goldens match on pinned Spike. This qualifies one non-square geometry, not all rectangular programs. |
 | Nicolas FP8 quantized readout through public object compiler | [128³ requant replay](evidence/nicolas_fp8_requant_typed_object_fa5ec73_266c593/README.md) | The checked-in `matmul_tiled_fp8_128x128_requant` source codes and scales match exactly: 16,384 FP8 codes and 512 E8M0 scales on pinned Spike. Other source quantization conventions require separate checks. |
+| Nicolas DIM32 FP8 quantized readout through public object compiler | [64³ DIM32 requant replay](evidence/nicolas_fp8_dim32_requant_typed_object_835e5ba_266c593/README.md) | The checked-in `matmul_tiled_fp8_64x64_requant_dim32` codes and scales match exactly: 4,096 FP8 codes and 128 E8M0 scales on pinned Spike with the DIM32 extension. Other DIM32 variants still need qualification. |
 | Direct Nicolas FP4 source through public object compiler | [64³ typed object replay](evidence/nicolas_plain_fp4_typed_object_97b0913_266c593/README.md) | The checked-in `matmul_tiled_fp4_64x64` direct packed arrays and all 4,096 BF16 source goldens match on pinned Spike. This qualifies the matrix result only. |
 | Nicolas packed FP4 requantized readout through public object compiler | [64³ requant replay](evidence/nicolas_fp4_requant_typed_object_5657fb6_266c593/README.md) | The checked-in `matmul_tiled_fp4_64x64_requant` packed source output and scales match exactly: 2,048 packed bytes and 128 E8M0 scales on pinned Spike. Other FP4 requant variants still need qualification. |
 | Nicolas larger FP4 requantized readout through public object compiler | [128×128×512 requant replay](evidence/nicolas_fp4_large_requant_typed_object_03490a5_266c593/README.md) | The checked-in `matmul_tiled_fp4_128x128x512_requant` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike. Other shapes and modes still need qualification. |
