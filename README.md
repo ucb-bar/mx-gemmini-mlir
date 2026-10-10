@@ -48,6 +48,11 @@ check and exercises the activation alternate-format bit.
 Direct E4M3 activation × E3M2 LUT weight and FP4 activation × direct E4M3
 weight also pass; these cases qualify the full-width activation and weight
 transfer layouts, respectively.
+The complete dedicated DIM16 asymmetric source matrix now passes 26 of 26
+legal modes across 20 Rocket profiles, with 106,496 source BF16 outputs per
+matrix run and an independent full reproduction. The
+[matrix qualification](docs/compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix)
+records the exact scope and pinned receipts.
 The asymmetric CLI now binds hashes and physical layouts of Nicolas's packed
 operand, scale, LUT, and golden arrays to the typed contraction before
 lowering; a fresh E4M3×E2M3 Spike run reproduces the result with that binding.

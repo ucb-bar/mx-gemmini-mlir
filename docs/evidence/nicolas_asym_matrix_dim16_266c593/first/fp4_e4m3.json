@@ -1,0 +1,91 @@
+{
+  "activation_format": "fp4_e2m1",
+  "activation_projection": "direct",
+  "build_log_sha256": {
+    "compile_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "extension_build.log": "a49897432d37bd9fbbf277498db1321b1c9f751eb0ee831ed49c77f6b52d7775",
+    "link.log": "83de86d97cfd5a96c21a1416529fe80dde9ae8ed0e996b12e775c68c0464ea4b"
+  },
+  "capture_sites": [
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    }
+  ],
+  "compared_bf16_outputs": 4096,
+  "compiler_revision": "338faa8d389629f9984924de63ff922f380e229f",
+  "compiler_source_closure_sha256": "ee6d46f937d2013e058bbb4789723f3f511677432e0527acab465e7a9fd74151",
+  "elf_sha256": "edec5fc6a7ffcd59616f8556a704808a0cd20ac3db6482ad351bdf594f94785a",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "extension_source_closure_sha256": "dbbc62171a9393691c575ec278dfdd75ca20fd6a2c9b52825380dad4e5d0af3f",
+  "files_sha256": {
+    "asymmetric_bound.mlir": "dc39ac8f959567c3000ad187cd769d497251518350b48f01fb4337301049d703",
+    "handoff.mlir": "4d442c1e52728b21d20a64fcd3dd9288967a3ffd7fab005620043cc4982806a8",
+    "model2mlir.mlir": "adf5c2afb3940637d6202b2910eefcb5c232a31232e5b867cb26ed4bce690205",
+    "quantization_manifest.json": "ca686238ae7acb347c1e2763ca0f779ed461da8ad8c266e36326b6b80b2ad866",
+    "recipe.json": "ebd876484625b174a4c65c58effa9fdda5b3a7607d04430f771322ecf6d46abc"
+  },
+  "frontend_contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "generated_c_sha256": "5d0b4d286d983c77d0ca1bf9ef54e1ab0b006f10b657ae235efba7b9f573eb99",
+  "generated_data_sha256": "50ba1b8ddc3b0b589aa8b8f5981b814bf2c2b18f102326f145578850c9ab4a7f",
+  "generated_driver_sha256": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+  "host_cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+  "model2mlir_revision": "7485a829c0195af0ec42820837d609e62e466564",
+  "mx_opt_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "mx_opt_sha256": "527cc60adab57876e27b3ac19f7c6a48179656268a1ff49e34c3f9239f946707",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "asymmetric_0.o": "e8460a1d2698455874bad454d1028a68fc0448d76f7e0249cd93932811aa35c4",
+    "asymmetric_1.o": "9af07eb399667492bdd5ad3f03f427c117f75654efd0a30e69df9a00ba2726c8",
+    "asymmetric_2.o": "1926dd241c10951d804906475398645f7be4441eda2057a7afe2dd2d928d49bc",
+    "asymmetric_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "asymmetric_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "opaque_calls": {},
+  "physical_command_count": 63,
+  "physical_fence_count": 4,
+  "physical_inputs_sha256": {
+    "activation.bin": "d407bf5b2e7d5fc2df893f6c6359a9c229ed38fe2a8a1a46180b69412b6cb97d",
+    "activation_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "activation_scales.bin": "bba6ecea0bfbd239ee42d5853f993bf086eb62e8257c2188a05311ac5af359d0",
+    "golden_bf16.bin": "c31462ed73cff56b5195d806f943a68062ebc38f68eafd58027bca180765fdce",
+    "mx_data.S": "50ba1b8ddc3b0b589aa8b8f5981b814bf2c2b18f102326f145578850c9ab4a7f",
+    "mx_driver.c": "254e7eb88cac6c390e281c1dbb5700ce448a5fed4e007a2ebb4ea4d96577a742",
+    "mx_issue.c": "5d0b4d286d983c77d0ca1bf9ef54e1ab0b006f10b657ae235efba7b9f573eb99",
+    "output_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "physical_program.json": "c9f1835954fa4c54b9fd21bc34df385685bb5480350763df395b93d1b995ebd8",
+    "resource_manifest.json": "bfd8b0753e475de7d9e84bc7d3f222d67607e50766510aca0eb34ec7a4db86a3",
+    "weight.bin": "75550282d7ae03d782b29f4d302ccbeea9301c0c66d749fa18654c96c52f42b0",
+    "weight_lut.bin": "f2d4fdbb9805c99b177300d32024348c630195b4c37ca38d63cdb5cd3989fbd8",
+    "weight_scales.bin": "18b8d7c0896ec161ef03f71d4cb6948f5b615798976dd969610f875c2d354809"
+  },
+  "physical_program_sha256": "c9f1835954fa4c54b9fd21bc34df385685bb5480350763df395b93d1b995ebd8",
+  "profile_name": "MxAsymFp4E4M3GemminiRocketConfig",
+  "profile_sha256": "9323c7e482ab0bf2811d2b0322bcfd2b97deb83e7f6ec8bcbeaebbb5a008ce4f",
+  "resource_manifest_sha256": "bfd8b0753e475de7d9e84bc7d3f222d67607e50766510aca0eb34ec7a4db86a3",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+  "scope": "64-cubed fp4_e4m3 source specialization of one captured PyTorch matmul; checked-in packed inputs, not random PyTorch example inputs; shared physical command IR and standalone emitter; standalone asymmetric MX profile without VPU",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_driver_sha256": "8a6eba79ce2464c12cf1e12e9ea4ce71f9e71a378e7dee94173a0a735ae2da9c",
+  "source_header_sha256": "2553cb68e1e1b7f72450be9b4449cd57efe4f5b6ca13007d000a6bb1188d1e5c",
+  "spike_exit_code": 0,
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_golden_matched_on_pinned_spike"
+}

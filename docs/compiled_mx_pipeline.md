@@ -574,11 +574,46 @@ and [resource manifest](evidence/compiled_nicolas_asym_payload_e4m3_e2m3_resourc
 The reverse FP4×FP6 mode also passed a fresh [Spike regression](evidence/compiled_nicolas_asym_payload_fp4_fp6_regression_20261009.json)
 with the binding.
 
+### Dedicated DIM16 asymmetric mode matrix
+
+The matrix CLI discovers Nicolas's 64×64×64 asymmetric tests, derives each
+mode from its named source/header pair, and checks it against the matching
+RTL-derived profile. Preflight requires every legal compute cell in the 20
+dedicated DIM16 `MxAsym*GemminiRocketConfig` profiles to have exactly one
+source variant. Removing a source test makes preflight fail. The CLI captures
+a fresh PyTorch matmul with the pinned model2MLIR, binds the checked-in
+operand, scale, LUT, and BF16 golden bytes to typed MLIR, emits a physical
+command program and standalone RV64 ELF, then compares all source outputs
+on Nicolas's pinned Spike extension.
+
+Two independent post-commit matrix runs passed **26 / 26 legal modes** and
+**106,496 / 106,496 BF16 values per run**. For every mode, the captured
+frontend artifacts, source resource manifest, physical program, generated
+issuer and driver, RV64 objects and ELF, Spike extension, and Spike log
+hashes agree across runs. Only link log hashes differ because their paths
+differ. The [first matrix receipt](evidence/nicolas_asym_matrix_dim16_266c593/matrix_first.json)
+and [reproduction](evidence/nicolas_asym_matrix_dim16_266c593/matrix_repro.json)
+index all 52 [per-mode receipts](evidence/nicolas_asym_matrix_dim16_266c593/)
+and record the selected PE tuple for each mode. They pin compiler revision
+`338faa8`, Nicolas RTL `266c593`, and the source/tool hashes.
+
+```sh
+python -m tools.qualify_nicolas_asym_matrix \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/matrix-output --jobs 4
+```
+
+This matrix qualifies the dedicated DIM16 Rocket profiles and their BF16
+64³ source tests. The separate DIM8, DIM32, all-asymmetric, and MX+VPU
+configurations still need their own numerical configuration evidence.
+
 ## Remaining gates
 
 1. Reconcile the FP8/FP4 source requant goldens with Nicolas's current convention,
    then qualify the actual FP6 requant source drivers once their missing data
-   headers are available, the other asymmetric legal mode classes, and any
+   headers are available, the remaining configuration families, and any
    source shapes without receipts. Extend multi-output tiling beyond the
    qualified FP8 BF16 shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
