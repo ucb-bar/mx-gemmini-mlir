@@ -18,7 +18,9 @@ import re
 from .source_fp6 import _array, _bytes, read_source_fp6_payload
 from .source_gemm import SourceGemm
 from .quant_reference import (exact_bf16_x2, quantize_bf16_fp4_output, quantize_bf16_fp8_output,
-                              quantize_bf16_fp6_lut_output)
+                              quantize_bf16_fp6_lut_output,
+                              quantize_bf16_radiance_header_fp8,
+                              quantize_bf16_radiance_header_fp6)
 
 
 SCHEMA = "mx_gemmini.source_payload.v1"
@@ -26,6 +28,7 @@ ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
 ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
 DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
 TARGET_MESH_REFERENCE_ORIGIN = "radiance_source_target_mesh_reference"
+TARGET_MESH_QUANT_CONVENTION = "target_mesh_radiance_header_v1"
 
 
 def validate_target_mesh_reference(manifest: dict) -> None:
@@ -35,6 +38,8 @@ def validate_target_mesh_reference(manifest: dict) -> None:
 
     policy = manifest.get("target_mesh_reference")
     descriptor = manifest.get("resources", {}).get("golden_bf16", {})
+    precision = manifest.get("precision")
+    quantized = manifest.get("output_format") is not None
     required = {"schema", "mesh_dim", "source_golden_sha256",
                 "model_cpp_sha256", "model_math_sha256",
                 "transformed_cpp_sha256", "target_golden_sha256"}
@@ -46,8 +51,7 @@ def validate_target_mesh_reference(manifest: dict) -> None:
         required |= {"lut_granularity_shift", "unpacked_activation_lut_sha256",
                      "unpacked_weight_lut_sha256"}
     if (manifest.get("origin") != TARGET_MESH_REFERENCE_ORIGIN or
-            manifest.get("precision") not in {"FP8", "FP4", "FP6"} or
-            manifest.get("output_format") is not None or
+            precision not in {"FP8", "FP4", "FP6"} or
             "source_derivation" in manifest or
             not isinstance(policy, dict) or
             set(policy) != required or
@@ -73,6 +77,42 @@ def validate_target_mesh_reference(manifest: dict) -> None:
         value = policy[name]
         if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
             raise ValueError(f"target mesh reference lacks {name}")
+    quant = manifest.get("target_quant_reference")
+    if not quantized:
+        if quant is not None:
+            raise ValueError("BF16 target mesh reference has a quantized policy")
+        return
+    names = {"FP8": ("golden_fp8", "nicolas_fp8", "fp8_e4m3",
+                     "radiance_header_fp8_v1"),
+             "FP4": ("golden_fp8", "nicolas_fp4", "fp4_e2m1",
+                     "radiance_header_fp8_v1"),
+             "FP6": ("source_fp6_packed", "nicolas_fp6", "fp6_e3m2",
+                     "radiance_header_fp6_lut_v1")}
+    code, nicolas, output, algorithm = names[precision]
+    quant_fields = {"schema", "quant_policy", "source_code_sha256",
+                    "source_scale_sha256", "target_code_sha256",
+                    "target_scale_sha256", "target_nicolas_code_sha256",
+                    "target_nicolas_scale_sha256"}
+    descriptors = manifest.get("resources", {})
+    if (policy.get("schema") != "mx_gemmini.radiance_target_mesh_reference.v2" or
+            manifest.get("output_format") != output or
+            manifest.get("output_specialization") is not None or
+            manifest.get("source_quant_golden_convention") !=
+            TARGET_MESH_QUANT_CONVENTION or
+            not isinstance(quant, dict) or set(quant) != quant_fields or
+            quant.get("schema") != "mx_gemmini.radiance_target_mesh_quant_reference.v1" or
+            quant.get("quant_policy") != algorithm or
+            any(not isinstance(quant.get(name), str) or
+                re.fullmatch(r"[0-9a-f]{64}", quant[name]) is None
+                for name in quant_fields - {"schema", "quant_policy"}) or
+            quant["target_code_sha256"] != descriptors.get(code, {}).get("sha256") or
+            quant["target_scale_sha256"] !=
+            descriptors.get("golden_output_scales", {}).get("sha256") or
+            quant["target_nicolas_code_sha256"] !=
+            descriptors.get(nicolas, {}).get("sha256") or
+            quant["target_nicolas_scale_sha256"] !=
+            descriptors.get("nicolas_output_scales", {}).get("sha256")):
+        raise ValueError("target mesh quant reference lacks pinned numerical provenance")
 
 
 def replace_source_golden_with_mesh_reference(directory: Path, target: bytes,
@@ -91,6 +131,70 @@ def replace_source_golden_with_mesh_reference(directory: Path, target: bytes,
     (directory / "golden_bf16.bin").write_bytes(target)
     (directory / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return manifest
+
+
+def replace_source_quantized_with_mesh_reference(directory: Path, target: bytes,
+                                                 policy: dict) -> dict:
+    """Derive target-mesh BF16 and Radiance/Nicolas quant oracles together."""
+    manifest, resources = load_bundle(directory)
+    m, n, _ = manifest["shape_mnk"]
+    precision = manifest["precision"]
+    if (manifest.get("origin") != "radiance_source_header_specialization" or
+            manifest.get("output_format") is None or
+            manifest.get("output_specialization") is not None or
+            manifest.get("source_quant_golden_convention") != "source_header" or
+            policy.get("schema") != "mx_gemmini.radiance_target_mesh_reference.v2" or
+            len(target) != len(resources["golden_bf16"]) or
+            policy.get("source_golden_sha256") != _sha(resources["golden_bf16"])):
+        raise ValueError("target mesh quant reference does not match the source bundle")
+    code_name = "source_fp6_packed" if precision == "FP6" else "golden_fp8"
+    nicolas_name = {"FP8": "nicolas_fp8", "FP4": "nicolas_fp4",
+                    "FP6": "nicolas_fp6"}[precision]
+    algorithm = ("radiance_header_fp6_lut_v1" if precision == "FP6" else
+                 "radiance_header_fp8_v1")
+
+    def radiance_quant(bf16: bytes) -> tuple[bytes, bytes]:
+        return (quantize_bf16_radiance_header_fp6(
+            bf16, m, n, resources["output_lut"]) if precision == "FP6" else
+            quantize_bf16_radiance_header_fp8(bf16, m, n))
+
+    source_codes, source_scales = radiance_quant(resources["golden_bf16"])
+    if (source_codes != resources[code_name] or
+            source_scales != resources["golden_output_scales"]):
+        raise ValueError("source quant header does not match its BF16 golden")
+    target_codes, target_scales = radiance_quant(target)
+    nicolas_codes, nicolas_scales = (
+        quantize_bf16_fp8_output(target, m, n) if precision == "FP8" else
+        quantize_bf16_fp4_output(target, m, n) if precision == "FP4" else
+        quantize_bf16_fp6_lut_output(target, m, n, resources["output_lut"]))
+    updated = {"golden_bf16": target, code_name: target_codes,
+               "golden_output_scales": target_scales,
+               nicolas_name: nicolas_codes,
+               "nicolas_output_scales": nicolas_scales}
+    for name, data in updated.items():
+        if len(data) != manifest["resources"][name]["bytes"]:
+            raise ValueError(f"target mesh quant resource {name} changed size")
+        manifest["resources"][name]["sha256"] = _sha(data)
+    manifest["origin"] = TARGET_MESH_REFERENCE_ORIGIN
+    manifest["target_mesh_reference"] = policy
+    manifest["source_quant_golden_convention"] = TARGET_MESH_QUANT_CONVENTION
+    manifest["target_quant_reference"] = {
+        "schema": "mx_gemmini.radiance_target_mesh_quant_reference.v1",
+        "quant_policy": algorithm,
+        "source_code_sha256": _sha(source_codes),
+        "source_scale_sha256": _sha(source_scales),
+        "target_code_sha256": _sha(target_codes),
+        "target_scale_sha256": _sha(target_scales),
+        "target_nicolas_code_sha256": _sha(nicolas_codes),
+        "target_nicolas_scale_sha256": _sha(nicolas_scales),
+    }
+    validate_target_mesh_reference(manifest)
+    for name, data in updated.items():
+        (directory / f"{name}.bin").write_bytes(data)
+    (directory / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    load_bundle(directory)
     return manifest
 
 
@@ -506,7 +610,9 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
                   manifest.get("output_oracle") == "nicolas_fp6_e3m2_lut_po2_rne_v1" and
                   manifest.get("output_specialization") in {
                       None, "bf16_fullout_to_fp6_lut_quantized"}))
-        expected_convention = ("source_header_projected" if precision == "FP6" and
+        expected_convention = (TARGET_MESH_QUANT_CONVENTION if
+                               manifest.get("origin") == TARGET_MESH_REFERENCE_ORIGIN else
+                               "source_header_projected" if precision == "FP6" and
                                manifest.get("output_specialization") ==
                                "bf16_fullout_to_fp6_lut_quantized" else
                                "source_header_unscaled" if manifest.get("output_specialization") ==

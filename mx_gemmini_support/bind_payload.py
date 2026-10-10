@@ -10,6 +10,7 @@ from pathlib import Path
 from .resource_ir import attach_source_resources
 from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN, ATTENTION_PV_PROXY_ORIGIN,
                              DERIVED_GEMM_FIXTURE_ORIGIN, TARGET_MESH_REFERENCE_ORIGIN,
+                             TARGET_MESH_QUANT_CONVENTION,
                              load_bundle, manifest_sha256,
                              validate_attention_qk_candidate, validate_attention_pv_proxy,
                              validate_derived_gemm_fixture, validate_target_mesh_reference,
@@ -87,7 +88,8 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
     source_resources = attach_source_resources(module, contract, manifest)
     if source_header_quantized and (
             precision not in {"FP8", "FP4", "FP6"} or
-            manifest.get("source_quant_golden_convention") != "source_header" or
+            manifest.get("source_quant_golden_convention") not in {
+                "source_header", TARGET_MESH_QUANT_CONVENTION} or
             manifest.get("output_specialization") is not None):
         raise ValueError("Radiance header requantization requires an FP8/FP4/FP6 source quantized driver")
     if manifest.get("output_format") is not None:

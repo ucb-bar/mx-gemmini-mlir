@@ -196,12 +196,18 @@ def main() -> None:
             receipt["experimental_spike_extension"] = True
         if mesh_dim != 16:
             receipt["spike_extension_name"] = extension_name
+        quant_reference = ("target" if manifest.get("origin") ==
+                           "radiance_source_target_mesh_reference" else "source")
         if program.output_format == "radiance_header_fp8":
-            receipt["compared_source_fp8_codes"] = program.shape[0] * program.shape[1]
-            receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+            receipt[f"compared_{quant_reference}_fp8_codes"] = (
+                program.shape[0] * program.shape[1])
+            receipt[f"compared_{quant_reference}_e8m0_scales"] = (
+                program.shape[0] * program.shape[1] // 32)
         elif program.output_format == "radiance_header_fp6":
-            receipt["compared_source_fp6_packed_bytes"] = program.shape[0] * program.shape[1] // 2
-            receipt["compared_source_e8m0_scales"] = program.shape[0] * program.shape[1] // 32
+            receipt[f"compared_{quant_reference}_fp6_packed_bytes"] = (
+                program.shape[0] * program.shape[1] // 2)
+            receipt[f"compared_{quant_reference}_e8m0_scales"] = (
+                program.shape[0] * program.shape[1] // 32)
         elif program.output_format == "fp8_e4m3":
             receipt["compared_fp8_codes"] = program.shape[0] * program.shape[1]
             receipt["compared_e8m0_scales"] = program.shape[0] * program.shape[1] // 32

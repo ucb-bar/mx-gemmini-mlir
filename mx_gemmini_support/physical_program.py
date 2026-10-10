@@ -21,6 +21,7 @@ from .quant_reference import (bf16_add_scalar, bf16_mul_scalar, exact_bf16_x2,
                               quantize_bf16_radiance_header_fp6)
 from .source_gemm import plan_mx_gemm
 from .source_payload import (manifest_json, manifest_sha256,
+                             TARGET_MESH_QUANT_CONVENTION,
                              vpu_requant_shape_is_legal)
 from .target_profile import profile_sha256
 from .verify_profile_ir import _bool_attr, _int_attr, _operation_name, _text_attr, verify_ir
@@ -258,7 +259,8 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
                 raise ValueError("physical FP6 header epilogue needs a checked output LUT")
             expected_operands += list(lut[0].results)
         if (precision not in allowed_precision or
-                manifest.get("source_quant_golden_convention") != "source_header" or
+                manifest.get("source_quant_golden_convention") not in {
+                    "source_header", TARGET_MESH_QUANT_CONVENTION} or
                 _text_attr(host, "site_id") != manifest["site_id"] or
                 _text_attr(host, "quant_policy") != policy or
                 _text_attr(host, "output_format") != output or

@@ -2808,6 +2808,16 @@ tests above exercise the VPU instructions themselves. Nicolas's current
 VPU profile supports FP8 and FP4, while FP6 uses a LUT-capable profile
 without the VPU.
 
+The companion `--all-requant` option selects the eight source drivers that
+write quantized outputs. It derives target-mesh BF16 first, then applies
+Radiance's checked FP8 output policy to FP8 and FP4 input kernels or its
+per-row LUT projection to FP6 kernels. The bundle records both the original
+source-header code/scale hashes and the derived target code/scale hashes.
+The generated program reads BF16 from MX and executes the typed host
+requantization epilogue before checking every output byte and E8M0 scale on
+Spike. This path matches Radiance's output convention; the MX hardware
+requantizer has a separate numerical contract.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

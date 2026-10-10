@@ -20,6 +20,7 @@ from mx_gemmini_support.mesh_reference import derive_mesh_reference
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import (load_bundle,
                                                 replace_source_golden_with_mesh_reference,
+                                                replace_source_quantized_with_mesh_reference,
                                                 write_bundle)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.generate_radiance_fp6_header import generate
@@ -78,13 +79,16 @@ def main() -> None:
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.rtl_product_floor_reference and not args.target_mesh_reference:
         parser.error("RTL product-floor reference requires --target-mesh-reference")
+    if (args.target_mesh_reference and args.source_header_quantized and
+            not args.rtl_product_floor_reference):
+        parser.error("target-mesh requant requires Nicolas's RTL product-floor reference")
     if args.target_mesh_reference and (
             profile["geometry"]["mesh_columns"] not in {8, 32} or
             args.physical_mode != "spike_serial" or
             args.fp6_quantized_specialization or args.vpu_spad_requant_x2 or
             args.tilewise_vpu_x2 or args.tilewise_vpu_muls_bf16_bits is not None or
-            args.tilewise_vpu_from_capture or args.source_header_quantized):
-        parser.error("target mesh reference needs plain DIM8/32 BF16 source lowering")
+            args.tilewise_vpu_from_capture):
+        parser.error("target mesh reference needs DIM8/32 source lowering")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     fixture = None
@@ -128,7 +132,9 @@ def main() -> None:
                 kernel.datatype, profile["geometry"]["mesh_columns"],
                 product_floor=args.rtl_product_floor_reference)
             (args.out_dir / "source_golden_bf16.bin").write_bytes(resources["golden_bf16"])
-            manifest = replace_source_golden_with_mesh_reference(bundle, target, policy)
+            manifest = (replace_source_quantized_with_mesh_reference(bundle, target, policy)
+                        if manifest.get("output_format") is not None else
+                        replace_source_golden_with_mesh_reference(bundle, target, policy))
         if generation is not None:
             generated = args.out_dir / "source_fixture"
             generated.mkdir()

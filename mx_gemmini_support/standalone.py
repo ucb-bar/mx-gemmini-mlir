@@ -60,11 +60,12 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     elif host_header:
         code_name = "source_fp6_packed" if host_fp6 else "golden_fp8"
         code_size = m * n // 2 if host_fp6 else m * n
-        if (not program.source_golden_preserving or
+        if ((not program.source_golden_preserving and
+              program.golden_origin != "target_mesh_reference") or
                 len(resources.get(code_name, b"")) != code_size or
                 len(resources.get("golden_output_scales", b"")) != m * n // 32 or
                 (host_fp6 and len(resources.get("output_lut", b"")) != 64 * 12)):
-            raise ValueError("Radiance header epilogue needs exact source BF16, codes, scales, and FP6 LUT")
+            raise ValueError("Radiance header epilogue needs checked BF16, codes, scales, and FP6 LUT")
         runtime_declarations = (
             f"static uint8_t output_bf16[{m * n * 2}] __attribute__((aligned(64)));\n"
             f"static uint8_t output_quantized[{code_size}] __attribute__((aligned(64)));\n"

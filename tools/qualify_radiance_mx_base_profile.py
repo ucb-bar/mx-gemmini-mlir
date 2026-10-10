@@ -41,11 +41,13 @@ def main() -> None:
                         help="select a source precision; repeat for several (default: all three)")
     parser.add_argument("--all-fullout", action="store_true",
                         help="compile all 23 archived BF16-output Radiance MX GEMM drivers")
+    parser.add_argument("--all-requant", action="store_true",
+                        help="compile all eight archived quantized-output Radiance MX GEMM drivers")
     parser.add_argument("--rtl-product-floor-reference", action="store_true",
                         help="use the versioned target mesh reference with Nicolas's product floor")
     args = parser.parse_args()
-    if args.all_fullout and args.case:
-        parser.error("--all-fullout cannot be combined with --case")
+    if int(args.all_fullout) + int(args.all_requant) + int(bool(args.case)) > 1:
+        parser.error("choose one of --all-fullout, --all-requant, or --case")
     source, rtl, riscv, out = (args.source_root.resolve(), args.rtl_root.resolve(),
                                args.riscv_root.resolve(), args.out_dir.resolve())
     if out.exists():
@@ -70,11 +72,16 @@ def main() -> None:
     rows = {Path(row["driver"]).stem: row for row in frontend_index["rows"]}
     selected_cases = ({stem: stem for stem, row in rows.items()
                        if not row["quant_output"]} if args.all_fullout else
+                      {stem: stem for stem, row in rows.items()
+                       if row["quant_output"]} if args.all_requant else
                       {name: stem for name, stem in DRIVERS.items()
                        if args.case is None or name in args.case})
     if args.all_fullout and len(selected_cases) != 23:
         parser.error("archived Radiance BF16-output roster differs from 23 drivers")
-    base_contract = (not args.all_fullout and selected_profile == PROFILE.resolve() and
+    if args.all_requant and len(selected_cases) != 8:
+        parser.error("archived Radiance requant roster differs from eight drivers")
+    base_contract = (not args.all_fullout and not args.all_requant and
+                     selected_profile == PROFILE.resolve() and
                      len(selected_cases) == len(DRIVERS))
     if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
                           len(profile["legal_compute"]) != 3 or
@@ -95,7 +102,7 @@ def main() -> None:
                 row["precision"] != precision.upper() or
                 row["shape_mnk"] != list(kernel.shape) or
                 row["tile_mnk"] != list(kernel.tile) or
-                row["quant_output"] or
+                row["quant_output"] != args.all_requant or
                 _sha(driver) != row["driver_sha256"] or
                 _sha(kernel.data_header) != row["header_sha256"] or
                 _sha(handoff) != receipt["handoff_mlir_sha256"] or
@@ -116,9 +123,11 @@ def main() -> None:
                    "--mlir", str(selected_mlir), "--driver", str(driver),
                    "--profile", str(selected_profile), "--rtl-root", str(rtl),
                    "--riscv-root", str(riscv), "--out-dir", str(result_dir)]
+        if args.all_requant:
+            command.append("--source-header-quantized")
         if mesh_reference:
             command.append("--target-mesh-reference")
-            if args.all_fullout or args.rtl_product_floor_reference:
+            if args.all_fullout or args.all_requant or args.rtl_product_floor_reference:
                 command.append("--rtl-product-floor-reference")
         run = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, check=False)
@@ -127,13 +136,24 @@ def main() -> None:
             raise RuntimeError(f"MX {precision} qualification failed: {run.stdout[-3000:]}")
         artifact = json.loads((result_dir / "build/artifact_manifest.json").read_text())
         expected_status = ("target_mesh_reference_matched_on_pinned_spike" if
-                           mesh_reference else "source_golden_matched_on_pinned_spike")
+                           mesh_reference else "radiance_header_matched_on_pinned_spike"
+                           if args.all_requant else "source_golden_matched_on_pinned_spike")
         if (artifact["status"] != expected_status or
                 artifact["spike_exit_code"] != 0 or
-                artifact["compared_bf16_outputs"] != kernel.shape[0] * kernel.shape[1] or
                 artifact["profile_sha256"] != profile_sha256(profile) or
                 artifact["bound_mlir_sha256"] != _sha(result_dir / "payload_bound.mlir")):
-            raise RuntimeError(f"MX {precision} did not match every selected BF16 reference output")
+            raise RuntimeError(f"MX {precision} did not match every selected reference output")
+        m, n, _ = kernel.shape
+        if args.all_requant:
+            basis = "target" if mesh_reference else "source"
+            code_field = (f"compared_{basis}_fp6_packed_bytes" if precision == "fp6" else
+                          f"compared_{basis}_fp8_codes")
+            quant_bytes = m * n // (2 if precision == "fp6" else 1)
+            if (artifact.get(code_field) != quant_bytes or
+                    artifact.get(f"compared_{basis}_e8m0_scales") != m * n // 32):
+                raise RuntimeError(f"MX {precision} did not match every quantized output")
+        elif artifact.get("compared_bf16_outputs") != m * n:
+            raise RuntimeError(f"MX {precision} did not match every BF16 output")
         result = {
             "precision": precision.upper(), "driver": row["driver"],
             "driver_sha256": _sha(driver),
@@ -147,9 +167,13 @@ def main() -> None:
             "artifact_manifest_sha256": _sha(result_dir / "build/artifact_manifest.json"),
             "elf_sha256": artifact["elf_sha256"],
             "spike_log_sha256": artifact["spike_log_sha256"],
-            "compared_bf16_outputs": artifact["compared_bf16_outputs"],
             "status": artifact["status"],
         }
+        if args.all_requant:
+            result["compared_quantized_output_bytes"] = quant_bytes
+            result["compared_output_scales"] = m * n // 32
+        else:
+            result["compared_bf16_outputs"] = artifact["compared_bf16_outputs"]
         if mesh_reference:
             source_golden = result_dir / "source_golden_bf16.bin"
             target_manifest = json.loads((result_dir / "bundle/manifest.json").read_text())
@@ -159,20 +183,34 @@ def main() -> None:
             result["source_golden_sha256"] = _sha(source_golden)
             result["target_golden_sha256"] = _sha(result_dir / "bundle/golden_bf16.bin")
             result["target_mesh_reference"] = target_manifest["target_mesh_reference"]
+            if args.all_requant:
+                result["target_quant_reference"] = target_manifest["target_quant_reference"]
         results.append(result)
     summary = {
-        "schema": ("mx_gemmini.radiance_target_mesh_fullout_roster.v1"
+        "schema": ("mx_gemmini.radiance_target_mesh_requant_roster.v1"
+                   if args.all_requant and mesh_reference else
+                   "mx_gemmini.radiance_source_requant_roster.v1"
+                   if args.all_requant else
+                   "mx_gemmini.radiance_target_mesh_fullout_roster.v1"
                    if args.all_fullout and mesh_reference else
                    "mx_gemmini.radiance_plain_mx_profile_source_ladder.v1" if base_contract else
                    "mx_gemmini.radiance_target_mesh_reference_cases.v1" if mesh_reference else
                    "mx_gemmini.radiance_selected_mx_profile_source_cases.v1"),
-        "status": ("fullout_target_mesh_reference_roster_matched_on_pinned_spike"
+        "status": ("requant_target_mesh_reference_roster_matched_on_pinned_spike"
+                   if args.all_requant and mesh_reference else
+                   "requant_source_header_roster_matched_on_pinned_spike"
+                   if args.all_requant else
+                   "fullout_target_mesh_reference_roster_matched_on_pinned_spike"
                    if args.all_fullout and mesh_reference else
                    "three_source_precisions_matched_on_pinned_spike"
                    if base_contract else
                    "target_mesh_reference_precisions_matched_on_pinned_spike" if mesh_reference else
                    "selected_source_precisions_matched_on_pinned_spike"),
-        "scope": ("archived model2MLIR e9ded36 captures rebound to Nicolas MxGemminiRocketConfig; source operands and BF16 goldens from byte-checked Radiance headers"
+        "scope": ("archived model2MLIR e9ded36 requant captures rebound to the selected Nicolas MX profile; byte-checked Radiance operands, derived target mesh BF16 references, and derived Radiance header quantized output"
+                  if args.all_requant and mesh_reference else
+                  "archived model2MLIR e9ded36 requant captures rebound to the selected Nicolas MX profile; source BF16 and quantized goldens from byte-checked Radiance headers"
+                  if args.all_requant else
+                  "archived model2MLIR e9ded36 captures rebound to Nicolas MxGemminiRocketConfig; source operands and BF16 goldens from byte-checked Radiance headers"
                   if base_contract else
                   "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; byte-checked Radiance operands and derived target mesh BF16 reference" if mesh_reference else
                   "archived model2MLIR e9ded36 captures rebound to the selected Nicolas MX profile; source operands and BF16 goldens from byte-checked Radiance headers"),
@@ -185,14 +223,26 @@ def main() -> None:
         "compiler_source_closure_sha256": _source_closure(
             ROOT, sorted((ROOT / "mx_gemmini_support").glob("*.py")) +
             sorted((ROOT / "tools").glob("*.py"))),
-        "compared_bf16_outputs": sum(row["compared_bf16_outputs"] for row in results),
         "rows": results,
     }
+    if args.all_requant:
+        summary["compared_quantized_output_bytes"] = sum(
+            row["compared_quantized_output_bytes"] for row in results)
+        summary["compared_output_scales"] = sum(
+            row["compared_output_scales"] for row in results)
+    else:
+        summary["compared_bf16_outputs"] = sum(
+            row["compared_bf16_outputs"] for row in results)
     if not base_contract:
         summary["profile_name"] = profile["name"]
     (out / "qualification.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
-    print(f"{profile['name']} {','.join(selected_cases)}: {summary['compared_bf16_outputs']} "
-          f"{'target mesh reference' if mesh_reference else 'source'} BF16 outputs matched Nicolas Spike")
+    if args.all_requant:
+        print(f"{profile['name']} {len(selected_cases)} requant cases: "
+              f"{summary['compared_quantized_output_bytes']} output bytes and "
+              f"{summary['compared_output_scales']} E8M0 scales matched Nicolas Spike")
+    else:
+        print(f"{profile['name']} {','.join(selected_cases)}: {summary['compared_bf16_outputs']} "
+              f"{'target mesh reference' if mesh_reference else 'source'} BF16 outputs matched Nicolas Spike")
 
 
 if __name__ == "__main__":
