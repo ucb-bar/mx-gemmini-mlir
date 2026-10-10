@@ -2062,8 +2062,8 @@ python -m tools.qualify_runtime_fp4_row_major_object \
 
 ## Muon MMIO issuer handoff
 
-The same checked physical MX program can now produce a data-free Muon RV32
-issuer object. The [MMIO object emitter](../tools/emit_mx_mmio_object.py)
+Selected checked physical MX programs can now produce data-free Muon RV32
+issuer objects. The [MMIO object emitter](../tools/emit_mx_mmio_object.py)
 selects `rtl_alternating` scale scheduling for hardware, checks Radiance's
 `mxgemmini_mmio.h` register offsets and instruction word, then maps each
 physical completion fence to a CPU fence followed by a poll of the MX gateway
@@ -2098,6 +2098,26 @@ python -m tools.emit_mx_mmio_object \
   --out-dir /tmp/fp8-vpu-muon-mmio
 ```
 
+The generated FP4+VPU fixture produces a second deterministic
+[issuer object](evidence/fp4_vpu_muon_mmio_object_266c593/mx_issue.o),
+[physical program](evidence/fp4_vpu_muon_mmio_object_266c593/physical_program.json.gz),
+and [manifest](evidence/fp4_vpu_muon_mmio_object_266c593/object_manifest.json).
+Its tile-major BF16 output ABI follows the physical four-tile plan. The
+[audit](../tests/test_fp4_muon_payload_evidence.py) checks its 1,134 commands,
+33 completion fences, four VPU commands, and shared-gateway disassembly.
+Reproduce with:
+
+```sh
+python -m tools.emit_mx_mmio_object \
+  --mlir docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/tilewise_bound.mlir \
+  --bundle docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --radiance-root /path/to/radiance-kernels-80f84ca \
+  --muon-clang /path/to/llvm-muon/bin/clang \
+  --out-dir /tmp/fp4-vpu-muon-mmio
+```
+
 The [Muon link probe](../tools/link_mx_muon_probe.py) compiles a C++ caller and
 links the issuer with Radiance's Muon runtime and linker script. Two builds
 produced an identical [RV32 ELF](evidence/fp8_vpu_muon_mmio_object_266c593/link_probe/link_probe.elf)
@@ -2120,13 +2140,14 @@ separately; a scoped Muon functional-model qualification follows below.
 
 ### Source-bound Muon kernel and simulator gap
 
-The [payload linker](../tools/link_mx_muon_payload.py) binds the same checked
-FP8 source bundle to the generated Muon issuer. It embeds the four operand and
-scale arrays, allocates row-major BF16 output and scale scratch, and derives the
-VPU×2 BF16 reference from the source golden. Its kernel counts mismatches across
-all 65,536 BF16 outputs after `mx_issue` completes. Two independent builds
-produced identical [RV32 ELFs](evidence/fp8_vpu_muon_payload_266c593/mx_kernel.elf)
-and [manifests](evidence/fp8_vpu_muon_payload_266c593/payload_manifest.json).
+The [payload linker](../tools/link_mx_muon_payload.py) binds a checked source
+bundle to a generated Muon issuer. It embeds the four operand and scale arrays,
+allocates BF16 output and scale scratch, and derives the VPU×2 BF16 reference
+from the source golden in the selected output layout. Its kernel counts
+mismatches across all 65,536 BF16 outputs after `mx_issue` completes. Two
+independent FP8 builds produced identical
+[RV32 ELFs](evidence/fp8_vpu_muon_payload_266c593/mx_kernel.elf) and
+[manifests](evidence/fp8_vpu_muon_payload_266c593/payload_manifest.json).
 Reproduce after emitting the MMIO object above:
 
 ```sh
@@ -2138,6 +2159,21 @@ python -m tools.link_mx_muon_payload \
   --out-dir /tmp/fp8-vpu-muon-payload
 ```
 
+Two independent FP4 builds likewise produced identical
+[RV32 ELFs](evidence/fp4_vpu_muon_payload_266c593/mx_kernel.elf) and
+[manifests](evidence/fp4_vpu_muon_payload_266c593/payload_manifest.json).
+The FP4 verifier reorders the generated Radiance golden into the physical
+tile-major output layout. Reproduce after emitting the FP4 issuer above:
+
+```sh
+python -m tools.link_mx_muon_payload \
+  --object-dir /tmp/fp4-vpu-muon-mmio \
+  --bundle docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle \
+  --radiance-root /path/to/radiance-kernels-80f84ca \
+  --muon-clangxx /path/to/llvm-muon/bin/clang++ \
+  --out-dir /tmp/fp4-vpu-muon-payload
+```
+
 The current Cyclotron model completes this ELF but produces zero output bytes:
 the kernel reports 65,517 BF16 mismatches, confirmed independently from the
 memory dump. The [diagnostic](evidence/fp8_vpu_muon_payload_266c593/cyclotron_diagnostic.json)
@@ -2147,8 +2183,9 @@ move-in (funct 2), move-out (funct 3), or VPU (funct 33), and treats scale DMA
 (funct 27) as a no-op. The stock-model result is a simulator coverage gap.
 
 An [isolated Cyclotron patch](evidence/fp8_vpu_muon_payload_266c593/cyclotron_compiler_stream.patch)
-adds config strides, operand DMA, scale DMA, this fixture's scalar-multiply
-VPU operation, and per-output-tile accumulator clearing. The
+adds config strides, operand DMA, scale DMA including the FP4 alternate scale
+bank, these fixtures' scalar-multiply VPU operation, and per-output-tile
+accumulator clearing. The
 [qualifier](../tools/qualify_mx_muon_cyclotron.py) clones pinned Cyclotron,
 applies the patch, builds it, runs its 35 existing MX tests, then executes the
 compiler-issued Muon ELF twice. Two independent fresh builds produced the same
@@ -2167,10 +2204,30 @@ python -m tools.qualify_mx_muon_cyclotron \
   --out-dir /tmp/fp8-vpu-muon-cyclotron
 ```
 
-This qualifies the selected FP8 256×256×256 MX+VPU compiler Muon MMIO path on
-an explicitly patched functional model. The patch handles the op subset used
-by this fixture; other precisions, VPU operations, RTL cycles, and FPGA
-execution remain separate gates.
+The same qualifier independently executes the generated FP4 256×256×256
+compiler Muon ELF. Two fresh patched-model builds each ran the ELF twice and
+matched all **65,536 / 65,536 BF16 outputs**. The
+[FP4 receipt](evidence/fp4_vpu_muon_payload_266c593/patched_cyclotron_qualification.json),
+[reproduction receipt](evidence/fp4_vpu_muon_payload_266c593/patched_cyclotron_qualification_repro.json),
+and [full memory dump](evidence/fp4_vpu_muon_payload_266c593/patched_cyclotron_gmem.bin.gz)
+record both the kernel verifier and an independent comparison with the
+source-derived, tile-major BF16 golden. Reproduce with:
+
+```sh
+python -m tools.qualify_mx_muon_cyclotron \
+  --cyclotron-root /path/to/cyclotron-2d6adad \
+  --payload-dir docs/evidence/fp4_vpu_muon_payload_266c593 \
+  --bundle docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle \
+  --muon-llvm /path/to/llvm-muon \
+  --out-dir /tmp/fp4-vpu-muon-cyclotron
+```
+
+These receipts qualify the selected FP8 and generated FP4 MX+VPU compiler
+Muon MMIO paths on an explicitly patched functional model. Radiance has no
+committed 256×256 FP4 source driver; the FP4 fixture comes from its pinned
+generator. The model patch covers these command and VPU subsets. Other
+precision modes, VPU operations, RTL cycles, and FPGA execution remain
+separate gates.
 
 ### Executed generated FP4 source tiles on Cyclotron
 

@@ -86,10 +86,12 @@ The [executed source-tile check](compiled_mx_pipeline.md#executed-generated-fp4-
 confirms four separate Muon/MX tiles against the same generated golden on
 Cyclotron. The naive 256×256 source driver itself does not implement four
 output tiles, so this is a derived source decomposition.
-General scheduling remains open. One selected FP8+VPU physical program now
-also issues through Muon MMIO and matches all 65,536 BF16 outputs on an
-isolated patched Cyclotron functional model; the stock model lacks its
-compiler DMA/VPU command subset. See [Muon MMIO qualification](compiled_mx_pipeline.md#source-bound-muon-kernel-and-simulator-gap).
+General scheduling remains open. Selected FP8+VPU and FP4+VPU physical
+programs issue through Muon MMIO and each match all 65,536 BF16 outputs on
+an isolated patched Cyclotron functional model in two independent builds.
+The FP4 program uses a generated Radiance fixture and tile-major output.
+The stock model lacks the compiler DMA/VPU command subset. See
+[Muon MMIO qualification](compiled_mx_pipeline.md#source-bound-muon-kernel-and-simulator-gap).
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config
