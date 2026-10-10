@@ -27,6 +27,8 @@ def main() -> None:
     parser.add_argument("--source-root", required=True, type=Path)
     parser.add_argument("--expected-index", type=Path,
                         help="frontend roster index whose driver/header hashes must match")
+    parser.add_argument("--compatible-source-revision", action="store_true",
+                        help="allow another Radiance revision only if all 31 driver/header hashes match")
     parser.add_argument("--out", type=Path, help="write a JSON materialization report")
     args = parser.parse_args()
     source = args.source_root.resolve()
@@ -46,7 +48,7 @@ def main() -> None:
             raise ValueError("expected index is not a full Radiance MX frontend roster")
         revision = subprocess.check_output(
             ["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
-        if revision != index["source_revision"]:
+        if revision != index["source_revision"] and not args.compatible_source_revision:
             raise ValueError("selected Radiance checkout differs from pinned source")
         expected = {row["driver"]: row for row in index["rows"]}
     rows = []

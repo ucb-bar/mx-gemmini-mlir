@@ -39,6 +39,9 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--baseline", type=Path, default=BASELINE)
+    parser.add_argument("--compatible-source-revision", action="store_true",
+                        help="allow a different Radiance revision only with identical driver, "
+                             "header, frontend, physical, ELF, and Spike artifacts")
     args = parser.parse_args()
     if not 1 <= args.jobs <= 4:
         parser.error("--jobs must be between 1 and 4")
@@ -57,10 +60,12 @@ def main() -> None:
     for path, revision in (
             (args.model2mlir_root, expected_front["model2mlir_revision"]),
             (args.mxq_root, expected_front["mxq_revision"]),
-            (args.source_root, expected_front["source_revision"]),
             (args.rtl_root, expected_front["rtl_revision"])):
         if _revision(path) != revision:
             raise ValueError(f"selected source revision differs from baseline: {path}")
+    if (_revision(args.source_root) != expected_front["source_revision"] and
+            not args.compatible_source_revision):
+        raise ValueError("selected Radiance revision differs from baseline")
     for path in (args.mx_opt, args.radiance_opt,
                  args.riscv_root / "bin/spike"):
         if not path.is_file():
@@ -73,12 +78,15 @@ def main() -> None:
     subprocess.run(["make", "-C", str(source / "lib/golden"), "mx_golden"],
                    check=True)
     print("materializing and checking 31 source driver headers", flush=True)
-    subprocess.run([
+    materialize = [
         sys.executable, "-m", "tools.materialize_radiance_roster_headers",
         "--source-root", str(source),
         "--expected-index", str(baseline / "frontend/index.json"),
         "--out", str(out / "headers.json"),
-    ], cwd=ROOT, check=True)
+    ]
+    if args.compatible_source_revision:
+        materialize.append("--compatible-source-revision")
+    subprocess.run(materialize, cwd=ROOT, check=True)
     print("capturing 31 PyTorch/model2MLIR contractions", flush=True)
     subprocess.run([
         sys.executable, "-m", "tools.recapture_radiance_roster",
@@ -111,6 +119,11 @@ def main() -> None:
                     "source_mlir_sha256", "bound_mlir_sha256"):
             if selected[key] != expected[key]:
                 raise ValueError(f"frontend artifact drift: {selected['driver']}: {key}")
+        current_capture = _read(out / "frontend" / selected["receipt"])
+        baseline_capture = _read(baseline / "frontend" / expected["receipt"])
+        for key in ("source_generator_sha256", "source_layout", "source_plan_error"):
+            if current_capture[key] != baseline_capture[key]:
+                raise ValueError(f"source planning drift: {selected['driver']}: {key}")
     for selected, expected in zip(spike["rows"], expected_spike["rows"]):
         if selected["driver"] != expected["driver"]:
             raise ValueError("Spike driver roster order differs")
@@ -136,6 +149,9 @@ def main() -> None:
         "compiler_revision": _revision(ROOT),
         "model2mlir_revision": front["model2mlir_revision"],
         "source_revision": front["source_revision"],
+        "baseline_source_revision": expected_front["source_revision"],
+        "compatible_source_revision": (
+            front["source_revision"] != expected_front["source_revision"]),
         "rtl_revision": front["rtl_revision"],
         "covered_drivers": 31,
         "fullout_drivers": 23,
