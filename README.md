@@ -84,6 +84,9 @@ starts from source C1 data to isolate the resident second contraction.
 A [source-derived 64×128×128 row-prefix chain](docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2/index.json)
 also compiles and runs on the same Spike model, matching 8,192 FP8 codes and
 256 scales at each site from two independent builds.
+The [16-row prefix ladder](docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/index.json)
+extends this source-backed connected lowering through every M from 16 to 128
+in steps of 16, with full C1/C2 Spike comparisons and independent replays.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
 rebuilds the native verifier and reproduces the connected program and Spike log.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)

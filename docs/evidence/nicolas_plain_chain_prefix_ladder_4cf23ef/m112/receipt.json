@@ -1,0 +1,49 @@
+{
+  "schema": "mx_gemmini.nicolas_chain_128_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "4cf23ef89cbd587910751d60a56f6211a4eb569b",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "source_mlir_sha256": "374946573fe9212f66ad5b9180db5a39c0eb02e0e22540f406cf8711b02242b2",
+  "handoff_mlir_sha256": "5871020e8f9b67c6af793b28a6795ffd968e2627ddaee1720e83be57196edf97",
+  "bound_mlir_sha256": "0fe16cfe7335fda83db64e37d56a62ab41826b1145503fb95cace54b4bb1a76a",
+  "manifest_sha256": "7bdb7b690012e12082bf7ca3637834d807918c606b39c2b3bab2f17f153f7c53",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        112,
+        128,
+        128
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        112,
+        128,
+        128
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "row-prefix specialization of Nicolas's checked-in 128\u00b3 packed source",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "matrix_dim": 128,
+  "output_rows": 112
+}

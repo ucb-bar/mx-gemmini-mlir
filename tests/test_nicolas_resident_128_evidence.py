@@ -27,6 +27,7 @@ FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_a
 PAIR_PLAN = ROOT / "docs/evidence/nicolas_resident_pair_plan_b1b5882"
 ROW_PREFIX = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_d512fc2"
 ROW_PREFIX_FRESH = ROOT / "docs/evidence/nicolas_connected_plain_chain_64x128_fresh_5cf6e1a"
+PREFIX_LADDER = ROOT / "docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
 
 
@@ -44,6 +45,70 @@ def _connected(name: str) -> bytes:
 
 def _row_prefix(name: str) -> bytes:
     return gzip.decompress((ROW_PREFIX / f"{name}.gz").read_bytes())
+
+
+@pytest.mark.parametrize("m", (16, 32, 48, 80, 96, 112))
+def test_complete_source_row_prefix_ladder_matches_spike(m: int) -> None:
+    index = json.loads((PREFIX_LADDER / "index.json").read_text())
+    case = index["cases"][str(m)]
+    directory = PREFIX_LADDER / f"m{m}"
+    first = json.loads((directory / "artifact_manifest.json").read_text())
+    second = json.loads((directory / "reproduction_manifest.json").read_text())
+    capture = json.loads((directory / "receipt.json").read_text())
+
+    def read(name: str) -> bytes:
+        plain = directory / name
+        return plain.read_bytes() if plain.is_file() else gzip.decompress(
+            (directory / f"{name}.gz").read_bytes())
+
+    assert first == second
+    assert first["compiler_revision"] == index["compiler_revision"] == (
+        "4cf23ef89cbd587910751d60a56f6211a4eb569b")
+    assert capture["model2mlir_revision"] == index["model2mlir_revision"]
+    assert capture["output_rows"] == m
+    assert [site["shape"] for site in capture["sites"]] == [
+        [m, 128, 128], [m, 128, 128]]
+    assert first["status"] == case["status"] == (
+        "source_prefix_connected_chain_matched_on_pinned_spike")
+    assert first["spike_exit_code"] == 0
+    assert (first["compared_c1_fp8_codes"], first["compared_c1_e8m0_scales"],
+            first["compared_fp8_codes"], first["compared_e8m0_scales"]) == (
+            m * 128, m * 4, m * 128, m * 4)
+    for name, digest in case["files_sha256"].items():
+        assert _sha(read(name)) == digest, (m, name)
+    assert (f"lowered connected {m}x128: C1 0 codes 0 scales; "
+            "C2 0 codes 0 scales").encode() in read("spike.log")
+    assert read("a1_activation.bin") == _connected("a1_activation.bin")[:m * 128]
+    full_scales = _connected("a1_scales.bin")
+    assert read("a1_scales.bin") == b"".join(
+        full_scales[group * 128:group * 128 + m] for group in range(4))
+    for name in ("c1_codes_ref", "c2_codes_ref"):
+        assert read(f"{name}.bin") == _connected(f"{name}.bin")[:m * 128]
+    for name in ("c1_scales_ref", "c2_scales_ref"):
+        assert read(f"{name}.bin") == _connected(f"{name}.bin")[:m * 4]
+    resources = {path.name.removesuffix(".bin.gz"):
+                 read(path.name.removesuffix(".gz"))
+                 for path in directory.glob("*.bin.gz")}
+    commands = lower_plain_chain_128(
+        read("connected_chain.mlir").decode(),
+        read("nicolas_chain.profile_bound.mlir").decode(),
+        json.loads(read("quantization_manifest.json")),
+        load_profile(PROFILE), resources,
+        source_sha256=index["source_sha256"],
+        header_sha256=index["header_sha256"])
+    buffers = tuple(sorted({operand.buffer for command in commands
+                            if isinstance(command, Command)
+                            for operand in (command.rs1, command.rs2)
+                            if operand.buffer is not None}))
+    assert emit_c(commands, transport="rocket_rocc", buffers=buffers).encode() == (
+        read("mx_issue.c"))
+    uploads = [command.rs1.buffer for command in commands
+               if isinstance(command, Command) and command.funct == 2]
+    assert uploads.count("a1_activation") == m // 2
+    assert uploads.count("b1_weight") == uploads.count("b2_weight") == 64
+    readouts = [command.rs1.buffer for command in commands
+                if isinstance(command, Command) and command.funct == 3]
+    assert readouts == ["c1_tiled_observed"] * (m // 2) + ["c2_tiled"] * (m // 2)
 
 
 def test_source_derived_64x128_connected_chain_matches_stock_spike() -> None:

@@ -755,6 +755,32 @@ A [fresh checkout of the published compiler](evidence/nicolas_connected_plain_ch
 replayed the archived frontend capture and reproduced the generated program,
 ELF, and complete Spike result from commit `5cf6e1a`.
 
+The [complete 16-row prefix ladder](evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/index.json)
+extends that same source specialization to M = **16, 32, 48, 64, 80, 96,
+112, and 128**, with N = K = 128. Six new shapes use a fresh two-site
+PyTorch capture from the current model2MLIR HEAD `e9ded36`; the 64 and 128
+cases retain their separate archives above. For each new shape, two captures
+and two generated RV64 builds match byte for byte. Nicolas's stock Spike
+matches every C1 and C2 code and scale: per site, **2,048 through 16,384
+FP8 codes** and **64 through 512 E8M0 scales** according to M. Each archived
+case contains the frontend capture, typed connected MLIR, packed source
+slice, physical issuer, ELF, full Spike log, and digest manifests. The
+qualification is for independent row prefixes of one checked-in 128³
+source header on one plain MX profile; it does not establish arbitrary N/K,
+graph topology, precision, or hardware parity.
+
+For example, replay the archived 96×128×128 capture without recapturing
+PyTorch:
+
+```sh
+python -m tools.qualify_nicolas_resident_128 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --connected-frontend-dir docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96 \
+  --source-rows 96 --out-dir /new/mx-connected-96x128 \
+  --baseline-manifest docs/evidence/nicolas_plain_chain_prefix_ladder_4cf23ef/m96/artifact_manifest.json
+```
+
 ```sh
 python -m tools.capture_nicolas_chain \
   --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQ_ROOT" \
@@ -3096,8 +3122,9 @@ cases with:
    source generator with the hardware product and accumulator precision,
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
-   qualified 64³ MX+VPU and 128³ plain MX Nicolas source cases, and lower
-   other typed graphs without a source-specific seam.
+   qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
+   Nicolas's 128³ source. Lower other typed graphs without a source-specific
+   seam, including changed N/K dimensions and mixed-engine graphs.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;
