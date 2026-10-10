@@ -12,25 +12,27 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **98 programs have at least one direct source-hash reference; 73
+exact hash. **102 programs have at least one direct source-hash reference; 69
 have none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
 with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
 
-The [one-command direct matrix suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
-reran all **11** registered direct matrix cases through fresh model2MLIR
+The [expanded direct matrix suite](evidence/nicolas_direct_matrix_suite_9df3384_266c593/README.md)
+reran all **15** registered direct matrix cases through fresh model2MLIR
 capture, public object compilation, and full-output Spike checks. Its index
-records 111,872 comparisons across BF16 values, quantized bytes, and scales.
-These 11 cases are the fully replayed direct matrix subset; the 98 source-hash
-references above include many weaker forms of evidence.
+records 163,072 comparisons across BF16 values, quantized bytes, and scales.
+The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
+remains archived. The 102 source-hash references above include many weaker
+forms of evidence and are not a count of compiler-regenerated programs.
 
 | Source family | Compiler evidence | Coverage boundary |
 |---|---|---|
 | Asymmetric matrix modes | [DIM8/16/32 mode matrices](compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix) and [stock-model gap](compiled_mx_pipeline.md#isolated-weight-lut-spike-correction-across-all-legal-modes) | Mode-class tests pass 35 of 36 legal cells on stock Spike per mesh. This does not regenerate every named C program or variant. |
 | FP8/FP4/FP6 matrix and quantized output | [Source shapes and precision cases](compiled_mx_pipeline.md#nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6), [requantizer modes](compiled_mx_pipeline.md#the-nicolas-requantizer-wrappers-three-output-modes) | Selected source programs and full outputs pass. Chunked, DRAM-loop, transfer, and performance variants are not exhaustively reproduced from typed MLIR. |
 | Direct Nicolas FP8 source through public object compiler | [128³ typed object replay](evidence/nicolas_plain_fp8_typed_object_7d7a660_266c593/README.md) | The checked-in `matmul_tiled_fp8_128x128` packed arrays and all 16,384 BF16 source goldens match on pinned Spike. This covers the matrix result, not the C test's cache experiment or performance counters. |
+| Additional direct Nicolas source shapes | [15-case suite](evidence/nicolas_direct_matrix_suite_9df3384_266c593/README.md) | New full-output replays cover FP8 32³, FP8 64×256×64 requant DIM32, FP8 128×128×256 requant DIM32, and plain FP4 128×128×512. The suite records every new frontend graph, bound graph, object, ELF, and Spike log. |
 | Deeper Nicolas FP8 through public object compiler | [128×128×256 two-wave replay](evidence/nicolas_plain_fp8_256_two_wave_object_9250250_266c593/README.md) | The checked-in source arrays and all 16,384 BF16 goldens match with a compiler-selected two-wave K schedule. This establishes numerical output parity, not exact source instruction or performance parity. |
 | Irregular Nicolas FP8 through public object compiler | [96×96×64 replay](evidence/nicolas_plain_fp8_96x96x64_object_52dcc4d_266c593/README.md) | The checked-in source arrays and all 9,216 BF16 goldens match on pinned Spike. This qualifies one non-square geometry, not all rectangular programs. |
 | Nicolas FP8 quantized readout through public object compiler | [128³ requant replay](evidence/nicolas_fp8_requant_typed_object_fa5ec73_266c593/README.md) | The checked-in `matmul_tiled_fp8_128x128_requant` source codes and scales match exactly: 16,384 FP8 codes and 512 E8M0 scales on pinned Spike. Other source quantization conventions require separate checks. |

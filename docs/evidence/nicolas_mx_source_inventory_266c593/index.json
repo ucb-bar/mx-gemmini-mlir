@@ -36,6 +36,13 @@
         },
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_64x64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "f74247468254d7204a2027cad17651dc0e3ab38c8dbb9bdd6eed8e45ef985c19",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp4_64x64x64/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
           "sha256": "7474dd5bd17c67f4328d327fda1672d9e33b60b986ede9af47776090759dbf65",
@@ -111,6 +118,13 @@
       "evidence_references": [
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp6_128x128x512/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp6_typed_object_spike.v1",
+          "sha256": "455b50582adf9585c115245814687c342156a01c23d1993ec451e58573dee373",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp6_128x128x512/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp6_typed_object_spike.v1",
           "sha256": "a7e681f1b659ef3c84d8e01075dfc415f6bd3432b42a4bc1cac7cca1ac6cf71d",
@@ -137,6 +151,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp6_128x128x512_requant/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp6_typed_object_spike.v1",
+          "sha256": "8bc80422fabe255e86ce71d808fa657b0a000188951d9c536c2108c65d0fb39f",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
         {
           "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp6_128x128x512_requant/receipt.json",
@@ -212,7 +233,22 @@
       "source_sha256": "cbd724db7a161305fa4763470346562efdc3665ab3d5d04b604df2a82c1ca8bd"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_128x128x512/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "7ffa6472d744dee03aaa55b71cb0d927140c69c8c8df4d97e418b96e478c6506",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_128x128x512/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "163bc1ba025e91a1404df65ab0a60861d5d128c5c2a9827d3a23f5f37cf011a3",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp4_128x128x512",
       "source_sha256": "450779560f0f90618f4e18375419ea6cb19979377d1ea30992c9759695f64ab2"
@@ -388,6 +424,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_128x128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "3abcd9d017ac5e568a7a845730059aa2b1528b796f8a1d7040100d33265b5a91",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
         {
           "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp8_128x128x128/receipt.json",
@@ -1083,6 +1126,13 @@
       "evidence_references": [
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_128x128x256/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "3917a74cb449ad4402ee90098d167d7330c4fd8fb7a7dc30fe9de814d8668273",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp8_128x128x256/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
           "sha256": "dee07544ce50e1a1685243d9492338428781b4106a1edcd4f37a8d4fbd79c8ed",
@@ -1123,6 +1173,13 @@
       "evidence_references": [
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_64x64x64_requant_dim32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "496c98f00facb64f7aac8b6fd61b76e7db4e490c2137dd441a1be036a9edb34a",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp8_64x64x64_requant_dim32/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
           "sha256": "78072ded969e82b9ed050048fae4377114a5a16b81116986aebf2fe9b78ab36a",
@@ -1148,13 +1205,43 @@
       "source_sha256": "1ddf6983ee813ee6ec286d0d86ec2f45575bf0bd81b40125d5f454ed466baa64"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_128x128x256_requant_dim32/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "1a9ceb3e269e2ec8a70a43e4c822c5c2a8ac92eba82115e6beade94db0d8182f",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_128x128x256_requant_dim32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "8d0c54153e5ec5a6dcd1153a285c26a0faced2d21c7e87021616dc018fa32375",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_128x128x256_requant_dim32",
       "source_sha256": "6870676773a40ad6b249d72a0e833c2d032378dff8ca1d936bae8e301042e382"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_64x256x64_requant_dim32/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "d5575596e1113cd5618366383a788a860c81d5026be4bafcc62bd5149c0189fb",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_64x256x64_requant_dim32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "f1a2c063a141dd6f3005df76c9f9e27aaabfdf980908b8a32ac482fa018e6a2a",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_64x256x64_requant_dim32",
       "source_sha256": "0d29269ed7cb089cbfeb9145a3bab517af5f2b249e055d25c31133bd1f438abf"
@@ -1167,6 +1254,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_128x128x128_requant_dim32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "a31de59655fe13f7e35c1ff8198218e6896ab62478b34bffb6efb8dc21ce9da5",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
         {
           "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp4_128x128x128_requant_dim32/receipt.json",
@@ -3397,6 +3491,13 @@
       "evidence_references": [
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_128x128x128_requant/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "5a311d725107f211cf650dd584fd94291f22f3ddaa4266ef1bfc0c916f67365c",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp8_128x128x128_requant/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
           "sha256": "17972547bbcacb8d1b29012e2487410391ccd368a139f51f9a9ac2ca418a14a9",
@@ -3492,6 +3593,13 @@
       "evidence_references": [
         {
           "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_96x96x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "d65cd9fc47df445f5c16566018505627d583d263c9101f58635e4af41df64c3a",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp8_96x96x64/receipt.json",
           "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
           "sha256": "3fac1b1407ab851722c647183b6eb9d51fd2f9d1e6b3db5a0900f0842ab9a7d5",
@@ -3523,7 +3631,22 @@
       "source_sha256": "00b13d84f832e0217adf00e367788a179c1572755e6846ce51346c9687aadca5"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_32x32x32/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "9818a11974146e4c82708016477a56f1d0df23f3f40a260be969a204ed143ca4",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp8_32x32x32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "0a3267006ff250b9f01090babdd8f32890a85ec25bfdc1eab52b659968253460",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_32x32x32",
       "source_sha256": "716e8c1b6ad1ea415e43f418d698cda18aee98c6616a5b507d1c831b75977bb2"
@@ -3536,6 +3659,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_64x64x64_requant/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "a1b3a41a06e6d4b6ea14f660f0d06e580c9b84f769aa879e7a2a48c049eac8d2",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
         {
           "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp4_64x64x64_requant/receipt.json",
@@ -3612,6 +3742,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_matrix_suite_9df3384_266c593/fp4_128x128x512_requant/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp4_typed_object_spike.v1",
+          "sha256": "5b2afa9f41da048be0762cc8c69e5ef0ce4b4ecb1a3ae4f3758829d80e77510b",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
         {
           "field": "source_driver_sha256",
           "path": "docs/evidence/nicolas_direct_matrix_suite_9f3a759_266c593/fp4_128x128x512_requant/receipt.json",
@@ -5549,6 +5686,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 98,
-  "without_direct_hash_reference": 73
+  "with_direct_hash_reference": 102,
+  "without_direct_hash_reference": 69
 }

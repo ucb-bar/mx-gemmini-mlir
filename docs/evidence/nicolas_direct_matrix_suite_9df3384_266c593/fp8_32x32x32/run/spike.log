@@ -1,0 +1,3 @@
+compiled Nicolas FP8 32 cubed: 0 mismatches / 1024 BF16 values
+Gemmini extension configured with:
+    dim = 16
