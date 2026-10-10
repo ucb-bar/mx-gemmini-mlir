@@ -1,0 +1,11 @@
+{
+  "bf16_sha256": "cac55d3a964a8efe0fb07772ba2aff38bd0029f83b4ab0c1ce35f625bbf431e4",
+  "generated_header_sha256": "8528beef2d4fded29c9023876d62490568707b4db69f3d33fe08d16f5ecc4bc7",
+  "golden_binary_sha256": "155d74d7be11cb951cac180af2515322e03c234a9f99600ec59e7b84d7e0b065",
+  "golden_source_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+  "k": 512,
+  "packed_output_sha256": "89040ceebb61438233ebbc6b6a7b206604e3271c5f4695105372364493bae296",
+  "scale_sha256": "32e5026eb31174e72da65102603f862df04423fe2eb9cb9c12777c852d0d0b5d",
+  "schema": "mx_gemmini.generated_radiance_fp6_fixture.v1",
+  "source_header_sha256": "b57ef75fc634acd21750db45202bf12ced04569701f74e0607e0f06c974da93e"
+}

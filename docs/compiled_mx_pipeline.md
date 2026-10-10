@@ -270,11 +270,49 @@ path, so that log's hash differs.
 The FP6 output path uses the E3M2-only profile; Nicolas's current MX+VPU
 profile has no E3M2 LUT compute mode.
 
-Reproduce it with the same profile, RTL, toolchain, and fullout driver as the
-BF16 row above, adding `--fp6-quantized-specialization` to
-`python -m tools.qualify_source_mx`. The command emits the
-[payload-bound MLIR](evidence/model2mlir_radiance_mx_fp6_128x128x2048_quant_payload_bound.mlir)
+Reproduce the fullout hardware FP6 output path with the same profile, RTL,
+toolchain, and fullout driver as the BF16 row above, adding
+`--fp6-quantized-specialization` to `python -m tools.qualify_source_mx`.
+The command emits the [payload-bound MLIR](evidence/model2mlir_radiance_mx_fp6_128x128x2048_quant_payload_bound.mlir)
 and a standalone RV64 ELF, then checks both codes and scales on Spike.
+
+The two FP6 requant drivers at 128×128×128 and 128×128×512 now have
+source-derived headers. `tools.generate_radiance_fp6_header` slices the
+checked-in 2048-K operands and A/B/C LUTs, then calls Radiance's `mx_golden`
+for each depth. Before writing either header it recomputes the full 2048-K
+BF16 result, both packed C layouts, and output scales and requires exact
+agreement with the checked-in header. These generated headers are fixtures
+for the missing source files; they are not claimed to be upstream Radiance
+headers.
+
+Fresh PyTorch→model2MLIR captures of both requant drivers bind their source
+operands, E8M0 scales, and three 64-line LUT banks to typed MX MLIR. The
+explicit `mx_gemmini.host_requantize` consumes the BF16 readout and C LUT.
+The RV64 host epilogue reproduces the source BF16→FP6 projection and packs
+the C LUT indices. On Nicolas's pinned Spike, both depths matched all
+**8,192 packed source bytes and 512 E8M0 scales**. The separate MX hardware
+FP6 readout also passed Nicolas's oracle for these depths; that output uses
+a different scale and code convention. See the archived
+[FP6 source qualification](evidence/radiance_fp6_requant_266c593/qualification.json),
+which includes the generated headers, frontend captures, bound MLIR, payload
+bundles, command issuers, Spike logs, and hashes. The selected profile is
+`MxE3M2OnlyGemminiRocketConfig`; this is not an MX+VPU FP6 qualification.
+The source capture reports a 128 KiB scratchpad assertion, while this selected
+target profile exposes 256 KiB. Operand placement and output bytes were
+checked on Spike; equal scratchpad capacity is not claimed.
+
+```sh
+python -m tools.generate_radiance_fp6_header \
+  --radiance-root /path/to/radiance-kernels --k 128 \
+  --out /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.data.fp6.m128n128k128.h
+python -m tools.qualify_source_mx \
+  --mlir docs/evidence/radiance_fp6_requant_266c593/fp6_128x128x128/profile_bound.mlir \
+  --driver /path/to/radiance-kernels/kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk128.requant.cpp \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE3M2OnlyGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup --riscv-root /path/to/riscv-tools \
+  --out-dir /new/radiance-fp6-source-run --source-header-quantized
+# Use --k 512 and the matching 512 filenames for the other source driver.
+```
 
 The same lowering accepts ordered physical `mx_gemmini.vpu_execute` and
 `mx_gemmini.spad_requant` operations between the contraction and BF16 readout.
@@ -983,12 +1021,12 @@ profiles; these missing lists are specific to each source shape.
 
 ## Remaining gates
 
-1. Qualify the source-compatible FP8 host epilogue on RTL or FPGA if that
-   execution path is needed there. Qualify actual FP6
-   requant source drivers once their missing data
-   headers are available, the remaining configuration families, and any
-   source shapes without receipts. Extend multi-output tiling beyond the
-   qualified FP8 BF16 shape.
+1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
+   if those paths are needed there. The FP6 requant receipts use generated
+   fixtures because the corresponding headers are absent upstream; check
+   future committed headers against them. Qualify remaining configuration
+   families and source shapes without receipts, and extend multi-output
+   tiling beyond the qualified FP8 BF16 shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
