@@ -130,6 +130,7 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     ("e4m3s_fp4", 4096, 6, 0, "MxAsymE4M3Fp4GemminiRocketConfig", 0),
     ("fp6_fp4", 2048, 3, 3, "MxAsymFp6Fp4GemminiRocketConfig", 3),
     ("fp4_fp6", 2048, 1, 3, "MxAsymFp4Fp6GemminiRocketConfig", 3),
+    ("e4m3_e2m3", 2048, 9, 3, "MxAsymE4M3E2M3GemminiRocketConfig", 4),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
         tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):
@@ -139,6 +140,8 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     source.write_text("\n".join((
         f'#include "include/{header.name}"',
         f"#define USE_LUT {int(lut_loads != 0)}", "#define MX_ALTFMT 0",
+        *(["((uint64_t)(1) << 31)", "((uint64_t)(1) << 12)"]
+          if variant == "e4m3_e2m3" else []),
         "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K")))
 
     def array(type_name: str, name: str, dims: str, count: int) -> str:
@@ -163,6 +166,11 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     program, resources, resource_manifest = lower_asymmetric_physical(
         bound, profile, recipe, source=source, header=header)
     assert program.plan["pe_mode"] == mode
+    assert program.plan["weight_projection"] == ("direct" if mode in (10, 6, 3)
+                                                   else "lut")
+    config_ex = next(step.command.rs1.immediate for step in program.steps
+                     if isinstance(step.command, Command) and step.command.funct == 0)
+    assert bool(config_ex & (1 << 31)) == (variant == "e4m3_e2m3")
     assert len(resources["activation"]) == activation_bytes
     assert len(resources["golden_bf16"]) == 8192
     assert {"activation", "weight", "activation_scales", "weight_scales"} <= set(
