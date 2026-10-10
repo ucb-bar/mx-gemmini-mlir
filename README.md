@@ -22,16 +22,16 @@ binding, and the external binary bundle supplies the bytes.
 operand movement, K-wave compute, and BF16 or supported quantized readout for
 complete output tiles.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
-output on Nicolas's pinned Spike extension. Qualified source shapes span the
-FP8 and FP4 ladder; see
-[compiled source parity](docs/compiled_mx_pipeline.md). The same stream also
+output on Nicolas's pinned Spike extension. The latest
+[complete MX GEMM source roster](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)
+qualifies all 31 Radiance FP4, FP6, and FP8 drivers from model2MLIR captures:
+23 drivers with BF16 output and 8 with requantized output match their source
+goldens. The same stream also
 executes an in-place BF16 ×2 VPU epilogue for FP8 and FP4 with exact derived
-goldens. Typed FP8, FP4, and FP6 quantized readouts also match Nicolas's current
-Spike convention for codes and scales. The FP6 path uses the checked-in fullout
-header as an explicit quantized output specialization; its 16-wave schedule
-selects FP6 output only on the final K wave. Source header output goldens use
-older or different conventions, so
-[quantized source parity remains open](docs/compiled_mx_pipeline.md#fp8-and-fp4-quantized-readout).
+goldens. Typed FP8, FP4, and FP6 quantized readouts match the pinned Spike
+convention for codes and scales. The FP6 path uses the checked-in source header
+for its output specialization; its 16-wave schedule selects FP6 output only on
+the final K wave.
 The source-bound full
 MM1→VPU×2→SPAD_REQUANT→resident MM2 chain now runs in one compiler-generated
 RV64 program and matches the C1/C2 source outputs on Spike. The checked

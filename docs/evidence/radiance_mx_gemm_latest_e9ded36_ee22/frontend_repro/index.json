@@ -1,0 +1,758 @@
+{
+  "captured_drivers": 31,
+  "compiler_revision": "12cb75d8550b64b349def9a0344a5623a61ab5d9",
+  "fullout_drivers": 23,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "requant_drivers": 8,
+  "rows": [
+    {
+      "bound_mlir_sha256": "eb06393a44fe9035a8617eb812e8e9aa244756a8088c31d45775fa7653ecfc1b",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m128n128k1024.tm128tn128tk512.fullout.cpp",
+      "driver_sha256": "978f234c0cbc6fe812450350cd472d2e04352b67ea1fe900c3d0368f574f875d",
+      "header_sha256": "fc420bd20dbcd2b61db815fefa67ca2650fb659f94698765a179e6538fa80728",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.m128n128k1024.tm128tn128tk512.fullout/receipt.json",
+      "receipt_sha256": "0597a55d20774e56bda936997db4cd218576f3c2e0d3f9ffa34f4dc2949fc5c6",
+      "shape_mnk": [
+        128,
+        128,
+        1024
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6d300fc0a7ef5ba1256ae4788a662870dd2edc235b26cdf53601c72c3405d32e",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "b0dd3523d643e0eafc7b3aca2929811bfce313eb9beacb38f4f349fb94efd70f",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m128n128k2048.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "1433db877a87627d2ead9961de7663b4b07a9dd070aff964906a8290c033cf9a",
+      "header_sha256": "57d3b18403f51bf843dc78f892ed3f50e9110c559ab326755da7c05dbcd89cb7",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.m128n128k2048.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "0fabb586a1aed3a20f7445e2237fb5731a4b75f1b89899ed99b132549869bf14",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "76fc6a26184629e33f899ee89c2492e2099456ab0e4ae01a7bc18dcbdcd06a96",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "5fa7c00437a0c8c49e37ca1cb49fcf4546ab58c863b75aac5ad84912c17a00a3",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m128n128k256.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "33accc38f62228e978b6bf82342dbb0ff6f35812081fdab1371f640390042e9d",
+      "header_sha256": "beb0ba7ab9f91386b85c3c1c7a94dc1bb22930ba79d01e60562ea6d4181ef42d",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.m128n128k256.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "b5aae2f09862074da349e5f3e21bca9987c622ef0e1e0d4c0a5e45a42dfcec57",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "865c0f7beb0d934880702f9747ce9ce3a5a3be8ae86b3df04b2d45468074d566",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "0a66522eb76638a23de84e93d578ed0c4cb8359f8c3938ab58fa451dbf63355a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m128n128k5632.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "f7502f543e317d4fcafef05c8167e2c024721a07f2f13aaee5dbb3dd5e8552b3",
+      "header_sha256": "603c1d5f81de6378a82e0bc0ba54d8675e839edbc1d8cc6a70acfc735c98158f",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.m128n128k5632.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "6de959533efe4d23ab9f413bbe3b99cd58108647496ac43d78d506297e02c8d5",
+      "shape_mnk": [
+        128,
+        128,
+        5632
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6a707f16f4c5214ddaf6e9476b5bb9c27408fc0f2f4e9836ab5008774a7c3e6a",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "749d44a8e2483cfeb0c184915050129bc66ab736c1d848415908c23a26569b23",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "8781fddbff19c5a17a0e671e8cc4787526ddecbb5daf9528b1106872c30667d0",
+      "header_sha256": "2ee4ca3372077130ae589e816523f4892a30233269b8e0123809a2864fc0ffcc",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout/receipt.json",
+      "receipt_sha256": "ababeb0effc5801b366e5d80817a5e9e8c8759a061ceff2e50023bf03e89bf3c",
+      "shape_mnk": [
+        64,
+        64,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "896b05ca59841751e142061fe35ff08535ccf39fea3388a40366538cf61cfbe0",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "bound_mlir_sha256": "e907ae7ead77508d99a8d8ef31c13aa89ea85537345d69e7ff081d89fed1a876",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "2e501c4afa3404b927c03461e4940ea77b4f80cb08b34c186584381af27e22df",
+      "header_sha256": "be8b5db02a2a90c32f8d2b35b70ac9d47d1a699ca85ccadfb705012fce050ed6",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.singletile.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "541ae66a9e572f4d3ab3b3e520be8964ccb2dbe93ef96a88cf30bebb0e43700b",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "cbbebac54e23cfd7fbb677e77b69dc1861144becd5a77c3a86519b848ffa7304",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "e907ae7ead77508d99a8d8ef31c13aa89ea85537345d69e7ff081d89fed1a876",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm128tn128tk128.requant.cpp",
+      "driver_sha256": "b40a27d9407779db66e287c8048305f2593808d25195e4a4cabfbfca4cd01427",
+      "header_sha256": "be8b5db02a2a90c32f8d2b35b70ac9d47d1a699ca85ccadfb705012fce050ed6",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp4.singletile.tm128tn128tk128.requant/receipt.json",
+      "receipt_sha256": "b89f0201c8ca4fb5e4d8a6ee1e00880b53049fda4eb3bfbe7c1a1ffb878ffd49",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "cbbebac54e23cfd7fbb677e77b69dc1861144becd5a77c3a86519b848ffa7304",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "c30c6ded1f5e6c4c5fe6230fe5aba3abc9cc1bcb47c7ec2c6deae8bf8d2fa44a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm128tn128tk512.fullout.cpp",
+      "driver_sha256": "82bbfd476adaa5a79be36859aaa812f70549eadc4c24bb15c783e99338ff55b0",
+      "header_sha256": "0461cc975949db7d5a153fa40b3240a48c306f2ca5061bd4e69a3231a8b1528f",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.singletile.tm128tn128tk512.fullout/receipt.json",
+      "receipt_sha256": "162f4fb9e020ba36ceddeb3a4516cec27f31c07797b448fc9d2fbfa015125c24",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "f2061213e871d8221cfe417d04ccd5d0ef9f8b5092c438df3c1a09fd9ff41a61",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "c30c6ded1f5e6c4c5fe6230fe5aba3abc9cc1bcb47c7ec2c6deae8bf8d2fa44a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm128tn128tk512.requant.cpp",
+      "driver_sha256": "49908237ac02fd377729ea8921c54d276f95d0bd96e170c5cbf43b8405975d8e",
+      "header_sha256": "0461cc975949db7d5a153fa40b3240a48c306f2ca5061bd4e69a3231a8b1528f",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp4.singletile.tm128tn128tk512.requant/receipt.json",
+      "receipt_sha256": "29e631d9271cfd9eacf5ef62a1082e5eebcc15f3e305dacf7c7e71e4facf4ec9",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "f2061213e871d8221cfe417d04ccd5d0ef9f8b5092c438df3c1a09fd9ff41a61",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "249637d2fc65caaada65c6a79cb75842a90dd21f8fd0e5c2d40230a711bc10c6",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "e37a53158bd6a4542e54eb703b1fd42d4b17e50f34ca3c66321ea66eeafc620f",
+      "header_sha256": "a72ea53586c3f403da429bf4bfd0548f0014fa8fbc7ccdd5efae00184f24013e",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp4.singletile.tm64tn64tk64.fullout/receipt.json",
+      "receipt_sha256": "88a4a4df3ca2fe49073b75a35a68313c10b7e9a484d15fea3c3225b03d22deb4",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "0cd1569e4e73077997ef3ed64fc4f28dce0b09b9cc14b6776deee6ab170685b2",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "bound_mlir_sha256": "249637d2fc65caaada65c6a79cb75842a90dd21f8fd0e5c2d40230a711bc10c6",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp4.singletile.tm64tn64tk64.requant.cpp",
+      "driver_sha256": "54344ecd0e2ff010cb59edb3f16d83f3b93a5159c972e8c87c76d2d991536ef3",
+      "header_sha256": "a72ea53586c3f403da429bf4bfd0548f0014fa8fbc7ccdd5efae00184f24013e",
+      "precision": "FP4",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp4.singletile.tm64tn64tk64.requant/receipt.json",
+      "receipt_sha256": "9a0dff12dd757cf5213e503d1404ec9f69b81b3c018894cd66611ec9c19c49ef",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "0cd1569e4e73077997ef3ed64fc4f28dce0b09b9cc14b6776deee6ab170685b2",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "bound_mlir_sha256": "c72e7a7556f1836ac7f76747391d40b99d9a58d73afc0ff086dcb08e36f2a9a5",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k1024.tm128tn128tk512.fullout.cpp",
+      "driver_sha256": "50b5ffc6ed39fb87599a4d0f0dda652dc6dd8b00611728bf026bfb490ae8c1a9",
+      "header_sha256": "a8ac96210238ea768dd5cced28061b1819c2c54d0eb89222bb37cdcdb730ce0d",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": false,
+      "receipt": "mxgemm.fp6.m128n128k1024.tm128tn128tk512.fullout/receipt.json",
+      "receipt_sha256": "53b70f7fee0cb91bacd702c89d060c6a3970cbb3a27aad4b74e546e5935320c0",
+      "shape_mnk": [
+        128,
+        128,
+        1024
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "d04c011c3ccefa2809539a177f14453dd14c503f1e49dc2f25890e4ea95027b9",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "5c78ff6c7b5b006c7ba7cab85c20297efbf033bc9222e3bce62b4f7c3006b5f3",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "18bfc5d0af4687bd965f546508d945adcfbfee5d242e6269ec442889888e02ed",
+      "header_sha256": "b57ef75fc634acd21750db45202bf12ced04569701f74e0607e0f06c974da93e",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": false,
+      "receipt": "mxgemm.fp6.m128n128k2048.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "51c3be0487ced5eba24ae42e6149a0dcb2dc4bc30bde84cec1ef0925bdcd8c28",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6e0c741b21446f0d0f4386cf38c381fd3ae768f1a4f55069061870c7c8cab83d",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "94b9f7442e81e51a99d06424f2143a7f4631319e30c823d896e904538d38d13a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.m128n128k256.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "b2ebd8106cc04d62afe74eb13f339f1244821d6a5ab7578e34ccdf931816dc2c",
+      "header_sha256": "1c4872ef1999a8a5af3c83949c1502e1a85935bf6fce98a3b6b679084c65ba4b",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": false,
+      "receipt": "mxgemm.fp6.m128n128k256.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "7c8ae1703a5833ceeaf9f5c8b08d3116aeb46b23754e2d830d408cbc83ce0b3d",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6b6bbc69a571ccc2ad20fb9657601c9df285a9ec9db922954ede8e5a5b848761",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "1b06d80b5bf9fb86c0305883d1173f340c64b4c562b71609e470efd3e346f4a7",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "75b0101dff29076e8e72e4290c18a7df17929bb7ca935896b1a8722883866ee9",
+      "header_sha256": "21a82706853dedd25cf3a53fda59a16c45a5a72faed72bc58a0004910046afda",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": false,
+      "receipt": "mxgemm.fp6.singletile.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "d8b332394f338645084f2340201829b0a67879d593776f580883fa730113fcde",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "2625aa42eddfd309917feb23360b9684228359eba2ff965ceacca5a1f6db60a9",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "1b06d80b5bf9fb86c0305883d1173f340c64b4c562b71609e470efd3e346f4a7",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk128.requant.cpp",
+      "driver_sha256": "f46bd8339d4f61fc9b2621872198a99e302e3e1cb20ef27acb7adfc6abd873f2",
+      "header_sha256": "21a82706853dedd25cf3a53fda59a16c45a5a72faed72bc58a0004910046afda",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": true,
+      "receipt": "mxgemm.fp6.singletile.tm128tn128tk128.requant/receipt.json",
+      "receipt_sha256": "a4a2b9aa56bba8593987398d7890c474fbde67ef427d61172d9c7796b53e98e3",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "2625aa42eddfd309917feb23360b9684228359eba2ff965ceacca5a1f6db60a9",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "f75f718f117fec8d977448548184900fe5976265d325569f6fd4934901b89e23",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk512.fullout.cpp",
+      "driver_sha256": "e9ffb31e8792ba282aa670f99288d5ac175513e728737a64d9f4d64d3025da25",
+      "header_sha256": "8528beef2d4fded29c9023876d62490568707b4db69f3d33fe08d16f5ecc4bc7",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": false,
+      "receipt": "mxgemm.fp6.singletile.tm128tn128tk512.fullout/receipt.json",
+      "receipt_sha256": "152e9b44614fb1b916df60828d317ed77fe2fca0d5302d6ac4b61bc6c7aeb5f1",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "dce36fa0447ce9c2c437b2761b3b4c0793f15be8d54f4081aa9d6b7a39c7d8fb",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "f75f718f117fec8d977448548184900fe5976265d325569f6fd4934901b89e23",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp6.singletile.tm128tn128tk512.requant.cpp",
+      "driver_sha256": "99607d6b83639624f95dbe5dc5ac76aaa8ac1d6972222712c1151dae1632421e",
+      "header_sha256": "8528beef2d4fded29c9023876d62490568707b4db69f3d33fe08d16f5ecc4bc7",
+      "precision": "FP6",
+      "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+      "quant_output": true,
+      "receipt": "mxgemm.fp6.singletile.tm128tn128tk512.requant/receipt.json",
+      "receipt_sha256": "bddfeea8ce913e3a8287742dc9ae6f1ab0ef7d6c3c813cf755b3a4fca5feb535",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "dce36fa0447ce9c2c437b2761b3b4c0793f15be8d54f4081aa9d6b7a39c7d8fb",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        512
+      ]
+    },
+    {
+      "bound_mlir_sha256": "0605d83d373e71e4a64ad5674f6c726a0f39c2c47e6bf76f3bb1662141c8312e",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "64568f62f9686c7497d205dd9a434d5efd424dc339190f022af16c8caeaf31e4",
+      "header_sha256": "5cb6ca13479a3d56ec3e493a3000009d1dbd869594bf52bda4bcb7ef6d7aec0f",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "3321c21520ab50c573b61891a7e45c5ea4900190080a6b8d7b7c3d5c1798be08",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "ba5847cc206cbb1ef0425a05f4d97019f60cf8968a3004bd6cf062caead07c35",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "bafcfb5f19f1e9189f82f7967a01cd903ff1ccdd7dbfeb72cfe770c440345728",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k2048.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "8944fcb602cf57110d8316c62eda18433bc5735be2c263516a3fe3dc4633ca1f",
+      "header_sha256": "66e030b349cc6bbaab2384240c237428a23dc2f887ad560b339f1a2fc3034668",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k2048.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "b852d779f428b991937acb80427c8705323c73b64506bc8f7cb1afa669ae1fbd",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6e70615fc64da7308abc3b25237c4c8b2dc81091ba020ba2008731a3e5bac302",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "7779b2bbb316741502e7e59ca03a2908a222ed4bfd0d1b1a49ed093db2df7359",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k256.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "77fe23bc5f4ca5b7f67658c4c259f4ef7584608c2108da9a4ff12ec5d4339ae7",
+      "header_sha256": "55e1beffb1484e8e28cbbc0e1bc3627773b4ade00fca3938a92190d6cd3f72d6",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k256.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "1bfccf528a8c070013ca26494f392365a57304c87196f3317eae91faa4118f0e",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "a8b5c89d0d04da65811f8c85c8493b01e2a4aa3c57816259052fcf1fc9939d00",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "ce17b274f829b45999293f54d59a42c42c81c4719e0befe2993d28d85de4619a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "36d95d08e9118197e73cb776ffd0b0c21f99eb17678dfc539fc262195c7a1bea",
+      "header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k512.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "2a38deb88c348cdf3f304d23754a43d525280df622eeb0350e9e8b6e22ba0046",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "562fe7b31e7fd8b00c3555b32b3e3302668266272c7af18ef472170fc756df1f",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "ce17b274f829b45999293f54d59a42c42c81c4719e0befe2993d28d85de4619a",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k512.tm128tn128tk256.fullout.cpp",
+      "driver_sha256": "ebf41fdce8dbe1e06164b6c381547e7edc1aa330c73f866cbedf3aacd1b21bcd",
+      "header_sha256": "ea355ae65fd6f687474618523ff1178d4f107da78b7b8d5c9d8f397280488875",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k512.tm128tn128tk256.fullout/receipt.json",
+      "receipt_sha256": "a449ba2c622383c6d56b22af6b36b55d1f87693346f5d2b24148142b28c0e0ce",
+      "shape_mnk": [
+        128,
+        128,
+        512
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "562fe7b31e7fd8b00c3555b32b3e3302668266272c7af18ef472170fc756df1f",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        256
+      ]
+    },
+    {
+      "bound_mlir_sha256": "ccfc11a71bd097dfa4131069409c25e4dc15ba96b2a3871070f1c227be9056e0",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m128n128k5632.tm128tn128tk128.fullout.cpp",
+      "driver_sha256": "a8515544889c64062fa67cc5ac58f51ad5469f38bdf08d294829f28445df1da0",
+      "header_sha256": "54cb4c901c9ab1b98d2bb2b40453ef11b6067c3ecd8754bd7f5abfc7613f51c8",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m128n128k5632.tm128tn128tk128.fullout/receipt.json",
+      "receipt_sha256": "dd2a4c8c1c486266034a4873b454a8cc2e27a230181f9d85e04dd337d69783dd",
+      "shape_mnk": [
+        128,
+        128,
+        5632
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "cb56e87b184df72a53f09f7478b2124293f3b35a6bb2a8e52be30f1097e96b64",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "74eae525661e636e4f6450ea4f4d88404bc9b2a823463a9faedfc38e7eac9f31",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp",
+      "driver_sha256": "05f12ce0aeeb5a49d7d0dc782a1aeda65ce48811e31760a8145494ecf858c22e",
+      "header_sha256": "d61f5358db4f6e39e51e0cf7f9867e393a67ce0c1b4d41c596d73a72d2496c70",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout/receipt.json",
+      "receipt_sha256": "cce40aa9642f4455fb37d9e508ad9704885bba32d6e9df415cc4682c3f339e56",
+      "shape_mnk": [
+        256,
+        256,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "73c2c215a791ddd44161e3cf5e6a7794d328366fbc9ed787a32c4022909a8d24",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        256
+      ]
+    },
+    {
+      "bound_mlir_sha256": "cfe77d0cfb64a6888ffb3041626b0e4e0ae299f80e5e7f026c27696fbf6e22b3",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.m64n64k128.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "114367c4feedcff5194611e14b665775daea2366e2c5f372b128d0f55cd0f8e2",
+      "header_sha256": "eb746dcb4022fa9e50b6505672a86abdcc7a5fbf280d80801767a86545173359",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.m64n64k128.tm64tn64tk64.fullout/receipt.json",
+      "receipt_sha256": "a52eceec18e6da4fb42b9586db20c3b5188d4d659581342d4cd008149605d5f0",
+      "shape_mnk": [
+        64,
+        64,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "0bf4266be36eb17172d62a8a163cf6e51acbe2549510ab7f85206a09bacd8a9d",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "bound_mlir_sha256": "0605d83d373e71e4a64ad5674f6c726a0f39c2c47e6bf76f3bb1662141c8312e",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm128tn128tk128.requant.cpp",
+      "driver_sha256": "294d68402fc3eb1d5c2e47dfc09da218a7fc3845a237b70693ad8c4d4c49869c",
+      "header_sha256": "5cb6ca13479a3d56ec3e493a3000009d1dbd869594bf52bda4bcb7ef6d7aec0f",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp8.singletile.tm128tn128tk128.requant/receipt.json",
+      "receipt_sha256": "a2c32adcdfe2abcf29878015f51ccc8813a97ffa415582bf686bd5e112b2860f",
+      "shape_mnk": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "ba5847cc206cbb1ef0425a05f4d97019f60cf8968a3004bd6cf062caead07c35",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "bound_mlir_sha256": "7779b2bbb316741502e7e59ca03a2908a222ed4bfd0d1b1a49ed093db2df7359",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm128tn128tk256.fullout.cpp",
+      "driver_sha256": "a7e771e3d83535a7e2b91cb4ea4899ddc3775dfa42ef3e89459dbdcd715b64a6",
+      "header_sha256": "55e1beffb1484e8e28cbbc0e1bc3627773b4ade00fca3938a92190d6cd3f72d6",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.singletile.tm128tn128tk256.fullout/receipt.json",
+      "receipt_sha256": "cbeee676ae2fc56cc62eb600096ec41f6d0c4914b5cd08c6f39ea88dad70dcd3",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "a8b5c89d0d04da65811f8c85c8493b01e2a4aa3c57816259052fcf1fc9939d00",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        256
+      ]
+    },
+    {
+      "bound_mlir_sha256": "7779b2bbb316741502e7e59ca03a2908a222ed4bfd0d1b1a49ed093db2df7359",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm128tn128tk256.requant.cpp",
+      "driver_sha256": "2abc4f5fda0c859f03cdb876f6d717aa95d800c5ddc27b1b699e53bcb6233404",
+      "header_sha256": "55e1beffb1484e8e28cbbc0e1bc3627773b4ade00fca3938a92190d6cd3f72d6",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp8.singletile.tm128tn128tk256.requant/receipt.json",
+      "receipt_sha256": "28485256517df8447d64bab8f330955fe559d174feb3060597ae72157b3189c5",
+      "shape_mnk": [
+        128,
+        128,
+        256
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "a8b5c89d0d04da65811f8c85c8493b01e2a4aa3c57816259052fcf1fc9939d00",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        128,
+        128,
+        256
+      ]
+    },
+    {
+      "bound_mlir_sha256": "77912844a0368da27da8c9b6b5bb3ab69897797299c0fc656e2780b240659ee1",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm64tn64tk64.fullout.cpp",
+      "driver_sha256": "0213626ce8e37bdcb59dd7be7d1457b1267e233f8ef3bf81e3cdb93fc0b20453",
+      "header_sha256": "7a11af40d2dacc4c462086c3a820de440eb4958b1d1f872e360b7d3eab4bd9c6",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": false,
+      "receipt": "mxgemm.fp8.singletile.tm64tn64tk64.fullout/receipt.json",
+      "receipt_sha256": "35e2f3212acd793261ca247ec574dc6b429b6f48c9fe40b838fe9d5428292fe4",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6ab8e640eb50e089902f5645f08a24ad7afbf79275a618764df2bfcaec1e9eb0",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "bound_mlir_sha256": "77912844a0368da27da8c9b6b5bb3ab69897797299c0fc656e2780b240659ee1",
+      "driver": "kernels/gemm_mxgemmini/mxgemm.fp8.singletile.tm64tn64tk64.requant.cpp",
+      "driver_sha256": "23fe329e80e71694d77850933acb31d7a5e4ee4006875df5e31747f2c9c76c57",
+      "header_sha256": "7a11af40d2dacc4c462086c3a820de440eb4958b1d1f872e360b7d3eab4bd9c6",
+      "precision": "FP8",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "quant_output": true,
+      "receipt": "mxgemm.fp8.singletile.tm64tn64tk64.requant/receipt.json",
+      "receipt_sha256": "ddfe73742dc74da7acb39bbddf46f66eebb5df95f559da639258a0405b440cc5",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "site_id": "functional:matmul",
+      "source_mlir_sha256": "6ab8e640eb50e089902f5645f08a24ad7afbf79275a618764df2bfcaec1e9eb0",
+      "status": "source_shape_frontend_handoff_only",
+      "tile_mnk": [
+        64,
+        64,
+        64
+      ]
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.radiance_frontend_roster.v1",
+  "scope": "PyTorch/model2MLIR structural captures; packed source operands and numerical Spike results are qualified separately",
+  "source_revision": "ee22e0b87180436cd0fa1583c411a3cf49d7586a"
+}

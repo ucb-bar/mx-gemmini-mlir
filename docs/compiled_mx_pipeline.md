@@ -1074,6 +1074,67 @@ record the 32 and 35 legal cells, respectively, outside these *larger-shape*
 source sets. The 64³ matrices above qualify additional cells in the same
 profiles; these missing lists are specific to each source shape.
 
+## Latest complete Radiance MX GEMM roster
+
+The [31-driver evidence archive](evidence/radiance_mx_gemm_latest_e9ded36_ee22/)
+binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, Nicolas's
+`gemmini-mx-cleanup` RTL `266c593`, and this compiler's `12cb75d` Spike runs.
+model2MLIR captures the PyTorch matmul and its shape; the compiler binds the
+drivers' packed operands, scales, LUTs, and output policy from the source
+headers to that typed contraction before physical lowering.
+All **23 BF16-output** and **8 requantized-output** drivers compiled and matched
+their source goldens on Nicolas's pinned Rocket/RoCC Spike extension. The full
+comparisons cover **376,832 BF16 values**, **73,728 FP8 codes**, **16,384 FP6
+packed bytes**, and **3,328 E8M0 output scales**. The 31 drivers consist of 11
+FP4, 7 FP6, and 13 FP8 cases. FP4/FP8 use the MX+VPU profile; FP6 uses the
+FP6-only profile because the pinned RTL does not expose FP6+VPU. The archive
+contains every model2MLIR capture, MX handoff, bound MLIR, physical command
+program, generated issuer, Spike log, and manifest for the first run, plus
+receipts for a second independent run. Binary payloads, objects, ELFs, and
+extensions are identified by SHA256 in those manifests and can be rebuilt.
+
+The two frontend captures produce identical source and profile-bound MLIR. The
+first frontend receipts name compiler `2ad71ab`, and the second name
+`12cb75d`, because the roster commands were committed between captures. Apart
+from that receipt revision field, their capture receipts agree. Both numerical
+runs use `12cb75d`; their generated source, objects, ELFs, extensions, and
+Spike logs have identical hashes for all 31 cases. Link logs can contain the
+output directory and are excluded from the byte-for-byte comparison.
+
+For a fresh checkout, build Radiance's golden tool, then generate **only
+missing** driver headers. Radiance commits the FP8 128×128×512 and FP6
+128×128×2048 headers; `--all-fp8` would overwrite the former with a different
+golden. The roster command preserves committed headers, derives the missing
+FP6 sizes from the committed 2048-K data, and checks all driver and header
+hashes against the archive. From the `mx-gemmini-mlir` repository root:
+
+```sh
+make -C "$RADIANCE_KERNELS_ROOT/lib/golden" mx_golden
+python -m tools.materialize_radiance_roster_headers \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --expected-index docs/evidence/radiance_mx_gemm_latest_e9ded36_ee22/frontend/index.json \
+  --out /new/mx-header-materialization.json
+python -m tools.recapture_radiance_roster \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --source-root "$RADIANCE_KERNELS_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --radiance-opt "$RADIANCE_OPT" \
+  --out-dir /new/mx-frontend-roster
+python -m tools.requalify_radiance_roster \
+  --capture-root /new/mx-frontend-roster \
+  --source-root "$RADIANCE_KERNELS_ROOT" --rtl-root "$MX_RTL_ROOT" \
+  --riscv-root "$RISCV_ROOT" --out-dir /new/mx-spike-roster --jobs 2
+```
+
+Repeat the capture and Spike commands with fresh output directories, then run
+`tools.archive_radiance_roster` with both pairs and the header materialization
+report. It rejects changed frontend artifacts, generated sources, objects,
+ELFs, extensions, or Spike logs before making a reviewable archive.
+
+This is full source parity for the current MX **GEMM driver roster** on pinned
+Spike. It does not cover the mixed MX+Muon HBM FlashAttention kernel, arbitrary
+typed graphs, FPGA execution, or the stock Spike E4M3-direct × E4M3-LUT defect
+described above.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA
