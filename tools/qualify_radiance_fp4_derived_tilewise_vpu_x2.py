@@ -3,7 +3,7 @@
 Radiance does not contain this 256x256 FP4 driver. The pinned Radiance FP8
 driver supplies only a source template; its generator and golden model produce
 new FP4 operands and a BF16 matrix reference. The PyTorch graph supplies the
-matmul -> x2 structure. This test qualifies the compiler and selected Spike
+matmul -> scalar MULS structure. This test qualifies the compiler and selected Spike
 profile, not parity with a committed Radiance source ELF.
 """
 
@@ -13,10 +13,12 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import sys
 
-from mx_gemmini_support.bind_payload import append_tilewise_vpu_x2, bind_payload
+from mx_gemmini_support.bind_payload import (append_tilewise_vpu_muls,
+                                            append_tilewise_vpu_x2, bind_payload)
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.handoff import render_handoff, validate_handoff
 from mx_gemmini_support.physical_program import lower_bound_source
@@ -108,7 +110,13 @@ def main() -> None:
     for name in ("model2mlir-root", "mxq-root", "source-root", "rtl-root",
                  "riscv-root", "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--scalar-bits", type=lambda value: int(value, 0),
+                        default=0x4000, help="finite BF16 scalar bits (default: 0x4000, 2.0)")
     args = parser.parse_args()
+    scalar_bits = args.scalar_bits
+    if not 0 <= scalar_bits <= 0xffff or (scalar_bits & 0x7f80) == 0x7f80:
+        parser.error("--scalar-bits must encode a finite BF16 value")
+    scalar = struct.unpack("<f", (scalar_bits << 16).to_bytes(4, "little"))[0]
     model2mlir, mxq_root, source, rtl, riscv, mx_opt, out = (
         args.model2mlir_root.resolve(), args.mxq_root.resolve(),
         args.source_root.resolve(), args.rtl_root.resolve(),
@@ -137,21 +145,21 @@ def main() -> None:
             Path(mxq.__file__).resolve().parents[1] != mxq_root):
         parser.error("frontend or MX quantization package resolved to another checkout")
 
-    class GemmX2(torch.nn.Module):
+    class GemmScalar(torch.nn.Module):
         def forward(self, lhs, rhs):
-            return torch.matmul(lhs, rhs) * 2.0
+            return torch.matmul(lhs, rhs) * scalar
 
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(0)
         lhs = torch.randn((256, 256), dtype=torch.float32)
         rhs = torch.randn((256, 256), dtype=torch.float32)
     result = m2m.convert(
-        GemmX2().eval(), (lhs, rhs),
+        GemmScalar().eval(), (lhs, rhs),
         quantization=ExternalQuantizationConfig("mx_gemmini", CONTRACT, POLICY),
         backend="fx_importer", capture_trace=True)
     if not result.ok:
         raise RuntimeError(f"model2MLIR capture failed: {result.diagnostics}")
-    _check_trace(result, quant_format="mxfp4")
+    _check_trace(result, quant_format="mxfp4", scalar=scalar)
     contract, policy = CONTRACT.read_bytes(), POLICY.read_bytes()
     validate_handoff(result, contract, policy)
     handoff = render_handoff(result, contract, policy)
@@ -169,7 +177,9 @@ def main() -> None:
                             source_derivation=derivation)
     _, resources = load_bundle(out / "bundle")
     payload_bound = bind_payload(selected, profile, manifest)
-    bound = append_tilewise_vpu_x2(payload_bound, profile, manifest)
+    bound = (append_tilewise_vpu_x2(payload_bound, profile, manifest)
+             if scalar_bits == 0x4000 else
+             append_tilewise_vpu_muls(payload_bound, profile, manifest, scalar_bits))
     (out / "payload_bound.mlir").write_text(payload_bound)
     (out / "tilewise_bound.mlir").write_text(bound)
     program = lower_bound_source(bound, profile, manifest, resources)
@@ -188,11 +198,16 @@ def main() -> None:
     compiled = json.loads((out / "build/artifact_manifest.json").read_text())
     if (compiled["status"] != "derived_vpu_golden_matched_on_pinned_spike" or
             compiled["compared_bf16_outputs"] != 65536 or
-            compiled["golden_basis"] != "derived_bf16_x2"):
+            compiled["golden_basis"] != (
+                "derived_bf16_x2" if scalar_bits == 0x4000 else "derived_bf16_muls")):
         raise RuntimeError("derived FP4 tilewise VPU full-output Spike test failed")
     index = {
-        "schema": "mx_gemmini.radiance_generated_fp4_tilewise_vpu_spike.v1",
-        "status": "generated_fp4_fixture_vpu_x2_matched_on_pinned_spike",
+        "schema": ("mx_gemmini.radiance_generated_fp4_tilewise_vpu_spike.v1"
+                   if scalar_bits == 0x4000 else
+                   "mx_gemmini.radiance_generated_fp4_tilewise_vpu_scalar_spike.v1"),
+        "status": ("generated_fp4_fixture_vpu_x2_matched_on_pinned_spike"
+                   if scalar_bits == 0x4000 else
+                   "generated_fp4_fixture_vpu_scalar_matched_on_pinned_spike"),
         "scope": "derived FP4 fixture; no committed Radiance driver or source ELF parity",
         "source_revision": _git_revision(source),
         "source_derivation": derivation,
@@ -219,8 +234,12 @@ def main() -> None:
         "elf_sha256": compiled["elf_sha256"],
         "extension_sha256": compiled["extension_sha256"],
     }
+    if scalar_bits != 0x4000:
+        index["scalar_bf16_bits"] = scalar_bits
+        index["scalar_value"] = scalar
     (out / "index.json").write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
-    print("generated FP4 four-tile MX+VPU: 65,536/65,536 BF16 outputs matched Spike")
+    print(f"generated FP4 four-tile MX+VPU MULS {scalar}: "
+          "65,536/65,536 BF16 outputs matched Spike")
 
 
 if __name__ == "__main__":

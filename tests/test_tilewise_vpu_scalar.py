@@ -17,6 +17,7 @@ from mx_gemmini_support.target_profile import load_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/radiance_tilewise_vpu_x2_266c593"
+FP4_EVIDENCE = ROOT / "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593"
 
 
 def _archived(name: str) -> bytes:
@@ -70,3 +71,16 @@ def test_tilewise_scalar_binding_and_physical_immediate():
             lower_bound_source(changed, profile, manifest, resources)
     with pytest.raises(ValueError):
         append_tilewise_vpu_muls(payload, profile, manifest, 0x7f80)
+
+
+def test_generated_fp4_tilewise_scalar_uses_same_physical_policy():
+    profile = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    manifest, resources = load_bundle(FP4_EVIDENCE / "bundle")
+    payload = (FP4_EVIDENCE / "payload_bound.mlir").read_text()
+    bound = append_tilewise_vpu_muls(payload, profile, manifest, 0x3fc0)
+    program = lower_bound_source(bound, profile, manifest, resources)
+    assert program.derived_vpu_scalar_bf16 == 0x3fc0
+    assert program.derived_expected_bf16 == bf16_mul_scalar(
+        resources["golden_bf16"], 0x3fc0)
+    assert sum(step.phase == "vpu" for step in program.steps) == 4
