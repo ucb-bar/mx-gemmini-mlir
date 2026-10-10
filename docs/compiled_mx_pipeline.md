@@ -1461,14 +1461,47 @@ generated V operand have a raw E4M3 PV product bound of 15 in this probe.
 The generated `O_gold` is therefore an internal model output, **not yet a
 golden for the existing mixed MX/Muon kernel**.
 
+#### First PV contraction with a Muon P proxy
+
+The [PV proxy qualification](evidence/radiance_gqa_pv_proxy_80f84ca/index.json)
+starts with the qualified head 0, block 0 BF16 QK tile. The first key block is
+fully visible to all query rows. It applies the pinned Muon P scale and E4M3
+encoding formulas, using BF16-rounded Torch `exp` in place of `mu_fexp`, and
+takes V codes and scales from the same generated Radiance header. A fresh
+PyTorch `matmul` capture goes through model2MLIR, typed MX source-resource
+binding, physical command lowering, and RV64 emission. Nicolas's stock Spike
+matches **4,096 / 4,096 BF16 PV outputs** against its reduced-precision MX
+numerical model. Two independent builds have identical qualification indexes.
+The [linkable PV object](evidence/radiance_gqa_pv_proxy_80f84ca/linkable_object/object_manifest.json)
+is byte identical to the QK object above, with every operand supplied by a
+pointer. The [typed PV program](evidence/radiance_gqa_pv_proxy_80f84ca/payload_bound.mlir),
+[source-bound bytes](evidence/radiance_gqa_pv_proxy_80f84ca/bundle/manifest.json),
+and [Spike ELF](evidence/radiance_gqa_pv_proxy_80f84ca/build/mx_program.elf)
+are archived.
+
+```sh
+export PYTHONPATH="$MODEL2MLIR_ROOT:$MXQUANT_ROOT"
+python -m tools.qualify_radiance_gqa_pv_proxy \
+  --source-root "$RADIANCE_KERNELS_ROOT" \
+  --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQUANT_ROOT" \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt --out-dir /new/mx-gqa-pv-proxy \
+  --baseline-index docs/evidence/radiance_gqa_pv_proxy_80f84ca/index.json
+```
+
+This is an MX-side PV qualification for **proxy P bytes**. The simulator run
+does not execute Muon, prove `mu_fexp` bit parity, or exercise the tiled
+Muon-to-MX shared-memory handoff. The experimental Q/K headroom correction
+also remains part of the fixture.
+
 ```sh
 python -m tools.diagnose_radiance_gqa_pv_handoff \
   --prepared-dir /new/mx-gqa-generated --source-root "$RADIANCE_KERNELS_ROOT" \
   --out-json /new/gqa-pv-handoff.json
 ```
 
-To qualify PV and the final output, the compiler needs runtime P codes and
-scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
+To qualify the actual PV and final output, the compiler needs runtime P codes
+and scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
 source-faithful numerical oracle for that handoff. This kernel's softmax runs
 on Muon; a separate MX VPU softmax test cannot stand in for it.
 

@@ -1,0 +1,103 @@
+{
+  "origin": "radiance_source_derived_attention_pv_proxy",
+  "precision": "FP8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources": {
+    "activation": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "512e432b5f150b5cef5f3e937fbbdaaf46104ef019c541408ccb83e2cb13ec7f",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "088e2cb930e36660950da4bfb8cca445864f9388d5cac1e0ac0fc226539a0ad2",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "dbeea704e25aecf5ca87bddde292e31ee2a53e24df2ec4caa73be494bcf2daf1",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "ae16eb1567bb016bb1c5e879f0d88088c88110d591521931e3f91e0964b12e43",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "weight": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "4cf46af31fbe920848be0421bbd4975037212f57e4ddff3a84e755b7203bc995",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "20f3e82a2564734cd0fd10dbd3dab50d441caec662b6736394a2163069909a5a",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "site_id": "functional:matmul",
+  "source_derivation": {
+    "causal_mask": "first_key_block_fully_visible",
+    "exp_policy": "torch_exp_bf16_proxy_for_mu_fexp",
+    "muon_requant_source_sha256": "c7dc2a63bf283a7cb3035983c26f76651569fa43a875d6fde06bcaf8991fa47f",
+    "output_oracle": "dim16_reduced_precision_product_and_accumulator",
+    "qk_golden_bf16_sha256": "b6fb2085456ce8cce2354163c84c204bf57e594acf528414e3098118629a5f38",
+    "schema": "mx_gemmini.attention_pv_proxy.v1",
+    "source_arrays_sha256": {
+      "activation": "512e432b5f150b5cef5f3e937fbbdaaf46104ef019c541408ccb83e2cb13ec7f",
+      "activation_scales": "088e2cb930e36660950da4bfb8cca445864f9388d5cac1e0ac0fc226539a0ad2",
+      "weight": "4cf46af31fbe920848be0421bbd4975037212f57e4ddff3a84e755b7203bc995",
+      "weight_scales": "20f3e82a2564734cd0fd10dbd3dab50d441caec662b6736394a2163069909a5a"
+    },
+    "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+    "stage": "gqa_pv_head0_block0"
+  },
+  "source_driver_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "source_header_sha256": "01e041222fec2508b585707d768620a5126e16647d406a2e85bfb99737fd78b8",
+  "tile_mnk": [
+    64,
+    64,
+    64
+  ]
+}
