@@ -101,3 +101,17 @@ def test_requantizer_wrapper_has_separate_hardware_output_evidence() -> None:
         "cases": 3,
         "fp6_terminal_readout_derived_from_fullout": True,
     }
+
+
+def test_plain_mx_resident_mm2_receipt_stays_scoped_to_second_contraction() -> None:
+    profiles = json.loads(CATALOG.read_text())["profiles"]
+    selected = next(row for row in profiles if row["name"] == "MxGemminiRocketConfig")
+    receipt = next(item for item in selected["named_profile_spike_evidence"]
+                   if item["kind"] == "source_bound_resident_mm2_spike")
+    assert receipt == {
+        "kind": "source_bound_resident_mm2_spike",
+        "evidence": "docs/evidence/nicolas_resident_mm2_128_266c593/index.json",
+        "compared_fp8_codes": 16384,
+        "compared_e8m0_scales": 512,
+        "excludes_mm1": True,
+    }

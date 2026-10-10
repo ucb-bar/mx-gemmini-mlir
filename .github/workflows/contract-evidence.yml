@@ -38,6 +38,7 @@ jobs:
             tests/test_mx_profile_qualification_catalog.py \
             tests/test_mx_rocket_wrapper_matrix_evidence.py \
             tests/test_nicolas_requantizer_wrapper_evidence.py \
+            tests/test_nicolas_resident_128_evidence.py \
             tests/test_fresh_mx_checkout_evidence.py \
             tests/test_selected_mx_profiles_evidence.py \
             tests/test_radiance_fullout_mesh_roster_evidence.py \

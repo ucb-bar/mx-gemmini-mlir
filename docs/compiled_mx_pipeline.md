@@ -677,6 +677,27 @@ byte for byte. See the [connected MLIR](evidence/nicolas_connected_chain_266c593
 This remains a source-bound 64³ specialization. General shape scheduling and
 independent lowering of arbitrary `mx_gemmini.contract` graphs remain open.
 
+The same typed `mx_gemmini.resident_contract` physical lowerer now accepts
+Nicolas's **128³ FP8 resident MM2** under the plain
+`MxGemminiRocketConfig`, which has a requantizer but no VPU or
+`SPAD_REQUANT`. Its scratchpad validation derives the C1, B2, and C2 spans
+from the operation's dimensions and rejects overlaps. The
+[128³ source-bound MLIR and Spike archive](evidence/nicolas_resident_mm2_128_266c593/index.json)
+preloads C1 codes and its transposed scales from Nicolas's checked-in chain
+header, then lowers the SSA-bound MM2 op into B2 scale and weight transfers,
+resident scale selection, compute, and C2 readout. The generated RV64 ELF
+matches **16,384 C2 FP8 codes and 512 E8M0 scales** on stock Spike; a second
+run reproduces the generated program, ELF, and log. This test starts at C1;
+the 128³ MM1 and its connection to MM2 are still a separate compiler gate.
+
+```sh
+python -m tools.qualify_nicolas_resident_128 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/mx-resident-mm2-128 \
+  --baseline-manifest docs/evidence/nicolas_resident_mm2_128_266c593/artifact_manifest.json
+```
+
 A [current upstream frontend rerun](evidence/nicolas_connected_chain_upstream_e9ded36_20261010/README.md)
 recaptured the two-site graph with model2MLIR `e9ded36` and executed the
 connected SSA chain on the same pinned Spike model. The new frontend and

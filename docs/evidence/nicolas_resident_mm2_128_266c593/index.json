@@ -1,0 +1,25 @@
+{
+  "compared_e8m0_scales": 512,
+  "compared_fp8_codes": 16384,
+  "files_sha256": {
+    "b2_scales.bin": "52eb3bffc939abc18edee6aeb0a2aac9019b7df129144334f472ebf741a37aeb",
+    "b2_weight.bin": "a51cf94d505c6dce57e3bd039423b83810b9342f1fc317e78e99464a118b0a24",
+    "c1_act_scales.bin": "d5c9dcaa2ea060a73f926c3921ef8603a0dd86adcd605c08bcaa21e91b9ff49a",
+    "c1_tiled.bin": "6bd2d033cf690c26bee87ddfd71da16ec3c020f17029c2cbe81104a369300270",
+    "c2_codes_ref.bin": "34786606151b009ed4e67b4a4a81b29a55c5a8a5f38a293947c98748d5e6252c",
+    "c2_scales_ref.bin": "5c271924606a4c927865271403a0cae25a2685e92dfb839cf650b26bc674eb96",
+    "mx_data.S": "eb22862db7b93e4fa95fa1f0a53ce951b81264112a1a69f00c19e6d7f1ed8386",
+    "mx_driver.c": "40cd460f25426dd63d6d2baf4dac209251a44440e3ec61ee6c6c423ae0cb3bbf",
+    "mx_issue.c": "3498521f7311905673a17dddfab1eab57aea99d16307234c90b36f0a77e63c17",
+    "mx_program.elf": "1c91194dd602e77c346efcab0aafd38dca9d94649f5b77f1bd8d434f364ff113",
+    "physical_program.json": "34a939cdb1ab91a5b55a58aadba81025b6be99fdd326d059a9e937c5dbba0a16",
+    "resident_mm2.mlir": "cba720c18e3c5dbd732498b367f5cd358dcbb469b3439ed48cd1fe088da103ab",
+    "spike.log": "674ffb8567495fb1fc1fb7066971bfa60505f3b7e9ca9333258ced4b681aad0e"
+  },
+  "header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_resident_mm2_128_archive.v1",
+  "scope": "source C1 codes/scales preloaded; typed resident MM2 lowered; excludes MM1",
+  "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944"
+}

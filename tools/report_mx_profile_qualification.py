@@ -186,6 +186,21 @@ def build_report() -> dict:
         "cases": len(plain["rows"]),
         "compared_bf16_outputs": plain["compared_bf16_outputs"],
     })
+    resident_path = "docs/evidence/nicolas_resident_mm2_128_266c593/index.json"
+    resident = _read(resident_path)
+    if (resident["profile_sha256"] != profile_sha256(plain_profile) or
+            resident["rtl_revision"] != candidate["rtl_revision"] or
+            resident["compared_fp8_codes"] != 16384 or
+            resident["compared_e8m0_scales"] != 512 or
+            resident["scope"] !=
+            "source C1 codes/scales preloaded; typed resident MM2 lowered; excludes MM1"):
+        raise ValueError("plain MX resident MM2 receipt differs from selected profile")
+    direct_receipts[plain_profile["name"]].append({
+        "kind": "source_bound_resident_mm2_spike", "evidence": resident_path,
+        "compared_fp8_codes": resident["compared_fp8_codes"],
+        "compared_e8m0_scales": resident["compared_e8m0_scales"],
+        "excludes_mm1": True,
+    })
     base_vpu = load_profile(PROFILE_DIR / "MxE4M3VpuGemminiRocketConfig.json")
     for path in vector_paths:
         index = _read(path)
@@ -285,7 +300,8 @@ def build_report() -> dict:
         "rtl_revision": candidate["rtl_revision"],
         "sources_sha256": {path: _digest(path) for path in sorted(
             set(stock_paths.values()) | {candidate_path, selected_path, vpu_path,
-                                         dedicated_path, plain_path, wrapper_path,
+                                         dedicated_path, plain_path, resident_path,
+                                         wrapper_path,
                                          requant_path,
                                          *vector_paths})},
         "profile_count": len(profiles),

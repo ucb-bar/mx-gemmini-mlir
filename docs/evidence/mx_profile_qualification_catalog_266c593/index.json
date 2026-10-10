@@ -1486,6 +1486,13 @@
           "compared_bf16_outputs": 36864,
           "evidence": "docs/evidence/radiance_plain_mx_profile_trio_266c593/index.json",
           "kind": "plain_mx_radiance_gemm_spike"
+        },
+        {
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_resident_mm2_128_266c593/index.json",
+          "excludes_mm1": true,
+          "kind": "source_bound_resident_mm2_spike"
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1559,6 +1566,7 @@
     "docs/evidence/nicolas_generated_mesh_dim8_266c593/qualification.json": "da3bb2965e0de5ffcddcb2c09dd9b9549645b513e27dc4272e546f987f593372",
     "docs/evidence/nicolas_generated_modes_266c593/qualification.json": "beca2bf9f6d2a345cc694dc88b394f314ecf1eec3d2b1a11e32a7aa8cc2869c6",
     "docs/evidence/nicolas_requantizer_wrapper_266c593/index.json": "03e94ad2790b0c0289e653bf90c1478583c1dfecef33fafa2efd2782a3f9ad86",
+    "docs/evidence/nicolas_resident_mm2_128_266c593/index.json": "b487cf714f5d32215a081b7206a157b1408d32a34deaa97bab0c0f02ede695f1",
     "docs/evidence/nicolas_rocket_wrapper_matrix_266c593/index.json": "173abc5f943fe38aff70edd1b6c96eb28911eb1638194a8e716af27f1bf57c6b",
     "docs/evidence/nicolas_spike_weight_lut_candidate_all_modes_266c593/qualification.json": "e8edcf42a3a02b5db8ff547418d086f10eb80c4794aa7f6a2a7d29e0da84038d",
     "docs/evidence/nicolas_vpu_elementwise_compiled_266c593/index.json": "3ea699c322e2e8ef0243bb315fe4122116fef3d381cf4cd5d686977b69b89c14",
