@@ -239,6 +239,11 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
                 raise ValueError("MX requantize output is absent from selected profile")
             requants += 1
+        elif name == "mx_gemmini.readout_bf16":
+            layout = _text_attr(op, "memory_layout")
+            if "memory_layout" in op.attributes and layout not in {
+                    "row_major_bf16", "output_tile_major_bf16"}:
+                raise ValueError("MX BF16 readout has an unsupported memory layout")
         elif name == "mx_gemmini.readout_quantized":
             output = _text_attr(op, "output_format")
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":

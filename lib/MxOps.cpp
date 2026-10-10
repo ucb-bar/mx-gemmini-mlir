@@ -171,7 +171,14 @@ LogicalResult ContractOp::verify() {
   return emitOpError("requires either a legacy MX format or profile-bound activation/weight formats and projections");
 }
 
-LogicalResult ReadoutBF16Op::verify() { return verifyBinding(*this); }
+LogicalResult ReadoutBF16Op::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto layout = (*this)->getAttrOfType<StringAttr>("memory_layout");
+  if (layout && layout.getValue() != "row_major_bf16" &&
+      layout.getValue() != "output_tile_major_bf16")
+    return emitOpError("requires row_major_bf16 or output_tile_major_bf16 memory layout");
+  return success();
+}
 LogicalResult ReadoutQuantizedOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
   auto output = (*this)->getAttrOfType<StringAttr>("output_format");

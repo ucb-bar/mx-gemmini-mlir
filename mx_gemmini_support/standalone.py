@@ -78,7 +78,8 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
         golden_name = "derived_expected_bf16"
     externs = "".join(f"extern const uint8_t {name}[];\n" for name in sorted(resource_files))
     arguments = ", ".join(names)
-    if "output_tiles" in program.plan:
+    if ("output_tiles" in program.plan and
+            program.plan.get("bf16_output_layout") != "row_major_bf16"):
         tm, tn, _ = program.plan["tile"]
         comparison = f'''  for (uint32_t row = 0; row < {m}; ++row)
     for (uint32_t col = 0; col < {n}; ++col) {{

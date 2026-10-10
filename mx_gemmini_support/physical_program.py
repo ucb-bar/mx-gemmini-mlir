@@ -98,12 +98,20 @@ def _transfer(funct: int, buffer: str, offset: int, row: int, *, dim: int = 16) 
                 (dim << 48) | (dim << 32) | row)
 
 
+def _transfer_rect(funct: int, buffer: str, offset: int, row: int, *,
+                   rows: int, cols: int = 16) -> Command:
+    if not 1 <= rows <= 16 or cols != 16:
+        raise ValueError("MX BF16 row-major transfer needs 1..16 rows of 16 bytes")
+    return _cmd(funct, Operand(buffer=buffer, byte_offset=offset),
+                (rows << 48) | (cols << 32) | row)
+
+
 def _exact_bf16_x2(source: bytes) -> bytes:
     return exact_bf16_x2(source)
 
 
 def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
-        list[tuple[str, dict]], str | None, str | None]:
+        list[tuple[str, dict]], str | None, str | None, str | None]:
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
@@ -153,6 +161,11 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
                                          "mx_gemmini.spad_requant"]) or
             (host_requant and (names[-2] != readout_name or len(names) != 3))):
         raise ValueError("physical MX lowering requires a matching output readout")
+    memory_layout = _text_attr(readout[0], "memory_layout")
+    if memory_layout is not None and (
+            memory_layout not in {"row_major_bf16", "output_tile_major_bf16"} or
+            output_format != "bf16" or host_requant or vector_requant):
+        raise ValueError("explicit MX memory layout requires final BF16 readout")
     if tilewise_policy is not None:
         function = readout[0].parent_op()
         if (tilewise_policy != "bf16_muls_x2_each_output_tile_v1" or
@@ -244,14 +257,15 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
                 "scale_dram_address": _int_attr(op, "scale_dram_address"),
                 "scale_buffer": _text_attr(op, "scale_buffer"),
             }))
-    return vector_ops, host_kind, tilewise_policy
+    return vector_ops, host_kind, tilewise_policy, memory_layout
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
-    vector_ops, host_kind, tilewise_policy = _check_binding(mlir_text, profile, manifest)
+    vector_ops, host_kind, tilewise_policy, memory_layout = _check_binding(
+        mlir_text, profile, manifest)
     host_requant = host_kind is not None
     if mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown MX physical scheduling mode")
@@ -283,6 +297,10 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     if dim != 16 or m % tm or n % tn or tk % 16 or plan["c_rows"] % 16:
         raise ValueError("physical source lowering needs complete DIM16 output tiles")
     output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
+    if memory_layout == "row_major_bf16" and len(output_tiles) > 1:
+        if tn * 2 % dim or not 1 <= tn * 2 // dim <= 16:
+            raise ValueError("row-major BF16 tile row exceeds selected DIM16 transfer")
+        plan = {**plan, "bf16_output_layout": "row_major_bf16"}
     if tilewise_policy and len(output_tiles) == 1:
         raise ValueError("physical MX tilewise VPU policy needs multiple output tiles")
     if len(output_tiles) != 1 and vector_ops:
@@ -461,18 +479,32 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
             issue("vpu_sync", Fence())
 
         issue("readout", _config_st(dim))
-        output_tile_base = output_tile["index"] * (
-            tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
-            if quant_output else tm * tn * 2)
         readout_rows = m * n // dim if vector_requant else plan["c_rows"]
         readout_source = (vector_ops[1][1]["destination_row"] if vector_requant
                           else plan["c_spad_dest"])
-        for row in range(0, readout_rows, dim):
-            offset = output_tile_base + row * dim
-            if offset + dim * dim > (expected_quant_bytes if quant_output else m * n * 2):
-                raise ValueError("physical MX readout exceeds output shape")
-            issue("readout", _transfer(3, "output_quantized" if quant_output else "output_bf16", offset,
-                                       readout_source + row))
+        if plan.get("bf16_output_layout") == "row_major_bf16":
+            rows_per_logical = tn * 2 // dim
+            if readout_rows != tm * rows_per_logical:
+                raise ValueError("row-major BF16 readout disagrees with C scratchpad rows")
+            for local_row in range(tm):
+                offset = ((m_start + local_row) * n + n_start) * 2
+                if offset + tn * 2 > m * n * 2:
+                    raise ValueError("row-major BF16 readout exceeds output shape")
+                issue("readout", _transfer_rect(
+                    3, "output_bf16", offset,
+                    readout_source + local_row * rows_per_logical,
+                    rows=rows_per_logical))
+        else:
+            output_tile_base = output_tile["index"] * (
+                tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
+                if quant_output else tm * tn * 2)
+            for row in range(0, readout_rows, dim):
+                offset = output_tile_base + row * dim
+                if offset + dim * dim > (expected_quant_bytes if quant_output else m * n * 2):
+                    raise ValueError("physical MX readout exceeds output shape")
+                issue("readout", _transfer(
+                    3, "output_quantized" if quant_output else "output_bf16",
+                    offset, readout_source + row))
         issue("readout", Fence())
 
     for output_tile in output_tiles:

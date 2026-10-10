@@ -10,7 +10,9 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 
-from mx_gemmini_support.bind_payload import append_vpu_spad_requant_x2, bind_payload
+from mx_gemmini_support.bind_payload import (
+    append_tilewise_vpu_x2, append_vpu_spad_requant_x2, bind_payload,
+    select_bf16_output_layout)
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -32,6 +34,11 @@ def main() -> None:
                         help="project the checked-in FP6 fullout BF16 result onto its C LUT")
     parser.add_argument("--vpu-spad-requant-x2", action="store_true",
                         help="compose BF16 matrix, VPU x2, and tiled resident FP8 requant")
+    parser.add_argument("--tilewise-vpu-x2", action="store_true",
+                        help="apply in-place BF16 VPU x2 before each complete output tile readout")
+    parser.add_argument("--bf16-output-layout", choices=("row_major_bf16",
+                                                          "output_tile_major_bf16"),
+                        help="select the physical memory layout of final BF16 readout")
     parser.add_argument("--source-header-quantized", action="store_true",
                         help="lower the Radiance FP8 or FP6 C_out convention as a host BF16 epilogue")
     parser.add_argument("--generate-missing-fp6-header", action="store_true",
@@ -43,6 +50,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.physical_mode == "rtl_alternating" and not args.experimental_spike_extension_root:
         parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
+    if args.tilewise_vpu_x2 and args.vpu_spad_requant_x2:
+        parser.error("select one MX VPU epilogue")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -95,6 +104,11 @@ def main() -> None:
                          source_header_quantized=args.source_header_quantized)
     if args.vpu_spad_requant_x2:
         bound = append_vpu_spad_requant_x2(bound, profile, manifest)
+    if args.tilewise_vpu_x2:
+        bound = append_tilewise_vpu_x2(bound, profile, manifest)
+    if args.bf16_output_layout:
+        bound = select_bf16_output_layout(
+            bound, profile, manifest, layout=args.bf16_output_layout)
     mlir.write_text(bound)
     command = [sys.executable, "-m", "tools.compile_mx",
                "--mlir", str(mlir.resolve()), "--bundle", str(bundle.resolve()),

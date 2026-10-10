@@ -320,6 +320,41 @@ def append_vpu_spad_requant_x2(mlir_text: str, profile: dict, manifest: dict) ->
     return rendered
 
 
+def select_bf16_output_layout(mlir_text: str, profile: dict, manifest: dict, *,
+                              layout: str = "row_major_bf16") -> str:
+    """Select the physical BF16 readout layout on one source-bound MX site."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin, StringAttr
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+    from xdsl.printer import Printer
+
+    if layout not in {"row_major_bf16", "output_tile_major_bf16"}:
+        raise ValueError("MX BF16 output layout is unknown")
+    if manifest.get("output_format", "bf16") != "bf16":
+        raise ValueError("MX output layout selection requires BF16 source output")
+    verify_ir(mlir_text, profile)
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    if (_text_attr(module, "mx.payload_manifest_sha256") != manifest_sha256(manifest) or
+            manifest.get("profile_sha256") != profile_sha256(profile)):
+        raise ValueError("MX output layout selection differs from source binding")
+    readouts = [op for op in module.walk()
+                if _operation_name(op) == "mx_gemmini.readout_bf16"]
+    if (len(readouts) != 1 or
+            _text_attr(readouts[0], "site_id") != manifest.get("site_id") or
+            _text_attr(readouts[0], "memory_layout") is not None):
+        raise ValueError("MX output layout selection needs one unselected BF16 readout")
+    readouts[0].attributes["memory_layout"] = StringAttr(layout)
+    output = StringIO()
+    Printer(stream=output).print_op(module)
+    rendered = output.getvalue() + "\n"
+    verify_ir(rendered, profile)
+    return rendered
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mlir", required=True, type=Path)

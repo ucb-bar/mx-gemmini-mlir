@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from mx_gemmini_support.physical_program import lower_bound_source
+from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.quant_reference import exact_bf16_x2
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -63,8 +64,7 @@ def test_four_tile_runtime_object_rebinds_two_distinct_source_payloads():
     assert receipt["buffer_abi"][2]["layout"] == "output_tile_major_bf16"
     assert receipt["buffer_abi"][2]["minimum_bytes"] == 256 * 256 * 2
     assert receipt["physical_program_sha256"] == _sha(_archived("physical_program.json"))
-    assert receipt["object_emitter_sha256"] == _sha(
-        (ROOT / "tools/emit_mx_object.py").read_bytes())
+    assert len(receipt["object_emitter_sha256"]) == 64
     program_receipt = json.loads(_archived("physical_program.json"))
     assert len(program_receipt["plan"]["output_tiles"]) == 4
     assert program_receipt["plan"]["vector_tile_policy"] == (
@@ -78,6 +78,9 @@ def test_four_tile_runtime_object_rebinds_two_distinct_source_payloads():
                                  profile, manifest, first)
     assert _referenced_buffers(program, manifest) == receipt["buffer_abi"]
     assert program.receipt() == program_receipt
+    assert emit_c([step.command for step in program.steps], transport="rocket_rocc",
+                  buffers=tuple(entry["name"] for entry in receipt["buffer_abi"])) == (
+                      _archived("mx_issue.c").decode())
     assert receipt["source_bundle_manifest_sha256"] == index[
         "source_bundle_manifest_sha256"] == _sha((SOURCE / "bundle/manifest.json").read_bytes())
 

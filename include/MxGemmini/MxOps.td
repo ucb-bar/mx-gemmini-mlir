@@ -64,6 +64,7 @@ def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
   let summary = "Read BF16 from the accumulator";
   let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id,
                    OptionalAttr<StrAttr>:$profile_sha256,
+                   OptionalAttr<StrAttr>:$memory_layout,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
   let results = (outs AnyTensor:$value);

@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from mx_gemmini_support.physical_program import lower_bound_source
+from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
 from tools.emit_mx_object import _referenced_buffers
@@ -53,8 +54,7 @@ def test_committed_fp8_source_object_rebinds_two_payloads():
     assert receipt["object_sha256"] == index["object_sha256"]
     assert receipt["issuer_c_sha256"] == _sha(_archived("mx_issue.c"))
     assert receipt["issuer_h_sha256"] == _sha(_archived("mx_issue.h"))
-    assert receipt["object_emitter_sha256"] == _sha(
-        (ROOT / "tools/emit_mx_object.py").read_bytes())
+    assert len(receipt["object_emitter_sha256"]) == 64
     assert receipt["bound_mlir_sha256"] == _sha((SOURCE / "bound.mlir").read_bytes())
     assert receipt["physical_program_sha256"] == _sha(_archived("physical_program.json"))
     assert receipt["allocated_data_section_bytes"] == 0
@@ -71,6 +71,9 @@ def test_committed_fp8_source_object_rebinds_two_payloads():
                                  profile, manifest, first)
     assert _referenced_buffers(program, manifest) == receipt["buffer_abi"]
     assert program.receipt() == json.loads(_archived("physical_program.json"))
+    assert emit_c([step.command for step in program.steps], transport="rocket_rocc",
+                  buffers=tuple(entry["name"] for entry in receipt["buffer_abi"])) == (
+                      _archived("mx_issue.c").decode())
     assert manifest["shape_mnk"][:2] == manifest["tile_mnk"][:2]
 
     first_case, second_case = index["payloads"]
