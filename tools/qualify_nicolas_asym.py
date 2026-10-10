@@ -32,8 +32,8 @@ def _revision(root: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--variant", choices=("lut", "direct"), default="lut",
-                        help="E4M3 activation projection in Nicolas's DIM16 source test")
+    parser.add_argument("--variant", choices=("lut", "direct", "fp6_lut"), default="lut",
+                        help="activation format and projection in Nicolas's DIM16 source test")
     issue = parser.add_mutually_exclusive_group()
     issue.add_argument("--physical", dest="physical", action="store_true", default=True,
                        help="compile through shared physical command IR (default)")
@@ -62,7 +62,8 @@ def main() -> None:
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    suffix = "e4m3_fp4" if args.variant == "lut" else "e4m3s_fp4"
+    suffix = {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
+              "fp6_lut": "fp6_fp4"}[args.variant]
     source = software / f"bareMetalC/matmul_tiled_asym_{suffix}_64x64.c"
     header = software / f"include/matmul_data_asym_{suffix}.h"
     recipe = source_recipe(source, header, profile)
@@ -168,7 +169,7 @@ def main() -> None:
                    if args.physical else "mx_gemmini.nicolas_asymmetric_spike_qualification.v1"),
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
-        "scope": (f"64-cubed {args.variant} E4M3 source specialization of one captured PyTorch matmul; "
+        "scope": (f"64-cubed {args.variant} activation source specialization of one captured PyTorch matmul; "
                   "checked-in packed inputs, not random PyTorch example inputs; " +
                   ("shared physical command IR and standalone emitter; " if args.physical else
                    "bounded C diagnostic; ") +
@@ -182,7 +183,8 @@ def main() -> None:
         "software_revision": _revision(software),
         "spike_extension_revision": _revision(extension),
         "profile_name": profile["name"], "profile_sha256": profile_sha256(profile),
-        "activation_projection": args.variant,
+        "activation_projection": recipe["compute"]["activation_projection"],
+        "activation_format": recipe["compute"]["activation_format"],
         "source_driver_sha256": sha256(source), "source_header_sha256": sha256(header),
         "frontend_contract_sha256": sha256(contract), "frontend_policy_sha256": sha256(policy),
         "capture_sites": sites, "opaque_calls": opaque,

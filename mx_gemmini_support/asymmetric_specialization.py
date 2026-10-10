@@ -11,6 +11,7 @@ import hashlib
 import json
 from io import StringIO
 from pathlib import Path
+import re
 
 from .target_profile import profile_sha256, require_compute
 from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
@@ -24,15 +25,23 @@ ASYM_CELL = {
     "pe_mode": 10,
 }
 DIRECT_CELL = {**ASYM_CELL, "activation_projection": "direct", "pe_mode": 6}
+FP6_FP4_CELL = {**ASYM_CELL, "activation_format": "fp6_e3m2", "pe_mode": 3}
 
 _VARIANTS = {
     "matmul_tiled_asym_e4m3_fp4_64x64.c": {
         "header": "matmul_data_asym_e4m3_fp4.h", "cell": ASYM_CELL,
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
     },
     "matmul_tiled_asym_e4m3s_fp4_64x64.c": {
         "header": "matmul_data_asym_e4m3s_fp4.h", "cell": DIRECT_CELL,
         "activation_array": "A_in[MATMUL_M][MATMUL_K]", "use_lut": False,
+        "lut_words_per_line": 0, "lut_entry_bits": 0,
+    },
+    "matmul_tiled_asym_fp6_fp4_64x64.c": {
+        "header": "matmul_data_asym_fp6_fp4.h", "cell": FP6_FP4_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 3, "lut_entry_bits": 6,
     },
 }
 
@@ -56,15 +65,17 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     if (profile["geometry"] != {"mesh_rows": 16, "mesh_columns": 16,
                                 "tile_rows": 1, "tile_columns": 1} or
             profile["resources"]["scratchpad_bytes"] != 262144 or
-            profile["resources"]["lut_config"]["activation_code_bits"] != 8 or
+            profile["resources"]["lut_config"]["activation_code_bits"] !=
+            (variant["lut_entry_bits"] or 8) or
             profile["resources"]["lut_config"]["address_bits"] != 4):
         raise ValueError("selected asymmetric source requires DIM16, 256 KiB SPAD, 4-bit LUT indices")
     source_text, header_text = source.read_text(), header.read_text()
     for marker in (f'#include "include/{header.name}"',
-                   f'#define USE_LUT {int(variant["use_lut"])}', "#define MX_ALTFMT 0",
-                   "gemmini_loop_ws_spad(tiles_I, tiles_J, tiles_K"):
+                   f'#define USE_LUT {int(variant["use_lut"])}'):
         if marker not in source_text:
             raise ValueError(f"Nicolas source command contract changed: {marker}")
+    if not re.search(r"gemmini_loop_ws_spad\(\s*tiles_I,\s*tiles_J,\s*tiles_K", source_text):
+        raise ValueError("Nicolas source loop schedule changed")
     for marker in ("#define MATMUL_M   64", "#define MATMUL_K   64",
                    "#define MATMUL_N   64", variant["activation_array"],
                    "B_in[MATMUL_K][MATMUL_N / 2]",
@@ -73,7 +84,9 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
                    "C_out_bf16[MATMUL_M][MATMUL_N]"):
         if marker not in header_text:
             raise ValueError(f"Nicolas source data contract changed: {marker}")
-    if variant["use_lut"] and "A_lut[32][4]" not in header_text:
+    if cell["activation_format"] == "fp8_e4m3" and "#define MX_ALTFMT 0" not in source_text:
+        raise ValueError("Nicolas E4M3 source alternate format selection changed")
+    if variant["use_lut"] and f'A_lut[32][{variant["lut_words_per_line"]}]' not in header_text:
         raise ValueError("Nicolas source activation LUT changed")
     return {"schema": "mx_gemmini.asymmetric_source_recipe.v1",
             "site_id": "functional:matmul", "shape": [64, 64, 64],
@@ -96,7 +109,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             recipe.get("shape") != [64, 64, 64] or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
-            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL) or
+            recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
                 for key in ("source_driver_sha256", "source_header_sha256"))):
@@ -176,6 +189,8 @@ def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
                    header: Path) -> str:
     """Emit the bounded historical C diagnostic from a verified contract."""
     cell = _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
+    if cell["activation_format"] != "fp8_e4m3":
+        raise ValueError("historical asymmetric C diagnostic only supports E4M3 activation")
     use_lut = cell["activation_projection"] == "lut"
     activation_array = "A_in_hw" if use_lut else "A_in"
     tile_rows = 32 if use_lut else 16
@@ -263,6 +278,7 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
         raise ValueError("asymmetric source header differs from recipe")
     text = header.read_text(encoding="ascii")
     lut = recipe["compute"]["activation_projection"] == "lut"
+    lut_words = 3 if recipe["compute"]["activation_format"] == "fp6_e3m2" else 4
     a_name = "A_in_hw" if lut else "A_in"
     a_shape = "[32][64]" if lut else "[MATMUL_M][MATMUL_K]"
     resources = {
@@ -287,7 +303,7 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
                                  ("B_lut", "weight_lut"),
                                  ("C_lut", "output_lut")):
             resources[resource] = _bytes(_array(text, name=c_name, ctype="uint32_t",
-                                               dimensions="[32][4]", count=128,
+                                               dimensions=f"[32][{lut_words}]", count=32 * lut_words,
                                                maximum=0xffffffff), 4)
     return resources
 
@@ -314,13 +330,16 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
         steps.append(PhysicalStep(phase, None, command))
 
     issue("configure", _cmd(7, 0, 0))
-    config_ex = (1 << 16) | (2 << 12) | (3 << 14) | (int(use_lut) << 5) | (1 << 2)
+    activation_code = 1 if recipe["compute"]["activation_format"] == "fp6_e3m2" else 0
+    lut_entry_bits = 6 if activation_code else 8
+    config_ex = (1 << 16) | (2 << 12) | (activation_code << 10) | \
+                (3 << 14) | (int(use_lut) << 5) | (1 << 2)
     issue("configure", _cmd(0, config_ex, 1 << 48))
     if use_lut:
         for resource, selector in (("weight_lut", 0), ("activation_lut", 1),
                                    ("output_lut", 2)):
             issue("upload_lut", _cmd(29, Operand(buffer=resource),
-                                     (8 << 34) | (selector << 32) | 32))
+                                     (lut_entry_bits << 34) | (selector << 32) | 32))
     else:
         issue("disable_lut", _cmd(30, 0, 0))
     issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"), 128))

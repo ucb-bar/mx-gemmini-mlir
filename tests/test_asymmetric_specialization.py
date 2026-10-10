@@ -125,13 +125,14 @@ def test_direct_e4m3_fp4_uses_full_activation_rows_without_lut(tmp_path):
     assert "gemmini_mx_load_lut_dt" not in emitted
 
 
-@pytest.mark.parametrize("variant,activation_bytes,mode,lut_loads", [
-    ("e4m3_fp4", 2048, 10, 3),
-    ("e4m3s_fp4", 4096, 6, 0),
+@pytest.mark.parametrize("variant,activation_bytes,mode,lut_loads,profile_name,lut_words", [
+    ("e4m3_fp4", 2048, 10, 3, "MxAsymE4M3Fp4GemminiRocketConfig", 4),
+    ("e4m3s_fp4", 4096, 6, 0, "MxAsymE4M3Fp4GemminiRocketConfig", 0),
+    ("fp6_fp4", 2048, 3, 3, "MxAsymFp6Fp4GemminiRocketConfig", 3),
 ])
 def test_asymmetric_site_lowers_to_shared_command_ir(
-        tmp_path, variant, activation_bytes, mode, lut_loads):
-    profile = _profile("MxAsymE4M3Fp4GemminiRocketConfig")
+        tmp_path, variant, activation_bytes, mode, lut_loads, profile_name, lut_words):
+    profile = _profile(profile_name)
     source = tmp_path / f"matmul_tiled_asym_{variant}_64x64.c"
     header = tmp_path / f"matmul_data_asym_{variant}.h"
     source.write_text("\n".join((
@@ -151,7 +152,7 @@ def test_asymmetric_site_lowers_to_shared_command_ir(
     header_text += array("uint8_t", "B_in", "[MATMUL_K][MATMUL_N / 2]", 2048)
     if lut_loads:
         for name in ("A_lut", "B_lut", "C_lut"):
-            header_text += array("uint32_t", name, "[32][4]", 128)
+            header_text += array("uint32_t", name, f"[32][{lut_words}]", 32 * lut_words)
     header_text += array("uint8_t", "A_scales_row", "[MATMUL_GK][MATMUL_M]", 128)
     header_text += array("uint8_t", "B_scales_col", "[MATMUL_GK][MATMUL_N]", 128)
     header_text += array("uint16_t", "C_out_bf16", "[MATMUL_M][MATMUL_N]", 4096)
