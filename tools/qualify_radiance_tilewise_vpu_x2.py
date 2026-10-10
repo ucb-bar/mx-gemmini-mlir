@@ -16,9 +16,9 @@ import struct
 import subprocess
 import sys
 
-from mx_gemmini_support.bind_payload import (append_tilewise_vpu_muls,
-                                            append_tilewise_vpu_x2, bind_payload)
+from mx_gemmini_support.bind_payload import bind_payload
 from mx_gemmini_support.bind_profile import bind_handoff
+from mx_gemmini_support.capture_epilogue import append_captured_tilewise_vpu_muls
 from mx_gemmini_support.handoff import render_handoff, validate_handoff
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_gemm import read_source_gemm
@@ -145,9 +145,8 @@ def main() -> None:
                             profile_sha256=profile_sha256(profile))
     _, resources = load_bundle(out / "bundle")
     payload_bound = bind_payload(selected, profile, manifest)
-    bound = (append_tilewise_vpu_x2(payload_bound, profile, manifest)
-             if scalar_bits == 0x4000 else
-             append_tilewise_vpu_muls(payload_bound, profile, manifest, scalar_bits))
+    bound = append_captured_tilewise_vpu_muls(
+        payload_bound, profile, manifest, result)
     (out / "payload_bound.mlir").write_text(payload_bound)
     (out / "tilewise_bound.mlir").write_text(bound)
     program = lower_bound_source(bound, profile, manifest, resources)

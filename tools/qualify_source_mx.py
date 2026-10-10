@@ -9,11 +9,13 @@ import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 from mx_gemmini_support.bind_payload import (
     append_tilewise_vpu_muls, append_tilewise_vpu_x2,
     append_vpu_spad_requant_x2, bind_payload,
     select_bf16_output_layout)
+from mx_gemmini_support.capture_epilogue import append_captured_tilewise_vpu_muls
 from mx_gemmini_support.source_gemm import plan_source_gemm, read_source_gemm
 from mx_gemmini_support.source_payload import write_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -39,6 +41,11 @@ def main() -> None:
                         help="apply in-place BF16 VPU x2 before each complete output tile readout")
     parser.add_argument("--tilewise-vpu-muls-bf16-bits", type=lambda value: int(value, 0),
                         help="apply in-place BF16 VPU MULS with this finite scalar immediate per output tile")
+    parser.add_argument("--tilewise-vpu-from-capture", action="store_true",
+                        help="derive tilewise BF16 MULS from a digest-checked model2MLIR capture")
+    parser.add_argument("--capture-trace", type=Path)
+    parser.add_argument("--capture-quantization-manifest", type=Path)
+    parser.add_argument("--capture-frontend-mlir", type=Path)
     parser.add_argument("--bf16-output-layout", choices=("row_major_bf16",
                                                           "output_tile_major_bf16"),
                         help="select the physical memory layout of final BF16 readout")
@@ -54,8 +61,13 @@ def main() -> None:
     if args.physical_mode == "rtl_alternating" and not args.experimental_spike_extension_root:
         parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
     if sum((args.tilewise_vpu_x2, args.tilewise_vpu_muls_bf16_bits is not None,
-            args.vpu_spad_requant_x2)) > 1:
+            args.vpu_spad_requant_x2, args.tilewise_vpu_from_capture)) > 1:
         parser.error("select one MX VPU epilogue")
+    capture_paths = (args.capture_trace, args.capture_quantization_manifest,
+                     args.capture_frontend_mlir)
+    if ((args.tilewise_vpu_from_capture and not all(path is not None for path in capture_paths)) or
+            (not args.tilewise_vpu_from_capture and any(path is not None for path in capture_paths))):
+        parser.error("capture-derived VPU needs all three capture sidecar paths")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -113,6 +125,15 @@ def main() -> None:
     if args.tilewise_vpu_muls_bf16_bits is not None:
         bound = append_tilewise_vpu_muls(
             bound, profile, manifest, args.tilewise_vpu_muls_bf16_bits)
+    if args.tilewise_vpu_from_capture:
+        capture = SimpleNamespace(
+            ok=True,
+            capture_trace=json.loads(args.capture_trace.read_text()),
+            quantization_manifest=json.loads(
+                args.capture_quantization_manifest.read_text()),
+            mlir_text=args.capture_frontend_mlir.read_text())
+        bound = append_captured_tilewise_vpu_muls(
+            bound, profile, manifest, capture)
     if args.bf16_output_layout:
         bound = select_bf16_output_layout(
             bound, profile, manifest, layout=args.bf16_output_layout)
