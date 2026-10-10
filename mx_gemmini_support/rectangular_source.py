@@ -1,4 +1,4 @@
-"""Checked Nicolas wire inputs and output oracle for one rectangular FP8 pair."""
+"""Checked Nicolas wire inputs and output oracle for rectangular FP8 pairs."""
 
 from __future__ import annotations
 
@@ -15,17 +15,17 @@ from .source_fp6 import _array
 
 
 FIRST_SHAPE = (64, 96, 64)
-SECOND_SHAPE = (64, 64, 96)
-
-
 def derive_rectangular_resources(first_header: Path, b2_header: Path, *,
-                                 model_path: Path) -> dict[str, bytes]:
+                                 model_path: Path,
+                                 second_width: int = 64) -> dict[str, bytes]:
     """Use the unchanged MM1 golden, then model C2 from a checked B2 slice."""
     if (first_header.name != "matmul_fp8_64x96x64.h" or
             b2_header.name != "matmul_fp8_128x128_chain.h" or
             not model_path.is_file() or model_path.name != "fp8_matmul_model.py" or
             hashlib.sha256(model_path.read_bytes()).hexdigest() != MODEL_SHA256):
         raise ValueError("rectangular pair needs Nicolas's pinned headers and mesh model")
+    if second_width not in (32, 64):
+        raise ValueError("rectangular pair MM2 width needs a selected source slice")
     first, second = first_header.read_text(), b2_header.read_text()
     if any(marker not in first for marker in
            ("#define MATMUL_M 64", "#define MATMUL_K 64", "#define MATMUL_N 96",
@@ -55,8 +55,8 @@ def derive_rectangular_resources(first_header: Path, b2_header: Path, *,
         second, name="B2_scales_col", ctype="uint8_t",
         dimensions="[MATMUL_GK][MATMUL_N]", count=4 * 128,
         maximum=255), dtype=np.uint8).reshape(4, 128)
-    b2 = b2_full[:96, :64].tobytes()
-    b2_scales = b2_scales_full[:3, :64].tobytes()
+    b2 = b2_full[:96, :second_width].tobytes()
+    b2_scales = b2_scales_full[:3, :second_width].tobytes()
 
     spec = importlib.util.spec_from_file_location("nicolas_rectangular_mesh", model_path)
     if spec is None or spec.loader is None:
@@ -80,9 +80,11 @@ def derive_rectangular_resources(first_header: Path, b2_header: Path, *,
             (c1_codes, c1_scales)):
         raise ValueError("rectangular MM1 model differs from unchanged source goldens")
     second_bf16 = bf16_bytes(model.tiled_matmul_hwlike(
-        _codes(c1_codes, (64, 96)), _codes(b2, (96, 64)),
-        _scales(c1_scales, (64, 3)), _scales(b2_scales, (3, 64)), **kwargs))
-    c2_codes, c2_scales = quantize_bf16_fp8_output(second_bf16, 64, 64)
+        _codes(c1_codes, (64, 96)), _codes(b2, (96, second_width)),
+        _scales(c1_scales, (64, 3)),
+        _scales(b2_scales, (3, second_width)), **kwargs))
+    c2_codes, c2_scales = quantize_bf16_fp8_output(
+        second_bf16, 64, second_width)
     return {
         "a1_activation": a, "a1_scales": a_scales,
         "b1_weight": b1, "b1_scales": b1_scales,

@@ -37,12 +37,15 @@ def main() -> None:
     b2_header = software / "include/matmul_fp8_128x128_chain.h"
     model = software / "fp8_matmul_model.py"
     capture = json.loads((args.capture_dir / "receipt.json").read_text())
+    second_shape = capture.get("second_shape_mnk")
+    if second_shape not in ([64, 32, 96], [64, 64, 96]):
+        raise ValueError("rectangular capture MM2 shape differs")
+    second_width = second_shape[1]
     frontend = args.capture_dir / "nicolas_chain.profile_bound.mlir"
     manifest_path = args.capture_dir / "quantization_manifest.json"
     if (capture.get("schema") !=
             "mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1" or
             capture.get("first_shape_mnk") != [64, 96, 64] or
-            capture.get("second_shape_mnk") != [64, 64, 96] or
             capture.get("profile_sha256") != profile_sha256(profile) or
             capture.get("source_sha256") != _sha(source) or
             capture.get("header_sha256") != _sha(header) or
@@ -54,7 +57,8 @@ def main() -> None:
             capture.get("handoff_mlir_sha256") != _sha(
                 args.capture_dir / "nicolas_chain.handoff.mlir")):
         raise ValueError("rectangular capture or source provenance differs")
-    resources = derive_rectangular_resources(header, b2_header, model_path=model)
+    resources = derive_rectangular_resources(
+        header, b2_header, model_path=model, second_width=second_width)
     bound = render_rectangular_chain(
         frontend.read_text(), json.loads(manifest_path.read_text()),
         profile, resources, source_sha256=_sha(source),
@@ -71,7 +75,7 @@ def main() -> None:
         "schema": "mx_gemmini.nicolas_rectangular_chain_binding.v1",
         "status": "source_c1_and_model_c2_bound_to_typed_pair",
         "first_shape_mnk": [64, 96, 64],
-        "second_shape_mnk": [64, 64, 96],
+        "second_shape_mnk": second_shape,
         "reference_kind": "unchanged_nicolas_c1_and_pinned_model_derived_c2",
         "capture_receipt_sha256": _sha(args.capture_dir / "receipt.json"),
         "source_sha256": _sha(source), "header_sha256": _sha(header),

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from .rectangular_source import FIRST_SHAPE, SECOND_SHAPE
+from .rectangular_source import FIRST_SHAPE
 from .resident_pair_graph import INPUTS, input_digest, lower_connected_fp8_pair
 from .resident_pair_plan import plan_fp8_rectangular_pair
 from .target_profile import profile_sha256
@@ -30,9 +30,15 @@ def render_rectangular_chain(frontend: str, manifest: dict, profile: dict,
     if (report["contracts"], report["resident_contracts"],
             report["vpu_commands"], report["spad_requants"]) != (2, 0, 0, 0):
         raise ValueError("rectangular frontend needs exactly two MX contractions")
+    sites = manifest.get("sites", [])
+    if len(sites) != 2 or sites[1].get("shape") not in (
+            [64, 32, 96], [64, 64, 96]):
+        raise ValueError("rectangular frontend MM2 width differs")
+    second_width = sites[1]["shape"][1]
+    second_shape = (64, second_width, 96)
     expected = [(site, "quantized", "mxfp8", list(shape)) for site, shape in zip(
         ("functional:matmul", "functional:matmul_1"),
-        (FIRST_SHAPE, SECOND_SHAPE))]
+        (FIRST_SHAPE, second_shape))]
     if [(site.get("site_id"), site.get("status"), site.get("format"),
          site.get("shape")) for site in manifest.get("sites", [])] != expected:
         raise ValueError("rectangular frontend sites or dimensions differ")
@@ -54,11 +60,12 @@ def render_rectangular_chain(frontend: str, manifest: dict, profile: dict,
         raise ValueError("rectangular frontend precision or site differs")
     sizes = {"a1_activation": 64 * 64, "a1_scales": 2 * 64,
              "b1_weight": 64 * 96, "b1_scales": 2 * 96,
-             "b2_weight": 96 * 64, "b2_scales": 3 * 64}
+             "b2_weight": 96 * second_width,
+             "b2_scales": 3 * second_width}
     if {slot: len(resources.get(slot, b"")) for slot in INPUTS} != sizes:
         raise ValueError("rectangular pair source wire dimensions differ")
     plan = plan_fp8_rectangular_pair(
-        profile, first_shape=FIRST_SHAPE, second_shape=SECOND_SHAPE,
+        profile, first_shape=FIRST_SHAPE, second_shape=second_shape,
         a_row=0, c1_row=2048, c2_row=4096)
     digest = profile_sha256(profile)
     policy = _sha(b"nicolas_rectangular_fp8_pair_v1" +
@@ -75,8 +82,8 @@ def render_rectangular_chain(frontend: str, manifest: dict, profile: dict,
   func.func @nicolas_rectangular_pair(
       %a1: tensor<64x64xi8>, %a1s: tensor<2x64xi8>,
       %b1: tensor<64x96xi8>, %b1s: tensor<2x96xi8>,
-      %b2: tensor<96x64xi8>, %b2s: tensor<3x64xi8>)
-      -> (tensor<64x64xi8>, tensor<64x2xi8>) {{
+      %b2: tensor<96x{second_width}xi8>, %b2s: tensor<3x{second_width}xi8>)
+      -> (tensor<64x{second_width}xi8>, tensor<64x{second_width // 32}xi8>) {{
     %acc = "mx_gemmini.contract"(%a1, %a1s, %b1, %b1s) {{
       site_id = "functional:matmul", activation_format = "fp8_e4m3",
       weight_format = "fp8_e4m3", activation_projection = "direct",
@@ -89,14 +96,14 @@ def render_rectangular_chain(frontend: str, manifest: dict, profile: dict,
     %c2, %c2s = "mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s) {{
       site_id = "functional:matmul_1", activation_row = {plan.c1_row} : i32,
       weight_row = {plan.b_row} : i32, output_row = {plan.c2_row} : i32,
-      m = 64 : i32, n = 64 : i32, k = 96 : i32,
+      m = 64 : i32, n = {second_width} : i32, k = 96 : i32,
       activation_format = "fp8_e4m3", weight_format = "fp8_e4m3",
       output_format = "fp8_e4m3", weight_buffer = "b2_weight",
       weight_scales_buffer = "b2_scales", output_scales_buffer = "c2_scales",
       {binding}}}
-      : (tensor<64x96xi8>, tensor<64x3xi8>, tensor<96x64xi8>, tensor<3x64xi8>)
-      -> (tensor<64x64xi8>, tensor<64x2xi8>)
-    func.return %c2, %c2s : tensor<64x64xi8>, tensor<64x2xi8>
+      : (tensor<64x96xi8>, tensor<64x3xi8>, tensor<96x{second_width}xi8>, tensor<3x{second_width}xi8>)
+      -> (tensor<64x{second_width}xi8>, tensor<64x{second_width // 32}xi8>)
+    func.return %c2, %c2s : tensor<64x{second_width}xi8>, tensor<64x{second_width // 32}xi8>
   }}
 }}
 '''

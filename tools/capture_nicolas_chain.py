@@ -1,4 +1,4 @@
-"""Capture Nicolas's two MX contractions at 64, 96, or 128 width.
+"""Capture Nicolas's two MX contractions, including selected rectangular widths.
 
 The PyTorch graph establishes the two contraction sites. Nicolas's checked-in
 packed tensors and scales are separate source specializations. The 96-wide
@@ -37,17 +37,17 @@ def main() -> None:
     parser.add_argument("--first-k", type=int,
                         help="MM1 K dimension; 64 with matrix-dim 96 selects Nicolas's rectangular source")
     parser.add_argument("--second-width", type=int,
-                        help="MM2 N dimension; 64 with matrix-dim 96 selects the rectangular pair")
+                        help="MM2 N dimension; 32 or 64 with matrix-dim 96 selects a rectangular pair")
     parser.add_argument("--output-rows", type=int, choices=tuple(range(16, 129, 16)),
                         help="row prefix of Nicolas's 128³ plain MX source")
     args = parser.parse_args()
     output_rows = args.output_rows or args.matrix_dim
     first_k = args.first_k or args.matrix_dim
     second_width = args.second_width or args.matrix_dim
-    rectangular = (first_k, args.matrix_dim, second_width) == (64, 96, 64)
+    rectangular = (first_k, args.matrix_dim) == (64, 96) and second_width in (32, 64)
     if ((first_k, second_width) != (args.matrix_dim, args.matrix_dim) and
             (not rectangular or output_rows != 64)):
-        parser.error("only Nicolas's 64x96x64 → 64x64x96 rectangular pair is selected")
+        parser.error("only Nicolas's 64x96x64 → 64x{32,64}x96 rectangular pairs are selected")
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
     if args.out_dir.exists():

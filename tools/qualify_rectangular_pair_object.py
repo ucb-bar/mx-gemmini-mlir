@@ -20,11 +20,7 @@ from tools.emit_resident_pair_object import OUTPUTS
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json"
-MARKER = ("lowered rectangular 64x96x64 -> 64x64x96: "
-          "C1 0 codes 0 scales; C2 0 codes 0 scales")
-
-
-def _driver(names: tuple[str, ...]) -> str:
+def _driver(names: tuple[str, ...], second_width: int) -> str:
     declarations = "\n".join(f"extern const uint8_t {name}[];" for name in
                              (*INPUTS, "c1_codes_ref", "c1_scales_ref",
                               "c2_codes_ref", "c2_scales_ref"))
@@ -33,8 +29,8 @@ def _driver(names: tuple[str, ...]) -> str:
 {declarations}
 static uint8_t c1_scales[192] __attribute__((aligned(64)));
 static uint8_t c1_tiled_observed[6144] __attribute__((aligned(64)));
-static uint8_t c2_scales[128] __attribute__((aligned(64)));
-static uint8_t c2_tiled[4096] __attribute__((aligned(64)));
+static uint8_t c2_scales[{64 * second_width // 32}] __attribute__((aligned(64)));
+static uint8_t c2_tiled[{64 * second_width}] __attribute__((aligned(64)));
 void mx_issue({", ".join(f"const void *{name}" for name in names)});
 
 int main(void) {{
@@ -45,16 +41,16 @@ int main(void) {{
       uint32_t tiled = (((row / 16) * 6 + col / 16) * 16 + row % 16) * 16 + col % 16;
       c1_codes += c1_tiled_observed[tiled] != c1_codes_ref[row * 96 + col];
     }}
-    for (uint32_t col = 0; col < 64; ++col) {{
-      uint32_t tiled = (((row / 16) * 4 + col / 16) * 16 + row % 16) * 16 + col % 16;
-      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * 64 + col];
+    for (uint32_t col = 0; col < {second_width}; ++col) {{
+      uint32_t tiled = (((row / 16) * {second_width // 16} + col / 16) * 16 + row % 16) * 16 + col % 16;
+      c2_codes += c2_tiled[tiled] != c2_codes_ref[row * {second_width} + col];
     }}
   }}
   for (uint32_t i = 0; i < 192; ++i)
     c1_scale_errors += c1_scales[i] != c1_scales_ref[i];
-  for (uint32_t i = 0; i < 128; ++i)
+  for (uint32_t i = 0; i < {64 * second_width // 32}; ++i)
     c2_scale_errors += c2_scales[i] != c2_scales_ref[i];
-  printf("lowered rectangular 64x96x64 -> 64x64x96: C1 %d codes %d scales; "
+  printf("lowered rectangular 64x96x64 -> 64x{second_width}x96: C1 %d codes %d scales; "
          "C2 %d codes %d scales\\n", c1_codes, c1_scale_errors,
          c2_codes, c2_scale_errors);
   return c1_codes || c1_scale_errors || c2_codes || c2_scale_errors;
@@ -83,13 +79,16 @@ def main() -> None:
     b2_header = software / "include/matmul_fp8_128x128_chain.h"
     model = software / "fp8_matmul_model.py"
     capture_receipt = json.loads((args.capture_dir / "receipt.json").read_text())
+    second_shape = capture_receipt.get("second_shape_mnk")
+    if second_shape not in ([64, 32, 96], [64, 64, 96]):
+        raise ValueError("rectangular capture MM2 shape differs")
+    second_width = second_shape[1]
     frontend = (args.capture_dir / "nicolas_chain.profile_bound.mlir").read_text()
     manifest_bytes = (args.capture_dir / "quantization_manifest.json").read_bytes()
     manifest = json.loads(manifest_bytes)
     if (capture_receipt.get("schema") !=
             "mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1" or
             capture_receipt.get("first_shape_mnk") != [64, 96, 64] or
-            capture_receipt.get("second_shape_mnk") != [64, 64, 96] or
             capture_receipt.get("profile_sha256") != profile_sha256(profile) or
             capture_receipt.get("source_sha256") != _sha(source) or
             capture_receipt.get("header_sha256") != _sha(header) or
@@ -102,7 +101,8 @@ def main() -> None:
                 args.capture_dir / f"nicolas_chain.{stem}.mlir")
                 for label, stem in (("source", "model2mlir"), ("handoff", "handoff")))):
         raise ValueError("rectangular model2MLIR capture or source provenance differs")
-    resources = derive_rectangular_resources(header, b2_header, model_path=model)
+    resources = derive_rectangular_resources(
+        header, b2_header, model_path=model, second_width=second_width)
     bound = render_rectangular_chain(
         frontend, manifest, profile, resources,
         source_sha256=_sha(source), header_sha256=_sha(header),
@@ -118,11 +118,12 @@ def main() -> None:
     names = tuple(entry.get("name") for entry in abi)
     expected_bytes = {name: len(resources[name]) for name in INPUTS} | {
         "c1_scales": 192, "c1_tiled_observed": 6144,
-        "c2_scales": 128, "c2_tiled": 4096}
+        "c2_scales": 64 * second_width // 32,
+        "c2_tiled": 64 * second_width}
     if (object_manifest.get("schema") !=
             "mx_gemmini.resident_pair_linkable_object.v1" or
             object_manifest.get("first_shape_mnk") != [64, 96, 64] or
-            object_manifest.get("shape_mnk") != [64, 64, 96] or
+            object_manifest.get("shape_mnk") != second_shape or
             object_manifest.get("profile_sha256") != profile_sha256(profile) or
             object_manifest.get("bound_mlir_sha256") !=
             hashlib.sha256(bound.encode()).hexdigest() or
@@ -156,7 +157,7 @@ def main() -> None:
                          f'.incbin "{name}.bin"', ".balign 64"))
     assembly.append('.section .note.GNU-stack,"",@progbits')
     (build / "mx_data.S").write_text("\n".join(assembly) + "\n")
-    (build / "mx_driver.c").write_text(_driver(names))
+    (build / "mx_driver.c").write_text(_driver(names, second_width))
     cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -196,15 +197,18 @@ def main() -> None:
         stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    passed = result.returncode == 0 and MARKER in result.stdout
+    marker = (f"lowered rectangular 64x96x64 -> 64x{second_width}x96: "
+              "C1 0 codes 0 scales; C2 0 codes 0 scales")
+    passed = result.returncode == 0 and marker in result.stdout
     receipt = {
         "schema": "mx_gemmini.nicolas_rectangular_pair_spike.v1",
         "status": ("source_c1_and_model_c2_matched_on_pinned_spike" if passed else
                    "rectangular_pair_failed_on_pinned_spike"),
-        "first_shape_mnk": [64, 96, 64], "second_shape_mnk": [64, 64, 96],
+        "first_shape_mnk": [64, 96, 64], "second_shape_mnk": second_shape,
         "reference_kind": "unchanged_nicolas_c1_and_pinned_model_derived_c2",
         "compared_c1_fp8_codes": 6144, "compared_c1_e8m0_scales": 192,
-        "compared_c2_fp8_codes": 4096, "compared_c2_e8m0_scales": 128,
+        "compared_c2_fp8_codes": 64 * second_width,
+        "compared_c2_e8m0_scales": 64 * second_width // 32,
         "capture_receipt_sha256": _sha(args.capture_dir / "receipt.json"),
         "source_sha256": _sha(source), "header_sha256": _sha(header),
         "b2_header_sha256": _sha(b2_header), "model_sha256": _sha(model),
