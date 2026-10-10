@@ -1,22 +1,22 @@
 {
   "files_sha256": {
     "cyclotron.log": "c643444cee5829c7640c6294f7eee6f30b663b69f8594ce836dba760c9b72b06",
-    "cyclotron_compiler_stream.patch": "24951e45d89ed9859e91b0991e1ea19aec7cfd4d3c8b46685c8d4247600515a5",
+    "cyclotron_compiler_stream.patch": "698f8d1db331911c5f3f97d293a9b5154b96c6d8e60aa3e79d84262dbb585a71",
     "cyclotron_diagnostic.json": "62ecdf4c4cde957523801fb2df86b0726275ddbf5b4ffffad581f80c4dca2e06",
-    "first.cyclotron.log": "0e5f547f4ba3ab9e52fe7255a3e44ac0ff1032586b0dff3f303ac750edf221c2",
+    "first.cyclotron.log": "21e7544bbdcbdc39c06852418995c75f0ed96f4f04e2fcda0aa2f2e85cad59e7",
     "mx_kernel.cpp": "6461494dd47daa9cc9be4849a4768820b702814e3a73556125b8b1d56f6ec003",
     "mx_kernel.elf": "0ce108e7e0cf061793230c02fe361b4d69d49411f9ed6b4b48953e784c9c4f4b",
     "mx_payload.S": "c379313a386859c3d675a9b12ab319e0186300f54783347a75da0fc63a133e50",
-    "mxgemmini_tests.log": "d6e1a255c238fa051a7e5d2b7080afd010efc057c11c3056d9c8601de9e29c6c",
+    "mxgemmini_tests.log": "066865ffcb2afda262edbc2f30e8af3f66479d45b08af570df0af2d42a43bab4",
     "patched_cyclotron_gmem.bin.gz": "e06f607b0e7187d25b4d9934e52738f9ad2963f8d8de754fde1dc37edae69930",
-    "patched_cyclotron_qualification.json": "206c631e0b6dbcceb81eb5bd206913842a1ae5b2bf886de13201a9b160e32548",
-    "patched_cyclotron_qualification_repro.json": "f18fe97291484bb1606ebc33e5293c6f580bae20bfffd8e0ae062db88cd1433f",
-    "payload_manifest.json": "9d45c06bf64d5fc2820d8d30e6b8ee01d92422a2085cc4483a38864fa23439ac",
-    "payload_manifest_repro.json": "9d45c06bf64d5fc2820d8d30e6b8ee01d92422a2085cc4483a38864fa23439ac",
-    "repro.cyclotron.log": "f3f0930cdcd1b8e7742a86f0d8bb01de0a1e705800223355c2baf68d62042e59"
+    "patched_cyclotron_qualification.json": "c09ff7d72a16b2a448308b1ca70ef8ce506da498f6bcb86415d07f2ebd806d14",
+    "patched_cyclotron_qualification_repro.json": "cef8f23b6cf2753f0923d0cdfc2ee135dad2c8bbca8deec1492a856f84568495",
+    "payload_manifest.json": "62d7f125894f77378d03c50edd6c92ec94dacb2d191029d75bc5e54468336baf",
+    "payload_manifest_repro.json": "62d7f125894f77378d03c50edd6c92ec94dacb2d191029d75bc5e54468336baf",
+    "repro.cyclotron.log": "e0664a49169aa05d3da9558326c12371f1f9c5244ed39c2fd5a65ff5b1977f87"
   },
   "schema": "mx_gemmini.fp8_vpu_muon_payload_archive.v1",
-  "scope": "Generated Muon MX RV32 ELF with checked source payload and BF16 verifier. Stock Cyclotron lacks compiler command handlers and fails; isolated patched Cyclotron matches all 65,536 BF16 outputs twice in each of two independent builds. Experimental functional-model evidence only; no RTL or FPGA qualification.",
+  "scope": "Generated FP8+VPU Muon MX RV32 ELF with checked source-derived payload and BF16 verifier. Isolated patched Cyclotron matches all 65,536 BF16 outputs twice in each of two independent builds. Experimental functional-model evidence only; no RTL or FPGA qualification.",
   "source_bundle": "docs/evidence/radiance_tilewise_vpu_x2_266c593/bundle",
   "source_object": "docs/evidence/fp8_vpu_muon_mmio_object_266c593",
   "status": "source_payload_bound_muon_elf_matched_on_isolated_patched_cyclotron"

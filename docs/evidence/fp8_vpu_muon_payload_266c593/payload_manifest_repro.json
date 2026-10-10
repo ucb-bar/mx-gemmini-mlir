@@ -1,5 +1,6 @@
 {
   "bf16_elements_to_compare": 65536,
+  "bf16_output_layout": "row_major_bf16",
   "bound_buffers": [
     "activation",
     "activation_scales",
@@ -41,8 +42,38 @@
   "muon_runtime_sha256": "b6a9028656269125c21f24ffa420cb825045094599b9337d9809d0eab8013554",
   "muon_tohost_sha256": "fb7e1ca77a8b12962740ded8ed2e5c78a4bbc5b41ec3a4e66609d1f16c8fc8d6",
   "object_manifest_sha256": "7349961554d99d0535c6144a6591bcc3542dc1fed28cb1bcac4e6d999b05b37d",
-  "payload_linker_sha256": "01d889848fb5e1de2ca38edb0862e97e87a5cfe5b740eb2cc0186c471f7cf5af",
+  "output_plan": {
+    "output_tiles": [
+      {
+        "index": 0,
+        "m_start": 0,
+        "n_start": 0
+      },
+      {
+        "index": 1,
+        "m_start": 0,
+        "n_start": 128
+      },
+      {
+        "index": 2,
+        "m_start": 128,
+        "n_start": 0
+      },
+      {
+        "index": 3,
+        "m_start": 128,
+        "n_start": 128
+      }
+    ],
+    "tile": [
+      128,
+      128,
+      256
+    ]
+  },
+  "payload_linker_sha256": "cc7d4ca283981e37247e1bc58e0e2e98990fc8d4105ba5013d0359ea937ab1a8",
   "physical_program_sha256": "4516a085b7e51dc15d4bcd372cbd2f254192ddd808c0eb26b9c010ef4a3ea063",
+  "precision": "FP8",
   "qualification": "linked_payload_and_verifier_only",
   "schema": "mx_gemmini.muon_payload_elf.v1",
   "shape_mnk": [

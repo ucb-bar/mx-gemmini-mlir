@@ -1,6 +1,6 @@
-"""Reproduce one compiler-issued Muon MX+VPU ELF on an isolated Cyclotron model.
+"""Reproduce selected compiler-issued Muon MX+VPU ELFs on isolated Cyclotron.
 
-The model patch adds only the FP8 command subset exercised by this fixture.
+The model patch adds only the FP8/FP4 command subset exercised by these fixtures.
 This is experimental functional-simulator evidence, not RTL/FPGA parity.
 """
 
@@ -16,6 +16,7 @@ import subprocess
 
 from mx_gemmini_support.quant_reference import exact_bf16_x2
 from mx_gemmini_support.source_payload import load_bundle
+from tools.link_mx_muon_payload import _tile_major_reference
 
 
 REVISION = "2d6adad4ad94d1621fdff9c9a1e5eac871048f24"
@@ -63,14 +64,22 @@ def main() -> None:
         parser.error("selected Cyclotron source differs from pinned unmodified model")
     payload_receipt = json.loads((args.payload_dir / "payload_manifest.json").read_text())
     elf = args.payload_dir / "mx_kernel.elf"
-    _, resources = load_bundle(args.bundle)
+    source_manifest, resources = load_bundle(args.bundle)
     expected = exact_bf16_x2(resources["golden_bf16"])
+    layout = payload_receipt.get("bf16_output_layout")
+    if layout == "output_tile_major_bf16":
+        expected = _tile_major_reference(expected, payload_receipt["shape_mnk"],
+                                         payload_receipt["output_plan"])
+    elif layout != "row_major_bf16":
+        parser.error("selected Muon BF16 output layout is unsupported")
     if (payload_receipt.get("schema") != "mx_gemmini.muon_payload_elf.v1" or
+            payload_receipt.get("precision") != source_manifest.get("precision") or
+            payload_receipt.get("shape_mnk") != source_manifest.get("shape_mnk") or
             payload_receipt.get("files_sha256", {}).get("mx_kernel.elf") != _sha(elf) or
             payload_receipt.get("bundle_manifest_sha256") != _sha(args.bundle / "manifest.json") or
             payload_receipt.get("expected_bf16_sha256") != hashlib.sha256(expected).hexdigest() or
             payload_receipt.get("bf16_elements_to_compare") != 65536):
-        parser.error("selected compiler ELF differs from checked FP8+VPU payload")
+        parser.error("selected compiler ELF differs from checked MX+VPU payload")
     nm = args.muon_llvm / "bin/llvm-nm"
     if not nm.is_file():
         parser.error("Muon toolchain lacks llvm-nm")
@@ -134,7 +143,11 @@ def main() -> None:
         "schema": "mx_gemmini.muon_payload_patched_cyclotron.v1",
         "status": "all_65536_bf16_outputs_matched_on_isolated_patched_cyclotron",
         "qualification": "experimental_functional_model_only",
-        "scope": "FP8 256x256x256 MX+VPU compiler Muon MMIO path; no RTL or FPGA claim",
+        "scope": (f"{source_manifest['precision']} "
+                  f"{'x'.join(map(str, source_manifest['shape_mnk']))} MX+VPU compiler "
+                  "Muon MMIO path; no RTL or FPGA claim"),
+        "precision": source_manifest["precision"],
+        "bf16_output_layout": layout,
         "cyclotron_revision": revision,
         "stock_model_sha256": MODEL_SHA256,
         "patched_model_sha256": _sha(model_source),

@@ -29,6 +29,38 @@ def _run(command: list[str], cwd: Path, log: Path) -> None:
         raise RuntimeError(f"Muon payload build failed ({result.returncode}); see {log}")
 
 
+def _tile_major_reference(row_major: bytes, shape: list[int], plan: dict) -> bytes:
+    if len(shape) != 3 or len(row_major) != shape[0] * shape[1] * 2:
+        raise ValueError("tile-major BF16 reference has the wrong matrix shape")
+    tile = plan.get("tile")
+    output_tiles = plan.get("output_tiles")
+    if (not isinstance(tile, list) or len(tile) != 3 or
+            not isinstance(output_tiles, list) or not output_tiles):
+        raise ValueError("tile-major BF16 reference lacks a physical output plan")
+    m, n, _ = shape
+    tm, tn, _ = tile
+    if (type(tm) is not int or type(tn) is not int or tm <= 0 or tn <= 0 or
+            m % tm or n % tn or len(output_tiles) != (m // tm) * (n // tn)):
+        raise ValueError("tile-major BF16 output tiles do not cover the matrix")
+    result = bytearray()
+    seen = set()
+    for index, entry in enumerate(output_tiles):
+        if entry.get("index") != index:
+            raise ValueError("tile-major BF16 output tile indices differ")
+        row, col = entry.get("m_start"), entry.get("n_start")
+        if (type(row) is not int or type(col) is not int or
+                row not in range(0, m, tm) or col not in range(0, n, tn) or
+                (row, col) in seen):
+            raise ValueError("tile-major BF16 output tiles overlap or are misaligned")
+        seen.add((row, col))
+        for local_row in range(tm):
+            start = ((row + local_row) * n + col) * 2
+            result.extend(row_major[start:start + tn * 2])
+    if len(result) != len(row_major):
+        raise ValueError("tile-major BF16 output reference is incomplete")
+    return bytes(result)
+
+
 def _checked_payload(object_dir: Path, bundle: Path) -> tuple[dict, dict[str, bytes],
                                                                 list[dict], bytes]:
     receipt = json.loads((object_dir / "object_manifest.json").read_text())
@@ -75,6 +107,16 @@ def _checked_payload(object_dir: Path, bundle: Path) -> tuple[dict, dict[str, by
         expected = resources["golden_bf16"]
     else:
         raise ValueError("Muon payload linker has no checked BF16 output reference")
+    output = next(entry for entry in buffers if entry["name"] == "output_bf16")
+    if output["layout"] == "row_major_bf16":
+        if physical.get("plan", {}).get("bf16_output_layout") != "row_major_bf16":
+            raise ValueError("Muon row-major output ABI differs from physical plan")
+    elif output["layout"] == "output_tile_major_bf16":
+        if physical.get("plan", {}).get("bf16_output_layout") == "row_major_bf16":
+            raise ValueError("Muon tile-major output ABI differs from physical plan")
+        expected = _tile_major_reference(expected, receipt["shape_mnk"], physical["plan"])
+    else:
+        raise ValueError("Muon BF16 output layout is unsupported")
     return receipt, resources, buffers, expected
 
 
@@ -202,6 +244,11 @@ def main() -> None:
         "muon_linker_script_sha256": _sha(linker),
         "muon_tohost_sha256": _sha(tohost),
         "shape_mnk": receipt["shape_mnk"],
+        "precision": json.loads((args.bundle / "manifest.json").read_text())["precision"],
+        "bf16_output_layout": next(entry["layout"] for entry in buffers
+                                   if entry["name"] == "output_bf16"),
+        "output_plan": {key: json.loads((args.object_dir / "physical_program.json").read_text())["plan"][key]
+                        for key in ("tile", "output_tiles")},
         "bf16_elements_to_compare": output_bytes // 2,
         "expected_bf16_sha256": hashlib.sha256(expected).hexdigest(),
         "gateway_control_base": receipt["radiance_gateway_control_base"],

@@ -11,7 +11,7 @@ import pytest
 
 from mx_gemmini_support.quant_reference import exact_bf16_x2
 from mx_gemmini_support.source_payload import load_bundle
-from tools.link_mx_muon_payload import _checked_payload
+from tools.link_mx_muon_payload import _checked_payload, _tile_major_reference
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +33,8 @@ def test_muon_payload_elf_is_bound_to_source_bytes_and_full_bf16_reference():
     assert receipt["schema"] == "mx_gemmini.muon_payload_elf.v1"
     assert receipt["status"] == "source_payload_bound_muon_elf_unexecuted"
     assert receipt["qualification"] == "linked_payload_and_verifier_only"
+    assert receipt["precision"] == "FP8"
+    assert receipt["bf16_output_layout"] == "row_major_bf16"
     assert receipt["payload_linker_sha256"] == _sha((
         ROOT / "tools/link_mx_muon_payload.py").read_bytes())
     assert receipt["object_manifest_sha256"] == _sha((OBJECT / "object_manifest.json").read_bytes())
@@ -77,6 +79,19 @@ def test_linker_rejects_a_different_source_bundle(tmp_path):
     with pytest.raises(ValueError, match="differ"):
         _checked_payload(
             tmp_path, ROOT / "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle")
+
+
+def test_tile_major_reference_follows_the_physical_output_plan():
+    row_major = b"".join(i.to_bytes(2, "little") for i in range(16))
+    plan = {"tile": [2, 2, 2], "output_tiles": [
+        {"index": i, "m_start": row, "n_start": col}
+        for i, (row, col) in enumerate(((0, 0), (0, 2), (2, 0), (2, 2)))]}
+    actual = _tile_major_reference(row_major, [4, 4, 4], plan)
+    assert [int.from_bytes(actual[i:i+2], "little") for i in range(0, 32, 2)] == [
+        0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15]
+    with pytest.raises(ValueError, match="overlap"):
+        _tile_major_reference(row_major, [4, 4, 4], {**plan, "output_tiles": [
+            *plan["output_tiles"][:3], {"index": 3, "m_start": 0, "n_start": 0}]})
 
 
 def test_current_cyclotron_result_is_explicitly_a_numerical_failure():

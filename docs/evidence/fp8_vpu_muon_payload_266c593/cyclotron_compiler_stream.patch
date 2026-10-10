@@ -1,5 +1,5 @@
 diff --git a/src/muon/mxgemmini/mod.rs b/src/muon/mxgemmini/mod.rs
-index 059eec0..6e58840 100644
+index 059eec0..bc1de9e 100644
 --- a/src/muon/mxgemmini/mod.rs
 +++ b/src/muon/mxgemmini/mod.rs
 @@ -130,6 +130,8 @@ fn k_dma() -> u64 {
@@ -51,7 +51,7 @@ index 059eec0..6e58840 100644
              F_LOOP_WS => {
                  // rs2[9] marks the MX-spad variant; the Radiance kernel always sets it.
                  if (rs2 >> 9) & 0x1 == 0 {
-@@ -344,6 +358,69 @@ impl MxGemminiDevice {
+@@ -344,6 +358,72 @@ impl MxGemminiDevice {
          }
      }
  
@@ -83,13 +83,16 @@ index 059eec0..6e58840 100644
 +        }
 +    }
 +
-+    fn compiler_load_scales(&self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &[u8]) {
++    fn compiler_load_scales(&mut self, rs1: u64, rs2: u64, smem: &mut [u8], gmem: &[u8]) {
 +        let pitch = (rs1 >> 40) as usize;
 +        let base = gpu_dram(rs1 & 0xffffffffff);
 +        let groups = ((rs2 >> 46) & 0x3ffff) as usize;
 +        let dest = ((rs2 >> 33) & 0x1fff) as usize;
 +        let sel = ((rs2 >> 32) & 1) as usize;
 +        let width = (rs2 & 0xffff_ffff) as usize;
++        if dest != 0 {
++            self.st.compiler_scale_alt_offset = dest;
++        }
 +        assert!(width > 0 && groups > 0 && dest + groups * width <= 0x2000,
 +                "unsupported compiler MX scale DMA span");
 +        let sf = if sel == 0 { SF_MEM_A } else { SF_MEM_B };
@@ -121,7 +124,7 @@ index 059eec0..6e58840 100644
      // --- loop_ws load phase: DMA operand tiles DRAM -> scratchpad (== SMEM) ---
      //
      // Mirrors gemmini's LoopMatmul mvin of A/B. FP8 = 1 byte/elem, so a spad row is
-@@ -387,7 +464,6 @@ impl MxGemminiDevice {
+@@ -387,7 +467,6 @@ impl MxGemminiDevice {
      // --- config handlers (subset of spike gemmini_t::config / *_config_*) ---
  
      fn config(&mut self, rs1: u64, rs2: u64) {
@@ -129,7 +132,7 @@ index 059eec0..6e58840 100644
          match rs1 & 0b11 {
              0 => {
                  // config_ex
-@@ -400,6 +476,9 @@ impl MxGemminiDevice {
+@@ -400,6 +479,9 @@ impl MxGemminiDevice {
                      self.st.mx_out_fmt = ((rs1 >> 14) & 0x3) as u8;
                  }
              }
@@ -139,7 +142,7 @@ index 059eec0..6e58840 100644
              3 => {
                  // config_norm: I-BERT constants + the activation MSB. Setting that MSB is
                  // the ONLY way acc_act becomes SOFTMAX(4) -- config_mvout can only encode
-@@ -419,6 +498,9 @@ impl MxGemminiDevice {
+@@ -419,6 +501,9 @@ impl MxGemminiDevice {
                  }
              }
              2 => {
@@ -149,7 +152,7 @@ index 059eec0..6e58840 100644
                  // config_mvout: acc activation
                  let sel = (rs1 >> 2) & 0b11;
                  self.st.acc_act = match sel {
-@@ -470,7 +552,7 @@ impl MxGemminiDevice {
+@@ -470,7 +555,7 @@ impl MxGemminiDevice {
      //               kernel (LUT0 = weights/B, LUT1 = activations/A); which LUT a row/col
      //               uses is `(global_index >> lut_update_granularity)`.
  
@@ -158,7 +161,7 @@ index 059eec0..6e58840 100644
          let c_spad = ((rs2 >> 32) & 0xFFFF_FFFF) as u32;
          let ti = self.st.loop_ws_i as usize;
          let tj = self.st.loop_ws_j as usize;
-@@ -509,6 +591,11 @@ impl MxGemminiDevice {
+@@ -509,6 +594,11 @@ impl MxGemminiDevice {
          let b_sp = (self.st.mx_loop_b_spad as usize).wrapping_sub(tk * tj * DIM);
          let m_dim = ti * tile;
          let n_dim = tj * tile;
@@ -170,17 +173,35 @@ index 059eec0..6e58840 100644
  
          // FP6 LUTs, staged in SMEM by the kernel. One LUT per `1 << G` rows/cols.
          let g = self.st.mx_lut_update_granularity as usize;
+@@ -594,8 +684,13 @@ impl MxGemminiDevice {
+                             // For K-tile double-buffering the kernel puts odd tiles'
+                             // scales in the second buffer and sets the mxquant select
+                             // bits; honor them or every odd tile reads stale scales.
+-                            let a_buf = if self.st.mx_scale_act_sel { SF_MEM_BUFFER_OFFSET } else { 0 };
+-                            let b_buf = if self.st.mx_scale_wgt_sel { SF_MEM_BUFFER_OFFSET } else { 0 };
++                            let alt = if compiler_stream_enabled() {
++                                self.st.compiler_scale_alt_offset
++                            } else {
++                                SF_MEM_BUFFER_OFFSET
++                            };
++                            let a_buf = if self.st.mx_scale_act_sel { alt } else { 0 };
++                            let b_buf = if self.st.mx_scale_wgt_sel { alt } else { 0 };
+                             let sa = smem.get(SF_MEM_A + a_buf + a_off).copied().unwrap_or(0x7f);
+                             let sb = smem.get(SF_MEM_B + b_buf + b_off).copied().unwrap_or(0x7f);
+                             let e = sa as i32 + sb as i32 - 127;
 diff --git a/src/muon/mxgemmini/state.rs b/src/muon/mxgemmini/state.rs
-index ccc4c87..c2b6551 100644
+index ccc4c87..ceb1d22 100644
 --- a/src/muon/mxgemmini/state.rs
 +++ b/src/muon/mxgemmini/state.rs
-@@ -22,6 +22,9 @@ impl Default for AccAct {
+@@ -22,6 +22,11 @@ impl Default for AccAct {
  
  #[derive(Debug, Clone, Default)]
  pub struct MxGemminiState {
 +    /// Compiler-issued ordinary DMA row strides (config_ld/config_st).
 +    pub ld_stride: u64,
 +    pub st_stride: u64,
++    /// Alternate SF bank offset carried by compiler-issued scale DMA commands.
++    pub compiler_scale_alt_offset: usize,
      // --- CONFIG_EX (funct 0, rs1[1:0]==00): MX formats ---
      /// 0 = FP8 E4M3, 1 = FP6 E3M2 (LUT), 2 = FP4 E2M1, 3 = full/bf16.
      pub mx_act_fmt: u8,

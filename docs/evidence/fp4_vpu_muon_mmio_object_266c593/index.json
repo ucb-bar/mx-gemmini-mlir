@@ -1,0 +1,16 @@
+{
+  "files_sha256": {
+    "disassembly.txt.gz": "5257186923b7a643c1fca872f628df7b149db5fca3af7ce83898db9fe77d4aeb",
+    "mx_issue.c.gz": "b32427d78f574525499bc11c61556d055854538576ec1daf60107ae25b7e2738",
+    "mx_issue.h": "339ad1355eb3a6cc03acdeed0d32f3a709fa4041cd9d2b56bd86973e7bd26d07",
+    "mx_issue.o": "076c33c7908516fa13fc58b6c913c52bcad3331defb8d69a14c6756e5d6b6baf",
+    "object_manifest.json": "c0e93e6906796aecafe8234c42eabdc92b58879689941fa6afb6dfb9edcd6103",
+    "object_manifest_repro.json": "c0e93e6906796aecafe8234c42eabdc92b58879689941fa6afb6dfb9edcd6103",
+    "physical_program.json.gz": "e9ea442292e624336cd963bd49ed580eca3ab8148dc8aab3bf628beacf557987"
+  },
+  "schema": "mx_gemmini.fp4_vpu_muon_mmio_object_archive.v1",
+  "scope": "Generated FP4+VPU Muon MMIO issuer with shared gateway and host-global pointer translation; no standalone RTL or FPGA qualification.",
+  "source_bundle": "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/bundle",
+  "source_mlir": "docs/evidence/radiance_fp4_generated_tilewise_vpu_266c593/tilewise_bound.mlir",
+  "status": "structural_object_only"
+}
