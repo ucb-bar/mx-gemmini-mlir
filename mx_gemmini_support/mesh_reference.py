@@ -55,13 +55,13 @@ def _mesh_source(source: str, dim: int) -> str:
 def derive_mesh_reference(source_root: Path, resources: dict[str, bytes],
                           shape: tuple[int, int, int], precision: str,
                           dim: int) -> tuple[bytes, dict]:
-    """Return a mesh reference and its byte-level provenance for FP8/FP4.
+    """Return a mesh reference and its byte-level provenance for FP8/FP4/FP6.
 
     The baseline DIM16 compile must reproduce the unmodified source golden.
     This catches source or arithmetic-model drift before deriving another mesh.
     """
-    if dim not in {8, 32} or precision not in {"FP8", "FP4"}:
-        raise ValueError("target mesh reference supports only DIM8/32 FP8/FP4 BF16")
+    if dim not in {8, 32} or precision not in {"FP8", "FP4", "FP6"}:
+        raise ValueError("target mesh reference supports only DIM8/32 FP8/FP4/FP6 BF16")
     model_dir = source_root / "lib/golden"
     cpp_path, math_path = model_dir / "mx_golden.cpp", model_dir / "mx_fp_math.h"
     cpp, math = cpp_path.read_bytes(), math_path.read_bytes()
@@ -71,10 +71,22 @@ def derive_mesh_reference(source_root: Path, resources: dict[str, bytes],
     if len(resources["golden_bf16"]) != m * n * 2:
         raise ValueError("source BF16 golden differs from requested shape")
     transformed = _mesh_source(cpp.decode(), dim)
+    lut_inputs = {}
+    if precision == "FP6":
+        for name in ("activation_lut", "weight_lut"):
+            packed = resources[name]
+            if len(packed) != 64 * 12:
+                raise ValueError(f"source FP6 {name} does not have 64 packed LUT lines")
+            lut_inputs[name] = bytes(
+                (int.from_bytes(packed[row * 12:(row + 1) * 12], "little")
+                 >> (6 * code)) & 63
+                for row in range(64) for code in range(16))
     with TemporaryDirectory(prefix="mx-mesh-reference-") as directory:
         work = Path(directory)
         for name in ("activation", "weight", "activation_scales", "weight_scales"):
             (work / f"{name}.bin").write_bytes(resources[name])
+        for name, content in lut_inputs.items():
+            (work / f"{name}.bin").write_bytes(content)
         args = [str(m), str(n), str(k), *(
             str(work / f"{name}.bin") for name in (
                 "activation", "weight", "activation_scales", "weight_scales"))]
@@ -86,14 +98,18 @@ def derive_mesh_reference(source_root: Path, resources: dict[str, bytes],
             subprocess.run(["g++", "-O2", "-std=c++17", "-I", str(model_dir),
                             "-o", str(executable), str(source)], check=True,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            subprocess.run([str(executable), *args, str(output),
-                            "0" if precision == "FP8" else "2"], check=True,
+            command = [str(executable), *args, str(output),
+                       {"FP8": "0", "FP6": "1", "FP4": "2"}[precision]]
+            if precision == "FP6":
+                command += [str(work / "activation_lut.bin"),
+                            str(work / "weight_lut.bin"), "1"]
+            subprocess.run(command, check=True,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         baseline = (work / "golden_dim16.bin").read_bytes()
         if baseline != resources["golden_bf16"]:
             raise ValueError("DIM16 host model does not reproduce source BF16 golden")
         target = (work / f"golden_dim{dim}.bin").read_bytes()
-    return target, {
+    policy = {
         "schema": "mx_gemmini.radiance_target_mesh_reference.v1",
         "mesh_dim": dim, "source_golden_sha256": _sha(baseline),
         "model_cpp_sha256": _MODEL_CPP_SHA256,
@@ -101,3 +117,8 @@ def derive_mesh_reference(source_root: Path, resources: dict[str, bytes],
         "transformed_cpp_sha256": _sha(transformed.encode()),
         "target_golden_sha256": _sha(target),
     }
+    if precision == "FP6":
+        policy["lut_granularity_shift"] = 1
+        for name, content in lut_inputs.items():
+            policy[f"unpacked_{name}_sha256"] = _sha(content)
+    return target, policy

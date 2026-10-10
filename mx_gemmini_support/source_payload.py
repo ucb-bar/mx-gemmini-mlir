@@ -34,14 +34,18 @@ def validate_target_mesh_reference(manifest: dict) -> None:
 
     policy = manifest.get("target_mesh_reference")
     descriptor = manifest.get("resources", {}).get("golden_bf16", {})
+    required = {"schema", "mesh_dim", "source_golden_sha256",
+                "model_cpp_sha256", "model_math_sha256",
+                "transformed_cpp_sha256", "target_golden_sha256"}
+    if manifest.get("precision") == "FP6":
+        required |= {"lut_granularity_shift", "unpacked_activation_lut_sha256",
+                     "unpacked_weight_lut_sha256"}
     if (manifest.get("origin") != TARGET_MESH_REFERENCE_ORIGIN or
-            manifest.get("precision") not in {"FP8", "FP4"} or
+            manifest.get("precision") not in {"FP8", "FP4", "FP6"} or
             manifest.get("output_format") is not None or
             "source_derivation" in manifest or
             not isinstance(policy, dict) or
-            set(policy) != {"schema", "mesh_dim", "source_golden_sha256",
-                            "model_cpp_sha256", "model_math_sha256",
-                            "transformed_cpp_sha256", "target_golden_sha256"} or
+            set(policy) != required or
             policy.get("schema") != "mx_gemmini.radiance_target_mesh_reference.v1" or
             policy.get("mesh_dim") not in {8, 32} or
             policy.get("model_cpp_sha256") != _MODEL_CPP_SHA256 or
@@ -49,6 +53,11 @@ def validate_target_mesh_reference(manifest: dict) -> None:
             policy.get("target_golden_sha256") != descriptor.get("sha256") or
             policy.get("source_golden_sha256") == descriptor.get("sha256")):
         raise ValueError("target mesh reference lacks pinned numerical provenance")
+    if manifest["precision"] == "FP6" and (
+            policy.get("lut_granularity_shift") != 1 or
+            any(re.fullmatch(r"[0-9a-f]{64}", policy.get(f"unpacked_{name}_sha256", "")) is None
+                for name in ("activation_lut", "weight_lut"))):
+        raise ValueError("FP6 target mesh reference lacks unpacked LUT provenance")
     for name in ("source_golden_sha256", "transformed_cpp_sha256"):
         value = policy[name]
         if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:

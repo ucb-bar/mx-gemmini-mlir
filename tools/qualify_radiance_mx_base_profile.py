@@ -56,8 +56,6 @@ def main() -> None:
             not profile["legal_compute"]):
         parser.error("selected MX profile needs legal square-mesh Rocket compute")
     mesh_reference = profile["geometry"]["mesh_columns"] != 16
-    if mesh_reference and "fp6" in selected_cases:
-        parser.error("DIM8/32 source mesh reference currently supports FP8/FP4 only")
     base_contract = (selected_profile == PROFILE.resolve() and
                      len(selected_cases) == len(DRIVERS))
     if base_contract and (profile["name"] != "MxGemminiRocketConfig" or
