@@ -63,6 +63,9 @@ def test_compiler_driver_keeps_source_oracle_but_removes_issue_calls() -> None:
     assert modified.count("mx_issue(") == 2
     with pytest.raises(ValueError, match="anchor changed"):
         _compiler_driver(original.replace("  gemmini_flush(0);", "  gemmini_flush(1);"))
+    with pytest.raises(ValueError, match="geometry or reference changed"):
+        _compiler_driver(original.replace("#define SP_TILED 0x2000",
+                                          "#define SP_TILED 0x3000"))
 
 
 def test_plain_mx_profile_rejects_fp4_spad_requant() -> None:

@@ -41,6 +41,17 @@ def _index_once(text: str, anchor: str, start: int = 0) -> int:
 
 def _compiler_driver(source: str) -> str:
     """Preserve the source input and golden code, replacing only issue sites."""
+    required = (
+        "#define M 64", "#define N 128",
+        "#define SP_SRC   0x0000", "#define SP_FLAT  0x1000",
+        "#define SP_TILED 0x2000",
+        "gemmini_spad_requant_fp4(SP_FLAT, SP_SRC, M, N, 0, (uint64_t)scales_hw, 0);",
+        "gemmini_spad_requant_fp4(SP_TILED, SP_SRC, M, N, 1, (uint64_t)scales_hw2, 0);",
+        "uint8_t sc = mxr_scale(&X[m][32 * b], 32);",
+        "codes_ref[m][32 * b + k] = fp4_code((uint16_t)(u >> 16));",
+    )
+    if any(source.count(fragment) != 1 for fragment in required):
+        raise ValueError("Nicolas FP4 source geometry or reference changed")
     start = _index_once(source, "  gemmini_flush(0);")
     flat_check = _index_once(source, "  int bad_flat = 0;", start)
     second = _index_once(source, "  // ---- FP4 operand-A tiled:", flat_check)
