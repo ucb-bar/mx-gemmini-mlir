@@ -48,7 +48,10 @@ def _referenced_buffers(program, manifest: dict) -> list[dict]:
             role = "read"
             layout = descriptor["layout"]
         elif name == "output_bf16":
-            length, role, layout = m * n * 2, "write", "row_major_bf16"
+            output_tiles = program.plan.get("output_tiles", [])
+            length, role = m * n * 2, "write"
+            layout = ("output_tile_major_bf16" if len(output_tiles) > 1
+                      else "row_major_bf16")
         elif name == "output_quantized":
             length = m * n // (2 if program.output_format in {"fp4_e2m1", "fp6_e3m2"} else 1)
             role = "write"
