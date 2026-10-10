@@ -19,6 +19,13 @@ be read as a count of compiler-regenerated programs. Rebuild the inventory
 with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
 
+The [one-command direct matrix suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
+reran all **11** registered direct matrix cases through fresh model2MLIR
+capture, public object compilation, and full-output Spike checks. Its index
+records 111,872 comparisons across BF16 values, quantized bytes, and scales.
+These 11 cases are the fully replayed direct matrix subset; the 98 source-hash
+references above include many weaker forms of evidence.
+
 | Source family | Compiler evidence | Coverage boundary |
 |---|---|---|
 | Asymmetric matrix modes | [DIM8/16/32 mode matrices](compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix) and [stock-model gap](compiled_mx_pipeline.md#isolated-weight-lut-spike-correction-across-all-legal-modes) | Mode-class tests pass 35 of 36 legal cells on stock Spike per mesh. This does not regenerate every named C program or variant. |
