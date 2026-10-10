@@ -1,4 +1,4 @@
-"""Derive a 16x96x96 connected fixture from Nicolas's 128-cubed wire data.
+"""Derive 96-wide connected fixtures from Nicolas's 128-cubed wire data.
 
 The unchanged 128-cubed source goldens first check the pinned mesh model.
 The 96-wide outputs are model-derived references, never described as source
@@ -64,8 +64,8 @@ def _reference(model, resources: dict[str, bytes], m: int, width: int
     return (*c1, *c2)
 
 
-def derive_16x96_from_128(full: dict[str, bytes], *, model_path: Path
-                         ) -> dict[str, bytes]:
+def derive_plain_96_from_128(full: dict[str, bytes], *, model_path: Path
+                             ) -> dict[str, bytes]:
     """Check the 128 source oracle, then slice its wire inputs and recalculate."""
     if (not model_path.is_file() or model_path.name != "fp8_matmul_model.py" or
             hashlib.sha256(model_path.read_bytes()).hexdigest() != MODEL_SHA256):
@@ -75,7 +75,10 @@ def derive_16x96_from_128(full: dict[str, bytes], *, model_path: Path
         raise ValueError("Nicolas FP8 mesh model cannot be loaded")
     model = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(model)
-    m, full_width, width = 16, 128, 96
+    full_width, width = 128, 96
+    m = len(full.get("a1_activation", b"")) // full_width
+    if m not in range(16, 129, 16):
+        raise ValueError("96-wide fixture needs complete source row tiles")
     expected = {"a1_activation": m * full_width, "a1_scales": m * 4,
                 "b1_weight": full_width**2, "b1_scales": full_width * 4,
                 "b2_weight": full_width**2, "b2_scales": full_width * 4,

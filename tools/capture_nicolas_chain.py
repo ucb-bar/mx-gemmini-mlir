@@ -40,8 +40,6 @@ def main() -> None:
     output_rows = args.output_rows or args.matrix_dim
     if args.matrix_dim == 64 and output_rows != 64:
         parser.error("the 64³ VPU source has only 64 rows")
-    if args.matrix_dim == 96 and output_rows != 16:
-        parser.error("the 96³ source-derived fixture has only 16 rows")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     root = Path(__file__).resolve().parents[1]

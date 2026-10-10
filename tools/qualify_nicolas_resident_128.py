@@ -3,7 +3,7 @@
 This source-bound stage preloads the checked C1 codes and transposed C1 scales.
 It proves the resident MM2 command lowering, not compilation of MM1. The
 source's complete MM1→MM2 chain is a separate connected-graph gate. The
-16x96x96 mode slices the checked 128³ wire inputs and uses a pinned numerical
+96-wide mode slices the checked 128³ wire inputs and uses a pinned numerical
 model to derive new C1/C2 outputs, after validating that model against the
 unchanged 128³ source goldens.
 """
@@ -279,16 +279,16 @@ def main() -> None:
     source = software / "bareMetalC/matmul_tiled_fp8_128x128_chain.c"
     header = software / "include/matmul_fp8_128x128_chain.h"
     connected = args.connected_frontend_dir is not None
-    if args.source_width == 96 and (not connected or args.source_rows != 16):
-        parser.error("the 96-wide derived fixture requires a connected 16-row capture")
+    if args.source_width == 96 and not connected:
+        parser.error("the 96-wide derived fixture requires a connected capture")
     if not connected and args.source_rows != 128:
         parser.error("a source row prefix requires --connected-frontend-dir")
     resources = _source_resources(source, header, with_mm1=connected,
                                   source_rows=args.source_rows)
     if args.source_width == 96:
-        from mx_gemmini_support.derived_plain_chain import derive_16x96_from_128
+        from mx_gemmini_support.derived_plain_chain import derive_plain_96_from_128
 
-        resources = derive_16x96_from_128(
+        resources = derive_plain_96_from_128(
             resources, model_path=software / "fp8_matmul_model.py")
     if connected:
         frontend_dir = args.connected_frontend_dir
@@ -425,7 +425,7 @@ def main() -> None:
         receipt["status"] = ("derived_source_connected_chain_matched_on_pinned_spike"
                              if passed else "derived_source_connected_chain_failed_on_pinned_spike")
         receipt["scope"] = (
-            "16x96x96 wire slice of Nicolas's 128³ source; 128³ model outputs first "
+            f"{args.source_rows}x96x96 wire slice of Nicolas's 128³ source; 128³ model outputs first "
             "rechecked against unchanged source goldens, then 96-wide C1/C2 "
             "compared against the pinned mesh-model derived reference")
         receipt["source_width"] = 96

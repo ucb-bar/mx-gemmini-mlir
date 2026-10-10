@@ -35,8 +35,8 @@ def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict,
     m = sites[0].get("shape", [None])[0] if sites else None
     if type(m) is not int or m not in range(16, 129, 16):
         raise ValueError("plain chain needs a source-qualified row count")
-    if width not in (96, 128) or (width == 96 and m != 16):
-        raise ValueError("plain chain width or row count lacks a derived source fixture")
+    if width not in (96, 128):
+        raise ValueError("plain chain width lacks a checked source fixture")
     expected = [(site, "quantized", "mxfp8", [m, width, width]) for site in
                 ("functional:matmul", "functional:matmul_1")]
     if [(row.get("site_id"), row.get("status"), row.get("format"), row.get("shape"))
