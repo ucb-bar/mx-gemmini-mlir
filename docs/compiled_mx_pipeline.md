@@ -668,9 +668,29 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 16 --all-asym \
   --out-dir /new/dim16-all-asym-output --jobs 4
 ```
 
-The aggregate receipts enumerate the **10 legal cells without source tests**.
-This result qualifies the available 64³ BF16 source cases on Spike; it does
-not establish numerical parity for those 10 cells or arbitrary shapes.
+These asymmetric-only aggregate receipts enumerate the **10 legal cells**
+outside their source set. They qualify the 64³ BF16 cases they name on Spike;
+arbitrary shapes remain unqualified.
+
+Nicolas also checks in same-format E2M3, E4M3, and E5M2 LUT source tests with
+BF16 goldens. `--include-symmetric-lut` adds these three tests to the DIM16
+all-asymmetric matrix. Two fresh runs passed **29 / 29 source modes** and
+**118,784 / 118,784 BF16 outputs per run**. The per-mode frontend, payload,
+physical program, generated source, ELF, extension, and Spike log hashes
+reproduce; only path-bearing link log hashes differ. The
+[combined first receipt](evidence/nicolas_asym_matrix_dim16_all_plus_symmetric_266c593/matrix_first.json)
+and [reproduction](evidence/nicolas_asym_matrix_dim16_all_plus_symmetric_266c593/matrix_repro.json)
+index 58 per-mode receipts pinned to compiler `4c4fa5e` and RTL `266c593`.
+The aggregate lists the **seven legal cells still without BF16 source tests**.
+
+```sh
+python -m tools.qualify_nicolas_asym_matrix --mesh-dim 16 --all-asym \
+  --include-symmetric-lut --source-shape 64x64 \
+  --model2mlir-root /path/to/model2MLIR --mxq-root /path/to/MXQuant \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/dim16-combined-output --jobs 4
+```
 
 ### Larger asymmetric source shapes
 
@@ -753,7 +773,7 @@ profiles; these missing lists are specific to each source shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
-3. Qualify the 10 untested DIM16 and 15 untested cells on each DIM8/DIM32
+3. Qualify the seven untested DIM16 and 15 untested cells on each DIM8/DIM32
    all-asymmetric profile, and every other legal mode class on the matching
    Spike/RTL configuration,
    and keep unsupported profile combinations rejected. FP6+VPU requires a

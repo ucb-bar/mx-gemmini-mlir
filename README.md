@@ -57,9 +57,10 @@ The DIM8 and DIM32 all-asymmetric Rocket profiles each pass all 21 checked-in
 source modes on Nicolas's Spike, with independent reproductions. Each profile
 has 36 legal modes, so 15 modes per profile still need source tests and numerical
 qualification; see the [mesh matrix receipts](docs/compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices).
-The separate DIM16 all-asymmetric Rocket profile passes all 26 available source
-modes in two fresh runs. Its 36 legal modes leave 10 without source tests;
-see the [DIM16 all-asymmetric receipts](docs/compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix).
+The separate DIM16 all-asymmetric Rocket profile passes 29 source modes in
+two fresh runs: 26 asymmetric pairs and three same-format LUT tests. Its 36
+legal modes leave seven without source tests; see the
+[DIM16 all-asymmetric receipts](docs/compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix).
 The source-bound scheduler also passes Nicolas's larger direct E4M3×FP4
 128×128×128 DIM16 and 128×128×256 DIM32 kernels on Spike, comparing all
 16,384 BF16 outputs in each. Their [generated programs and reproduction

@@ -23,6 +23,8 @@ def _cell(cell: dict) -> str:
      "MxDim8AllAsymGemminiRocketConfig", 21, 15, "de188c1"),
     (16, "nicolas_asym_matrix_dim16_all_266c593",
      "MxAllAsymGemminiRocketConfig", 26, 10, "0e03168"),
+    (16, "nicolas_asym_matrix_dim16_all_plus_symmetric_266c593",
+     "MxAllAsymGemminiRocketConfig", 29, 7, "4c4fa5e"),
     (32, "nicolas_asym_matrix_dim32_266c593",
      "MxDim32AllAsymGemminiRocketConfig", 21, 15, "de188c1"),
 ])
@@ -41,6 +43,8 @@ def test_all_asymmetric_mesh_receipts_cover_checked_in_source_modes(
                     dim, mode_count, mode_count, 1, 36, False)
         if dim == 16:
             assert manifest["all_asym_profile"] is True
+        if mode_count == 29:
+            assert manifest["includes_symmetric_lut"] is True
         selected = {_cell(row["compute"]) for row in manifest["rows"]}
         assert len(selected) == mode_count
         assert selected <= legal
