@@ -10,10 +10,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/nicolas_fp4_connected_resident_266c593"
+ARCHIVE_128 = ROOT / "docs/evidence/nicolas_fp4_connected_resident_128_266c593"
 
 
 def _read(path: str) -> bytes:
     raw = (ARCHIVE / path).read_bytes()
+    return gzip.decompress(raw) if path.endswith(".gz") else raw
+
+
+def _read_128(path: str) -> bytes:
+    raw = (ARCHIVE_128 / path).read_bytes()
     return gzip.decompress(raw) if path.endswith(".gz") else raw
 
 
@@ -76,3 +82,39 @@ def test_connected_fp4_archive_integrity_and_spike_results():
         "object/physical_program.json.gz": "object/physical_program.json",
     }.items():
         assert fresh["checks_sha256"][fresh_path] == index["files"][archive_path]["sha256"]
+
+
+def test_connected_fp4_128_archive_and_full_output_spike():
+    index = json.loads(_read_128("index.json"))
+    assert index["schema"] == "mx_gemmini.nicolas_fp4_connected_resident_128_archive.v1"
+    assert index["status"] == "source_and_compiler_matched_on_pinned_spike"
+    assert index["compared"] == {
+        "c1_fp4_codes": 16384, "c2_fp4_codes": 16384,
+        "c1_e8m0_scales": 512, "c2_e8m0_scales": 512}
+    for path, record in index["files"].items():
+        data = _read_128(path)
+        assert len(data) == record["bytes"]
+        assert hashlib.sha256(data).hexdigest() == record["sha256"]
+    capture = json.loads(_read_128("capture/receipt.json"))
+    chain = json.loads(_read_128("chain/receipt.json"))
+    obj = json.loads(_read_128("object/object_manifest.json"))
+    dispatch = json.loads(_read_128("object/compile_manifest.json"))
+    assert capture["matrix_dim"] == chain["matrix_dim"] == 128
+    assert [site["format"] for site in capture["sites"]] == ["mxfp4", "mxfp4"]
+    assert capture["opaque_calls"] == []
+    assert chain["status"] == index["status"]
+    assert chain["source_spike"]["matched"]
+    assert chain["compiler_spike"]["matched"]
+    assert chain["compared_c1_fp4_codes"] == chain["compared_c2_fp4_codes"] == 16384
+    assert chain["compared_c1_e8m0_scales"] == chain["compared_c2_e8m0_scales"] == 512
+    assert chain["allocated_data_section_bytes"] == 0
+    assert obj["precision"] == "fp4_e2m1"
+    assert obj["shape_mnk"] == [128, 128, 128]
+    assert obj["embedded_operand_bytes"] == obj["embedded_golden_bytes"] == 0
+    assert obj["allocated_data_section_bytes"] == 0
+    assert dispatch["lowering_family"] == "resident_pair"
+    assert dispatch["compiler_revision"] == index["compiler_revision"]
+    assert dispatch["object_sha256"] == obj["object_sha256"]
+    assert obj["bound_mlir_sha256"] == chain["bound_mlir_sha256"]
+    assert b"fp4 chain test PASSED" in _read_128("chain/source_spike.log")
+    assert b"fp4 chain test PASSED" in _read_128("chain/compiled_spike.log")

@@ -1,0 +1,41 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "29fb1d7264bf771e42b893140deec713c9b2336ae1503ec6cd982fd05267bfb6",
+  "compared_c1_e8m0_scales": 512,
+  "compared_c1_fp4_codes": 16384,
+  "compared_c2_e8m0_scales": 512,
+  "compared_c2_fp4_codes": 16384,
+  "compiler_revision": "c0f84e96909653aee5fcdb986231fd95cd33d12c",
+  "compiler_spike": {
+    "elf_sha256": "e02c572abfc1c9ec149da0c2a233e9436fd5696c7c2cf304a25390118349c32e",
+    "exit_code": 0,
+    "matched": true,
+    "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+  },
+  "driver_sha256": "6ca0683111b4f94507806dc2326f11fa7e5eee78a10492ed6710a3a3dc7212ff",
+  "extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "frontend_manifest_sha256": "72373a391d236059e77eedd63cf6a2617499c9d4eb63f6620378664db22245cb",
+  "frontend_mlir_sha256": "1e6a168d3882dce32d8edcf1ca2fdc52ec80fa7e5e999a4a4d4135d8bbace454",
+  "header_sha256": "a7825848f2a6f52cbbdae241bd5c710b376db48e61d6a199d1369fd816ae12e0",
+  "issuer_sha256": "65e750857d028230b81ff0e966839053f2418bbaa3f4123912df6e55b35857da",
+  "matrix_dim": 128,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "object_sha256": "44e65be3de75db00db1938d126fb8672d8f6c15a06a23be756179e996cd428b8",
+  "physical_sha256": "9dfc2244f02d15955b76572048acfee515dfd8ff0372e517f6a809409db8a35c",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_closure_sha256": "9bbe58b5453e546cc53b843d1afbfe82b8172dc5693b1366fcb8414cf92c0800",
+  "source_sha256": "79d924969bc431427f3afecbc11b7895d1e6314cd7019d8b8743ea8281682219",
+  "source_spike": {
+    "elf_sha256": "679dff22f49fbd1f54166639aafc886a87f2ee9160458c62ba09b77399f5a8b7",
+    "exit_code": 0,
+    "matched": true,
+    "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_and_compiler_matched_on_pinned_spike"
+}

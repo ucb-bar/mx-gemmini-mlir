@@ -1,0 +1,5 @@
+MM1 residency OK (C1 codes+scales exact).
+MM2 chain OK (C2 codes+scales exact; C1 reused in place, scales reused).
+fp4 chain test PASSED (MM1 resident + reused as MM2 operand, scales reused).
+Gemmini extension configured with:
+    dim = 16

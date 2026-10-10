@@ -95,12 +95,12 @@ also compiles the typed 64³ MM1→VPU×2→resident requant→MM2 graph to a
 data-free RV64 object. Nicolas's stock Spike matches all 4,096 BF16 values,
 8,192 FP8 codes, and 256 scales; a fresh upstream checkout reproduces the
 object and Spike log.
-The [plain FP4 resident chain](docs/nicolas-fp4-resident-chain.md) captures
-two PyTorch contractions with the latest pinned model2MLIR, binds Nicolas's
-packed 64³ source tensors, and lowers both sites into one data-free RoCC
-object. Nicolas's Spike matches all 4,096 FP4 codes and 128 scales at each
-site. The shared object compiler dispatches this connected graph by its
-verified FP4 precision.
+The [plain FP4 resident chains](docs/nicolas-fp4-resident-chain.md) capture
+two PyTorch contractions with the latest pinned model2MLIR, bind Nicolas's
+packed 64³ and 128³ source tensors, and lower each pair into a data-free RoCC
+object. Nicolas's Spike matches all 4,096 and 16,384 FP4 codes, plus 128 and
+512 scales, at each site. The shared object compiler dispatches these connected
+graphs by their verified FP4 precision.
 `python -m tools.compile_object` is the shared entry point for these object
 paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
 typed graph and reuses the existing physical lowerers.
