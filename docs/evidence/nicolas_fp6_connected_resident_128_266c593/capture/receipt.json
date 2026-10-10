@@ -1,0 +1,44 @@
+{
+  "bound_mlir_sha256": "b59d787b7c0e5a9f4c55a1a3edaf28d1c1ab080a9d90bb270919b31e71f62d9d",
+  "handoff_mlir_sha256": "9243d4ee0879a0772d081a65cff67d60a057ea53c3e332ac9944a7583b503a99",
+  "header_sha256": "50dadea0cb83cc416a501a347ba3716de514e5aeedeec5a11fedeea9d1abd0c8",
+  "manifest_sha256": "ad257fa69129ec5135384c22b968d2c4aa1cd14b37c55b725acaccd8efddfd99",
+  "matrix_dim": 128,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "numerical_scope": "PyTorch sites only; Nicolas packed bytes, LUT banks, and scales bind in the resident compiler gate; frontend reviewed codebook selects sites only",
+  "opaque_calls": [],
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_fp6_resident_model2mlir_capture.v1",
+  "sites": [
+    {
+      "format": "mxfp6",
+      "fp6_codebook_sha256": "db785d339bc4991ea98ec25dcdbc67d5a7ad10b2b9a11ac715121ba1262a802e",
+      "kind": "functional",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    },
+    {
+      "format": "mxfp6",
+      "fp6_codebook_sha256": "db785d339bc4991ea98ec25dcdbc67d5a7ad10b2b9a11ac715121ba1262a802e",
+      "kind": "functional",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul_1",
+      "status": "quantized"
+    }
+  ],
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_mlir_sha256": "09c51026a2cf32eea9e60cabecb4d847d9a7b7c4d53a764fa411ef63feab8d18",
+  "source_sha256": "236dd96dc3385c83755112e75453927a746d49a01b7407c4265f00e00ecab0a0",
+  "status": "two_site_frontend_handoff_only"
+}

@@ -58,3 +58,10 @@ issuer object, source and compiler ELFs, patches, and Spike logs. The standalone
 object emitter also accepts the typed module through `tools.compile_object` with
 `--resources-dir` and `--abi-json`; the ABI file must map the eleven input slots
 and four output slots in `mx_gemmini.resident_pair_buffer_map.v1`.
+
+The [64³ archive](evidence/nicolas_fp6_connected_resident_64_266c593/index.json)
+and [128³ archive](evidence/nicolas_fp6_connected_resident_128_266c593/index.json)
+include the capture, connected program, packed runtime inputs, data-free
+objects, source and compiler ELFs, Spike logs, and file digests. Both archives
+record the byte-identical replay from a fresh clone of the published
+`handwritten-implementation` commit `ef16c11`.
