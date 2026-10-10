@@ -48,11 +48,13 @@ before emitting a Rocket RoCC C issuer.
 The [compiler-issued VPU evidence](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations)
 now covers the 12 base opcodes on Nicolas's pinned Spike model; the two
 fused opcodes have a separate [source-bound qualification](compiled_mx_pipeline.md#compiler-issued-fused-expsub-and-expsum).
-Together with the [variant qualifications](compiled_mx_pipeline.md#compiler-issued-vpu-broadcast-and-same-bank-variants),
-they cover all 25 single-operation checks in Nicolas's `vpu_ops.c`, including
-all 14 opcodes, broadcast, same-bank placement, and reduction length one.
-The four chained and memory-hazard checks remain source-oracle checks until
-the compiler issues those schedules as well.
+Together with the [variant qualifications](compiled_mx_pipeline.md#compiler-issued-vpu-broadcast-and-same-bank-variants)
+and [ordering qualifications](compiled_mx_pipeline.md#compiler-issued-vpu-dependencies-and-memory-ordering),
+they map all 29 named `vpu_ops.c` source checks to compiler-issued Spike
+comparisons: all 14 opcodes, broadcast, same-bank placement, reduction length
+one, chained VPU operations, DMA write-after-read, and a cross-VPU dependency.
+These are independent source-bound programs rather than one general scheduler
+for the entire source benchmark.
 `spad_requant` may bind its E8M0 output destination as
 `scale_buffer = "name"` with `scale_dram_address = 0`. The issuer then takes `name` as a
 runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it

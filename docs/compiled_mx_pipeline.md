@@ -438,10 +438,10 @@ python -m tools.qualify_nicolas_vpu_ops_source \
 ```
 
 This source executable is the full VPU oracle. The compiler-issued base,
-fused, and variant qualifications below cover all **25 single-operation
-source checks**, including all 14 opcodes, broadcast, same-bank access, and
-reduction length one. The four chained and memory-hazard checks remain to be
-issued by the compiler.
+variant, and ordering qualifications below now cover all **29 named source
+checks** on Nicolas's pinned Spike extension. Each case is compiled into an
+independent ELF with the source input sequence and reference calculation;
+the monolithic source benchmark remains a separate qualification.
 
 ### Compiler-issued base VPU operations
 
@@ -536,9 +536,43 @@ python -m tools.qualify_nicolas_vpu_variants \
 ```
 
 These checks establish numerical and ordered-command parity on Nicolas's
-Spike extension. The chained VPU→VPU, DMA write-after-read, and two-unit
-cross-VPU dependency cases still need compiler-issued programs; RTL/FPGA
-qualification is separate.
+Spike extension. The dependent-command cases are qualified separately below.
+
+### Compiler-issued VPU dependencies and memory ordering
+
+The [ordering receipt](evidence/nicolas_vpu_ordering_compiled_266c593/index.json)
+contains three more model2MLIR captures and profile-bound typed command
+modules. The chain issues ADD→in-place MULS→RMAX; the write-after-read case
+issues ADD, then overwrites its source bank with DMA before reading the ADD
+result; the two-unit case issues independent ADDS and EXP, then MUL reading
+the ADDS result across VPUs. The compiler emits all transfers and VPU
+commands with **no intervening fence**. The driver retains the exact source
+input generator, a completion fence, and the `vpu_ref.h` oracle. The write-
+after-read DMA is an explicit source-bound scheduling test: its side effect
+is outside the pure PyTorch arithmetic graph.
+
+The chain matches **128 / 128 BF16 values**, write-after-read **512 / 512**,
+and the dual-VPU case **1,536 / 1,536**, including both independent outputs
+and the dependent result. Two fresh builds reproduce every capture, bound
+module, issuer, ELF, and Spike log byte for byte
+([reproducibility](evidence/nicolas_vpu_ordering_compiled_266c593/reproducibility.json)).
+The [chain module](evidence/nicolas_vpu_ordering_compiled_266c593/chain/bound.mlir)
+and [dual module](evidence/nicolas_vpu_ordering_compiled_266c593/dual/bound.mlir)
+show the command order. Reproduce with:
+
+```sh
+python -m tools.qualify_nicolas_vpu_ordering \
+  --model2mlir-root /path/to/model2MLIR \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /tmp/nicolas-vpu-ordering
+```
+
+Together with the base and variant receipts, the coverage tests map every
+one of Nicolas's 29 source log checks to a compiler-issued Spike comparison.
+This is a source-specific schedule qualification. General graph scheduling,
+the monolithic 29-case compiler executable, and RTL/FPGA validation are
+separate work.
 
 ### Compiler-issued BF16 VPU softmax
 

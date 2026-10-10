@@ -1,0 +1,29 @@
+{
+  "bound_mlir_sha256": "011a1e567a14c0280e91dbdcc3e31c56270354479aa11eab617fc356b44be1fe",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "6a6b9261669b26863b93bc1331ed2ad3a04e32defaf28f66a319af165f3c4eb8",
+  "manifest_sha256": "980978562ac35efa1d8726ac3bea9575ae7d36cb570f12439572e2eda3eddeaf",
+  "policy": {
+    "ordering": "two independent VPUs then dependent cross-VPU read without fence",
+    "rounding": "Nicolas vpu_ref.h BF16 at each VPU operation",
+    "scratchpad_rows": [
+      0,
+      4096,
+      8192,
+      12288
+    ],
+    "source_case": [
+      "dual X,Y",
+      "dual Z=X*B"
+    ],
+    "vpu_order": [
+      "adds",
+      "exp",
+      "mul"
+    ]
+  },
+  "policy_sha256": "f4a896f367a305eed03b16296a98dcb6508f05da5f3111b748b43251878047af",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.nicolas_vpu_ordering_binding.v1",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569"
+}

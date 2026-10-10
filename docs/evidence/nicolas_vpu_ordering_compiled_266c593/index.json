@@ -1,0 +1,143 @@
+{
+  "compiler_revision": "162fc117f1bc87cf198ae8ca4095e068990adae7",
+  "compiler_source_closure_sha256": "e6a04f6b421e9ee662410a4bddfbc75f9bef297dc2174d5159b066658acc89ce",
+  "extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "reference_sha256": "459726e52e7d19c51bada75b2e3ded16f64371799d5bc443750eb22e8616b17b",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rows": [
+    {
+      "binding_sha256": "0ff6f69bc4364a68a556aad57d8c3c05560f903a5818d816f15a7ce6536c113f",
+      "bound_mlir_sha256": "9991596a7d0cf346471d9b902475ceff79218474404de1d40e3477d8ab77afd2",
+      "compared_bf16": [
+        128
+      ],
+      "driver_sha256": "a1eab6aa62a865fa1a128918e4a4a63063e509300ccc1d3623e62cd2cfcae430",
+      "elf_sha256": "a246397bcc3496fb88619db49db18b9485da084241851394d07cf9bb4403ce85",
+      "frontend_mlir_sha256": "2342f2710aae86db0ec67acb4c22a6f42f0843ca0722cd306c44a9e476b73143",
+      "issuer_sha256": "5a0ceaac2dec2ad91bd889694e406e205e12fce6c92922103f6e1f60a70b60bf",
+      "name": "chain",
+      "ordered_functs": [
+        7,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        33,
+        33,
+        33,
+        3
+      ],
+      "source_checks": [
+        "chain"
+      ],
+      "spike_log_sha256": "6f217e79812c6ae67c09cabc00fbb177da93fe6470f670fae2ccd0b4eb3b9f6d",
+      "status": "source_vpu_reference_matched_on_pinned_spike"
+    },
+    {
+      "binding_sha256": "51f168a8a056a1eb4dac5842b839ea9cd6f0a1ba515823f8ad4e821f5d3aaa67",
+      "bound_mlir_sha256": "9a6aed3d2b20c1db45cede9fb835c25ca34302307000b5ceaa32c8b00210ceaf",
+      "compared_bf16": [
+        512
+      ],
+      "driver_sha256": "d59b56498a3d36dd10e0f805b561303fa6e7d0ba4892ae478413770f4c0c47c4",
+      "elf_sha256": "9bd8c0d1ca1df3a5b38c80ec9205c123e5485fa32ed7f1dae91605d508a64f38",
+      "frontend_mlir_sha256": "b0023616f7cdd46793c4879e107984d20c27288cf4f79f1ea7781cac102a1a1d",
+      "issuer_sha256": "1aae1573256ce7b630a013ffcbd2b08a0bac6a372dd6ec1b7720d99c76f047c9",
+      "name": "war",
+      "ordered_functs": [
+        7,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        33,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3
+      ],
+      "source_checks": [
+        "war mvin"
+      ],
+      "spike_log_sha256": "c19b4085f58da2c244e3949952aa43973fdf646a0c0039d1a91e54a85e38596f",
+      "status": "source_vpu_reference_matched_on_pinned_spike"
+    },
+    {
+      "binding_sha256": "a0729abad032a778dae48a472d5b35a94e4da20ddaeafd4c5e435c4a7d70b7c6",
+      "bound_mlir_sha256": "011a1e567a14c0280e91dbdcc3e31c56270354479aa11eab617fc356b44be1fe",
+      "compared_bf16": [
+        1024,
+        512
+      ],
+      "driver_sha256": "0f2ab0204915f3c764ff180704e2166be48415a100eac84cff602d96214fdc15",
+      "elf_sha256": "9544e207ee55f1d5f53fd38f2473e5e85443a106451e1d088ac76efa1156b405",
+      "frontend_mlir_sha256": "6a6b9261669b26863b93bc1331ed2ad3a04e32defaf28f66a319af165f3c4eb8",
+      "issuer_sha256": "a743783ec98a43c24609e00656d11e07731726c677c6efac10f26f4161f4f48e",
+      "name": "dual",
+      "ordered_functs": [
+        7,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        33,
+        33,
+        33,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "source_checks": [
+        "dual X,Y",
+        "dual Z=X*B"
+      ],
+      "spike_log_sha256": "4ca6af9a4bde7e78b5be47c4ef1883f97e90c44cf55036eef90a4cc890ac258a",
+      "status": "source_vpu_reference_matched_on_pinned_spike"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_vpu_ordering_compiled_spike.v1",
+  "source_qualification_sha256": "6a9f8b2407e2f78066be6855b9950f22981802af5dcd7d042b34a9c5426e71d5",
+  "source_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "compiler_vpu_ordering_source_checks_matched_reference"
+}

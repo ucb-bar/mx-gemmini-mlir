@@ -1,0 +1,31 @@
+{
+  "compiler_source_closure_sha256": "e6a04f6b421e9ee662410a4bddfbc75f9bef297dc2174d5159b066658acc89ce",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "index_sha256": "2b08c32956748547f3789216ffd87e19116c9757657ac2eb17b85a600907020f",
+  "matching_artifacts": {
+    "chain/binding.json": "0ff6f69bc4364a68a556aad57d8c3c05560f903a5818d816f15a7ce6536c113f",
+    "chain/bound.mlir": "9991596a7d0cf346471d9b902475ceff79218474404de1d40e3477d8ab77afd2",
+    "chain/frontend.mlir": "2342f2710aae86db0ec67acb4c22a6f42f0843ca0722cd306c44a9e476b73143",
+    "chain/mx_driver.c": "a1eab6aa62a865fa1a128918e4a4a63063e509300ccc1d3623e62cd2cfcae430",
+    "chain/mx_issue.c": "5a0ceaac2dec2ad91bd889694e406e205e12fce6c92922103f6e1f60a70b60bf",
+    "chain/ordering.elf": "a246397bcc3496fb88619db49db18b9485da084241851394d07cf9bb4403ce85",
+    "chain/spike.log": "6f217e79812c6ae67c09cabc00fbb177da93fe6470f670fae2ccd0b4eb3b9f6d",
+    "dual/binding.json": "a0729abad032a778dae48a472d5b35a94e4da20ddaeafd4c5e435c4a7d70b7c6",
+    "dual/bound.mlir": "011a1e567a14c0280e91dbdcc3e31c56270354479aa11eab617fc356b44be1fe",
+    "dual/frontend.mlir": "6a6b9261669b26863b93bc1331ed2ad3a04e32defaf28f66a319af165f3c4eb8",
+    "dual/mx_driver.c": "0f2ab0204915f3c764ff180704e2166be48415a100eac84cff602d96214fdc15",
+    "dual/mx_issue.c": "a743783ec98a43c24609e00656d11e07731726c677c6efac10f26f4161f4f48e",
+    "dual/ordering.elf": "9544e207ee55f1d5f53fd38f2473e5e85443a106451e1d088ac76efa1156b405",
+    "dual/spike.log": "4ca6af9a4bde7e78b5be47c4ef1883f97e90c44cf55036eef90a4cc890ac258a",
+    "war/binding.json": "51f168a8a056a1eb4dac5842b839ea9cd6f0a1ba515823f8ad4e821f5d3aaa67",
+    "war/bound.mlir": "9a6aed3d2b20c1db45cede9fb835c25ca34302307000b5ceaa32c8b00210ceaf",
+    "war/frontend.mlir": "b0023616f7cdd46793c4879e107984d20c27288cf4f79f1ea7781cac102a1a1d",
+    "war/mx_driver.c": "d59b56498a3d36dd10e0f805b561303fa6e7d0ba4892ae478413770f4c0c47c4",
+    "war/mx_issue.c": "1aae1573256ce7b630a013ffcbd2b08a0bac6a372dd6ec1b7720d99c76f047c9",
+    "war/ordering.elf": "9bd8c0d1ca1df3a5b38c80ec9205c123e5485fa32ed7f1dae91605d508a64f38",
+    "war/spike.log": "c19b4085f58da2c244e3949952aa43973fdf646a0c0039d1a91e54a85e38596f"
+  },
+  "run_count": 2,
+  "schema": "mx_gemmini.nicolas_vpu_ordering_reproducibility.v1",
+  "status": "two_independent_runs_identical"
+}

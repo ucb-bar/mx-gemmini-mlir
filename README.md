@@ -77,7 +77,12 @@ VPU operations, and readout, and matches all 512 BF16 source-reference outputs
 on Spike.
 Nicolas's [full VPU source oracle](docs/compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations)
 also passes all 29 checks on pinned Spike, including fused EXPSUB/EXPSUM;
-compiler-issued coverage remains narrower.
+the [base](docs/compiled_mx_pipeline.md#compiler-issued-base-vpu-operations),
+[variant](docs/compiled_mx_pipeline.md#compiler-issued-vpu-broadcast-and-same-bank-variants),
+and [ordering](docs/compiled_mx_pipeline.md#compiler-issued-vpu-dependencies-and-memory-ordering)
+receipts now map each source check to an independently compiled RoCC program
+with full BF16 comparison. General scheduling and RTL/FPGA validation remain
+separate.
 The [fused VPU compiler path](docs/compiled_mx_pipeline.md#compiler-issued-fused-expsub-and-expsum)
 now lowers model2MLIR `e9ded36` captures of EXPSUB and EXPSUM to executable
 commands; Nicolas's Spike matches all 512 outputs for each and all 128 EXPSUM

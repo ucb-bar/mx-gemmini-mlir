@@ -1,0 +1,26 @@
+{
+  "bound_mlir_sha256": "9a6aed3d2b20c1db45cede9fb835c25ca34302307000b5ceaa32c8b00210ceaf",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "b0023616f7cdd46793c4879e107984d20c27288cf4f79f1ea7781cac102a1a1d",
+  "manifest_sha256": "4190ef75d0f9332c6d45c48c063148151301188a42a01b71fc0bdfd8327b1a6f",
+  "policy": {
+    "ordering": "VPU then overwrite source by DMA without fence",
+    "rounding": "Nicolas vpu_ref.h BF16 at each VPU operation",
+    "scratchpad_rows": [
+      0,
+      4096,
+      8192,
+      12288
+    ],
+    "source_case": [
+      "war mvin"
+    ],
+    "vpu_order": [
+      "add"
+    ]
+  },
+  "policy_sha256": "c9a6106dd4525e6c2fd997ab8df11cb1667313560dc818a26fbc9e1bfaaba795",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.nicolas_vpu_ordering_binding.v1",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569"
+}

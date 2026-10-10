@@ -1,0 +1,28 @@
+{
+  "bound_mlir_sha256": "9991596a7d0cf346471d9b902475ceff79218474404de1d40e3477d8ab77afd2",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "2342f2710aae86db0ec67acb4c22a6f42f0843ca0722cd306c44a9e476b73143",
+  "manifest_sha256": "10c4543d8725bf41e6ea8fd3bf3b927457df8ad363c2d9ebbeea6709f98ef314",
+  "policy": {
+    "ordering": "dependent VPU RAW without fence",
+    "rounding": "Nicolas vpu_ref.h BF16 at each VPU operation",
+    "scratchpad_rows": [
+      0,
+      4096,
+      8192,
+      12288
+    ],
+    "source_case": [
+      "chain"
+    ],
+    "vpu_order": [
+      "add",
+      "muls",
+      "rmax"
+    ]
+  },
+  "policy_sha256": "9b92855e636b80bb86016c60d3ccdea6627f3e686238a6b45c172f3e258ec6c2",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.nicolas_vpu_ordering_binding.v1",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569"
+}
