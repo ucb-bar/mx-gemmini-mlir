@@ -898,6 +898,13 @@ matching `examples/resident-pair-abi.json` or
 `examples/resident-vpu-abi.json`. The source bundle or input files are needed
 to verify the typed payload; the emitted object contains no operand or golden
 data. Existing Spike qualifiers link that object and compare full outputs.
+`tools.compile_mx --issuer-object /new/mx-fp4-object/mx_issue.o` links a
+source-bound object into the standalone source-golden harness after checking
+its MLIR, bundle, profile, generated C, and object hashes. The same route
+works for FP4, FP6, and FP8 on `MxGemminiRocketConfig`; their full-output
+Spike logs match the established source builds. The
+[fresh compiler and source-parity archive](evidence/mx_compile_object_dispatch_d3156e4/index.json)
+records the object hashes, physical programs, and numerical checks.
 
 For example, replay the archived 96×128×128 capture without recapturing
 PyTorch:

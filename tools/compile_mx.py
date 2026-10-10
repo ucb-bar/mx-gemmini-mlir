@@ -65,6 +65,8 @@ def main() -> None:
                         default="spike_serial")
     parser.add_argument("--experimental-spike-extension-root", type=Path,
                         help="isolated modified libgemmini source; receipts are experimental")
+    parser.add_argument("--issuer-object", type=Path,
+                        help="link a separately compiled, source-bound MX issuer object")
     args = parser.parse_args()
     if args.physical_mode == "rtl_alternating" and args.run_spike and not args.experimental_spike_extension_root:
         parser.error("rtl_alternating Spike execution requires an explicit experimental extension")
@@ -88,6 +90,29 @@ def main() -> None:
     if not riscv_cc.is_file():
         parser.error("selected RISC-V toolchain lacks riscv64-unknown-elf-gcc")
     receipt = write_standalone_sources(args.out_dir, program, resources)
+    issuer_manifest = None
+    if args.issuer_object is not None:
+        issuer_path = args.issuer_object.resolve()
+        issuer_manifest_path = issuer_path.parent / "object_manifest.json"
+        issuer_manifest = json.loads(issuer_manifest_path.read_text())
+        if (issuer_manifest.get("schema") != "mx_gemmini.linkable_object.v1" or
+                issuer_manifest.get("transport") != "rocket_rocc" or
+                issuer_manifest.get("mode") != program.mode or
+                issuer_manifest.get("profile_sha256") != program.profile_sha256 or
+                issuer_manifest.get("payload_manifest_sha256") !=
+                program.payload_manifest_sha256 or
+                issuer_manifest.get("bound_mlir_sha256") != _sha(args.mlir) or
+                issuer_manifest.get("source_bundle_manifest_sha256") !=
+                _sha(args.bundle / "manifest.json") or
+                issuer_manifest.get("issuer_c_sha256") !=
+                _sha(args.out_dir / "mx_issue.c") or
+                issuer_manifest.get("object_sha256") != _sha(issuer_path) or
+                issuer_manifest.get("allocated_data_section_bytes") != 0 or
+                issuer_manifest.get("embedded_operand_bytes") != 0 or
+                issuer_manifest.get("embedded_golden_bytes") != 0 or
+                issuer_manifest.get("defined_symbol") != "mx_issue" or
+                issuer_manifest.get("undefined_symbols") != []):
+            raise ValueError("linkable MX object differs from checked source contraction")
     compiler_root = Path(__file__).resolve().parents[1]
     flags = ["-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DMX_ROCKET", "-DBAREMETAL=1",
              "-mcmodel=medany", "-std=gnu99", "-O2", "-ffast-math", "-fno-common",
@@ -97,15 +122,18 @@ def main() -> None:
              "-I", str(software / "riscv-tests"),
              "-I", str(software / "riscv-tests/env"),
              "-I", str(software), "-I", str(bench)]
-    sources = [args.out_dir / name for name in ("mx_issue.c", "mx_driver.c", "mx_data.S")]
-    sources += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
-    objects = []
+    sources = [args.out_dir / name for name in (("mx_driver.c", "mx_data.S")
+               if args.issuer_object else ("mx_issue.c", "mx_driver.c", "mx_data.S"))]
+    benchmark_sources = sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
+    sources += benchmark_sources
+    objects = [args.issuer_object.resolve()] if args.issuer_object else []
     # Large straight-line issuers make GCC's O2 passes disproportionately slow.
     # Their inline RoCC instructions carry the physical ordering already.
-    issuer_opt_level = "-O0" if len(program.steps) > 10000 else "-O2"
+    issuer_opt_level = ("external_object" if args.issuer_object else
+                        "-O0" if len(program.steps) > 10000 else "-O2")
     for index, source in enumerate(sources):
         obj = args.out_dir / f"mx_{index}.o"
-        source_flags = ([*flags, issuer_opt_level] if index == 0 else flags)
+        source_flags = ([*flags, issuer_opt_level] if source.name == "mx_issue.c" else flags)
         _run([str(riscv_cc), *source_flags, "-c", str(source), "-o", str(obj)],
              cwd=args.out_dir, log=args.out_dir / f"compile_{index}.log")
         objects.append(obj)
@@ -124,7 +152,7 @@ def main() -> None:
         "rtl_revision": _git_revision(args.rtl_root),
         "gemmini_software_revision": _git_revision(software),
         "gemmini_software_source_closure_sha256": _source_closure(
-            software, sorted(software.glob("include/*.h")) + sources[3:]),
+            software, sorted(software.glob("include/*.h")) + benchmark_sources),
         "riscv_gcc_sha256": _sha(riscv_cc),
         "issuer_opt_level": issuer_opt_level,
         "elf_sha256": _sha(elf),
@@ -132,6 +160,9 @@ def main() -> None:
         "build_log_sha256": {path.name: _sha(path) for path in
                              sorted(args.out_dir.glob("compile_*.log")) + [args.out_dir / "link.log"]},
     })
+    if issuer_manifest is not None:
+        receipt["issuer_origin"] = "linkable_source_object"
+        receipt["issuer_object_manifest_sha256"] = _sha(issuer_manifest_path)
     if args.run_spike:
         pinned_extension = args.rtl_root / "software/libgemmini"
         _require_gitlink(args.rtl_root, "software/libgemmini")

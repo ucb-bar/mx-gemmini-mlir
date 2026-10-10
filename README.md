@@ -98,6 +98,8 @@ object and Spike log.
 `python -m tools.compile_object` is the shared entry point for these object
 paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
 typed graph and reuses the existing physical lowerers.
+The [source object replay](docs/evidence/mx_compile_object_dispatch_d3156e4/index.json)
+links the generated FP4, FP6, and FP8 objects into full-output Spike checks.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
 rebuilds the native verifier and reproduces the connected program and Spike log.
 The [row-major BF16 readout](docs/compiled_mx_pipeline.md#direct-row-major-bf16-readout-across-output-tiles)
