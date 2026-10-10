@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 
 from mx_gemmini_support.command_ir import Command, Fence, emit_c
-from mx_gemmini_support.resident_pair_graph import INPUTS, lower_connected_pair
+from mx_gemmini_support.resident_pair_graph import FP6_INPUTS, INPUTS, lower_connected_pair
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _source_closure
 
@@ -59,10 +59,11 @@ def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str], *,
     m, n, k = pair.plan.m, pair.plan.n, pair.plan.k
     first_k = getattr(pair.plan, "first_k", k)
     first_n = k if hasattr(pair.plan, "first_k") else n
-    pack = 2 if precision == "fp4_e2m1" else 1
-    a_layout = "operand_a_tiled_packed_fp4" if pack == 2 else "row_major_fp8"
-    b_layout = "row_major_n_packed_fp4" if pack == 2 else "row_major_fp8"
-    tile_layout = "tile_major_packed_fp4" if pack == 2 else "tile_major_fp8"
+    pack = 1 if precision == "fp8_e4m3" else 2
+    code_name = "fp6_indices" if precision == "fp6_e3m2" else "fp4"
+    a_layout = f"operand_a_tiled_packed_{code_name}" if pack == 2 else "row_major_fp8"
+    b_layout = f"row_major_n_packed_{code_name}" if pack == 2 else "row_major_fp8"
+    tile_layout = f"tile_major_packed_{code_name}" if pack == 2 else "tile_major_fp8"
     slots = {
         "a1_activation": (m * first_k // pack, "read", a_layout),
         "a1_scales": (m * first_k // 32, "read", "k_group_major_a_scales"),
@@ -75,7 +76,11 @@ def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str], *,
         "c2_scales": (m * n // 32, "write", "row_major_e8m0_scales"),
         "c2_tiled": (m * n // pack, "write", tile_layout),
     }
-    symbols = {slot: buffers[slot] for slot in INPUTS} | {
+    input_slots = FP6_INPUTS if precision == "fp6_e3m2" else INPUTS
+    if precision == "fp6_e3m2":
+        slots.update({name: (m // 2 * 12, "read", "group_major_fp6_lut_16x6")
+                      for name in FP6_INPUTS[len(INPUTS):]})
+    symbols = {slot: buffers[slot] for slot in input_slots} | {
         slot: outputs[slot] for slot in OUTPUTS}
     uses: dict[str, list] = {}
     for command in pair.commands:
@@ -144,7 +149,7 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--mx-opt", type=Path,
                         help="also verify the typed module with native mx-gemmini-opt")
-    parser.add_argument("--precision", choices=("fp8_e4m3", "fp4_e2m1"),
+    parser.add_argument("--precision", choices=("fp8_e4m3", "fp4_e2m1", "fp6_e3m2"),
                         default="fp8_e4m3")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated issuer, object, and physical program")
@@ -158,21 +163,22 @@ def main() -> None:
     if profile.get("transport") != "rocket_rocc":
         raise ValueError("resident pair object requires Rocket RoCC transport")
     spec = json.loads(args.abi_json.read_text())
+    input_slots = FP6_INPUTS if args.precision == "fp6_e3m2" else INPUTS
     if (not isinstance(spec, dict) or
             set(spec) != {"schema", "inputs", "outputs"} or
             spec["schema"] != "mx_gemmini.resident_pair_buffer_map.v1" or
             not isinstance(spec["inputs"], dict) or
-            set(spec["inputs"]) != set(INPUTS) or
+            set(spec["inputs"]) != set(input_slots) or
             not isinstance(spec["outputs"], dict) or
             set(spec["outputs"]) != set(OUTPUTS)):
         raise ValueError("resident pair ABI JSON has an unsupported schema or slots")
     buffers, outputs = spec["inputs"], spec["outputs"]
     if (any(not isinstance(name, str) or not _SYMBOL.fullmatch(name)
             for name in (*buffers.values(), *outputs.values())) or
-            len(set((*buffers.values(), *outputs.values()))) != len(INPUTS) + len(OUTPUTS)):
+            len(set((*buffers.values(), *outputs.values()))) != len(input_slots) + len(OUTPUTS)):
         raise ValueError("resident pair ABI needs distinct C identifier symbols")
     resources = {buffers[slot]: _load_resource(args.resources_dir, buffers[slot])
-                 for slot in INPUTS}
+                 for slot in input_slots}
     mlir_bytes = _load_mlir(args.mlir)
     mlir_text = mlir_bytes.decode()
     pair = lower_connected_pair(
@@ -244,7 +250,7 @@ def main() -> None:
         "bound_mlir_sha256": _sha(mlir_bytes),
         "mlir_container_sha256": _file_sha(args.mlir),
         "abi_json_sha256": _file_sha(args.abi_json),
-        "input_sha256": {slot: _sha(resources[buffers[slot]]) for slot in INPUTS},
+        "input_sha256": {slot: _sha(resources[buffers[slot]]) for slot in input_slots},
         "physical_program_sha256": _file_sha(physical),
         "issuer_c_sha256": _file_sha(issuer),
         "issuer_h_sha256": _file_sha(header),

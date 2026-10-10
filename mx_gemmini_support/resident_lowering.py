@@ -1,4 +1,4 @@
-"""Profile-checked physical lowering for DIM16 FP8 and FP4 resident contractions.
+"""Profile-checked physical lowering for DIM16 FP8, FP4, and FP6 resident contractions.
 
 The typed operation names the live scratchpad tile and source buffers. The
 64-cubed VPU/requant and 128-cubed direct requant chains use the same physical
@@ -23,31 +23,43 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     shape = (attrs["m"], attrs["n"], attrs["k"])
     precision = attrs["activation_format"]
     fp4 = precision == "fp4_e2m1"
+    fp6 = precision == "fp6_e3m2"
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
-    fp4_shape = shape in ((64, 64, 64), (128, 128, 128))
+    packed_shape = shape in ((64, 64, 64), (128, 128, 128))
     vpu_shape = (shape[0] == 64 and shape[1] in (32, 64) and shape[2] == 64)
-    if not ((fp4 and fp4_shape) or (not fp4 and (vpu_shape or plain_shape))):
+    if not (((fp4 or fp6) and packed_shape) or
+            (not fp4 and not fp6 and (vpu_shape or plain_shape))):
         raise ValueError("resident MX contraction needs a supported complete tile")
-    if not fp4 and vpu_shape and (not profile["resources"].get("spad_requant") or
+    if not fp4 and not fp6 and vpu_shape and (not profile["resources"].get("spad_requant") or
                       not profile["resources"].get("vpu")):
         raise ValueError("64-row resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
-    if (plain_shape or fp4) and (
+    if (plain_shape or fp4 or fp6) and (
             profile["name"] != "MxGemminiRocketConfig" or
             profile["resources"].get("spad_requant") or
             profile["resources"].get("vpu")):
         raise ValueError("plain resident MX contraction needs Nicolas's plain MX profile")
     if any(attrs[key] != precision for key in
            ("activation_format", "weight_format", "output_format")):
-        raise ValueError("resident MX contraction requires matching FP8 or FP4 inputs and output")
+        raise ValueError("resident MX contraction requires matching FP8, FP4, or FP6 inputs and output")
     from .target_profile import require_compute
-    require_compute(profile, precision, precision, pe_mode=0 if fp4 else 8,
-                    activation_projection="direct", weight_projection="direct")
+    require_compute(profile, precision, precision,
+                    pe_mode=4 if fp6 else 0 if fp4 else 8,
+                    activation_projection="lut" if fp6 else "direct",
+                    weight_projection="lut" if fp6 else "direct")
+    if fp6:
+        if (not profile["resources"].get("lut") or
+                attrs.get("lut_groups") != shape[0] // 2 or
+                any(not isinstance(attrs.get(key), str) or
+                    not _BUFFER.fullmatch(attrs[key]) for key in
+                    ("weight_lut_buffer", "activation_lut_buffer",
+                     "output_lut_buffer"))):
+            raise ValueError("resident FP6 contraction needs named per-group LUT banks")
     for key in ("weight_buffer", "weight_scales_buffer", "output_scales_buffer"):
         if not isinstance(attrs[key], str) or not _BUFFER.fullmatch(attrs[key]):
             raise ValueError(f"resident MX {key} must name a runtime buffer")
     m, n, k = shape
-    packed = 2 if fp4 else 1
+    packed = 2 if fp4 or fp6 else 1
     activation_rows, weight_rows, output_rows = (m * k // (16 * packed),
                                                   k * n // (16 * packed),
                                                   m * n // (16 * packed))
@@ -74,7 +86,43 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
     m, n, k = attrs["m"], attrs["n"], attrs["k"]
     a, b, c = (attrs[key] for key in ("activation_row", "weight_row", "output_row"))
     fp4 = attrs["activation_format"] == "fp4_e2m1"
-    i, j, kk = m // (32 if fp4 else 16), n // (32 if fp4 else 16), k // 16
+    fp6 = attrs["activation_format"] == "fp6_e3m2"
+    packed = fp4 or fp6
+    i, j, kk = m // (32 if packed else 16), n // (32 if packed else 16), k // 16
+    if fp6:
+        groups = attrs["lut_groups"]
+        def lut(name: str, sel: int) -> Command:
+            return cmd(29, Operand(buffer=attrs[name]),
+                       (6 << 34) | (sel << 32) | groups)
+
+        commands: list[Command | Fence] = [
+            cmd(0, 2, 8),
+            cmd(26, Operand(buffer=attrs["output_scales_buffer"],
+                            address_mask=(1 << 33) - 1,
+                            or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
+            lut("weight_lut_buffer", 0),
+            lut("activation_lut_buffer", 1),
+            lut("output_lut_buffer", 2),
+            cmd(27, Operand(buffer=attrs["weight_scales_buffer"]),
+                (1 << 32) | (k * n // 32)),
+            Fence(),
+            cmd(0, (16 << 16) | (1 << 8) | 1, n // 2),
+        ]
+        for tk in range(kk):
+            for tj in range(j):
+                commands.extend((
+                    cmd(2, Operand(buffer=attrs["weight_buffer"],
+                                   byte_offset=tk * 16 * (n // 2) + tj * 16),
+                        (16 << 48) | (16 << 32) |
+                        (b + (tk * j + tj) * 16)),
+                    Fence()))
+        commands.extend([
+            cmd(9, 0, (kk << 32) | (j << 16) | i),
+            cmd(24, a, b + k * n // 32),
+            cmd(8, 0, (c << 32) | 0x200 | 0x38 | (1 << 10)),
+            Fence(),
+        ])
+        return tuple(commands)
     config_ex = ((1 << 16) | (2 << 14) | (2 << 12) | (2 << 10) | (1 << 2)
                  if fp4 else (1 << 16) | (1 << 2))
     commands: list[Command | Fence] = [

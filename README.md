@@ -101,6 +101,10 @@ packed 64³ and 128³ source tensors, and lower each pair into a data-free RoCC
 object. Nicolas's Spike matches all 4,096 and 16,384 FP4 codes, plus 128 and
 512 scales, at each site. The shared object compiler dispatches these connected
 graphs by their verified FP4 precision.
+The [plain FP6 resident chains](docs/nicolas-fp6-resident-chain.md) use the
+same path with eleven source-bound runtime inputs, including five complete LUT
+banks. Nicolas's stock Spike matches C1 and C2 codes and scales at 64³ and
+128³; MM2 reuses C1's packed codes, scales, and output LUT.
 `python -m tools.compile_object` is the shared entry point for these object
 paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
 typed graph and reuses the existing physical lowerers.

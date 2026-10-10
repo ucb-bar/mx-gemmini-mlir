@@ -30,6 +30,16 @@ def Mx_UploadLutOp : Mx_Op<"upload_lut"> {
                    StrAttr:$manifest_sha256);
 }
 
+def Mx_RuntimeLutOp : Mx_Op<"runtime_lut"> {
+  let summary = "Bind a runtime LUT bank to one connected MX contraction site";
+  let arguments = (ins AnyTensor:$data, StrAttr:$site_id,
+                   StrAttr:$lut_target, StrAttr:$runtime_buffer,
+                   I32Attr:$groups, I32Attr:$entry_bits,
+                   StrAttr:$profile_sha256,
+                   StrAttr:$contract_sha256, StrAttr:$policy_sha256,
+                   StrAttr:$manifest_sha256);
+}
+
 def Mx_EncodeOp : Mx_Op<"encode"> {
   let summary = "Prepare packed operand codes and E8M0 scales";
   let arguments = (ins AnyTensor:$source, StrAttr:$site_id,
@@ -155,6 +165,10 @@ def Mx_ResidentContractOp : Mx_Op<"resident_contract"> {
                    StrAttr:$output_format,
                    StrAttr:$weight_buffer, StrAttr:$weight_scales_buffer,
                    StrAttr:$output_scales_buffer,
+                   OptionalAttr<StrAttr>:$weight_lut_buffer,
+                   OptionalAttr<StrAttr>:$activation_lut_buffer,
+                   OptionalAttr<StrAttr>:$output_lut_buffer,
+                   OptionalAttr<I32Attr>:$lut_groups,
                    StrAttr:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);

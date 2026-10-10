@@ -1,7 +1,7 @@
 """Compile one verified MX MLIR module to a data-free RV64 RoCC object.
 
 The graph selects an existing physical lowerer. Source-specialized modules
-take a checked payload bundle; connected runtime graphs take six input files
+take a checked payload bundle; connected runtime graphs take their input files
 and an explicit buffer ABI. Unsupported graphs fail before object emission.
 """
 
@@ -82,7 +82,7 @@ def _resident_pair_precision(mlir_text: str) -> str:
     if len(mm2) != 1:
         raise ValueError("connected MX object needs one resident contraction")
     precision = _text_attr(mm2[0], "activation_format")
-    if precision not in ("fp8_e4m3", "fp4_e2m1"):
+    if precision not in ("fp8_e4m3", "fp4_e2m1", "fp6_e3m2"):
         raise ValueError("connected MX object has no resident precision lowerer")
     return precision
 
@@ -94,7 +94,7 @@ def main() -> None:
     parser.add_argument("--bundle", type=Path,
                         help="checked payload bundle for one source contraction")
     parser.add_argument("--resources-dir", type=Path,
-                        help="six checked runtime input files for a connected pair")
+                        help="checked runtime input files for a connected pair")
     parser.add_argument("--abi-json", type=Path,
                         help="runtime buffer map for a connected pair")
     parser.add_argument("--mx-opt", type=Path,
@@ -167,7 +167,7 @@ def main() -> None:
         "verified_graph_counts": {
             name: report[name] for name in
             ("contracts", "resident_contracts", "vpu_commands", "spad_requants",
-             "source_resources", "lut_uploads")},
+             "source_resources", "lut_uploads", "runtime_luts")},
     }
     if args.mx_opt is not None:
         manifest["native_verifier_sha256"] = _sha(args.mx_opt.resolve())

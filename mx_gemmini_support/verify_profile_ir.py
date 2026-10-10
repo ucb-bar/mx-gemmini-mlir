@@ -67,6 +67,9 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     if payload_digest is not None and (len(payload_digest) != 64 or
                                        any(c not in "0123456789abcdef" for c in payload_digest)):
         raise ValueError("MX module payload manifest digest is malformed")
+    runtime_digest = _text_attr(module, "mx.runtime_resources_sha256")
+    if runtime_digest is not None and re.fullmatch(r"[0-9a-f]{64}", runtime_digest) is None:
+        raise ValueError("MX runtime resource digest is malformed")
     payload_json = _text_attr(module, "mx.payload_manifest_json")
     binding_schema = _text_attr(module, "mx.payload_binding_schema")
     if binding_schema is not None and (
@@ -126,8 +129,10 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     not descriptor["layout"]):
                 raise ValueError(f"MX payload resource {resource_name} descriptor is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
+    runtime_luts = 0
     source_resources: dict[str, object] = {}
     lut_uploads: set[str] = set()
+    runtime_lut_sites: set[tuple[str, str]] = set()
     for op in module.walk():
         name = _operation_name(op)
         if not name.startswith("mx_gemmini."):
@@ -171,6 +176,27 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     _text_attr(op, "payload_manifest_sha256") != payload_digest):
                 raise ValueError("MX LUT upload differs from checked source resource")
             lut_uploads.add(resource_name)
+        elif name == "mx_gemmini.runtime_lut":
+            target = _text_attr(op, "lut_target")
+            buffer = _text_attr(op, "runtime_buffer")
+            groups = _int_attr(op, "groups")
+            bits = _int_attr(op, "entry_bits")
+            site = _text_attr(op, "site_id")
+            result_type = op.operands[0].type if len(op.operands) == 1 else None
+            if (binding_schema is not None or payload_digest is not None or
+                    runtime_digest is None or not profile["resources"].get("lut") or
+                    target not in {"activation", "weight", "output"} or
+                    not isinstance(buffer, str) or
+                    re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", buffer) is None or
+                    type(groups) is not int or not 1 <= groups <= 64 or bits != 6 or
+                    (site, target) in runtime_lut_sites or
+                    not isinstance(result_type, TensorType) or
+                    list(result_type.get_shape()) != [groups, 3] or
+                    not isinstance(result_type.element_type, IntegerType) or
+                    result_type.element_type.width.data != 32):
+                raise ValueError("MX runtime LUT binding differs from the selected FP6 profile")
+            runtime_lut_sites.add((site, target))
+            runtime_luts += 1
         elif name == "mx_gemmini.contract":
             local_payload = _text_attr(op, "payload_manifest_sha256")
             if payload_digest is not None:
@@ -307,14 +333,20 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             spad_requants += 1
         elif name == "mx_gemmini.resident_contract":
             from .resident_lowering import validate_resident_contract
-            validate_resident_contract(profile, {
+            resident_attrs = {
                 key: _int_attr(op, key) for key in
                 ("activation_row", "weight_row", "output_row", "m", "n", "k")
             } | {
                 key: _text_attr(op, key) for key in
                 ("activation_format", "weight_format", "output_format",
                  "weight_buffer", "weight_scales_buffer", "output_scales_buffer")
-            })
+            }
+            if resident_attrs["activation_format"] == "fp6_e3m2":
+                resident_attrs["lut_groups"] = _int_attr(op, "lut_groups")
+                resident_attrs.update({key: _text_attr(op, key) for key in
+                                       ("weight_lut_buffer", "activation_lut_buffer",
+                                        "output_lut_buffer")})
+            validate_resident_contract(profile, resident_attrs)
             resident_contracts += 1
         elif name not in {"mx_gemmini.readout_bf16", "mx_gemmini.readout_to_smem", "mx_gemmini.wait"}:
             raise ValueError(f"unknown MX operation {name}")
@@ -330,7 +362,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             "contracts": contracts, "encodes": encodes, "requantizes": requants,
             "vpu_commands": vpu_commands, "spad_requants": spad_requants,
             "resident_contracts": resident_contracts,
-            "source_resources": len(source_resources), "lut_uploads": len(lut_uploads)}
+            "source_resources": len(source_resources), "lut_uploads": len(lut_uploads),
+            "runtime_luts": runtime_luts}
 
 
 def main() -> None:

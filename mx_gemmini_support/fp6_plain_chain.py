@@ -1,0 +1,189 @@
+"""Bind Nicolas's packed FP6 chains and their runtime LUT banks to typed MX IR."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+
+from .resident_pair_graph import FP6_INPUTS, input_digest, lower_connected_pair
+from .resident_pair_plan import plan_fp6_resident_pair
+from .source_fp6 import _array, _bytes, _lut_lines
+from .layout import pack_fp6_lut
+from .target_profile import profile_sha256
+from .verify_profile_ir import _operation_name, _text_attr, verify_ir
+
+
+def source_resources(source: str, header: str, *, dimension: int = 64) -> dict[str, bytes]:
+    if dimension not in (64, 128):
+        raise ValueError("Nicolas FP6 resident source has only 64 and 128 fixtures")
+    groups, half = dimension // 32, dimension // 2
+    anchors = (f'"include/matmul_fp6_{dimension}x{dimension}_chain.h"',
+               "#define CHAIN_FLAGS (0x38 | LOOP_WS_REQUANT_TILED)",
+               "SPAD_DEST1 = 2048", "SPAD_DEST2 = 4096",
+               "gemmini_mxquant_config_mvout_resident",
+               "gemmini_mx_load_lut_dt", "fp6_config_ex()")
+    if (any(anchor not in source for anchor in anchors) or
+            source.count("gemmini_loop_ws_spad(") != 2 or
+            source.count("gemmini_mx_load_lut_dt(") != 6):
+        raise ValueError("Nicolas FP6 resident source schedule differs")
+    for macro, value in (("MATMUL_M", dimension), ("MATMUL_N", dimension),
+                         ("MATMUL_K", dimension), ("MATMUL_GK", groups),
+                         ("MATMUL_GN", groups), ("LUT_GROUPS_A", half),
+                         ("LUT_GROUPS_B", half)):
+        if not re.search(rf"^#define\s+{macro}\s+{value}\s*$", header, re.M):
+            raise ValueError(f"Nicolas FP6 source header {macro} differs")
+
+    def data(name: str, dimensions: str, count: int) -> bytes:
+        return bytes(_array(header, name=name, ctype="uint8_t",
+                            dimensions=dimensions, count=count, maximum=255))
+
+    def lut(name: str) -> bytes:
+        words = _array(header, name=name, ctype="uint32_t",
+                       dimensions=f"[{half}][3]", count=half * 3,
+                       maximum=0xffffffff)
+        payload = _bytes(words, 4)
+        if pack_fp6_lut(_lut_lines(words)) != payload:
+            raise ValueError(f"Nicolas FP6 {name} LUT packing differs")
+        return payload
+
+    packed, scales = dimension * dimension // 2, dimension * groups
+    return {
+        "a1_activation": data("A_in_hw", f"[{half}][{dimension}]", packed),
+        "a1_scales": data("A_scales_row", f"[{groups}][{dimension}]", scales),
+        "b1_weight": data("B_in", f"[{dimension}][{half}]", packed),
+        "b1_scales": data("B_scales_col", f"[{groups}][{dimension}]", scales),
+        "b2_weight": data("B2_in", f"[{dimension}][{half}]", packed),
+        "b2_scales": data("B2_scales_col", f"[{groups}][{dimension}]", scales),
+        "a1_lut": lut("A_lut"), "b1_lut": lut("B_lut"),
+        "b2_lut": lut("B2_lut"), "c1_lut": lut("C1_lut"),
+        "c2_lut": lut("C2_lut"),
+        "c1_codes_ref": data("C1_out", f"[{half}][{dimension}]", packed),
+        "c1_scales_ref": data("C1_scales_out", f"[{dimension}][{groups}]", scales),
+        "c2_codes_ref": data("C2_out", f"[{half}][{dimension}]", packed),
+        "c2_scales_ref": data("C2_scales_out", f"[{dimension}][{groups}]", scales),
+    }
+
+
+def _validate_frontend(frontend_mlir: str | None, manifest: dict | None,
+                       profile: dict, dimension: int) -> None:
+    if not isinstance(frontend_mlir, str) or not isinstance(manifest, dict):
+        raise ValueError("FP6 resident pair needs both frontend IR and manifest")
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func
+    from xdsl.parser import Parser
+
+    if verify_ir(frontend_mlir, profile)["contracts"] != 2:
+        raise ValueError("FP6 resident frontend needs two MX contraction sites")
+    expected = [("functional:matmul", "quantized", "mxfp6", [dimension] * 3),
+                ("functional:matmul_1", "quantized", "mxfp6", [dimension] * 3)]
+    sites = manifest.get("sites", [])
+    if [(site.get("site_id"), site.get("status"), site.get("format"),
+         site.get("shape")) for site in sites] != expected:
+        raise ValueError("FP6 resident frontend site manifest differs")
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, frontend_mlir).parse_module()
+    contracts = [op for op in module.walk()
+                 if _operation_name(op) == "mx_gemmini.contract"]
+    if [_text_attr(op, "site_id") for op in contracts] != [item[0] for item in expected]:
+        raise ValueError("FP6 resident frontend contraction sites differ")
+
+
+def render_fp6_plain_chain(profile: dict, resources: dict[str, bytes], *,
+                           source_sha256: str, header_sha256: str,
+                           frontend_mlir: str | None = None,
+                           frontend_manifest: dict | None = None,
+                           dimension: int = 64) -> str:
+    frontend_attrs = ""
+    if frontend_mlir is not None or frontend_manifest is not None:
+        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension)
+        manifest_sha = hashlib.sha256(json.dumps(
+            frontend_manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        frontend_attrs = (f'mx.frontend_mlir_sha256 = "{hashlib.sha256(frontend_mlir.encode()).hexdigest()}",\n'
+                          f'  mx.frontend_manifest_sha256 = "{manifest_sha}",\n  ')
+    plan = plan_fp6_resident_pair(profile, shape=(dimension,) * 3,
+                                  a_row=0, c1_row=2048, c2_row=4096)
+    digest = profile_sha256(profile)
+    policy = hashlib.sha256(
+        f"nicolas_plain_fp6_{dimension}_resident_chain_v1".encode()).hexdigest()
+    inputs_sha = input_digest(resources, {name: name for name in FP6_INPUTS})
+    half, groups = dimension // 2, dimension // 32
+    binding = (f'contract_sha256 = "{source_sha256}", policy_sha256 = "{policy}", '
+               f'manifest_sha256 = "{header_sha256}", profile_sha256 = "{digest}"')
+    lut_ops = lambda entries: "\n".join(
+        f'    "mx_gemmini.runtime_lut"(%{operand}) {{site_id = "{site}", '
+        f'lut_target = "{target}", runtime_buffer = "{buffer}", '
+        f'groups = {half} : i32, entry_bits = 6 : i32, {binding}}} '
+        f': (tensor<{half}x3xi32>) -> ()'
+        for operand, site, target, buffer in entries)
+    mm1_luts = lut_ops((("b1lut", "functional:matmul", "weight", "b1_lut"),
+                        ("a1lut", "functional:matmul", "activation", "a1_lut"),
+                        ("c1lut", "functional:matmul", "output", "c1_lut")))
+    mm2_luts = lut_ops((("b2lut", "functional:matmul_1", "weight", "b2_lut"),
+                        ("c1lut", "functional:matmul_1", "activation", "c1_lut"),
+                        ("c2lut", "functional:matmul_1", "output", "c2_lut")))
+    text = f'''module attributes {{mx.profile_sha256 = "{digest}",
+  mx.contract_sha256 = "{source_sha256}", mx.policy_sha256 = "{policy}",
+  prov.quantization_manifest_sha256 = "{header_sha256}",
+  {frontend_attrs}mx.runtime_resources_sha256 = "{inputs_sha}"}} {{
+  func.func @nicolas_plain_fp6_chain(
+      %a1: tensor<{half}x{dimension}xi8>, %a1s: tensor<{groups}x{dimension}xi8>,
+      %b1: tensor<{dimension}x{half}xi8>, %b1s: tensor<{groups}x{dimension}xi8>,
+      %b2: tensor<{dimension}x{half}xi8>, %b2s: tensor<{groups}x{dimension}xi8>,
+      %a1lut: tensor<{half}x3xi32>, %b1lut: tensor<{half}x3xi32>,
+      %b2lut: tensor<{half}x3xi32>, %c1lut: tensor<{half}x3xi32>,
+      %c2lut: tensor<{half}x3xi32>)
+      -> (tensor<{half}x{dimension}xi8>, tensor<{dimension}x{groups}xi8>) {{
+{mm1_luts}
+    %acc = "mx_gemmini.contract"(%a1, %a1s, %b1, %b1s) {{
+      site_id = "functional:matmul", activation_format = "fp6_e3m2",
+      weight_format = "fp6_e3m2", activation_projection = "lut",
+      weight_projection = "lut", pe_mode = 4 : i32, {binding}}}
+      : (tensor<{half}x{dimension}xi8>, tensor<{groups}x{dimension}xi8>, tensor<{dimension}x{half}xi8>, tensor<{groups}x{dimension}xi8>)
+      -> tensor<{dimension}x{dimension}xbf16>
+    %c1, %c1s = "mx_gemmini.readout_quantized"(%acc) {{
+      site_id = "functional:matmul", output_format = "fp6_e3m2", {binding}}}
+      : (tensor<{dimension}x{dimension}xbf16>) -> (tensor<{half}x{dimension}xi8>, tensor<{dimension}x{groups}xi8>)
+{mm2_luts}
+    %c2, %c2s = "mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s) {{
+      site_id = "functional:matmul_1", activation_row = {plan.c1_row} : i32,
+      weight_row = {plan.b_row} : i32, output_row = {plan.c2_row} : i32,
+      m = {dimension} : i32, n = {dimension} : i32, k = {dimension} : i32,
+      activation_format = "fp6_e3m2", weight_format = "fp6_e3m2",
+      output_format = "fp6_e3m2", weight_buffer = "b2_weight",
+      weight_scales_buffer = "b2_scales", output_scales_buffer = "c2_scales",
+      weight_lut_buffer = "b2_lut", activation_lut_buffer = "c1_lut",
+      output_lut_buffer = "c2_lut", lut_groups = {half} : i32,
+      {binding}}}
+      : (tensor<{half}x{dimension}xi8>, tensor<{dimension}x{groups}xi8>, tensor<{dimension}x{half}xi8>, tensor<{groups}x{dimension}xi8>)
+      -> (tensor<{half}x{dimension}xi8>, tensor<{dimension}x{groups}xi8>)
+    func.return %c2, %c2s : tensor<{half}x{dimension}xi8>, tensor<{dimension}x{groups}xi8>
+  }}
+}}
+'''
+    lower_fp6_plain_chain(text, profile, resources, frontend_mlir=frontend_mlir,
+                          frontend_manifest=frontend_manifest, dimension=dimension)
+    return text
+
+
+def lower_fp6_plain_chain(mlir_text: str, profile: dict,
+                          resources: dict[str, bytes], *,
+                          frontend_mlir: str | None = None,
+                          frontend_manifest: dict | None = None,
+                          dimension: int = 64):
+    if frontend_mlir is not None or frontend_manifest is not None:
+        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension)
+        manifest_sha = hashlib.sha256(json.dumps(
+            frontend_manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        if (f'mx.frontend_mlir_sha256 = "{hashlib.sha256(frontend_mlir.encode()).hexdigest()}"'
+                not in mlir_text or
+                f'mx.frontend_manifest_sha256 = "{manifest_sha}"' not in mlir_text):
+            raise ValueError("FP6 resident pair frontend binding differs")
+    return lower_connected_pair(
+        mlir_text, profile, resources,
+        buffers={name: name for name in FP6_INPUTS},
+        c1_scales="c1_scales", c1_tiled_observed="c1_tiled_observed",
+        c2_tiled="c2_tiled", precision="fp6_e3m2").commands

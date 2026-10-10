@@ -262,9 +262,10 @@ def lower_first_fp8_resident(plan: ResidentPairPlan, *,
     return tuple(commands)
 
 
-def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
-                           a_row: int, c1_row: int, c2_row: int) -> ResidentPairPlan:
-    """Place Nicolas's packed E2M1 square chain with B1/B2 tail reuse."""
+def _plan_packed_resident_pair(profile: dict, *, shape: tuple[int, int, int],
+                               a_row: int, c1_row: int, c2_row: int,
+                               precision: str) -> ResidentPairPlan:
+    """Place Nicolas's packed direct or LUT-indexed square chain."""
     resources = profile["resources"]
     if (profile.get("transport") != "rocket_rocc" or
             profile["name"] != "MxGemminiRocketConfig" or
@@ -272,11 +273,15 @@ def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
             profile["geometry"]["mesh_rows"] != 16 or
             not resources.get("requantizer") or
             resources.get("vpu") or resources.get("spad_requant")):
-        raise ValueError("FP4 resident pair needs Nicolas's plain DIM16 MX profile")
-    require_compute(profile, "fp4_e2m1", "fp4_e2m1", pe_mode=0,
-                    activation_projection="direct", weight_projection="direct")
+        raise ValueError("packed resident pair needs Nicolas's plain DIM16 MX profile")
+    lut = precision == "fp6_e3m2"
+    if lut and not resources.get("lut"):
+        raise ValueError("FP6 resident pair needs target LUT memory")
+    require_compute(profile, precision, precision, pe_mode=4 if lut else 0,
+                    activation_projection="lut" if lut else "direct",
+                    weight_projection="lut" if lut else "direct")
     if shape not in ((64, 64, 64), (128, 128, 128)):
-        raise ValueError("FP4 resident pair needs Nicolas's 64- or 128-cubed source shape")
+        raise ValueError("packed resident pair needs Nicolas's 64- or 128-cubed source shape")
     size = shape[0]
     rows = resources["scratchpad_bytes"] // 16
     a_rows = b_rows = c_rows = size * size // 32
@@ -291,12 +296,26 @@ def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
                 for right in ranges[i + 1:]) or
             resources["scale_mem_config"]["size_bytes"] // 4 < size * size // 32 or
             resources["accumulator_bytes"] < size * size * 2):
-        raise ValueError("FP4 resident pair scratchpad or scale capacity differs")
+        raise ValueError("packed resident pair scratchpad or scale capacity differs")
     scales = size * size // 32
     return ResidentPairPlan(size, size, size, 16, rows, a_row, b_row, c1_row,
                             c2_row, a_rows, b_rows, c_rows,
                             size // 32, size // 32, size // 16,
                             scales, scales, scales)
+
+
+def plan_fp4_resident_pair(profile: dict, *, shape: tuple[int, int, int],
+                           a_row: int, c1_row: int, c2_row: int) -> ResidentPairPlan:
+    return _plan_packed_resident_pair(
+        profile, shape=shape, a_row=a_row, c1_row=c1_row, c2_row=c2_row,
+        precision="fp4_e2m1")
+
+
+def plan_fp6_resident_pair(profile: dict, *, shape: tuple[int, int, int],
+                           a_row: int, c1_row: int, c2_row: int) -> ResidentPairPlan:
+    return _plan_packed_resident_pair(
+        profile, shape=shape, a_row=a_row, c1_row=c1_row, c2_row=c2_row,
+        precision="fp6_e3m2")
 
 
 def lower_first_fp4_resident(plan: ResidentPairPlan, *,
@@ -329,6 +348,59 @@ def lower_first_fp4_resident(plan: ResidentPairPlan, *,
         _cmd(26, Operand(buffer=output_scales_buffer,
                          address_mask=(1 << 33) - 1,
                          or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
+        _cmd(9, 0, (kk << 32) | (j << 16) | i),
+        _cmd(24, plan.a_row, plan.rows),
+        _cmd(8, 0, (plan.c1_row << 32) | 0x200 | 0x38 | (1 << 10)),
+        Fence(),
+    ])
+    return tuple(commands)
+
+
+def lower_first_fp6_resident(plan: ResidentPairPlan, *,
+                             activation_buffer: str, activation_scales_buffer: str,
+                             weight_buffer: str, weight_scales_buffer: str,
+                             activation_lut_buffer: str, weight_lut_buffer: str,
+                             output_lut_buffer: str,
+                             output_scales_buffer: str) -> tuple[Command | Fence, ...]:
+    """Issue LUT-indexed MM1 and leave packed C1 codes and scales resident."""
+    i, j, kk = plan.m_tiles, plan.n_tiles, plan.k_tiles
+    groups = plan.m // 2
+    fmt = (1 << 16) | (1 << 14) | (1 << 12) | (1 << 10) | (1 << 2)
+    commands: list[Command | Fence] = [
+        _cmd(7, 0, 0),
+        _cmd(0, fmt | (1 << 4), 1 << 48),
+        _cmd(0, fmt | (1 << 5), 1 << 48),
+        _config_st(8),
+        _cmd(29, Operand(buffer=weight_lut_buffer), (6 << 34) | groups),
+        _cmd(29, Operand(buffer=activation_lut_buffer),
+             (6 << 34) | (1 << 32) | groups),
+        _cmd(29, Operand(buffer=output_lut_buffer),
+             (6 << 34) | (2 << 32) | groups),
+        _cmd(27, Operand(buffer=activation_scales_buffer), plan.a_scale_bytes),
+        _cmd(27, Operand(buffer=weight_scales_buffer),
+             (1 << 32) | plan.b_scale_bytes),
+        Fence(),
+        _cmd(26, Operand(buffer=output_scales_buffer,
+                         address_mask=(1 << 33) - 1,
+                         or_bits=(1 << 63) | (kk << 51) | (j << 42) | (i << 33)), 1),
+        _config_ld(plan.k),
+    ]
+    for mi in range(i):
+        for ki in range(kk):
+            commands.extend((
+                _transfer(2, activation_buffer,
+                          mi * plan.dim * plan.k + ki * plan.dim,
+                          plan.a_row + (mi * kk + ki) * plan.dim),
+                Fence()))
+    commands.append(_config_ld(plan.n // 2))
+    for ki in range(kk):
+        for nj in range(j):
+            commands.extend((
+                _transfer(2, weight_buffer,
+                          ki * plan.dim * plan.n // 2 + nj * plan.dim,
+                          plan.b_row + (ki * j + nj) * plan.dim),
+                Fence()))
+    commands.extend([
         _cmd(9, 0, (kk << 32) | (j << 16) | i),
         _cmd(24, plan.a_row, plan.rows),
         _cmd(8, 0, (plan.c1_row << 32) | 0x200 | 0x38 | (1 << 10)),

@@ -105,6 +105,37 @@ LogicalResult UploadLutOp::verify() {
   return success();
 }
 
+LogicalResult RuntimeLutOp::verify() {
+  if (failed(verifyBinding(*this))) return failure();
+  auto module = (*this)->getParentOfType<ModuleOp>();
+  auto runtime = module->getAttrOfType<StringAttr>("mx.runtime_resources_sha256");
+  auto source = module->getAttrOfType<StringAttr>("mx.payload_binding_schema");
+  auto target = (*this)->getAttrOfType<StringAttr>("lut_target");
+  auto buffer = (*this)->getAttrOfType<StringAttr>("runtime_buffer");
+  auto groups = (*this)->getAttrOfType<IntegerAttr>("groups");
+  auto bits = (*this)->getAttrOfType<IntegerAttr>("entry_bits");
+  if (!runtime || !isSha256(runtime.getValue()) || source || !target ||
+      (target.getValue() != "activation" && target.getValue() != "weight" &&
+       target.getValue() != "output") || !buffer || buffer.getValue().empty() ||
+      !groups || groups.getInt() < 1 || groups.getInt() > 64 ||
+      !bits || bits.getInt() != 6)
+    return emitOpError("requires a runtime-bound FP6 LUT bank");
+  StringRef name = buffer.getValue();
+  for (size_t i = 0; i < name.size(); ++i) {
+    char c = name[i];
+    bool alpha = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    bool digit = (c >= '0' && c <= '9');
+    if (!alpha && (i == 0 || !digit))
+      return emitOpError("runtime LUT buffer name must be a C identifier");
+  }
+  auto tensor = dyn_cast<RankedTensorType>(getData().getType());
+  if (!tensor || !tensor.hasStaticShape() || tensor.getRank() != 2 ||
+      !tensor.getElementType().isInteger(32) ||
+      tensor.getDimSize(0) != groups.getInt() || tensor.getDimSize(1) != 3)
+    return emitOpError("requires a groups-by-three i32 LUT tensor");
+  return success();
+}
+
 LogicalResult EncodeOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
   auto legacy = (*this)->getAttrOfType<StringAttr>("format");
@@ -348,13 +379,14 @@ LogicalResult ResidentContractOp::verify() {
     return (*this)->getAttrOfType<StringAttr>(name).getValue();
   };
   StringRef precision = format("activation_format");
-  if ((precision != "fp8_e4m3" && precision != "fp4_e2m1") ||
+  if ((precision != "fp8_e4m3" && precision != "fp4_e2m1" &&
+       precision != "fp6_e3m2") ||
       format("weight_format") != precision ||
       format("output_format") != precision)
-    return emitOpError("resident contraction requires matching E4M3 or E2M1 inputs and output");
+    return emitOpError("resident contraction requires matching E4M3, E2M1, or E3M2 inputs and output");
   if (!getInputs().empty()) {
     int64_t m = row("m"), n = row("n"), k = row("k");
-    int64_t pack = precision == "fp4_e2m1" ? 2 : 1;
+    int64_t pack = precision == "fp8_e4m3" ? 1 : 2;
     const int64_t expected[6][2] = {
         {m / pack, k}, {m, k / 32}, {k, n / pack}, {k / 32, n},
         {m / pack, n}, {m, n / 32}};
@@ -376,6 +408,26 @@ LogicalResult ResidentContractOp::verify() {
       bool digit = (c >= '0' && c <= '9');
       if (!alpha && (i == 0 || !digit))
         return emitOpError("resident contraction buffer name must be a C identifier");
+    }
+  }
+  if (precision == "fp6_e3m2") {
+    auto groups = (*this)->getAttrOfType<IntegerAttr>("lut_groups");
+    if (!groups || groups.getInt() != row("m") / 2 ||
+        row("m") != row("n") || row("n") != row("k"))
+      return emitOpError("FP6 resident contraction needs source-aligned LUT groups");
+    for (StringRef attr : {"weight_lut_buffer", "activation_lut_buffer",
+                           "output_lut_buffer"}) {
+      auto buffer = (*this)->getAttrOfType<StringAttr>(attr);
+      if (!buffer || buffer.getValue().empty())
+        return emitOpError("FP6 resident contraction needs named LUT buffers");
+      StringRef name = buffer.getValue();
+      for (size_t i = 0; i < name.size(); ++i) {
+        char c = name[i];
+        bool alpha = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+        bool digit = (c >= '0' && c <= '9');
+        if (!alpha && (i == 0 || !digit))
+          return emitOpError("FP6 LUT buffer name must be a C identifier");
+      }
     }
   }
   return success();
