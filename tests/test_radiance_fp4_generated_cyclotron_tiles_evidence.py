@@ -54,7 +54,7 @@ def test_four_executed_fp4_source_tiles_and_raw_driver_limit():
     assert receipt["cyclotron_model_sha256"] == CYCLOTRON_MODEL_SHA256
     assert receipt["cyclotron_binary_sha256"] == CYCLOTRON_BINARY_SHA256
     assert receipt["source_files_sha256"] == SOURCE_FILES
-    assert receipt["compiler_revision"] == "44d4cc996eb432b327755f6d0273d432c70ce995"
+    assert receipt["compiler_revision"] == "858eac62b483a7007a2451d92aace248fde73933"
 
     manifest, resources = load_bundle(EVIDENCE / "bundle")
     compiler = json.loads((EVIDENCE / "build/artifact_manifest.json").read_text())
