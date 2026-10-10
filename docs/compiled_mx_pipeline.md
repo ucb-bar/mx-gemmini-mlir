@@ -1962,6 +1962,39 @@ Spike. It does not cover the mixed MX+Muon HBM FlashAttention kernel, arbitrary
 typed graphs, FPGA execution, or the stock Spike E4M3-direct × E4M3-LUT defect
 described above.
 
+### Linkable objects for the Radiance host requantization cases
+
+`tools.compile_object` now lowers each source-bound
+`mx_gemmini.host_requantize` graph into one data-free RV64 object entry point.
+The entry point runs the typed MX contraction and BF16 readout, then applies
+the source-compatible FP8 or FP6 host epilogue using caller-provided output
+and scale buffers. FP4 source drivers use the FP8 output-code convention.
+The FP6 path also accepts the full 64-pair output LUT as a runtime pointer and
+clears packed output storage before writing its two nibbles per byte. The
+same host arithmetic generators feed the standalone ELF path; the object
+path only changes their storage binding.
+
+The [eight-case object roster](evidence/radiance_host_requant_objects_80f84ca/index.json)
+uses the current Radiance `80f84ca` source roster and model2MLIR `e9ded36`
+typed graphs. The native MX verifier accepts all eight graphs. Nicolas's
+pinned Spike matches **90,112 / 90,112 code bytes** and **3,328 / 3,328
+E8M0 scales** against the source goldens. Each object has zero allocated data
+bytes and no unresolved symbols. The archived per-case manifests, objects,
+ELFs, and Spike logs make the comparison inspectable. This qualifies these
+eight host-output shapes and selected profiles on the pinned functional
+model; RTL timing and FPGA execution remain separate gates.
+
+From a source-roster reproduction produced as above:
+
+```sh
+python -m tools.qualify_host_requant_roster \
+  --source-root /new/mx-reproduction/spike \
+  --profiles profiles/gemmini-mx-cleanup-266c593 \
+  --rtl-root "$MX_RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/mx-host-objects --workers 2
+```
+
 ## Read-once weight-stationary Radiance MX kernels
 
 The two committed read-once drivers at Radiance `ee22e0b` now use the same

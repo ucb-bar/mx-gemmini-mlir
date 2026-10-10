@@ -1,0 +1,393 @@
+{
+  "compiler_revision": "ddffa18ec5ed7bfe497d9699714d48054c47bb46",
+  "files": [
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/object_manifest.json",
+      "raw_sha256": "2b01433877bc0f14d6101e56aad2cb887615b6722055a7555299adb416ed9096"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/compile_manifest.json",
+      "raw_sha256": "2065ebd4a0cd37374cf4550a33bdf9eb67088043b618ffbe067e954f01798650"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/physical_program.json",
+      "raw_sha256": "730eee69314296edb925974eedcf9a26d034543779110eb49afd08b707f248ba"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/mx_issue.c.gz",
+      "raw_sha256": "3f9b1a061a9e38d1823ffaf6a35769d6a0acc52984043b5c4120745f26b29fe1"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/object/mx_issue.o.gz",
+      "raw_sha256": "64a61d4a03968cf052188ee006e120752647d3a0af5b6ef715034cf8f34f1f54"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/spike/index.json",
+      "raw_sha256": "e810d107c934aed54d51426f31b017a8f982c544388ff0202d703e4ac1cc4217"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/spike/spike.log",
+      "raw_sha256": "b4206455ea3fa724fb1f024f2a43d6e3467030148acde36d605625e5afab0c83"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "79c0dc20d03e608028c4b8b74cbf8e9d773a1d4e5e9b11846ab56a84080ca827"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk128.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "187b9543146caf41124a090ca9b67b8451615ba29478b5bef646ff764933d297"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm128tn128tk128.requant/payload_bound.mlir.gz",
+      "raw_sha256": "2f0a25a7c9526a5c44870da6853d10f57e2d7e5056ab6fc699c214e998b8ac8f"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm128tn128tk128.requant/bundle/manifest.json",
+      "raw_sha256": "388db7245d128e3ac892ad1977b67e0dfb76482f354f0f289b83c528b3e24718"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/object_manifest.json",
+      "raw_sha256": "7831b17accb8d740058a42f450d695a9102d898256e82e1c7adea34fb34cac38"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/compile_manifest.json",
+      "raw_sha256": "8819e0b19dced021e76fd0ec83a0331ee38c781e5a6396f6b4359d93212a9afb"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/physical_program.json",
+      "raw_sha256": "a89c9364987ccf1efc7724718b60e0244ccdd6b446a3a273b93ceaf1acc6e261"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/mx_issue.c.gz",
+      "raw_sha256": "366544f0821bd7aabc2c83279d818a29cf5b0e8b77ed033302ba7f02f6108d11"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/object/mx_issue.o.gz",
+      "raw_sha256": "c4394158ad11e2f4dc76eca1643f0bd21ae22bad349929fcba3b41693c9e8e17"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/spike/index.json",
+      "raw_sha256": "5a37510fb766ea5a1603bf8481c0b5f4576e68339956c55dc97a68eaede185aa"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/spike/spike.log",
+      "raw_sha256": "b4206455ea3fa724fb1f024f2a43d6e3467030148acde36d605625e5afab0c83"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "79c0dc20d03e608028c4b8b74cbf8e9d773a1d4e5e9b11846ab56a84080ca827"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm128tn128tk512.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "7653fba7bde2767f867cb09c308d2565963e2f71b5e01d3f292c631a940c5035"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm128tn128tk512.requant/payload_bound.mlir.gz",
+      "raw_sha256": "6e7f1f2c84b05bf2b9b04bb89c1d82565bb14641714f4175335abaf78b88ea98"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm128tn128tk512.requant/bundle/manifest.json",
+      "raw_sha256": "2d30ae90bc376e8c1224bcd8a96c99ad200b529beae9203c928b54cf663d977e"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/object_manifest.json",
+      "raw_sha256": "5f1c5f26f89e91515da6e9eb67a25e50d9a8fd9aa287a0cb9036500ff155c448"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/compile_manifest.json",
+      "raw_sha256": "689b1468c72da57b2fc0736dc2aac552aa35e2c9db6e09ed141899da06a2a9d5"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/physical_program.json",
+      "raw_sha256": "03b43ec6cbfeabb20c72f25d4560f977b3a12307f6d6ab0750d4d268fe26dde6"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/mx_issue.c.gz",
+      "raw_sha256": "8ae4aa2e93be42020a184117fb144ae868d491c545e3b3a05cfff829ac3dc52b"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/object/mx_issue.o.gz",
+      "raw_sha256": "1bcad2c4fc403f675a5341ebfb72d10b2dc1c8469994c54dc2bddf26c00e8015"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/spike/index.json",
+      "raw_sha256": "a164b068f41bcf88e2e01a545195c66152c317133d8d60136814e549f301be47"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/spike/spike.log",
+      "raw_sha256": "9aec64e910506e3881c5ed5906b208921b10b127398299490601b6f93e2f4597"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "d41f71a4b8abb0c99acef1b38b1dfd874919bd009cc277ba871e80ac7eaf56ed"
+    },
+    {
+      "path": "cases/mxgemm.fp4.singletile.tm64tn64tk64.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "f04f1a858f18f499a4c3060a93ad01c23ad110fe2723f72f141ef064cbdf9e92"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm64tn64tk64.requant/payload_bound.mlir.gz",
+      "raw_sha256": "4ea8d9d6ad25331d8a7e0d2d11ec5f5f61df79c61d002af28d4c9a6e6e6bc547"
+    },
+    {
+      "path": "source/mxgemm.fp4.singletile.tm64tn64tk64.requant/bundle/manifest.json",
+      "raw_sha256": "b06b6289ab6fcceb4bfc8fb5fba1488b488058f868b96c17e13d907713cdc56c"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/object_manifest.json",
+      "raw_sha256": "730662299dcd83288cb2722be8c432afb161dc4c38cd1b5e2c2a3d8a150002b1"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/compile_manifest.json",
+      "raw_sha256": "3acd41372a9e6dee70bb758d2a970bd0c2ae70059b3849233c8c0234dfbc6d4f"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/physical_program.json",
+      "raw_sha256": "957d5bcc5f48cd16c580e7353ebf12b6bec16446b620816a972f820cb449ce8e"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/mx_issue.c.gz",
+      "raw_sha256": "a6181a8aac4e9f97ba074a1357883613d07f0c12d9c86bcb1d7671b8f4ea3b9f"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/mx_issue.h",
+      "raw_sha256": "66b79e7ca2659ebea515259e9c1ab0422e612f9f47e570d583f5fc8a09b7c7f2"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/object/mx_issue.o.gz",
+      "raw_sha256": "a962ca2e30540af0df7a16e746a761a833f12fdd46f75c61fbc6c368be63bfae"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/spike/index.json",
+      "raw_sha256": "f492251ee15ce9388efae1fa72bc759062913f77244338b73f18e9e1a01367b3"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/spike/spike.log",
+      "raw_sha256": "d3df1e2eb023bebe8fd3039f16cbe7b73a6f5307b23c2ea5d878926e212b811b"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "1fc1da2cdd65b3a0bb45dccfa1253fa0522bc280fad56ac4ca7400b927a3fb06"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk128.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "8274dc903f6d178fd476dccc7171d74c2efa86007220c4ea9b95677d7d4a3eac"
+    },
+    {
+      "path": "source/mxgemm.fp6.singletile.tm128tn128tk128.requant/payload_bound.mlir.gz",
+      "raw_sha256": "49d8eb90bac7d7642a61d20e5cbf8de9bcc1bab02c94dda75ff5be04031247eb"
+    },
+    {
+      "path": "source/mxgemm.fp6.singletile.tm128tn128tk128.requant/bundle/manifest.json",
+      "raw_sha256": "9590b1222abd3c6e466360c66c9fa8fd10e15dde7bc3e47f2f96af4ec9893a46"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/object_manifest.json",
+      "raw_sha256": "ff2e4c3635b9affc372c7e2a20c87d6db4524fa9d618b59f62b155c862c698a8"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/compile_manifest.json",
+      "raw_sha256": "5a152bf79a34aea6646d5c8d1eafd24bd231151721e285f711defae5761b4cef"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/physical_program.json",
+      "raw_sha256": "6099f85d9012018eff2f5d11800fd72a08174392525dc17bfaf88c2a1d2358b9"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/mx_issue.c.gz",
+      "raw_sha256": "c7dccd8c8263da9d6e41c10f770b9e4d1ea917fae75fe3bda697d02b1ee2d235"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/mx_issue.h",
+      "raw_sha256": "66b79e7ca2659ebea515259e9c1ab0422e612f9f47e570d583f5fc8a09b7c7f2"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/object/mx_issue.o.gz",
+      "raw_sha256": "9e813f679e01ee76f123489f70fcf3b464c9f5e40ed04ec469f9f8ef4b31bc1f"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/spike/index.json",
+      "raw_sha256": "5d0ae55e758f73b07c49d62cd61ae0dfcba570e1e2c1fa870a22db4e326ee0ec"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/spike/spike.log",
+      "raw_sha256": "d3df1e2eb023bebe8fd3039f16cbe7b73a6f5307b23c2ea5d878926e212b811b"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "1fc1da2cdd65b3a0bb45dccfa1253fa0522bc280fad56ac4ca7400b927a3fb06"
+    },
+    {
+      "path": "cases/mxgemm.fp6.singletile.tm128tn128tk512.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "b1be067a801b322f33a194e0bb0c129c0853ddc4aaf21653b93c878f3ae70180"
+    },
+    {
+      "path": "source/mxgemm.fp6.singletile.tm128tn128tk512.requant/payload_bound.mlir.gz",
+      "raw_sha256": "8336a85bf7a8d6a57665f3727a6b95ebf1caf79ada6e47539d22ec52506f1771"
+    },
+    {
+      "path": "source/mxgemm.fp6.singletile.tm128tn128tk512.requant/bundle/manifest.json",
+      "raw_sha256": "4f2d3dc1ba751adef55ab7164039e12ceb21ccd9056f7ae3c0f292893f8929f1"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/object_manifest.json",
+      "raw_sha256": "b5ab709482ecd4b549f6adf12629d608f02b0fe632d945edc59fc10c1140fdbf"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/compile_manifest.json",
+      "raw_sha256": "76d7385e77849f3ae9750d7a343cef96619044bb3288e0529184ed6a347dad75"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/physical_program.json",
+      "raw_sha256": "1d1148e5ef965b57483bb5c2eaf6a474d38d248594b51cc477177c6f1819b326"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/mx_issue.c.gz",
+      "raw_sha256": "43d87e84cc18219d29628aeed9b705c74214db6407d4daac2a37eb15a484544a"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/object/mx_issue.o.gz",
+      "raw_sha256": "4beaed8125b448e7c03e74809a0868507ca48462817f4626354421d0ca75583d"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/spike/index.json",
+      "raw_sha256": "85945b3c02722f50ec8dbfe8068bf29f6eb1ada501d476258b868abcff0aa27f"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/spike/spike.log",
+      "raw_sha256": "b4206455ea3fa724fb1f024f2a43d6e3467030148acde36d605625e5afab0c83"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "79c0dc20d03e608028c4b8b74cbf8e9d773a1d4e5e9b11846ab56a84080ca827"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk128.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "7e7bd9bf8231e7ec5d5d074b9797508e2507833a7bc67c4458353294f69f74a4"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm128tn128tk128.requant/payload_bound.mlir.gz",
+      "raw_sha256": "7e20e6bfa60db40bcba9bae9dde51855869ec0d1e9e20c52842a577388b90244"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm128tn128tk128.requant/bundle/manifest.json",
+      "raw_sha256": "173c3122a97f38addae9e89ac4a9704403e52df4d3865bc3949cfb1c408a0c32"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/object_manifest.json",
+      "raw_sha256": "505db3296d81f4970549c4bf48c63ff1288453aa630c4abc6a4d64102f3edf1f"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/compile_manifest.json",
+      "raw_sha256": "a6290c52af9307160f9751fc01b527bbd2f0a7286e5242fd4cff62031b46defa"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/physical_program.json",
+      "raw_sha256": "27edb46b03adf8c6a1c479efebf6d99d0a6a7cf29f2427ca91d26ddf20db15e6"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/mx_issue.c.gz",
+      "raw_sha256": "587ac2071420de10ecf7ab30b6224031f947bf2972ce51e9c57cc66cc4cd35b9"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/object/mx_issue.o.gz",
+      "raw_sha256": "90739c83c7c83670273d50d77357c15aceef9dda29692e67c88211ea67e70ae4"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/spike/index.json",
+      "raw_sha256": "338b80ac2c3a2fe5a917f4dea2f81cf1b6990cb8e08488b046a38880b46736be"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/spike/spike.log",
+      "raw_sha256": "b4206455ea3fa724fb1f024f2a43d6e3467030148acde36d605625e5afab0c83"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "79c0dc20d03e608028c4b8b74cbf8e9d773a1d4e5e9b11846ab56a84080ca827"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm128tn128tk256.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "de4a679de84708610c94650b2ac0c50089a0243e49f9e94a329b55e1422dce2e"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm128tn128tk256.requant/payload_bound.mlir.gz",
+      "raw_sha256": "d8f42a4c508ca89011018905c44ef57634da1403f9252ecb07a87ef67c8ca1df"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm128tn128tk256.requant/bundle/manifest.json",
+      "raw_sha256": "764742488c84ba7b700eba0d0af5768db309a988ccaf28b8926583beae8afcb0"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/object_manifest.json",
+      "raw_sha256": "9751b91d3b9fcda62f16af2fcb242c7dfb09dd919bd5cb7ae73d7745610702f0"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/compile_manifest.json",
+      "raw_sha256": "4b8fb420171e64a617e0f439a2cf2dc1cdaa8936fe9c4ff3c4ef82102c28f3ff"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/physical_program.json",
+      "raw_sha256": "0098b27821bc05b7c627f281cb9840df1df87a76b5c7f4ea9b0cde5212dfc4ca"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/mx_issue.c.gz",
+      "raw_sha256": "393841c0c421c3b3faae368c6bbcf8c3c28ebb3865f295818aa03886a5460f6f"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/mx_issue.h",
+      "raw_sha256": "3ef2e9ffbc985e805235a02497c5449b4db661864b2a941bd02fd8509aaf0117"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/object/mx_issue.o.gz",
+      "raw_sha256": "c7bf2d0be578cdee5543c9cf6ff3fd78da6b2febbbef634ffec8d8568c09dd06"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/spike/index.json",
+      "raw_sha256": "34a26b4fea85b81bd8d2b59902ad4596435b23dbca568d5a77e8df4dd4e69b2b"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/spike/spike.log",
+      "raw_sha256": "9aec64e910506e3881c5ed5906b208921b10b127398299490601b6f93e2f4597"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/spike/mx_driver.c.gz",
+      "raw_sha256": "d41f71a4b8abb0c99acef1b38b1dfd874919bd009cc277ba871e80ac7eaf56ed"
+    },
+    {
+      "path": "cases/mxgemm.fp8.singletile.tm64tn64tk64.requant/spike/mx_host_object.elf.gz",
+      "raw_sha256": "625da3b89064277f4c9c7aad15e2dbb9e5a3b664cf7edae342801958a9998572"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm64tn64tk64.requant/payload_bound.mlir.gz",
+      "raw_sha256": "e50503b057e281d59774bac5284c7d06461492df8715db3b2b7897f2cfe68c46"
+    },
+    {
+      "path": "source/mxgemm.fp8.singletile.tm64tn64tk64.requant/bundle/manifest.json",
+      "raw_sha256": "1e6b68fd3c7e243e5983fe1970be44edb8c2be74081222fb829cac9e29b349ed"
+    }
+  ],
+  "fresh_index_sha256": "3f09c2144fdfb604a8ff91cb08b46b3ad3062170834a518151ab9b02550f062e",
+  "index_sha256": "3f09c2144fdfb604a8ff91cb08b46b3ad3062170834a518151ab9b02550f062e",
+  "schema": "mx_gemmini.runtime_host_object_evidence.v1",
+  "status": "fresh_checkout_reproduced_all_8_host_objects_and_spike_logs"
+}

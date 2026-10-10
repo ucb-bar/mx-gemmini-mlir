@@ -113,9 +113,11 @@ banks. Nicolas's stock Spike matches C1 and C2 codes and scales at 64³ and
 `python -m tools.compile_object` is the shared entry point for these object
 paths and source-bound FP4/FP6/FP8 contractions; it dispatches by verified
 typed graph and reuses the existing physical lowerers. Source graphs with
-`mx_gemmini.host_requantize` require the standalone ELF path through
-`tools.qualify_source_mx`: the linkable object path does not yet emit their
-host output stage and rejects them before writing an object.
+`mx_gemmini.host_requantize` now emit one data-free object entry point that
+issues MX commands and then runs the source-compatible FP8 or FP6 host output
+stage on caller-provided buffers. The [eight-case source-object Spike
+replay](docs/evidence/radiance_host_requant_objects_80f84ca/index.json)
+matches all 90,112 output code bytes and 3,328 scales.
 The [source object replay](docs/evidence/mx_compile_object_dispatch_d3156e4/index.json)
 links the generated FP4, FP6, and FP8 objects into full-output Spike checks.
 A [fresh published checkout](docs/evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
