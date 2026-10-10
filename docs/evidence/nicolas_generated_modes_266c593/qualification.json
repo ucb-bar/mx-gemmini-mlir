@@ -1,0 +1,99 @@
+{
+  "checked_in_source_passes": 30,
+  "compiler_revision": "fc9c077",
+  "distinct_stock_spike_passes": 35,
+  "generated_rows": [
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e2m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "2b9a2b6e36c0a224a008ac7314b701838ea2d13715f38c33faddde44b3b4408f",
+      "mode": "e2m3_e4m3s",
+      "repro_receipt_sha256": "d432cb1b4980da2ea915ccc47094e001e081a620af0ea278582d2d35a15a2d0f",
+      "spike_exit_code": 0,
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp6_e3m2",
+        "activation_projection": "lut",
+        "pe_mode": 4,
+        "weight_format": "fp6_e3m2",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "10d08792e3809f9d72e5201255042d83f8f55dbed6762adb76491c5b9e2955a9",
+      "mode": "e3m2_e3m2",
+      "repro_receipt_sha256": "b4a860981fda075e5f27f537952bc667453c6c2cdf45dd7fe7bf633a08ce6b41",
+      "spike_exit_code": 0,
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp6_e2m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "58f3036bc88b8dbe397b52912fe51b62049da3794ae7cdc163d6a22f650327ee",
+      "mode": "e4m3s_e2m3",
+      "repro_receipt_sha256": "972d9be067012d85dfc1b2eb8ca2e66db28616f0b69bda67f18cbf0cab5b397c",
+      "spike_exit_code": 0,
+      "status": "source_golden_matched_on_pinned_spike"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "direct",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "lut"
+      },
+      "first_receipt_sha256": "6117475f03a769990337e07af14dba14c6bf2c909fdbf937d55aed3bdfdd171f",
+      "mode": "e4m3s_e4m3",
+      "repro_receipt_sha256": null,
+      "spike_exit_code": 1,
+      "status": "source_golden_failed_on_pinned_spike"
+    },
+    {
+      "compared_bf16_outputs": 4096,
+      "compute": {
+        "activation_format": "fp8_e4m3",
+        "activation_projection": "lut",
+        "pe_mode": 8,
+        "weight_format": "fp8_e4m3",
+        "weight_projection": "direct"
+      },
+      "first_receipt_sha256": "af664433338c2dda817dfd4a08d0d325f78ce2fde7f6df5a583a49dd5b592202",
+      "mode": "e4m3_e4m3s",
+      "repro_receipt_sha256": "062d456db59954efb30ea9d8130569492ba4dcd562d228a4116ea8ce7234c641",
+      "spike_exit_code": 0,
+      "status": "source_golden_matched_on_pinned_spike"
+    }
+  ],
+  "generated_stock_spike_failures": 1,
+  "generated_stock_spike_passes": 4,
+  "generation_manifest_sha256": "688800f78d06a52c00caf7982cdab49b0b0fef7fb79237fd5d9a3d03c3f5f737",
+  "legal_mode_count": 36,
+  "profile_name": "MxAllAsymGemminiRocketConfig",
+  "radiance_source_passes": 1,
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_generated_dim16_mode_matrix.v1",
+  "unqualified_legal_compute": [
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "lut"
+    }
+  ]
+}

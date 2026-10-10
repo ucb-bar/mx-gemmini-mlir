@@ -24,6 +24,13 @@ profile; DIM8 and DIM32 each have 21 of 36 available source modes qualified.
 The Radiance direct E4M3×E4M3 source driver separately qualifies a 31st
 distinct DIM16 mode with two full-output Spike runs; it is not part of
 Nicolas's checked-in source-mode matrix.
+Four more cells have separate full-output tests from Nicolas's validated
+`gen_asym.py` data model, giving **35 of 36 distinct DIM16 modes** with
+numerical parity on the unmodified Spike extension. The remaining direct
+E4M3 × E4M3-LUT cell fails on that extension because its weight-lane packing
+ignores a loaded E4M3 weight LUT; a local diagnostic patch matches the golden
+but is not a qualified upstream model or FPGA result. See
+[generated DIM16 probes](compiled_mx_pipeline.md#generated-dim16-mode-probes).
 
 Nicolas's public branch includes `MxE4M3VpuGemminiRocketConfig` and
 `MxE4M3Fp4VpuGemminiRocketConfig`. Both build two 8-lane BF16 scratchpad

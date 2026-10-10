@@ -68,6 +68,14 @@ The Radiance 64×64×64 direct E4M3×E4M3 fullout driver adds a separate
 physical command stream, and two Spike builds match all 4,096 BF16 outputs.
 Its [receipt](docs/compiled_mx_pipeline.md#radiance-direct-fp8-on-the-all-asymmetric-profile)
 keeps that source provenance distinct from Nicolas's checked-in matrix.
+Nicolas's pinned `gen_asym.py` produces independent headers for the five
+remaining DIM16 cells. Four additional modes match every BF16 output twice
+on the stock Spike model, bringing distinct numerical coverage to **35 / 36**.
+Direct E4M3 activation × E4M3 LUT weights is the remaining gap: stock Spike
+reports 4,094 mismatches, while a local model correction matching the RTL's
+weight-LUT lane selection reports zero for the same ELF. The
+[generated-mode evidence](docs/compiled_mx_pipeline.md#generated-dim16-mode-probes)
+keeps that patch diagnostic separate from stock-model qualification.
 The source-bound scheduler also passes Nicolas's larger direct E4M3×FP4
 128×128×128 DIM16 and 128×128×256 DIM32 kernels on Spike, comparing all
 16,384 BF16 outputs in each. Their [generated programs and reproduction

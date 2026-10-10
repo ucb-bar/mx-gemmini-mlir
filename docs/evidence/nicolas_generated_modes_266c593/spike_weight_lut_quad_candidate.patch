@@ -1,0 +1,16 @@
+diff --git a/gemmini.cc b/gemmini.cc
+index 655fc0f..db8e009 100644
+--- a/gemmini.cc
++++ b/gemmini.cc
+@@ -1522,7 +1522,10 @@ void gemmini_t::mx_loop_ws_spad(reg_t rs1, reg_t rs2) {
+     // E4M3-single ACTIVATION (direct 8-bit, 1 row/lane). The WEIGHT is single (E4M3 direct, 1 col/lane
+     // -> 16x16 tile) OR quad (fp4/fp6/E5M2 nibble-packed, 2 col/lane -> 16x32 tile). This is the
+     // single x quad "dual throughput" case (modes 6/7): TM=16 always (single act), TN=32 iff wgt quad.
+-    const bool wgt_quad = (wgtf != 0) || gemmini_state.mx_wgt_altfmt;
++    // An E4M3 LUT weight is nibble-packed even with format code 0 and altfmt 0.
++    // Match ExecuteController.mx_multi_elem, which also checks weight_lut_en.
++    const bool wgt_quad = (wgtf != 0) || gemmini_state.mx_wgt_altfmt ||
++                          gemmini_state.mx_lut_b_loaded;
+     const int TM = DIM;
+     const int TN = wgt_quad ? 2*DIM : DIM;
+     const uint32_t B_sp = gemmini_state.mx_loop_b_spad - (uint32_t)TK * TJ * DIM;

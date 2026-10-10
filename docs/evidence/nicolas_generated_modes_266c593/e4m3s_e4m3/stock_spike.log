@@ -1,0 +1,12 @@
+MISMATCH 0: got=0x7fc0 expected=0xc22c
+MISMATCH 1: got=0x7f80 expected=0xbfb7
+MISMATCH 2: got=0x7fc0 expected=0x43c5
+MISMATCH 3: got=0x7f80 expected=0xc2ee
+MISMATCH 4: got=0xff80 expected=0xc303
+MISMATCH 5: got=0x7fc0 expected=0xbf24
+MISMATCH 6: got=0x7fc0 expected=0x40d6
+MISMATCH 7: got=0xff80 expected=0x4290
+lowered MX 64x64x64: 4094 BF16 mismatches
+Gemmini extension configured with:
+    dim = 16
+*** FAILED *** (tohost = 1)

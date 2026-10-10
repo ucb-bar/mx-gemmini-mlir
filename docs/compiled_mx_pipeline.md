@@ -735,6 +735,61 @@ python kernels/gemm_mxgemmini/gen_mxgemm_data.py fp8 64 64 64
 # mx_gemm.profile_bound.mlir and the Radiance fullout driver.
 ```
 
+### Generated DIM16 mode probes
+
+Five other legal cells lack a checked-in Nicolas fullout driver. The
+[generation wrapper](../tools/generate_nicolas_missing_headers.py) registers
+their format pairs with Nicolas's pinned `gen_asym.py` without changing its
+quantization or matrix model. Before emitting new headers, it regenerates a
+checked-in E2M3×E4M3 header byte for byte. Its
+[manifest](evidence/nicolas_generated_modes_266c593/mx_gemmini_generated_modes_manifest.json)
+pins the generator, baseline hash, RTL and software revisions, and the
+upstream microxcaling revision `7bc41952`. The new headers are archived with
+their hashes. `tools.qualify_nicolas_asym --generated-mode <mode>` binds one
+such header to a current model2MLIR matmul capture, lowers the physical MX
+commands, builds an RV64 Rocket ELF, and runs Nicolas's Spike extension. No
+new handwritten C kernel enters the compiled output.
+
+| Activation × weight | Stock Spike BF16 result | Evidence |
+|---|---:|---|
+| E2M3 LUT × E4M3 direct | 4,096 / 4,096, twice | [first](evidence/nicolas_generated_modes_266c593/e2m3_e4m3s/first.json), [reproduction](evidence/nicolas_generated_modes_266c593/e2m3_e4m3s/repro.json) |
+| E3M2 LUT × E3M2 LUT | 4,096 / 4,096, twice | [first](evidence/nicolas_generated_modes_266c593/e3m2_e3m2/first.json), [reproduction](evidence/nicolas_generated_modes_266c593/e3m2_e3m2/repro.json) |
+| E4M3 direct × E2M3 LUT | 4,096 / 4,096, twice | [first](evidence/nicolas_generated_modes_266c593/e4m3s_e2m3/first.json), [reproduction](evidence/nicolas_generated_modes_266c593/e4m3s_e2m3/repro.json) |
+| E4M3 LUT × E4M3 direct | 4,096 / 4,096, twice | [first](evidence/nicolas_generated_modes_266c593/e4m3_e4m3s/first.json), [reproduction](evidence/nicolas_generated_modes_266c593/e4m3_e4m3s/repro.json) |
+| E4M3 direct × E4M3 LUT | **4,094 mismatches** | [failed receipt](evidence/nicolas_generated_modes_266c593/e4m3s_e4m3/first.json), [stock log](evidence/nicolas_generated_modes_266c593/e4m3s_e4m3/stock_spike.log) |
+
+The four passing modes reproduce their frontend and target MLIR, physical
+program, C issuer, ELF, and Spike log hashes; only path-bearing link log
+hashes differ. With the 30 checked-in Nicolas modes and the separate Radiance
+direct FP8 mode, **35 of 36 distinct DIM16 legal cells** now have full-output
+parity on unmodified Spike. These counts refer to the 64³ BF16 mode tests;
+they do not qualify arbitrary shapes, quantized readouts, timing, or FPGA.
+The [qualification index](evidence/nicolas_generated_modes_266c593/qualification.json)
+enumerates the exact covered and uncovered compute tuples.
+
+For the failing cell, the pinned Spike extension's direct-E4M3 activation
+path chooses single-column weights when format and alternate-format bits are
+zero, even if its E4M3 weight LUT is loaded. Nicolas's RTL
+`ExecuteController.mx_multi_elem` includes `weight_lut_en` in that lane
+decision. Applying the [candidate model patch](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
+in an isolated extension checkout makes the **same compiler ELF** match
+4,096 / 4,096 outputs; the [diagnostic](evidence/nicolas_generated_modes_266c593/e4m3s_e4m3/patch_diagnostic.json)
+records both extension and log hashes. That patch has not been merged into
+Nicolas's Spike branch, and this cell remains unqualified on the pinned model.
+
+```sh
+# From mx-gemmini-mlir, with an isolated gemmini checkout at 266c593:
+python -m tools.generate_nicolas_missing_headers \
+  --rtl-root /path/to/gemmini-mx-cleanup \
+  --microxcaling-root /path/to/microxcaling-at-7bc41952
+python -m tools.qualify_nicolas_asym --generated-mode e2m3_e4m3s \
+  --mesh-dim 16 --model2mlir-root /path/to/model2MLIR \
+  --mxq-root /path/to/MXQuant --rtl-root /path/to/gemmini-mx-cleanup \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxAllAsymGemminiRocketConfig.json \
+  --riscv-root /path/to/riscv-tools --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/generated-mode-output
+```
+
 ### Larger asymmetric source shapes
 
 The source-bound scheduler now derives the operand strides, scale byte counts,
@@ -816,8 +871,9 @@ profiles; these missing lists are specific to each source shape.
 2. Consolidate the two checked MLIR inputs into one connected chain, then
    generalize its explicit scratchpad lifetimes beyond the qualified 64³
    Nicolas source case.
-3. Qualify the five DIM16 cells still lacking source evidence across Nicolas
-   and Radiance, and 15 untested cells on each DIM8/DIM32
+3. Fix and upstream the Spike weight-LUT lane selection for the one remaining
+   DIM16 cell, check it against RTL, then qualify 15 untested cells on each
+   DIM8/DIM32
    all-asymmetric profile, and every other legal mode class on the matching
    Spike/RTL configuration,
    and keep unsupported profile combinations rejected. FP6+VPU requires a
