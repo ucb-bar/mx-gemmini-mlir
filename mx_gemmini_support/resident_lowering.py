@@ -27,21 +27,24 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
     packed_shape = shape in ((64, 64, 64), (128, 128, 128))
-    # The VPU handoff keeps a 64x64 C1 tile resident. MM2 may use any complete
-    # E8M0 output width that fits the selected scratchpad and accumulator.
-    vpu_shape = (shape[0] == 64 and shape[1] >= 32 and
-                 shape[1] % 32 == 0 and shape[2] == 64)
+    # The VPU handoff keeps a square C1 tile resident. MM2 may use any
+    # complete E8M0 output width that fits the selected target memories.
+    vpu_shape = (shape[0] in (64, 128) and shape[1] >= 32 and
+                 shape[1] % 32 == 0 and shape[2] == shape[0])
+    vpu_selected = bool(profile["resources"].get("vpu"))
     if not (((fp4 or fp6) and packed_shape) or
             (not fp4 and not fp6 and (vpu_shape or plain_shape))):
         raise ValueError("resident MX contraction needs a supported complete tile")
-    if not fp4 and not fp6 and vpu_shape and (not profile["resources"].get("spad_requant") or
-                      not profile["resources"].get("vpu")):
-        raise ValueError("64-row resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
-    if (plain_shape or fp4 or fp6) and (
+    if not fp4 and not fp6 and vpu_shape and vpu_selected and (
+            not profile["resources"].get("spad_requant")):
+        raise ValueError("resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
+    if ((plain_shape and not vpu_selected) or fp4 or fp6) and (
             profile["name"] != "MxGemminiRocketConfig" or
             profile["resources"].get("spad_requant") or
             profile["resources"].get("vpu")):
         raise ValueError("plain resident MX contraction needs Nicolas's plain MX profile")
+    if not fp4 and not fp6 and vpu_shape and not vpu_selected and not plain_shape:
+        raise ValueError("resident MX contraction needs the qualified VPU/SPAD_REQUANT profile")
     if any(attrs[key] != precision for key in
            ("activation_format", "weight_format", "output_format")):
         raise ValueError("resident MX contraction requires matching FP8, FP4, or FP6 inputs and output")

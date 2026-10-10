@@ -29,16 +29,18 @@ def load_nicolas_fp8_model(software: Path):
     return model
 
 
-def model_c2(resources: dict[str, bytes], model, *, width: int
+def model_c2(resources: dict[str, bytes], model, *, width: int,
+             first_width: int = 64
              ) -> tuple[bytes, bytes, bytes]:
-    """Return BF16, FP8 codes, and E8M0 scales for C1[64,64] × B2[64,N]."""
+    """Return BF16, FP8 codes, and E8M0 scales for C1[M,M] × B2[M,N]."""
     import torch
 
     if (type(width) is not int or width < 32 or width % 32 or
-            len(resources["c1_codes_ref"]) != 4096 or
-            len(resources["c1_scales_ref"]) != 128 or
-            len(resources["b2_weight"]) != 64 * width or
-            len(resources["b2_scales"]) != 2 * width):
+            first_width not in (64, 128) or
+            len(resources["c1_codes_ref"]) != first_width ** 2 or
+            len(resources["c1_scales_ref"]) != first_width ** 2 // 32 or
+            len(resources["b2_weight"]) != first_width * width or
+            len(resources["b2_scales"]) != first_width * width // 32):
         raise ValueError("connected MM2 model needs complete FP8 operand blocks")
 
     def values(codes: bytes, rows: int, cols: int):
@@ -50,10 +52,10 @@ def model_c2(resources: dict[str, bytes], model, *, width: int
                             dtype=torch.float32).reshape(rows, cols)
 
     result = model.tiled_matmul_hwlike(
-        values(resources["c1_codes_ref"], 64, 64),
-        values(resources["b2_weight"], 64, width),
-        scales(resources["c1_scales_ref"], 64, 2),
-        scales(resources["b2_scales"], 2, width), verbose=False,
+        values(resources["c1_codes_ref"], first_width, first_width),
+        values(resources["b2_weight"], first_width, width),
+        scales(resources["c1_scales_ref"], first_width, first_width // 32),
+        scales(resources["b2_scales"], first_width // 32, width), verbose=False,
         prod_precision_list=PRODUCT_PRECISION,
         acc_precision_list=ACCUMULATOR_PRECISION)
     if not torch.isfinite(result).all():
@@ -63,5 +65,5 @@ def model_c2(resources: dict[str, bytes], model, *, width: int
         raise ValueError("Nicolas MM2 model changed BF16 output width")
     bf16 = b"".join(int(code).to_bytes(2, "little")
                     for row in codes for code in row)
-    quantized, scales_out = quantize_bf16_fp8_output(bf16, 64, width)
+    quantized, scales_out = quantize_bf16_fp8_output(bf16, first_width, width)
     return bf16, quantized, scales_out

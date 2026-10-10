@@ -28,9 +28,11 @@ PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketC
 MARKER = "lowered narrow MX/VPU: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales"
 
 
-def _driver(names: tuple[str, ...], second_width: int = 32) -> str:
-    if second_width < 32 or second_width % 32:
+def _driver(names: tuple[str, ...], second_width: int = 32,
+            first_width: int = 64) -> str:
+    if first_width not in (64, 128) or second_width < 32 or second_width % 32:
         raise ValueError("connected VPU driver needs complete E8M0 output blocks")
+    label = "lowered narrow MX/VPU" if first_width == 64 else "lowered 128 MX/VPU"
     declarations = "\n".join(
         f"extern const uint8_t {name}[];" for name in
         (*INPUTS, "c1_bf16", "c1_codes_ref", "c1_scales_ref",
@@ -38,34 +40,34 @@ def _driver(names: tuple[str, ...], second_width: int = 32) -> str:
     return f'''#include <stdint.h>
 #include <stdio.h>
 {declarations}
-static uint8_t c1_scales[128] __attribute__((aligned(64)));
-static uint8_t c1_bf16_observed[8192] __attribute__((aligned(64)));
-static uint8_t c1_tiled[4096] __attribute__((aligned(64)));
-static uint8_t c2_scales[{2 * second_width}] __attribute__((aligned(64)));
-static uint8_t c2_tiled[{64 * second_width}] __attribute__((aligned(64)));
+static uint8_t c1_scales[{first_width ** 2 // 32}] __attribute__((aligned(64)));
+static uint8_t c1_bf16_observed[{first_width ** 2 * 2}] __attribute__((aligned(64)));
+static uint8_t c1_tiled[{first_width ** 2}] __attribute__((aligned(64)));
+static uint8_t c2_scales[{first_width * second_width // 32}] __attribute__((aligned(64)));
+static uint8_t c2_tiled[{first_width * second_width}] __attribute__((aligned(64)));
 void mx_issue({", ".join(f"const void *{name}" for name in names)});
 
 int main(void) {{
   mx_issue({", ".join(names)});
   int bf16_errors = 0, c1_codes = 0, c1_scale_errors = 0;
   int c2_codes = 0, c2_scale_errors = 0;
-  for (uint32_t i = 0; i < 8192; ++i)
+  for (uint32_t i = 0; i < {first_width ** 2 * 2}; ++i)
     bf16_errors += c1_bf16_observed[i] != c1_bf16[i];
-  for (uint32_t row = 0; row < 64; ++row) {{
-    for (uint32_t col = 0; col < 64; ++col) {{
-      uint32_t tiled = (((row / 16) * 4 + col / 16) * 16 + row % 16) * 16 + col % 16;
-      c1_codes += c1_tiled[tiled] != c1_codes_ref[row * 64 + col];
+  for (uint32_t row = 0; row < {first_width}; ++row) {{
+    for (uint32_t col = 0; col < {first_width}; ++col) {{
+      uint32_t tiled = (((row / 16) * {first_width // 16} + col / 16) * 16 + row % 16) * 16 + col % 16;
+      c1_codes += c1_tiled[tiled] != c1_codes_ref[row * {first_width} + col];
     }}
     for (uint32_t col = 0; col < {second_width}; ++col) {{
       uint32_t tiled = (((row / 16) * {second_width // 16} + col / 16) * 16 + row % 16) * 16 + col % 16;
       c2_codes += c2_tiled[tiled] != c2_codes_ref[row * {second_width} + col];
     }}
   }}
-  for (uint32_t i = 0; i < 128; ++i)
+  for (uint32_t i = 0; i < {first_width ** 2 // 32}; ++i)
     c1_scale_errors += c1_scales[i] != c1_scales_ref[i];
-  for (uint32_t i = 0; i < {2 * second_width}; ++i)
+  for (uint32_t i = 0; i < {first_width * second_width // 32}; ++i)
     c2_scale_errors += c2_scales[i] != c2_scales_ref[i];
-  printf("lowered narrow MX/VPU: C1 BF16 %d, C1 %d codes %d scales, "
+  printf("{label}: C1 BF16 %d, C1 %d codes %d scales, "
          "C2 %d codes %d scales\\n", bf16_errors, c1_codes,
          c1_scale_errors, c2_codes, c2_scale_errors);
   return bf16_errors || c1_codes || c1_scale_errors || c2_codes || c2_scale_errors;

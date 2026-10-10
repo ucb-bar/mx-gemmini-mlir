@@ -30,8 +30,10 @@ def _sha(data: bytes) -> str:
 def _readout_commands(pair, outputs: dict[str, str]) -> tuple[Command | Fence, ...]:
     """Read both resident quantized tiles after MM2, as the source does."""
     commands: list[Command | Fence] = [*pair.commands, _config_st(16)]
-    for slot, start, rows in (("c1_tiled", 128, 256),
-                              ("c2_tiled", 512, 64 * pair.second_width // 16)):
+    for slot, start, rows in (("c1_tiled", pair.c1_row,
+                               pair.first_width * pair.first_width // 16),
+                              ("c2_tiled", pair.c2_row,
+                               pair.first_width * pair.second_width // 16)):
         for row in range(0, rows, 16):
             commands.append(_transfer(3, outputs[slot], row * 16, start + row))
     commands.append(Fence())
@@ -39,19 +41,20 @@ def _readout_commands(pair, outputs: dict[str, str]) -> tuple[Command | Fence, .
 
 
 def _buffer_abi(commands: tuple[Command | Fence, ...], inputs: dict[str, str],
-                outputs: dict[str, str], second_width: int = 64) -> list[dict]:
+                outputs: dict[str, str], second_width: int = 64,
+                first_width: int = 64) -> list[dict]:
     slots = {
-        "a1_activation": (4096, "read", "row_major_fp8"),
-        "a1_scales": (128, "read", "k_group_major_a_scales"),
-        "b1_weight": (4096, "read", "row_major_fp8"),
-        "b1_scales": (128, "read", "k_group_major_b_scales"),
-        "b2_weight": (64 * second_width, "read", "row_major_fp8"),
-        "b2_scales": (2 * second_width, "read", "k_group_major_b_scales"),
-        "c1_scales": (128, "write", "row_major_e8m0_scales"),
-        "c1_bf16_observed": (8192, "write", "output_tile_major_bf16"),
-        "c1_tiled": (4096, "write", "tile_major_fp8"),
-        "c2_scales": (2 * second_width, "write", "row_major_e8m0_scales"),
-        "c2_tiled": (64 * second_width, "write", "tile_major_fp8"),
+        "a1_activation": (first_width ** 2, "read", "row_major_fp8"),
+        "a1_scales": (first_width ** 2 // 32, "read", "k_group_major_a_scales"),
+        "b1_weight": (first_width ** 2, "read", "row_major_fp8"),
+        "b1_scales": (first_width ** 2 // 32, "read", "k_group_major_b_scales"),
+        "b2_weight": (first_width * second_width, "read", "row_major_fp8"),
+        "b2_scales": (first_width * second_width // 32, "read", "k_group_major_b_scales"),
+        "c1_scales": (first_width ** 2 // 32, "write", "row_major_e8m0_scales"),
+        "c1_bf16_observed": (first_width ** 2 * 2, "write", "output_tile_major_bf16"),
+        "c1_tiled": (first_width ** 2, "write", "tile_major_fp8"),
+        "c2_scales": (first_width * second_width // 32, "write", "row_major_e8m0_scales"),
+        "c2_tiled": (first_width * second_width, "write", "tile_major_fp8"),
     }
     symbols = inputs | outputs
     reverse = {symbol: slot for slot, symbol in symbols.items()}
@@ -107,7 +110,8 @@ def main() -> None:
     pair = lower_connected_fp8_vpu_pair(
         mlir_bytes.decode(), profile, resources, buffers=inputs, outputs=outputs)
     commands = _readout_commands(pair, outputs)
-    abi = _buffer_abi(commands, inputs, outputs, pair.second_width)
+    abi = _buffer_abi(commands, inputs, outputs, pair.second_width,
+                      pair.first_width)
     if args.mx_opt is not None:
         with tempfile.TemporaryDirectory(prefix="mx-vpu-verifier-") as temp:
             native_input = Path(temp) / "input.mlir"
@@ -127,7 +131,7 @@ def main() -> None:
     physical = args.out_dir / "physical_program.json"
     physical.write_text(json.dumps({
         "schema": "mx_gemmini.resident_vpu_physical.v1",
-        "shape_mnk": [64, pair.second_width, 64],
+        "shape_mnk": [pair.first_width, pair.second_width, pair.first_width],
         "first_site": pair.first_site, "second_site": pair.second_site,
         "profile_sha256": profile_sha256(profile),
         "commands": [({"kind": "command", **asdict(item)} if isinstance(item, Command)
@@ -138,7 +142,8 @@ def main() -> None:
     manifest = {
         "schema": "mx_gemmini.resident_vpu_linkable_object.v1",
         "status": "rv64_rocc_resident_vpu_object_built",
-        "transport": "rocket_rocc", "shape_mnk": [64, pair.second_width, 64],
+        "transport": "rocket_rocc",
+        "shape_mnk": [pair.first_width, pair.second_width, pair.first_width],
         "first_site": pair.first_site, "second_site": pair.second_site,
         "buffer_abi": abi,
         "embedded_operand_bytes": 0, "embedded_golden_bytes": 0,

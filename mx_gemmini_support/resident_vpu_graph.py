@@ -29,6 +29,9 @@ class ConnectedVpuPair:
     second_site: str
     second_width: int
     commands: tuple[Command | Fence, ...]
+    first_width: int = 64
+    c1_row: int = 128
+    c2_row: int = 512
 
 
 def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
@@ -57,10 +60,6 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
         lengths = {slot: len(resources[buffers[slot]]) for slot in INPUTS}
     except (KeyError, TypeError) as error:
         raise ValueError("connected MX VPU pair runtime input is absent") from error
-    if any(lengths.get(name) != size for name, size in {
-            "a1_activation": 4096, "a1_scales": 128,
-            "b1_weight": 4096, "b1_scales": 128}.items()):
-        raise ValueError("connected MX VPU pair MM1 input sizes differ from 64³")
     report = verify_ir(mlir_text, profile)
     vpu_count = report["vpu_commands"]
     if (report["contracts"] != 1 or not 1 <= vpu_count <= 16 or
@@ -88,21 +87,27 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
     vpus = ops[2:2 + vpu_count]
     requant, mm2, ret = ops[2 + vpu_count:]
     n = _int_attr(mm2, "n")
+    m = _int_attr(mm2, "m")
+    if type(m) is not int or m not in (64, 128) or _int_attr(mm2, "k") != m:
+        raise ValueError("connected MX VPU pair needs a complete square MM1 tile")
     if type(n) is not int or n < 32 or n % 32:
         raise ValueError("connected MX VPU pair needs a complete E8M0 MM2 width")
-    if (lengths["b2_weight"], lengths["b2_scales"]) != (64 * n, 2 * n):
-        raise ValueError("connected MX VPU pair MM2 input sizes differ")
+    if {name: lengths[name] for name in INPUTS} != {
+            "a1_activation": m * m, "a1_scales": m * m // 32,
+            "b1_weight": m * m, "b1_scales": m * m // 32,
+            "b2_weight": m * n, "b2_scales": m * n // 32}:
+        raise ValueError("connected MX VPU pair physical input sizes differ")
     args = list(function.body.block.args)
-    first_args = ("tensor<64x64xi8>", "tensor<2x64xi8>",
-                  "tensor<64x64xi8>", "tensor<2x64xi8>")
-    quantized = ("tensor<64x64xi8>", "tensor<64x2xi8>")
-    final = (f"tensor<64x{n}xi8>", f"tensor<64x{n // 32}xi8>")
+    first_args = (f"tensor<{m}x{m}xi8>", f"tensor<{m // 32}x{m}xi8>",
+                  f"tensor<{m}x{m}xi8>", f"tensor<{m // 32}x{m}xi8>")
+    quantized = (f"tensor<{m}x{m}xi8>", f"tensor<{m}x{m // 32}xi8>")
+    final = (f"tensor<{m}x{n}xi8>", f"tensor<{m}x{n // 32}xi8>")
     if (tuple(str(arg.type) for arg in args) != first_args +
-            (f"tensor<64x{n}xi8>", f"tensor<2x{n}xi8>") or
-            tuple(str(result.type) for result in mm1.results) != ("tensor<64x64xbf16>",) or
-            tuple(str(result.type) for result in readout.results) != ("tensor<64x64xbf16>",) or
+            (f"tensor<{m}x{n}xi8>", f"tensor<{m // 32}x{n}xi8>") or
+            tuple(str(result.type) for result in mm1.results) != (f"tensor<{m}x{m}xbf16>",) or
+            tuple(str(result.type) for result in readout.results) != (f"tensor<{m}x{m}xbf16>",) or
             any(tuple(str(result.type) for result in vpu.results) !=
-                ("tensor<64x64xbf16>",) for vpu in vpus) or
+                (f"tensor<{m}x{m}xbf16>",) for vpu in vpus) or
             tuple(str(result.type) for result in requant.results) != quantized or
             tuple(str(result.type) for result in mm2.results) != final or
             list(mm1.operands) != args[:4] or
@@ -131,16 +136,21 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
                   ("activation_format", "weight_format", "output_format",
                    "weight_buffer", "weight_scales_buffer", "output_scales_buffer")})
     rows = profile["resources"]["scratchpad_bytes"] // 16
-    if (tuple(attrs[key] for key in ("m", "n", "k")) != (64, n, 64) or
-            tuple(attrs[key] for key in ("activation_row", "weight_row", "output_row")) !=
-            (128, rows - 64 * n // 16, 512) or
+    c1_row, c2_row = attrs["activation_row"], attrs["output_row"]
+    bf16_start, bf16_end = 0x1000, 0x1000 + m * m * 2 // 16
+    c1_end = c1_row + m * m // 16
+    c2_end = c2_row + m * n // 16
+    if (tuple(attrs[key] for key in ("m", "n", "k")) != (m, n, m) or
+            attrs["weight_row"] != rows - m * n // 16 or
+            any(not (end <= bf16_start or start >= bf16_end)
+                for start, end in ((c1_row, c1_end), (c2_row, c2_end))) or
             attrs["weight_buffer"] != buffers["b2_weight"] or
             attrs["weight_scales_buffer"] != buffers["b2_scales"] or
             attrs["output_scales_buffer"] != outputs["c2_scales"] or
             _text_attr(requant, "scale_buffer") != outputs["c1_scales"] or
             _int_attr(requant, "source_row") != 0x1000 or
-            _int_attr(requant, "destination_row") != 128 or
-            _int_attr(requant, "m") != 64 or _int_attr(requant, "n") != 64 or
+            _int_attr(requant, "destination_row") != c1_row or
+            _int_attr(requant, "m") != m or _int_attr(requant, "n") != m or
             _text_attr(requant, "output_format") != "fp8_e4m3" or
             not _bool_attr(requant, "tiled") or not _bool_attr(requant, "resident") or
             _int_attr(requant, "scale_dram_address") != 0):
@@ -149,28 +159,28 @@ def lower_connected_fp8_vpu_pair(mlir_text: str, profile: dict,
            _int_attr(vpu, "src1_row") != 0x1000 or
            _int_attr(vpu, "src2_row") != 0 or
            _int_attr(vpu, "dst_row") != 0x1000 or
-           _int_attr(vpu, "rows") != 512 or
+           _int_attr(vpu, "rows") != m * m * 2 // 16 or
            _int_attr(vpu, "reduction_length") != 1 or
            _bool_attr(vpu, "broadcast") or
            _int_attr(vpu, "second_dst_row") is not None for vpu in vpus):
         raise ValueError("connected MX VPU pair needs in-place scalar operations")
     vectors = tuple(vpu_command(
         profile, kind=_text_attr(vpu, "kind"), src1_row=0x1000, src2_row=0,
-        dst_row=0x1000, rows=512, reduction_length=1,
+        dst_row=0x1000, rows=m * m * 2 // 16, reduction_length=1,
         broadcast=False, immediate_bf16=_int_attr(vpu, "immediate_bf16"))
         for vpu in vpus)
     quant = spad_requant_command(
-        profile, source_row=0x1000, destination_row=128,
-        m=64, n=64, output_format="fp8_e4m3", tiled=True,
+        profile, source_row=0x1000, destination_row=c1_row,
+        m=m, n=m, output_format="fp8_e4m3", tiled=True,
         resident=True, scale_dram_address=0,
         scale_buffer=outputs["c1_scales"])
     first_buffers = {**{slot: buffers[slot] for slot in INPUTS[:4]},
                      "c1_scales": outputs["c1_scales"],
                      "c1_bf16_observed": outputs["c1_bf16_observed"]}
     first = emit_verified_first_matrix_commands(
-        profile, resources, buffers=first_buffers)
+        profile, resources, buffers=first_buffers, shape=(m, m, m))
     vector_steps = tuple(step for vector in vectors for step in (vector, Fence()))
     return ConnectedVpuPair(
         first_site, second_site, n,
         (*first, Fence(), *vector_steps, quant, Fence(),
-         *lower_resident_contract(profile, attrs)))
+         *lower_resident_contract(profile, attrs)), m, c1_row, c2_row)

@@ -40,6 +40,8 @@ def main() -> None:
                         help="MM2 N dimension; 32 or 64 with matrix-dim 96 selects a rectangular pair")
     parser.add_argument("--output-rows", type=int, choices=tuple(range(16, 129, 16)),
                         help="row prefix of Nicolas's 128³ plain MX source")
+    parser.add_argument("--vpu-derived", action="store_true",
+                        help="capture the 128-cubed source pair for a derived MX/VPU handoff")
     args = parser.parse_args()
     output_rows = args.output_rows or args.matrix_dim
     first_k = args.first_k or args.matrix_dim
@@ -49,6 +51,11 @@ def main() -> None:
         64, 64, 32, 64)
     wide_vpu = ((first_k, args.matrix_dim, output_rows) == (64, 64, 64)
                 and second_width in (96, 128))
+    square_vpu = (args.vpu_derived and
+                  (first_k, args.matrix_dim, second_width, output_rows) ==
+                  (128, 128, 128, 128))
+    if args.vpu_derived and not square_vpu:
+        parser.error("derived square VPU capture needs the 128-cubed source")
     if ((first_k, second_width) != (args.matrix_dim, args.matrix_dim) and
             not narrow_vpu and not wide_vpu and
             (not rectangular or output_rows != 64)):
@@ -82,10 +89,14 @@ def main() -> None:
     if args.matrix_dim == 64 and (not profile["resources"].get("vpu") or
                                   not profile["resources"].get("spad_requant")):
         raise ValueError("selected profile cannot execute Nicolas's FP8 VPU chain")
-    if args.matrix_dim != 64 and (profile["name"] != "MxGemminiRocketConfig" or
-                                   profile["resources"].get("vpu") or
-                                   not profile["resources"].get("requantizer")):
+    if args.matrix_dim != 64 and not square_vpu and (
+            profile["name"] != "MxGemminiRocketConfig" or
+            profile["resources"].get("vpu") or
+            not profile["resources"].get("requantizer")):
         raise ValueError("selected profile cannot execute Nicolas's plain FP8 chain")
+    if square_vpu and (not profile["resources"].get("vpu") or
+                       not profile["resources"].get("spad_requant")):
+        raise ValueError("selected profile cannot execute derived 128-cubed VPU chain")
     software = args.rtl_root / "software/gemmini-rocc-tests"
     source = software / ("bareMetalC/matmul_tiled_fp8_64x96x64.c" if rectangular else
                          "bareMetalC/chain_vpu_spad_requant.c" if args.matrix_dim == 64
@@ -144,6 +155,8 @@ def main() -> None:
     receipt = {
         "schema": ("mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
                    if rectangular else
+                   "mx_gemmini.nicolas_square_128_vpu_model2mlir_capture.v1"
+                   if square_vpu else
                    "mx_gemmini.nicolas_derived_wide_vpu_chain_model2mlir_capture.v1"
                    if wide_vpu else
                    "mx_gemmini.nicolas_narrow_vpu_chain_model2mlir_capture.v1"
@@ -194,6 +207,12 @@ def main() -> None:
             "MM1 and VPU use Nicolas's checked 64³ source; the wider MM2 "
             "weight columns are derived from its B2 wire bytes and require "
             "a separately checked pinned mesh-model output reference")
+    if square_vpu:
+        receipt["first_shape_mnk"] = [128, 128, 128]
+        receipt["second_shape_mnk"] = [128, 128, 128]
+        receipt["numerical_scope"] = (
+            "the 128-cubed operands and original MM1 BF16 are Nicolas source "
+            "bytes; VPU x2 and changed MM2 outputs need pinned-model references")
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"captured {len(sites)} MX sites: {bound}")
 

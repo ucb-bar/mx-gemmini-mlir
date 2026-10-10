@@ -18,7 +18,8 @@ import sys
 
 from mx_gemmini_support.connected_fp8_model import MODEL_SHA256
 from mx_gemmini_support.narrow_vpu_chain import render_connected_fp8_vpu_chain
-from mx_gemmini_support.narrow_vpu_source import derive_wide_vpu_resources
+from mx_gemmini_support.narrow_vpu_source import (
+    derive_square_128_vpu_resources, derive_wide_vpu_resources)
 from mx_gemmini_support.resident_pair_graph import INPUTS
 from mx_gemmini_support.resident_vpu_graph import OUTPUTS
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -55,12 +56,15 @@ def main() -> None:
         "MxE4M3Fp4VpuGemminiRocketConfig", "MxE4M3VpuGemminiRocketConfig"),
         default="MxE4M3Fp4VpuGemminiRocketConfig")
     parser.add_argument("--second-width", type=int, choices=(96, 128), required=True)
+    parser.add_argument("--first-width", type=int, choices=(64, 128), default=64)
     args = parser.parse_args()
     for name in ("model2mlir_root", "mxq_root", "rtl_root", "riscv_root",
                  "mx_opt", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
+    if args.first_width == 128 and args.second_width != 128:
+        parser.error("the derived 128-cubed VPU source needs 128 MM2 columns")
     for root, revision in ((args.model2mlir_root, M2M_REVISION),
                            (args.mxq_root, MXQ_REVISION),
                            (args.rtl_root, RTL_REVISION)):
@@ -74,8 +78,12 @@ def main() -> None:
     extension = args.rtl_root / "software/libgemmini"
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
-    source = software / "bareMetalC/chain_vpu_spad_requant.c"
-    header = software / "include/matmul_fp8_64x64_chain.h"
+    source = software / ("bareMetalC/chain_vpu_spad_requant.c" if
+                         args.first_width == 64 else
+                         "bareMetalC/matmul_tiled_fp8_128x128_chain.c")
+    header = software / ("include/matmul_fp8_64x64_chain.h" if
+                         args.first_width == 64 else
+                         "include/matmul_fp8_128x128_chain.h")
     first_source = software / "bareMetalC/matmul_tiled_fp8_64x64_chain.c"
     args.out_dir.mkdir(parents=True)
     capture = args.out_dir / "capture"
@@ -85,24 +93,31 @@ def main() -> None:
         "--mxq-root", str(args.mxq_root),
         "--rtl-root", str(args.rtl_root),
         "--profile", str(profile_path), "--mx-opt", str(args.mx_opt),
-        "--matrix-dim", "64", "--second-width", str(args.second_width),
+        "--matrix-dim", str(args.first_width),
+        "--second-width", str(args.second_width),
+        *(["--vpu-derived"] if args.first_width == 128 else []),
         "--out-dir", str(capture),
     ], args.out_dir / "capture.log")
     captured = json.loads((capture / "receipt.json").read_text())
     frontend = capture / "nicolas_chain.profile_bound.mlir"
     manifest_path = capture / "quantization_manifest.json"
-    if (captured.get("schema") !=
-            "mx_gemmini.nicolas_derived_wide_vpu_chain_model2mlir_capture.v1" or
+    capture_schema = ("mx_gemmini.nicolas_square_128_vpu_model2mlir_capture.v1"
+                      if args.first_width == 128 else
+                      "mx_gemmini.nicolas_derived_wide_vpu_chain_model2mlir_capture.v1")
+    if (captured.get("schema") != capture_schema or
             captured.get("source_sha256") != _sha(source) or
             captured.get("header_sha256") != _sha(header) or
             captured.get("profile_sha256") != profile_sha256(profile) or
             captured.get("bound_mlir_sha256") != _sha(frontend) or
             captured.get("manifest_sha256") != _sha(manifest_path) or
-            captured.get("second_shape_mnk") != [64, args.second_width, 64] or
+            captured.get("second_shape_mnk") != [
+                args.first_width, args.second_width, args.first_width] or
             captured.get("opaque_calls")):
         raise ValueError("wide VPU model2MLIR capture differs from pinned source")
-    resources, facts = derive_wide_vpu_resources(
+    resources, facts = (derive_wide_vpu_resources(
         source, header, first_source, profile, second_width=args.second_width)
+        if args.first_width == 64 else
+        derive_square_128_vpu_resources(source, header, profile))
     bound = args.out_dir / "connected.mlir"
     bound.write_text(render_connected_fp8_vpu_chain(
         frontend.read_text(), json.loads(manifest_path.read_text()),
@@ -129,7 +144,8 @@ def main() -> None:
     compiled = json.loads((obj / "compile_manifest.json").read_text())
     object_manifest = json.loads((obj / "object_manifest.json").read_text())
     if (compiled["lowering_family"] != "resident_vpu_pair" or
-            object_manifest["shape_mnk"] != [64, args.second_width, 64] or
+            object_manifest["shape_mnk"] != [
+                args.first_width, args.second_width, args.first_width] or
             object_manifest["input_sha256"] != {
                 name: hashlib.sha256(resources[name]).hexdigest() for name in INPUTS} or
             object_manifest["allocated_data_section_bytes"] != 0 or
@@ -146,7 +162,8 @@ def main() -> None:
     assembly.append('.section .note.GNU-stack,"",@progbits')
     (build / "mx_data.S").write_text("\n".join(assembly) + "\n")
     names = tuple(entry["name"] for entry in object_manifest["buffer_abi"])
-    (build / "mx_driver.c").write_text(_driver(names, args.second_width))
+    (build / "mx_driver.c").write_text(_driver(
+        names, args.second_width, args.first_width))
     cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -187,20 +204,30 @@ def main() -> None:
         stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    passed = result.returncode == 0 and MARKER in result.stdout
+    marker = (MARKER if args.first_width == 64 else
+              "lowered 128 MX/VPU: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales")
+    passed = result.returncode == 0 and marker in result.stdout
+    passed_status = ("source_derived_wide_vpu_pair_matched_on_pinned_spike"
+                     if args.first_width == 64 else
+                     "source_derived_square_128_vpu_pair_matched_on_pinned_spike")
+    failed_status = ("source_derived_wide_vpu_pair_failed_on_pinned_spike"
+                     if args.first_width == 64 else
+                     "source_derived_square_128_vpu_pair_failed_on_pinned_spike")
     receipt = {
-        "schema": "mx_gemmini.derived_wide_vpu_pair_spike.v1",
-        "status": ("source_derived_wide_vpu_pair_matched_on_pinned_spike" if passed else
-                   "source_derived_wide_vpu_pair_failed_on_pinned_spike"),
+        "schema": ("mx_gemmini.derived_wide_vpu_pair_spike.v1" if
+                   args.first_width == 64 else
+                   "mx_gemmini.derived_square_128_vpu_pair_spike.v1"),
+        "status": passed_status if passed else failed_status,
         "source_scope": facts["source_scope"],
         "second_width": args.second_width,
-        "first_shape_mnk": [64, 64, 64],
-        "second_shape_mnk": [64, args.second_width, 64],
-        "compared_c1_bf16_values": 4096,
-        "compared_c1_fp8_codes": 4096,
-        "compared_c1_e8m0_scales": 128,
-        "compared_c2_fp8_codes": 64 * args.second_width,
-        "compared_c2_e8m0_scales": 2 * args.second_width,
+        "first_shape_mnk": [args.first_width] * 3,
+        "second_shape_mnk": [
+            args.first_width, args.second_width, args.first_width],
+        "compared_c1_bf16_values": args.first_width ** 2,
+        "compared_c1_fp8_codes": args.first_width ** 2,
+        "compared_c1_e8m0_scales": args.first_width ** 2 // 32,
+        "compared_c2_fp8_codes": args.first_width * args.second_width,
+        "compared_c2_e8m0_scales": args.first_width * args.second_width // 32,
         "model_sha256": MODEL_SHA256,
         "model2mlir_revision": _git_revision(args.model2mlir_root),
         "mxq_revision": _git_revision(args.mxq_root),

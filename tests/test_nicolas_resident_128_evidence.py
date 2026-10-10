@@ -513,5 +513,6 @@ def test_wrong_lifetime_or_ssa_handoff_fails_closed() -> None:
         validate_resident_contract(profile, attrs | {"m": 64, "n": 64, "k": 64})
     vpu_profile = load_profile(
         ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3VpuGemminiRocketConfig.json")
-    with pytest.raises(ValueError, match="plain MX profile"):
-        validate_resident_contract(vpu_profile, attrs)
+    # A standalone 128-cubed MM2 is legal on the VPU profile. Connected
+    # lowering additionally checks that its output avoids the live BF16 tile.
+    validate_resident_contract(vpu_profile, attrs)
