@@ -26,6 +26,8 @@ PROFILES = ROOT / "profiles/gemmini-mx-cleanup-266c593"
      "MxGemminiRocketConfig", "resident_pair", 0),
     ("docs/evidence/nicolas_connected_chain_upstream_e9ded36_20261010/connected_bound.mlir",
      "MxE4M3Fp4VpuGemminiRocketConfig", "resident_vpu_pair", 0),
+    ("docs/evidence/nicolas_chain_pipelined_full_266c593/connected.mlir",
+     "MxE4M3Fp4VpuGemminiRocketConfig", "full_vpu_branch", 0),
 ])
 def test_compiler_selects_the_verified_graph_family(mlir_path, profile_name,
                                                      family, resources):

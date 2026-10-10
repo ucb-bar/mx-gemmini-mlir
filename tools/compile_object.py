@@ -26,11 +26,13 @@ EMITTERS = {
     "source_contract": "tools.emit_mx_object",
     "resident_pair": "tools.emit_resident_pair_object",
     "resident_vpu_pair": "tools.emit_resident_vpu_object",
+    "full_vpu_branch": "tools.emit_full_vpu_branch_object",
 }
 MANIFEST_SCHEMAS = {
     "source_contract": "mx_gemmini.linkable_object.v1",
     "resident_pair": "mx_gemmini.resident_pair_linkable_object.v1",
     "resident_vpu_pair": "mx_gemmini.resident_vpu_linkable_object.v1",
+    "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
 }
 
 
@@ -62,6 +64,8 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
         return "resident_pair", report
     if runtime and counts[0:2] == (1, 1) and 1 <= counts[2] <= 16 and counts[3] == 1:
         return "resident_vpu_pair", report
+    if runtime and counts == (1, 2, 2, 2):
+        return "full_vpu_branch", report
     raise ValueError(f"MX object has no qualified lowering for graph counts {counts}")
 
 
@@ -99,6 +103,11 @@ def main() -> None:
                         help="runtime buffer map for a connected pair")
     parser.add_argument("--mx-opt", type=Path,
                         help="also run the native MX dialect verifier")
+    parser.add_argument("--preloaded-mlir", type=Path,
+                        help="checked BF16-preload graph for a full MX/VPU branch")
+    parser.add_argument("--issue-schedule", choices=(
+        "program_order_with_dependency_fences", "pipelined"),
+        default="program_order_with_dependency_fences")
     args = parser.parse_args()
     for name in ("mlir", "profile", "rtl_root", "riscv_root", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
@@ -113,6 +122,9 @@ def main() -> None:
         raise ValueError("MX object input must be .mlir or .mlir.gz")
     mlir_text = mlir_bytes.decode()
     family, report = classify(mlir_text, profile)
+    if family != "full_vpu_branch" and (args.preloaded_mlir is not None or
+                                        args.issue_schedule != "program_order_with_dependency_fences"):
+        raise ValueError("preloaded MLIR and issue schedule require a full MX/VPU branch")
     if family == "source_contract":
         if args.bundle is None or args.resources_dir or args.abi_json:
             raise ValueError("source MX object needs --bundle only")
@@ -126,6 +138,11 @@ def main() -> None:
                  "--abi-json", str(args.abi_json.resolve())]
         if family == "resident_pair":
             extra += ["--precision", _resident_pair_precision(mlir_text)]
+        if family == "full_vpu_branch":
+            if args.preloaded_mlir is None:
+                raise ValueError("full MX/VPU branch needs --preloaded-mlir")
+            extra += ["--preloaded-mlir", str(args.preloaded_mlir.resolve()),
+                      "--issue-schedule", args.issue_schedule]
     if args.mx_opt is not None:
         with tempfile.TemporaryDirectory(prefix="mx-object-verify-") as temp:
             native_input = Path(temp) / "input.mlir"
@@ -150,6 +167,13 @@ def main() -> None:
             built.get("embedded_operand_bytes") != 0 or
             built.get("embedded_golden_bytes") != 0):
         raise ValueError("MX object emitter returned an unverified object")
+    if family == "full_vpu_branch" and (
+            built.get("preloaded_mlir_sha256") != hashlib.sha256(
+                gzip.decompress(args.preloaded_mlir.read_bytes()) if
+                args.preloaded_mlir.name.endswith(".mlir.gz") else
+                args.preloaded_mlir.read_bytes()).hexdigest() or
+            built.get("issue_schedule") != args.issue_schedule):
+        raise ValueError("full MX/VPU object precursor or schedule differs")
     manifest = {
         "schema": "mx_gemmini.compiler_object_dispatch.v1",
         "status": "rv64_rocc_object_built",
@@ -169,6 +193,9 @@ def main() -> None:
             ("contracts", "resident_contracts", "vpu_commands", "spad_requants",
              "source_resources", "lut_uploads", "runtime_luts")},
     }
+    if family == "full_vpu_branch":
+        manifest["preloaded_mlir_sha256"] = built["preloaded_mlir_sha256"]
+        manifest["issue_schedule"] = args.issue_schedule
     if args.mx_opt is not None:
         manifest["native_verifier_sha256"] = _sha(args.mx_opt.resolve())
     (args.out_dir / "compile_manifest.json").write_text(
