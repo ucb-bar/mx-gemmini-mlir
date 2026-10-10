@@ -20,7 +20,8 @@ from mx_gemmini_support.bind_payload import bind_payload, select_bf16_output_lay
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.source_gemm import SourceGemm
 from mx_gemmini_support.source_fp6 import read_source_fp6_payload
-from mx_gemmini_support.source_payload import NICOLAS_SOURCE_HEADER_ORIGIN, write_bundle
+from mx_gemmini_support.source_payload import (NICOLAS_SOURCE_HEADER_ORIGIN,
+                                              load_bundle, write_bundle)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _require_gitlink, _run
 
@@ -45,6 +46,7 @@ class Case:
     buffer_abi: tuple[str, ...]
     call_arguments: tuple[str, ...]
     label: str
+    quant_output: bool = False
 
 
 CASES = {
@@ -78,6 +80,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 96x96x64"),
+    "fp8_128x128x128_requant": Case(
+        "fp8_128x128x128_requant", "FP8", (128, 128, 128), (128, 128, 128),
+        "matmul_tiled_fp8_128x128_requant.c", "matmul_fp8_128x128.h",
+        "bc446ca5f0d08a308771b9cdabbf3f9d9feddc8a661b82f5200a2c9d52b118de",
+        "16241671c4df2d4f738e77225063caac4895cdcba4d4495941e599d0db185bcd",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_quantized",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 128 requant", True),
     "fp4_64x64x64": Case(
         "fp4_64x64x64", "FP4", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp4_64x64.c", "matmul_fp4_64x64.h",
@@ -128,6 +140,8 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                 "gemmini_loop_ws_spad", "gemmini_extended_mvout", "C_out_bf16")
     if case.precision == "FP6":
         required += ("gemmini_mx_load_lut_dt",)
+    if case.quant_output:
+        required += ("gemmini_mxquant_config_mvout", "C_scales_out", "C_out[i][j]")
     if any(needle not in source for needle in required):
         raise ValueError("Nicolas source no longer has the audited compute/check path")
     header_text = header.read_text()
@@ -135,7 +149,7 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
             raise ValueError("Nicolas source header shape changed")
     return SourceGemm(driver, header, case.shape, case.tile,
-                      case.precision, False, False, True)
+                      case.precision, case.quant_output, False, True)
 
 
 def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
@@ -199,6 +213,40 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
 
 
 def _driver(case: Case) -> str:
+    if case.quant_output:
+        if case.precision != "FP8":
+            raise ValueError("source quantized driver currently supports FP8 output only")
+        return f"""#include <stdint.h>
+#include <stdio.h>
+#include "include/gemmini_testutils.h"
+#include "include/{case.header_name}"
+#include "mx_issue.h"
+static uint8_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
+static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));
+int main(void) {{
+  mx_issue({', '.join(case.call_arguments)});
+  gemmini_fence();
+  int code_errors = 0, scale_errors = 0;
+  for (int i = 0; i < MATMUL_M; ++i)
+    for (int j = 0; j < MATMUL_N; ++j)
+      if (C_hw[i][j] != C_out[i][j]) {{
+        if (code_errors < 8) printf("code mismatch %d,%d got %x want %x\\n",
+                                    i,j,C_hw[i][j],C_out[i][j]);
+        ++code_errors;
+      }}
+  for (int i = 0; i < MATMUL_M; ++i)
+    for (int g = 0; g < MATMUL_GN; ++g)
+      if (scratch_output_scales[i*MATMUL_GN+g] != C_scales_out[i][g]) {{
+        if (scale_errors < 8) printf("scale mismatch %d,%d got %x want %x\\n",
+                                     i,g,scratch_output_scales[i*MATMUL_GN+g],
+                                     C_scales_out[i][g]);
+        ++scale_errors;
+      }}
+  printf("compiled Nicolas {case.label}: %d code mismatches / %d, %d scale mismatches / %d\\n",
+         code_errors, MATMUL_M*MATMUL_N, scale_errors, MATMUL_M*MATMUL_GN);
+  return code_errors != 0 || scale_errors != 0;
+}}
+"""
     return f"""#include <stdint.h>
 #include <stdio.h>
 #include "include/gemmini_testutils.h"
@@ -304,9 +352,16 @@ def main(default_case: str | None = None) -> None:
     manifest = write_bundle(bundle, kernel, site_id="functional:matmul",
                             profile_sha256=profile_sha256(profile),
                             source_origin=NICOLAS_SOURCE_HEADER_ORIGIN)
+    if case.quant_output:
+        _, resources = load_bundle(bundle)
+        if (manifest.get("output_format") != "fp8_e4m3" or
+                resources["golden_fp8"] != resources["nicolas_fp8"] or
+                resources["golden_output_scales"] != resources["nicolas_output_scales"]):
+            raise ValueError("Nicolas source FP8 codes/scales differ from target quantization")
     bound = bind_handoff(handoff, profile)
     bound = bind_payload(bound, profile, manifest)
-    bound = select_bf16_output_layout(bound, profile, manifest)
+    if not case.quant_output:
+        bound = select_bf16_output_layout(bound, profile, manifest)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -318,15 +373,19 @@ def main(default_case: str | None = None) -> None:
     returncode, output, elf = run_spike(rtl_root, args.riscv_root.resolve(),
                                         object_dir, args.out_dir, case)
     m, n, _ = case.shape
-    passed = (returncode == 0 and
-              f"compiled Nicolas {case.label}: 0 mismatches / {m * n} BF16 values" in output)
+    expected = (f"compiled Nicolas {case.label}: 0 code mismatches / {m * n}, "
+                f"0 scale mismatches / {m * n // 32}" if case.quant_output else
+                f"compiled Nicolas {case.label}: 0 mismatches / {m * n} BF16 values")
+    passed = returncode == 0 and expected in output
     dispatch = json.loads((object_dir / "compile_manifest.json").read_text())
     receipt = {
         "schema": f"mx_gemmini.nicolas_plain_{case.precision.lower()}_typed_object_spike.v1",
         "status": "source_golden_matched_on_pinned_spike" if passed else
                   "source_golden_failed_on_pinned_spike",
         "scope": (f"Nicolas {case.source_name}: packed {case.precision} source arrays, "
-                  f"{m}x{n}x{case.shape[2]} BF16 output; PyTorch model2MLIR capture, "
+                  f"{m}x{n}x{case.shape[2]} " +
+                  ("source-header FP8 codes and E8M0 scales" if case.quant_output
+                   else "BF16 output") + "; PyTorch model2MLIR capture, "
                   "typed source binding, public object compiler, full Spike comparison"),
         "source_driver_sha256": _sha(kernel.driver),
         "source_header_sha256": _sha(kernel.data_header),
@@ -349,7 +408,10 @@ def main(default_case: str | None = None) -> None:
         "spike_sha256": _sha(args.riscv_root.resolve() / "bin/spike"),
         "spike_extension_sha256": _sha(args.out_dir / "run/libgemmini.so"),
         "driver_sha256": _sha(args.out_dir / "run/mx_driver.c"),
-        "outputs_checked": m * n, "mismatches": 0 if passed else None,
+        "outputs_checked": m * n + (m * n // 32 if case.quant_output else 0),
+        "codes_checked": m * n if case.quant_output else None,
+        "scales_checked": m * n // 32 if case.quant_output else None,
+        "mismatches": 0 if passed else None,
     }
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
