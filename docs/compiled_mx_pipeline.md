@@ -892,6 +892,17 @@ The archived `bound/connected.mlir.gz` and six `bound/*.bin.gz` files can be
 passed directly to `tools.compile_object`; a replay reproduced the archived
 object, C issuer, and physical command stream byte for byte.
 
+The [narrow rectangular archive](evidence/nicolas_rectangular_pair_64x96x64_64x32x96_ea746a2/index.json)
+repeats capture → bind → object → stock Spike from a fresh `ea746a2`
+checkout with `--second-width 32` and separate output directories. It keeps
+Nicolas's unchanged 64×96×64 MM1 golden and slices B2 to 96×32. The B1 and
+B2 buffers are **6,144 and 3,072 bytes**, with distinct scratchpad tail
+placements. Spike matched **6,144 C1 codes, 192 C1 scales, 2,048 C2 codes,
+and 64 C2 scales** against the checked source/model references. The first
+build and fresh replay produced identical captured MLIR, bound payloads,
+object, ELF, and Spike log. The archive hashes every replay artifact and
+includes the data-free object and complete output reference.
+
 ```sh
 python -m tools.capture_nicolas_chain \
   --model2mlir-root "$MODEL2MLIR_ROOT" --mxq-root "$MXQ_ROOT" \
@@ -3355,9 +3366,9 @@ cases with:
    qualified 64³ MX+VPU case and the plain MX 16-row prefix ladder of
    Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
    MX cases.
-   One rectangular 64×96×64 → 64×64×96 pair is now qualified on Spike;
-   lower broader rectangular graphs, distinct B1/B2 footprints, and
-   mixed-engine graphs without a source-specific seam.
+   Two rectangular 64×96×64 → 64×{32,64}×96 pairs are now qualified on
+   Spike, including distinct B1/B2 footprints; lower broader rectangular
+   and mixed-engine graphs without a source-specific seam.
 3. Check the candidate Spike weight-LUT lane fix against RTL, then qualify
    the one failing E4M3-direct × E4M3-LUT cell on DIM8, DIM16, and DIM32.
    The other 35 / 36 legal cells pass stock Spike on all three geometries;
