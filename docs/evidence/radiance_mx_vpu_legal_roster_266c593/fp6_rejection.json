@@ -1,0 +1,8 @@
+{
+  "diagnostic": "functional:matmul: 0 legal fp6_e3m2/lut choices; the capture cannot change operand projection",
+  "handoff_sha256": "361be49fc4336b4dea67c11960ec13d3b59c07f9ced54b8533b6811827d69cbd",
+  "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.unsupported_vpu_fp6_handoff.v1",
+  "status": "unsupported_profile_rejected"
+}

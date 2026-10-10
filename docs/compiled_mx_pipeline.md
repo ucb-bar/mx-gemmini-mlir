@@ -2828,6 +2828,25 @@ target code/scale bytes, bound MLIR, physical program, and generated issuer
 are archived per case. DIM16 compares the source headers directly; DIM8 and
 DIM32 compare the derived target-mesh reference.
 
+### Complete legal source roster on the MX+VPU profile
+
+The `--precision` selector restricts either source roster to the formats
+admitted by one RTL profile. For Nicolas's
+`MxE4M3Fp4VpuGemminiRocketConfig`, FP8 and FP4 are legal; FP6 LUT compute
+is rejected during handoff binding. The
+[VPU-profile archive](evidence/radiance_mx_vpu_legal_roster_266c593/index.json)
+records two direct Spike runs of every matching Radiance MX GEMM driver:
+**18 / 18 BF16-output drivers and 294,912 / 294,912 BF16 values**, plus
+**6 / 6 requant drivers, 73,728 / 73,728 output bytes, and 2,304 / 2,304
+E8M0 scales** per run. Generated ELFs and Spike logs match between runs.
+The archive also records the exact FP6 profile rejection.
+
+These source drivers execute the matrix and optional host requantization
+path under a VPU-capable profile; they contain no VPU instructions. The
+separate VPU command and captured graph qualifications above exercise vector
+execution. FP6+VPU remains a hardware configuration gap in Nicolas's pinned
+branch.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

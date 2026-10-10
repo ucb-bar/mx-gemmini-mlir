@@ -130,6 +130,12 @@ header requantization epilogue: each profile matches 90,112 output bytes and
 3,328 E8M0 scales in two Spike runs. See the
 [requant evidence](evidence/radiance_mx_requant_mesh_roster_266c593/index.json)
 for the numerical reference boundary.
+The VPU-enabled `MxE4M3Fp4VpuGemminiRocketConfig` also runs the complete
+legal FP8/FP4 source GEMM subset: 18 BF16 drivers and six requant drivers,
+each in two direct Spike runs. The
+[profile archive](evidence/radiance_mx_vpu_legal_roster_266c593/index.json)
+records all outputs and the compiler's FP6 rejection. These source drivers
+do not issue VPU instructions; the vector qualifications above do.
 
 No image-specific profile is checked in for the current VPU build. An
 image-specific profile must bind the bitstream and elaborated Radiance config

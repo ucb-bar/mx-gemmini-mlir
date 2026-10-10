@@ -1,0 +1,87 @@
+{
+  "origin": "radiance_source_header_specialization",
+  "precision": "FP4",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources": {
+    "activation": {
+      "bytes": 131072,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "cb1edaaf34c1ef69d6fef45dfa8d09c54a98f0147aa3cbb3d3d2b8cc30684fc5",
+      "shape": [
+        64,
+        2048
+      ]
+    },
+    "activation_scales": {
+      "bytes": 8192,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "beac4667f3e3789564e55cea7260ce86663cf95254ee0186ea6020869574488b",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 32768,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "855199d435e4f037d97243ecf2818c8e0070e9bc0ab70c6d6872a3f634d40311",
+      "shape": [
+        128,
+        128
+      ]
+    },
+    "output_scales": {
+      "bytes": 512,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "22c100abd4a683c806c39b4a7c0e19b7a8a325d7187323fa0fd039ea82abbcdf",
+      "shape": [
+        4,
+        128
+      ]
+    },
+    "weight": {
+      "bytes": 131072,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "535652c749bbf0d33077e0dc43590a4a6e4cbb1c62eec099661193c9b5d8d6d0",
+      "shape": [
+        2048,
+        64
+      ]
+    },
+    "weight_scales": {
+      "bytes": 8192,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "3793230dac1c7926c1ce245824fed4364374e4742d9b2991b79e90a1f8f28614",
+      "shape": [
+        64,
+        128
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    128,
+    128,
+    2048
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "1433db877a87627d2ead9961de7663b4b07a9dd070aff964906a8290c033cf9a",
+  "source_header_sha256": "57d3b18403f51bf843dc78f892ed3f50e9110c559ab326755da7c05dbcd89cb7",
+  "tile_mnk": [
+    128,
+    128,
+    128
+  ]
+}
