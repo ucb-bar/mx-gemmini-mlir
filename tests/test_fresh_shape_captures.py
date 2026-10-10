@@ -77,3 +77,49 @@ def test_long_k_source_capture_matches_executed_spike_receipt(precision, k):
     payload_text = payload.read_text()
     assert capture["source_mlir_sha256"] in payload_text
     assert executed["payload_manifest_sha256"] in payload_text
+
+
+@pytest.mark.parametrize("case,driver,shape,expected_status", [
+    ("fp8_128x128x128_tk128_fullout",
+     "mxgemm.fp8.m128n128k128.tm128tn128tk128.fullout.cpp",
+     (128, 128, 128), "source_golden_matched_on_pinned_spike"),
+    ("fp4_128x128x512_tk512_fullout",
+     "mxgemm.fp4.singletile.tm128tn128tk512.fullout.cpp",
+     (128, 128, 512), "source_golden_matched_on_pinned_spike"),
+    ("fp4_128x128x1024_tk512_fullout",
+     "mxgemm.fp4.m128n128k1024.tm128tn128tk512.fullout.cpp",
+     (128, 128, 1024), "source_golden_matched_on_pinned_spike"),
+    ("fp8_128x128x128_tk128_quant",
+     "mxgemm.fp8.singletile.tm128tn128tk128.requant.cpp",
+     (128, 128, 128), "nicolas_oracle_matched_on_pinned_spike"),
+    ("fp4_128x128x512_tk512_quant",
+     "mxgemm.fp4.singletile.tm128tn128tk512.requant.cpp",
+     (128, 128, 512), "nicolas_oracle_matched_on_pinned_spike"),
+    ("fp8_128x128x256_tk256_quant",
+     "mxgemm.fp8.singletile.tm128tn128tk256.requant.cpp",
+     (128, 128, 256), "nicolas_oracle_matched_on_pinned_spike"),
+    ("fp8_128x128x256_tk256_fullout",
+     "mxgemm.fp8.singletile.tm128tn128tk256.fullout.cpp",
+     (128, 128, 256), "source_golden_matched_on_pinned_spike"),
+])
+def test_generated_source_variants_bind_capture_to_spike(case, driver, shape,
+                                                         expected_status):
+    stem = f"model2mlir_radiance_mx_{case}"
+    capture = json.loads((EVIDENCE / f"{stem}_capture_receipt.json").read_text())
+    executed = json.loads((EVIDENCE / f"compiled_mx_{case}_20261009.json").read_text())
+    assert capture["source_driver"].endswith(driver)
+    assert capture["source_shape"] == list(shape)
+    assert capture["model2mlir_revision"] == "7485a829c0195af0ec42820837d609e62e466564"
+    assert capture["opaque_calls"] == {}
+    assert capture["source_mlir_sha256"] == _sha(EVIDENCE / f"{stem}_source.mlir")
+    assert capture["handoff_mlir_sha256"] == _sha(EVIDENCE / f"{stem}_handoff.mlir")
+    assert capture["target_binding"]["bound_mlir_sha256"] == _sha(EVIDENCE / f"{stem}_bound.mlir")
+    assert executed["status"] == expected_status
+    assert executed["spike_exit_code"] == 0
+    assert executed["source_driver_sha256"] == capture["source_driver_sha256"]
+    assert executed["source_header_sha256"] == capture["source_data_header_sha256"]
+    assert executed["bound_mlir_sha256"] == _sha(EVIDENCE / f"{stem}_payload_bound.mlir")
+    if expected_status.startswith("source_golden"):
+        assert executed["compared_bf16_outputs"] == shape[0] * shape[1]
+    else:
+        assert executed["source_quant_scale_differences"] > 0
