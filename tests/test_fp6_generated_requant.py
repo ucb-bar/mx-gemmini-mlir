@@ -46,3 +46,15 @@ def test_fp6_requant_header_generation_and_payload_binding(tmp_path, k):
     assert len(resources["golden_output_scales"]) == 512
     assert resources["source_fp6_packed"] != resources["nicolas_fp6"]
     assert resources["golden_output_scales"] != resources["nicolas_output_scales"]
+
+    fullout = SOURCE / "kernels/gemm_mxgemmini" / (
+        f"mxgemm.fp6.singletile.tm128tn128tk{k}.fullout.cpp")
+    shutil.copy2(fullout, tmp_path / fullout.name)
+    fullout_kernel = read_source_gemm(tmp_path / fullout.name)
+    assert not fullout_kernel.quant_output and fullout_kernel.shape == (128, 128, k)
+    fullout_manifest = write_bundle(tmp_path / "fullout_bundle", fullout_kernel,
+                                    site_id="functional:matmul", profile_sha256="0" * 64)
+    checked_fullout, fullout_resources = load_bundle(tmp_path / "fullout_bundle")
+    assert checked_fullout == fullout_manifest
+    assert fullout_manifest.get("output_format") is None
+    assert fullout_resources["golden_bf16"] == resources["golden_bf16"]
