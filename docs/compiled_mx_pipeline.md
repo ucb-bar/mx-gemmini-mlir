@@ -3478,8 +3478,9 @@ runtime input hashes. The [pinned Spike log](evidence/nicolas_chain_pipelined_fu
 reports **0 mismatches** for all **4,096 MM1 BF16 values**, **16,384 C1/C2
 FP8 codes**, and **512 E8M0 scales** across the two branches. This closes the
 numerical shared-MM1→VPU→requant→MM2 path for Nicolas's 64³ source data. The
-compiler currently uses dependency fences and program order; the source's
-pipelined schedule and its RTL timing are still unqualified.
+default compiler schedule uses dependency fences and program order. The
+compiler's optional pipelined schedule has a separate functional Spike receipt
+below; its RTL timing remains unqualified.
 The [fresh checkout replay](evidence/nicolas_chain_pipelined_full_266c593/fresh_replay_manifest.json)
 from pushed commit `495fefe` matched the bound graph, physical commands,
 issuer, object, ELF, extension, Spike log, and compiler source closure hashes.
@@ -3519,3 +3520,28 @@ ELF, extension, Spike log, and compiler source closure hashes for both the
 [FP4-capable](evidence/nicolas_chain_pipelined_full_266c593/pipelined/fresh_replay_manifest.json)
 and [E4M3-only](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/fresh_replay_manifest.json)
 VPU profiles.
+
+### Source-preloaded pipelined issue on Nicolas's Spike
+
+The source driver starts from a BF16 C1 tile already in host memory. Running
+the compiler with `--issue-schedule pipelined` and without `--include-mm1`
+keeps that entry point: it loads B2 once, issues both BF16 tile transfers,
+then issues VPU0, requant0, VPU1, MM2_0, requant1, and MM2_1. There are no
+fences between the BF16 transfers or these six stage commands. The object is
+linkable and contains no embedded operands or goldens.
+
+The [FP4-capable VPU receipt](evidence/nicolas_chain_pipelined_compiled_266c593/preloaded_pipelined/object_manifest.json)
+and [E4M3-only VPU receipt](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_preloaded_pipelined/object_manifest.json)
+each compare **16,384 FP8 codes and 512 E8M0 scales** with zero mismatches on
+Nicolas's pinned Spike. Their profile hashes differ; for this FP8 path their
+issuer objects, ELFs, and Spike logs have identical hashes. Fresh checkouts of
+compiler commit `dd39055` reproduced both archives' MLIR, physical programs,
+objects, ELFs, and logs. The profile catalog records these as source-preloaded
+pipeline receipts, distinct from the compiler-issued MM1 receipts. These
+functional runs do not establish RTL queue overlap or a comparable cycle
+count with Nicolas's handwritten source driver.
+
+To reproduce either profile, use the compile command above with
+`--issue-schedule pipelined --run-spike` and omit `--include-mm1`. For the
+E4M3-only profile, also select its archived capture and profile JSON as in
+the full-chain command.

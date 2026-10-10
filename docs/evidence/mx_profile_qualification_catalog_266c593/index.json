@@ -1341,6 +1341,23 @@
           ],
           "second_tile_count": 2,
           "source": "docs/evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json"
+        },
+        {
+          "capture": "docs/evidence/nicolas_chain_pipelined_266c593/receipt.json",
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_chain_pipelined_compiled_266c593/preloaded_pipelined/object_manifest.json",
+          "fresh_checkout_reproduced": true,
+          "issues_captured_mm1": false,
+          "issues_vpu_commands": true,
+          "kind": "source_preloaded_mx_vpu_two_tile_pipelined_spike",
+          "schedule": "pipelined",
+          "second_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "second_tile_count": 2
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1530,6 +1547,23 @@
           ],
           "second_tile_count": 2,
           "source": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike_receipt.json"
+        },
+        {
+          "capture": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/capture/receipt.json",
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384,
+          "evidence": "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_preloaded_pipelined/object_manifest.json",
+          "fresh_checkout_reproduced": true,
+          "issues_captured_mm1": false,
+          "issues_vpu_commands": true,
+          "kind": "source_preloaded_mx_vpu_two_tile_pipelined_spike",
+          "schedule": "pipelined",
+          "second_shape_mnk": [
+            64,
+            64,
+            64
+          ],
+          "second_tile_count": 2
         }
       ],
       "profile_qualification": "structural_unqualified",
@@ -1709,9 +1743,11 @@
     "docs/evidence/nicolas_chain_pipelined_266c593/receipt.json": "c7a1bdd2b41f025725c1599594505158fc4ccac9cdb8c12561386ef47daee856",
     "docs/evidence/nicolas_chain_pipelined_266c593/source_spike_receipt.json": "a9c584f0d85f917fc1cb5c46775844a55730b8cf4e54c4d041d67f07df4fde21",
     "docs/evidence/nicolas_chain_pipelined_266c593/spike.log": "fbec49f76408fe92e2161da9468ba9d226a403a1dfeb5c06e3293239ee487b89",
+    "docs/evidence/nicolas_chain_pipelined_compiled_266c593/preloaded_pipelined/object_manifest.json": "d17af19d47d466ccb7dfdf8facd75bb215c96c9fef3fadbe3f4e1bacf6e2ffe2",
     "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/capture/receipt.json": "1e965b70fd563a421e40c0d83b9200478028fc82b79acb40368f0c750b925823",
     "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled/object_manifest.json": "b9132ae5b02caaaecfcbcb4fc41b80ce47e5deb83d9416100f8c0f82631ab70c",
     "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/object_manifest.json": "50128575f642e27c91d25e6bf10f49be64118836c1a010090cefa0ec79ae8c78",
+    "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_preloaded_pipelined/object_manifest.json": "ccf88c857d41b4ca832eb97b3b7a6eba27bfb0848b6cb63dd0ae23eb869fcd24",
     "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike.log": "fbec49f76408fe92e2161da9468ba9d226a403a1dfeb5c06e3293239ee487b89",
     "docs/evidence/nicolas_chain_pipelined_e4m3_only_266c593/source_spike_receipt.json": "d2a9fa300f5d0d6862251442a8f350b0edf8b58045cca703da27fdd5c24e414b",
     "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json": "1590f25f412d9989cca94fbc671174b5834dcc851a33177106db4df1e4d31c06",

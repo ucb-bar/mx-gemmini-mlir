@@ -1,0 +1,18 @@
+{
+  "compared_e8m0_scales": 512,
+  "compared_fp8_codes": 16384,
+  "compiler_revision": "dd39055fcb3ce2666f43f6adfe93251566e39198",
+  "compiler_source_closure_sha256": "aed162d82177d407daaa997c36000f8acb40cf13867784320168700c8d727b9c",
+  "issue_schedule": "pipelined",
+  "matching_sha256": {
+    "connected.mlir": "34862c08e89202a0ab263347d2bb7ae040d2e3d8ac3cabe7caa0d4beae23afba",
+    "mx_issue.c": "3b5def3b01ba395726d1876a5a6112ba57c5fc0eef236e0150c0f2d1c42c74f5",
+    "mx_issue.o": "4e6ad2070954fc0eeaf926ac79ce5ca0d506f0dc4f0174e7338f388d0fe8de86",
+    "mx_program.elf": "d6ed1a6338638fe3781b6053333c0685a377b07fe66ea1a2a3ab791117076806",
+    "physical_program.json": "2a41a6956fe7b6cc26dffef7475284c28567f9aa4153567ec9e4483a9d9c12d1",
+    "spike.log": "67ec652b1d989f59aaf40b0e0768709f7153fc3a82d8627493bb161c47122c05"
+  },
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "schema": "mx_gemmini.preloaded_pipelined_fresh_replay.v1",
+  "status": "fresh_checkout_identical"
+}

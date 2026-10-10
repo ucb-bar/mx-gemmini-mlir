@@ -55,15 +55,17 @@ def test_stock_failure_and_candidate_patch_stay_separate() -> None:
     assert selected["named_profile_spike_evidence"][1]["kind"] == (
         "connected_mx_vpu_narrow_spike")
     base = vpu["MxE4M3VpuGemminiRocketConfig"]
-    assert len(base["named_profile_spike_evidence"]) == 7
+    assert len(base["named_profile_spike_evidence"]) == 8
     assert sum(receipt["cases"] for receipt in
                base["named_profile_spike_evidence"] if "cases" in receipt) == 28
-    assert base["named_profile_spike_evidence"][-3]["kind"] == (
+    assert base["named_profile_spike_evidence"][-4]["kind"] == (
         "connected_mx_vpu_narrow_spike")
-    assert base["named_profile_spike_evidence"][-2]["kind"] == (
+    assert base["named_profile_spike_evidence"][-3]["kind"] == (
         "connected_mx_vpu_two_tile_spike")
-    assert base["named_profile_spike_evidence"][-1]["kind"] == (
+    assert base["named_profile_spike_evidence"][-2]["kind"] == (
         "connected_mx_vpu_two_tile_pipelined_spike")
+    assert base["named_profile_spike_evidence"][-1]["kind"] == (
+        "source_preloaded_mx_vpu_two_tile_pipelined_spike")
     assert all(not row["named_profile_spike_evidence"] for name, row in vpu.items()
                if name not in {selected["name"], base["name"]})
 
@@ -111,6 +113,14 @@ def test_both_named_vpu_rocket_profiles_have_full_two_tile_receipts() -> None:
                     "compared_e8m0_scales", "issues_vpu_commands",
                     "issues_captured_mm1"):
             assert pipelined[0][key] == receipt[key]
+        preloaded = [item for item in by_name[name]["named_profile_spike_evidence"]
+                     if item["kind"] == "source_preloaded_mx_vpu_two_tile_pipelined_spike"]
+        assert len(preloaded) == 1
+        assert preloaded[0]["schedule"] == "pipelined"
+        assert preloaded[0]["issues_captured_mm1"] is False
+        assert preloaded[0]["fresh_checkout_reproduced"] is True
+        assert preloaded[0]["compared_fp8_codes"] == 16384
+        assert preloaded[0]["compared_e8m0_scales"] == 512
 
 
 def test_dedicated_asymmetric_profiles_have_direct_mode_receipts() -> None:
