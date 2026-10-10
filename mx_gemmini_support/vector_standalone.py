@@ -11,6 +11,7 @@ from .physical_program import _cmd, _config_ld, _config_st, _transfer
 from .vector_lowering import lower_vector_commands
 from .resident_lowering import lower_resident_chain_commands
 from .first_matrix_lowering import lower_first_matrix_commands
+from .connected_chain import lower_connected_chain_commands
 
 
 def _sha(data: bytes) -> str:
@@ -106,7 +107,8 @@ int main(void) {
 
 def write_resident_chain_sources(directory: Path, mlir_text: str, profile: dict,
                                  resources: dict[str, bytes], facts: dict, *,
-                                 frontend_mlir: str | None = None) -> dict:
+                                 frontend_mlir: str | None = None,
+                                 connected_mlir: str | None = None) -> dict:
     """Emit the typed resident chain with C1 and C2 source-golden checks."""
     expected_lengths = {"c1_bf16": 8192, "c1_codes_ref": 4096,
                         "c1_scales_ref": 128, "b2_weight": 4096,
@@ -121,13 +123,21 @@ def write_resident_chain_sources(directory: Path, mlir_text: str, profile: dict,
         mlir_text, profile,
         expected_sites=("functional:matmul", "functional:matmul_1")
         if frontend_mlir is not None else None)
-    if frontend_mlir is None:
+    if connected_mlir is not None:
+        if frontend_mlir is None:
+            raise ValueError("connected MX chain requires the checked frontend capture")
+        commands = list(lower_connected_chain_commands(
+            connected_mlir, profile, resources, facts,
+            frontend_mlir=frontend_mlir, seam_mlir=mlir_text))
+    elif frontend_mlir is None:
         commands: list[Command | Fence] = [_cmd(7, 0, 0), _config_ld(16), Fence()]
         for row in range(0, 512, 16):
             commands.append(_transfer(2, "c1_bf16", row * 16, 0x1000 + row))
     else:
         commands = list(lower_first_matrix_commands(frontend_mlir, profile, resources))
-    commands.extend((Fence(), *body, _config_st(16)))
+    if connected_mlir is None:
+        commands.extend((Fence(), *body))
+    commands.append(_config_st(16))
     for name, start in (("c1_tiled", 128), ("c2_tiled", 512)):
         for row in range(0, 256, 16):
             commands.append(_transfer(3, name, row * 16, start + row))
@@ -228,7 +238,9 @@ int main(void) {{
     (directory / "mx_issue.c").write_text(issuer)
     (directory / "mx_driver.c").write_text(driver)
     (directory / "mx_data.S").write_text("\n".join(assembly) + "\n")
-    physical = {"schema": ("mx_gemmini.full_chain_program.v1" if frontend_mlir is not None
+    physical = {"schema": ("mx_gemmini.connected_full_chain_program.v1" if
+                           connected_mlir is not None else
+                           "mx_gemmini.full_chain_program.v1" if frontend_mlir is not None
                            else "mx_gemmini.resident_chain_program.v1"),
                 "source_facts": facts, "typed_mlir_sha256": _sha(mlir_text.encode()),
                 "command_count": sum(isinstance(command, Command) for command in commands),
@@ -237,11 +249,17 @@ int main(void) {{
                                    if isinstance(command, Command)]}
     if frontend_mlir is not None:
         physical["frontend_mlir_sha256"] = _sha(frontend_mlir.encode())
+    if connected_mlir is not None:
+        physical["connected_mlir_sha256"] = _sha(connected_mlir.encode())
     (directory / "physical_program.json").write_text(
         json.dumps(physical, indent=2, sort_keys=True) + "\n")
-    return {"schema": ("mx_gemmini.full_chain_sources.v1" if frontend_mlir is not None
+    return {"schema": ("mx_gemmini.connected_full_chain_sources.v1" if
+                       connected_mlir is not None else
+                       "mx_gemmini.full_chain_sources.v1" if frontend_mlir is not None
                        else "mx_gemmini.resident_chain_sources.v1"),
             "source_facts": facts, "typed_mlir_sha256": _sha(mlir_text.encode()),
+            **({"connected_mlir_sha256": _sha(connected_mlir.encode())}
+               if connected_mlir is not None else {}),
             "command_count": physical["command_count"],
             "files_sha256": {path.name: _sha(path.read_bytes())
                              for path in sorted(directory.iterdir()) if path.is_file()}}

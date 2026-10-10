@@ -117,7 +117,8 @@ def Mx_RequantizeOp : Mx_Op<"requantize"> {
 
 def Mx_VpuExecuteOp : Mx_Op<"vpu_execute"> {
   let summary = "Issue a source-bound BF16 scratchpad VPU command";
-  let arguments = (ins StrAttr:$site_id, StrAttr:$kind,
+  let arguments = (ins Variadic<AnyTensor>:$inputs,
+                   StrAttr:$site_id, StrAttr:$kind,
                    I32Attr:$src1_row, I32Attr:$src2_row, I32Attr:$dst_row,
                    I32Attr:$rows, I32Attr:$reduction_length,
                    BoolAttr:$broadcast, I32Attr:$immediate_bf16,
@@ -125,11 +126,13 @@ def Mx_VpuExecuteOp : Mx_Op<"vpu_execute"> {
                    StrAttr:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
+  let results = (outs Variadic<AnyTensor>:$outputs);
 }
 
 def Mx_SpadRequantOp : Mx_Op<"spad_requant"> {
   let summary = "Requantize BF16 scratchpad rows into resident MX operand A";
-  let arguments = (ins StrAttr:$site_id,
+  let arguments = (ins Variadic<AnyTensor>:$inputs,
+                   StrAttr:$site_id,
                    I32Attr:$source_row, I32Attr:$destination_row,
                    I32Attr:$m, I32Attr:$n, StrAttr:$output_format,
                    BoolAttr:$tiled, BoolAttr:$resident,
@@ -138,11 +141,13 @@ def Mx_SpadRequantOp : Mx_Op<"spad_requant"> {
                    StrAttr:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
+  let results = (outs Variadic<AnyTensor>:$outputs);
 }
 
 def Mx_ResidentContractOp : Mx_Op<"resident_contract"> {
   let summary = "Consume a resident MX activation tile and scales in a second contraction";
-  let arguments = (ins StrAttr:$site_id,
+  let arguments = (ins Variadic<AnyTensor>:$inputs,
+                   StrAttr:$site_id,
                    I32Attr:$activation_row, I32Attr:$weight_row,
                    I32Attr:$output_row, I32Attr:$m, I32Attr:$n, I32Attr:$k,
                    StrAttr:$activation_format, StrAttr:$weight_format,
@@ -152,4 +157,5 @@ def Mx_ResidentContractOp : Mx_Op<"resident_contract"> {
                    StrAttr:$profile_sha256,
                    StrAttr:$contract_sha256, StrAttr:$policy_sha256,
                    StrAttr:$manifest_sha256);
+  let results = (outs Variadic<AnyTensor>:$outputs);
 }

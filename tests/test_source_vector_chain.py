@@ -16,6 +16,10 @@ from mx_gemmini_support.vector_lowering import lower_vector_commands
 from mx_gemmini_support.vector_standalone import write_vector_requant_sources
 from mx_gemmini_support.vector_standalone import write_resident_chain_sources
 from mx_gemmini_support.resident_lowering import lower_resident_chain_commands
+from mx_gemmini_support.connected_chain import (render_connected_chain,
+                                                lower_connected_chain_commands)
+from mx_gemmini_support.first_matrix_lowering import lower_first_matrix_commands
+from mx_gemmini_support.command_ir import Fence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -183,3 +187,55 @@ def test_two_site_frontend_lowers_full_matrix_vpu_requant_matrix_chain(tmp_path)
         write_resident_chain_sources(tmp_path / "bad", mlir.replace(
             'site_id = "functional:matmul_1"', 'site_id = "wrong"'), profile,
             resources, facts, frontend_mlir=frontend)
+
+
+def test_connected_full_chain_reuses_checked_commands_and_rejects_broken_ssa(tmp_path):
+    if not SOURCE.is_file() or not HEADER.is_file():
+        pytest.skip("requires Nicolas's pinned chain source and header")
+    profile = _profile()
+    frontend = (ROOT / "docs/evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir").read_text()
+    first_source = RTL / "software/gemmini-rocc-tests/bareMetalC/matmul_tiled_fp8_64x64_chain.c"
+    seam, resources, facts = capture_nicolas_vpu_requant(
+        SOURCE, HEADER, profile, include_resident_matmul=True,
+        first_source_path=first_source)
+    connected = render_connected_chain(frontend, seam, profile, resources, facts)
+    commands = lower_connected_chain_commands(
+        connected, profile, resources, facts,
+        frontend_mlir=frontend, seam_mlir=seam)
+    legacy = (*lower_first_matrix_commands(frontend, profile, resources),
+              Fence(), *lower_resident_chain_commands(
+                  seam, profile,
+                  expected_sites=("functional:matmul", "functional:matmul_1")))
+    assert commands == legacy
+    receipt = write_resident_chain_sources(
+        tmp_path / "connected", seam, profile, resources, facts,
+        frontend_mlir=frontend, connected_mlir=connected)
+    write_resident_chain_sources(
+        tmp_path / "legacy", seam, profile, resources, facts,
+        frontend_mlir=frontend)
+    assert (tmp_path / "connected/mx_issue.c").read_bytes() == (
+        tmp_path / "legacy/mx_issue.c").read_bytes()
+    assert receipt["schema"] == "mx_gemmini.connected_full_chain_sources.v1"
+    assert receipt["connected_mlir_sha256"] == hashlib.sha256(connected.encode()).hexdigest()
+    wrong_edge = connected.replace(
+        '"mx_gemmini.resident_contract"(%c1, %c1s, %b2, %b2s)',
+        '"mx_gemmini.resident_contract"(%c1, %c1s, %b2, %a1s)')
+    with pytest.raises(ValueError, match="SSA handoff differs"):
+        lower_connected_chain_commands(
+            wrong_edge, profile, resources, facts,
+            frontend_mlir=frontend, seam_mlir=seam)
+    with pytest.raises(ValueError, match="target commands differ from source seam"):
+        lower_connected_chain_commands(
+            connected.replace('kind = "muls"', 'kind = "adds"'),
+            profile, resources, facts,
+            frontend_mlir=frontend, seam_mlir=seam)
+    with pytest.raises(ValueError, match="source facts or profile differ"):
+        lower_connected_chain_commands(
+            connected.replace('mx.frontend_mlir_sha256 = "',
+                              'mx.frontend_mlir_sha256 = "0', 1),
+            profile, resources, facts, frontend_mlir=frontend, seam_mlir=seam)
+    opt = ROOT / "build/tools/mx-gemmini-opt"
+    if opt.is_file():
+        path = tmp_path / "connected.mlir"
+        path.write_text(connected)
+        subprocess.run([str(opt), str(path), "-o", "/dev/null"], check=True)

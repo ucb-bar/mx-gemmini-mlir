@@ -239,6 +239,17 @@ LogicalResult RequantizeOp::verify() {
 
 LogicalResult VpuExecuteOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
+  if (!(getInputs().empty() && getOutputs().empty()) &&
+      !(getInputs().size() == 1 && getOutputs().size() == 1))
+    return emitOpError("requires either no SSA edges or one BF16 input and output");
+  if (!getInputs().empty()) {
+    auto input = dyn_cast<RankedTensorType>(getInputs()[0].getType());
+    auto output = dyn_cast<RankedTensorType>(getOutputs()[0].getType());
+    if (!input || !output || input.getRank() != 2 ||
+        !input.hasStaticShape() || !input.getElementType().isBF16() ||
+        !output.getElementType().isBF16() || input != output)
+      return emitOpError("connected VPU needs matching rank-two BF16 tensors");
+  }
   auto kind = (*this)->getAttrOfType<StringAttr>("kind").getValue();
   if (kind != "add" && kind != "sub" && kind != "mul" && kind != "adds" &&
       kind != "muls" && kind != "exp" && kind != "rcp" && kind != "rsqrt" &&
@@ -265,6 +276,9 @@ LogicalResult VpuExecuteOp::verify() {
 
 LogicalResult SpadRequantOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
+  if (!(getInputs().empty() && getOutputs().empty()) &&
+      !(getInputs().size() == 1 && getOutputs().size() == 2))
+    return emitOpError("requires either no SSA edges or BF16 input and code/scale outputs");
   auto row = [this](StringRef name) { return (*this)->getAttrOfType<IntegerAttr>(name).getInt(); };
   auto output = (*this)->getAttrOfType<StringAttr>("output_format").getValue();
   if (output != "fp8_e4m3" && output != "fp4_e2m1")
@@ -276,6 +290,20 @@ LogicalResult SpadRequantOp::verify() {
   int64_t blocks = row("m") * row("n") / 32;
   if (row("m") % 8 || row("n") % 32 || blocks % 32 || blocks > 2048)
     return emitOpError("SPAD_REQUANT requires M multiple of 8, N multiple of 32, and 32..2048 blocks");
+  if (!getInputs().empty()) {
+    auto input = dyn_cast<RankedTensorType>(getInputs()[0].getType());
+    auto codes = dyn_cast<RankedTensorType>(getOutputs()[0].getType());
+    auto scales = dyn_cast<RankedTensorType>(getOutputs()[1].getType());
+    int64_t m = row("m"), n = row("n");
+    int64_t codeRows = output == "fp4_e2m1" ? m / 2 : m;
+    if (!input || !input.getElementType().isBF16() ||
+        !codes || !codes.getElementType().isInteger(8) ||
+        !scales || !scales.getElementType().isInteger(8) ||
+        input.getShape() != ArrayRef<int64_t>({m, n}) ||
+        codes.getShape() != ArrayRef<int64_t>({codeRows, n}) ||
+        scales.getShape() != ArrayRef<int64_t>({m, n / 32}))
+      return emitOpError("connected SPAD_REQUANT tensor shapes differ from command geometry");
+  }
   auto scale = row("scale_dram_address");
   if (scale < 0 || scale >= (int64_t{1} << 33))
     return emitOpError("SPAD_REQUANT scale address must fit 33 bits");
@@ -296,6 +324,9 @@ LogicalResult SpadRequantOp::verify() {
 
 LogicalResult ResidentContractOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
+  if (!(getInputs().empty() && getOutputs().empty()) &&
+      !(getInputs().size() == 4 && getOutputs().size() == 2))
+    return emitOpError("requires either no SSA edges or four inputs and two outputs");
   auto row = [this](StringRef name) { return (*this)->getAttrOfType<IntegerAttr>(name).getInt(); };
   if (row("activation_row") < 0 || row("activation_row") > 0x3fff ||
       row("weight_row") < 0 || row("weight_row") > 0x3fff ||
@@ -310,6 +341,19 @@ LogicalResult ResidentContractOp::verify() {
       format("weight_format") != "fp8_e4m3" ||
       format("output_format") != "fp8_e4m3")
     return emitOpError("resident contraction currently requires E4M3 inputs and output");
+  if (!getInputs().empty()) {
+    int64_t m = row("m"), n = row("n"), k = row("k");
+    const int64_t expected[6][2] = {
+        {m, k}, {m, k / 32}, {k, n}, {k / 32, n}, {m, n}, {m, n / 32}};
+    for (unsigned i = 0; i < 6; ++i) {
+      Value value = i < 4 ? getInputs()[i] : getOutputs()[i - 4];
+      auto tensor = dyn_cast<RankedTensorType>(value.getType());
+      if (!tensor || !tensor.getElementType().isInteger(8) ||
+          tensor.getRank() != 2 || tensor.getDimSize(0) != expected[i][0] ||
+          tensor.getDimSize(1) != expected[i][1])
+        return emitOpError("connected resident contraction tensor shapes differ from command geometry");
+    }
+  }
   for (StringRef attr : {"weight_buffer", "weight_scales_buffer", "output_scales_buffer"}) {
     StringRef name = format(attr);
     if (name.empty()) return emitOpError("resident contraction buffer name is empty");

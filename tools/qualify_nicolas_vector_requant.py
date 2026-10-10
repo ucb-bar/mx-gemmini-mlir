@@ -9,6 +9,7 @@ import shutil
 import subprocess
 
 from mx_gemmini_support.source_vector_chain import capture_nicolas_vpu_requant
+from mx_gemmini_support.connected_chain import render_connected_chain
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.vector_standalone import (write_resident_chain_sources,
                                                    write_vector_requant_sources)
@@ -28,6 +29,8 @@ def main() -> None:
                         help="two-site model2MLIR profile-bound handoff for MM1")
     parser.add_argument("--frontend-receipt", type=Path,
                         help="capture receipt binding the frontend handoff to Nicolas's source")
+    parser.add_argument("--connected-ssa", action="store_true",
+                        help="compile one SSA-connected MM1/VPU/requant/MM2 MLIR function")
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
@@ -35,6 +38,8 @@ def main() -> None:
         parser.error("--frontend-bound-mlir and --frontend-receipt are required together")
     if args.frontend_bound_mlir and not args.with_resident_matmul:
         parser.error("the frontend chain requires --with-resident-matmul")
+    if args.connected_ssa and not args.frontend_bound_mlir:
+        parser.error("--connected-ssa requires the checked two-site frontend capture")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     software = args.rtl_root / "software/gemmini-rocc-tests"
     extension = args.rtl_root / "software/libgemmini"
@@ -63,9 +68,18 @@ def main() -> None:
     mlir_path.write_text(mlir)
     if frontend_mlir is not None:
         (args.out_dir / "frontend_bound.mlir").write_text(frontend_mlir)
+    connected_mlir = None
+    if args.connected_ssa:
+        connected_mlir = render_connected_chain(
+            frontend_mlir, mlir, profile, resources, facts)
+        (args.out_dir / "connected_bound.mlir").write_text(connected_mlir)
     if args.mx_opt is not None:
         _run([str(args.mx_opt.resolve()), str(mlir_path), "-o", "/dev/null"],
              cwd=args.out_dir, log=args.out_dir / "native_verify.log")
+        if connected_mlir is not None:
+            _run([str(args.mx_opt.resolve()), str(args.out_dir / "connected_bound.mlir"),
+                  "-o", "/dev/null"], cwd=args.out_dir,
+                 log=args.out_dir / "connected_native_verify.log")
     build = args.out_dir / "build"
     writer = (write_resident_chain_sources if args.with_resident_matmul else
               write_vector_requant_sources)
@@ -73,7 +87,8 @@ def main() -> None:
         receipt = writer(build, mlir, profile, resources, facts)
     else:
         receipt = writer(build, mlir, profile, resources, facts,
-                         frontend_mlir=frontend_mlir)
+                         frontend_mlir=frontend_mlir,
+                         connected_mlir=connected_mlir)
     riscv_cc = args.riscv_root / "bin/riscv64-unknown-elf-gcc"
     spike = args.riscv_root / "bin/spike"
     if not riscv_cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
@@ -112,7 +127,10 @@ def main() -> None:
                             stderr=subprocess.STDOUT, check=False)
     log = build / "spike.log"
     log.write_text(result.stdout)
-    if frontend_mlir is not None:
+    if connected_mlir is not None:
+        scope = "source_connected_full_chain"
+        marker = "lowered full chain: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
+    elif frontend_mlir is not None:
         scope = "source_full_chain"
         marker = "lowered full chain: C1 BF16 0, C1 0 codes 0 scales, C2 0 codes 0 scales mismatches"
     elif args.with_resident_matmul:
@@ -143,6 +161,8 @@ def main() -> None:
         receipt["compared_bf16_values"] = 4096
         receipt["frontend_bound_mlir_sha256"] = _sha(args.out_dir / "frontend_bound.mlir")
         receipt["frontend_capture_receipt_sha256"] = _sha(args.frontend_receipt)
+    if connected_mlir is not None:
+        receipt["connected_bound_mlir_sha256"] = _sha(args.out_dir / "connected_bound.mlir")
     (build / "artifact_manifest.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"{receipt['status']}: {elf}")
     if not passed:

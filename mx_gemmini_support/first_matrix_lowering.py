@@ -36,6 +36,15 @@ def lower_first_matrix_commands(frontend_mlir: str, profile: dict,
                  _text_attr(op, "weight_projection")) !=
                 ("fp8_e4m3", "fp8_e4m3", "direct", "direct") for op in contracts)):
         raise ValueError("first MX matrix site or selected precision differs")
+    return emit_verified_first_matrix_commands(profile, resources,
+                                               output_row=output_row)
+
+
+def emit_verified_first_matrix_commands(profile: dict,
+                                        resources: dict[str, bytes], *,
+                                        output_row: int = 0x1000
+                                        ) -> tuple[Command | Fence, ...]:
+    """Emit MM1 after a frontend or connected-chain validator checked its site."""
     if {name: len(resources.get(name, b"")) for name in
             ("a1_activation", "b1_weight", "a1_scales", "b1_scales", "c1_bf16")
             } != {"a1_activation": 4096, "b1_weight": 4096,
