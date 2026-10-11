@@ -173,7 +173,8 @@ def lower_first_fp8_rectangular(plan: RectangularPairPlan, *,
 
 
 def plan_fp8_resident_pair(profile: dict, *, shape: tuple[int, int, int],
-                           a_row: int, c1_row: int, c2_row: int
+                           a_row: int, c1_row: int, c2_row: int,
+                           allow_a_c1_reuse: bool = False
                            ) -> ResidentPairPlan:
     """Place full A/B/C1/C2 tiles; reuse B rows only after MM1 retires."""
     resources = profile["resources"]
@@ -195,6 +196,11 @@ def plan_fp8_resident_pair(profile: dict, *, shape: tuple[int, int, int],
     if (any(type(row) is not int or row < 0 or row % dim for row in
             (a_row, c1_row, c2_row))):
         raise ValueError("resident pair scratchpad rows need DIM16 alignment")
+    if allow_a_c1_reuse and (
+            shape != (64, 64, 64) or
+            (a_row, c1_row, c2_row) != (0, 128, 512) or
+            profile["name"] != "MxGemminiRocketConfig"):
+        raise ValueError("A/C1 row reuse is qualified only for Nicolas's 64³ chain")
     if (resources["scratchpad_bytes"] % dim or
             resources["scale_mem_config"]["size_bytes"] % 4):
         raise ValueError("resident pair target memory geometry is unsupported")
@@ -207,10 +213,14 @@ def plan_fp8_resident_pair(profile: dict, *, shape: tuple[int, int, int],
               "B": (b_row, rows),
               "C1": (c1_row, c1_row + c_rows),
               "C2": (c2_row, c2_row + c_rows)}
+    # MM1 has consumed A before it writes C1. Nicolas's 64³ source reuses
+    # rows 128..255 for C1; all other pairs must remain disjoint.
     if (b_row < 0 or any(end > rows for _, end in ranges.values()) or
             any(not (left[1] <= right[0] or right[1] <= left[0])
-                for i, left in enumerate(ranges.values())
-                for right in list(ranges.values())[i + 1:])):
+                for i, (left_name, left) in enumerate(ranges.items())
+                for right_name, right in list(ranges.items())[i + 1:]
+                if not (allow_a_c1_reuse and
+                        {left_name, right_name} == {"A", "C1"}))):
         raise ValueError("resident pair scratchpad row lifetimes overlap")
     scale_half = resources["scale_mem_config"]["size_bytes"] // 4
     a_scales, b_scales, output_scales = (m * k // 32, k * n // 32, m * n // 32)

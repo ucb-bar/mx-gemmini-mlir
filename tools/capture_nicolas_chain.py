@@ -83,11 +83,20 @@ def main() -> None:
             Path(mxq.__file__).resolve().parents[1] != mxq_root:
         raise ValueError("model2MLIR or MXQuant resolved to another checkout")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    plain64 = args.matrix_dim == 64 and profile["name"] == "MxGemminiRocketConfig"
+    if plain64 and (_git(m2m_root) !=
+                    "e9ded36eb85abf2d9097ac4dc11457c825853388" or
+                    _git(mxq_root) !=
+                    "b4af5430bac147f4a16126931cc0177367cc3982"):
+        raise ValueError("direct Nicolas 64³ chain needs the pinned latest frontend")
     if profile["geometry"]["mesh_columns"] != 16 or \
             "fp8_e4m3" not in profile["candidate_output_modes"]:
         raise ValueError("selected profile cannot execute Nicolas's FP8 chain")
-    if args.matrix_dim == 64 and (not profile["resources"].get("vpu") or
-                                  not profile["resources"].get("spad_requant")):
+    if plain64 and not profile["resources"].get("requantizer"):
+        raise ValueError("selected plain FP8 profile lacks the requantizer")
+    if args.matrix_dim == 64 and not plain64 and (
+            not profile["resources"].get("vpu") or
+            not profile["resources"].get("spad_requant")):
         raise ValueError("selected profile cannot execute Nicolas's FP8 VPU chain")
     if args.matrix_dim != 64 and not square_vpu and (
             profile["name"] != "MxGemminiRocketConfig" or
@@ -98,7 +107,8 @@ def main() -> None:
                        not profile["resources"].get("spad_requant")):
         raise ValueError("selected profile cannot execute derived 128-cubed VPU chain")
     software = args.rtl_root / "software/gemmini-rocc-tests"
-    source = software / ("bareMetalC/matmul_tiled_fp8_64x96x64.c" if rectangular else
+    source = software / ("bareMetalC/matmul_tiled_fp8_64x64_chain.c" if plain64 else
+                         "bareMetalC/matmul_tiled_fp8_64x96x64.c" if rectangular else
                          "bareMetalC/chain_vpu_spad_requant.c" if args.matrix_dim == 64
                          else "bareMetalC/matmul_tiled_fp8_128x128_chain.c")
     header = software / ("include/matmul_fp8_64x96x64.h" if rectangular else
@@ -153,7 +163,9 @@ def main() -> None:
         raise RuntimeError("profile-bound handoff lost a contraction site")
     subprocess.run([str(args.mx_opt.resolve()), str(bound), "-o", "/dev/null"], check=True)
     receipt = {
-        "schema": ("mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
+        "schema": ("mx_gemmini.nicolas_plain_chain_64_model2mlir_capture.v1"
+                   if plain64 else
+                   "mx_gemmini.nicolas_rectangular_chain_model2mlir_capture.v1"
                    if rectangular else
                    "mx_gemmini.nicolas_square_128_vpu_model2mlir_capture.v1"
                    if square_vpu else
@@ -176,7 +188,7 @@ def main() -> None:
         "numerical_scope": "source A1/B1/B2 packed bytes and scales are not PyTorch example inputs",
         "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
     }
-    if args.matrix_dim != 64:
+    if args.matrix_dim != 64 or plain64:
         receipt["matrix_dim"] = args.matrix_dim
     if output_rows != args.matrix_dim:
         receipt["output_rows"] = output_rows

@@ -216,7 +216,11 @@ def lower_connected_pair(mlir_text: str, profile: dict,
     else:
         plan = plan_fp8_resident_pair(
             profile, shape=(m, n, k), a_row=a_row,
-            c1_row=attrs["activation_row"], c2_row=attrs["output_row"])
+            c1_row=attrs["activation_row"], c2_row=attrs["output_row"],
+            allow_a_c1_reuse=(
+                (m, n, k, a_row, attrs["activation_row"], attrs["output_row"]) ==
+                (64, 64, 64, 0, 128, 512) and
+                profile["name"] == "MxGemminiRocketConfig"))
     if attrs["weight_row"] != plan.b_row:
         raise ValueError("connected MX pair B placement differs from profile")
     lower_first = (lower_first_fp6_resident if fp6 else

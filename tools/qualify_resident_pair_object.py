@@ -32,9 +32,11 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--source-rows", type=int, choices=tuple(range(16, 129, 16)),
                         required=True)
-    parser.add_argument("--source-width", type=int, choices=(96, 128), default=128)
+    parser.add_argument("--source-width", type=int, choices=(64, 96, 128), default=128)
     parser.add_argument("--baseline-manifest", type=Path)
     args = parser.parse_args()
+    if args.source_width == 64 and args.source_rows != 64:
+        parser.error("the direct 64³ resident source requires 64 rows")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)

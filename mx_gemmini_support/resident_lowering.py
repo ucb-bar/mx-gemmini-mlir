@@ -24,8 +24,13 @@ def validate_resident_contract(profile: dict, attrs: dict) -> None:
     precision = attrs["activation_format"]
     fp4 = precision == "fp4_e2m1"
     fp6 = precision == "fp6_e3m2"
-    plain_shape = (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
-                   shape[1] in range(32, 129, 32) and shape[2] in (96, 128))
+    direct64 = (shape == (64, 64, 64) and
+                tuple(attrs.get(key) for key in
+                      ("activation_row", "weight_row", "output_row")) ==
+                (128, 16128, 512))
+    plain_shape = (direct64 or
+                   (type(shape[0]) is int and shape[0] in range(16, 129, 16) and
+                    shape[1] in range(32, 129, 32) and shape[2] in (96, 128)))
     packed_shape = shape in ((64, 64, 64), (128, 128, 128))
     # The VPU handoff keeps a square C1 tile resident. MM2 may use any
     # complete E8M0 output width that fits the selected target memories.

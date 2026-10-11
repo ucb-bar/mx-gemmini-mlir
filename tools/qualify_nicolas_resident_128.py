@@ -38,63 +38,75 @@ def _source_resources(source: Path, header: Path, *, with_mm1: bool = False,
             (source_rows != 128 and not with_mm1)):
         raise ValueError("row-prefix specialization requires connected MM1 and MM2")
     text = source.read_text()
-    if (source.name != "matmul_tiled_fp8_128x128_chain.c" or
-            header.name != "matmul_fp8_128x128_chain.h" or
-            '"include/matmul_fp8_128x128_chain.h"' not in text or
-            "SPAD_DEST1 = 2048" not in text or "SPAD_DEST2 = 4096" not in text or
+    dimension = (64 if source.name == "matmul_tiled_fp8_64x64_chain.c" else
+                 128 if source.name == "matmul_tiled_fp8_128x128_chain.c" else None)
+    if (dimension is None or
+            (dimension == 64 and (not with_mm1 or source_rows != 64)) or
+            header.name != f"matmul_fp8_{dimension}x{dimension}_chain.h" or
+            f'"include/matmul_fp8_{dimension}x{dimension}_chain.h"' not in text or
+            f"SPAD_DEST1 = {128 if dimension == 64 else 2048}" not in text or
+            f"SPAD_DEST2 = {512 if dimension == 64 else 4096}" not in text or
             "#define CHAIN_FLAGS (0x38 | LOOP_WS_REQUANT_TILED)" not in text or
             text.count("gemmini_loop_ws_spad(") != 2 or
             "gemmini_mx_load_scales((uint64_t)&A_scales_row" not in text or
             "gemmini_mx_load_scales((uint64_t)&B_scales_col" not in text or
             "gemmini_mxquant_config_mvout_resident" not in text or
             "gemmini_mx_load_scales((uint64_t)&B2_scales_col" not in text):
-        raise ValueError("Nicolas 128³ resident source schedule differs")
+        raise ValueError("Nicolas plain FP8 resident source schedule differs")
     data = header.read_text()
-    for marker in ("#define MATMUL_M 128", "#define MATMUL_K 128",
-                   "#define MATMUL_N 128", "#define MATMUL_GK 4",
-                   "#define MATMUL_GN 4"):
+    for marker in (f"#define MATMUL_M {dimension}", f"#define MATMUL_K {dimension}",
+                   f"#define MATMUL_N {dimension}",
+                   f"#define MATMUL_GK {dimension // 32}",
+                   f"#define MATMUL_GN {dimension // 32}"):
         if marker not in data:
-            raise ValueError("Nicolas 128³ resident source shape differs")
+            raise ValueError("Nicolas plain FP8 resident source shape differs")
 
     def codes(name: str, dims: str, count: int) -> bytes:
         return bytes(_array(data, name=name, ctype="uint8_t",
                             dimensions=dims, count=count, maximum=255))
 
-    c1 = codes("C1_out", "[MATMUL_M][MATMUL_N]", 16384)
-    c1_scales = codes("C1_scales_out", "[MATMUL_M][MATMUL_GN]", 512)
-    tiled = bytes(c1[(i * 16 + r) * 128 + j * 16 + c]
-                  for i in range(8) for j in range(8)
+    c1 = codes("C1_out", "[MATMUL_M][MATMUL_N]", dimension * dimension)
+    c1_scales = codes("C1_scales_out", "[MATMUL_M][MATMUL_GN]",
+                     dimension * dimension // 32)
+    tiled = bytes(c1[(i * 16 + r) * dimension + j * 16 + c]
+                  for i in range(dimension // 16) for j in range(dimension // 16)
                   for r in range(16) for c in range(16))
-    transposed = bytes(c1_scales[row * 4 + block]
-                       for block in range(4) for row in range(128))
-    if len(tiled) != 16384 or len(transposed) != 512:
+    transposed = bytes(c1_scales[row * (dimension // 32) + block]
+                       for block in range(dimension // 32)
+                       for row in range(dimension))
+    if (len(tiled) != dimension * dimension or
+            len(transposed) != dimension * dimension // 32):
         raise ValueError("Nicolas C1 resident operand layout differs")
     result = {
         "c1_tiled": tiled, "c1_act_scales": transposed,
-        "b2_weight": codes("B2_in", "[MATMUL_K][MATMUL_N]", 16384),
-        "b2_scales": codes("B2_scales_col", "[MATMUL_GK][MATMUL_N]", 512),
-        "c2_codes_ref": codes("C2_out", "[MATMUL_M][MATMUL_N]", 16384),
-        "c2_scales_ref": codes("C2_scales_out", "[MATMUL_M][MATMUL_GN]", 512),
+        "b2_weight": codes("B2_in", "[MATMUL_K][MATMUL_N]", dimension * dimension),
+        "b2_scales": codes("B2_scales_col", "[MATMUL_GK][MATMUL_N]",
+                           dimension * dimension // 32),
+        "c2_codes_ref": codes("C2_out", "[MATMUL_M][MATMUL_N]", dimension * dimension),
+        "c2_scales_ref": codes("C2_scales_out", "[MATMUL_M][MATMUL_GN]",
+                               dimension * dimension // 32),
     }
     if with_mm1:
         del result["c1_tiled"]
         del result["c1_act_scales"]
-        a1 = codes("A_in", "[MATMUL_M][MATMUL_K]", 16384)
-        a1_scales = codes("A_scales_row", "[MATMUL_GK][MATMUL_M]", 512)
-        if source_rows != 128:
-            c1 = c1[:source_rows * 128]
-            c1_scales = c1_scales[:source_rows * 4]
-            result["c2_codes_ref"] = result["c2_codes_ref"][:source_rows * 128]
-            result["c2_scales_ref"] = result["c2_scales_ref"][:source_rows * 4]
-            a1 = a1[:source_rows * 128]
+        a1 = codes("A_in", "[MATMUL_M][MATMUL_K]", dimension * dimension)
+        a1_scales = codes("A_scales_row", "[MATMUL_GK][MATMUL_M]",
+                          dimension * dimension // 32)
+        if source_rows != dimension:
+            c1 = c1[:source_rows * dimension]
+            c1_scales = c1_scales[:source_rows * (dimension // 32)]
+            result["c2_codes_ref"] = result["c2_codes_ref"][:source_rows * dimension]
+            result["c2_scales_ref"] = result["c2_scales_ref"][:source_rows * (dimension // 32)]
+            a1 = a1[:source_rows * dimension]
             a1_scales = b"".join(
-                a1_scales[group * 128:group * 128 + source_rows]
-                for group in range(4))
+                a1_scales[group * dimension:group * dimension + source_rows]
+                for group in range(dimension // 32))
         result.update({
             "a1_activation": a1,
             "a1_scales": a1_scales,
-            "b1_weight": codes("B_in", "[MATMUL_K][MATMUL_N]", 16384),
-            "b1_scales": codes("B_scales_col", "[MATMUL_GK][MATMUL_N]", 512),
+            "b1_weight": codes("B_in", "[MATMUL_K][MATMUL_N]", dimension * dimension),
+            "b1_scales": codes("B_scales_col", "[MATMUL_GK][MATMUL_N]",
+                                dimension * dimension // 32),
             "c1_codes_ref": c1, "c1_scales_ref": c1_scales,
         })
     return result
@@ -260,8 +272,8 @@ def main() -> None:
     parser.add_argument("--source-rows", type=int, choices=tuple(range(16, 129, 16)),
                         default=128,
                         help="complete 16-row prefix of Nicolas's 128³ source; prefixes require a connected capture")
-    parser.add_argument("--source-width", type=int, choices=(96, 128), default=128,
-                        help="96 uses a pinned model-derived slice of the 128³ source wire data")
+    parser.add_argument("--source-width", type=int, choices=(64, 96, 128), default=128,
+                        help="64 selects Nicolas's direct resident chain; 96 uses a derived 128³ slice")
     parser.add_argument("--baseline-manifest", type=Path,
                         help="require identical generated program and Spike output")
     args = parser.parse_args()
@@ -276,11 +288,16 @@ def main() -> None:
     extension = args.rtl_root / "software/libgemmini"
     _require_gitlink(args.rtl_root, "software/gemmini-rocc-tests")
     _require_gitlink(args.rtl_root, "software/libgemmini")
-    source = software / "bareMetalC/matmul_tiled_fp8_128x128_chain.c"
-    header = software / "include/matmul_fp8_128x128_chain.h"
+    direct64 = args.source_width == 64
+    if direct64 and args.source_rows != 64:
+        parser.error("the direct 64³ resident source requires --source-rows 64")
+    source = software / ("bareMetalC/matmul_tiled_fp8_64x64_chain.c" if direct64
+                         else "bareMetalC/matmul_tiled_fp8_128x128_chain.c")
+    header = software / ("include/matmul_fp8_64x64_chain.h" if direct64
+                         else "include/matmul_fp8_128x128_chain.h")
     connected = args.connected_frontend_dir is not None
-    if args.source_width == 96 and not connected:
-        parser.error("the 96-wide derived fixture requires a connected capture")
+    if args.source_width in (64, 96) and not connected:
+        parser.error("the selected source width requires a connected capture")
     if not connected and args.source_rows != 128:
         parser.error("a source row prefix requires --connected-frontend-dir")
     resources = _source_resources(source, header, with_mm1=connected,
@@ -303,10 +320,12 @@ def main() -> None:
         manifest_bytes = frontend_bytes("quantization_manifest.json")
         frontend_manifest = json.loads(manifest_bytes)
         capture_receipt = json.loads(frontend_bytes("receipt.json"))
-        if (capture_receipt.get("schema") !=
-                f"mx_gemmini.nicolas_chain_{args.source_width}_model2mlir_capture.v1" or
+        expected_schema = ("mx_gemmini.nicolas_plain_chain_64_model2mlir_capture.v1"
+                           if direct64 else
+                           f"mx_gemmini.nicolas_chain_{args.source_width}_model2mlir_capture.v1")
+        if (capture_receipt.get("schema") != expected_schema or
                 capture_receipt.get("matrix_dim") != args.source_width or
-                capture_receipt.get("output_rows", 128) != args.source_rows or
+                capture_receipt.get("output_rows", args.source_width) != args.source_rows or
                 capture_receipt.get("profile_sha256") != profile_sha256(profile) or
                 capture_receipt.get("source_sha256") != _sha(source) or
                 capture_receipt.get("header_sha256") != _sha(header) or
@@ -388,7 +407,7 @@ def main() -> None:
                    "mx_gemmini.nicolas_resident_mm2_128.v1"),
         "status": (("source_prefix_connected_chain_matched_on_pinned_spike" if passed else
                     "source_prefix_connected_chain_failed_on_pinned_spike")
-                   if args.source_rows != 128 else
+                   if args.source_rows != args.source_width else
                    ("source_connected_chain_matched_on_pinned_spike" if passed else
                     "source_connected_chain_failed_on_pinned_spike")) if connected else (
                    "source_resident_mm2_matched_on_pinned_spike" if passed else
@@ -416,11 +435,35 @@ def main() -> None:
         receipt["frontend_mlir_sha256"] = hashlib.sha256(frontend.encode()).hexdigest()
         receipt["compared_c1_fp8_codes"] = args.source_rows * args.source_width
         receipt["compared_c1_e8m0_scales"] = args.source_rows * (args.source_width // 32)
-        if args.source_rows != 128:
+        if args.source_rows != args.source_width:
             receipt["source_rows"] = args.source_rows
             receipt["scope"] = (
                 f"first {args.source_rows} independent output rows of Nicolas's 128³ packed source; "
                 "typed MM1 C1 and scales remain resident for typed MM2")
+        if direct64:
+            from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+            source_build = args.out_dir / "source_baseline"
+            source_elf = _compile_program(source_build, source, software, riscv_cc, None)
+            source_run = subprocess.run(
+                [str(spike), f"--extlib={so}", "--extension=gemmini", str(source_elf)],
+                cwd=source_build, text=True, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, check=False)
+            source_log = source_build / "spike.log"
+            source_log.write_text(source_run.stdout)
+            if (source_run.returncode != 0 or
+                    "fp8 chain test PASSED (MM1 resident + reused as MM2 operand, scales reused)."
+                    not in source_run.stdout):
+                raise ValueError("Nicolas direct 64³ source baseline failed on pinned Spike")
+            receipt["source_baseline"] = {
+                "source_elf_sha256": _sha(source_elf),
+                "source_spike_log_sha256": _sha(source_log),
+                "source_spike_exit_code": source_run.returncode,
+                "source_c1_codes_checked": 4096,
+                "source_c1_scales_checked": 128,
+                "source_c2_codes_checked": 4096,
+                "source_c2_scales_checked": 128,
+            }
     if args.source_width == 96:
         receipt["status"] = ("derived_source_connected_chain_matched_on_pinned_spike"
                              if passed else "derived_source_connected_chain_failed_on_pinned_spike")

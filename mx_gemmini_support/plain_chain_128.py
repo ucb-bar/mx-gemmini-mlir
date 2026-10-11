@@ -35,7 +35,7 @@ def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict,
     m = sites[0].get("shape", [None])[0] if sites else None
     if type(m) is not int or m not in range(16, 129, 16):
         raise ValueError("plain chain needs a source-qualified row count")
-    if width not in (96, 128):
+    if width not in (64, 96, 128) or (width == 64 and m != 64):
         raise ValueError("plain chain width lacks a checked source fixture")
     expected = [(site, "quantized", "mxfp8", [m, width, width]) for site in
                 ("functional:matmul", "functional:matmul_1")]
@@ -67,8 +67,11 @@ def render_plain_chain(frontend_mlir: str, manifest: dict, profile: dict,
     """Bind two captured sites to checked wire data and a resident edge."""
     m = _validate_frontend(frontend_mlir, manifest, profile, width)
     _validate_resources(resources, m, width)
+    c1_row, c2_row = (128, 512) if width == 64 else (2048, 4096)
     plan = plan_fp8_resident_pair(
-        profile, shape=(m, width, width), a_row=0, c1_row=2048, c2_row=4096)
+        profile, shape=(m, width, width), a_row=0,
+        c1_row=c1_row, c2_row=c2_row,
+        allow_a_c1_reuse=width == 64)
     digest = profile_sha256(profile)
     policy = _sha(f"nicolas_plain_fp8_{width}_resident_chain_v1".encode())
     binding = (f'contract_sha256 = "{source_sha256}", policy_sha256 = "{policy}", '
@@ -156,7 +159,8 @@ def lower_plain_chain(mlir_text: str, frontend_mlir: str, manifest: dict,
         raise ValueError("plain chain selected sites differ")
     if (plan.m, plan.n, plan.k) != (m, width, width):
         raise ValueError("plain chain source specialization needs its checked shape")
-    if ((plan.c1_row, plan.c2_row) != (2048, 4096) or
+    expected_rows = (128, 512) if width == 64 else (2048, 4096)
+    if ((plan.c1_row, plan.c2_row) != expected_rows or
             _text_attr(mm2, "output_scales_buffer") != "c2_scales"):
         raise ValueError("plain chain resident placement differs")
     if plan.rows != 16384 or profile["name"] != "MxGemminiRocketConfig":
