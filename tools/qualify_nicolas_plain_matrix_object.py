@@ -90,6 +90,16 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 32 cubed"),
+    "fp8_32x32x32_alternate_mvin": Case(
+        "fp8_32x32x32_alternate_mvin", "FP8", (32, 32, 32), (32, 32, 32),
+        "matmul_tiled_fp8.c", "matmul_fp8_32x32x32.h",
+        "d9b20beb693cd70dacf02d1b22bbd4ab7d85fd1f2466e38ba9aa41e9bc14e176",
+        "70c32822155c5e329b761952a06f4a36836361b18622d22114d48b58fd708fc6",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 32 cubed alternate mvin"),
     "fp8_64x256x64_requant_dim32": Case(
         "fp8_64x256x64_requant_dim32", "FP8", (64, 256, 64), (64, 256, 64),
         "matmul_tiled_fp8_64x256x64_requant_dim32.c",
@@ -365,6 +375,67 @@ def _revision(path: Path) -> str:
                                    text=True).strip()
 
 
+def _audit_alternate_fp8_mvin(object_dir: Path, profile: dict,
+                              source_sha256: str) -> dict:
+    """Prove the two 32³ source loop nests flatten to the emitted transfers."""
+    physical = json.loads((object_dir / "physical_program.json").read_text())
+    dim = profile["geometry"]["mesh_columns"]
+    if dim != 16 or physical["shape_mnk"] != [32, 32, 32]:
+        raise ValueError("alternate FP8 transfer audit needs Nicolas's DIM16 32³ case")
+    m = n = k = 32
+    ti, tj, tki = m // dim, n // dim, k // dim
+    b_base = profile["resources"]["scratchpad_bytes"] // 16 - tki * tj * dim
+    # Literal source formulas, pinned by source_kernel's source hash and anchors.
+    expected = {
+        "move_activation": [(i * dim * m + ki * dim,
+                             (i * tki + ki) * dim)
+                            for i in range(ti) for ki in range(tki)],
+        "move_weight": [(j * dim * m + ki * dim,
+                         b_base + (j * tki + ki) * dim)
+                        for j in range(tj) for ki in range(tki)],
+    }
+    observed = {}
+    for phase, pairs in expected.items():
+        steps = [step["command"] for step in physical["steps"]
+                 if step["phase"] == phase and step["command"].get("funct") == 2]
+        observed[phase] = [(step["rs1"]["byte_offset"],
+                            step["rs2"]["immediate"] & 0xffffffff)
+                           for step in steps]
+        if observed[phase] != pairs:
+            raise ValueError(f"compiler {phase} differs from Nicolas's alternate loop")
+    return {"schema": "mx_gemmini.nicolas_alternate_fp8_mvin_audit.v1",
+            "source_driver_sha256": source_sha256,
+            "profile_sha256": profile_sha256(profile),
+            "physical_program_sha256": _sha(object_dir / "physical_program.json"),
+            "source_transfer_pairs": expected,
+            "compiler_transfer_pairs": observed,
+            "object_sha256": _sha(object_dir / "mx_issue.o")}
+
+
+def _run_alternate_fp8_source(rtl_root: Path, riscv_root: Path,
+                              out_dir: Path, source: Path) -> dict:
+    """Run the pinned handwritten program as an independent source oracle."""
+    from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+    software = rtl_root / "software/gemmini-rocc-tests"
+    build = out_dir / "source_baseline"
+    elf = _compile_program(build, source, software,
+                           riscv_root / "bin/riscv64-unknown-elf-gcc", None)
+    so = out_dir / "run/libgemmini.so"
+    result = subprocess.run([str(riscv_root / "bin/spike"), f"--extlib={so}",
+                             "--extension=gemmini", str(elf)],
+                            cwd=build, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, check=False)
+    log = build / "spike.log"
+    log.write_text(result.stdout)
+    if (result.returncode or
+            "fp8 WS matmul test PASSED (no mismatches)." not in result.stdout):
+        raise ValueError("Nicolas alternate FP8 source executable failed on pinned Spike")
+    return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
+            "source_spike_exit_code": result.returncode,
+            "source_golden_bf16_values_checked": 1024}
+
+
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     """Admit only a Nicolas test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
@@ -377,8 +448,11 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     if _sha(driver) != case.source_sha256 or _sha(header) != case.header_sha256:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
+    alternate_mvin = case.key == "fp8_32x32x32_alternate_mvin"
     required = (f'#include "include/{case.header_name}"', "gemmini_mx_load_scales",
-                "gemmini_loop_ws_spad", "gemmini_extended_mvout")
+                "gemmini_loop_ws_spad",
+                "gemmini_mx_read_smem" if alternate_mvin else
+                "gemmini_extended_mvout")
     if not case.quant_output:
         required += ("C_out_bf16",)
     if case.precision == "FP6":
@@ -389,6 +463,11 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                      ("gemmini_mxquant_config_mvout", "C_scales_out", "C_out[i][j]"))
     if any(needle not in source for needle in required):
         raise ValueError("Nicolas source no longer has the audited compute/check path")
+    if alternate_mvin and any(source.count(marker) != 1 for marker in (
+            "elem_t *dram_ptr = ((elem_t*)B_in) + j * DIM * MATMUL_M + k * DIM;",
+            "uint32_t sp_addr = b_base + (j * tiles_K + k) * DIM;",
+            "gemmini_mx_read_smem(&C_hw[0][0], SPAD_DEST * 16, MATMUL_M * MATMUL_N);")):
+        raise ValueError("Nicolas alternate FP8 transfer source changed")
     header_text = header.read_text()
     for axis, extent in zip(("M", "N", "K"), case.shape):
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
@@ -630,11 +709,20 @@ def main(default_case: str | None = None) -> None:
           "--rtl-root", str(rtl_root), "--riscv-root", str(args.riscv_root.resolve()),
           "--mx-opt", str(args.mx_opt.resolve()), "--out-dir", str(object_dir)],
          cwd=ROOT, log=args.out_dir / "object_compile.log")
+    transfer_audit = None
+    if case.key == "fp8_32x32x32_alternate_mvin":
+        transfer_audit = _audit_alternate_fp8_mvin(
+            object_dir, profile, case.source_sha256)
+        (args.out_dir / "transfer_equivalence.json").write_text(
+            json.dumps(transfer_audit, indent=2, sort_keys=True) + "\n")
     mesh_dim = profile["geometry"]["mesh_columns"]
     if profile["geometry"]["mesh_rows"] != mesh_dim:
         raise ValueError("Nicolas source qualifier needs a square MX mesh")
     returncode, output, elf = run_spike(rtl_root, args.riscv_root.resolve(),
                                         object_dir, args.out_dir, case, mesh_dim)
+    source_baseline = (_run_alternate_fp8_source(
+        rtl_root, args.riscv_root.resolve(), args.out_dir, kernel.driver)
+        if case.key == "fp8_32x32x32_alternate_mvin" else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -681,6 +769,10 @@ def main(default_case: str | None = None) -> None:
         "scales_checked": m * n // 32 if case.quant_output else None,
         "mismatches": 0 if passed else None,
     }
+    if transfer_audit is not None:
+        receipt["transfer_equivalence_sha256"] = _sha(
+            args.out_dir / "transfer_equivalence.json")
+        receipt["source_baseline"] = source_baseline
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
     print(output)
