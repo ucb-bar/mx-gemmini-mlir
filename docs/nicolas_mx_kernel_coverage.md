@@ -72,6 +72,11 @@ C path uses an MMIO gateway and constant `0x7f` scale SRAM values, whereas
 these objects use RoCC and source-header scales. Stock Spike cannot execute
 the accumulator destination, so hardware numerical and timing parity are
 still open.
+An [experimental accumulator Spike extension](evidence/nicolas_accumulator_candidate_spike_266c593/README.md)
+executes those three generated objects and matches all 24,576 BF16 source
+goldens under a candidate MX shadow-result readout model. This checks the
+compiler's addresses and complete results under that model; it does not
+qualify RTL or FPGA packing, MMIO scale behavior, or timing.
 The [three same-format LUT source programs](evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/README.md)
 also pass through public data-free objects with their dedicated E2M3, E4M3,
 and E5M2 Rocket profiles, matching 12,288 BF16 values. Three more
