@@ -274,16 +274,17 @@ covered by that field.
 All four model families' bound prefill/prefix/flow subsets now compile as
 relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
 sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
-139 sites and nine kernels, and SmolVLA flow 116 sites and ten kernels. These
+211 sites and twelve kernels after BF16 preparation, and SmolVLA flow 116
+sites and ten kernels. These
 objects are catalog probes. Full host/device stage ELFs have linked for
 TinyLlama prefill (199 routes, 4.4 GB), Qwen prefill (253 routes, 7.1 GB),
-and SmolVLA prefix (211 routes after BF16 preparation, 911 MB). These use
-full checkpoint captures. Gemma prefill compiled and routed 235 sites but its
-first build hit Merlin's 900-second timeout while converting the ~10 GB weight
-image with `ld -r -b binary`; a retry uses a 3600-second per-command limit.
-TinyLlama's first Spike run exhausted the 512 MiB arena. The stage probe now
-defaults to 2 GiB, and a larger-arena Spike run is in progress. No complete
-model inference or independent quantized parity follows from these links.
+Gemma prefill (235 routes, 12.8 GB), and SmolVLA prefix (211 routes after
+BF16 preparation, 911 MB). These use full checkpoint captures. Gemma's first
+build hit the 900-second limit while converting its ~10 GB weight image; the
+3600-second retry linked. TinyLlama's first Spike run exhausted a 512 MiB
+arena. A manual 2 GiB relink exceeded a 20-minute Spike run limit, and a
+longer run is in progress. These are single stages: no full session or
+independent quantized parity follows from the links.
 
 A separate [two-layer random-weight TinyLlama whole-stage diagnostic](evidence/tiny_two_layer_whole_stage_spike_20261011/README.md)
 completed on Nicolas's Spike with 19 MX calls and a full-logit digest. Its
@@ -325,7 +326,9 @@ whole-model build using the target catalog and writes `mx_stage_probe.json`.
 It rejects a changed capture `model.mlir` and a linked catalog missing any
 source region selected from the raw capture. With `--spike-extlib` it also runs
 the linked ELF using the pinned Gemmini Spike extension and records the raw
-console and completion status. Merlin's bare-metal digest now supports f32,
+console and completion status. On a completed run, it parses the console,
+checks the linked build hash and memref status, and binds every indexed output
+digest to the captured result shape and dtype. Merlin's bare-metal digest now supports f32,
 i64, and boolean first outputs, including SmolVLA's prefix result. The stage
 probe also requests indexed raw-storage digests for every result, including
 state results. These records need independently captured typed references
@@ -333,6 +336,19 @@ before they become correctness evidence. Completion is not a numerical parity
 gate.
 The probe's `--compile-timeout-s` defaults to 3600 for multi-gigabyte
 checkpoint weight images; `0` disables the command limit.
+When the precision plan selects no direct MX contractions, the same stage
+probe builds Merlin's host path with `execution_route: host_only` and an
+explicit zero-device count. [SmolVLA action decode](evidence/smolvla_action_decode_spike_20261011/README.md)
+completed this path on Nicolas's pinned Spike; all 1,600 f32 output values matched its saved
+PyTorch golden exactly. Its input is the captured stage input, not an output
+from a preceding compiled flow run.
+
+For a complete first-output dump, `tools.compare_stage_output` checks its
+wire values against the target digest before comparing an explicit `.npy`
+reference. It records whether the reference is original PyTorch, MX operand
+fake quantization, or an independent MX arithmetic result. The first two are
+diagnostics for locating errors; the last still needs an authored tolerance
+and all state-result checks before whole-session qualification.
 
 ```sh
 python -m tools.build_merlin_stage \
