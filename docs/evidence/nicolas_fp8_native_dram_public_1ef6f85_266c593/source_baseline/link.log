@@ -1,0 +1,1 @@
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/../lib/gcc/riscv64-unknown-elf/13.2.0/../../../../riscv64-unknown-elf/bin/ld: warning: /scratch/agustin/tmp/nicolas-fp8-native-dram-1ef6f85-20261010/source_baseline/program.elf has a LOAD segment with RWX permissions

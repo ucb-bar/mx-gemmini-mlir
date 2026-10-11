@@ -1,0 +1,27 @@
+{
+  "explicit_operand_dma_commands": 0,
+  "explicit_output_dma_commands": 0,
+  "loop_bounds_ijk": [
+    8,
+    8,
+    8
+  ],
+  "native_command_functs": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    8
+  ],
+  "native_pointer_buffers": [
+    "activation",
+    "weight",
+    "output_bf16"
+  ],
+  "physical_program_sha256": "878130027ddfd1b280c7b5e23f8fed06f5705914309dd764c2c124c8fe52c832",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "scale_bytes_per_side": 512,
+  "schema": "mx_gemmini.nicolas_fp8_native_dram_audit.v1",
+  "source_driver_sha256": "53b5f60844725aa9e289a1c3833002fe777c2a3b41ea64a31b05c2237eb32277"
+}

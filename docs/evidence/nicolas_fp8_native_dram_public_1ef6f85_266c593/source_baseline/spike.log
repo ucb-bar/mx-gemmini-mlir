@@ -1,0 +1,5 @@
+fp8 WS native-loop matmul test PASSED (no mismatches).
+PERF fp8_128x128_dramloop M=128 N=128 K=128 DIM=16 load=13 compute=158 mvout=0 total=171 ideal=8192 util=5184.8%
+PERF_HW fp8_128x128_dramloop exe_active=4099 loop_active=3349 ex_only=2199 st_ex=2008 spad_a_wait=2205 overlap_haz=2113 st_only=1954 rs_full=2368 other=-6003
+Gemmini extension configured with:
+    dim = 16
