@@ -47,11 +47,11 @@ def _source_defines(source: str) -> dict[str, str]:
 def _check_source_policy(source_wrapper: str, source_core: str,
                          source_header: str, shape: DenseAttentionShape,
                          block_k: int, input_format: str,
-                         softmax_mode: str) -> None:
+                         softmax_mode: str, causal: bool) -> None:
     header = _source_defines(source_header)
     fp4 = input_format == "fp4_e2m1"
     expected = {"ATTN_SQ": str(shape.sq), "ATTN_SK": str(shape.sk),
-                "ATTN_D": str(shape.d), "ATTN_CAUSAL": "0",
+                "ATTN_D": str(shape.d), "ATTN_CAUSAL": "1" if causal else "0",
                 "ATTN_HEADS": "1", "ATTN_SCALE_IN_Q": "0"}
     if fp4:
         expected["ATTN_FP4"] = "1"
@@ -62,7 +62,8 @@ def _check_source_policy(source_wrapper: str, source_core: str,
     if source_wrapper != source_core:
         wrapper = _source_defines(source_wrapper)
         allowed = {"BK": str(block_k)}
-        suffix = "_llama" if shape == STREAM_SHAPE else "_mid_fp4" if fp4 else "_mid"
+        suffix = ("_llama_causal" if causal else "_llama" if shape == STREAM_SHAPE
+                  else "_mid_fp4" if fp4 else "_mid")
         optional = {"ATTN_HEADER": f'"attn_vpu{suffix}.h"',
                     "ATTN_EXPECT": f'"attn_flash{suffix}_expect.h"'}
         if softmax_mode == "expsum":
@@ -77,13 +78,15 @@ def _check_source_policy(source_wrapper: str, source_core: str,
 
 
 def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
-                     input_format: str = "fp8_e4m3"
+                     input_format: str = "fp8_e4m3", *, causal: bool = False
                      ) -> tuple[tuple[str, ...], tuple[int, ...]]:
     """Runtime byte buffers for the selected flash source shape."""
     if (shape, block_k, input_format) not in (
             (SHAPE, BK, "fp8_e4m3"), (FA_SHAPE, 64, "fp8_e4m3"),
             (SHAPE, BK, "fp4_e2m1"), (STREAM_SHAPE, 256, "fp8_e4m3")):
         raise ValueError("flash compiler has no selected source shape")
+    if causal and (shape, block_k, input_format) != (STREAM_SHAPE, 256, "fp8_e4m3"):
+        raise ValueError("causal flash needs selected streamed source shape")
     sq, sk, d = shape.sq, shape.sk, shape.d
     fp4 = input_format == "fp4_e2m1"
     qt = 2 if fp4 else 1
@@ -94,6 +97,9 @@ def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
     lengths = (sq * d // 32, d * sk // 32, sk * d // 32,
                sq * d // qt, d * sk // qt, sk * d // qt, 2048,
                sq * block_k // 32, sq * block_k // 32, sq * d * 2)
+    if causal:
+        names += ("MASK_BF16",)
+        lengths += (sq * sq * 2,)
     return names, lengths
 
 
@@ -121,10 +127,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      source_header: str, profile: dict, *,
                      shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                      input_format: str = "fp8_e4m3",
-                     softmax_mode: str = "split"
+                     softmax_mode: str = "split", causal: bool = False
                      ) -> tuple[str, dict]:
     """Render a source-bound, fenced QK/softmax/requant/PV program."""
-    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
+    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
+                                             causal=causal)
     if softmax_mode not in {"split", "expsum"} or (
             softmax_mode == "expsum" and
             (shape, block_k, input_format) not in {
@@ -140,8 +147,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             'gemmini_mxquant_config_mvout_managed' not in source_core):
         raise ValueError("pinned flash source or geometry differs")
     _check_source_policy(source_wrapper, source_core, source_header,
-                         shape, block_k, input_format, softmax_mode)
-    _audit_frontend_edges(frontend, shape)
+                         shape, block_k, input_format, softmax_mode, causal)
+    _audit_frontend_edges(frontend, shape, causal=causal)
     streamed = (shape, block_k, input_format) == (STREAM_SHAPE, 256, "fp8_e4m3")
     if streamed:
         if (profile.get("transport") != "rocket_rocc" or
@@ -154,6 +161,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                 "#define K_BUFS   (ATTN_STREAM ? 2 : NB)" not in source_core or
                 "#define V_BUFS   (ATTN_STREAM ? (ATTN_V3 ? 3 : 2) : NB)" not in source_core):
             raise ValueError("streamed flash needs Nicolas's four-bank Kx2/Vx3 source layout")
+        if causal and (softmax_mode != "split" or
+                       "#define SP_MASK  (S_BUF(NB) + ROWS16(SQ, BK) + ROWS16(SQ, D))" not in source_core or
+                       "SP_MASK + r * (ATTN_CH / 8), ATTN_CH / 8" not in source_core):
+            raise ValueError("causal flash source mask schedule differs")
     else:
         shape.validate(profile)
     if (profile.get("source", {}).get("gemmini_revision") !=
@@ -170,9 +181,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     SP_P = SP_KT + k_buffers * rows8(D, BK)
     ST = SP_V + v_buffers * rows8(BK, D)
     SP_O = 3 * 4096 + rows16(SQ, BK) + rows16(SQ, D)
+    SP_MASK = (2 + (NB & 1)) * 4096 + rows16(SQ, BK) + rows16(SQ, D)
     if (SP_V + v_buffers * rows8(BK, D) + 8 * SQ > 4096 or
             SP_P + 2 * rows8(SQ, BK) > 8192 or
-            SP_O + rows16(SQ, D) > 16384):
+            SP_O + rows16(SQ, D) > 16384 or
+            (causal and SP_MASK + rows16(SQ, SQ) > 3 * 4096)):
         raise ValueError("flash source bank-split residency differs")
     _score = lambda j: (2 + (j & 1)) * 4096
     _probability = lambda j: SP_P + (j & 1) * rows8(SQ, BK)
@@ -180,7 +193,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = ("llama_stream" if streamed else
+    variant = ("llama_causal_stream" if causal else "llama_stream" if streamed else
                "mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
                "mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
                else "mid" if folded else "fa")
@@ -194,6 +207,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
               "output_rows": [_output_j(j) for j in range(NB)]}
     if streamed:
         policy["kv_stream_buffers"] = [k_buffers, v_buffers]
+    if causal:
+        policy["causal"] = True
+        policy["mask_spad_row"] = SP_MASK
+        policy["mask_key_start"] = SK - SQ
     if fp4:
         policy["input_format"] = input_format
     if softmax_mode == "expsum":
@@ -300,6 +317,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                f"matrix_rows = {SQ // qt} : i32, matrix_cols = {D} : i32, "
                "burst_cols = 64 : i32, spad_row = 0 : i32"),
     ])
+    if causal:
+        lines.append(memory("dma_matrix", "MASK_BF16", "operand:causal_mask",
+                            f"matrix_rows = {SQ * SQ * 2 // 16} : i32, "
+                            f"matrix_cols = 16 : i32, burst_cols = 16 : i32, "
+                            f"spad_row = {SP_MASK} : i32"))
     def block_load(j: int) -> tuple[str, str]:
         return (memory("dma_matrix", buffers[4], f"operand:kt{j}",
                             f"matrix_rows = {D} : i32, matrix_cols = {BK // qt} : i32, "
@@ -334,6 +356,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         if not folded:
             lines.append(vpu(f"softmax{j}:scale", "muls", s, 0, s,
                              score_rows, immediate=shape.scale_immediate_bf16))
+        if causal and j == NB - 1:
+            for r in range(SQ):
+                row = s + r * (BK // 8) + (BK - SQ) // 8
+                lines.append(vpu(f"softmax{j}:mask{r}", "add", row,
+                                 SP_MASK + r * (SQ // 8), row, SQ // 8))
         if j == 0:
             lines.append(vpu("softmax0:rmax", "rmax", s, 0, m,
                              score_rows, score_rlen))
@@ -390,8 +417,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     report = verify_ir(mlir, profile)
     if (report["memory_phases"], report["flash_setups"], report["spad_matmuls"],
             report["vpu_commands"], report["spad_requants"]) != (
-                35 if streamed else 19, 1, 16 if streamed else 8,
-                83 if streamed else 31 if softmax_mode == "expsum" else
+                36 if causal else 35 if streamed else 19, 1, 16 if streamed else 8,
+                147 if causal else 83 if streamed else 31 if softmax_mode == "expsum" else
                 39 if folded else 43, 8 if streamed else 4):
         raise ValueError(f"flash {variant} typed stage inventory differs: {report}")
     return mlir, binding
@@ -401,14 +428,15 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     source_wrapper: str, source_header: str, profile: dict, *,
                     shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                     input_format: str = "fp8_e4m3",
-                    softmax_mode: str = "split"
+                    softmax_mode: str = "split", causal: bool = False
                     ) -> tuple[Command | Fence, ...]:
     """Require the exact source-bound serial graph before issuing commands."""
     expected, _ = render_flash_mid(frontend, source_core, source_wrapper,
                                    source_header, profile, shape=shape,
                                    block_k=block_k, input_format=input_format,
-                                   softmax_mode=softmax_mode)
+                                   softmax_mode=softmax_mode, causal=causal)
     if mlir_text != expected:
         raise ValueError("flash typed graph or source binding differs")
-    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
+    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
+                                             causal=causal)
     return lower_flash_commands(mlir_text, profile, buffers, buffer_bytes)

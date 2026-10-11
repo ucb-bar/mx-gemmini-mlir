@@ -24,8 +24,9 @@ compiler code reproduced the object and both ELFs byte for byte.
 
 This is a fenced serial compiler schedule. It proves functional behavior on
 Spike for this source shape; pipelined compiler scheduling, performance
-parity, a real TinyLlama captured head, and causal masking need separate
-qualification. No FPGA was used.
+parity and a real TinyLlama captured head need separate qualification. The
+[causal variant](../nicolas_flash_llama_causal_stream_typed_e9ded36_0344bcb/README.md)
+has its own source-matched Spike qualification. No FPGA was used.
 
 To reproduce, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,

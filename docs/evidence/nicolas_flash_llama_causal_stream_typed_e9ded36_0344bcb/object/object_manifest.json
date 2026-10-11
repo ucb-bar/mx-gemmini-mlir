@@ -1,0 +1,128 @@
+{
+  "allocated_data_section_bytes": 0,
+  "binding_json_sha256": "2e6d619ba593705da2a81d5ac86b1a91f30c3750d5878435d31e91747fd06bc3",
+  "bound_mlir_sha256": "8a32f373d8e4f17f97e557cc25c2a6bdd32aa6cf7bfa17822f071ffef0bc6869",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 128,
+      "name": "Q_SCALES_FOLDED",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 4096,
+      "name": "KT_SCALES",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 4096,
+      "name": "V_SCALES",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 4096,
+      "name": "Q_IN",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 131072,
+      "name": "KT_IN",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 131072,
+      "name": "V_IN",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 2048,
+      "name": "scale_sink",
+      "position": 6,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 512,
+      "name": "p_scales_0",
+      "position": 7,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 512,
+      "name": "p_scales_1",
+      "position": 8,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 8192,
+      "name": "O_HW",
+      "position": 9,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_causal_stream",
+      "minimum_bytes": 8192,
+      "name": "MASK_BF16",
+      "position": 10,
+      "role": "read"
+    }
+  ],
+  "causal": true,
+  "command_count": 581,
+  "compiler_revision": "fc8713eb02328ee70fdf413dcd9fb060be4536e8",
+  "compiler_source_closure_sha256": "ca20e4f1634fbf1f067a44a8acb438667fb4d972e8fe99e49f16dfe03772b3b5",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 50,
+  "input_format": "fp8_e4m3",
+  "issuer_c_sha256": "13e4362790c2650fec0a653ed88d4373dc67bcfe1897d0902c23745fac2d4186",
+  "issuer_h_sha256": "8a206771a86eb3ff2eb58ecc9155ab7019f984b14d8e473ff0bf3cf4759563ee",
+  "mlir_container_sha256": "8a32f373d8e4f17f97e557cc25c2a6bdd32aa6cf7bfa17822f071ffef0bc6869",
+  "object_sha256": "bed7c2a49ba1667b6c17c231f881222bb0241eadf3beca310beecc5ea061049e",
+  "physical_program_sha256": "824c52265d9b3cc680d9f518eac932c486c4226adb559450411cacdb7fd6ed88",
+  "precursor_mlir_sha256": "56099369c7eb23486170f0d092651fcd7c7b1e608fe8f14ed2f4bee13a5b4fb9",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schedule": "fenced_serial",
+  "schema": "mx_gemmini.flash_program_linkable_object.v1",
+  "shape_sq_sk_d_bk": [
+    64,
+    2048,
+    64,
+    256
+  ],
+  "softmax_mode": "split",
+  "source_core_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "source_header_sha256": "efe35106618683a67c6cd58ef9189e266d8771ad47a06018b72aad4f5b355b7d",
+  "source_wrapper_sha256": "687f2d4be5cf00dabbe4daccc0b07f71a2cc24e6521e17cbbff9db48fac3319f",
+  "status": "rv64_rocc_typed_flash_program_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

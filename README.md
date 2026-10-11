@@ -171,6 +171,11 @@ and all 4,096 BF16 source outputs across two Spike runs. The [typed streamed
 program](docs/evidence/nicolas_flash_llama_stream_typed_e9ded36_0344bcb/README.md)
 now emits a data-free RV64 object with 484 MX commands and 50 fences. It
 matches all 4,096 BF16 source outputs twice on pinned Spike.
+The [causal 64×2,048×64 variant](docs/evidence/nicolas_flash_llama_causal_stream_typed_e9ded36_0344bcb/README.md)
+adds a source-bound BF16 mask DMA and 64 final-block VPU adds. Its 581-command
+data-free object matches every one of the 4,096 source BF16 outputs across
+two Spike runs for both source and compiler. The input data is synthetic;
+this does not yet establish compilation of a captured TinyLlama head.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

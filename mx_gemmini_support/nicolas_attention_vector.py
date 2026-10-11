@@ -84,8 +84,9 @@ def _sha(data: bytes) -> str:
 
 
 def _audit_frontend_edges(frontend: str,
-                          shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64)) -> None:
-    """Require QK -> scale -> softmax -> PV, not just two matching shapes."""
+                          shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64),
+                          *, causal: bool = False) -> None:
+    """Require QK -> scale -> optional mask -> softmax -> PV SSA edges."""
     from xdsl.context import Context
     from xdsl.dialects.arith import Arith
     from xdsl.dialects.builtin import Builtin
@@ -107,11 +108,24 @@ def _audit_frontend_edges(frontend: str,
     qk = by_region("matmul_0", "linalg.generic")
     scale = by_region("mul_0", "linalg.generic")
     pv = by_region("matmul_1", "linalg.generic")
+    mask_add = by_region("add_0", "linalg.generic") if causal else []
+    softmax_input = scale[0].results[0] if len(scale) == 1 else None
+    if causal:
+        functions = [op for op in operations if op.name == "func.func"]
+        if (len(mask_add) != 1 or len(functions) != 1 or
+                len(functions[0].body.blocks) != 1 or
+                len(functions[0].body.block.args) != 4 or
+                len(mask_add[0].operands) < 2 or
+                mask_add[0].operands[0] is not softmax_input or
+                mask_add[0].operands[1] is not functions[0].body.block.args[2] or
+                _text_attr(mask_add[0], "prov.aten") != "aten.add.Tensor"):
+            raise ValueError("causal attention score-mask SSA edge differs")
+        softmax_input = mask_add[0].results[0]
     if (len(qk) != 1 or len(scale) != 1 or len(pv) != 1 or
             len(scale[0].operands) < 2 or len(pv[0].operands) < 1 or
             scale[0].operands[0] is not qk[0].results[0] or
             not any(op.name == "linalg.reduce" and op.operands[0] is
-                    scale[0].results[0] for op in operations) or
+                    softmax_input for op in operations) or
             pv[0].operands[0].owner is None or
             _text_attr(pv[0].operands[0].owner, "prov.region_id") != "softmax_0" or
             _text_attr(pv[0].operands[0].owner, "prov.aten") !=
