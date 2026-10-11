@@ -838,24 +838,45 @@
     {
       "family": "chain",
       "name": "chain_pipelined",
-      "other_receipt_statuses": [
-        "four_source_checks_matched_on_pinned_spike",
-        "rv64_rocc_two_tile_object_built",
-        "three_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_c1_bf16_values": 4096,
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384
+        },
+        "compiler_revision": "0b89864934b76847fb6a205064eac4078a332ccf",
+        "elf_sha256": "a13164cb8c6d5934a07b1e3bda1f55a592d5da060131aea57b2609621649911b",
+        "object_sha256": "f33bd6e110b6f08834d1a077b7304a875a012502b5a6f8ab1ecc9123dccec87b",
+        "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+        "receipt": "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json",
+        "receipt_schema": "mx_gemmini.full_chain_pipelined_linkable_object.v1",
+        "receipt_sha256": "1590f25f412d9989cca94fbc671174b5834dcc851a33177106db4df1e4d31c06",
+        "spike_log_sha256": "b573befac16b7d9173155f385cbbd0b27c874963eaa32b49717147efad12de09"
+      },
       "source_reference_count": 15,
       "source_sha256": "6bbcf587aa5ccfdf99ff2b1a46a08117067ed056a68c3bc30b267ee7fcd350d4",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "other_mx",
       "name": "mx_mem_bw",
-      "other_receipt_statuses": [
-        "source_memory_phases_and_full_mvout_matched_on_pinned_spike"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_mvout_bytes": 16384,
+          "phase_count": 7
+        },
+        "compiler_revision": "9cb0e4a8762a19065e53c63c1cc5a45c97e0460c",
+        "elf_sha256": "e0f430e84b56eedc8e816ed1ec2c53e488adf847561754d396923d319e691b36",
+        "object_sha256": "4a8d04a91fd866b3870f3a3ee57f4df75f01ac3ea5bcc5cb3af396c1366e919a",
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_mem_bw_typed_object_spike.v1",
+        "receipt_sha256": "fe25b40aaebd3f23107e40b91a5c376f6055a406b7836de5f201912db539b682",
+        "spike_log_sha256": "41de83d04b4840a966bb24adcb3b8a4036457d366b4bc34789606ca4524cb846"
+      },
       "source_reference_count": 2,
       "source_sha256": "d23c749184ede0db1cb0b4ee67f3e29d8d80ddee4ddf589dd949fc7c40a3b922",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
@@ -4244,8 +4265,8 @@
   "status_counts": {
     "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
-    "generated_specialized_selected_spike_result_matched": 3,
+    "generated_specialized_selected_spike_result_matched": 5,
     "no_direct_source_receipt": 2,
-    "separate_evidence_requires_scope_review": 4
+    "separate_evidence_requires_scope_review": 2
   }
 }

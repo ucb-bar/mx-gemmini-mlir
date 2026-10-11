@@ -23,8 +23,8 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     assert report["status_counts"] == {
         "generated_object_selected_spike_result_matched": 156,
         "generated_connected_chain_spike_result_matched": 6,
-        "generated_specialized_selected_spike_result_matched": 3,
-        "separate_evidence_requires_scope_review": 4,
+        "generated_specialized_selected_spike_result_matched": 5,
+        "separate_evidence_requires_scope_review": 2,
         "no_direct_source_receipt": 2,
     }
     rows = {row["name"]: row for row in report["entries"]}
@@ -43,7 +43,8 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
                for name in chains if name != "matmul_tiled_fp8_128x128_chain")
     assert {name for name, row in rows.items() if row["status"] ==
             "generated_specialized_selected_spike_result_matched"} == {
-                "vpu_softmax", "spad_requant", "spad_requant_fp4"}
+                "vpu_softmax", "spad_requant", "spad_requant_fp4",
+                "chain_pipelined", "mx_mem_bw"}
     for row in rows.values():
         if row["status"] in {
                 "generated_object_selected_spike_result_matched",
@@ -78,4 +79,13 @@ def test_report_rejects_stale_specialized_binding() -> None:
                    "vpu_softmax")
     softmax["source_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="stale specialized source binding"):
+        build_report(inventory)
+
+
+def test_report_rejects_stale_compound_binding() -> None:
+    inventory = json.loads(INVENTORY.read_text())
+    chain = next(row for row in inventory["entries"] if row["name"] ==
+                 "chain_pipelined")
+    chain["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="stale compound source binding"):
         build_report(inventory)

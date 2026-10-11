@@ -217,7 +217,9 @@ def _full_matrix_result(entry: dict) -> dict | None:
 
 
 def _full_specialized_result(entry: dict) -> dict | None:
-    """Validate complete selected outputs for three non-matrix MX sources."""
+    """Validate complete selected outputs for non-matrix MX sources."""
+    if entry["name"] in ("chain_pipelined", "mx_mem_bw"):
+        return _full_compound_result(entry)
     specification = SPECIALIZED_RESULTS.get(entry["name"])
     if specification is None:
         return None
@@ -285,6 +287,81 @@ def _full_specialized_result(entry: dict) -> dict | None:
             result["model2mlir_revision"] = model2mlir_revision
         return result
     return None
+
+
+def _full_compound_result(entry: dict) -> dict | None:
+    """Check archived complete outputs while keeping timing outside the claim."""
+    definitions = {
+        "chain_pipelined": (
+            "docs/evidence/nicolas_chain_pipelined_full_266c593/object_manifest.json",
+            "mx_gemmini.full_chain_pipelined_linkable_object.v1",
+            "rv64_rocc_two_tile_object_built"),
+        "mx_mem_bw": (
+            "docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/receipt.json",
+            "mx_gemmini.nicolas_mem_bw_typed_object_spike.v1",
+            "source_memory_phases_and_full_mvout_matched_on_pinned_spike"),
+    }
+    receipt_name, schema, status = definitions[entry["name"]]
+    ref = next((item for item in entry["evidence_references"]
+                if item["path"] == receipt_name and item["schema"] == schema and
+                item["status"] == status), None)
+    if ref is None:
+        return None
+    path = ROOT / receipt_name
+    if _sha(path) != ref["sha256"]:
+        raise ValueError(f"changed Nicolas compound receipt: {receipt_name}")
+    receipt = json.loads(path.read_text())
+    if (receipt.get("schema") != schema or receipt.get("status") != status or
+            receipt.get(ref["field"]) != entry["source_sha256"] or
+            receipt.get("rtl_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
+        raise ValueError(f"stale compound source binding in {receipt_name}")
+    for field in ("profile_sha256", "object_sha256"):
+        _require_digest(receipt.get(field), f"{receipt_name} {field}")
+    revision = receipt.get("compiler_revision")
+    if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+        raise ValueError(f"{receipt_name} has no pinned compiler revision")
+    if entry["name"] == "chain_pipelined":
+        execution = receipt.get("spike_qualification", {})
+        metrics = {"compared_c1_bf16_values": 4096,
+                   "compared_fp8_codes": 16384, "compared_e8m0_scales": 512}
+        if (receipt.get("allocated_data_section_bytes") != 0 or
+                receipt.get("embedded_operand_bytes") != 0 or
+                receipt.get("embedded_golden_bytes") != 0 or
+                execution.get("status") != "full_three_site_chain_matched_on_pinned_spike" or
+                execution.get("spike_exit_code") != 0 or
+                any(execution.get(key) != value for key, value in metrics.items())):
+            raise ValueError(f"incomplete three-site chain in {receipt_name}")
+        files = (("object_sha256", "mx_issue.o", receipt),
+                 ("elf_sha256", "mx_program.elf", execution),
+                 ("spike_log_sha256", "spike.log", execution))
+        elf_sha, log_sha = execution["elf_sha256"], execution["spike_log_sha256"]
+    else:
+        metrics = {"compared_mvout_bytes": 16384, "phase_count": 7}
+        if (receipt.get("compiled_exit_code") != 0 or
+                receipt.get("source_full_exit_code") != 0 or
+                any(receipt.get(key) != value for key, value in metrics.items()) or
+                receipt.get("compiled_output_sha256") !=
+                receipt.get("source_full_output_sha256")):
+            raise ValueError(f"incomplete memory result in {receipt_name}")
+        _require_digest(receipt.get("compiled_output_sha256"),
+                        f"{receipt_name} full readout")
+        files = (("object_sha256", "mx_issue.o", receipt),
+                 ("compiled_elf_sha256", "compiled/program.elf", receipt),
+                 ("compiled_spike_log_sha256", "compiled/spike.log", receipt),
+                 ("source_full_elf_sha256", "source_full/program.elf", receipt),
+                 ("source_full_spike_log_sha256", "source_full/spike.log", receipt))
+        elf_sha, log_sha = (receipt["compiled_elf_sha256"],
+                            receipt["compiled_spike_log_sha256"])
+    for field, name, owner in files:
+        _require_digest(owner.get(field), f"{receipt_name} {field}")
+        if _sha(path.parent / name) != owner[field]:
+            raise ValueError(f"changed {name} in {receipt_name}")
+    return {"receipt": receipt_name, "receipt_sha256": ref["sha256"],
+            "receipt_schema": schema, "profile_sha256": receipt["profile_sha256"],
+            "compiler_revision": revision, "object_sha256": receipt["object_sha256"],
+            "elf_sha256": elf_sha, "spike_log_sha256": log_sha,
+            "checked_output_metrics": metrics}
 
 
 def build_report(inventory: dict) -> dict:
