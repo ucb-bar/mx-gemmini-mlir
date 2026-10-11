@@ -1,0 +1,21 @@
+{
+  "census_sha256": "69753d6dbd62aa22649017806a483954247813e175511fc09161d826ea0074e6",
+  "contract_sha256": "7534923eb953717543cd903550a50a2f1c62d885653ceca624065da02c23b053",
+  "mode": {
+    "activation_format": "fp6_e3m2",
+    "activation_projection": "lut",
+    "pe_mode": 4,
+    "weight_format": "fp6_e3m2",
+    "weight_projection": "lut"
+  },
+  "payload_manifest_sha256": "d6414fc839ff531dd9f079aba438538b2ad334b0727ff6f1b674d127e6b20bf7",
+  "policy_sha256": "45f700f05113af0e5c34a31d6fa18ff13e43ebe7946ee51ce3085cc69021dc08",
+  "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+  "schema": "mx_gemmini.portable_matmul_binding.v1",
+  "shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "source_mlir_sha256": "6b602eb48f6de83adf646ff1135dc904adc02fef887f43d92ed4825669ea75fb"
+}

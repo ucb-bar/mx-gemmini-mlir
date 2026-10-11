@@ -1,0 +1,10 @@
+{
+  "diagnostics": [
+    "torch-mlir path disabled (use_torch_mlir=False); using FXImporter",
+    "torch-mlir not installed; falling back to CompGen FXImporter",
+    "FXImporter fallback succeeded with 1 decomposed ops, 0 opaque"
+  ],
+  "path_taken": "fx_importer",
+  "revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39"
+}
