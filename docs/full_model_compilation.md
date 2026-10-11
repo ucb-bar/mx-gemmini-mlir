@@ -285,6 +285,11 @@ TinyLlama's first Spike run exhausted the 512 MiB arena. The stage probe now
 defaults to 2 GiB, and a larger-arena Spike run is in progress. No complete
 model inference or independent quantized parity follows from these links.
 
+A separate [two-layer random-weight TinyLlama whole-stage diagnostic](evidence/tiny_two_layer_whole_stage_spike_20261011/README.md)
+completed on Nicolas's Spike with 19 MX calls and a full-logit digest. Its
+output differs from the unquantized PyTorch golden; no quantized numerical
+reference has been established for that run.
+
 For a prepared graph, the standalone builder is:
 
 ```sh
