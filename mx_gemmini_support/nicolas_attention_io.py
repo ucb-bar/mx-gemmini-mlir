@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from .command_ir import Command, Fence, Operand
-from .physical_program import _config_ld, _config_st, _transfer
+from .command_ir import Command, Fence
+from .memory_phase import (lower_linear_spad_mvout, lower_matrix_mvin,
+                           lower_scale_load, lower_strided_scale_dma)
 
 
 ATTENTION_BUFFERS = (
@@ -31,33 +32,27 @@ def lower_dense_attention_scales(profile: dict) -> tuple[Command, ...]:
     if config.get("size_bytes") != 16384:
         raise ValueError("dense attention scale memory differs from source")
     return (
-        Command(27, Operand(buffer="Q_SCALES"), Operand(immediate=64)),
-        Command(27, Operand(buffer="KT_SCALES"),
-                Operand(immediate=(1 << 32) | 128)),
-        Command(27, Operand(buffer="V_SCALES", address_mask=(1 << 40) - 1,
-                            or_bits=64 << 40),
-                Operand(immediate=(2 << 46) | (4096 << 33) |
-                                  (1 << 32) | 64)),
+        *lower_scale_load(profile, buffer="Q_SCALES", payload_bytes=64,
+                          operand="activation").commands,
+        *lower_scale_load(profile, buffer="KT_SCALES", payload_bytes=128,
+                          operand="weight").commands,
+        *lower_strided_scale_dma(profile, buffer="V_SCALES", row_bytes=64,
+                                 rows=2, pitch_bytes=64,
+                                 destination_byte=4096, selector=1).commands,
     )
 
 
 def lower_dense_attention_operands(profile: dict) -> tuple[Command, ...]:
     """Tile Q, Kᵀ, and V with the source's DIM16 byte strides."""
     _profile_rows(profile)
-    commands = [_config_ld(64)]
-    for i in range(2):
-        for k in range(4):
-            commands.append(_transfer(2, "Q_IN", i * 16 * 64 + k * 16,
-                                      (i * 4 + k) * 16))
-    commands.append(_config_ld(64))
-    for name, start in (("KT_IN", 128), ("V_IN", 768)):
-        for k in range(4):
-            for j in range(4):
-                commands.append(_transfer(2, name, k * 16 * 64 + j * 16,
-                                          start + (k * 4 + j) * 16))
-        if name == "KT_IN":
-            commands.append(_config_ld(64))
-    return tuple(commands)
+    return (
+        *lower_matrix_mvin(profile, buffer="Q_IN", matrix_rows=32,
+                           matrix_cols=64, burst_cols=16, spad_row=0).commands,
+        *lower_matrix_mvin(profile, buffer="KT_IN", matrix_rows=64,
+                           matrix_cols=64, burst_cols=16, spad_row=128).commands,
+        *lower_matrix_mvin(profile, buffer="V_IN", matrix_rows=64,
+                           matrix_cols=64, burst_cols=16, spad_row=768).commands,
+    )
 
 
 def lower_dense_attention_readout(profile: dict, stage: str) -> tuple[Command, ...]:
@@ -72,8 +67,9 @@ def lower_dense_attention_readout(profile: dict, stage: str) -> tuple[Command, .
     if stage not in outputs:
         raise ValueError("dense attention readout stage is unsupported")
     name, start, rows = outputs[stage]
-    return (_config_st(16), *(_transfer(3, name, r * 16, start + r)
-                              for r in range(0, rows, 16)))
+    return lower_linear_spad_mvout(
+        profile, buffer=name, total_bytes=rows * 16,
+        tile_cols=16, spad_row=start).commands
 
 
 def lower_dense_attention_program(mlir_text: str, profile: dict,

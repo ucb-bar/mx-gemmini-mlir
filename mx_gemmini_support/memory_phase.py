@@ -109,6 +109,29 @@ def lower_scale_load(profile: Mapping, *, buffer: str,
                        payload_bytes // 8, payload_bytes)
 
 
+def lower_strided_scale_dma(profile: Mapping, *, buffer: str,
+                            row_bytes: int, rows: int, pitch_bytes: int,
+                            destination_byte: int, selector: int) -> MemoryPhase:
+    """Load contiguous E8M0 scale rows from a pitched DRAM matrix."""
+    _capacity(profile)
+    config = profile.get("resources", {}).get("scale_mem_config", {})
+    capacity = config.get("size_bytes", 0)
+    if (any(type(value) is not int for value in
+            (row_bytes, rows, pitch_bytes, destination_byte, selector)) or
+            row_bytes <= 0 or row_bytes % 8 or rows <= 0 or rows >= 1 << 8 or
+            pitch_bytes < row_bytes or pitch_bytes >= 1 << 24 or
+            destination_byte < 0 or destination_byte % 8 or
+            destination_byte >= 1 << 13 or selector not in (0, 1) or
+            destination_byte + rows * row_bytes > capacity // 2):
+        raise ValueError("MX strided scale DMA exceeds selected scale memory or command fields")
+    command = _cmd(
+        27, Operand(buffer=buffer, address_mask=(1 << 40) - 1,
+                    or_bits=pitch_bytes << 40),
+        (rows << 46) | (destination_byte << 33) | (selector << 32) | row_bytes)
+    return MemoryPhase((command,), rows * row_bytes, rows,
+                       (rows - 1) * pitch_bytes + row_bytes)
+
+
 def render_nicolas_memory_mlir(profile: Mapping, source_sha256: str) -> str:
     """Describe the source's reusable transfer phases as typed MX operations."""
     if re.fullmatch(r"[0-9a-f]{64}", source_sha256) is None:

@@ -11,7 +11,7 @@ import pytest
 
 from mx_gemmini_support.memory_phase import (
     lower_linear_spad_mvout, lower_matrix_mvin, lower_nicolas_memory_mlir,
-    lower_scale_load, render_nicolas_memory_mlir,
+    lower_scale_load, lower_strided_scale_dma, render_nicolas_memory_mlir,
 )
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.verify_profile_ir import verify_ir
@@ -69,6 +69,20 @@ def test_memory_phases_reject_unsupported_profile_or_placement() -> None:
     with pytest.raises(ValueError, match="cannot hold"):
         lower_scale_load(profile, buffer="src", payload_bytes=16384,
                          operand="activation")
+
+
+def test_strided_scale_dma_checks_destination_and_runtime_span() -> None:
+    profile = load_profile(PROFILE)
+    phase = lower_strided_scale_dma(
+        profile, buffer="v_scales", row_bytes=64, rows=2,
+        pitch_bytes=64, destination_byte=4096, selector=1)
+    assert phase.transferred_bytes == phase.minimum_buffer_bytes == 128
+    assert phase.commands[0].funct == 27
+    assert phase.commands[0].rs1.or_bits == 64 << 40
+    with pytest.raises(ValueError, match="exceeds"):
+        lower_strided_scale_dma(profile, buffer="v_scales", row_bytes=64,
+                                rows=2, pitch_bytes=64,
+                                destination_byte=8192, selector=1)
 
 
 def test_typed_memory_phases_lower_and_reject_invalid_source_or_dma() -> None:
