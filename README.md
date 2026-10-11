@@ -126,6 +126,11 @@ profile-bound MLIR graph through the public object CLI. Its one data-free
 object is byte identical to the single-object replay, and the source checker
 matches all four stage hashes twice on Spike. This qualification is bound to
 the pinned 32×64×64 source kernel; other shapes and full models remain open.
+The [64×128×64 `attn_vpu_mid` program](docs/evidence/nicolas_attn_vpu_mid_typed_program_a042643_0344bcb/README.md)
+uses the same source-bound lowering with geometry derived from its model2MLIR
+capture and source header. One data-free object issues all 302 MX commands and
+one fence; two Spike runs match all 2,048 score words and all four source
+stage hashes. Larger flash-shape attention and full models remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

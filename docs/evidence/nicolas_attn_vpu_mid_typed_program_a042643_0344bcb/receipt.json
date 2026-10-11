@@ -1,0 +1,43 @@
+{
+  "allocated_data_section_bytes": 0,
+  "binding_sha256": "3c0560d2fe3d07c889f31abbad934884d745ec40e3409f090f8ef0d2507154f4",
+  "command_count": 302,
+  "compile_manifest_sha256": "9fe18d034b497bbb6064f8204b9e92551ed2dc3b8a5d1845248cd583f0660fc0",
+  "compiler_revision": "61f83fee9a2caba2d7d5b9f36e4b3e6a84e3398d",
+  "compiler_source_closure_sha256": "b55133fb85007c97efd35e5a3119dc2d9bc600bccdd064db4c932efc894ce548",
+  "driver_sha256": "5a1f9c2849c88405dbd9d890eb153a1b1a3dbc30bd1dea2816121cec5e66c45c",
+  "elf_sha256": "e19fa9d155840f1d7ae47bad86c091d2a572b33d11b0b8981b471e229865ad4f",
+  "fence_count": 1,
+  "frontend_mlir_sha256": "cce8457e2fe88ac3f35dc4815258557a2eb5bdd52ce950d8f6c877fd4daefd84",
+  "header_sha256": "690bb592e6469b129f79552981828c57cc737928b631190483f0351dc9f7e9ee",
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "native_verifier_sha256": "7c5e0899165a6e8fde9650189d2d2f2dc0c99cf55cb8a529b31b9f7fad5928cb",
+  "npu_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "object_manifest_sha256": "b2e4917453d4b6d4d47e5c2ba4ed524795180a755656ec31b6524c212ce1c0f6",
+  "object_sha256": "0a8f8f1b541c02aec1a2bbe42f826dbb7931ac4a3b6ade3c2d6b3809b582f631",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_dense_attention_shape_qualification.v1",
+  "shape_sq_sk_d": [
+    64,
+    128,
+    64
+  ],
+  "source_baseline_sha256": "3a633e748d344414e9d4bede551bea180a2a61a33221da47d4d2916ac7f2ef38",
+  "source_sha256": "537fcde270abb982b58e6777487d7ea3bc14e5e81da05fb48cb2ac31077a5cd8",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "spike_log_sha256": "913db06fb09e1162023b36cd46893fd217fcc56c354deabe87d1a0f24975c391",
+  "spike_reproduced_runs": 2,
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "stage_hashes": {
+    "O": "f36330f2c41bdea9",
+    "P": "e1e703dbca70d942",
+    "Pq": "acde72ab3f3f5459",
+    "S": "0096a8da30785bff"
+  },
+  "status": "typed_attention_object_matches_source_on_spike",
+  "typed_mlir_sha256": "7793a5ce2314a7789bcc4ac43d834fe35e5e728e381ca8367723dde6937095c9",
+  "variant": "mid",
+  "vector_mlir_sha256": "82788ef7a0b2312f44596cf3387b1e89334292c8c45435a601b43219a993099b"
+}
