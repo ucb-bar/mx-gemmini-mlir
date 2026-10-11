@@ -101,6 +101,41 @@ _VARIANTS = {
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
         "lut_words_per_line": 4, "lut_entry_bits": 8,
         "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": 0,
+    },
+    "matmul_tiled_fp8_e4m3_lut_64x64_requant_dim8.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64_dim8.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": "activation_footprint",
+    },
+    "matmul_tiled_fp8_e4m3_lut_64x64_requant_dim32.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64_dim32.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": 128,
+    },
+    "matmul_tiled_fp8_e4m3_lut_128x128_requant_dim8.c": {
+        "header": "matmul_data_mx_lut_e4m3_128x128_dim8.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
+        "shape": [128, 128, 128], "activation_array": "A_in_hw[64][128]",
+        "use_lut": True, "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "lut_lines": 64,
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": "activation_footprint",
+    },
+    "matmul_tiled_fp8_e4m3_lut_128x128_requant_dim32.c": {
+        "header": "matmul_data_mx_lut_e4m3_128x128_dim32.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
+        "shape": [128, 128, 128], "activation_array": "A_in_hw[64][128]",
+        "use_lut": True, "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "lut_lines": 64,
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": "activation_footprint",
     },
     "matmul_tiled_fp8_e4m3_lut_64x64_dim32.c": {
         "header": "matmul_data_mx_lut_e4m3_64x64_dim32.h",
@@ -339,9 +374,15 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
     if variant.get("output_projection") == "lut" and (
             "#define QUANT_LUT_UPDATE_GRANULARITY 1" not in source_text or
             "((uint64_t)(0) << 14)" not in source_text or
-            "C_proj_hw[32][64]" not in header_text or
+            f"C_proj_hw[{m // 2}][{n}]" not in header_text or
             "C_scales_row[MATMUL_GN][MATMUL_M]" not in header_text):
         raise ValueError("Nicolas packed LUT readout contract changed")
+    if variant.get("quant_spad_dest") == "activation_footprint" and (
+            "SPAD_DEST = tiles_I * tiles_K * DIM" not in source_text):
+        raise ValueError("Nicolas packed LUT output scratchpad placement changed")
+    if isinstance(variant.get("quant_spad_dest"), int) and (
+            f"SPAD_DEST = {variant['quant_spad_dest']};" not in source_text):
+        raise ValueError("Nicolas packed LUT output scratchpad placement changed")
     altfmt_match = re.search(r"^#define MX_ALTFMT\s+([01])\b", source_text, re.M)
     config_altfmt = int(altfmt_match.group(1)) if altfmt_match else 0
     if cell["activation_format"] != "fp4_e2m1" and config_altfmt != int(
@@ -910,7 +951,8 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     quantized_lut = variant.get("output_projection") == "lut"
     output_bytes = m * n // 2 if quantized_lut else m * n * 2
     if quantized_lut:
-        c_base = 0
+        c_base = (ti * tki * dim if variant["quant_spad_dest"] == "activation_footprint"
+                  else variant["quant_spad_dest"])
     if (b_base < ti * tki * dim or b_end > scratchpad_rows or
             c_base + output_bytes // dim > b_base):
         raise ValueError("asymmetric operand and BF16 readout rows exceed profile scratchpad")

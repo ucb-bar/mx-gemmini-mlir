@@ -73,9 +73,11 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
     if args.symmetric_lut_requant and (
-            args.symmetric_lut != "e4m3" or args.source_shape != "64x64" or
-            args.mesh_dim != 16 or not args.physical):
-        parser.error("packed E4M3 LUT readout needs --symmetric-lut e4m3, DIM16, 64x64")
+            args.symmetric_lut != "e4m3" or not args.physical or
+            (args.mesh_dim, args.source_shape) not in {
+                (16, "64x64"), (8, "64x64"), (32, "64x64"),
+                (8, "128x128"), (32, "128x128")}):
+        parser.error("packed E4M3 LUT readout needs a registered E4M3 mesh and shape")
     if args.public_object and not args.physical:
         parser.error("public asymmetric object requires physical lowering")
     if args.out_dir.exists():
@@ -134,11 +136,13 @@ def main() -> None:
                            f"{'_requant' if args.symmetric_lut_requant else ''}.c")
             header_name = f"matmul_data_mx_lut_{name}_64x64.h"
         elif name == "e4m3" and (args.mesh_dim, args.source_shape) in {
-                (32, "64x64"), (8, "64x64"), (8, "128x128")}:
+                (32, "64x64"), (8, "64x64"), (8, "128x128"),
+                (32, "128x128")}:
             dim_suffix = f"_dim{args.mesh_dim}"
-            nonrequant = "_nonrequant" if args.mesh_dim == 8 else ""
+            nonrequant = "_nonrequant" if args.mesh_dim == 8 and not args.symmetric_lut_requant else ""
             source_name = (f"matmul_tiled_fp8_e4m3_lut_{args.source_shape}"
-                           f"{nonrequant}{dim_suffix}.c")
+                           f"{'_requant' if args.symmetric_lut_requant else nonrequant}"
+                           f"{dim_suffix}.c")
             header_name = f"matmul_data_mx_lut_e4m3_{args.source_shape}{dim_suffix}.h"
         else:
             parser.error("same-format LUT source shape and mesh are not registered")
