@@ -239,6 +239,123 @@ CASES = {
 }
 
 
+def _register_standard_source(key: str, precision: str,
+                              shape: tuple[int, int, int], source_name: str,
+                              header_name: str, source_sha256: str,
+                              header_sha256: str, *, quant_output: bool = False,
+                              profile_name: str = "MxGemminiRocketConfig") -> None:
+    """Register a pinned matrix source using the ordinary MX pointer ABI."""
+    if key in CASES or precision not in {"FP8", "FP4"}:
+        raise ValueError(f"unsupported or duplicate Nicolas source case: {key}")
+    output = "output_quantized" if quant_output else "output_bf16"
+    activation = "A_in_hw" if precision == "FP4" else "A_in"
+    CASES[key] = Case(
+        key, precision, shape, shape, source_name, header_name,
+        source_sha256, header_sha256, profile_name,
+        ("activation", "activation_scales", output, "scratch_output_scales",
+         "weight", "weight_scales"),
+        (activation, "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"),
+        f"{precision} {shape[0]}x{shape[1]}x{shape[2]}" +
+        (" requant" if quant_output else ""), quant_output)
+
+
+_register_standard_source(
+    "fp8_64x96x64", "FP8", (64, 96, 64),
+    "matmul_tiled_fp8_64x96x64.c", "matmul_fp8_64x96x64.h",
+    "026aa3f9510306aa43b7513a1a27ee610091eacc96af2dd0ce255d9e372b219d",
+    "5b71b66fdb15fd776958e8d995d15f9aa0ddbbd39892c3cdb27d1ca144c15dd2")
+_register_standard_source(
+    "fp8_64x96x64_requant", "FP8", (64, 96, 64),
+    "matmul_tiled_fp8_64x96x64_requant.c", "matmul_fp8_64x96x64.h",
+    "5b0f17b108bf81e5146f513f0ca325490a6a15eb55bcbf25178881577a0cfb38",
+    "5b71b66fdb15fd776958e8d995d15f9aa0ddbbd39892c3cdb27d1ca144c15dd2",
+    quant_output=True)
+_register_standard_source(
+    "fp8_96x32x32_requant", "FP8", (96, 32, 32),
+    "matmul_tiled_fp8_96x32x32_requant.c", "matmul_fp8_96x32x32.h",
+    "747acfe2358bab83913ffd8c6a4db23dbcb50bde08ca9ad496fca054eeb519fe",
+    "872254ca7a0de8ab0d49ea51a5df357f5c2b7703114356a6eaec363297079cc7",
+    quant_output=True)
+_register_standard_source(
+    "fp8_96x96x64_requant", "FP8", (96, 96, 64),
+    "matmul_tiled_fp8_96x96x64_requant.c", "matmul_fp8_96x96x64.h",
+    "00b13d84f832e0217adf00e367788a179c1572755e6846ce51346c9687aadca5",
+    "2d83916439936348eedd9375dd24bbf5727db5e0facacc02f30c3130bb9abf25",
+    quant_output=True)
+_register_standard_source(
+    "fp8_32x32x32_requant", "FP8", (32, 32, 32),
+    "matmul_tiled_fp8_32x32x32_requant.c", "matmul_fp8_32x32x32.h",
+    "58ebb708907ccd61989b8a22a37578ece4005b33e1af69f4564f3af3dbc5829c",
+    "70c32822155c5e329b761952a06f4a36836361b18622d22114d48b58fd708fc6",
+    quant_output=True)
+_register_standard_source(
+    "fp4_128x128x128", "FP4", (128, 128, 128),
+    "matmul_tiled_fp4_128x128.c", "matmul_fp4_128x128.h",
+    "cbd724db7a161305fa4763470346562efdc3665ab3d5d04b604df2a82c1ca8bd",
+    "f3ab8dbc5d492c661756d163b42e3be3914f6819b52549d08f0ee453706e9607")
+_register_standard_source(
+    "fp4_128x128x128_requant", "FP4", (128, 128, 128),
+    "matmul_tiled_fp4_128x128_requant.c", "matmul_fp4_128x128.h",
+    "5290df310cf1f4af2ef051792726bf451a454cc1ae4a3b124686eecf2a42cd46",
+    "f3ab8dbc5d492c661756d163b42e3be3914f6819b52549d08f0ee453706e9607",
+    quant_output=True)
+_register_standard_source(
+    "fp4_64x64x64_requant_dim32", "FP4", (64, 64, 64),
+    "matmul_tiled_fp4_64x64_requant_dim32.c", "matmul_fp4_64x64_dim32.h",
+    "724bda79b2f594520dff04808689703a593abc7ea656e16022a756c2fe018cfa",
+    "5a1f3fa7806fff120dbd7c283ff136a952798a07da122bf2d78ef5a629b72bc5",
+    quant_output=True, profile_name="MxDim32GemminiRocketConfig")
+_register_standard_source(
+    "fp4_64x64x64_nonrequant_dim32", "FP4", (64, 64, 64),
+    "matmul_tiled_fp4_64x64_nonrequant_dim32.c", "matmul_fp4_64x64_dim32.h",
+    "35bc2bf18ae3314835a1e34379788e4822cacb927f9680c5647a9105bf45fa74",
+    "5a1f3fa7806fff120dbd7c283ff136a952798a07da122bf2d78ef5a629b72bc5",
+    profile_name="MxDim32GemminiRocketConfig")
+_register_standard_source(
+    "fp4_128x128x128_nonrequant_dim32", "FP4", (128, 128, 128),
+    "matmul_tiled_fp4_128x128_nonrequant_dim32.c", "matmul_fp4_128x128_dim32.h",
+    "8e78585cdd9a03f1a7f007ed13bb11bc210c0a500e87a4ed79bd9b7dfcfe7834",
+    "b28981f5e0cd9e74a33a9663f753b68e76e71e76f630c82afcd2364c8a4a8745",
+    profile_name="MxDim32GemminiRocketConfig")
+_register_standard_source(
+    "fp4_128x128x64_requant_dim32", "FP4", (128, 128, 64),
+    "matmul_tiled_fp4_128x128x64_requant_dim32.c", "matmul_fp4_128x128x64_dim32.h",
+    "d50779e8836a3d7b7296610ab362fc7d730e3dbd07e66e50b3da76b95ddb3572",
+    "9f55f60d82647988eacc91d82e3399199acf11d5cae4e10163620166be0eef97",
+    quant_output=True, profile_name="MxDim32GemminiRocketConfig")
+_register_standard_source(
+    "fp8_64x64x64_single_dim8", "FP8", (64, 64, 64),
+    "matmul_tiled_fp8_64x64_single_dim8.c", "matmul_fp8_64x64_dim8.h",
+    "f270fff49b70b468c88690f6baf068a25936689039802328e3c46c2f6c697179",
+    "be9aad16d3f4b2ba08b4f75944958a3234631c86d6c8c65aa143d7ad622b5593",
+    profile_name="MxDim8AllGemminiRocketConfig")
+_register_standard_source(
+    "fp8_128x128x128_single_dim8", "FP8", (128, 128, 128),
+    "matmul_tiled_fp8_128x128_single_dim8.c", "matmul_fp8_128x128_dim8.h",
+    "32dc131ab86a93cf4c60628f5b1e1bf297c37428de1036d65ddbf1057a13022e",
+    "5ecc24f4ceb8e2dc9533e96c0ca842ed43d677fc6a359b1d529c23767fc5e624",
+    profile_name="MxDim8AllGemminiRocketConfig")
+_register_standard_source(
+    "fp8_64x64x64_requant_dim8", "FP8", (64, 64, 64),
+    "matmul_tiled_fp8_64x64_requant_dim8.c", "matmul_fp8_64x64_dim8.h",
+    "239394c2252865c6480f2851da8aadef9872fb842b473fab0df525373af271e3",
+    "be9aad16d3f4b2ba08b4f75944958a3234631c86d6c8c65aa143d7ad622b5593",
+    quant_output=True, profile_name="MxDim8AllGemminiRocketConfig")
+_register_standard_source(
+    "fp8_128x128x128_requant_dim8", "FP8", (128, 128, 128),
+    "matmul_tiled_fp8_128x128_requant_dim8.c", "matmul_fp8_128x128_dim8.h",
+    "56291b1d6f38addff5751755d7a01c8beb650c384f663a1179d88eeda3420567",
+    "5ecc24f4ceb8e2dc9533e96c0ca842ed43d677fc6a359b1d529c23767fc5e624",
+    quant_output=True, profile_name="MxDim8AllGemminiRocketConfig")
+_register_standard_source(
+    "fp4_64x64x64_requant_dim8", "FP4", (64, 64, 64),
+    "matmul_tiled_fp4_64x64_requant_dim8.c", "matmul_fp4_64x64_dim8.h",
+    "f410f6d70d03ca40dff626fff0b26987e69a88339d07dd77ef4f67cf22712095",
+    "252364c3b867cabb0dc555174cb90278bab2107d18ddcfbf00e46ca36f275e14",
+    quant_output=True, profile_name="MxDim8AllGemminiRocketConfig")
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 

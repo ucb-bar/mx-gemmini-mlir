@@ -340,7 +340,7 @@ def read_source_payload(kernel: SourceGemm, *,
     m, n, k = kernel.shape
     if k % 32 or n % 32:
         raise ValueError("source MX payload requires 32-element scale groups")
-    source = kernel.data_header.read_text(encoding="ascii")
+    source = kernel.data_header.read_text(encoding="utf-8")
     packed = kernel.datatype != "FP8"
     if kernel.datatype not in {"FP8", "FP4", "FP6"}:
         raise ValueError("unknown source MX payload precision")
@@ -406,11 +406,20 @@ def read_source_payload(kernel: SourceGemm, *,
                                                   count=m * n, maximum=65535), 2),
                                     (m, n), 16, "row_major_bf16"),
         }
-    resources["output_scales"] = Resource(bytes(_array(
-        source, name="C_scales_row", ctype="uint8_t",
-        dimensions=("[MATMUL_GN][MATMUL_M]", f"[{n // 32}][{m}]"),
-        count=n // 32 * m, maximum=255)),
-        (n // 32, m), 8, "n_group_row_e8m0")
+    if re.search(r"static const uint8_t C_scales_row\[", source):
+        output_scales = bytes(_array(
+            source, name="C_scales_row", ctype="uint8_t",
+            dimensions=("[MATMUL_GN][MATMUL_M]", f"[{n // 32}][{m}]"),
+            count=n // 32 * m, maximum=255))
+    else:
+        row_major_scales = bytes(_array(
+            source, name="C_scales_out", ctype="uint8_t",
+            dimensions=("[MATMUL_M][MATMUL_GN]", f"[{m}][{n // 32}]"),
+            count=m * (n // 32), maximum=255))
+        output_scales = bytes(row_major_scales[row * (n // 32) + group]
+                              for group in range(n // 32) for row in range(m))
+    resources["output_scales"] = Resource(
+        output_scales, (n // 32, m), 8, "n_group_row_e8m0")
     if kernel.quant_output and kernel.datatype == "FP6":
         projected = bytes(_array(source, name="C_proj_hw", ctype="uint8_t",
                                  dimensions="[64][128]", count=m * n // 2,
