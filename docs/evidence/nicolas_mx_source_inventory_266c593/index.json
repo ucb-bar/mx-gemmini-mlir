@@ -1213,6 +1213,34 @@
         },
         {
           "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_ops_program_public_266c593/e4m3_fp4_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_program_spike.v1",
+          "sha256": "2363720ff3ee6663aeab77fc262bc51fd82a2ef8e48a74096e690fe4f2a6a50e",
+          "status": "compiler_vpu_program_matched_source_reference_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_ops_program_public_266c593/e4m3_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_program_spike.v1",
+          "sha256": "0c8a88d6132c451fc05ddf3551acff5fe86ebcc5b9e8193c7b5a4da010a10044",
+          "status": "compiler_vpu_program_matched_source_reference_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_ops_program_public_266c593/index.json",
+          "schema": "mx_gemmini.nicolas_vpu_ops_public_program_archive.v1",
+          "sha256": "5681dd53b6cf5173622b64f24a693eb3ec8ea70e205317f65b505c77af0465da",
+          "status": "two_profile_full_vpu_program_source_reference_matched"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_ops_program_public_266c593/reproduction_receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_program_spike.v1",
+          "sha256": "0c8a88d6132c451fc05ddf3551acff5fe86ebcc5b9e8193c7b5a4da010a10044",
+          "status": "compiler_vpu_program_matched_source_reference_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
           "path": "docs/evidence/nicolas_vpu_ordering_compiled_266c593/chain/binding.json",
           "schema": "mx_gemmini.nicolas_vpu_ordering_binding.v1",
           "sha256": "0ff6f69bc4364a68a556aad57d8c3c05560f903a5818d816f15a7ce6536c113f",

@@ -5,10 +5,10 @@ The [index](index.json) classifies every program in Nicolas's pinned
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52`. The report validates the
 archived source binding, generated object or executable evidence, Spike outcome,
 and recorded output-comparison count for **156 matrix/LUT programs**,
-**six connected FP4/FP6/FP8 matrix chains**, and **six specialized programs**
+**six connected FP4/FP6/FP8 matrix chains**, and **seven specialized programs**
 with selected-path full-result receipts. The specialized programs are
 `vpu_softmax`, `spad_requant`, `spad_requant_fp4`, `chain_pipelined`,
-`chain_vpu_spad_requant`, and `mx_mem_bw`; the audit checks their archived
+`chain_vpu_spad_requant`, `mx_mem_bw`, and `vpu_ops`; the audit checks their archived
 generated object, Spike log, source binding, and complete output count.
 The memory benchmark's full
 16 KiB readout qualifies bytes, not timing or performance counters.
@@ -17,21 +17,21 @@ comparisons and the saved ELF and Spike log. FP8 receipts also pin the
 archived reference arrays. Each row names its exact receipt and available
 frontend, compiler, and target profile revisions.
 
-The other **three entries** are explicitly listed rather than counted as failed
-compilations. The monolithic `vpu_ops` program has separate operation-level
-evidence; it has not been rebuilt as one compiler-issued executable.
-The two remaining debug programs, `matmul_ws_mx_generic` and
+The other **two entries** are explicitly listed rather than counted as failed
+compilations. They are debug programs, `matmul_ws_mx_generic` and
 `matmul_single_tile_test`, have no direct source-hash receipt. In
 the latter source, the golden-comparison loop
 is commented out, so its printed PASS line alone is not a numerical oracle.
 
 This audit does **not** claim that the compiler regenerated every instruction
-or the complete C control flow of the 168 selected paths. The archived
+or the complete C control flow of the 169 selected paths. The `vpu_ops`
+qualification compiles all 30 ordered source VPU commands into one executable
+and compares 13,056 BF16 values across 29 named source checks under both VPU
+profiles; its CPU input and reference logic remains in a thin driver. The archived
 FP8 128×128 chain contains a generated ELF and pinned object hashes, while
 the individual object files are not archived in that original bundle. It does
 not upgrade patched Spike, source-only runs, RTL timing, or FPGA behavior into a
-compiler qualification. The separate evidence for `vpu_ops` must
-be reviewed at its stated scope before making a program-level claim.
+compiler qualification.
 
 Rebuild and check the inventory and audit against the pinned RTL checkout:
 

@@ -218,6 +218,8 @@ def _full_matrix_result(entry: dict) -> dict | None:
 
 def _full_specialized_result(entry: dict) -> dict | None:
     """Validate complete selected outputs for non-matrix MX sources."""
+    if entry["name"] == "vpu_ops":
+        return _full_vpu_program_result(entry)
     if entry["name"] == "chain_vpu_spad_requant":
         return _full_resident_vpu_result(entry)
     if entry["name"] in ("chain_pipelined", "mx_mem_bw"):
@@ -289,6 +291,91 @@ def _full_specialized_result(entry: dict) -> dict | None:
             result["model2mlir_revision"] = model2mlir_revision
         return result
     return None
+
+
+def _full_vpu_program_result(entry: dict) -> dict:
+    """Validate the single compiler-issued Nicolas VPU test executable."""
+    directory = ROOT / "docs/evidence/nicolas_vpu_ops_program_public_266c593"
+    index = json.loads((directory / "index.json").read_text())
+    if (index.get("schema") != "mx_gemmini.nicolas_vpu_ops_public_program_archive.v1" or
+            index.get("status") != "two_profile_full_vpu_program_source_reference_matched" or
+            index.get("source_sha256") != entry["source_sha256"] or
+            index.get("rtl_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            index.get("operation_count") != 30 or
+            index.get("snapshot_count") != 30 or
+            index.get("source_check_count") != 29 or
+            index.get("bf16_values_checked_per_profile") != 13056 or
+            index.get("same_profile_reproduction_exact") is not True or
+            index.get("cross_profile_object_elf_log_exact") is not True or
+            len(index.get("rows", [])) != 2):
+        raise ValueError("incomplete Nicolas VPU program archive")
+    receipts = []
+    required_files = {"abi.json", "compiler.log", "mx_driver.c",
+                      "object/compile_manifest.json", "object/mx_issue.c",
+                      "object/mx_issue.h", "object/mx_issue.o",
+                      "object/object_manifest.json", "object/physical_program.json",
+                      "receipt.json", "spike.log", "vpu_ops.elf", "vpu_ops.mlir"}
+    seen_profiles = set()
+    for row in index["rows"]:
+        if row.get("name") not in ("e4m3_vpu", "e4m3_fp4_vpu") or row["name"] in seen_profiles:
+            raise ValueError("unknown Nicolas VPU program profile")
+        seen_profiles.add(row["name"])
+        if set(row.get("files_sha256", {})) != required_files:
+            raise ValueError("incomplete Nicolas VPU program artifact set")
+        base = directory / row["name"]
+        for name, digest in row.get("files_sha256", {}).items():
+            _require_digest(digest, f"VPU program {name}")
+            if _sha(base / name) != digest:
+                raise ValueError(f"changed VPU program artifact {name}")
+        receipt_path = base / "receipt.json"
+        receipt = json.loads(receipt_path.read_text())
+        if (row.get("receipt_sha256") != _sha(receipt_path) or
+                receipt.get("schema") != "mx_gemmini.nicolas_vpu_program_spike.v1" or
+                receipt.get("status") !=
+                "compiler_vpu_program_matched_source_reference_on_pinned_spike" or
+                receipt.get("source_sha256") != entry["source_sha256"] or
+                receipt.get("profile_sha256") != row.get("profile_sha256") or
+                receipt.get("mismatches") != 0 or
+                (receipt.get("operation_count"), receipt.get("snapshot_count"),
+                 receipt.get("source_check_count"), receipt.get("bf16_values_checked")) !=
+                (30, 30, 29, 13056)):
+            raise ValueError("VPU program receipt or source binding differs")
+        for field in ("profile_sha256", "object_sha256", "elf_sha256",
+                      "spike_log_sha256"):
+            _require_digest(receipt.get(field), f"VPU program {field}")
+        revision = receipt.get("compiler_revision")
+        if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+            raise ValueError("VPU program has no pinned compiler revision")
+        for name, field in (("object/mx_issue.o", "object_sha256"),
+                            ("vpu_ops.elf", "elf_sha256"),
+                            ("spike.log", "spike_log_sha256")):
+            if _sha(base / name) != receipt[field]:
+                raise ValueError(f"changed VPU program {name}")
+        receipts.append((receipt, receipt_path))
+    if seen_profiles != {"e4m3_vpu", "e4m3_fp4_vpu"}:
+        raise ValueError("missing Nicolas VPU program profile")
+    first, second = receipts[0][0], receipts[1][0]
+    if (first["profile_sha256"] == second["profile_sha256"] or
+            any(first[field] != second[field] for field in
+                ("object_sha256", "elf_sha256", "spike_log_sha256")) or
+            _sha(directory / "reproduction_receipt.json") !=
+            index.get("same_profile_second_receipt_sha256") or
+            json.loads((directory / "reproduction_receipt.json").read_text()) !=
+            first):
+        raise ValueError("VPU program profile or reproduction evidence differs")
+    return {"receipt": str(receipts[0][1].relative_to(ROOT)),
+            "receipt_sha256": _sha(receipts[0][1]),
+            "receipt_schema": first["schema"],
+            "profile_sha256": first["profile_sha256"],
+            "compiler_revision": first["compiler_revision"],
+            "object_sha256": first["object_sha256"],
+            "elf_sha256": first["elf_sha256"],
+            "spike_log_sha256": first["spike_log_sha256"],
+            "checked_output_metrics": {"bf16_values_checked": 13056,
+                                       "source_check_count": 29,
+                                       "snapshot_count": 30},
+            "qualified_profile_count": 2}
 
 
 def _full_resident_vpu_result(entry: dict) -> dict:

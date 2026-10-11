@@ -441,7 +441,14 @@ This source executable is the full VPU oracle. The compiler-issued base,
 variant, and ordering qualifications below now cover all **29 named source
 checks** on Nicolas's pinned Spike extension. Each case is compiled into an
 independent ELF with the source input sequence and reference calculation;
-the monolithic source benchmark remains a separate qualification.
+the monolithic source benchmark remains a separate qualification for these
+per-operation objects. A later [single-object source-order replay](evidence/nicolas_vpu_ops_program_public_266c593/README.md)
+issues all 30 VPU commands in one generated executable, with timed readout
+snapshots and a write-after-read reload. It matches all 13,056 BF16 values
+across 29 named source checks under both VPU Rocket profiles. The thin CPU
+driver supplies Nicolas's input and reference logic; the compiler produces
+the accelerator command stream. This qualifies selected functional outputs
+on Spike, not RTL queue timing or the source benchmark's performance behavior.
 
 ### Compiler-issued base VPU operations
 

@@ -23,8 +23,7 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     assert report["status_counts"] == {
         "generated_object_selected_spike_result_matched": 156,
         "generated_connected_chain_spike_result_matched": 6,
-        "generated_specialized_selected_spike_result_matched": 6,
-        "separate_evidence_requires_scope_review": 1,
+        "generated_specialized_selected_spike_result_matched": 7,
         "no_direct_source_receipt": 2,
     }
     rows = {row["name"]: row for row in report["entries"]}
@@ -44,7 +43,12 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     assert {name for name, row in rows.items() if row["status"] ==
             "generated_specialized_selected_spike_result_matched"} == {
                 "vpu_softmax", "spad_requant", "spad_requant_fp4",
-                "chain_pipelined", "chain_vpu_spad_requant", "mx_mem_bw"}
+                "chain_pipelined", "chain_vpu_spad_requant", "mx_mem_bw",
+                "vpu_ops"}
+    assert rows["vpu_ops"]["selected_spike_result"]["checked_output_metrics"] == {
+        "bf16_values_checked": 13056, "source_check_count": 29,
+        "snapshot_count": 30}
+    assert rows["vpu_ops"]["selected_spike_result"]["qualified_profile_count"] == 2
     for row in rows.values():
         if row["status"] in {
                 "generated_object_selected_spike_result_matched",
@@ -70,6 +74,14 @@ def test_report_rejects_stale_connected_chain_binding() -> None:
                  "matmul_tiled_fp6_64x64_chain")
     chain["source_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="stale chain source binding"):
+        build_report(inventory)
+
+
+def test_report_rejects_stale_vpu_program_binding() -> None:
+    inventory = json.loads(INVENTORY.read_text())
+    vpu = next(row for row in inventory["entries"] if row["name"] == "vpu_ops")
+    vpu["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="incomplete Nicolas VPU program archive"):
         build_report(inventory)
 
 
