@@ -1,0 +1,33 @@
+add: 0 mismatches
+sub: 0 mismatches
+mul: 0 mismatches
+mul same-bank: 0 mismatches
+mul bcast: 0 mismatches
+max: 0 mismatches
+max same-bank: 0 mismatches
+max bcast: 0 mismatches
+sub bcast sb: 0 mismatches
+expsub: 0 mismatches
+expsub bcast: 0 mismatches
+expsub sb: 0 mismatches
+expsum bcast: 0 mismatches
+expsum sums: 0 mismatches
+expsum sb: 0 mismatches
+expsum sb sums: 0 mismatches
+adds: 0 mismatches
+muls: 0 mismatches
+exp: 0 mismatches
+rcp: 0 mismatches
+rsqrt: 0 mismatches
+rmax: 0 mismatches
+ramax: 0 mismatches
+rsum: 0 mismatches
+rsum rlen1: 0 mismatches
+chain: 0 mismatches
+war mvin: 0 mismatches
+dual X: 0 mismatches
+dual Y: 0 mismatches
+dual Z=X*B: 0 mismatches
+compiled vpu_ops: 0 mismatches across 30 output snapshots
+Gemmini extension configured with:
+    dim = 16

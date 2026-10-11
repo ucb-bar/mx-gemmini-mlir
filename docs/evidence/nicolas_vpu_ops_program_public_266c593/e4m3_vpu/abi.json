@@ -1,0 +1,219 @@
+{
+  "inputs": [
+    {
+      "name": "a",
+      "row": 0,
+      "rows": 64
+    },
+    {
+      "name": "a2",
+      "row": 2048,
+      "rows": 64
+    },
+    {
+      "name": "b",
+      "row": 4096,
+      "rows": 64
+    },
+    {
+      "name": "p",
+      "row": 9216,
+      "rows": 64
+    },
+    {
+      "name": "x",
+      "row": 13312,
+      "rows": 64
+    }
+  ],
+  "outputs": [
+    {
+      "after_operation": 0,
+      "name": "out_0",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 1,
+      "name": "out_1",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 2,
+      "name": "out_2",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 3,
+      "name": "out_3",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 4,
+      "name": "out_4",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 5,
+      "name": "out_5",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 6,
+      "name": "out_6",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 7,
+      "name": "out_7",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 8,
+      "name": "out_8",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 9,
+      "name": "out_9",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 10,
+      "name": "out_10",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 11,
+      "name": "out_11",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 12,
+      "name": "out_12",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 12,
+      "name": "out_13",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 13,
+      "name": "out_14",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 13,
+      "name": "out_15",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 14,
+      "name": "out_16",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 15,
+      "name": "out_17",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 16,
+      "name": "out_18",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 17,
+      "name": "out_19",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 18,
+      "name": "out_20",
+      "row": 12288,
+      "rows": 64
+    },
+    {
+      "after_operation": 19,
+      "name": "out_21",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 20,
+      "name": "out_22",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 21,
+      "name": "out_23",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 22,
+      "name": "out_24",
+      "row": 12288,
+      "rows": 64
+    },
+    {
+      "after_operation": 25,
+      "name": "out_25",
+      "row": 12288,
+      "rows": 16
+    },
+    {
+      "after_operation": 26,
+      "name": "out_26",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "after_operation": 29,
+      "name": "out_27",
+      "row": 1024,
+      "rows": 64
+    },
+    {
+      "after_operation": 29,
+      "name": "out_28",
+      "row": 12288,
+      "rows": 64
+    },
+    {
+      "after_operation": 29,
+      "name": "out_29",
+      "row": 8192,
+      "rows": 64
+    }
+  ],
+  "reloads": [
+    {
+      "after_operation": 26,
+      "input": "a2",
+      "row": 0
+    }
+  ],
+  "schema": "mx_gemmini.vpu_sequence_buffer_map.v2"
+}
