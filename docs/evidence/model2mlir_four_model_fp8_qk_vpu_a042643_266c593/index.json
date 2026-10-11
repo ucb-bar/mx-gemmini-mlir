@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "compared_bf16_values": 512,
+      "elf_sha256": "87878607ae1c7c424fc44dbb32d04ab310d7828b525310d0f78853ff9ea5c678",
+      "model": "tinyllama",
+      "model_output_values": 64,
+      "object_sha256": "86eb1049bcf8e1c4bad3d9d42fafb40b73c88f2aa24b5312559ac4e3a331513a",
+      "padded_shape_mnk": [
+        16,
+        32,
+        64
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.3445582389831543,
+      "status": "qk_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 512,
+      "elf_sha256": "e7a630208f2ef56162347be7a9ddb24c531fe1dbb5a6a6ed02253e980aa067c6",
+      "model": "deepseek_r1_distill_qwen_1_5b",
+      "model_output_values": 16,
+      "object_sha256": "456cd33440442306a13ee19f6f34ab923df55a3f663195ff816002f6a1367789",
+      "padded_shape_mnk": [
+        16,
+        32,
+        128
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.23705565929412842,
+      "status": "qk_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 512,
+      "elf_sha256": "32e968327c0e8dc85184f5b81caae1fc765ccfcee2675c12ccb224d8525fd994",
+      "model": "gemma2_2b",
+      "model_output_values": 16,
+      "object_sha256": "166e638c1fc0ce812424ea1c237bc3ca4667a5b16e8e6b77a0ccc896d3d7d69c",
+      "padded_shape_mnk": [
+        16,
+        32,
+        256
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.6450182795524597,
+      "status": "qk_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 512,
+      "elf_sha256": "ea1f1050c9045703a35ed9568ca4be0212f9cdedc0101d26e90aca27e0cf3b83",
+      "model": "smolvla",
+      "model_output_values": 256,
+      "object_sha256": "86eb1049bcf8e1c4bad3d9d42fafb40b73c88f2aa24b5312559ac4e3a331513a",
+      "padded_shape_mnk": [
+        16,
+        32,
+        64
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.10218652337789536,
+      "status": "qk_head_matched_on_spike"
+    }
+  ],
+  "schema": "mx_gemmini.four_model_fp8_qk_head_suite.v1",
+  "scope": "one head of first QK batched matmul per reduced random-weight model; no attention epilogue or PV"
+}

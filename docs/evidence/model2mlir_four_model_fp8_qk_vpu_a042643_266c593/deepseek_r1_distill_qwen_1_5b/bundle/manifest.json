@@ -1,0 +1,101 @@
+{
+  "model2mlir_attention_qk": {
+    "batch_index": 0,
+    "fqn": "lm.model.layers.0.self_attn",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "fe9bc64e82b93d26ca066c30fc0d86bcc5bdc4f6dfbc7939a78fa81867f6df8a",
+    "region_id": "matmul_4",
+    "source_mlir_sha256": "91857cfab3105ecd7308b50981b5899a95bb2d2101b81dc6ad338e9c68ceef40",
+    "source_op": "batch_matmul",
+    "source_shape_bmnk": [
+      12,
+      4,
+      4,
+      128
+    ],
+    "weight_sha256": "48f0515bab0c260abb0414f8691ee9e04d8aa59218ce5da88d4a27b6053c1678"
+  },
+  "origin": "model2mlir_attention_qk_head",
+  "precision": "FP8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resources": {
+    "activation": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "3d0eecf4d3bd00491452d422b1c9b9cd0e0f4d6db73fdb0d02c0c3a7ec491898",
+      "shape": [
+        16,
+        128
+      ]
+    },
+    "activation_scales": {
+      "bytes": 64,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "089d87c8f5913d60e8a5aaa79911a111f2881d903e0a636fbff0498f1b562bea",
+      "shape": [
+        4,
+        16
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 1024,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "79af8007aee75ffb2c50d63ef8d5ee10180cdd9bf281ad27b5eeda228c2555be",
+      "shape": [
+        16,
+        32
+      ]
+    },
+    "output_scales": {
+      "bytes": 16,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "shape": [
+        1,
+        16
+      ]
+    },
+    "weight": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "d293cc2930c6d74d4154988ba5e8b1da86e4be39ce5592289e10f4bf54f7061e",
+      "shape": [
+        128,
+        32
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "4b854925fe2a87b6facec7cc077d4ab74bdf2d2c68e7dbb9c0abbeb6f6001374",
+      "shape": [
+        4,
+        32
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    16,
+    32,
+    128
+  ],
+  "site_id": "functional:matmul",
+  "tile_mnk": [
+    16,
+    32,
+    128
+  ]
+}
