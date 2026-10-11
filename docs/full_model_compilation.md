@@ -53,8 +53,10 @@ remaining operation families. Its `unlowered_operation_count` intentionally
 equals the stage's operation count until an executable catalog and host/device
 partition have been built and verified.
 
-On 2026-10-11, the current model2MLIR `02c61c2` plus the changes on this
-branch captured all four full pretrained checkpoints as explicit sessions.
+On 2026-10-11, model2MLIR task commits based on `02c61c2` captured all four
+full pretrained checkpoints as explicit sessions. The task branch later merged
+upstream `main` at `d164bf0`; existing captures retain their original source
+receipts and have not been recaptured after that merge.
 Every stage had zero opaque operations and passed the model2MLIR stage-receipt
 and whole-bundle integrity checks. The MX structural audit used Merlin's shared
 parser and the selected Nicolas MX+VPU profile. Counts below sum distinct
@@ -154,8 +156,8 @@ device catalog hook, bare-metal linking, Spike execution, and multi-program
 session bindings. The MX compiler should implement a **target-owned catalog
 builder** for Merlin's `DeviceRouting.catalog_builder` boundary. It should
 not create another model graph compiler or host runtime here. The latest
-model2MLIR `main` checked on 2026-10-11 was `02c61c2`; existing archived MX
-captures remain pinned to their older recorded revisions until recaptured.
+model2MLIR `main` checked on 2026-10-11 was `d164bf0`; existing archived MX
+captures remain pinned to their recorded revisions until recaptured.
 
 The first executable handoff is `tools.emit_runtime_issuer`. It takes a
 payload-bound model2MLIR-derived MX program and emits a data-free RV64 object
