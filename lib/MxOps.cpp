@@ -54,6 +54,33 @@ static LogicalResult verifyBinding(Operation *op) {
   return success();
 }
 
+static LogicalResult verifyMemoryIds(Operation *op) {
+  auto module = op->getParentOfType<ModuleOp>();
+  if (!module) return op->emitOpError("requires a module");
+  auto profile = op->getAttrOfType<StringAttr>("profile_sha256");
+  auto selectedProfile = module->getAttrOfType<StringAttr>("mx.profile_sha256");
+  auto source = op->getAttrOfType<StringAttr>("source_sha256");
+  auto selectedSource = module->getAttrOfType<StringAttr>("mx.source_sha256");
+  auto site = op->getAttrOfType<StringAttr>("site_id");
+  if (!profile || !selectedProfile || !isSha256(profile.getValue()) ||
+      profile != selectedProfile || !source || !selectedSource ||
+      !isSha256(source.getValue()) || source != selectedSource ||
+      !site || site.getValue().empty())
+    return op->emitOpError("requires matching source and profile digests with a site ID");
+  return success();
+}
+
+static LogicalResult verifyMemoryBinding(Operation *op, Value buffer,
+                                         int64_t requiredBytes) {
+  if (failed(verifyMemoryIds(op))) return failure();
+  auto memref = dyn_cast<MemRefType>(buffer.getType());
+  if (!memref || !memref.hasStaticShape() || memref.getRank() != 1 ||
+      !memref.getElementType().isInteger(8) ||
+      memref.getDimSize(0) < requiredBytes)
+    return op->emitOpError("requires a static one-dimensional i8 buffer of sufficient size");
+  return success();
+}
+
 static bool isCheckedResource(Value value, StringRef expectedName,
                               StringRef payloadDigest) {
   auto resource = value.getDefiningOp<ResourceOp>();
@@ -439,6 +466,44 @@ LogicalResult ResidentContractOp::verify() {
     }
   }
   return success();
+}
+
+LogicalResult DmaMatrixOp::verify() {
+  auto rows = getMatrixRows();
+  auto cols = getMatrixCols();
+  auto burst = getBurstCols();
+  auto row = getSpadRow();
+  if (rows <= 0 || rows % 16 || cols <= 0 || cols % 16 ||
+      burst < 16 || burst % 16 || burst >= (1 << 16) ||
+      cols % burst || row < 0 || row % 16 ||
+      static_cast<int64_t>(row) + static_cast<int64_t>(rows) * cols / 16 > 16384)
+    return emitOpError("requires complete DIM16 DMA tiles and a 14-bit scratchpad span");
+  return verifyMemoryBinding(*this, getBuffer(),
+                             static_cast<int64_t>(rows) * cols);
+}
+
+LogicalResult MemorySetupOp::verify() {
+  return verifyMemoryIds(*this);
+}
+
+LogicalResult SpadMvoutLinearOp::verify() {
+  auto bytes = getTotalBytes();
+  auto cols = getTileCols();
+  auto row = getSpadRow();
+  if (cols < 16 || cols % 16 || cols >= (1 << 16) ||
+      bytes <= 0 || bytes % (16 * cols) ||
+      row < 0 || row % 16 || row + bytes / 16 > 16384)
+    return emitOpError("requires complete DIM16 stores and a 14-bit scratchpad span");
+  return verifyMemoryBinding(*this, getBuffer(), bytes);
+}
+
+LogicalResult LoadScalesOp::verify() {
+  auto bytes = getPayloadBytes();
+  auto operand = getScaleTarget();
+  if (bytes <= 0 || bytes % 8 ||
+      (operand != "activation" && operand != "weight"))
+    return emitOpError("requires aligned E8M0 bytes and an activation or weight target");
+  return verifyMemoryBinding(*this, getBuffer(), bytes);
 }
 
 #define GET_OP_CLASSES

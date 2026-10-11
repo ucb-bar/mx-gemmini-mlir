@@ -175,3 +175,32 @@ def Mx_ResidentContractOp : Mx_Op<"resident_contract"> {
                    StrAttr:$manifest_sha256);
   let results = (outs Variadic<AnyTensor>:$outputs);
 }
+
+def Mx_DmaMatrixOp : Mx_Op<"dma_matrix"> {
+  let summary = "Load a row-major byte matrix into MX scratchpad tiles";
+  let arguments = (ins AnyMemRef:$buffer, StrAttr:$site_id,
+                   I32Attr:$matrix_rows, I32Attr:$matrix_cols,
+                   I32Attr:$burst_cols, I32Attr:$spad_row,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
+
+def Mx_MemorySetupOp : Mx_Op<"memory_setup"> {
+  let summary = "Initialize a source-bound MX-only memory program";
+  let arguments = (ins StrAttr:$site_id,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
+
+def Mx_SpadMvoutLinearOp : Mx_Op<"spad_mvout_linear"> {
+  let summary = "Store consecutive MX scratchpad byte tiles to a flat buffer";
+  let arguments = (ins AnyMemRef:$buffer, StrAttr:$site_id,
+                   I32Attr:$total_bytes, I32Attr:$tile_cols,
+                   I32Attr:$spad_row,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
+
+def Mx_LoadScalesOp : Mx_Op<"load_scales"> {
+  let summary = "Load E8M0 scales into the selected MX scale memory";
+  let arguments = (ins AnyMemRef:$buffer, StrAttr:$site_id,
+                   I32Attr:$payload_bytes, StrAttr:$scale_target,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}

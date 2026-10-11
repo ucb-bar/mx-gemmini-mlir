@@ -21,7 +21,8 @@ import subprocess
 
 from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.memory_phase import (
-    lower_linear_spad_mvout, lower_matrix_mvin, lower_scale_load,
+    lower_linear_spad_mvout, lower_matrix_mvin, lower_nicolas_memory_mlir,
+    lower_scale_load, render_nicolas_memory_mlir,
 )
 from mx_gemmini_support.physical_program import _cmd
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -171,6 +172,7 @@ def main() -> None:
     parser.add_argument("--rtl-root", required=True, type=Path)
     parser.add_argument("--riscv-root", required=True, type=Path)
     parser.add_argument("--profile", type=Path, default=PROFILE)
+    parser.add_argument("--mx-opt", type=Path, default=ROOT / "build/tools/mx-gemmini-opt")
     parser.add_argument("--out-dir", required=True, type=Path)
     args = parser.parse_args()
     rtl, riscv, out = args.rtl_root.resolve(), args.riscv_root.resolve(), args.out_dir.resolve()
@@ -190,18 +192,28 @@ def main() -> None:
     cc, spike = riscv / "bin/riscv64-unknown-elf-gcc", riscv / "bin/spike"
     if not cc.is_file() or not spike.is_file() or shutil.which("g++") is None:
         parser.error("RISC-V GCC, Spike, and host g++ are required")
+    mx_opt = args.mx_opt.resolve()
+    if not mx_opt.is_file():
+        parser.error("native mx-gemmini-opt is required to verify typed memory MLIR")
     original = source.read_text()
     instrumented = _instrument(original)
     compiled = _instrument(_compiler_driver(original))
-    phases = _phase_commands(profile)
+    typed_mlir = render_nicolas_memory_mlir(profile, SOURCE_SHA)
+    phases = lower_nicolas_memory_mlir(typed_mlir, profile, SOURCE_SHA)
+    if phases != _phase_commands(profile):
+        raise ValueError("typed MX memory phases differ from audited source geometry")
     out.mkdir(parents=True)
+    (out / "typed_memory.mlir").write_text(typed_mlir)
+    _run([str(mx_opt), str(out / "typed_memory.mlir"), "-o", "/dev/null"],
+         cwd=out, log=out / "native_verify.log")
     (out / "source_full.c").write_text(instrumented)
     (out / "compiler_driver.c").write_text(compiled)
     (out / "compiler_driver.patch").write_text("".join(difflib.unified_diff(
         original.splitlines(keepends=True), compiled.splitlines(keepends=True),
         fromfile="Nicolas/mx_mem_bw.c", tofile="compiler_driver.c")))
     (out / "physical_program.json").write_text(json.dumps({
-        "schema": "mx_gemmini.nicolas_memory_phases.v1",
+        "schema": "mx_gemmini.nicolas_memory_phases.v2",
+        "typed_mlir_sha256": _sha(out / "typed_memory.mlir"),
         "profile_sha256": profile_sha256(profile),
         "phases": {name: [asdict(command) for command in commands]
                    for name, commands in phases.items()},
@@ -243,7 +255,7 @@ def main() -> None:
     if source_output != compiled_output:
         raise ValueError("compiler memory DMA output differs from Nicolas source")
     receipt = {
-        "schema": "mx_gemmini.nicolas_mem_bw_physical_object_spike.v1",
+        "schema": "mx_gemmini.nicolas_mem_bw_typed_object_spike.v1",
         "status": "source_memory_phases_and_full_mvout_matched_on_pinned_spike",
         "scope": "seven MX memory phases; complete 16 KiB mvout bytes; timing and counters not qualified",
         "source_sha256": SOURCE_SHA, "header_sha256": HEADER_SHA,
@@ -257,6 +269,8 @@ def main() -> None:
         "extension_revision": _git_revision(extension),
         "profile_sha256": profile_sha256(profile),
         "physical_program_sha256": _sha(out / "physical_program.json"),
+        "typed_mlir_sha256": _sha(out / "typed_memory.mlir"),
+        "native_verify_log_sha256": _sha(out / "native_verify.log"),
         "issuer_c_sha256": _sha(out / "mx_issue.c"),
         "object_sha256": _sha(obj),
         "source_elf_sha256": _sha(source_elf),

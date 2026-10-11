@@ -129,6 +129,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     not descriptor["layout"]):
                 raise ValueError(f"MX payload resource {resource_name} descriptor is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
+    memory_phases = 0
     runtime_luts = 0
     source_resources: dict[str, object] = {}
     lut_uploads: set[str] = set()
@@ -136,6 +137,47 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     for op in module.walk():
         name = _operation_name(op)
         if not name.startswith("mx_gemmini."):
+            continue
+        if name in {"mx_gemmini.memory_setup", "mx_gemmini.dma_matrix",
+                    "mx_gemmini.load_scales", "mx_gemmini.spad_mvout_linear"}:
+            from .memory_phase import (lower_linear_spad_mvout,
+                                       lower_matrix_mvin, lower_scale_load)
+            source = _text_attr(module, "mx.source_sha256")
+            if (source is None or re.fullmatch(r"[0-9a-f]{64}", source) is None or
+                    _text_attr(op, "source_sha256") != source or
+                    _text_attr(op, "profile_sha256") != digest or
+                    not _text_attr(op, "site_id") or op.results or
+                    profile.get("name") != "MxGemminiRocketConfig"):
+                raise ValueError(f"{name}: source or target memory binding differs")
+            if name == "mx_gemmini.memory_setup":
+                if op.operands:
+                    raise ValueError("MX memory setup takes no buffer")
+            else:
+                if len(op.operands) != 1:
+                    raise ValueError(f"{name}: needs one runtime buffer")
+                shape = re.fullmatch(r"memref<([1-9][0-9]*)xi8>",
+                                     str(op.operands[0].type))
+                if shape is None:
+                    raise ValueError(f"{name}: needs a flat static i8 memref")
+                capacity = int(shape.group(1))
+                if name == "mx_gemmini.dma_matrix":
+                    phase = lower_matrix_mvin(
+                        profile, buffer="src", matrix_rows=_int_attr(op, "matrix_rows"),
+                        matrix_cols=_int_attr(op, "matrix_cols"),
+                        burst_cols=_int_attr(op, "burst_cols"),
+                        spad_row=_int_attr(op, "spad_row"))
+                elif name == "mx_gemmini.load_scales":
+                    phase = lower_scale_load(
+                        profile, buffer="src", payload_bytes=_int_attr(op, "payload_bytes"),
+                        operand=_text_attr(op, "scale_target"))
+                else:
+                    phase = lower_linear_spad_mvout(
+                        profile, buffer="dst", total_bytes=_int_attr(op, "total_bytes"),
+                        tile_cols=_int_attr(op, "tile_cols"),
+                        spad_row=_int_attr(op, "spad_row"))
+                if capacity < phase.minimum_buffer_bytes:
+                    raise ValueError(f"{name}: runtime buffer is too small")
+            memory_phases += 1
             continue
         for local, module_name in (("contract_sha256", "mx.contract_sha256"),
                                    ("policy_sha256", "mx.policy_sha256"),
@@ -372,13 +414,14 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         if (set(source_resources) != expected_resources or
                 lut_uploads != (set(LUTS) & set(payload_manifest["resources"]))):
             raise ValueError("MX source resource or LUT upload set is incomplete")
-    if not (contracts or vpu_commands or spad_requants or resident_contracts):
+    if not (contracts or vpu_commands or spad_requants or resident_contracts or memory_phases):
         raise ValueError("MX profile-bound IR has no executable or contraction operation")
     return {"schema": "mx_gemmini.profile_ir_check.v1",
             "status": profile["qualification"], "profile_sha256": digest,
             "contracts": contracts, "encodes": encodes, "requantizes": requants,
             "vpu_commands": vpu_commands, "spad_requants": spad_requants,
             "resident_contracts": resident_contracts,
+            "memory_phases": memory_phases,
             "source_resources": len(source_resources), "lut_uploads": len(lut_uploads),
             "runtime_luts": runtime_luts}
 

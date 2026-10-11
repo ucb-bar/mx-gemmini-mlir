@@ -7,11 +7,13 @@ may use them to lower explicit transfer operations or benchmark phases.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Mapping
 
 from .command_ir import Command, Operand
 from .layout import scale_load_rs2
 from .physical_program import _cmd, _config_ld, _config_st
+from .target_profile import profile_sha256
 
 
 @dataclass(frozen=True)
@@ -105,3 +107,113 @@ def lower_scale_load(profile: Mapping, *, buffer: str,
                    scale_load_rs2(payload_bytes, operand=operand))
     return MemoryPhase((command,), payload_bytes,
                        payload_bytes // 8, payload_bytes)
+
+
+def render_nicolas_memory_mlir(profile: Mapping, source_sha256: str) -> str:
+    """Describe the source's reusable transfer phases as typed MX operations."""
+    if re.fullmatch(r"[0-9a-f]{64}", source_sha256) is None:
+        raise ValueError("MX memory source digest must be SHA-256")
+    _capacity(profile)
+    digest = profile_sha256(profile)
+    shared = f'profile_sha256 = "{digest}", source_sha256 = "{source_sha256}"'
+
+    def function(name: str, bytes_: int, operation: str, attributes: str) -> str:
+        return (f"  func.func @mx_issue_{name}(%arg0: memref<{bytes_}xi8>) {{\n"
+                f'    "mx_gemmini.{operation}"(%arg0) '
+                f'{{site_id = "{name}", {attributes}, {shared}}} : '
+                f'(memref<{bytes_}xi8>) -> ()\n'
+                "    return\n  }\n")
+
+    return (f'module attributes {{mx.profile_sha256 = "{digest}", '
+            f'mx.source_sha256 = "{source_sha256}"}} {{\n'
+            f'  func.func @mx_issue_setup() {{\n'
+            f'    "mx_gemmini.memory_setup"() '
+            f'{{site_id = "setup", {shared}}} : () -> ()\n'
+            '    return\n  }\n'
+            + function("a64", 16384, "dma_matrix",
+                       "matrix_rows = 128 : i32, matrix_cols = 128 : i32, "
+                       "burst_cols = 64 : i32, spad_row = 0 : i32")
+            + function("b16", 16384, "dma_matrix",
+                       "matrix_rows = 128 : i32, matrix_cols = 128 : i32, "
+                       "burst_cols = 16 : i32, spad_row = 1024 : i32")
+            + function("scale", 512, "load_scales",
+                       'payload_bytes = 512 : i32, scale_target = "activation"')
+            + function("mvout", 16384, "spad_mvout_linear",
+                       "total_bytes = 16384 : i32, tile_cols = 16 : i32, "
+                       "spad_row = 0 : i32")
+            + "}\n")
+
+
+def lower_nicolas_memory_mlir(mlir_text: str, profile: Mapping,
+                              source_sha256: str) -> dict[str, tuple[Command, ...]]:
+    """Lower the typed source-bound phases to five linkable MX entry points."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.parser import Parser
+
+    from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
+
+    checked = verify_ir(mlir_text, dict(profile))
+    if checked["memory_phases"] != 5 or checked["contracts"]:
+        raise ValueError("MX memory benchmark needs exactly five transfer phases")
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    if _text_attr(module, "mx.source_sha256") != source_sha256:
+        raise ValueError("MX memory program source digest differs")
+    functions = [op for op in module.walk() if isinstance(op, FuncOp)]
+    if len(functions) != 5:
+        raise ValueError("MX memory program needs five phase functions")
+    expected = {"setup": "memory_setup", "a64": "dma_matrix",
+                "b16": "dma_matrix", "scale": "load_scales",
+                "mvout": "spad_mvout_linear"}
+    commands: dict[str, tuple[Command, ...]] = {}
+    for function in functions:
+        symbol = function.sym_name.data
+        name = symbol.removeprefix("mx_issue_") if symbol else None
+        if name not in expected or name in commands or symbol != f"mx_issue_{name}":
+            raise ValueError("MX memory phase function name differs")
+        ops = list(function.body.block.ops)
+        if (len(ops) != 2 or _operation_name(ops[0]) !=
+                f"mx_gemmini.{expected[name]}" or
+                not isinstance(ops[1], ReturnOp) or ops[1].operands or
+                _text_attr(ops[0], "site_id") != name):
+            raise ValueError("MX memory phase operation or return differs")
+        op = ops[0]
+        args = list(function.body.block.args)
+        if name == "setup":
+            if args or op.operands:
+                raise ValueError("MX memory setup has no runtime buffer")
+            commands[name] = (_cmd(7, 0, 0),
+                              _cmd(0, (1 << 16) | (3 << 14) | (1 << 2), 1 << 48))
+            continue
+        if len(args) != 1 or list(op.operands) != args:
+            raise ValueError("MX memory transfer must consume its function buffer")
+        expected_type = "memref<512xi8>" if name == "scale" else "memref<16384xi8>"
+        if str(args[0].type) != expected_type:
+            raise ValueError("MX memory transfer ABI buffer type differs")
+        buffer = "dst" if name == "mvout" else "src"
+        if name in {"a64", "b16"}:
+            phase = lower_matrix_mvin(
+                profile, buffer=buffer,
+                matrix_rows=_int_attr(op, "matrix_rows"),
+                matrix_cols=_int_attr(op, "matrix_cols"),
+                burst_cols=_int_attr(op, "burst_cols"),
+                spad_row=_int_attr(op, "spad_row"))
+        elif name == "scale":
+            phase = lower_scale_load(
+                profile, buffer=buffer,
+                payload_bytes=_int_attr(op, "payload_bytes"),
+                operand=_text_attr(op, "scale_target"))
+        else:
+            phase = lower_linear_spad_mvout(
+                profile, buffer=buffer,
+                total_bytes=_int_attr(op, "total_bytes"),
+                tile_cols=_int_attr(op, "tile_cols"),
+                spad_row=_int_attr(op, "spad_row"))
+        commands[name] = phase.commands
+    if set(commands) != set(expected):
+        raise ValueError("MX memory program is missing a transfer phase")
+    return commands
