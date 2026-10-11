@@ -141,8 +141,12 @@ def main() -> None:
     from merlin.runtime.backends import spike_model
     from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
+    from mx_gemmini_support.merlin_vpu_inventory import audit_softmax_boundaries
     from mx_gemmini_support.target_profile import profile_sha256
 
+    vpu_inventory = audit_softmax_boundaries(source.read_text(encoding="utf-8"), profile)
+    if vpu_inventory["direct_profile_matches_unlowered"]:
+        raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(source, profile)
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
@@ -185,6 +189,7 @@ def main() -> None:
         "raw_selected_source_coverage_complete": True,
         "unbound_precision_proposals": len(catalog["unbound_precision_proposals"]),
         "widened_bf16_contractions": widened_bf16,
+        "vpu_softmax_inventory": vpu_inventory,
         "unique_kernels": catalog["unique_kernels"],
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),
