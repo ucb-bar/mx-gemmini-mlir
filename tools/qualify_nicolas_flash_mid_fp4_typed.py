@@ -13,7 +13,7 @@ import sys
 from mx_gemmini_support.nicolas_flash_mid import render_flash_mid
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision
-from tools.qualify_nicolas_flash_mid_typed import _output_words
+from tools.flash_spike_parity import run_flash_spike_parity
 from tools.qualify_nicolas_flash_qk0 import DATA_SOURCE, FLASH_SOURCE, _run, _sha
 
 
@@ -90,42 +90,11 @@ def main() -> None:
             (154, 21) or object_manifest["allocated_data_section_bytes"] != 0):
         raise ValueError("FP4 flash object inventory or data section differs")
 
-    software = args.rtl_root / "software/gemmini-rocc-tests"
-    bench = software / "riscv-tests/benchmarks/common"
-    flags = ["-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DMX_ROCKET", "-DBAREMETAL=1",
-             "-mcmodel=medany", "-std=gnu99", "-O2", "-ffast-math", "-fno-common",
-             "-fno-builtin-printf", "-fno-tree-loop-distribute-patterns",
-             "-march=rv64gc", "-Wa,-march=rv64gc"]
-    for path in (out, args.npu_root / "baremetal/mxgemmini",
-                 args.npu_root / "baremetal/mxgemmini/src",
-                 software / "riscv-tests", software / "riscv-tests/env", software, bench):
-        flags.extend(("-I", str(path)))
-    common = []
-    for index, source in enumerate([*sorted(bench.glob("*.c")),
-                                    *sorted(bench.glob("*.S"))]):
-        obj = out / f"common_{index}.o"
-        _run([str(cc), *flags, "-c", str(source), "-o", str(obj)],
-             cwd=out, log=out / f"common_compile_{index}.log")
-        common.append(obj)
-    words = []
-    for kind in ("source", "generated"):
-        driver_obj = out / f"driver_{kind}.o"
-        _run([str(cc), *flags, *(["-DGENERATED"] if kind == "generated" else []),
-              "-c", str(out / "driver.c"), "-o", str(driver_obj)],
-             cwd=out, log=out / f"driver_{kind}_compile.log")
-        elf = out / f"flash_mid_fp4_{kind}.elf"
-        _run([str(cc), "-nostdlib", "-nostartfiles", "-static", "-T",
-              str(bench / "test.ld"), str(driver_obj),
-              *([str(object_dir / "mx_issue.o")] if kind == "generated" else []),
-              *(str(path) for path in common), "-lm", "-lgcc", "-o", str(elf)],
-             cwd=out, log=out / f"link_{kind}.log")
-        for run in (1, 2):
-            log = out / f"{kind}_spike_{run}.log"
-            _run([str(spike), f"--extlib={args.spike_extension}",
-                  "--extension=gemmini", str(elf)], cwd=out, log=log)
-            words.append(_output_words(log, EXPECTED_HASH, 64 * 64))
-    if len(set(words)) != 1:
-        raise ValueError("compiler FP4 flash output differs from source BF16 words")
+    run_flash_spike_parity(
+        out=out, npu_root=args.npu_root, rtl_root=args.rtl_root,
+        riscv_root=args.riscv_root, spike_extension=args.spike_extension,
+        object_path=object_dir / "mx_issue.o", slug="flash_mid_fp4",
+        expected_hash=EXPECTED_HASH, output_words=4096)
     receipt = {
         "schema": "mx_gemmini.flash_mid_fp4_serial_spike_parity.v1",
         "status": "typed_flash_mid_fp4_full_bf16_source_parity",

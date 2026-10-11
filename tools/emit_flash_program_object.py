@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PINNED_CORE_SHA256 = "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0"
 PINNED_MID_WRAPPER_SHA256 = "5f46198f35539b261ccbc2c689ce56beb823ba7e6ec74d8ff60936418619089f"
 PINNED_MID_FP4_WRAPPER_SHA256 = "650ceb3c3b77cfd5b91521b879921debe9e35832fe1d1c5435ad09ee1fb6d6c0"
+PINNED_MID_EXPSUM_WRAPPER_SHA256 = "549b0440b05b149c84059985f3b20f55338da7af879d8272557f662cb263824d"
 
 
 def _source_text(path: Path) -> str:
@@ -55,8 +56,10 @@ def main() -> None:
         raise ValueError("flash object binding has no selected source shape")
     shape, block_k = DenseAttentionShape(*dims[:3]), dims[3]
     input_format = binding["policy"].get("input_format", "fp8_e4m3")
+    softmax_mode = binding["policy"].get("softmax_mode", "split")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
-    wrapper_sha256 = (PINNED_MID_FP4_WRAPPER_SHA256 if input_format == "fp4_e2m1"
+    wrapper_sha256 = (PINNED_MID_EXPSUM_WRAPPER_SHA256 if softmax_mode == "expsum"
+                      else PINNED_MID_FP4_WRAPPER_SHA256 if input_format == "fp4_e2m1"
                       else PINNED_MID_WRAPPER_SHA256 if block_k == 32
                       else PINNED_CORE_SHA256)
     if (_file_sha(args.source_core) != PINNED_CORE_SHA256 or
@@ -68,13 +71,15 @@ def main() -> None:
     header = _source_text(args.source_header)
     expected, selected = render_flash_mid(
         frontend, core, wrapper, header, profile, shape=shape, block_k=block_k,
-        input_format=input_format)
+        input_format=input_format, softmax_mode=softmax_mode)
     if binding != selected or mlir_bytes.decode() != expected:
         raise ValueError("typed flash source, frontend, graph, or binding differs")
     commands = lower_flash_mid(
         expected, frontend, core, wrapper, header, profile,
-        shape=shape, block_k=block_k, input_format=input_format)
-    slug = ("flash_mid_fp4" if input_format == "fp4_e2m1" else
+        shape=shape, block_k=block_k, input_format=input_format,
+        softmax_mode=softmax_mode)
+    slug = ("flash_mid_expsum" if softmax_mode == "expsum" else
+            "flash_mid_fp4" if input_format == "fp4_e2m1" else
             "flash_mid" if block_k == 32 else "flash_fa")
     args.out_dir.mkdir(parents=True)
     issuer = args.out_dir / "mx_issue.c"
@@ -100,6 +105,7 @@ def main() -> None:
         "transport": "rocket_rocc", "schedule": "fenced_serial",
         "shape_sq_sk_d_bk": dims,
         "input_format": input_format,
+        "softmax_mode": softmax_mode,
         "buffer_abi": [{"name": name, "position": index,
                         "role": "write" if name in {"scale_sink", "p_scales_0",
                                                     "p_scales_1", "O_HW"} else "read",

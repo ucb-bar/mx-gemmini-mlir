@@ -45,7 +45,8 @@ def _source_defines(source: str) -> dict[str, str]:
 
 def _check_source_policy(source_wrapper: str, source_core: str,
                          source_header: str, shape: DenseAttentionShape,
-                         block_k: int, input_format: str) -> None:
+                         block_k: int, input_format: str,
+                         softmax_mode: str) -> None:
     header = _source_defines(source_header)
     fp4 = input_format == "fp4_e2m1"
     expected = {"ATTN_SQ": str(shape.sq), "ATTN_SK": str(shape.sk),
@@ -63,7 +64,10 @@ def _check_source_policy(source_wrapper: str, source_core: str,
         suffix = "_mid_fp4" if fp4 else "_mid"
         optional = {"ATTN_HEADER": f'"attn_vpu{suffix}.h"',
                     "ATTN_EXPECT": f'"attn_flash{suffix}_expect.h"'}
+        if softmax_mode == "expsum":
+            optional["ATTN_EXPSUM"] = "1"
         if (wrapper.get("BK") != str(block_k) or
+                (softmax_mode == "expsum" and wrapper.get("ATTN_EXPSUM") != "1") or
                 set(wrapper) - set(allowed) - set(optional) or
                 any(wrapper[name] != value for name, value in optional.items()
                     if name in wrapper) or
@@ -115,10 +119,15 @@ def _alpha(j: int) -> int:
 def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      source_header: str, profile: dict, *,
                      shape: DenseAttentionShape = SHAPE, block_k: int = BK,
-                     input_format: str = "fp8_e4m3"
+                     input_format: str = "fp8_e4m3",
+                     softmax_mode: str = "split"
                      ) -> tuple[str, dict]:
     """Render a source-bound, fenced QK/softmax/requant/PV program."""
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
+    if softmax_mode not in {"split", "expsum"} or (
+            softmax_mode == "expsum" and
+            (shape, block_k, input_format) != (SHAPE, 32, "fp8_e4m3")):
+        raise ValueError("flash compiler has no selected softmax mode")
     if (DenseAttentionShape.from_header(source_header) != shape or
             (source_wrapper != source_core and
              (f'#define BK {block_k}' not in source_wrapper or
@@ -129,7 +138,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             'gemmini_mxquant_config_mvout_managed' not in source_core):
         raise ValueError("pinned flash source or geometry differs")
     _check_source_policy(source_wrapper, source_core, source_header,
-                         shape, block_k, input_format)
+                         shape, block_k, input_format, softmax_mode)
     _audit_frontend_edges(frontend, shape)
     shape.validate(profile)
     if (profile.get("source", {}).get("gemmini_revision") !=
@@ -155,7 +164,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = "mid_fp4" if fp4 else "mid" if folded else "fa"
+    variant = ("mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
+               else "mid" if folded else "fa")
     policy = {"schema": f"mx_gemmini.flash_{variant}_serial_policy.v1",
               "shape_sq_sk_d_bk": [SQ, SK, D, BK],
               "block_order": ["QK", "softmax", "requant", "PV", "update"],
@@ -166,6 +176,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
               "output_rows": [_output_j(j) for j in range(NB)]}
     if fp4:
         policy["input_format"] = input_format
+    if softmax_mode == "expsum":
+        policy["softmax_mode"] = softmax_mode
     binding = {"schema": f"mx_gemmini.flash_{variant}_serial_binding.v1",
                "profile_sha256": profile_sha256(profile),
                "source_sha256": _sha(source_core.encode()),
@@ -204,13 +216,16 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
 
     def vpu(site: str, kind: str, src1: int, src2: int, dst: int,
             rows: int, rlen: int = 1, broadcast: bool = False,
-            immediate: int = 0) -> str:
+            immediate: int = 0, second_dst: int | None = None) -> str:
         return (f'    "mx_gemmini.vpu_execute"() {{site_id = "{site}", '
                 f'kind = "{kind}", src1_row = {src1} : i32, '
                 f'src2_row = {src2} : i32, dst_row = {dst} : i32, '
                 f'rows = {rows} : i32, reduction_length = {rlen} : i32, '
                 f'broadcast = {str(broadcast).lower()}, '
-                f'immediate_bf16 = {immediate} : i32, {vector_attrs}}} : () -> ()')
+                f'immediate_bf16 = {immediate} : i32, '
+                + (f'second_dst_row = {second_dst} : i32, '
+                   if second_dst is not None else "") +
+                f'{vector_attrs}}} : () -> ()')
 
     def gated(kind: str, j: int, half: int) -> str:
         if kind == "qk":
@@ -302,12 +317,17 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                           vpu(f"softmax{j}:max", "max", old, ST + 2 * SQ, m, SQ),
                           vpu(f"softmax{j}:alpha_sub", "sub", old, m, alpha, SQ),
                           vpu(f"softmax{j}:alpha_exp", "exp", alpha, 0, alpha, SQ)))
-        lines.extend((vpu(f"softmax{j}:sub", "sub", s, m, s,
-                          score_rows, score_rlen, True),
-                      vpu(f"softmax{j}:exp", "exp", s, 0, s, score_rows),
-                      vpu(f"softmax{j}:rsum", "rsum", s, 0,
-                          ST + (5 if j == 0 else 6) * SQ,
-                          score_rows, score_rlen)))
+        if softmax_mode == "expsum":
+            lines.append(vpu(f"softmax{j}:expsum", "expsum", s, m, s,
+                             score_rows, score_rlen, True,
+                             second_dst=ST + (5 if j == 0 else 6) * SQ))
+        else:
+            lines.extend((vpu(f"softmax{j}:sub", "sub", s, m, s,
+                              score_rows, score_rlen, True),
+                          vpu(f"softmax{j}:exp", "exp", s, 0, s, score_rows),
+                          vpu(f"softmax{j}:rsum", "rsum", s, 0,
+                              ST + (5 if j == 0 else 6) * SQ,
+                              score_rows, score_rlen)))
         if j > 0:
             lines.extend((vpu(f"softmax{j}:sum_mul", "mul", ST + 5 * SQ,
                               _alpha(j), ST + 5 * SQ, SQ),
@@ -342,7 +362,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     report = verify_ir(mlir, profile)
     if (report["memory_phases"], report["flash_setups"], report["spad_matmuls"],
             report["vpu_commands"], report["spad_requants"]) != (
-                19, 1, 8, 39 if folded else 43, 4):
+                19, 1, 8, 31 if softmax_mode == "expsum" else
+                39 if folded else 43, 4):
         raise ValueError(f"flash {variant} typed stage inventory differs: {report}")
     return mlir, binding
 
@@ -350,12 +371,14 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
 def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     source_wrapper: str, source_header: str, profile: dict, *,
                     shape: DenseAttentionShape = SHAPE, block_k: int = BK,
-                    input_format: str = "fp8_e4m3"
+                    input_format: str = "fp8_e4m3",
+                    softmax_mode: str = "split"
                     ) -> tuple[Command | Fence, ...]:
     """Require the exact source-bound serial graph before issuing commands."""
     expected, _ = render_flash_mid(frontend, source_core, source_wrapper,
                                    source_header, profile, shape=shape,
-                                   block_k=block_k, input_format=input_format)
+                                   block_k=block_k, input_format=input_format,
+                                   softmax_mode=softmax_mode)
     if mlir_text != expected:
         raise ValueError("flash typed graph or source binding differs")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
