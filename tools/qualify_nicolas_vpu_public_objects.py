@@ -13,13 +13,16 @@ import sys
 
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _require_gitlink, _run, _sha
-from tools.qualify_nicolas_vpu_elementwise import KINDS, REDUCING
+from tools.qualify_nicolas_vpu_elementwise import KINDS, REDUCING, bind as bind_base
+from tools.qualify_nicolas_vpu_fused import bind as bind_fused
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/nicolas_vpu_elementwise_compiled_266c593"
 FUSED_ARCHIVE = ROOT / "docs/evidence/nicolas_vpu_fused_compiled_266c593"
 PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3VpuGemminiRocketConfig.json"
+FP4_VPU_PROFILE = ROOT / (
+    "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json")
 ABI = ROOT / "examples/vpu-elementwise-abi.json"
 FUSED = ("expsub", "expsum")
 
@@ -53,6 +56,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--profile", type=Path, default=PROFILE)
     parser.add_argument("--mx-opt", type=Path)
     args = parser.parse_args()
     rtl, riscv, out = (args.rtl_root.resolve(), args.riscv_root.resolve(),
@@ -63,7 +67,18 @@ def main() -> None:
                            rtl / "software/libgemmini")
     _require_gitlink(rtl, "software/gemmini-rocc-tests")
     _require_gitlink(rtl, "software/libgemmini")
-    profile = load_profile(PROFILE, rtl_root=rtl)
+    selected_profile = args.profile.resolve()
+    if selected_profile not in {PROFILE, FP4_VPU_PROFILE}:
+        parser.error("VPU replay supports only the two pinned Nicolas VPU Rocket profiles")
+    profile = load_profile(selected_profile, rtl_root=rtl)
+    baseline_profile = load_profile(PROFILE, rtl_root=rtl)
+    if (profile.get("transport") != "rocket_rocc" or
+            profile["geometry"] != baseline_profile["geometry"] or
+            profile["resources"].get("vpu_config") !=
+            baseline_profile["resources"].get("vpu_config") or
+            profile["resources"].get("scratchpad_bytes") !=
+            baseline_profile["resources"].get("scratchpad_bytes")):
+        raise ValueError("selected VPU profile differs in its executable VPU resources")
     baseline = json.loads((ARCHIVE / "index.json").read_text())
     fused_baseline = json.loads((FUSED_ARCHIVE / "index.json").read_text())
     source = software / "bareMetalC/vpu_ops.c"
@@ -71,7 +86,7 @@ def main() -> None:
     if (_git_revision(rtl) != baseline["rtl_revision"] or
             _sha(source) != baseline["source_sha256"] or
             _sha(oracle) != baseline["reference_sha256"] or
-            profile_sha256(profile) != baseline["profile_sha256"] or
+            profile_sha256(baseline_profile) != baseline["profile_sha256"] or
             {row["kind"] for row in baseline["rows"]} != set(KINDS) or
             _sha(source) != fused_baseline["source_sha256"] or
             _sha(oracle) != fused_baseline["reference_sha256"] or
@@ -107,10 +122,22 @@ def main() -> None:
             raise ValueError(f"Nicolas {kind} captured input differs")
         directory = out / kind
         directory.mkdir()
+        selected_bound = bound
+        binding_path = None
+        if selected_profile == FP4_VPU_PROFILE:
+            frontend = archived / "frontend.mlir"
+            if _sha(frontend) != row["frontend_mlir_sha256"]:
+                raise ValueError(f"Nicolas {kind} frontend capture differs")
+            rebound, binding = (bind_fused if fused else bind_base)(
+                kind, frontend.read_text(), baseline["source_sha256"], profile)
+            selected_bound = directory / "rebound.mlir"
+            selected_bound.write_text(rebound)
+            binding_path = directory / "rebound_binding.json"
+            binding_path.write_text(json.dumps(binding, indent=2, sort_keys=True) + "\n")
         object_dir = directory / "object"
         abi = (ROOT / f"examples/vpu-{kind}-abi.json") if fused else ABI
         command = [sys.executable, "-m", "tools.compile_object",
-                   "--mlir", str(bound), "--profile", str(PROFILE),
+                   "--mlir", str(selected_bound), "--profile", str(selected_profile),
                    "--rtl-root", str(rtl), "--riscv-root", str(riscv),
                    "--abi-json", str(abi), "--out-dir", str(object_dir)]
         if args.mx_opt is not None:
@@ -172,10 +199,11 @@ def main() -> None:
                 (fused and row["compared_sum_bf16"] !=
                  (128 if kind == "expsum" else 0))):
             raise RuntimeError(f"public {kind} object differs from source oracle")
-        rows.append({
+        result_row = {
             "kind": kind, "status": "public_object_source_vpu_reference_matched_on_pinned_spike",
             "source_sha256": baseline["source_sha256"],
-            "bound_mlir_sha256": _sha(bound), "driver_sha256": _sha(driver),
+            "bound_mlir_sha256": _sha(selected_bound),
+            "driver_sha256": _sha(driver),
             "linked_driver_sha256": _sha(linked_driver),
             "baseline_issuer_sha256": row["issuer_sha256"],
             "issuer_c_sha256": _sha(object_dir / "mx_issue.c"),
@@ -187,7 +215,12 @@ def main() -> None:
             "compared_output_bf16": compared,
             "compared_sum_bf16": 128 if kind == "expsum" else 0,
             "mismatches": 0,
-        })
+        }
+        if binding_path is not None:
+            result_row["baseline_bound_mlir_sha256"] = _sha(bound)
+            result_row["rebound_binding_sha256"] = _sha(binding_path)
+            result_row["frontend_mlir_sha256"] = _sha(archived / "frontend.mlir")
+        rows.append(result_row)
     report = {
         "schema": "mx_gemmini.nicolas_vpu_public_object_replay.v1",
         "status": "all_base_and_fused_vpu_public_objects_match_source_reference",
@@ -203,6 +236,8 @@ def main() -> None:
         "total_sum_bf16_compared": sum(row["compared_sum_bf16"] for row in rows),
         "rows": rows,
     }
+    if selected_profile == FP4_VPU_PROFILE:
+        report["profile_name"] = profile["name"]
     (out / "index.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(out / "index.json")

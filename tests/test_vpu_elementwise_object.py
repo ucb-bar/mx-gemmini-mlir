@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,8 @@ from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.vpu_elementwise_program import lower_vpu_elementwise_program
 from tools.compile_object import classify
-from tools.qualify_nicolas_vpu_elementwise import KINDS, REDUCING
+from tools.qualify_nicolas_vpu_elementwise import KINDS, REDUCING, bind as bind_base
+from tools.qualify_nicolas_vpu_fused import bind as bind_fused
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,3 +70,28 @@ def test_public_lowerer_rejects_profile_without_vpu() -> None:
     with pytest.raises(ValueError, match="profile digest|no VPU"):
         lower_vpu_elementwise_program(
             bound, plain, {"src1": "a", "src2": "b", "output": "output"})
+
+
+@pytest.mark.parametrize("kind", (*KINDS, "expsub", "expsum"))
+def test_vpu_capture_rebinds_to_fp4_capable_profile_without_command_change(
+        kind: str) -> None:
+    fp4_vpu = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/"
+        "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    fused = kind in {"expsub", "expsum"}
+    archived = (ROOT / "docs/evidence/nicolas_vpu_fused_compiled_266c593"
+                if fused else ARCHIVE) / kind
+    # The binding carries the pinned source hash; use the archived value so
+    # this test also verifies that the original bound module is reproducible.
+    source_sha = json.loads((archived / "binding.json").read_text())["source_sha256"]
+    original, _ = (bind_fused if fused else bind_base)(
+        kind, (archived / "frontend.mlir").read_text(), source_sha, PROFILE)
+    rebound, _ = (bind_fused if fused else bind_base)(
+        kind, (archived / "frontend.mlir").read_text(), source_sha, fp4_vpu)
+    assert original == (archived / "bound.mlir").read_text()
+    assert classify(rebound, fp4_vpu)[0] == "vpu_elementwise"
+    buffers = {"src1": "a", "src2": "b", "output": "output"}
+    if kind == "expsum":
+        buffers["output2"] = "sums"
+    assert (lower_vpu_elementwise_program(original, PROFILE, buffers).commands ==
+            lower_vpu_elementwise_program(rebound, fp4_vpu, buffers).commands)
