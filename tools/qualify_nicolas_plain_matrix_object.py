@@ -458,6 +458,24 @@ CASES[_kt_key] = Case(
     native_dram_chunks=2, native_dram_scale_mode="loop",
     native_dram_k_tiles=2)
 
+for _suffix, _sha256, _mode in (
+        ("nc_2d", "4d5fffa5153779041d4f271cad33c6971af028b03031eb21d7d547d06aba4854",
+         "direct_2d"),
+        ("nc_wait", "c69f99fcc6bb791f705ce94c7ceeef8a10efc80a4fcdb47e1ba7e578ce5ea974",
+         "wait")):
+    _key = f"fp8_128x128x128_native_dram_{_suffix}"
+    CASES[_key] = Case(
+        _key, "FP8", (128, 128, 128), (128, 128, 128),
+        f"matmul_tiled_fp8_128x128_dramloop_{_suffix}.c",
+        "matmul_fp8_128x128.h", _sha256, _CHUNK_HEADER_SHA256,
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"),
+        f"FP8 128 cubed native DRAM {_suffix}", native_dram=True,
+        native_dram_chunks=2, native_dram_scale_mode=_mode)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -629,6 +647,7 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
         return _audit_native_dram_kt_fp8(object_dir, profile, case)
     chunks = case.native_dram_chunks
     loop_scales = case.native_dram_scale_mode == "loop"
+    scale_wait = case.native_dram_scale_mode == "wait"
     if chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
         raise ValueError("native column-loop audit needs the pinned DIM16 case")
     physical = json.loads((object_dir / "physical_program.json").read_text())
@@ -638,6 +657,8 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
             physical["plan"].get("native_dram_n_chunks") != chunks or
             physical["plan"].get("native_dram_scale_mode") !=
             ("loop_managed" if loop_scales else None) or
+            physical["plan"].get("native_dram_scale_wait") !=
+            (True if scale_wait else None) or
             any(step["phase"] in {"move_activation", "move_weight", "compute",
                                    "readout"} for step in steps)):
         raise ValueError("compiler did not select native column-loop transport")
@@ -702,7 +723,12 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
         if (actual_scales != expected_scales or len(selectors) != 1 or
                 selectors[0].get("funct") != 26 or
                 selectors[0]["rs1"]["or_bits"] !=
-                ((8 * chunks << 51) | ((8 // chunks) << 42) | (8 << 33))):
+                ((8 * chunks << 51) | ((8 // chunks) << 42) | (8 << 33)) or
+                selectors[0]["rs2"]["immediate"] !=
+                (1 | ((1 << 16) if scale_wait else 0)) or
+                sum(step["command"] == {} for step in steps
+                    if step["phase"] == "upload_chunk_scales") !=
+                (0 if scale_wait else 1)):
             raise ValueError("native column-loop scales differ from source")
     return {"schema": ("mx_gemmini.nicolas_fp8_native_dram_ls_audit.v1"
                        if loop_scales else
@@ -713,6 +739,7 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
             "native_chunk_count": chunks,
             "native_command_functs": [command["funct"] for command in native[:-1]],
             "scale_uploads": len(scales),
+            **({"scale_config_wait_bit": True} if scale_wait else {}),
             **({"loop_scale_configurations": 2 * chunks}
                if loop_scales else {}),
             "output_column_bytes_per_chunk": nc * 2,
@@ -882,33 +909,38 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     if _sha(driver) != case.source_sha256 or _sha(header) != case.header_sha256:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
-    if case.native_dram and (case.native_dram_chunks == 4 or
-                             case.native_dram_scale_mode == "loop"):
-        expected = (
+    native_wrappers = {
+        "matmul_tiled_fp8_128x128_dramloop_nc4.c":
             '// 4-chunk variant of matmul_tiled_fp8_128x128_dramloop_nc.\n'
             '#define NCHUNKS 4\n'
-            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
-            if case.native_dram_scale_mode == "preload" else
-            '// dramloop_nc with native K-tiling: 2 chunks x 2 K-tiles of 64, accumulating loops (C on the last), loop scales.\n'
-            '#define NCHUNKS 2\n'
-            '#define K_TILES 2\n'
-            '#define LOOP_SCALES 1\n'
-            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
-            if case.native_dram_k_tiles == 2 else
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_ls.c":
             '// dramloop_nc with LOOP-MANAGED scales (2 chunks): no MX_LOAD_SCALES / CONFIG_SCALE_MEM / fence.\n'
-            '#define NCHUNKS 2\n'
-            '#define LOOP_SCALES 1\n'
-            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
-            if case.native_dram_chunks == 2 else
+            '#define NCHUNKS 2\n#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_ls4.c":
             '// dramloop_nc with LOOP-MANAGED scales (4 chunks): no MX_LOAD_SCALES / CONFIG_SCALE_MEM / fence.\n'
-            '#define NCHUNKS 4\n'
-            '#define LOOP_SCALES 1\n'
-            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"')
-        if source.strip() != expected:
+            '#define NCHUNKS 4\n#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_kt.c":
+            '// dramloop_nc with native K-tiling: 2 chunks x 2 K-tiles of 64, accumulating loops (C on the last), loop scales.\n'
+            '#define NCHUNKS 2\n#define K_TILES 2\n#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_nc_2d.c":
+            '// matmul_tiled_fp8_128x128_dramloop_nc with 2-D MX_LOAD_SCALES (no host packing).\n'
+            '#define SCALES_2D 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_nc_wait.c":
+            '// dramloop_nc with 2-D scale loads and NO fence: CONFIG_SCALE_MEM waits in HW (rs2[16]).\n'
+            '#define SCALES_2D 1\n#define SCALE_WAIT 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+    }
+    if case.native_dram and case.source_name in native_wrappers:
+        if source.strip() != native_wrappers[case.source_name]:
             raise ValueError("Nicolas native column-loop wrapper changed")
         core = driver.parent / "matmul_tiled_fp8_128x128_dramloop_nc.c"
         if _sha(core) != CASES["fp8_128x128x128_native_dram_nc2"].source_sha256:
-            raise ValueError("Nicolas four-column native-loop include changed")
+            raise ValueError("Nicolas native column-loop include changed")
         source = core.read_text()
     if case.i_chunks == 4 or case.key == _chunk2d_key:
         expected = (

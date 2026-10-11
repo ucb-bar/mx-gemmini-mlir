@@ -22,6 +22,10 @@ LOOP_SCALE_SOURCE_SHA256 = {
     "ls4": "946515729cd3d962253b238af23522b849bf6baef721238ec4f2dacfc784a706",
 }
 K_TILED_SOURCE_SHA256 = "586910dcd6445a3ba0fc0e9db485d85de3ea265b8efe7464931ba3ff005dfa08"
+PRELOAD_VARIANT_SOURCE_SHA256 = {
+    "nc2_2d": "4d5fffa5153779041d4f271cad33c6971af028b03031eb21d7d547d06aba4854",
+    "nc2_wait": "c69f99fcc6bb791f705ce94c7ceeef8a10efc80a4fcdb47e1ba7e578ce5ea974",
+}
 _SHAPE = [128, 128, 128]
 _ATTR = "mx.native_dram_loop"
 
@@ -30,6 +34,7 @@ def _check_source(profile: dict, manifest: dict,
                   selection: int | str) -> None:
     expected_source = {1: SOURCE_SHA256, **CHUNK_SOURCE_SHA256,
                        **LOOP_SCALE_SOURCE_SHA256,
+                       **PRELOAD_VARIANT_SOURCE_SHA256,
                        "kt2": K_TILED_SOURCE_SHA256}.get(selection)
     if (manifest.get("origin") != "nicolas_source_header_specialization" or
             expected_source is None or
@@ -52,7 +57,11 @@ def bind_native_dram(mlir_text: str, profile: dict, manifest: dict,
     from xdsl.dialects.builtin import StringAttr
     from xdsl.printer import Printer
 
-    selection: int | str = ("kt2" if chunks == 2 and k_tiles == 2 and
+    selection: int | str = ("nc2_2d" if chunks == 2 and k_tiles == 1 and
+                            scale_mode == "direct_2d" else
+                            "nc2_wait" if chunks == 2 and k_tiles == 1 and
+                            scale_mode == "wait" else
+                            "kt2" if chunks == 2 and k_tiles == 2 and
                             scale_mode == "loop" else
                             chunks if scale_mode == "preload" and k_tiles == 1 else
                             f"ls{chunks}" if scale_mode == "loop" else "unknown")
@@ -82,7 +91,7 @@ def selected_native_dram(mlir_text: str, profile: dict,
     selected = _text_attr(module, _ATTR)
     if selected is None:
         return None
-    if selected not in {"single", "2", "4", "ls2", "ls4", "kt2"} or _text_attr(module, "mx.payload_manifest_sha256") != \
+    if selected not in {"single", "2", "4", "ls2", "ls4", "kt2", "nc2_2d", "nc2_wait"} or _text_attr(module, "mx.payload_manifest_sha256") != \
             manifest_sha256(manifest) or _text_attr(module, "mx.i_chunks") is not None:
         raise ValueError("native DRAM loop is not bound to selected payload")
     selection: int | str = (1 if selected == "single" else
@@ -96,8 +105,12 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                       selection: int | str = 1) -> PhysicalProgram:
     """Issue LoopMatmul's DRAM A/B loads and C store, without explicit DMA."""
     _check_source(profile, manifest, selection)
-    chunks = 2 if selection == "kt2" else int(selection[2:]) if isinstance(selection, str) else selection
+    chunks = (2 if selection in {"kt2", "nc2_2d", "nc2_wait"} else
+              int(selection[2:]) if isinstance(selection, str) else selection)
     loop_scales = isinstance(selection, str)
+    if selection in {"nc2_2d", "nc2_wait"}:
+        loop_scales = False
+    scale_wait = selection == "nc2_wait"
     k_tiles = 2 if selection == "kt2" else 1
     plan = base.plan
     if (base.shape != (128, 128, 128) or base.output_format != "bf16" or
@@ -132,7 +145,8 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                 rs2 = (4 << 46) | (dest << 33) | (selector << 32) | count
                 steps.append(PhysicalStep("upload_chunk_scales", c,
                                           _cmd(27, rs1, rs2)))
-        steps.append(PhysicalStep("upload_chunk_scales", None, Fence()))
+        if not scale_wait:
+            steps.append(PhysicalStep("upload_chunk_scales", None, Fence()))
     steps.extend(by_phase["configure"][2:5])
     if loop_scales:
         pass
@@ -145,7 +159,8 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                                   _cmd(26, Operand(
                                       buffer="scratch_output_scales",
                                       address_mask=(1 << 33) - 1,
-                                      or_bits=selector_bits), 1)))
+                                      or_bits=selector_bits),
+                                       1 | ((1 << 16) if scale_wait else 0))))
 
     def issue(command: Command | Fence) -> None:
         steps.append(PhysicalStep("native_dram_loop", None, command))
@@ -183,12 +198,15 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                             "native_dram_source_sha256":
                             {1: SOURCE_SHA256, **CHUNK_SOURCE_SHA256,
                              **LOOP_SCALE_SOURCE_SHA256,
+                             **PRELOAD_VARIANT_SOURCE_SHA256,
                              "kt2": K_TILED_SOURCE_SHA256}[selection],
                             **({} if chunks == 1 else {"native_dram_n_chunks": chunks}),
                             **({"native_dram_scale_mode": "loop_managed"}
                                if loop_scales else {}),
                             **({"native_dram_k_tiles": k_tiles}
-                               if k_tiles > 1 else {})},
+                               if k_tiles > 1 else {}),
+                            **({"native_dram_scale_wait": True}
+                               if scale_wait else {})},
                            tuple(steps), base.source_golden_preserving,
                            base.derived_expected_bf16, base.output_format,
                            base.tiled_quant_readout,
