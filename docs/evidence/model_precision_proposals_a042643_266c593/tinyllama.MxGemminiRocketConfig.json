@@ -1,0 +1,330 @@
+{
+  "baseline_format": "mxfp8",
+  "mx_scale_block_elements": 32,
+  "mx_scale_format": "e8m0",
+  "preferred_attention_qk_pv_format": "mxfp8",
+  "preferred_regular_matmul_format": "mxfp4",
+  "profile_has_vpu": false,
+  "profile_name": "MxGemminiRocketConfig",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "schema": "mx_gemmini.model2mlir_precision_proposal.v1",
+  "selected_format_counts": {
+    "host": 1,
+    "mxfp4": 15,
+    "mxfp8": 4
+  },
+  "sites": [
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_1",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_2",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        256,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_3",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        256,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.self_attn.o_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_6",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.mlp.gate_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_7",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        5632,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.mlp.up_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_8",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        5632,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.0.mlp.down_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_9",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        5632
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_10",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_11",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        256,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_12",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        256,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.self_attn.o_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_15",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.mlp.gate_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_16",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        5632,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.mlp.up_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_17",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        5632,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.model.layers.1.mlp.down_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_18",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        2048,
+        5632
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "lm.lm_head",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_19",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        8,
+        32000,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "fqn": "lm.model.rotary_emb",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "matmul_0",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "batch_matmul",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "lm.model.layers.0.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_4",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "lm.model.layers.0.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_5",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "lm.model.layers.1.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_13",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "lm.model.layers.1.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_14",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    }
+  ],
+  "source_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+  "status": "proposal_only_no_whole_model_executable"
+}

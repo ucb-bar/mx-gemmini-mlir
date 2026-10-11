@@ -1,0 +1,2756 @@
+{
+  "baseline_format": "mxfp8",
+  "mx_scale_block_elements": 32,
+  "mx_scale_format": "e8m0",
+  "preferred_attention_qk_pv_format": "mxfp8",
+  "preferred_regular_matmul_format": "mxfp4",
+  "profile_has_vpu": true,
+  "profile_name": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.model2mlir_precision_proposal.v1",
+  "selected_format_counts": {
+    "host": 93,
+    "mxfp4": 81,
+    "mxfp8": 24
+  },
+  "sites": [
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.embeddings.patch_embedding",
+      "preferred_format": "mxfp8",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "conv_0",
+      "role": "other_rank2_contraction",
+      "selected_format": "host",
+      "shape_mnk": [
+        768,
+        16,
+        768
+      ],
+      "source_op": "convolution_im2col_matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_0",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_1",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_2",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_5",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_6",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_7",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_8",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_9",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_10",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_13",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_14",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_15",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_16",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_17",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_18",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_21",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_22",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_23",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_24",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_25",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_26",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_29",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_30",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_31",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_32",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_33",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_34",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_37",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_38",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_39",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_40",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_41",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_42",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_45",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_46",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_47",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_48",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_49",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_50",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_53",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_54",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_55",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_56",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_57",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_58",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_61",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_62",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_63",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_64",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_65",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_66",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_69",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_70",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_71",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_72",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_73",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_74",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_77",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_78",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_79",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_80",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_81",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_82",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_85",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_86",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_87",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_88",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_89",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_90",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.out_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_93",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc1",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_94",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        3072,
+        768
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc2",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_95",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        16,
+        768,
+        3072
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.connector.modality_projection.proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_96",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        1,
+        960,
+        12288
+      ],
+      "source_op": "matmul",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.state_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_97",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        1,
+        960,
+        32
+      ],
+      "source_op": "addmm",
+      "status": "requires_quantization_and_executable_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_98",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        960,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_99",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        320,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_100",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        320,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.self_attn.o_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_103",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        960,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.mlp.gate_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_104",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        2560,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.mlp.up_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_105",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        2560,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.vlm.model.text_model.layers.0.mlp.down_proj",
+      "preferred_format": "mxfp4",
+      "reason": null,
+      "region_id": "matmul_106",
+      "role": "regular_matmul",
+      "selected_format": "mxfp4",
+      "shape_mnk": [
+        50,
+        960,
+        2560
+      ],
+      "source_op": "matmul",
+      "status": "requires_bf16_operand_cast_and_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.action_in_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_107",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        720,
+        32
+      ],
+      "source_op": "addmm",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.action_time_mlp_in",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_108",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        720,
+        1440
+      ],
+      "source_op": "addmm",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.action_time_mlp_out",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_109",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        720,
+        720
+      ],
+      "source_op": "addmm",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.self_attn.q_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_110",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        960,
+        720
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.self_attn.k_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_111",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        320,
+        720
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.self_attn.v_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_112",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        320,
+        720
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.self_attn.o_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_115",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        720,
+        960
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.mlp.gate_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_116",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        2048,
+        720
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.mlp.up_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_117",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        2048,
+        720
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "bf16",
+      "excluded_addmm_bias_epilogue": false,
+      "fqn": "model.vlm_with_expert.lm_expert.layers.0.mlp.down_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_118",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        720,
+        2048
+      ],
+      "source_op": "matmul",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "element_type": "f32",
+      "excluded_addmm_bias_epilogue": true,
+      "fqn": "model.action_out_proj",
+      "preferred_format": "mxfp4",
+      "reason": "K_or_N_is_not_32_aligned",
+      "region_id": "matmul_119",
+      "role": "regular_matmul",
+      "selected_format": "host",
+      "shape_mnk": [
+        50,
+        32,
+        720
+      ],
+      "source_op": "addmm",
+      "status": "requires_shape_or_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_3",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_4",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_5",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_3",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_4",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_6",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_8",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_9",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_11",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_12",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_13",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_11",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_12",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_14",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_16",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_17",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_19",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_20",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_21",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_19",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_20",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_22",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_24",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_25",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_27",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_28",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_29",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_27",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_28",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_30",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_32",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_33",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_35",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_36",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_37",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_35",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_36",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_38",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_40",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_41",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_43",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_44",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_45",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_43",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_44",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_46",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_48",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_49",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_51",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_52",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_53",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_51",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_52",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_54",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_56",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_57",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_59",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_60",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_61",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_59",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_60",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_62",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_64",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_65",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_67",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_68",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_69",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_67",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_68",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_70",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_72",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_73",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_75",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_76",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_77",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_75",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_76",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_78",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_80",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_81",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_83",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_84",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_85",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_83",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_84",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_86",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_88",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_89",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.q_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_91",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.k_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_92",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.v_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_93",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_91",
+      "required_operand_boundary": "quantize_q_and_k_to_mxfp8_with_e8m0_scales",
+      "role": "qk",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn",
+      "preferred_format": "mxfp8",
+      "reason": null,
+      "region_id": "matmul_92",
+      "required_operand_boundary": "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales",
+      "role": "pv",
+      "selected_format": "mxfp8",
+      "source_op": "batch_matmul",
+      "status": "requires_fp8_batched_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn.out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_94",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc1",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_96",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc2",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_97",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.state_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_99",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": null,
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "matmul_101",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "batch_matmul",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": null,
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "matmul_102",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "batch_matmul",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.action_in_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_107",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.action_time_mlp_in",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_109",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.action_time_mlp_out",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_110",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": null,
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "matmul_113",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "batch_matmul",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": null,
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "matmul_114",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "batch_matmul",
+      "status": "requires_host_lowering"
+    },
+    {
+      "fqn": "model.action_out_proj",
+      "preferred_format": "host",
+      "reason": null,
+      "region_id": "add_119",
+      "required_operand_boundary": null,
+      "role": "unclassified",
+      "selected_format": "host",
+      "source_op": "addmm",
+      "status": "requires_host_lowering"
+    }
+  ],
+  "source_mlir_sha256": "329e4238431e1079d76ee71e23a47f49bff6e48e7651e21b207bff18a51fe119",
+  "status": "proposal_only_no_whole_model_executable"
+}
