@@ -350,6 +350,10 @@ python -m tools.run_linked_merlin_session \
 
 The static allocator analysis is a sizing estimate. Dynamic allocations,
 peak live data, and configured hardware memory still require run-time checks.
+For a new single-stage build, `tools.build_merlin_stage` now asks Merlin to
+size the Spike arena from the final LLVM IR by default. Pass `--arena-mb`
+to override that estimate explicitly. The stage receipt records the selected
+arena size, allocation-site count, literal-byte sum, and dynamic-site count.
 The remaining full-model gates are completed linked session runs on Nicolas's
 Spike, VPU placement with an explicit BF16 conversion and softmax numerical
 policy, and comparison of every output and recurrent state against an

@@ -99,7 +99,8 @@ def main() -> None:
     parser.add_argument("--merlin-src", type=Path, required=True)
     parser.add_argument("--llvm-install", type=Path, required=True)
     parser.add_argument("--riscv-root", type=Path, required=True)
-    parser.add_argument("--arena-mb", type=int, default=2048)
+    parser.add_argument("--arena-mb", type=int,
+                        help="explicit Spike arena size; omitted uses Merlin's LLVM-site estimate")
     parser.add_argument("--output-dump-cap", type=int, default=1)
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
@@ -115,7 +116,8 @@ def main() -> None:
     source = _capture_model(stage)
     output_sha256 = _can_hash_first_output(stage)
     capture_sha = hashlib.sha256(source.read_bytes()).hexdigest()
-    if (args.arena_mb <= 0 or args.output_dump_cap <= 0 or args.spike_timeout <= 0
+    if ((args.arena_mb is not None and args.arena_mb <= 0)
+            or args.output_dump_cap <= 0 or args.spike_timeout <= 0
             or args.compile_timeout_s < 0):
         parser.error("arena, dump cap and Spike timeout must be positive; compile timeout cannot be negative")
     profile_path = args.profile.resolve(strict=True)
@@ -150,7 +152,8 @@ def main() -> None:
             profile_path=profile_path, riscv_root=riscv_root),
     ) if expected_regions else None)
     result = spike_model.build(
-        stage, work, arena_mb=args.arena_mb, backend="scalar", device=device,
+        stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
+        auto_arena=args.arena_mb is None, backend="scalar", device=device,
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
         output_all_sha256=True,
@@ -186,7 +189,9 @@ def main() -> None:
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),
         "mem_bytes": result["mem_bytes"],
-        "arena_mb": args.arena_mb,
+        "arena_mb": result["arena_bytes"] // (1024 * 1024),
+        "arena_estimate": result["arena_estimate"],
+        "arena_selection": "llvm_site_estimate" if args.arena_mb is None else "explicit",
         "compile_timeout_s": args.compile_timeout_s,
         "first_output_sha256_enabled": output_sha256,
         "all_output_sha256_enabled": True,
