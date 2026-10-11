@@ -1,0 +1,33 @@
+{
+  "dtype": "float32",
+  "log_sha256": "15d00b3220e84143d506ad6a4fe781f5edc99cdeed03dc9c2a626d9a0716d145",
+  "metrics": {
+    "argmax_equal": false,
+    "cosine": 0.6179863378352102,
+    "mae": 0.73848779296875,
+    "max_abs": 5.015625,
+    "max_rel": 2203125000000.0,
+    "reference_argmax": [
+      27575
+    ],
+    "rmse": 0.9252266441227738,
+    "target_argmax": [
+      26705
+    ]
+  },
+  "numerical_qualification": "not_established",
+  "reference_kind": "mx_operand_fake_quant",
+  "reference_sha256": "d0153f622b31fb48598f8f0cb2c575471a9c1b857a8bada6def6e18d9d6f7f76",
+  "schema": "mx_gemmini.stage_output_comparison.v1",
+  "scope": "first_result_only",
+  "shape": [
+    1,
+    32000
+  ],
+  "target_digest": {
+    "bytes": 128000,
+    "elements": 32000,
+    "encoding": "f32le",
+    "sha256": "756897f97073152ef0cc3eba4ae09be41a2295d688ebf3816dcdaaf52a6b12aa"
+  }
+}

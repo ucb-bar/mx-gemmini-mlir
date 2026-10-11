@@ -71,8 +71,9 @@ Qwen's other regions are predominantly the 84 bias epilogues in each stage;
 their matrix components are separately proposed for FP4. SmolVLA has
 additional contraction shapes and ABI forms that the current MX importer
 retains for host or further VPU legalization. These are the original candidate
-counts. Later sections report executable contraction subsets, but there is no
-quantized reference, linked session, or full Spike inference result. The
+counts. Later sections report executable contraction subsets and linked
+sessions. There is still no independent quantized full-model reference or
+completed full-checkpoint Spike inference result. The
 captures use synthetic inputs and are not paper-ready quality measurements.
 SmolVLA was recaptured with xDSL 0.65 so all four graphs
 can be parsed in the same Merlin environment.
@@ -276,15 +277,21 @@ relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
 sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
 211 sites and twelve kernels after BF16 preparation, and SmolVLA flow 116
 sites and ten kernels. These
-objects are catalog probes. Full host/device stage ELFs have linked for
-TinyLlama prefill (199 routes, 4.4 GB), Qwen prefill (253 routes, 7.1 GB),
-Gemma prefill (235 routes, 12.8 GB), and SmolVLA prefix (211 routes after
-BF16 preparation, 911 MB). These use full checkpoint captures. Gemma's first
-build hit the 900-second limit while converting its ~10 GB weight image; the
-3600-second retry linked. TinyLlama's first Spike run exhausted a 512 MiB
-arena. A manual 2 GiB relink exceeded a 20-minute Spike run limit, and a
-longer run is in progress. These are single stages: no full session or
-independent quantized parity follows from the links.
+objects are catalog probes. Full host/device stage ELFs have linked for both
+prefill and decode of TinyLlama (199 routes each), Qwen (253 each), and Gemma
+(235 each); SmolVLA prefix and flow link with 211 and 116 MX routes, and its
+action decode links through Merlin's host lane with zero MX routes. These are
+full-checkpoint captures. Gemma's first build hit the 900-second limit while
+converting its ~10 GB weight image; the 3600-second retry linked. TinyLlama's
+first Spike run exhausted a 512 MiB arena. A 2 GiB relink also reached a
+guest `FATAL model arena exhausted` after 348 calls despite Spike returning
+process exit code zero. The ELF link and process exit are not an inference
+result. The LLVM IR contains 690 literal allocation sites totaling 4.34 GiB;
+a larger arena is being tested. SmolVLA flow ran one captured flow input on
+Spike with every result/state digest present, and host-only action decode
+matched all 1,600 captured PyTorch f32 output values on its separately
+captured input. Neither proves recurrent handoff or quantized full-model
+parity.
 
 A separate [two-layer random-weight TinyLlama whole-stage diagnostic](evidence/tiny_two_layer_whole_stage_spike_20261011/README.md)
 completed on Nicolas's Spike with 19 MX calls and a full-logit digest. Its
@@ -313,13 +320,42 @@ python -m tools.build_merlin_catalog \
   --out-dir /new/catalog-output
 ```
 
-The remaining full-model gates are host/device ELF builds for the other stages,
-serial workspace admission against a selected memory map, full session
-link/run on Nicolas's Spike, VPU placement beyond the existing softmax
-contract, and comparison of every output and recurrent state against an
-independent quantized PyTorch reference. The native f32 encoder and packed
-buffer glue stay in this target package; Merlin's graph inventory, catalog
-ABI, memref shim, host lowering, and session orchestration remain shared.
+`tools.link_merlin_session` consumes the exact version-2 model2MLIR bundle and
+the already built stage objects. It checks the source stage receipts, selected
+site counts, profile identity, shared checkpoint-weight bytes, object hashes,
+and program schedule. It uses Merlin's target-neutral session adapters and
+allocator-site analysis, then emits one RV64 ELF with a Spike memory map and
+an MX-owned link receipt. Every recurrent invocation resets the temporary
+model arena; the session's persistent output and state buffers remain live.
+`tools.run_linked_merlin_session` rechecks the ELF and capture identities and
+requires every program/step/result digest, zero memref rank mismatches, and a
+guest `DONE`. It reports numerical qualification as pending even on a
+structurally complete run. For example:
+
+```sh
+python -m tools.link_merlin_session \
+  --session-root /path/to/model2mlir/session \
+  --stage-build prefill=/path/to/prefill-build \
+  --stage-build decode=/path/to/decode-build \
+  --workdir /path/to/new-session-link \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --merlin-src /path/to/merlin/src --riscv-root /path/to/riscv-tools
+python -m tools.run_linked_merlin_session \
+  --link-receipt /path/to/new-session-link/mx_session_link.json \
+  --session-root /path/to/model2mlir/session \
+  --merlin-src /path/to/merlin/src --riscv-root /path/to/riscv-tools \
+  --spike-extlib /path/to/pinned/libgemmini.so \
+  --out-dir /path/to/new-session-run
+```
+
+The static allocator analysis is a sizing estimate. Dynamic allocations,
+peak live data, and configured hardware memory still require run-time checks.
+The remaining full-model gates are completed linked session runs on Nicolas's
+Spike, VPU placement with an explicit BF16 conversion and softmax numerical
+policy, and comparison of every output and recurrent state against an
+independent quantized reference. The native f32 encoder and packed buffer
+glue stay in this target package; Merlin's graph inventory, catalog ABI,
+memref shim, host lowering, and session orchestration remain shared.
 
 For a receipt-bound stage, `tools.build_merlin_stage` runs Merlin's actual
 whole-model build using the target catalog and writes `mx_stage_probe.json`.

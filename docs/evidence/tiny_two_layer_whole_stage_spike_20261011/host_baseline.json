@@ -1,0 +1,9 @@
+{
+  "max_abs": 1.3113021850585938e-05,
+  "cosine": 0.9999999999935396,
+  "argmax": 21282,
+  "golden_argmax": 21282,
+  "target_sha256": "2a32ca27e5ad1a1820f2720443d3e2bdaaf5f261b12ae806eef979bd1a6a040d",
+  "golden_sha256": "84f6e5186442e532f8c4dbe83794991a37bd3f534b2abb987afe59e8c2fb5116",
+  "seconds": 73.24975998839363
+}

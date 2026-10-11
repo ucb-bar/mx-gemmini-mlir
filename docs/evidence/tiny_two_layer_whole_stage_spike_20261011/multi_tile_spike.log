@@ -1,0 +1,3 @@
+MX multiwave K=2048 mismatches=0
+Gemmini extension configured with:
+    dim = 16

@@ -1,0 +1,12 @@
+{
+  "schema": "mx_gemmini.actual_weight_operand_quant_comparison.v1",
+  "model": "two_layer_random_weight_tinyllama",
+  "site": "lm.model.layers.0.self_attn.q_proj.weight",
+  "rows": 128,
+  "contraction_k": 2048,
+  "format": "mxfp4",
+  "activation_codes_mismatches": 0,
+  "activation_scales_mismatches": 0,
+  "weight_codes_mismatches": 0,
+  "weight_scales_mismatches": 0
+}
