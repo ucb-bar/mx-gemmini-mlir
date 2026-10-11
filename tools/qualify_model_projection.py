@@ -27,7 +27,10 @@ from tools.compile_mx import _run, _sha, _source_closure
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL2MLIR_SOURCE_CLOSURE = "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39"
+MODEL2MLIR_SOURCE_CLOSURES = {
+    "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+    "559efcf9232c1375df1fb12bd131edc0e3daba7d1364df25725bb2ef7a0e2027",
+}
 MXQ_REVISION = "b4af5430bac147f4a16126931cc0177367cc3982"
 
 
@@ -58,9 +61,10 @@ def main() -> None:
         setattr(args, name, getattr(args, name).resolve())
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
-    if (_source_closure(args.model2mlir_root,
-                        list((args.model2mlir_root / "m2m").rglob("*.py"))) !=
-            MODEL2MLIR_SOURCE_CLOSURE or _revision(args.mxq_root) != MXQ_REVISION):
+    frontend_closure = _source_closure(
+        args.model2mlir_root, list((args.model2mlir_root / "m2m").rglob("*.py")))
+    if (frontend_closure not in MODEL2MLIR_SOURCE_CLOSURES or
+            _revision(args.mxq_root) != MXQ_REVISION):
         raise ValueError("model2MLIR or MXQuant source differs from pinned frontend")
     sys.path[:0] = [str(args.model2mlir_root), str(args.mxq_root)]
     import m2m
@@ -101,11 +105,14 @@ def main() -> None:
         tile_k=args.tile_k, profile=profile, reference_root=args.reference_root,
         precision=args.precision.upper())
     m, n, k = manifest["shape_mnk"]
+    source_k = site["shape_mnk"][2]
     a = torch.zeros((m, k), dtype=torch.float32)
-    a[:args.row_count] = torch.from_numpy(
+    a[:args.row_count, :source_k] = torch.from_numpy(
         activation[args.row_start:args.row_start + args.row_count])
-    b = torch.from_numpy(weight[:, args.column_start:
-                                args.column_start + args.column_count].copy())
+    b = torch.zeros((k, n), dtype=torch.float32)
+    b[:source_k, :args.column_count] = torch.from_numpy(
+        weight[:, args.column_start:
+               args.column_start + args.column_count].copy())
 
     class Matmul(torch.nn.Module):
         def forward(self, lhs: torch.Tensor, rhs: torch.Tensor) -> torch.Tensor:
@@ -188,8 +195,10 @@ def main() -> None:
     golden_words = np.frombuffer((bundle_dir / "golden_bf16.bin").read_bytes(),
                                  dtype="<u2").reshape(m, n)
     hardware_values = (golden_words.astype(np.uint32) << 16).view(np.float32)
-    pytorch_values = torch.matmul(a[:args.row_count], b).detach().cpu().numpy()
-    difference = np.abs(hardware_values[:args.row_count] - pytorch_values)
+    pytorch_values = torch.matmul(
+        a[:args.row_count, :source_k], b[:source_k, :args.column_count]).detach().cpu().numpy()
+    difference = np.abs(hardware_values[:args.row_count, :args.column_count] -
+                        pytorch_values)
     if not np.isfinite(difference).all():
         raise ValueError("model projection comparison has nonfinite values")
     complete_projection = (args.row_start == 0 and args.row_count == site["shape_mnk"][0]
@@ -204,7 +213,7 @@ def main() -> None:
         "scope": ("one complete rank-two model projection; other model operations uncompiled"
                   if complete_projection else
                   "one model2MLIR matmul output stripe; other model operations uncompiled"),
-        "model2mlir_source_closure_sha256": MODEL2MLIR_SOURCE_CLOSURE,
+        "model2mlir_source_closure_sha256": frontend_closure,
         "mxq_revision": MXQ_REVISION,
         "full_model_mlir_sha256": worklist["source_mlir_sha256"],
         "site": manifest["model2mlir_projection"],
@@ -212,8 +221,8 @@ def main() -> None:
         "excluded_addmm_bias_epilogue": site["source_op"] == "addmm",
         "padded_shape_mnk": manifest["shape_mnk"],
         "compared_bf16_values": m * n if args.run_spike else 0,
-        "model_output_values": args.row_count * n,
-        "padding_output_values": (m - args.row_count) * n,
+        "model_output_values": args.row_count * args.column_count,
+        "padding_output_values": m * n - args.row_count * args.column_count,
         "pytorch_f32_vs_mx_bf16_mean_absolute_error": float(difference.mean()),
         "pytorch_f32_vs_mx_bf16_max_absolute_error": float(difference.max()),
         "object_sha256": _sha(obj / "mx_issue.o"),

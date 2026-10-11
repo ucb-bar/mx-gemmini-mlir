@@ -73,8 +73,8 @@ def validate_model2mlir_projection(manifest: dict) -> None:
     if (site["row_start"] + site["row_count"] > m or
             site["column_start"] + site["column_count"] > n or
             shape[0] != ((site["row_count"] + spatial_tile - 1) // spatial_tile) * spatial_tile or
-            site["column_count"] < 32 or site["column_count"] % 32 or
-            shape[1:] != [site["column_count"], k] or
+            shape[1:] != [((site["column_count"] + 31) // 32) * 32,
+                          ((k + 31) // 32) * 32] or
             manifest.get("tile_mnk", [None, None, None])[:2] != [shape[0], 32]):
         raise ValueError("model2MLIR projection padded shape differs from source slice")
 

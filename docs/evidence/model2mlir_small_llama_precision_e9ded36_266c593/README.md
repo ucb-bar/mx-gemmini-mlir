@@ -17,6 +17,9 @@ because dimension 344 needs MX padding. The plan records the required
 padding. Each 8×8 attention score also needs a 32×32 hardware tile; the
 proposal records those padded QK/PV shapes.
 
+Two of the six padding candidates are now compiled and executed as separate
+FP4 programs: see the [layer-0 gate/down archive](../model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md).
+
 This is **not an executable whole-model MX program**. It makes the next
 lowering steps explicit: quantize and pad the six MLP sites, lower batched
 FP8 attention with masked/cropped lanes, then connect all operators and

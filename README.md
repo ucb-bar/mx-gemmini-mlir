@@ -2,6 +2,11 @@
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE).
 
+The [current model2MLIR small LLaMA MLP replay](docs/evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md)
+compiles two complete FP4 projections with N/K padding and matches all
+15,360 padded BF16 results on Nicolas's pinned MX Spike model. Whole-model
+execution remains in progress.
+
 The MLIR dialect includes `readout_to_smem` and `wait` operations for
 an explicit MX-to-Muon shared-memory handoff. The `radiance-mlir` composition
 package verifies their ordering with Muon fences and barriers against a

@@ -97,6 +97,14 @@ recognizes both `attn` QK/PV pairs as FP8 sites and records the padded MX
 shapes needed for the six unaligned MLP matmuls. It remains a frontend and
 placement probe, with no whole-model executable.
 
+The [padded FP4 MLP archive](evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md)
+executes two of those formerly unaligned sites: layer-0 gate and down
+projections. Source dimensions 344 in N and K respectively are zero-padded
+to 352. Pinned Spike matched all 15,360 padded BF16 outputs against the
+independent MX reference, including 3,776 logical model outputs. Each is a
+separate program; the nonlinear MLP path and whole-model graph remain to be
+connected.
+
 ## First executed model-derived contraction
 
 The [TinyLlama projection archive](evidence/model2mlir_tinyllama_projection_a042643_266c593/README.md)

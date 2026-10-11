@@ -1,0 +1,35 @@
+{
+  "input_ids_npy_sha256": "2f592e5f96dabc61ae824578e1e735437a94f137a39128aab85f3b1ff8bdec7b",
+  "loader_sha256": "aa859e6ffb6ec765c372511a97d63aba6205b8a5dd092cb2ac5b36864d9c2c5b",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "schema": "mx_gemmini.small_llama_mlp_operands.v1",
+  "seed": 0,
+  "sites": {
+    "dn": {
+      "activation_npy_sha256": "0bda6bb57a98426e8ab4592969bfd6a836879b63627c062531782615ec1a4b4b",
+      "activation_sha256": "be1652fc8e8578aeb3e0911449367babf65e00f256a6e9e88755825e4f550d33",
+      "fqn": "blocks.0.mlp.dn",
+      "region_id": "matmul_8",
+      "source_shape_mnk": [
+        8,
+        128,
+        344
+      ],
+      "weight_npy_sha256": "15322661358558cd5f4b47a555619a0c3d1b34ff64040439c163db64c7631d45",
+      "weight_sha256": "e4a6afc617dd466b74007058f0418fe810cca6c26eb9483bf79820a98d86de8d"
+    },
+    "g": {
+      "activation_npy_sha256": "519fb0c58fe19c0381f21ddeb1b1c578cbf85daa6faee0bcb96719444586866c",
+      "activation_sha256": "f7f6349e9daea70b153399a981dfebff24d73444d4f86e6e7cf3ed38f6f9c067",
+      "fqn": "blocks.0.mlp.g",
+      "region_id": "matmul_6",
+      "source_shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "weight_npy_sha256": "40b3d11187b98ff4543e6ed84c84ed7ae04344325a5da2f0ab38ed50ee45bdf2",
+      "weight_sha256": "fe4e523de8d6b77189e555851209bd457c43e46f1a969852959b2ae404106a9b"
+    }
+  }
+}

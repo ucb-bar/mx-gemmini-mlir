@@ -53,13 +53,24 @@ def portable_projection_shape(mlir_text: str) -> tuple[int, int, int]:
         raise ValueError("projection capture needs one function")
     block = functions[0].body.block
     ops = list(block.ops)
-    if (len(block.args) != 2 or [op.name for op in ops] !=
-            ["tensor.empty", "arith.constant", "linalg.fill", "linalg.matmul",
-             "func.return"]):
+    names = [op.name for op in ops]
+    if len(block.args) != 2:
+        raise ValueError("projection capture needs two runtime operands")
+    if names == ["tensor.empty", "arith.constant", "linalg.fill",
+                 "linalg.matmul", "func.return"]:
+        empty, zero, init, matmul, returned = ops
+        if list(init.operands) != [zero.results[0], empty.results[0]]:
+            raise ValueError("projection capture's zero initialization differs")
+        extra_types = [empty.results[0].type]
+    elif names == ["arith.constant", "tensor.splat", "linalg.matmul",
+                   "func.return"]:
+        zero, init, matmul, returned = ops
+        if list(init.operands) != [zero.results[0]]:
+            raise ValueError("projection capture's zero initialization differs")
+        extra_types = []
+    else:
         raise ValueError("projection capture needs one direct matmul and return")
-    empty, zero, fill, matmul, returned = ops
-    if (list(fill.operands) != [zero.results[0], empty.results[0]] or
-            list(matmul.operands) != [block.args[0], block.args[1], fill.results[0]] or
+    if (list(matmul.operands) != [block.args[0], block.args[1], init.results[0]] or
             list(returned.operands) != list(matmul.results) or
             getattr(getattr(zero.properties.get("value"), "value", None), "data", None) != 0.0 or
             any(getattr(matmul.attributes.get(key), "data", None) != value
@@ -67,7 +78,7 @@ def portable_projection_shape(mlir_text: str) -> tuple[int, int, int]:
                                    "prov.aten": "aten.mm.default"}.items())):
         raise ValueError("projection capture's matmul dataflow differs")
     types = [block.args[0].type, block.args[1].type,
-             empty.results[0].type, fill.results[0].type, matmul.results[0].type]
+             *extra_types, init.results[0].type, matmul.results[0].type]
     if any(not isinstance(t, TensorType) or
            not isinstance(t.element_type, Float32Type) or len(t.get_shape()) != 2
            for t in types):
@@ -87,8 +98,8 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
     """Quantize one full-K model projection stripe and write checked resources.
 
     `activation` and `weight` are complete f32 matrices for the selected
-    model2MLIR matmul. A short M axis is zero-padded to the target mesh; the
-    exact row count remains in the provenance so callers can discard padding.
+    model2MLIR matmul. M, N, and K are zero-padded to legal MX groups; the
+    logical source shape remains in provenance for output cropping.
     """
     import numpy as np
     import torch
@@ -111,20 +122,25 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
     if (any(type(value) is not int for value in (row_start, row_count,
                                                 column_start, column_count, tile_k)) or
             row_start < 0 or row_count <= 0 or row_start + row_count > m or
-            column_start < 0 or column_count < 32 or column_count % 32 or
+            column_start < 0 or column_count <= 0 or
             column_start + column_count > n or
-            column_start % 32 or k % 32 or tile_k < 32 or tile_k % 32 or k % tile_k):
+            column_start % 32 or tile_k < 32 or tile_k % 32):
         raise ValueError("projection stripe or K tile is outside complete MX bounds")
     mesh = profile["geometry"]["mesh_columns"]
     if mesh != 16 or profile["geometry"]["mesh_rows"] != 16:
         raise ValueError("model projection slice currently needs the qualified DIM16 profile")
     spatial_tile = 16 if precision == "FP8" else 32
     padded_m = ((row_count + spatial_tile - 1) // spatial_tile) * spatial_tile
+    padded_n = ((column_count + 31) // 32) * 32
+    padded_k = ((k + 31) // 32) * 32
+    if padded_k % tile_k:
+        raise ValueError("projection K tile must divide the padded MX K extent")
     raw_a = np.ascontiguousarray(activation[row_start:row_start + row_count])
     raw_b = np.ascontiguousarray(weight[:, column_start:column_start + column_count])
-    a = torch.zeros((padded_m, k), dtype=torch.bfloat16)
-    a[:row_count] = torch.from_numpy(raw_a).to(torch.bfloat16)
-    b = torch.from_numpy(raw_b).to(torch.bfloat16)
+    a = torch.zeros((padded_m, padded_k), dtype=torch.bfloat16)
+    a[:row_count, :k] = torch.from_numpy(raw_a).to(torch.bfloat16)
+    b = torch.zeros((padded_k, padded_n), dtype=torch.bfloat16)
+    b[:k, :column_count] = torch.from_numpy(raw_b).to(torch.bfloat16)
     mx_format = "mxfp8" if precision == "FP8" else "mxfp4"
     encoded = functional_contraction_operands(a, b, mx_format)
     packed = pack_direct_operands(
@@ -133,17 +149,19 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
     b_scales = encoded.weight_scales.T.contiguous().numpy().tobytes()
     resources = {
         "activation": Resource(packed.activation_bytes,
-                               (padded_m if precision == "FP8" else padded_m // 2, k),
+                               (padded_m if precision == "FP8" else padded_m // 2, padded_k),
                                8, "row_major_codes" if precision == "FP8" else
                                "packed_even_odd_m_nibbles"),
         "weight": Resource(packed.weight_bytes,
-                           (k, column_count if precision == "FP8" else column_count // 2),
+                           (padded_k, padded_n if precision == "FP8" else padded_n // 2),
                            8, "row_major_codes" if precision == "FP8" else
                            "packed_even_odd_n_nibbles"),
-        "activation_scales": Resource(a_scales, (k // 32, padded_m), 8, "k_group_row_e8m0"),
-        "weight_scales": Resource(b_scales, (k // 32, column_count), 8, "k_group_column_e8m0"),
-        "output_scales": Resource(bytes(padded_m * column_count // 32),
-                                  (column_count // 32, padded_m), 8, "n_group_row_e8m0"),
+        "activation_scales": Resource(a_scales, (padded_k // 32, padded_m), 8,
+                                      "k_group_row_e8m0"),
+        "weight_scales": Resource(b_scales, (padded_k // 32, padded_n), 8,
+                                  "k_group_column_e8m0"),
+        "output_scales": Resource(bytes(padded_m * padded_n // 32),
+                                  (padded_n // 32, padded_m), 8, "n_group_row_e8m0"),
     }
     model_cpp = reference_root / "lib/golden/mx_golden.cpp"
     model_math = reference_root / "lib/golden/mx_fp_math.h"
@@ -161,17 +179,17 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
                         str(model_cpp), "-o", str(executable)], check=True,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         golden_path = directory / "golden_bf16.bin"
-        subprocess.run([str(executable), str(padded_m), str(column_count), str(k),
+        subprocess.run([str(executable), str(padded_m), str(padded_n), str(padded_k),
                         *(str(directory / f"{name}.bin") for name in
                           ("activation", "weight", "activation_scales", "weight_scales")),
                         str(golden_path), "0" if precision == "FP8" else "2"], check=True,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     resources["golden_bf16"] = Resource(golden_path.read_bytes(),
-                                         (padded_m, column_count), 16, "row_major_bf16")
+                                         (padded_m, padded_n), 16, "row_major_bf16")
     manifest = {
         "schema": "mx_gemmini.source_payload.v1",
         "site_id": "functional:matmul", "precision": precision,
-        "shape_mnk": [padded_m, column_count, k],
+        "shape_mnk": [padded_m, padded_n, padded_k],
         "tile_mnk": [padded_m, 32, tile_k],
         "profile_sha256": profile_sha256(profile),
         "origin": MODEL2MLIR_PROJECTION_ORIGIN,
