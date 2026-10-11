@@ -11,7 +11,8 @@ from pathlib import Path
 from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.nicolas_attention_io import ATTENTION_BUFFERS
 from mx_gemmini_support.nicolas_attention_program import (
-    BUFFER_BYTES, lower_dense_attention_typed_program)
+    lower_dense_attention_typed_program)
+from mx_gemmini_support.nicolas_attention_shape import DenseAttentionShape
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _source_closure
 from tools.emit_resident_pair_object import _compile_object, _file_sha, _load_mlir
@@ -37,6 +38,7 @@ def main() -> None:
     mlir_bytes = _load_mlir(args.mlir)
     precursor_bytes = _load_mlir(args.precursor_mlir)
     binding = json.loads(args.binding_json.read_text())
+    buffer_bytes = DenseAttentionShape.from_plan(binding["plan"]).buffer_bytes()
     commands = lower_dense_attention_typed_program(
         mlir_bytes.decode(), precursor_bytes.decode(), profile, binding)
     args.out_dir.mkdir(parents=True)
@@ -70,7 +72,7 @@ def main() -> None:
         "buffer_abi": [
             {"name": name, "position": index,
              "role": "write" if name in outputs else "read",
-             "minimum_bytes": BUFFER_BYTES[name], "alignment_bytes": 64,
+             "minimum_bytes": buffer_bytes[name], "alignment_bytes": 64,
              "layout": "flat_bytes_source_attention"}
             for index, name in enumerate(ATTENTION_BUFFERS)],
         "command_count": sum(isinstance(item, Command) for item in commands),

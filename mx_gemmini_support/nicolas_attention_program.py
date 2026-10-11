@@ -12,17 +12,13 @@ from .memory_phase import (lower_linear_spad_mvout, lower_matrix_mvin,
                            lower_scale_load, lower_strided_scale_dma)
 from .nicolas_attention_io import ATTENTION_BUFFERS, lower_dense_attention_program
 from .nicolas_attention_matrix import lower_spad_matmul
+from .nicolas_attention_shape import DenseAttentionShape
 from .nicolas_attention_vector import lower_dense_attention_vector
 from .target_profile import profile_sha256
 from .verify_profile_ir import _int_attr, _operation_name, _text_attr, verify_ir
 
 
-BUFFER_BYTES = {
-    "Q_SCALES": 64, "KT_SCALES": 128, "V_SCALES": 128,
-    "Q_IN": 2048, "KT_IN": 4096, "V_IN": 4096,
-    "scale_sink": 2048, "S_hw": 4096, "p_scales": 64,
-    "O_hw": 4096, "P_hw": 4096, "p_codes_hw": 2048,
-}
+BUFFER_BYTES = DenseAttentionShape(32, 64, 64).buffer_bytes()
 SCHEMA = "mx_gemmini.nicolas_dense_attention_program.v1"
 
 
@@ -32,6 +28,9 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
     vector = lower_dense_attention_vector(vector_mlir, profile, binding)
     if len(vector) != 8:
         raise ValueError("dense attention needs the checked vector middle")
+    shape = DenseAttentionShape.from_plan(binding["plan"])
+    shape.validate(profile)
+    buffer_bytes = shape.buffer_bytes()
     digest = profile_sha256(profile)
     source = binding["source_sha256"]
     common = f'profile_sha256 = "{digest}", source_sha256 = "{source}"'
@@ -44,16 +43,17 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
     def memory(name: str, buffer: str, attrs: str, site: str) -> str:
         return (f'    "mx_gemmini.{name}"(%{buffer}) '
                 f'{{site_id = "{site}", {attrs}, {common}}} : '
-                f'(memref<{BUFFER_BYTES[buffer]}xi8>) -> ()')
+                f'(memref<{buffer_bytes[buffer]}xi8>) -> ()')
 
-    def matmul(site: str, *, a: int, b_end: int, c: int, half: int) -> str:
+    def matmul(site: str, *, m: int, n: int, k: int,
+               a: int, b_end: int, c: int, half: int) -> str:
         return (f'    "mx_gemmini.matmul_spad"() {{site_id = "{site}", '
-                f'm = 32 : i32, n = 64 : i32, k = 64 : i32, '
+                f'm = {m} : i32, n = {n} : i32, k = {k} : i32, '
                 f'activation_row = {a} : i32, weight_end_row = {b_end} : i32, '
                 f'output_row = {c} : i32, weight_half = {half} : i32, '
                 f'scale_sink_buffer = "scale_sink", {common}}} : () -> ()')
 
-    args = ", ".join(f"%{name}: memref<{BUFFER_BYTES[name]}xi8>"
+    args = ", ".join(f"%{name}: memref<{buffer_bytes[name]}xi8>"
                      for name in ATTENTION_BUFFERS)
     lines = [
         "builtin.module attributes {",
@@ -67,14 +67,17 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
         "} {",
         f"  func.func @mx_issue({args}) {{",
         memory("load_scales", "Q_SCALES",
-               'payload_bytes = 64 : i32, scale_target = "activation"',
+               f'payload_bytes = {buffer_bytes["Q_SCALES"]} : i32, '
+               'scale_target = "activation"',
                "scales:q"),
         memory("load_scales", "KT_SCALES",
-               'payload_bytes = 128 : i32, scale_target = "weight"',
+               f'payload_bytes = {buffer_bytes["KT_SCALES"]} : i32, '
+               'scale_target = "weight"',
                "scales:kt"),
         memory("scale_dma", "V_SCALES",
-               "row_bytes = 64 : i32, rows = 2 : i32, pitch_bytes = 64 : i32, "
-               "destination_byte = 4096 : i32, selector = 1 : i32", "scales:v"),
+               f"row_bytes = {shape.d} : i32, rows = {shape.sk // 32} : i32, "
+               f"pitch_bytes = {shape.d} : i32, destination_byte = 4096 : i32, "
+               "selector = 1 : i32", "scales:v"),
         ('    "mx_gemmini.wait"() {site_id = "scales:fence", '
          f'profile_sha256 = "{digest}", '
          f'contract_sha256 = "{binding["contract_sha256"]}", '
@@ -82,29 +85,33 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
          f'manifest_sha256 = "{binding["manifest_sha256"]}"'
          '} : () -> ()'),
         memory("dma_matrix", "Q_IN",
-               "matrix_rows = 32 : i32, matrix_cols = 64 : i32, "
+               f"matrix_rows = {shape.sq} : i32, matrix_cols = {shape.d} : i32, "
                "burst_cols = 16 : i32, spad_row = 0 : i32", "operand:q"),
         memory("dma_matrix", "KT_IN",
-               "matrix_rows = 64 : i32, matrix_cols = 64 : i32, "
-               "burst_cols = 16 : i32, spad_row = 128 : i32", "operand:kt"),
+               f"matrix_rows = {shape.d} : i32, matrix_cols = {shape.sk} : i32, "
+               f"burst_cols = 16 : i32, spad_row = {shape.kt_row} : i32", "operand:kt"),
         memory("dma_matrix", "V_IN",
-               "matrix_rows = 64 : i32, matrix_cols = 64 : i32, "
-               "burst_cols = 16 : i32, spad_row = 768 : i32", "operand:v"),
-        matmul("matmul_0", a=0, b_end=384, c=384, half=0),
+               f"matrix_rows = {shape.sk} : i32, matrix_cols = {shape.d} : i32, "
+               f"burst_cols = 16 : i32, spad_row = {shape.v_row} : i32", "operand:v"),
+        matmul("matmul_0", m=shape.sq, n=shape.sk, k=shape.d,
+               a=0, b_end=shape.score_row, c=shape.score_row, half=0),
         memory("spad_mvout_linear", "S_hw",
-               "total_bytes = 4096 : i32, tile_cols = 16 : i32, "
-               "spad_row = 384 : i32", "score:readout"),
+               f"total_bytes = {buffer_bytes['S_hw']} : i32, tile_cols = 16 : i32, "
+               f"spad_row = {shape.score_row} : i32", "score:readout"),
         *vector_ops,
-        matmul("matmul_1", a=640, b_end=1024, c=1024, half=1),
+        matmul("matmul_1", m=shape.sq, n=shape.d, k=shape.sk,
+               a=shape.probability_row, b_end=shape.output_row,
+               c=shape.output_row, half=1),
         memory("spad_mvout_linear", "O_hw",
-               "total_bytes = 4096 : i32, tile_cols = 16 : i32, "
-               "spad_row = 1024 : i32", "output:readout"),
+               f"total_bytes = {buffer_bytes['O_hw']} : i32, tile_cols = 16 : i32, "
+               f"spad_row = {shape.output_row} : i32", "output:readout"),
         memory("spad_mvout_linear", "P_hw",
-               "total_bytes = 4096 : i32, tile_cols = 16 : i32, "
-               "spad_row = 384 : i32", "probability:readout"),
+               f"total_bytes = {buffer_bytes['P_hw']} : i32, tile_cols = 16 : i32, "
+               f"spad_row = {shape.score_row} : i32", "probability:readout"),
         memory("spad_mvout_linear", "p_codes_hw",
-               "total_bytes = 2048 : i32, tile_cols = 16 : i32, "
-               "spad_row = 640 : i32", "probability_codes:readout"),
+               f"total_bytes = {buffer_bytes['p_codes_hw']} : i32, "
+               f"tile_cols = 16 : i32, spad_row = {shape.probability_row} : i32",
+               "probability_codes:readout"),
         "    func.return", "  }", "}", "",
     ]
     result = "\n".join(lines)

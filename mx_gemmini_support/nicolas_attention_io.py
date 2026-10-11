@@ -5,6 +5,7 @@ from __future__ import annotations
 from .command_ir import Command, Fence
 from .memory_phase import (lower_linear_spad_mvout, lower_matrix_mvin,
                            lower_scale_load, lower_strided_scale_dma)
+from .nicolas_attention_shape import DenseAttentionShape
 
 
 ATTENTION_BUFFERS = (
@@ -12,7 +13,7 @@ ATTENTION_BUFFERS = (
     "scale_sink", "S_hw", "p_scales", "O_hw", "P_hw", "p_codes_hw")
 
 
-def _profile_rows(profile: dict) -> int:
+def _profile_rows(profile: dict, shape: DenseAttentionShape) -> int:
     if (profile.get("transport") != "rocket_rocc" or
             profile.get("geometry", {}).get("mesh_rows") != 16 or
             profile.get("geometry", {}).get("mesh_columns") != 16 or
@@ -20,49 +21,62 @@ def _profile_rows(profile: dict) -> int:
             not profile.get("resources", {}).get("spad_requant")):
         raise ValueError("dense attention I/O requires the DIM16 MX+VPU Rocket profile")
     rows = profile["resources"]["scratchpad_bytes"] // 16
-    if rows < 1280:
+    if rows < shape.end_row:
         raise ValueError("dense attention scratchpad is too small")
+    shape.validate(profile)
     return rows
 
 
-def lower_dense_attention_scales(profile: dict) -> tuple[Command, ...]:
+def lower_dense_attention_scales(
+        profile: dict, shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64)
+        ) -> tuple[Command, ...]:
     """Load Q and Kᵀ into scale half zero and V into weight half one."""
-    _profile_rows(profile)
+    _profile_rows(profile, shape)
     config = profile["resources"].get("scale_mem_config", {})
     if config.get("size_bytes") != 16384:
         raise ValueError("dense attention scale memory differs from source")
     return (
-        *lower_scale_load(profile, buffer="Q_SCALES", payload_bytes=64,
+        *lower_scale_load(profile, buffer="Q_SCALES",
+                          payload_bytes=shape.buffer_bytes()["Q_SCALES"],
                           operand="activation").commands,
-        *lower_scale_load(profile, buffer="KT_SCALES", payload_bytes=128,
+        *lower_scale_load(profile, buffer="KT_SCALES",
+                          payload_bytes=shape.buffer_bytes()["KT_SCALES"],
                           operand="weight").commands,
-        *lower_strided_scale_dma(profile, buffer="V_SCALES", row_bytes=64,
-                                 rows=2, pitch_bytes=64,
+        *lower_strided_scale_dma(profile, buffer="V_SCALES", row_bytes=shape.d,
+                                 rows=shape.sk // 32, pitch_bytes=shape.d,
                                  destination_byte=4096, selector=1).commands,
     )
 
 
-def lower_dense_attention_operands(profile: dict) -> tuple[Command, ...]:
+def lower_dense_attention_operands(
+        profile: dict, shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64)
+        ) -> tuple[Command, ...]:
     """Tile Q, Kᵀ, and V with the source's DIM16 byte strides."""
-    _profile_rows(profile)
+    _profile_rows(profile, shape)
     return (
-        *lower_matrix_mvin(profile, buffer="Q_IN", matrix_rows=32,
-                           matrix_cols=64, burst_cols=16, spad_row=0).commands,
-        *lower_matrix_mvin(profile, buffer="KT_IN", matrix_rows=64,
-                           matrix_cols=64, burst_cols=16, spad_row=128).commands,
-        *lower_matrix_mvin(profile, buffer="V_IN", matrix_rows=64,
-                           matrix_cols=64, burst_cols=16, spad_row=768).commands,
+        *lower_matrix_mvin(profile, buffer="Q_IN", matrix_rows=shape.sq,
+                           matrix_cols=shape.d, burst_cols=16, spad_row=0).commands,
+        *lower_matrix_mvin(profile, buffer="KT_IN", matrix_rows=shape.d,
+                           matrix_cols=shape.sk, burst_cols=16,
+                           spad_row=shape.kt_row).commands,
+        *lower_matrix_mvin(profile, buffer="V_IN", matrix_rows=shape.sk,
+                           matrix_cols=shape.d, burst_cols=16,
+                           spad_row=shape.v_row).commands,
     )
 
 
-def lower_dense_attention_readout(profile: dict, stage: str) -> tuple[Command, ...]:
+def lower_dense_attention_readout(
+        profile: dict, stage: str,
+        shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64)
+        ) -> tuple[Command, ...]:
     """Read one source scratchpad result as 16-byte DMA rows."""
-    _profile_rows(profile)
+    _profile_rows(profile, shape)
     outputs = {
-        "score": ("S_hw", 384, 256),
-        "probability": ("P_hw", 384, 256),
-        "probability_codes": ("p_codes_hw", 640, 128),
-        "output": ("O_hw", 1024, 256),
+        "score": ("S_hw", shape.score_row, shape.sq * shape.sk * 2 // 16),
+        "probability": ("P_hw", shape.score_row, shape.sq * shape.sk * 2 // 16),
+        "probability_codes": ("p_codes_hw", shape.probability_row,
+                              shape.sq * shape.sk // 16),
+        "output": ("O_hw", shape.output_row, shape.sq * shape.d * 2 // 16),
     }
     if stage not in outputs:
         raise ValueError("dense attention readout stage is unsupported")
@@ -79,17 +93,16 @@ def lower_dense_attention_program(mlir_text: str, profile: dict,
     from .nicolas_attention_vector import lower_dense_attention_vector
 
     vector = lower_dense_attention_vector(mlir_text, profile, binding)
+    shape = DenseAttentionShape.from_plan(binding["plan"])
     program = (
-        *lower_dense_attention_scales(profile), Fence(),
-        *lower_dense_attention_operands(profile),
-        *lower_dense_attention_matrix(profile, "qk"),
-        *lower_dense_attention_readout(profile, "score"),
+        *lower_dense_attention_scales(profile, shape), Fence(),
+        *lower_dense_attention_operands(profile, shape),
+        *lower_dense_attention_matrix(profile, "qk", shape=shape),
+        *lower_dense_attention_readout(profile, "score", shape),
         *vector,
-        *lower_dense_attention_matrix(profile, "pv"),
-        *lower_dense_attention_readout(profile, "output"),
-        *lower_dense_attention_readout(profile, "probability"),
-        *lower_dense_attention_readout(profile, "probability_codes"),
+        *lower_dense_attention_matrix(profile, "pv", shape=shape),
+        *lower_dense_attention_readout(profile, "output", shape),
+        *lower_dense_attention_readout(profile, "probability", shape),
+        *lower_dense_attention_readout(profile, "probability_codes", shape),
     )
-    if len(program) != 127:
-        raise ValueError("dense attention physical program length differs")
     return program

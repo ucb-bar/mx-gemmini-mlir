@@ -8,6 +8,7 @@ scratchpad handoff.
 from __future__ import annotations
 
 from .command_ir import Command, Operand
+from .nicolas_attention_shape import DenseAttentionShape
 from .target_profile import require_compute
 
 
@@ -20,7 +21,9 @@ STAGES = {
 
 
 def lower_dense_attention_matrix(profile: dict, stage: str,
-                                 *, scale_sink: str = "scale_sink") -> tuple[Command, ...]:
+                                 *, scale_sink: str = "scale_sink",
+                                 shape: DenseAttentionShape = DenseAttentionShape(32, 64, 64)
+                                 ) -> tuple[Command, ...]:
     """Encode source `mm`'s config, scale, and LOOP_WS_SPAD packets."""
     if stage not in STAGES:
         raise ValueError("dense attention matrix stage must be qk or pv")
@@ -32,7 +35,14 @@ def lower_dense_attention_matrix(profile: dict, stage: str,
         raise ValueError("dense attention matrix requires the DIM16 MX+VPU Rocket profile")
     require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
                     activation_projection="direct", weight_projection="direct")
-    spec = STAGES[stage]
+    shape.validate(profile)
+    spec = ({"m": shape.sq, "n": shape.sk, "k": shape.d,
+             "a_row": 0, "b_end_row": shape.score_row,
+             "output_row": shape.score_row, "weight_half": 0}
+            if stage == "qk" else
+            {"m": shape.sq, "n": shape.d, "k": shape.sk,
+             "a_row": shape.probability_row, "b_end_row": shape.output_row,
+             "output_row": shape.output_row, "weight_half": 1})
     return lower_spad_matmul(
         profile, m=spec["m"], n=spec["n"], k=spec["k"],
         a_row=spec["a_row"], b_end_row=spec["b_end_row"],
