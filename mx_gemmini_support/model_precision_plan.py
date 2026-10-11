@@ -65,9 +65,14 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         ordinary = site["source_op"] in {"matmul", "addmm"}
         aligned = shape[1] % 32 == 0 and shape[2] % 32 == 0
         preferred = "mxfp4" if ordinary else "mxfp8"
-        selected = (preferred if aligned and _legal(profile, preferred) else
+        preferred_legal = _legal(profile, preferred)
+        can_pad = (ordinary and profile["geometry"]["mesh_rows"] == 16 and
+                   profile["geometry"]["mesh_columns"] == 16 and
+                   preferred_legal)
+        selected = (preferred if (aligned or can_pad) and preferred_legal else
                     "mxfp8" if aligned else "host")
         padded = [_round_up(value) for value in shape]
+        needs_padding = selected != "host" and not aligned
         sites.append({
             "region_id": site["region_id"], "fqn": site["fqn"],
             "source_op": site["source_op"], "shape_mnk": shape,
@@ -76,14 +81,19 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
             "mx_padded_shape_mnk": padded,
             "output_crop_mn": shape[:2],
             "post_padding_candidate_format": (
-                preferred if _legal(profile, preferred) else "host"),
-            "status": ("requires_bf16_operand_cast_and_lowering"
+                preferred if preferred_legal else "host"),
+            "status": ("requires_bf16_cast_padding_and_executable_lowering"
+                       if needs_padding and site["element_type"] == "bf16" else
+                       "requires_padding_quantization_and_executable_lowering"
+                       if needs_padding else
+                       "requires_bf16_operand_cast_and_lowering"
                        if selected != "host" and site["element_type"] == "bf16" else
                        "requires_quantization_and_executable_lowering" if selected != "host"
                        else "requires_shape_or_host_lowering"),
             "element_type": site["element_type"],
             "excluded_addmm_bias_epilogue": site["source_op"] == "addmm",
-            "reason": (None if selected == preferred else
+            "reason": ("N_or_K_requires_zero_padding" if needs_padding else
+                       None if selected == preferred else
                        "profile_lacks_preferred_mode" if aligned else
                        "K_or_N_is_not_32_aligned"),
         })

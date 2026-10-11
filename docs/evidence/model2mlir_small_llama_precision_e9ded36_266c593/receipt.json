@@ -7,11 +7,10 @@
   "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
   "opaque_operation_count": 0,
   "precision_counts": {
-    "host": 6,
-    "mxfp4": 9,
+    "mxfp4": 15,
     "mxfp8": 4
   },
-  "precision_proposal_sha256": "af19d14c8cc1e0421dc3067fb3ab11e3cdb14a7f4f838c8276e56ae4e915ae56",
+  "precision_proposal_sha256": "e5029134f3d8e9a2715df57e46da6604faa027e53ade8ba6acc81f98e69633b9",
   "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
   "schema": "mx_gemmini.small_llama_latest_model2mlir_precision_probe.v1",
   "status": "frontend_and_precision_proposal_only_no_executable_model",

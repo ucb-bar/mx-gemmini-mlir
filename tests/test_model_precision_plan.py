@@ -19,6 +19,7 @@ ARCHIVE = ROOT / "docs/evidence/full_model_compile_preflight_a042643_748b984"
 PROFILES = ROOT / "profiles/gemmini-mx-cleanup-266c593"
 VPU = load_profile(PROFILES / "MxE4M3Fp4VpuGemminiRocketConfig.json")
 ALL = load_profile(PROFILES / "MxGemminiRocketConfig.json")
+DIM8 = load_profile(PROFILES / "MxDim8AllAsymGemminiRocketConfig.json")
 
 
 @pytest.mark.parametrize("model,attention_pairs", [
@@ -79,7 +80,7 @@ def test_current_small_llama_attention_and_padding_proposal() -> None:
     plan = build_model_precision_plan(worklist, VPU)
     assert worklist == json.loads((archive / "worklist.json").read_text())
     assert plan == json.loads((archive / "precision_proposal.json").read_text())
-    assert plan["selected_format_counts"] == {"host": 6, "mxfp4": 9, "mxfp8": 4}
+    assert plan["selected_format_counts"] == {"mxfp4": 15, "mxfp8": 4}
     attention = [site for site in plan["sites"] if site["role"] in {"qk", "pv"}]
     assert [(site["fqn"], site["role"]) for site in attention] == [
         ("blocks.0.attn", "qk"), ("blocks.0.attn", "pv"),
@@ -92,8 +93,9 @@ def test_current_small_llama_attention_and_padding_proposal() -> None:
     assert len(mlp) == 6
     assert mlp["blocks.0.mlp.g"]["mx_padded_shape_mnk"] == [32, 352, 128]
     assert mlp["blocks.0.mlp.dn"]["mx_padded_shape_mnk"] == [32, 128, 352]
-    assert all(site["selected_format"] == "host" and
-               site["post_padding_candidate_format"] == "mxfp4"
+    assert all(site["selected_format"] == "mxfp4" and
+               site["reason"] == "N_or_K_requires_zero_padding" and
+               site["status"] == "requires_padding_quantization_and_executable_lowering"
                for site in mlp.values())
     incomplete = dict(worklist)
     incomplete["other_contraction_regions"] = [site for site in
@@ -102,3 +104,14 @@ def test_current_small_llama_attention_and_padding_proposal() -> None:
     assert not any(site["role"] in {"qk", "pv"} and
                    site["fqn"] == "blocks.0.attn"
                    for site in incomplete_plan["sites"])
+
+
+def test_unqualified_mesh_does_not_inherit_dim16_padding_selection() -> None:
+    archive = ROOT / "docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593"
+    graph = gzip.decompress((archive / "small_llama.model2mlir.mlir.gz").read_bytes()).decode()
+    worklist = build_model2mlir_worklist(graph, DIM8)
+    plan = build_model_precision_plan(worklist, DIM8)
+    gate = next(site for site in plan["sites"] if site["fqn"] == "blocks.0.mlp.g")
+    assert gate["mx_padded_shape_mnk"] == [32, 352, 128]
+    assert gate["selected_format"] == "host"
+    assert gate["reason"] == "K_or_N_is_not_32_aligned"

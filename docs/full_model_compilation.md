@@ -94,7 +94,7 @@ The [current model2MLIR small LLaMA probe](evidence/model2mlir_small_llama_preci
 uses revision `e9ded36` and captures a complete two-layer random-weight
 LLaMA-style graph with zero opaque operations. Its precision proposal now
 recognizes both `attn` QK/PV pairs as FP8 sites and records the padded MX
-shapes needed for the six unaligned MLP matmuls. It remains a frontend and
+shapes and FP4 placement for the six unaligned MLP matmuls. It remains a frontend and
 placement probe, with no whole-model executable.
 
 The [first padded FP4 MLP archive](evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md)

@@ -9,8 +9,7 @@
   "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
   "schema": "mx_gemmini.model2mlir_precision_proposal.v1",
   "selected_format_counts": {
-    "host": 6,
-    "mxfp4": 9,
+    "mxfp4": 15,
     "mxfp8": 4
   },
   "sites": [
@@ -137,17 +136,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_6",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         344,
         128
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",
@@ -164,17 +163,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_7",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         344,
         128
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",
@@ -191,17 +190,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_8",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         128,
         344
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",
@@ -326,17 +325,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_15",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         344,
         128
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",
@@ -353,17 +352,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_16",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         344,
         128
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",
@@ -380,17 +379,17 @@
       ],
       "post_padding_candidate_format": "mxfp4",
       "preferred_format": "mxfp4",
-      "reason": "K_or_N_is_not_32_aligned",
+      "reason": "N_or_K_requires_zero_padding",
       "region_id": "matmul_17",
       "role": "regular_matmul",
-      "selected_format": "host",
+      "selected_format": "mxfp4",
       "shape_mnk": [
         8,
         128,
         344
       ],
       "source_op": "matmul",
-      "status": "requires_shape_or_host_lowering"
+      "status": "requires_padding_quantization_and_executable_lowering"
     },
     {
       "element_type": "f32",

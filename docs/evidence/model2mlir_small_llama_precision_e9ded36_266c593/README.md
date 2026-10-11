@@ -10,21 +10,21 @@ model2MLIR revision, loader and graph digests, and MX+VPU profile.
 The [worklist](worklist.json) identifies 19 contractions: 15 rank-two
 linear matmuls and four batched attention matmuls. The [precision
 proposal](precision_proposal.json) assigns FP4 to nine aligned linear
-matmuls and FP8 to both QK/PV pairs under `blocks.0.attn` and
-`blocks.1.attn`. Six MLP matmuls remain on the host in this proposal
-because dimension 344 needs MX padding. The plan records the required
-32×352×128 or 32×128×352 padded shapes and FP4 as the candidate after
-padding. Each 8×8 attention score also needs a 32×32 hardware tile; the
+matmuls and the six MLP matmuls that need 32-element padding. It assigns
+FP8 to both QK/PV pairs under `blocks.0.attn` and `blocks.1.attn`. The
+plan records 32×352×128 or 32×128×352 as the padded MLP shapes. Each
+8×8 attention score also needs a 32×32 hardware tile; the
 proposal records those padded QK/PV shapes.
 
 All six padding candidates are now compiled and executed as separate FP4
 programs: see the [first layer-0 gate/down archive](../model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md)
 and the [remaining four-site archive](../model2mlir_small_llama_remaining_mlp_fp4_e9ded36_266c593/README.md).
 
-This is **not an executable whole-model MX program**. It makes the next
-lowering steps explicit: quantize and pad the six MLP sites, lower batched
-FP8 attention with masked/cropped lanes, then connect all operators and
-model state to an executable host/MX program. No FPGA was used.
+This is **not an executable whole-model MX program**. The next steps are to
+connect the six separately qualified MLP projections with their nonlinear
+operations, lower batched FP8 attention with masked/cropped lanes, and route
+the remaining operators and model state into an executable host/MX program.
+No FPGA was used.
 
 Regenerate with the pinned model2MLIR checkout, its Python environment,
 and the MX RTL checkout:

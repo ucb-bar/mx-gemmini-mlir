@@ -6,6 +6,12 @@ archived model2MLIR `a042643` portable graphs and pinned Gemmini RTL
 SHA-256. The two profiles are `MxE4M3Fp4VpuGemminiRocketConfig` (MX+VPU) and
 `MxGemminiRocketConfig` (MX without VPU).
 
+These are historical proposal snapshots from before DIM16 N/K zero-padding
+was qualified. The current planner also selects FP4 for legal padded rank-two
+matmuls, so rerunning the command below can produce different placement
+counts. The [current small LLaMA proposal](../model2mlir_small_llama_precision_e9ded36_266c593/README.md)
+records that updated policy and its Spike evidence.
+
 The current requested policy is FP8 E4M3 with E8M0 scales as the general MX
 baseline, FP4 E2M1 with E8M0 scales for aligned rank-two matrix
 multiplications (including Q/K/V/O linear projections), and FP8 E4M3 for

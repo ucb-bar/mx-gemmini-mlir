@@ -68,7 +68,7 @@ def main() -> None:
     if (worklist["contraction_region_count"] != 19 or
             roles != {"qk": 2, "pv": 2} or
             plan["selected_format_counts"] !=
-            {"host": 6, "mxfp4": 9, "mxfp8": 4}):
+            {"mxfp4": 15, "mxfp8": 4}):
         raise ValueError("small LLaMA precision proposal differs")
     out.mkdir(parents=True)
     (out / "small_llama.model2mlir.mlir.gz").write_bytes(gzip.compress(graph, mtime=0))
@@ -92,7 +92,7 @@ def main() -> None:
     }
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                   sort_keys=True) + "\n")
-    print("small LLaMA: 19 contractions, FP4 9, FP8 attention 4, host 6")
+    print("small LLaMA: 19 contractions, FP4 15, FP8 attention 4")
 
 
 if __name__ == "__main__":
