@@ -36,6 +36,8 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
     by_name = {entry["name"]: entry for entry in inventory["entries"]}
     assert any("nicolas_mem_bw_physical_public_4a24503" in ref["path"]
                for ref in by_name["mx_mem_bw"]["evidence_references"])
+    assert any("nicolas_mem_bw_typed_public_9cb0e4a" in ref["path"]
+               for ref in by_name["mx_mem_bw"]["evidence_references"])
     assert any("nicolas_plain_fp8_chain64_public_52e6132" in ref["path"]
                for ref in by_name["matmul_tiled_fp8_64x64_chain"]["evidence_references"])
     assert any("nicolas_fp8_native_dram_public_1ef6f85" in ref["path"] for ref in

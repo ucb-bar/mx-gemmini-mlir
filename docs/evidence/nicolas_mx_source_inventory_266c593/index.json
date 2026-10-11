@@ -1665,6 +1665,13 @@
           "schema": "mx_gemmini.nicolas_mem_bw_physical_object_spike.v1",
           "sha256": "b4e204d7565ac0aa08025d4924327f7ff11d07df7a2aafeeaa3116d9c8bc8818",
           "status": "source_memory_phases_and_full_mvout_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_mem_bw_typed_object_spike.v1",
+          "sha256": "fe25b40aaebd3f23107e40b91a5c376f6055a406b7836de5f201912db539b682",
+          "status": "source_memory_phases_and_full_mvout_matched_on_pinned_spike"
         }
       ],
       "family": "other_mx",

@@ -1,0 +1,1 @@
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/../lib/gcc/riscv64-unknown-elf/13.2.0/../../../../riscv64-unknown-elf/bin/ld: warning: /scratch/agustin/projects/mx-gemmini-mlir/docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/source_full/program.elf has a LOAD segment with RWX permissions

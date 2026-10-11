@@ -21,6 +21,11 @@ binding, and the external binary bundle supplies the bytes.
 `physical_program.lower_bound_source` schedules configuration, scale/LUT DMA,
 operand movement, K-wave compute, and BF16 or supported quantized readout for
 complete output tiles.
+Typed `memory_setup`, `dma_matrix`, `load_scales`, and
+`spad_mvout_linear` ops also lower Nicolas's seven-phase
+[MX memory benchmark](docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/README.md)
+to a data-free RV64 object. Its full 16 KiB readout matches the source on
+pinned Spike; timing and performance-counter parity remain unqualified.
 `tools.qualify_source_mx` builds a standalone RV64 ELF and compares every
 output on Nicolas's pinned Spike extension. The latest
 [complete MX GEMM source roster](docs/compiled_mx_pipeline.md#latest-complete-radiance-mx-gemm-roster)

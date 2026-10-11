@@ -10,6 +10,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_mem_bw_physical_public_4a24503_266c593"
+TYPED = ROOT / "docs/evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593"
 
 
 def _sha(path: Path) -> str:
@@ -58,3 +59,28 @@ def test_source_and_generated_memory_phases_match_entire_mvout() -> None:
             ("setup", "a64", "b16", "scale", "mvout")] == [2, 17, 65, 1, 65]
     assert [physical["phases"][name][-1]["funct"] for name in
             ("a64", "b16", "scale", "mvout")] == [2, 2, 27, 3]
+
+
+def test_typed_memory_replay_preserves_object_and_full_output() -> None:
+    old = json.loads((EVIDENCE / "receipt.json").read_text())
+    receipt = json.loads((TYPED / "receipt.json").read_text())
+    physical = json.loads((TYPED / "physical_program.json").read_text())
+    assert receipt["schema"] == "mx_gemmini.nicolas_mem_bw_typed_object_spike.v1"
+    assert receipt["compiler_revision"] == (
+        "9cb0e4a8762a19065e53c63c1cc5a45c97e0460c")
+    assert receipt["source_sha256"] == old["source_sha256"]
+    assert receipt["status"] == old["status"]
+    assert receipt["typed_mlir_sha256"] == _sha(TYPED / "typed_memory.mlir")
+    assert receipt["native_verify_log_sha256"] == _sha(TYPED / "native_verify.log")
+    assert physical["schema"] == "mx_gemmini.nicolas_memory_phases.v2"
+    assert physical["typed_mlir_sha256"] == receipt["typed_mlir_sha256"]
+    assert receipt["object_sha256"] == old["object_sha256"] == _sha(TYPED / "mx_issue.o")
+    assert receipt["issuer_c_sha256"] == old["issuer_c_sha256"] == _sha(
+        TYPED / "mx_issue.c")
+    source_output = _output((TYPED / "source_full/spike.log").read_bytes())
+    compiled_output = _output((TYPED / "compiled/spike.log").read_bytes())
+    assert source_output == compiled_output
+    assert len(source_output) == receipt["compared_mvout_bytes"] == 16384
+    assert (hashlib.sha256(source_output).hexdigest() ==
+            receipt["source_full_output_sha256"] ==
+            receipt["compiled_output_sha256"] == old["compiled_output_sha256"])

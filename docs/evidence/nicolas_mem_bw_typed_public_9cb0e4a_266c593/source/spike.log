@@ -1,0 +1,10 @@
+MEMBW A_cold_64B bytes=16384 cyc=217 B/c=75.50 reqs=256 avg_inflight=0.0 lat_req=0 | ld_active=5115 ld_dma_wait=3641 ld_dma_bp=3946 rdma_active=3194 xact_full=4868 rdma_tl_wait=4223 rs_full=4660
+MEMBW A_warm_64B bytes=16384 cyc=217 B/c=75.50 reqs=256 avg_inflight=0.0 lat_req=0 | ld_active=4881 ld_dma_wait=5084 ld_dma_bp=5703 rdma_active=4886 xact_full=3792 rdma_tl_wait=3933 rs_full=4574
+MEMBW B_cold_16B bytes=16384 cyc=649 B/c=25.24 reqs=1024 avg_inflight=0.0 lat_req=0 | ld_active=15478 ld_dma_wait=17102 ld_dma_bp=16918 rdma_active=14783 xact_full=17517 rdma_tl_wait=15505 rs_full=17384
+MEMBW B_warm_16B bytes=16384 cyc=649 B/c=25.24 reqs=1024 avg_inflight=0.0 lat_req=0 | ld_active=17850 ld_dma_wait=15042 ld_dma_bp=17144 rdma_active=15305 xact_full=15298 rdma_tl_wait=15676 rs_full=16135
+MEMBW scale_cold bytes=512 cyc=9 B/c=56.88 reqs=64 avg_inflight=0.0 lat_req=0 | ld_active=80 ld_dma_wait=202 ld_dma_bp=25 rdma_active=386 xact_full=46 rdma_tl_wait=227 rs_full=255
+MEMBW scale_warm bytes=512 cyc=6 B/c=85.33 reqs=64 avg_inflight=0.0 lat_req=0 | ld_active=48 ld_dma_wait=248 ld_dma_bp=156 rdma_active=198 xact_full=380 rdma_tl_wait=15 rs_full=139
+MEMBW mvout_16B bytes=16384 cyc=336 B/c=48.76 reqs=1024 avg_inflight=0.0 lat_req=0 | ld_active=13077 ld_dma_wait=16120 ld_dma_bp=15994 rdma_active=14516 xact_full=17630 rdma_tl_wait=17804 rs_full=15747
+mx_mem_bw PASSED (0 mismatches in spot check)
+Gemmini extension configured with:
+    dim = 16
