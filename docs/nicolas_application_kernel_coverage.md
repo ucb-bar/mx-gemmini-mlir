@@ -27,5 +27,14 @@ qualification must exercise that profile-dependent scheduling. The source
 readme records 8,192-row and 16,384-row scratchpad plans for its full
 attention kernel.
 
+The first reduced TinyLlama head is 8×8. Its current 16×32 QK/PV padding
+contains only **16 E8M0 blocks** (`M × N / 32`), while the selected
+`spad_requant` command requires a multiple of 32 blocks. The compiler
+correctly rejects requantization of that shape. A single on-device head
+therefore needs at least **32×32** score and probability storage, with
+the masked and padded lanes checked numerically, or a validated head-packing
+plan. Merely concatenating the three current objects would omit this
+necessary layout change.
+
 All gates in this table are compiler, source, and Spike checks. FPGA execution
 is outside the current qualification scope.
