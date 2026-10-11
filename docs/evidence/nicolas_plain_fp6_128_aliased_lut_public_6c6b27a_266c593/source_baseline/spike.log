@@ -1,0 +1,3 @@
+fp6 WS matmul test PASSED (no mismatches).
+Gemmini extension configured with:
+    dim = 16
