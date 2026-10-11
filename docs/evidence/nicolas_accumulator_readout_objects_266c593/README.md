@@ -32,6 +32,10 @@ archive](../nicolas_dram_mvout_spike_fallback_public_6ed3fcb_266c593/README.md)
 checks the complete BF16 outputs for the scratchpad route only. No FPGA
 numerical parity, cycle overlap, or exact source-hardware command equivalence
 is claimed here.
+The [controlled constant-scale candidate replay](../nicolas_accumulator_constant_scale_divergence_266c593/README.md)
+quantifies the scale-value gap: 24,516 of 24,576 BF16 values differ from the
+source-header goldens when the generated objects receive the hardware branch's
+constant `0x7f` scale bytes under the isolated Spike model.
 
 Reproduce each object with the pinned RTL, RISC-V toolchain, and built native
 `mx-gemmini-opt`:

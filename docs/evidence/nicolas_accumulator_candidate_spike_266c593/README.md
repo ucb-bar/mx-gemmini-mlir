@@ -26,6 +26,11 @@ compiler object uses RoCC scale uploads and, for 128×128×256, a two-wave K
 schedule. No RTL, FPGA, exact source-hardware command, or timing parity is
 claimed.
 
+The [constant-scale replay](../nicolas_accumulator_constant_scale_divergence_266c593/README.md)
+uses the same generated objects and candidate extension but changes their
+runtime A/B scales to the `0x7f` values written by Nicolas's hardware branch.
+It diverges from the source-header goldens in 24,516 of 24,576 BF16 values.
+
 To replay from a fresh checkout with the pinned RTL and RISC-V tools:
 
 ```bash

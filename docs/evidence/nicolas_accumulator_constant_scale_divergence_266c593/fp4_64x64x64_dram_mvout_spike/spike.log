@@ -1,0 +1,12 @@
+mismatch 0,0 got c098 want bcd0
+mismatch 0,1 got c010 want bca0
+mismatch 0,2 got be80 want bb00
+mismatch 0,3 got 4088 want 3c88
+mismatch 0,4 got c0a8 want bd28
+mismatch 0,5 got 4000 want 3b80
+mismatch 0,6 got bf00 want bbe0
+mismatch 0,7 got c088 want bca8
+compiled Nicolas FP4 64 cubed DRAM-mvout accumulator candidate constant scales: 4036 mismatches / 4096 BF16 values
+Gemmini extension configured with:
+    dim = 16
+*** FAILED *** (tohost = 1)

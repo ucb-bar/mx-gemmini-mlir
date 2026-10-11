@@ -83,6 +83,11 @@ executes those three generated objects and matches all 24,576 BF16 source
 goldens under a candidate MX shadow-result readout model. This checks the
 compiler's addresses and complete results under that model; it does not
 qualify RTL or FPGA packing, MMIO scale behavior, or timing.
+A [controlled constant-scale replay](evidence/nicolas_accumulator_constant_scale_divergence_266c593/README.md)
+passes the hardware branch's `0x7f` scale values to the same generated objects.
+Under the same candidate Spike model, 24,516 of 24,576 outputs then differ
+from the source-header goldens. The header-golden pass therefore cannot be
+used to infer numerical parity for Nicolas's constant-scale hardware branch.
 The [three same-format LUT source programs](evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/README.md)
 also pass through public data-free objects with their dedicated E2M3, E4M3,
 and E5M2 Rocket profiles, matching 12,288 BF16 values. Three more
