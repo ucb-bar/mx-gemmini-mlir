@@ -329,14 +329,21 @@ requested precision policy on this captured input. It is not a Gemmini MX
 mesh oracle and does not establish full-model parity or quality acceptance.
 
 The selected MX+VPU profile declares a direct BF16 rank-two row-softmax
-capability. The captured prefill/prefix softmax regions expose f32 rank-three
-inputs: 22 TinyLlama `[1,32,128]`, 28 Qwen `[1,12,128]`, 26 Gemma
-`[1,8,128]`, and 28 SmolVLA regions (12 `[1,12,1024]`, 16 `[1,15,113]`).
-Thus none is a direct match for that VPU contract. The compiler still needs an
-explicit flatten/cast boundary, tiled VPU softmax schedule, restored tensor
-shape, and a quantized numerical reference before those regions can be moved
-from the host. A profile containing a VPU does not mean these operations are
-currently executed on it.
+capability. Inspection of the actual last `linalg.generic` in each captured
+softmax region shows f32 rank-four **score/probability tensors**: 22 TinyLlama
+`[1,32,128,160]`, 28 Qwen `[1,12,128,160]`, 26 Gemma `[1,8,128,160]`,
+and 28 SmolVLA regions (12 `[1,12,1024,1024]`, 16 `[1,15,113,113]`).
+The reduced maximum and sum intermediates have rank three; they are not the
+softmax input or output. None is a direct match for the VPU contract. The
+compiler needs an explicit f32-to-BF16 conversion, row flattening, width
+padding and tiling where required, a BF16-to-f32 result boundary, and a
+numerical acceptance policy before moving these regions from the host. A
+profile containing a VPU does not mean these operations execute on it today.
+The [four-checkpoint boundary audit](evidence/four_checkpoint_vpu_softmax_inventory_20261011/README.md)
+binds all 104 softmax regions to the selected profile and their source MLIR
+hashes. New stage builds record this audit and refuse silent host fallback
+for any directly matching BF16 rank-two region while integrated VPU lowering
+is absent.
 
 For a prepared graph, the standalone builder is:
 

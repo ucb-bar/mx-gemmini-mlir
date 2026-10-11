@@ -1,0 +1,89 @@
+{
+  "models": {
+    "deepseek_r1_distill_qwen_1_5b": {
+      "boundary_shapes": [
+        {
+          "dtype": "f32",
+          "regions": 28,
+          "shape": [
+            1,
+            12,
+            128,
+            160
+          ]
+        }
+      ],
+      "capture_model_sha256": "d98737d6c812f467f7b6280d37291f868fae6b3cd66d6ad5d46e891e67b1cabb",
+      "direct_profile_matches_unlowered": 0,
+      "host_owned_regions": 28,
+      "softmax_regions": 28
+    },
+    "gemma2_2b": {
+      "boundary_shapes": [
+        {
+          "dtype": "f32",
+          "regions": 26,
+          "shape": [
+            1,
+            8,
+            128,
+            160
+          ]
+        }
+      ],
+      "capture_model_sha256": "f75f264f2dd13928175d01c2f3f339f2ec98f545de4ed75a7a28caca6a00eb01",
+      "direct_profile_matches_unlowered": 0,
+      "host_owned_regions": 26,
+      "softmax_regions": 26
+    },
+    "smolvla": {
+      "boundary_shapes": [
+        {
+          "dtype": "f32",
+          "regions": 12,
+          "shape": [
+            1,
+            12,
+            1024,
+            1024
+          ]
+        },
+        {
+          "dtype": "f32",
+          "regions": 16,
+          "shape": [
+            1,
+            15,
+            113,
+            113
+          ]
+        }
+      ],
+      "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+      "direct_profile_matches_unlowered": 0,
+      "host_owned_regions": 28,
+      "softmax_regions": 28
+    },
+    "tinyllama": {
+      "boundary_shapes": [
+        {
+          "dtype": "f32",
+          "regions": 22,
+          "shape": [
+            1,
+            32,
+            128,
+            160
+          ]
+        }
+      ],
+      "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+      "direct_profile_matches_unlowered": 0,
+      "host_owned_regions": 22,
+      "softmax_regions": 22
+    }
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.four_checkpoint_vpu_softmax_inventory.v1",
+  "status": "all_model_softmax_host_owned_conversion_required"
+}
