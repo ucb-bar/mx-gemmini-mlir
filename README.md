@@ -139,7 +139,10 @@ separate blocked `attn_flash` kernels and full models remain open.
 The [four-block `attn_flash_mid` source oracle](docs/evidence/nicolas_attn_flash_mid_source_baseline_a042643_0344bcb/README.md)
 pins an unmodified Spike run and reproducible full-output hash for the next
 compiler target. Its online softmax and pipelined block schedule still need
-typed lowering.
+typed lowering. The compiler now verifies and encodes pitched matrix DMA,
+gated weight-scale loads, and managed scale-half scratchpad matmuls as typed
+operations for this pinned MX+VPU RTL. The complete blocked schedule and its
+compiler-generated Spike parity remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

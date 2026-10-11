@@ -7,6 +7,8 @@ scratchpad handoff.
 
 from __future__ import annotations
 
+import re
+
 from .command_ir import Command, Operand
 from .nicolas_attention_shape import DenseAttentionShape
 from .target_profile import require_compute
@@ -89,4 +91,57 @@ def lower_spad_matmul(profile: dict, *, m: int, n: int, k: int,
         command(24, a, b_end),
         # SPAD_STORE=0x38 skips loop DMA and drains BF16 into scratchpad.
         command(8, 0, (c << 32) | 0x200 | 0x38),
+    )
+
+
+def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
+                              a_row: int, b_end_row: int, output_row: int,
+                              weight_half: int, activation_half: int,
+                              scale_sink: str) -> tuple[Command, ...]:
+    """Issue one managed-scale loop after its gated weight-scale load.
+
+    The caller owns the schedule: it must place a gated load for the same
+    weight half before this config and may prefetch the next half afterward.
+    The selected RTL's managed config waits for the load to land and releases
+    the other half; the loop alternates accumulator halves with INC_ACC.
+    """
+    if (profile.get("source", {}).get("gemmini_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            profile.get("transport") != "rocket_rocc" or
+            profile.get("geometry", {}).get("mesh_rows") != 16 or
+            profile.get("geometry", {}).get("mesh_columns") != 16 or
+            not profile.get("resources", {}).get("vpu") or
+            not profile.get("resources", {}).get("spad_requant")):
+        raise ValueError("managed MX scratchpad matmul needs the pinned DIM16 MX+VPU RTL")
+    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+                    activation_projection="direct", weight_projection="direct")
+    if (any(type(value) is not int for value in
+            (m, n, k, a_row, b_end_row, output_row, weight_half, activation_half)) or
+            any(value <= 0 or value % 16 for value in (m, n, k)) or
+            max(m, n, k) >= 1 << 16 or
+            weight_half not in (0, 1) or activation_half not in (0, 1) or
+            not isinstance(scale_sink, str) or
+            re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", scale_sink) is None):
+        raise ValueError("managed MX scratchpad matmul geometry or scale half is unsupported")
+    b_start = b_end_row - k * n // 16
+    limit = profile["resources"]["scratchpad_bytes"] // 16
+    spans = ((a_row, a_row + m * k // 16),
+             (b_start, b_end_row),
+             (output_row, output_row + m * n * 2 // 16))
+    if (any(start < 0 or start >= end or end > limit for start, end in spans) or
+            any(left[0] < right[1] and right[0] < left[1]
+                for i, left in enumerate(spans) for right in spans[i + 1:]) or
+            max(a_row, b_end_row, output_row) >= 1 << 14):
+        raise ValueError("managed MX scratchpad matmul placement overlaps or exceeds profile")
+    i, j, kk = m // 16, n // 16, k // 16
+    return (
+        Command(26, Operand(buffer=scale_sink, address_mask=(1 << 33) - 1,
+                            or_bits=(weight_half << 61) | (activation_half << 60) |
+                                    (kk << 51) | (j << 42) | (i << 33)),
+                Operand(immediate=(1 << 18) | (1 << 17) | 1)),
+        Command(9, Operand(immediate=0),
+                Operand(immediate=(kk << 32) | (j << 16) | i)),
+        Command(24, Operand(immediate=a_row), Operand(immediate=b_end_row)),
+        Command(8, Operand(immediate=0),
+                Operand(immediate=(output_row << 32) | 0x200 | 0x100 | 0x38)),
     )

@@ -483,13 +483,17 @@ LogicalResult DmaMatrixOp::verify() {
   auto cols = getMatrixCols();
   auto burst = getBurstCols();
   auto row = getSpadRow();
+  int64_t stride = getSourceStrideBytes().value_or(cols);
+  int64_t offset = getSourceOffsetBytes().value_or(0);
   if (rows <= 0 || rows % 16 || cols <= 0 || cols % 16 ||
+      stride < cols || stride >= (int64_t{1} << 32) ||
+      offset < 0 || offset % 16 || offset % stride + cols > stride ||
       burst < 16 || burst % 16 || burst >= (1 << 16) ||
       cols % burst || row < 0 || row % 16 ||
       static_cast<int64_t>(row) + static_cast<int64_t>(rows) * cols / 16 > 16384)
     return emitOpError("requires complete DIM16 DMA tiles and a 14-bit scratchpad span");
   return verifyMemoryBinding(*this, getBuffer(),
-                             static_cast<int64_t>(rows) * cols);
+                             offset + static_cast<int64_t>(rows - 1) * stride + cols);
 }
 
 LogicalResult MemorySetupOp::verify() {
@@ -531,6 +535,17 @@ LogicalResult ScaleDmaOp::verify() {
   return verifyMemoryBinding(*this, getBuffer(), (rows - 1) * pitch + rowBytes);
 }
 
+LogicalResult GatedScaleDmaOp::verify() {
+  int64_t rowBytes = getRowBytes(), rows = getRows(), pitch = getPitchBytes();
+  int64_t destination = getDestinationByte();
+  if (rowBytes <= 0 || rowBytes % 8 || rows <= 0 || rows >= 256 ||
+      pitch < rowBytes || pitch >= (int64_t{1} << 24) ||
+      (destination != 0 && destination != 4096) || getSelector() != 1 ||
+      rows * rowBytes > 4096)
+    return emitOpError("gated weight scale DMA needs one 4096-byte managed half");
+  return verifyMemoryBinding(*this, getBuffer(), (rows - 1) * pitch + rowBytes);
+}
+
 LogicalResult MatmulSpadOp::verify() {
   if (failed(verifyMemoryIds(*this))) return failure();
   int64_t m = getM(), n = getN(), k = getK();
@@ -543,6 +558,36 @@ LogicalResult MatmulSpadOp::verify() {
       bStart < 0 || bEnd > c || c + m * n * 2 / 16 > (1 << 14) ||
       (half != 0 && half != 1))
     return emitOpError("scratchpad matmul needs complete DIM16 tiles and nonoverlapping rows");
+  auto sink = getScaleSinkBuffer();
+  if (sink.empty()) return emitOpError("requires a scale sink buffer name");
+  for (size_t i = 0; i < sink.size(); ++i) {
+    char ch = sink[i];
+    bool alpha = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+    bool digit = ch >= '0' && ch <= '9';
+    if (!alpha && (i == 0 || !digit))
+      return emitOpError("scale sink buffer must be a C identifier");
+  }
+  return success();
+}
+
+LogicalResult ManagedMatmulSpadOp::verify() {
+  if (failed(verifyMemoryIds(*this))) return failure();
+  int64_t m = getM(), n = getN(), k = getK();
+  int64_t a = getActivationRow(), bEnd = getWeightEndRow(), c = getOutputRow();
+  int64_t bStart = bEnd - k * n / 16;
+  int64_t aEnd = a + m * k / 16, cEnd = c + m * n * 2 / 16;
+  auto overlaps = [](int64_t l0, int64_t l1, int64_t r0, int64_t r1) {
+    return l0 < r1 && r0 < l1;
+  };
+  if (m <= 0 || n <= 0 || k <= 0 || m % 16 || n % 16 || k % 16 ||
+      m >= (1 << 16) || n >= (1 << 16) || k >= (1 << 16) ||
+      a < 0 || bStart < 0 || c < 0 || aEnd > (1 << 14) ||
+      bEnd > (1 << 14) || cEnd > (1 << 14) ||
+      overlaps(a, aEnd, bStart, bEnd) || overlaps(a, aEnd, c, cEnd) ||
+      overlaps(bStart, bEnd, c, cEnd) ||
+      (getWeightHalf() != 0 && getWeightHalf() != 1) ||
+      (getActivationHalf() != 0 && getActivationHalf() != 1))
+    return emitOpError("managed scratchpad matmul needs disjoint DIM16 spans and legal scale halves");
   auto sink = getScaleSinkBuffer();
   if (sink.empty()) return emitOpError("requires a scale sink buffer name");
   for (size_t i = 0; i < sink.size(); ++i) {

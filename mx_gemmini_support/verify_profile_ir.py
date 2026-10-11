@@ -61,8 +61,9 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     context.load_dialect(Func)
     module = Parser(context, mlir_text).parse_module()
     digest = profile_sha256(profile)
-    attention_program = (_text_attr(module, "mx.attention_program_schema") ==
-                         "mx_gemmini.nicolas_dense_attention_program.v1")
+    attention_program = _text_attr(module, "mx.attention_program_schema") in {
+        "mx_gemmini.nicolas_dense_attention_program.v1",
+        "mx_gemmini.nicolas_flash_attention_program.v1"}
     if _text_attr(module, "mx.profile_sha256") != digest:
         raise ValueError("MX module profile digest differs from selected target profile")
     payload_digest = _text_attr(module, "mx.payload_manifest_sha256")
@@ -155,7 +156,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             continue
         if name in {"mx_gemmini.memory_setup", "mx_gemmini.dma_matrix",
                     "mx_gemmini.load_scales", "mx_gemmini.spad_mvout_linear",
-                    "mx_gemmini.scale_dma"}:
+                    "mx_gemmini.scale_dma", "mx_gemmini.gated_scale_dma"}:
             from .memory_phase import (lower_linear_spad_mvout,
                                        lower_matrix_mvin, lower_scale_load,
                                        lower_strided_scale_dma)
@@ -183,18 +184,23 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                         profile, buffer="src", matrix_rows=_int_attr(op, "matrix_rows"),
                         matrix_cols=_int_attr(op, "matrix_cols"),
                         burst_cols=_int_attr(op, "burst_cols"),
-                        spad_row=_int_attr(op, "spad_row"))
+                        spad_row=_int_attr(op, "spad_row"),
+                        source_stride_bytes=(_int_attr(op, "source_stride_bytes")
+                                             if "source_stride_bytes" in op.attributes else None),
+                        source_offset_bytes=(_int_attr(op, "source_offset_bytes")
+                                             if "source_offset_bytes" in op.attributes else 0))
                 elif name == "mx_gemmini.load_scales":
                     phase = lower_scale_load(
                         profile, buffer="src", payload_bytes=_int_attr(op, "payload_bytes"),
                         operand=_text_attr(op, "scale_target"))
-                elif name == "mx_gemmini.scale_dma":
+                elif name in {"mx_gemmini.scale_dma", "mx_gemmini.gated_scale_dma"}:
                     phase = lower_strided_scale_dma(
                         profile, buffer="src", row_bytes=_int_attr(op, "row_bytes"),
                         rows=_int_attr(op, "rows"),
                         pitch_bytes=_int_attr(op, "pitch_bytes"),
                         destination_byte=_int_attr(op, "destination_byte"),
-                        selector=_int_attr(op, "selector"))
+                        selector=_int_attr(op, "selector"),
+                        gated=name == "mx_gemmini.gated_scale_dma")
                 else:
                     phase = lower_linear_spad_mvout(
                         profile, buffer="dst", total_bytes=_int_attr(op, "total_bytes"),
@@ -204,8 +210,9 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     raise ValueError(f"{name}: runtime buffer is too small")
             memory_phases += 1
             continue
-        if name == "mx_gemmini.matmul_spad":
-            from .nicolas_attention_matrix import lower_spad_matmul
+        if name in {"mx_gemmini.matmul_spad", "mx_gemmini.managed_matmul_spad"}:
+            from .nicolas_attention_matrix import (lower_managed_spad_matmul,
+                                                   lower_spad_matmul)
             source = _text_attr(module, "mx.source_sha256")
             if (not attention_program or source is None or
                     re.fullmatch(r"[0-9a-f]{64}", source) is None or
@@ -213,13 +220,17 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     _text_attr(op, "profile_sha256") != digest or
                     not _text_attr(op, "site_id") or op.operands or op.results):
                 raise ValueError("MX scratchpad matmul source or profile binding differs")
-            lower_spad_matmul(
+            lower = (lower_managed_spad_matmul if name ==
+                     "mx_gemmini.managed_matmul_spad" else lower_spad_matmul)
+            kwargs = {"activation_half": _int_attr(op, "activation_half")} if name == \
+                "mx_gemmini.managed_matmul_spad" else {}
+            lower(
                 profile, m=_int_attr(op, "m"), n=_int_attr(op, "n"),
                 k=_int_attr(op, "k"), a_row=_int_attr(op, "activation_row"),
                 b_end_row=_int_attr(op, "weight_end_row"),
                 output_row=_int_attr(op, "output_row"),
                 weight_half=_int_attr(op, "weight_half"),
-                scale_sink=_text_attr(op, "scale_sink_buffer"))
+                scale_sink=_text_attr(op, "scale_sink_buffer"), **kwargs)
             spad_matmuls += 1
             continue
         for local, module_name in (("contract_sha256", "mx.contract_sha256"),

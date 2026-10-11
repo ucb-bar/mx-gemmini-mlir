@@ -40,13 +40,20 @@ def _capacity(profile: Mapping) -> tuple[int, int]:
 
 def lower_matrix_mvin(profile: Mapping, *, buffer: str, matrix_rows: int,
                       matrix_cols: int, burst_cols: int,
-                      spad_row: int) -> MemoryPhase:
+                      spad_row: int, source_stride_bytes: int | None = None,
+                      source_offset_bytes: int = 0) -> MemoryPhase:
     """Load a row-major byte matrix in DIM16-high, 16..DMA-max-wide tiles."""
     spad_limit, maximum = _capacity(profile)
+    if source_stride_bytes is None:
+        source_stride_bytes = matrix_cols
     if (any(type(n) is not int for n in
-            (matrix_rows, matrix_cols, burst_cols, spad_row)) or
+            (matrix_rows, matrix_cols, burst_cols, spad_row,
+             source_stride_bytes, source_offset_bytes)) or
             matrix_rows <= 0 or matrix_rows % 16 or
             matrix_cols <= 0 or matrix_cols % 16 or
+            source_stride_bytes < matrix_cols or
+            source_offset_bytes < 0 or source_offset_bytes % 16 or
+            source_offset_bytes % source_stride_bytes + matrix_cols > source_stride_bytes or
             burst_cols < 16 or burst_cols % 16 or
             burst_cols > maximum or matrix_cols % burst_cols or
             spad_row < 0 or spad_row % 16 or
@@ -54,20 +61,22 @@ def lower_matrix_mvin(profile: Mapping, *, buffer: str, matrix_rows: int,
         raise ValueError("MX matrix DMA shape or scratchpad placement is unsupported")
     # The source instruction accepts 16-bit cols/rows but a single DMA row
     # cannot exceed the profile's actual maximum transfer width.
-    if burst_cols >= 1 << 16 or matrix_cols >= 1 << 32:
+    if (burst_cols >= 1 << 16 or matrix_cols >= 1 << 32 or
+            source_stride_bytes >= 1 << 32):
         raise ValueError("MX matrix DMA width exceeds the command field")
     tiles_per_row = matrix_cols // 16
-    commands = [_config_ld(matrix_cols)]
+    commands = [_config_ld(source_stride_bytes)]
     for i in range(matrix_rows // 16):
         for k in range(0, tiles_per_row, burst_cols // 16):
-            offset = i * 16 * matrix_cols + k * 16
+            offset = source_offset_bytes + i * 16 * source_stride_bytes + k * 16
             row = spad_row + (i * tiles_per_row + k) * 16
             commands.append(_cmd(
                 2, Operand(buffer=buffer, byte_offset=offset),
                 (16 << 48) | (burst_cols << 32) | row))
     requests = matrix_rows * matrix_cols // burst_cols
+    minimum = source_offset_bytes + (matrix_rows - 1) * source_stride_bytes + matrix_cols
     return MemoryPhase(tuple(commands), matrix_rows * matrix_cols,
-                       requests, matrix_rows * matrix_cols)
+                       requests, minimum)
 
 
 def lower_linear_spad_mvout(profile: Mapping, *, buffer: str, total_bytes: int,
@@ -111,12 +120,14 @@ def lower_scale_load(profile: Mapping, *, buffer: str,
 
 def lower_strided_scale_dma(profile: Mapping, *, buffer: str,
                             row_bytes: int, rows: int, pitch_bytes: int,
-                            destination_byte: int, selector: int) -> MemoryPhase:
+                            destination_byte: int, selector: int,
+                            gated: bool = False) -> MemoryPhase:
     """Load contiguous E8M0 scale rows from a pitched DRAM matrix."""
     _capacity(profile)
     config = profile.get("resources", {}).get("scale_mem_config", {})
     capacity = config.get("size_bytes", 0)
-    if (any(type(value) is not int for value in
+    if (type(gated) is not bool or
+            any(type(value) is not int for value in
             (row_bytes, rows, pitch_bytes, destination_byte, selector)) or
             row_bytes <= 0 or row_bytes % 8 or rows <= 0 or rows >= 1 << 8 or
             pitch_bytes < row_bytes or pitch_bytes >= 1 << 24 or
@@ -124,10 +135,17 @@ def lower_strided_scale_dma(profile: Mapping, *, buffer: str,
             destination_byte >= 1 << 13 or selector not in (0, 1) or
             destination_byte + rows * row_bytes > capacity // 2):
         raise ValueError("MX strided scale DMA exceeds selected scale memory or command fields")
+    half = capacity // 4
+    if gated and (selector != 1 or destination_byte not in (0, half) or
+                  rows * row_bytes > half or
+                  profile.get("source", {}).get("gemmini_revision") !=
+                  "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
+        raise ValueError("gated MX weight scale load needs a complete selected managed half")
     command = _cmd(
         27, Operand(buffer=buffer, address_mask=(1 << 40) - 1,
                     or_bits=pitch_bytes << 40),
-        (rows << 46) | (destination_byte << 33) | (selector << 32) | row_bytes)
+        (int(gated) << 54) | (rows << 46) | (destination_byte << 33) |
+        (selector << 32) | row_bytes)
     return MemoryPhase((command,), rows * row_bytes, rows,
                        (rows - 1) * pitch_bytes + row_bytes)
 
