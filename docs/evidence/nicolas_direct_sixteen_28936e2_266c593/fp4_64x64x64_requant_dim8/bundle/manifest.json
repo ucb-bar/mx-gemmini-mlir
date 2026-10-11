@@ -1,0 +1,135 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "output_format": "fp4_e2m1",
+  "output_oracle": "nicolas_fp4_e3m1_e2m1_v1",
+  "precision": "FP4",
+  "profile_sha256": "29da32388a217e55e50764bd2503a2b733f815ff34053d4f95a8a397269d2b9d",
+  "resources": {
+    "activation": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "6f3551082e366e7728d5ec5842eb1dc4f698d5861460d6cb8c55f2678f60622e",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "b1edf7059293569f75723d096e33280bd0e0f55de7b365d958637ef2fb5b751c",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "9cade2be63df4756a57a261d6fe3986975597181951106df45607dee0cb5f435",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "golden_output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "golden_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "cf53b1dbee275b3fd0ca8f72bcbc42cc725dbba3579744eb8a5bc15230b48551",
+      "shape": [
+        64,
+        2
+      ]
+    },
+    "nicolas_fp4": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "nicolas_fp4.bin",
+      "layout": "packed_even_odd_m_fp4_e2m1",
+      "sha256": "a79041da88442c38acb54d20d800eeaa4688112f1030ab1d903538a6237272a7",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "nicolas_output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "nicolas_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "cf53b1dbee275b3fd0ca8f72bcbc42cc725dbba3579744eb8a5bc15230b48551",
+      "shape": [
+        64,
+        2
+      ]
+    },
+    "output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "da9174383af0b2add7af423ad9ad1d34dadfbfcfb637a4bb1cbfb1f1f4112c19",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "source_fp4_packed": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "source_fp4_packed.bin",
+      "layout": "packed_even_odd_m_fp4_e2m1",
+      "sha256": "a79041da88442c38acb54d20d800eeaa4688112f1030ab1d903538a6237272a7",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "weight": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "ffba3d14bedef24d450ca02b3727e85c770a2ca3a3348bdb951e7f40bd89f19d",
+      "shape": [
+        64,
+        32
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "451673350eac0f42301db13826b6893e887cd778bfc2c57ddc054dcd933f8651",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "f410f6d70d03ca40dff626fff0b26987e69a88339d07dd77ef4f67cf22712095",
+  "source_header_sha256": "252364c3b867cabb0dc555174cb90278bab2107d18ddcfbf00e46ca36f275e14",
+  "source_quant_golden_convention": "source_header",
+  "source_quant_header_format": "packed_fp4_e2m1",
+  "tile_mnk": [
+    64,
+    64,
+    64
+  ]
+}

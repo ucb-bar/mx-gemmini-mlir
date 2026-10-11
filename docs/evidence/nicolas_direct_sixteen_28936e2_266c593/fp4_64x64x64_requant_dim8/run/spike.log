@@ -1,0 +1,3 @@
+compiled Nicolas FP4 64x64x64 requant: 0 packed-byte mismatches / 2048, 0 scale mismatches / 128
+Gemmini extension configured with:
+    dim = 8
