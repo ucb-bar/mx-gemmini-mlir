@@ -8,6 +8,19 @@ using Merlin's target-neutral linalg inventory. Each model row binds the
 capture `model.mlir` SHA256 and the selected profile SHA256 without publishing
 checkpoint data or token inputs.
 
+Regenerate a summary from receipt-bound captures with
+[`tools/audit_merlin_vpu_softmax.py`](../../../tools/audit_merlin_vpu_softmax.py):
+
+```sh
+python -m tools.audit_merlin_vpu_softmax \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --model tinyllama=/path/to/tiny_prefill/model.mlir \
+  --model deepseek_r1_distill_qwen_1_5b=/path/to/qwen_prefill/model.mlir \
+  --model gemma2_2b=/path/to/gemma_prefill/model.mlir \
+  --model smolvla=/path/to/smol_prefix_encode/model.mlir \
+  --out /path/to/new/summary.json
+```
+
 All 104 captured regions have f32 rank-four input and output tensors, so none
 matches the selected profile's direct BF16 rank-two VPU softmax contract. They
 remain explicitly host-owned. The rank-three tensors previously reported for

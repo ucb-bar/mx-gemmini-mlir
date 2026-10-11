@@ -84,6 +84,6 @@
     }
   },
   "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
-  "schema": "mx_gemmini.four_checkpoint_vpu_softmax_inventory.v1",
+  "schema": "mx_gemmini.model_vpu_softmax_inventory.v1",
   "status": "all_model_softmax_host_owned_conversion_required"
 }
