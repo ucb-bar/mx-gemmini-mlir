@@ -1,0 +1,18 @@
+{
+  "baseline_logits_sha256": "9f67bb9337850fe9eb610756c3c7d952c2a59d2261f34908a3097d3f37a00b41",
+  "baseline_top_token": 279,
+  "capacity": 160,
+  "capture_inputs_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "capture_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "fp4_linear_sites": 155,
+  "fp8_attention_calls": 44,
+  "layers": 22,
+  "model2mlir_revision": "d7c42d5d86c436404d96318de41438bb73a9f0bc",
+  "proxy_logits_sha256": "9bf845826360ad59223b414fabb99facab8b9b249e29575a30efb429d4a75720",
+  "proxy_max_abs_vs_unquantized": 11.758407592773438,
+  "proxy_mean_abs_vs_unquantized": 2.067028760910034,
+  "proxy_top_token": 29871,
+  "schema": "mx_gemmini.tinyllama_operand_fake_quant.v1",
+  "status": "diagnostic_not_mesh_oracle"
+}

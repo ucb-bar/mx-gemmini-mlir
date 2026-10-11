@@ -320,6 +320,14 @@ completed on Nicolas's Spike with 19 MX calls and a full-logit digest. Its
 output differs from the unquantized PyTorch golden; no quantized numerical
 reference has been established for that run.
 
+The [full-checkpoint TinyLlama operand fake-quant diagnostic](evidence/tiny_full_checkpoint_operand_fake_quant_20261011/README.md)
+reproduces the captured unquantized logits exactly, then exercises all 155
+proposed FP4 Linear sites and 44 FP8 attention matmuls with PyTorch BF16
+arithmetic. Its top token changes from 279 to 29871 and its maximum absolute
+logit change is 11.7584. This indicates a substantial accuracy shift for the
+requested precision policy on this captured input. It is not a Gemmini MX
+mesh oracle and does not establish full-model parity or quality acceptance.
+
 The selected MX+VPU profile declares a direct BF16 rank-two row-softmax
 capability. The captured prefill/prefix softmax regions expose f32 rank-three
 inputs: 22 TinyLlama `[1,32,128]`, 28 Qwen `[1,12,128]`, 26 Gemma
