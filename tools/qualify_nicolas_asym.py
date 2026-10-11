@@ -76,7 +76,10 @@ def main() -> None:
     if args.symmetric_lut_requant and (
             args.symmetric_lut not in {"e2m3", "e4m3", "e5m2"} or not args.physical or
             (args.symmetric_lut in {"e2m3", "e5m2"} and
-             (args.mesh_dim, args.source_shape) != (16, "64x64")) or
+             (args.mesh_dim, args.source_shape) not in {
+                 (16, "64x64"), (8, "64x64"), (32, "64x64"),
+                 (32, "128x128"), (32, "64x128x128"),
+                 (32, "128x64x128")}) or
             (args.symmetric_lut == "e4m3" and
              (args.mesh_dim, args.source_shape) not in {
                 (16, "64x64"), (8, "64x64"), (32, "64x64"),
@@ -140,16 +143,16 @@ def main() -> None:
             source_name = (f"matmul_tiled_{precision}_{name}{lut_suffix}_64x64"
                            f"{'_requant' if args.symmetric_lut_requant else ''}.c")
             header_name = f"matmul_data_mx_lut_{name}_64x64.h"
-        elif name == "e4m3" and (args.mesh_dim, args.source_shape) in {
+        elif (args.mesh_dim, args.source_shape) in {
                 (32, "64x64"), (8, "64x64"), (8, "128x128"),
                 (32, "128x128"), (32, "64x128x128"),
                 (32, "128x64x128")}:
             dim_suffix = f"_dim{args.mesh_dim}"
             nonrequant = "_nonrequant" if args.mesh_dim == 8 and not args.symmetric_lut_requant else ""
-            source_name = (f"matmul_tiled_fp8_e4m3_lut_{args.source_shape}"
+            source_name = (f"matmul_tiled_{precision}_{name}{lut_suffix}_{args.source_shape}"
                            f"{'_requant' if args.symmetric_lut_requant else nonrequant}"
                            f"{dim_suffix}.c")
-            header_name = f"matmul_data_mx_lut_e4m3_{args.source_shape}{dim_suffix}.h"
+            header_name = f"matmul_data_mx_lut_{name}_{args.source_shape}{dim_suffix}.h"
         else:
             parser.error("same-format LUT source shape and mesh are not registered")
         source = software / "bareMetalC" / source_name

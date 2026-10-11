@@ -289,12 +289,52 @@ _FORMAT_TOKEN = {
 
 def _source_variant(source: Path, header: Path, profile: dict,
                     header_text: str) -> dict:
-    """Derive the source layout and legal mode from one named DIM16 test."""
+    """Derive a named source's layout and legal mode from its pinned inputs."""
     pinned = _VARIANTS.get(source.name)
     if pinned is not None:
         if header.name != pinned["header"]:
             raise ValueError("selected asymmetric source/header pair differs")
         return pinned
+    symmetric = re.fullmatch(
+        r"matmul_tiled_(fp6_e2m3_lut|fp8_e5m2)_"
+        r"(64x64|128x128|64x128x128|128x64x128)_requant(?:_dim(8|32))?\.c",
+        source.name)
+    if symmetric is not None:
+        kind, shape_name, dim_suffix = symmetric.groups()
+        fmt = "fp6_e2m3" if kind == "fp6_e2m3_lut" else "fp8_e5m2"
+        fmt_suffix = "e2m3" if fmt == "fp6_e2m3" else "e5m2"
+        dim = int(dim_suffix) if dim_suffix else 16
+        expected_header = (f"matmul_data_mx_lut_{fmt_suffix}_{shape_name}"
+                           f"{'_dim' + dim_suffix if dim_suffix else ''}.h")
+        if header.name != expected_header:
+            raise ValueError("selected symmetric LUT source/header pair differs")
+        shape_parts = [int(part) for part in shape_name.split("x")]
+        m, n, k = ((shape_parts[0], shape_parts[1], shape_parts[1])
+                   if len(shape_parts) == 2 else shape_parts)
+        cells = [cell for cell in profile["legal_compute"] if
+                 cell["activation_format"] == fmt and cell["weight_format"] == fmt and
+                 cell["activation_projection"] == "lut" and
+                 cell["weight_projection"] == "lut"]
+        if len(cells) != 1:
+            raise ValueError("selected symmetric LUT source has no unique profile mode")
+        source_text = source.read_text()
+        dest_match = re.search(r"\bint SPAD_DEST = ([^;]+);", source_text)
+        if dest_match is None or dest_match.group(1) not in {
+                "0", "128", "tiles_I * tiles_K * DIM"}:
+            raise ValueError("selected symmetric LUT source has unknown output placement")
+        dest = ("activation_footprint" if dest_match.group(1) ==
+                "tiles_I * tiles_K * DIM" else int(dest_match.group(1)))
+        words = 3 if fmt == "fp6_e2m3" else 4
+        return {
+            "header": header.name, "cell": cells[0], "mesh_dim": dim,
+            "shape": [m, n, k], "activation_array": f"A_in_hw[{m // 2}][{k}]",
+            "use_lut": True, "lut_words_per_line": words,
+            "lut_entry_bits": 2 * words,
+            "lut_lines_by_array": {"A_lut": m // 2, "B_lut": n // 2,
+                                   "C_lut": m // 2},
+            "output_format": fmt, "output_projection": "lut",
+            "quant_spad_dest": dest,
+        }
     match = re.fullmatch(r"matmul_tiled_asym_([a-z0-9]+)_([a-z0-9]+)_64x64(?:_dim(8|32))?\.c",
                          source.name)
     if match is None:
