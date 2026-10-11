@@ -163,6 +163,18 @@ kernel evidence, but it must not become a second whole-model graph frontend.
 The catalog builder belongs in this target package, but it must implement
 Merlin's generic `DeviceRouting.catalog_builder` interface.
 
+Merlin's catalog route now has an explicit, target-neutral source dtype
+conversion contract on its `cx/mx-catalog-source-abi` task branch. That admits
+an f32 model contraction only when the catalog names a real target-native
+datapath and a hashed numeric policy. The current MX provider contract still
+declares no executable compute-unit datapaths, so the conversion route cannot
+be enabled for MX until the selected Nicolas profile exports those facts into
+Merlin. This is target profile integration work, not a reason to label f32 as
+an MX hardware dtype. `runtime_quant.c` also still mixes reusable numerical
+encoding with MX physical packing; the generic numerical part should be
+promoted to Merlin when its shared C runtime API is established, while the
+target's byte layout and command ABI stay here.
+
 The [current model2MLIR small LLaMA probe](evidence/model2mlir_small_llama_precision_e9ded36_266c593/README.md)
 uses revision `e9ded36` and captures a complete two-layer random-weight
 LLaMA-style graph with zero opaque operations. Its precision proposal now
