@@ -109,6 +109,11 @@ replaces all eight vector and requant calls with a data-free RV64 object and
 matches the source's four stage hashes on Spike. The QK and PV matrix calls
 are still issued by the source driver. The same issuer can now be built with
 `python -m tools.compile_object` from the archived typed graph and binding.
+The [generated QK and PV compute replay](docs/evidence/nicolas_attn_vpu_generated_compute_e9ded36_0344bcb/README.md)
+also replaces both matrix command helpers with data-free RV64 issuers and
+matches all four source stage hashes twice on Spike. Its source driver still
+owns operand/scale transfers and readouts; the matrix stages need a connected
+typed lowering.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
