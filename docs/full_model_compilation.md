@@ -198,8 +198,24 @@ target's different activation and weight packing orders. A [pinned Spike
 replay](evidence/runtime_f32_projection_spike_266c593/README.md) pads two
 small-LLaMA FP4 MLP projections at runtime, converts their live f32 operands,
 calls the data-free issuer, and checks all 15,360 BF16 readouts. These are
-separate projections; the dense three-pointer catalog wrapper and complete
-model link remain open.
+separate projections; the prepared-model catalog and complete model link
+remain open.
+
+`mx_gemmini_support.dense_kernel.emit_dense_f32_kernel` now emits the target
+side of Merlin's dense `lhs, rhs, out` f32 ABI for one already qualified MX
+schedule. It pads the live operands, packs FP4/FP8 codes and E8M0 scales,
+calls the six-pointer RoCC issuer, and copies the logical region of its BF16
+readout back to f32. Its buffers have static storage, so this first adapter
+is serial and non-reentrant. The compiler must account for its workspace
+against the selected memory map before admitting a full model. The
+`--dense-adapter` mode of `tools.qualify_runtime_f32_projection_spike` checks
+the generated entry on Nicolas's pinned Spike against the archived projection
+reference. On the gate and down sites, respectively, all 2,752 and 1,024
+logical f32 outputs matched the archived BF16 reference. Each run also
+combined the adapter, issuer, and quantizer into a relocatable RV64 object
+without unresolved symbols. This is the per-kernel ABI handoff. A
+prepared-model catalog builder, exact source-operation bindings, and session
+execution remain open.
 
 ## Compiler ownership
 

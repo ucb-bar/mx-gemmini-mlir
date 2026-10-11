@@ -14,6 +14,7 @@ from pathlib import Path
 import subprocess
 
 from mx_gemmini_support.physical_program import lower_bound_source
+from mx_gemmini_support.dense_kernel import emit_dense_f32_kernel
 from mx_gemmini_support.runtime_issuer import emit_runtime_issuer
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -87,9 +88,34 @@ int main(void) {{
 '''
 
 
+def _dense_driver(site: str, *, m: int, n: int, logical_m: int,
+                  logical_n: int) -> str:
+    return f'''#include <stdint.h>
+#include <stdio.h>
+extern const float raw_a[], raw_b[];
+extern const uint16_t golden_bf16[];
+void mx_dense_projection(const float *, const float *, float *);
+static float output[{logical_m} * {logical_n}] __attribute__((aligned(64)));
+int main(void) {{
+  mx_dense_projection(raw_a, raw_b, output);
+  unsigned mismatches = 0;
+  for (unsigned row = 0; row < {logical_m}; ++row)
+    for (unsigned col = 0; col < {logical_n}; ++col) {{
+      union {{ float value; uint32_t bits; }} word;
+      word.value = output[row * {logical_n} + col];
+      mismatches += word.bits != ((uint32_t)golden_bf16[row * {n} + col] << 16);
+    }}
+  printf("dense f32 MX {site}: %u output mismatches\\n", mismatches);
+  return mismatches != 0;
+}}
+'''
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--site", choices=("g", "dn"), required=True)
+    parser.add_argument("--dense-adapter", action="store_true",
+                        help="run the generated three-pointer catalog adapter")
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
@@ -131,11 +157,22 @@ def main() -> None:
         "expected_bs": archive / "bundle/weight_scales.bin",
         "golden_bf16": archive / "bundle/golden_bf16.bin",
     }
+    if args.dense_adapter:
+        assembly = {name: path for name, path in assembly.items()
+                    if name in {"raw_a", "raw_b", "golden_bf16"}}
     (out / "mx_data.S").write_text(_assembly_data(assembly))
     (out / "mx_issue.c").write_text(issuer.source)
-    (out / "mx_driver.c").write_text(_driver(site, m=m, n=n, k=k,
-                                            logical_m=logical_m, logical_n=logical_n,
-                                            logical_k=logical_k))
+    dense_kernel = None
+    if args.dense_adapter:
+        dense_kernel = emit_dense_f32_kernel(
+            issuer, (logical_m, logical_n, logical_k), symbol="mx_dense_projection")
+        (out / "mx_dense.c").write_text(dense_kernel.source)
+        driver = _dense_driver(site, m=m, n=n, logical_m=logical_m,
+                               logical_n=logical_n)
+    else:
+        driver = _driver(site, m=m, n=n, k=k, logical_m=logical_m,
+                         logical_n=logical_n, logical_k=logical_k)
+    (out / "mx_driver.c").write_text(driver)
     bench = software / "riscv-tests/benchmarks/common"
     cc = riscv / "bin/riscv64-unknown-elf-gcc"
     flags = ["-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DMX_ROCKET", "-DBAREMETAL=1",
@@ -145,6 +182,8 @@ def main() -> None:
              "-I", str(software / "riscv-tests"), "-I", str(software / "riscv-tests/env"),
              "-I", str(software), "-I", str(bench)]
     sources = [out / name for name in ("mx_issue.c", "mx_driver.c", "mx_data.S")]
+    if args.dense_adapter:
+        sources.append(out / "mx_dense.c")
     sources += [ROOT / "mx_gemmini_support/runtime_quant.c"]
     sources += sorted(bench.glob("*.c")) + sorted(bench.glob("*.S"))
     objects = []
@@ -153,6 +192,21 @@ def main() -> None:
         _run([str(cc), *flags, "-c", str(source), "-o", str(obj)],
              out=out, log=f"compile_{index}.log")
         objects.append(obj)
+    candidate = None
+    if args.dense_adapter:
+        candidate = out / "mx_dense_catalog_candidate.o"
+        ld = riscv / "bin/riscv64-unknown-elf-ld"
+        nm = riscv / "bin/riscv64-unknown-elf-nm"
+        _run([str(ld), "-r", "-o", str(candidate),
+              *(str(objects[index]) for index in (0, 3, 4))],
+             out=out, log="combine_dense.log")
+        symbols = subprocess.run([str(nm), "--format=posix", "--extern-only",
+                                  str(candidate)], capture_output=True, text=True, check=True)
+        rows = [line.split() for line in symbols.stdout.splitlines()]
+        if (sum(len(row) >= 2 and row[0] == "mx_dense_projection" and
+                row[1].upper() == "T" for row in rows) != 1 or
+                any(len(row) < 2 or row[1].upper() == "U" for row in rows)):
+            raise ValueError("dense MX relocatable object has unresolved or missing symbols")
     elf = out / "live_f32.elf"
     _run([str(cc), "-nostdlib", "-nostartfiles", "-static", "-T", str(bench / "test.ld"),
           *(str(obj) for obj in objects), "-lm", "-lgcc", "-o", str(elf)],
@@ -168,14 +222,18 @@ def main() -> None:
                           "--extension=gemmini", str(elf)], cwd=out, text=True,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     (out / "spike.log").write_text(run.stdout)
-    expected = f"live f32 MX {site}: 0 pack mismatches, 0 BF16/f32 mismatches"
+    expected = (f"dense f32 MX {site}: 0 output mismatches" if args.dense_adapter else
+                f"live f32 MX {site}: 0 pack mismatches, 0 BF16/f32 mismatches")
     passed = run.returncode == 0 and expected in run.stdout
     receipt = {
-        "schema": "mx_gemmini.runtime_f32_projection_spike.v1",
-        "status": "live_f32_to_fp4_projection_matched" if passed else "failed",
+        "schema": ("mx_gemmini.dense_f32_projection_spike.v1" if args.dense_adapter else
+                   "mx_gemmini.runtime_f32_projection_spike.v1"),
+        "status": ("dense_three_pointer_fp4_projection_matched" if args.dense_adapter else
+                   "live_f32_to_fp4_projection_matched") if passed else "failed",
         "scope": "one model2MLIR small-LLaMA MLP projection, runtime f32 padding and MX quantization",
         "site": site, "logical_shape_mnk": [logical_m, logical_n, logical_k],
-        "padded_shape_mnk": [m, n, k], "compared_bf16_outputs": m * n,
+        "padded_shape_mnk": [m, n, k],
+        "compared_bf16_outputs": (logical_m * logical_n if args.dense_adapter else m * n),
         "profile_sha256": issuer.profile_sha256,
         "payload_manifest_sha256": issuer.payload_manifest_sha256,
         "issuer_sha256": _sha(out / "mx_issue.c"),
@@ -183,6 +241,13 @@ def main() -> None:
         "elf_sha256": _sha(elf), "spike_log_sha256": _sha(out / "spike.log"),
         "spike_exit_code": run.returncode,
     }
+    if dense_kernel is not None:
+        receipt["dense_adapter_sha256"] = _sha(out / "mx_dense.c")
+        receipt["static_workspace_bytes"] = dense_kernel.workspace_bytes
+        receipt["abi"] = {"symbol": dense_kernel.symbol,
+                          "argument_order": ["lhs", "rhs", "out"],
+                          "dtypes": ["f32", "f32", "f32"]}
+        receipt["relocatable_object_sha256"] = _sha(candidate)
     (out / "runtime_f32_projection_spike.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, sort_keys=True))
     if not passed:
