@@ -220,8 +220,9 @@ LogicalResult ReadoutQuantizedOp::verify() {
   if (projection && (projection.getValue() != "lut" ||
                      (output.getValue() != "fp8_e4m3" &&
                       output.getValue() != "fp8_e5m2" &&
-                      output.getValue() != "fp6_e2m3")))
-    return emitOpError("supports LUT output projection only for E2M3, E4M3, or E5M2");
+                      output.getValue() != "fp6_e2m3" &&
+                      output.getValue() != "fp6_e3m2")))
+    return emitOpError("supports LUT output projection only for E2M3, E3M2, E4M3, or E5M2");
   auto codes = dyn_cast<RankedTensorType>(getCodes().getType());
   auto scales = dyn_cast<RankedTensorType>(getScales().getType());
   if (!codes || !scales || codes.getRank() != 2 || scales.getRank() != 2 ||

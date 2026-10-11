@@ -45,10 +45,10 @@ def main() -> None:
                         help="activation format and projection in Nicolas's DIM16 source test")
     parser.add_argument("--source-suffix", type=str,
                         help="Nicolas source pair, for example e2m3_e5m2")
-    parser.add_argument("--symmetric-lut", choices=("e2m3", "e4m3", "e5m2"),
+    parser.add_argument("--symmetric-lut", choices=("e2m3", "e3m2", "e4m3", "e5m2"),
                         help="Nicolas's named same-format LUT source test")
     parser.add_argument("--symmetric-lut-requant", action="store_true",
-                        help="select the packed E4M3 LUT-index output source")
+                        help="select the packed same-format LUT-index output source")
     parser.add_argument("--symmetric-fp4", action="store_true",
                         help="Nicolas's named direct FP4 by FP4 BF16 source test")
     parser.add_argument("--generated-mode", choices=(
@@ -74,7 +74,12 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
     if args.symmetric_lut_requant and (
-            args.symmetric_lut not in {"e2m3", "e4m3", "e5m2"} or not args.physical or
+            args.symmetric_lut not in {"e2m3", "e3m2", "e4m3", "e5m2"} or not args.physical or
+            (args.symmetric_lut == "e3m2" and
+             (args.mesh_dim, args.source_shape) not in {
+                 (8, "64x64"), (32, "64x64"),
+                 (32, "128x128"), (32, "64x128x128"),
+                 (32, "128x64x128")}) or
             (args.symmetric_lut in {"e2m3", "e5m2"} and
              (args.mesh_dim, args.source_shape) not in {
                  (16, "64x64"), (8, "64x64"), (32, "64x64"),
@@ -136,7 +141,7 @@ def main() -> None:
         if args.source_suffix:
             parser.error("same-format LUT source selection does not take a source suffix")
         name = args.symmetric_lut
-        precision = "fp6" if name == "e2m3" else "fp8"
+        precision = "fp6" if name in {"e2m3", "e3m2"} else "fp8"
         lut_suffix = "_lut" if name != "e5m2" else ""
         suffix = f"{name}_{name}"
         if args.mesh_dim == 16 and args.source_shape == "64x64":

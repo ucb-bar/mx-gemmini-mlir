@@ -8,6 +8,7 @@ import pytest
 
 from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
                                                            E2M3_E2M3_CELL,
+                                                           E3M2_E3M2_CELL,
                                                            E4M3_E4M3_CELL,
                                                            E5M2_E5M2_CELL,
                                                            bind_asymmetric_payload,
@@ -87,6 +88,18 @@ def test_e2m3_lut_index_readout_uses_semantic_output_format():
     }
     bound = specialize_handoff(CAPTURE, profile, recipe)
     assert 'output_format = "fp6_e2m3"' in bound
+    assert 'output_projection = "lut"' in bound
+    assert verify_ir(bound, profile)["contracts"] == 1
+
+
+def test_e3m2_lut_index_readout_uses_semantic_output_format():
+    profile = _profile("MxDim32AllGemminiRocketConfig")
+    recipe = _recipe(profile) | {
+        "compute": E3M2_E3M2_CELL.copy(),
+        "source_layout": {"output_format": "fp6_e3m2", "output_projection": "lut"},
+    }
+    bound = specialize_handoff(CAPTURE, profile, recipe)
+    assert 'output_format = "fp6_e3m2"' in bound
     assert 'output_projection = "lut"' in bound
     assert verify_ir(bound, profile)["contracts"] == 1
 

@@ -281,7 +281,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             output = _text_attr(op, "output_format")
             projection = _text_attr(op, "output_projection")
             lut_output = (projection == "lut" and output in {
-                              "fp6_e2m3", "fp8_e4m3", "fp8_e5m2"} and
+                              "fp6_e2m3", "fp6_e3m2", "fp8_e4m3", "fp8_e5m2"} and
                           profile["resources"]["lut"] and
                           profile["resources"]["requantizer"] and
                           any(cell["activation_format"] == output and

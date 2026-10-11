@@ -58,7 +58,8 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     quant_bytes = m * n // (2 if packed_lut or packed_fp4 or packed_fp6 else 1)
     if quantized:
         if packed_lut:
-            if (program.output_format not in {"fp8_e4m3", "fp8_e5m2", "fp6_e2m3"} or
+            if (program.output_format not in {"fp8_e4m3", "fp8_e5m2",
+                                                  "fp6_e2m3", "fp6_e3m2"} or
                     len(resources.get("golden_lut_indices", b"")) != quant_bytes or
                     len(resources.get("golden_output_scales", b"")) != m * n // 32 or
                     "output_lut" not in resources):
@@ -246,8 +247,8 @@ int main(void) {{
             "nicolas_fp4_e3m1_e2m1_from_source_bf16" if packed_fp4 else
             "nicolas_mxquant_po2_rne_from_source_bf16")
         if packed_lut:
-            receipt["source_quant_code_format"] = "packed_e4m3_lut_index"
-            receipt["target_quant_code_format"] = "packed_e4m3_lut_index"
+            receipt["source_quant_code_format"] = f"packed_{program.output_format}_lut_index"
+            receipt["target_quant_code_format"] = f"packed_{program.output_format}_lut_index"
         elif packed_fp6:
             receipt["source_quant_code_format"] = "packed_fp6_lut_index"
             receipt["target_quant_code_format"] = "packed_fp6_lut_index"

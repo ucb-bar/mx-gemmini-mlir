@@ -58,6 +58,10 @@ E2M3_E2M3_CELL = {"activation_format": "fp6_e2m3",
                   "activation_projection": "lut",
                   "weight_format": "fp6_e2m3",
                   "weight_projection": "lut", "pe_mode": 9}
+E3M2_E3M2_CELL = {"activation_format": "fp6_e3m2",
+                  "activation_projection": "lut",
+                  "weight_format": "fp6_e3m2",
+                  "weight_projection": "lut", "pe_mode": 4}
 E4M3_E4M3_CELL = {"activation_format": "fp8_e4m3",
                   "activation_projection": "lut",
                   "weight_format": "fp8_e4m3",
@@ -296,13 +300,14 @@ def _source_variant(source: Path, header: Path, profile: dict,
             raise ValueError("selected asymmetric source/header pair differs")
         return pinned
     symmetric = re.fullmatch(
-        r"matmul_tiled_(fp6_e2m3_lut|fp8_e5m2)_"
+        r"matmul_tiled_(fp6_e2m3_lut|fp6_e3m2_lut|fp8_e5m2)_"
         r"(64x64|128x128|64x128x128|128x64x128)_requant(?:_dim(8|32))?\.c",
         source.name)
     if symmetric is not None:
         kind, shape_name, dim_suffix = symmetric.groups()
-        fmt = "fp6_e2m3" if kind == "fp6_e2m3_lut" else "fp8_e5m2"
-        fmt_suffix = "e2m3" if fmt == "fp6_e2m3" else "e5m2"
+        fmt = ("fp6_e2m3" if kind == "fp6_e2m3_lut" else
+               "fp6_e3m2" if kind == "fp6_e3m2_lut" else "fp8_e5m2")
+        fmt_suffix = fmt.split("_")[1]
         dim = int(dim_suffix) if dim_suffix else 16
         expected_header = (f"matmul_data_mx_lut_{fmt_suffix}_{shape_name}"
                            f"{'_dim' + dim_suffix if dim_suffix else ''}.h")
@@ -324,7 +329,7 @@ def _source_variant(source: Path, header: Path, profile: dict,
             raise ValueError("selected symmetric LUT source has unknown output placement")
         dest = ("activation_footprint" if dest_match.group(1) ==
                 "tiles_I * tiles_K * DIM" else int(dest_match.group(1)))
-        words = 3 if fmt == "fp6_e2m3" else 4
+        words = 3 if fmt.startswith("fp6_") else 4
         return {
             "header": header.name, "cell": cells[0], "mesh_dim": dim,
             "shape": [m, n, k], "activation_array": f"A_in_hw[{m // 2}][{k}]",
@@ -449,7 +454,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             raise ValueError(f"Nicolas source {lut_array} changed")
     if variant.get("output_projection") == "lut" and (
             "#define QUANT_LUT_UPDATE_GRANULARITY 1" not in source_text or
-            f"((uint64_t)({1 if variant['output_format'] == 'fp6_e2m3' else 0}) << 14)" not in source_text or
+            f"((uint64_t)({1 if variant['output_format'].startswith('fp6_') else 0}) << 14)" not in source_text or
             f"C_proj_hw[{m // 2}][{n}]" not in header_text or
             "C_scales_row[MATMUL_GN][MATMUL_M]" not in header_text):
         raise ValueError("Nicolas packed LUT readout contract changed")
@@ -619,7 +624,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             (recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
                                            FP4_FP6_CELL, E4M3_E2M3_CELL,
                                            E5M2_FP4_CELL, E4M3_DIRECT_E3M2_CELL,
-                                           FP4_DIRECT_E4M3_CELL) and
+                                           FP4_DIRECT_E4M3_CELL, E3M2_E3M2_CELL) and
              not isinstance(recipe.get("source_layout"), dict)) or
             any(not isinstance(recipe.get(key), str) or len(recipe[key]) != 64 or
                 any(ch not in "0123456789abcdef" for ch in recipe[key])
@@ -664,7 +669,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
         op.attributes["profile_sha256"] = StringAttr(digest)
     if recipe.get("source_layout", {}).get("output_projection") == "lut":
         output_format = recipe["source_layout"].get("output_format")
-        if output_format not in {"fp8_e4m3", "fp8_e5m2", "fp6_e2m3"}:
+        if output_format not in {"fp8_e4m3", "fp8_e5m2", "fp6_e2m3", "fp6_e3m2"}:
             raise ValueError("packed LUT readout format is not supported")
         function = readout.parent_op()
         if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
