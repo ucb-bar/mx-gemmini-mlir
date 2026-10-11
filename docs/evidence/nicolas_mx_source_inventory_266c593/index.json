@@ -5024,7 +5024,29 @@
       "source_sha256": "dbb3a6bc7f3ff8309215d6a64f96d2df5de6c7c0f9d766f9d8ff669e80d3ce4f"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/capture/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_chain_64_model2mlir_capture.v1",
+          "sha256": "f2a63fe5285773154246461cce9199c72fd1acbb1826d17a2af738dd369177b8",
+          "status": "two_site_frontend_handoff_only"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/parity/reference/build/artifact_manifest.json",
+          "schema": "mx_gemmini.nicolas_connected_plain_chain_64x64.v1",
+          "sha256": "c21b12875192c4749ec4f2385cf6e169d89efdcbf76b29cc9f3ca3109b88af1c",
+          "status": "source_connected_chain_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/reference/build/artifact_manifest.json",
+          "schema": "mx_gemmini.nicolas_connected_plain_chain_64x64.v1",
+          "sha256": "c21b12875192c4749ec4f2385cf6e169d89efdcbf76b29cc9f3ca3109b88af1c",
+          "status": "source_connected_chain_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_64x64_chain",
       "source_sha256": "54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf"
@@ -8110,6 +8132,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 167,
-  "without_direct_hash_reference": 4
+  "with_direct_hash_reference": 168,
+  "without_direct_hash_reference": 3
 }

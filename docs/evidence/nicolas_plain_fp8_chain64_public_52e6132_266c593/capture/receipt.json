@@ -1,0 +1,48 @@
+{
+  "schema": "mx_gemmini.nicolas_plain_chain_64_model2mlir_capture.v1",
+  "status": "two_site_frontend_handoff_only",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "compiler_revision": "52e6132f59c793fd46af606c8e0c30a4c43bf41b",
+  "source_sha256": "54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf",
+  "header_sha256": "8425226b26ee6c6153de9e0f6969575399ed7216efd72a1f7c441444c43fc351",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "source_mlir_sha256": "1083fe656d633ee653bfd102c69a5f2792c2148098ff517e513d750a9643e42a",
+  "handoff_mlir_sha256": "2e52bf17770f3a6152fe464fb8581990fa19c3dcff123fa6bf71b0b990e078cf",
+  "bound_mlir_sha256": "4e022769011c6492404d83e32bcfce2264f35d116307d7cbe2dedd7eff30de4a",
+  "manifest_sha256": "00c9a884335b8eb61c0b670200205f50108fe4e6bea22ff05ce21b1728e7e826",
+  "sites": [
+    {
+      "site_id": "functional:matmul",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    },
+    {
+      "site_id": "functional:matmul_1",
+      "kind": "functional",
+      "status": "quantized",
+      "format": "mxfp8",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "fp6_codebook_sha256": null
+    }
+  ],
+  "opaque_calls": {},
+  "numerical_scope": "source A1/B1/B2 packed bytes and scales are not PyTorch example inputs",
+  "physical_scope": "two contraction sites verified; MM1 and chain binding remain separate gates",
+  "matrix_dim": 64
+}
