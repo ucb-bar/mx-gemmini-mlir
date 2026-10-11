@@ -136,6 +136,10 @@ also compiles from a clean model2MLIR capture through the same shape-derived
 path. Its one data-free object issues 702 MX commands and one fence; two
 Spike runs match all 4,096 score words and four source stage hashes. The
 separate blocked `attn_flash` kernels and full models remain open.
+The [four-block `attn_flash_mid` source oracle](docs/evidence/nicolas_attn_flash_mid_source_baseline_a042643_0344bcb/README.md)
+pins an unmodified Spike run and reproducible full-output hash for the next
+compiler target. Its online softmax and pipelined block schedule still need
+typed lowering.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

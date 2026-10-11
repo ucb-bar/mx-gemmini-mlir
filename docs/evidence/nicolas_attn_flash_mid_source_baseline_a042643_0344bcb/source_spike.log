@@ -1,0 +1,13 @@
+attn_flash: E4M3, Sq=64 Sk=128 d=64, Bk=32 (4 key blocks), online softmax on the VPU, K/V resident
+mask: none (every key precedes every query)
+mesh order: QK(j+2) before PV(j)
+vector order: softmax(j+1) before PV(j); loads, update(j-1), SR(j+1) after it
+softmax: SUB, EXP, RSUM
+spad layout: bank split, stats in bank 0 (S / O_j / O in banks 2-3)
+1/sqrt(d): folded into Q's scales (no VPU pass)
+check O hash vs Spike: match (cd7aef4d68d1e0d9)
+accuracy O head 0 (16 rows): rel_fro 68041 ppm vs fp64 attention
+PERF pipelined   2073 cycles; mesh ideal 4096 -> util 197%
+attn_flash PASSED
+Gemmini extension configured with:
+    dim = 16

@@ -1,0 +1,29 @@
+{
+  "block_k": 32,
+  "expect_header_sha256": "1bd9d786ca5eb0ce72cb97e89b6cea1e31fc238c9fbc6ce2815b68239d0c5870",
+  "frontend_mlir_sha256": "cce8457e2fe88ac3f35dc4815258557a2eb5bdd52ce950d8f6c877fd4daefd84",
+  "key_blocks": 4,
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "npu_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_flash_mid_source_baseline.v1",
+  "scope": "unmodified four-block 64x128x64 BK32 pipelined flash source; source oracle only, no compiler-issued blocked program",
+  "source_core_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "source_elf_sha256": "9953e1b46d7802f7ddf09f824ca7f023097d4178eb4d34ae2f0007a42b971e80",
+  "source_header_archive_sha256": "f98e7a5a4c71e0b58c4ba743939c04a186f90466c57dffcb95f89e1aa47d5b6f",
+  "source_header_sha256": "690bb592e6469b129f79552981828c57cc737928b631190483f0351dc9f7e9ee",
+  "source_output_hash": "cd7aef4d68d1e0d9",
+  "source_shape_sq_sk_d": [
+    64,
+    128,
+    64
+  ],
+  "source_spike_log_sha256": "f66e8b5c2e4e9e2b5a0d8b59ca719583e3f298d8469364e9ce45c334f236cc7e",
+  "source_spike_reproduced_runs": 2,
+  "source_wrapper_sha256": "5f46198f35539b261ccbc2c689ce56beb823ba7e6ec74d8ff60936418619089f",
+  "spike_binary_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "original_flash_mid_source_matched_on_pinned_spike"
+}

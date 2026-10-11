@@ -1,0 +1,9 @@
+{
+  "schema": "mx_gemmini.flash_mid_source_replay.v1",
+  "source_baseline_sha256": "ec7703946e1a317a5145901ba140daab976b49fea404e0e350ddb1424c7a1dda",
+  "source_elf_sha256": "9953e1b46d7802f7ddf09f824ca7f023097d4178eb4d34ae2f0007a42b971e80",
+  "source_output_hash": "cd7aef4d68d1e0d9",
+  "source_spike_log_sha256": "f66e8b5c2e4e9e2b5a0d8b59ca719583e3f298d8469364e9ce45c334f236cc7e",
+  "spike_reproduced_runs": 2,
+  "status": "original_flash_mid_source_reproduced"
+}
