@@ -201,6 +201,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                         pitch_bytes=_int_attr(op, "pitch_bytes"),
                         destination_byte=_int_attr(op, "destination_byte"),
                         selector=_int_attr(op, "selector"),
+                        source_offset_bytes=(_int_attr(op, "source_offset_bytes")
+                                             if "source_offset_bytes" in op.attributes else 0),
                         gated=name == "mx_gemmini.gated_scale_dma")
                 else:
                     phase = lower_linear_spad_mvout(

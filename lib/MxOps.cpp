@@ -526,24 +526,28 @@ LogicalResult ScaleDmaOp::verify() {
   int64_t pitch = getPitchBytes();
   int64_t destination = getDestinationByte();
   int64_t selector = getSelector();
+  int64_t offset = getSourceOffsetBytes().value_or(0);
   if (rowBytes <= 0 || rowBytes % 8 || rows <= 0 || rows >= 256 ||
       pitch < rowBytes || pitch >= (int64_t{1} << 24) ||
+      offset < 0 || offset % 8 || offset % pitch + rowBytes > pitch ||
       destination < 0 || destination % 8 || destination >= (1 << 13) ||
       (selector != 0 && selector != 1) ||
       destination + rows * rowBytes > (1 << 13))
     return emitOpError("strided scale DMA geometry exceeds command fields");
-  return verifyMemoryBinding(*this, getBuffer(), (rows - 1) * pitch + rowBytes);
+  return verifyMemoryBinding(*this, getBuffer(), offset + (rows - 1) * pitch + rowBytes);
 }
 
 LogicalResult GatedScaleDmaOp::verify() {
   int64_t rowBytes = getRowBytes(), rows = getRows(), pitch = getPitchBytes();
   int64_t destination = getDestinationByte();
+  int64_t offset = getSourceOffsetBytes().value_or(0);
   if (rowBytes <= 0 || rowBytes % 8 || rows <= 0 || rows >= 256 ||
       pitch < rowBytes || pitch >= (int64_t{1} << 24) ||
+      offset < 0 || offset % 8 || offset % pitch + rowBytes > pitch ||
       (destination != 0 && destination != 4096) || getSelector() != 1 ||
       rows * rowBytes > 4096)
     return emitOpError("gated weight scale DMA needs one 4096-byte managed half");
-  return verifyMemoryBinding(*this, getBuffer(), (rows - 1) * pitch + rowBytes);
+  return verifyMemoryBinding(*this, getBuffer(), offset + (rows - 1) * pitch + rowBytes);
 }
 
 LogicalResult MatmulSpadOp::verify() {

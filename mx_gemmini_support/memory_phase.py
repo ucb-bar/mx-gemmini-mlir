@@ -121,16 +121,20 @@ def lower_scale_load(profile: Mapping, *, buffer: str,
 def lower_strided_scale_dma(profile: Mapping, *, buffer: str,
                             row_bytes: int, rows: int, pitch_bytes: int,
                             destination_byte: int, selector: int,
-                            gated: bool = False) -> MemoryPhase:
+                            gated: bool = False,
+                            source_offset_bytes: int = 0) -> MemoryPhase:
     """Load contiguous E8M0 scale rows from a pitched DRAM matrix."""
     _capacity(profile)
     config = profile.get("resources", {}).get("scale_mem_config", {})
     capacity = config.get("size_bytes", 0)
     if (type(gated) is not bool or
             any(type(value) is not int for value in
-            (row_bytes, rows, pitch_bytes, destination_byte, selector)) or
+            (row_bytes, rows, pitch_bytes, destination_byte, selector,
+             source_offset_bytes)) or
             row_bytes <= 0 or row_bytes % 8 or rows <= 0 or rows >= 1 << 8 or
             pitch_bytes < row_bytes or pitch_bytes >= 1 << 24 or
+            source_offset_bytes < 0 or source_offset_bytes % 8 or
+            source_offset_bytes % pitch_bytes + row_bytes > pitch_bytes or
             destination_byte < 0 or destination_byte % 8 or
             destination_byte >= 1 << 13 or selector not in (0, 1) or
             destination_byte + rows * row_bytes > capacity // 2):
@@ -142,12 +146,13 @@ def lower_strided_scale_dma(profile: Mapping, *, buffer: str,
                   "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
         raise ValueError("gated MX weight scale load needs a complete selected managed half")
     command = _cmd(
-        27, Operand(buffer=buffer, address_mask=(1 << 40) - 1,
+        27, Operand(buffer=buffer, byte_offset=source_offset_bytes,
+                    address_mask=(1 << 40) - 1,
                     or_bits=pitch_bytes << 40),
         (int(gated) << 54) | (rows << 46) | (destination_byte << 33) |
         (selector << 32) | row_bytes)
     return MemoryPhase((command,), rows * row_bytes, rows,
-                       (rows - 1) * pitch_bytes + row_bytes)
+                       source_offset_bytes + (rows - 1) * pitch_bytes + row_bytes)
 
 
 def render_nicolas_memory_mlir(profile: Mapping, source_sha256: str) -> str:

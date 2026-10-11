@@ -214,6 +214,7 @@ def Mx_ScaleDmaOp : Mx_Op<"scale_dma"> {
                    I32Attr:$row_bytes, I32Attr:$rows,
                    I32Attr:$pitch_bytes, I32Attr:$destination_byte,
                    I32Attr:$selector,
+                   OptionalAttr<I32Attr>:$source_offset_bytes,
                    StrAttr:$profile_sha256, StrAttr:$source_sha256);
 }
 
@@ -223,6 +224,7 @@ def Mx_GatedScaleDmaOp : Mx_Op<"gated_scale_dma"> {
                    I32Attr:$row_bytes, I32Attr:$rows,
                    I32Attr:$pitch_bytes, I32Attr:$destination_byte,
                    I32Attr:$selector,
+                   OptionalAttr<I32Attr>:$source_offset_bytes,
                    StrAttr:$profile_sha256, StrAttr:$source_sha256);
 }
 

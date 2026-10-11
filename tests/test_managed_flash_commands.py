@@ -35,6 +35,12 @@ def test_mid_flash_first_qk_and_pv_scale_halves_match_source_macros() -> None:
         (1 << 54) | (2 << 46) | (1 << 32) | 32)
     assert pv_scale.commands[0].rs2.immediate == (
         (1 << 54) | (1 << 46) | (4096 << 33) | (1 << 32) | 64)
+    later_qk = lower_strided_scale_dma(
+        profile, buffer="KT_SCALES", row_bytes=32, rows=2,
+        pitch_bytes=128, destination_byte=4096, selector=1,
+        gated=True, source_offset_bytes=32)
+    assert later_qk.commands[0].rs1.byte_offset == 32
+    assert later_qk.minimum_buffer_bytes == 192
 
     qk = lower_managed_spad_matmul(
         profile, m=64, n=32, k=64, a_row=0, b_end_row=4224,
@@ -73,6 +79,10 @@ def test_managed_scale_protocol_rejects_wrong_half_and_overlap() -> None:
         lower_strided_scale_dma(profile, buffer="KT_SCALES", row_bytes=32,
                                 rows=2, pitch_bytes=128, destination_byte=0,
                                 selector=0, gated=True)
+    with pytest.raises(ValueError, match="scale memory or command fields"):
+        lower_strided_scale_dma(profile, buffer="KT_SCALES", row_bytes=32,
+                                rows=2, pitch_bytes=128, destination_byte=0,
+                                selector=1, gated=True, source_offset_bytes=112)
     with pytest.raises(ValueError, match="unsupported"):
         lower_matrix_mvin(profile, buffer="KT_IN", matrix_rows=64,
                           matrix_cols=32, burst_cols=32, spad_row=4096,
