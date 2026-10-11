@@ -32,6 +32,8 @@ def _sha(path: Path) -> str:
     ("fa", "fa", "attn_vpu_fa.h.gz", "attn_flash.c"),
     ("mid_fp4", "mid", "attn_vpu_mid_fp4.h.gz",
      "tools/fixtures/nicolas_flash_mid_fp4.c"),
+    ("mid_expsum", "mid", "attn_vpu_mid.h.gz",
+     "tools/fixtures/nicolas_flash_mid_expsum.c"),
 ])
 def test_public_flash_object_reproduces_archived_spike_issuer(
         tmp_path: Path, variant: str, precursor_variant: str, header_name: str,
@@ -43,7 +45,7 @@ def test_public_flash_object_reproduces_archived_spike_issuer(
     if not all(path.is_file() for path in (core, wrapper, gcc)) or not RTL.is_dir():
         pytest.skip("pinned Nicolas source, RTL, or RV64 compiler is unavailable")
     archive = ROOT / f"docs/evidence/nicolas_flash_{variant}_typed_a042643_0344bcb"
-    archived_object = archive / "object" if variant == "mid_fp4" else archive
+    archived_object = archive / "object" if variant in {"mid_fp4", "mid_expsum"} else archive
     precursor = ROOT / f"docs/evidence/nicolas_attn_vpu_{precursor_variant}_source_baseline_a042643_0344bcb"
     header = archive / header_name if variant == "mid_fp4" else precursor / header_name
     out = tmp_path / "object"
