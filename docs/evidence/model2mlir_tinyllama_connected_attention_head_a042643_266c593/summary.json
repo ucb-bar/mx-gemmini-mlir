@@ -1,0 +1,48 @@
+{
+  "compared_bf16_values": 1024,
+  "elf_sha256": "dbb7dc4346730a492bf4d7c065c1ad9b2741dffb6b740cda698909d1476e9705",
+  "model_output_values": 512,
+  "object_sha256": "3b0c0a79b787df7514bc5d5047f34afff4dc0a299695b9f68434deab6c3a67ff",
+  "padded_shape_mnk": [
+    16,
+    64,
+    32
+  ],
+  "pytorch_f32_vs_mx_bf16_max_absolute_error": 0.1684272289276123,
+  "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.021891210228204727,
+  "run_receipt_sha256": "b87d90d1a6634d4f9e232c292847232da86931472008ad72af874161e14f1d02",
+  "run_status": "model_attention_pv_matched_on_pinned_spike",
+  "schema": "mx_gemmini.model2mlir_attention_pv_execution.v1",
+  "scope": "PV head consumes separately executed model-derived QK/VPU softmax BF16 probabilities; on-device routing uncompiled",
+  "site": {
+    "batch_index": 0,
+    "fqn": "lm.model.layers.0.self_attn",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "2eceb636522e3cc7ee462ead9d80feecd82a07faa4e092e7252419bfe9c2ac55",
+    "region_id": "matmul_5",
+    "source_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+    "source_op": "batch_matmul",
+    "source_shape_bmnk": [
+      32,
+      8,
+      64,
+      8
+    ],
+    "weight_sha256": "6bb9c588a4fe92ddfa55f73ca32d89b3d23caadf6a7f14fe1fd811820776e6ad"
+  },
+  "status": "pv_head_matched_on_spike",
+  "upstream_producer": {
+    "full_model_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+    "head_shape_mk": [
+      8,
+      8
+    ],
+    "probability_bf16_sha256": "fedcbe58c534efab42f90d4dc584cf7c5f278e24f3f5ed00e391da5cc40ed980",
+    "qk_golden_bf16_sha256": "35827be2988598a3df9704e4d44b6b872ee0a704bde3901f5a04bdb9d57c6f0a",
+    "qk_region_id": "matmul_4",
+    "schema": "mx_gemmini.vpu_softmax_probability_producer.v1",
+    "softmax_region_id": "softmax_0",
+    "softmax_summary_sha256": "3207fd61ee46cbff5277bb5ec80b33483434f8d6562f3d6b0d3e358fde344918",
+    "status": "model_qk_to_vpu_softmax_matched_on_pinned_spike"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "connected_pv_golden_bf16_sha256": "5730c6d2f5cba9501375d98db453b363e40f9ddce28b77b1fe2cafbb9fae55b8",
+  "real_output_values": 512,
+  "schema": "mx_gemmini.tinyllama_connected_attention_head_quality.v1",
+  "scope": "one head of reduced random-weight TinyLlama; separately executed QK, host scale/mask, VPU softmax, and PV",
+  "source_f32_vs_compiled_chain_bf16_max_absolute_error": 0.1685107946395874,
+  "source_f32_vs_compiled_chain_bf16_mean_absolute_error": 0.025687556713819504,
+  "source_probability_npy_sha256": "227adaaad1f735ac3dc26b01c4d220960b20edb67d9fb07d46e34f16ac696c85",
+  "source_pv_input_receipt_sha256": "202c549c8912728c3b860145338dcb5333449b10c06baec818e5600e4f49f8c2",
+  "source_value_npy_sha256": "3b2cbd5093708a930db4403f8366c99f8980c8426a669b427e2c11e36bb15cbf"
+}
