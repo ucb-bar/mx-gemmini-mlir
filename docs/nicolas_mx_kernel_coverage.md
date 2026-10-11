@@ -20,9 +20,10 @@ with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
 The [program-level regeneration audit](evidence/nicolas_mx_regeneration_audit_266c593/README.md)
 validates selected-path generated-object Spike receipts for 156 matrix/LUT
-names and selected-path generated-executable receipts for all six connected
-FP4/FP6/FP8 matrix chains. Seven other specialized programs and two debug
-programs remain separate. Its categories retain each
+names, generated-executable receipts for all six connected FP4/FP6/FP8 matrix
+chains, and complete selected outputs for VPU softmax and both scratchpad
+requant programs. Four other specialized programs and two debug programs
+remain separate. Its categories retain each
 receipt's actual scope rather than treating every source-hash match as a full
 program qualification.
 
@@ -109,9 +110,9 @@ add 40,960 packed bytes and 2,560 scales.
 [Five E3M2 DIM8/DIM32 mesh replays](evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/README.md)
 add 20,480 packed bytes and 1,280 scales. These matrix/LUT numerical replay
 suites cover **156 of 171 named MX source programs** for their selected Spike
-execution paths. The six connected chains below bring the audited
-selected-output count to **162 of 171**. The seven other specialized programs
-have separate evidence with narrower scopes.
+execution paths. The six connected chains and three specialized programs bring
+the audited selected-output count to **165 of 171**. Four other specialized
+programs have separate evidence with narrower scopes.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
 remains archived. The 169 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.

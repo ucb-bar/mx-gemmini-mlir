@@ -26,6 +26,17 @@ MATRIX_FAMILIES = {"asymmetric_matrix", "other_tiled_matrix"}
 HEX256 = re.compile(r"[0-9a-f]{64}\Z")
 HEX160 = re.compile(r"[0-9a-f]{40}\Z")
 CHAIN_NAME = re.compile(r"matmul_tiled_(fp4|fp6|fp8)_(64x64|128x128)_chain\Z")
+SPECIALIZED_RESULTS = {
+    "vpu_softmax": ("mx_gemmini.nicolas_vpu_softmax_spike.v1",
+                    "source_vpu_softmax_matched_on_pinned_spike",
+                    {"compared_bf16_values": 512}),
+    "spad_requant": ("mx_gemmini.nicolas_fp8_spad_requant_compiler_spike.v1",
+                     "source_and_compiled_flat_tiled_fp8_matched_on_pinned_spike",
+                     {"compared_fp8_codes": 4096, "compared_e8m0_scales": 128}),
+    "spad_requant_fp4": ("mx_gemmini.nicolas_fp4_dual_public_object_spike.v1",
+                         "source_and_public_object_matched_on_pinned_spike",
+                         {"compared_fp4_codes": 16384, "compared_e8m0_scales": 512}),
+}
 
 
 def _sha(path: Path) -> str:
@@ -205,6 +216,77 @@ def _full_matrix_result(entry: dict) -> dict | None:
     return None
 
 
+def _full_specialized_result(entry: dict) -> dict | None:
+    """Validate complete selected outputs for three non-matrix MX sources."""
+    specification = SPECIALIZED_RESULTS.get(entry["name"])
+    if specification is None:
+        return None
+    schema, status, metrics = specification
+    for ref in entry["evidence_references"]:
+        if ref["schema"] != schema or ref["status"] != status:
+            continue
+        path = ROOT / ref["path"]
+        if _sha(path) != ref["sha256"]:
+            raise ValueError(f"changed Nicolas specialized receipt: {ref['path']}")
+        receipt = json.loads(path.read_text())
+        if (receipt.get("schema") != schema or receipt.get("status") != status or
+                receipt.get(ref["field"]) != entry["source_sha256"] or
+                receipt.get("rtl_revision") !=
+                "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
+            raise ValueError(f"stale specialized source binding in {ref['path']}")
+        _require_digest(receipt.get("profile_sha256"), f"{ref['path']} profile")
+        revision = receipt.get("compiler_revision")
+        if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+            raise ValueError(f"{ref['path']} has no pinned compiler revision")
+        if entry["name"] == "vpu_softmax":
+            if (receipt.get("spike_exit_code") != 0 or
+                    receipt.get("compared_bf16_values") != metrics["compared_bf16_values"]):
+                raise ValueError(f"incomplete softmax result in {ref['path']}")
+            object_sha = receipt["object_sha256"]["mx_issue.o"]
+            object_path = path.parent / "object/mx_issue.o"
+            log_sha = receipt.get("spike_log_sha256")
+            log_path = path.parent / "spike.log"
+            elf_sha = receipt.get("elf_sha256")
+            model2mlir_revision = receipt.get("model2mlir_revision")
+            if (not isinstance(model2mlir_revision, str) or
+                    not HEX160.fullmatch(model2mlir_revision)):
+                raise ValueError(f"{ref['path']} has no pinned model2MLIR revision")
+        else:
+            source, compiler = receipt.get("source_spike", {}), receipt.get("compiler_spike", {})
+            if (receipt.get("allocated_data_section_bytes") != 0 or
+                    source.get("exit_code") != 0 or compiler.get("exit_code") != 0 or
+                    any(source.get(key) != value or compiler.get(key) != value
+                        for key, value in metrics.items())):
+                raise ValueError(f"incomplete requant result in {ref['path']}")
+            for result, directory in ((source, "source"), (compiler, "compiled")):
+                for field, name in (("elf_sha256", "program.elf"),
+                                    ("spike_log_sha256", "spike.log")):
+                    _require_digest(result.get(field), f"{ref['path']} {directory} {field}")
+                    if _sha(path.parent / directory / name) != result[field]:
+                        raise ValueError(f"changed {directory} {name} in {ref['path']}")
+            object_sha = receipt.get("object_sha256")
+            object_path = (path.parent / "object/mx_issue.o" if entry["name"] ==
+                           "spad_requant_fp4" else path.parent / "mx_issue.o")
+            log_sha = compiler["spike_log_sha256"]
+            log_path = path.parent / "compiled/spike.log"
+            elf_sha = compiler["elf_sha256"]
+            model2mlir_revision = None
+        _require_digest(object_sha, f"{ref['path']} object")
+        _require_digest(log_sha, f"{ref['path']} Spike log")
+        _require_digest(elf_sha, f"{ref['path']} ELF")
+        if _sha(object_path) != object_sha or _sha(log_path) != log_sha:
+            raise ValueError(f"changed specialized object or log in {ref['path']}")
+        result = {"receipt": ref["path"], "receipt_sha256": ref["sha256"],
+                  "receipt_schema": schema, "profile_sha256": receipt["profile_sha256"],
+                  "compiler_revision": revision, "object_sha256": object_sha,
+                  "elf_sha256": elf_sha, "spike_log_sha256": log_sha,
+                  "checked_output_metrics": metrics}
+        if model2mlir_revision is not None:
+            result["model2mlir_revision"] = model2mlir_revision
+        return result
+    return None
+
+
 def build_report(inventory: dict) -> dict:
     if (inventory.get("schema") != "mx_gemmini.nicolas_mx_source_inventory.v1" or
             inventory.get("programs") != len(inventory.get("entries", [])) or
@@ -215,10 +297,14 @@ def build_report(inventory: dict) -> dict:
     for entry in inventory["entries"]:
         proof = _full_matrix_result(entry)
         chain_proof = _full_chain_result(entry) if proof is None else None
+        specialized_proof = (_full_specialized_result(entry)
+                             if proof is None and chain_proof is None else None)
         if proof is not None:
             status = "generated_object_selected_spike_result_matched"
         elif chain_proof is not None:
             status = "generated_connected_chain_spike_result_matched"
+        elif specialized_proof is not None:
+            status = "generated_specialized_selected_spike_result_matched"
         elif entry["evidence_references"]:
             status = "separate_evidence_requires_scope_review"
         else:
@@ -226,8 +312,8 @@ def build_report(inventory: dict) -> dict:
         row = {"name": entry["name"], "family": entry["family"],
                "source_sha256": entry["source_sha256"], "status": status,
                "source_reference_count": len(entry["evidence_references"])}
-        if proof is not None or chain_proof is not None:
-            row["selected_spike_result"] = proof or chain_proof
+        if proof is not None or chain_proof is not None or specialized_proof is not None:
+            row["selected_spike_result"] = proof or chain_proof or specialized_proof
         else:
             row["other_receipt_statuses"] = sorted({
                 ref["status"] for ref in entry["evidence_references"]
@@ -235,8 +321,8 @@ def build_report(inventory: dict) -> dict:
         rows.append(row)
     counts = Counter(row["status"] for row in rows)
     return {
-        "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v2",
-        "scope": ("matched generated matrix and connected-chain results cover selected "
+        "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v3",
+        "scope": ("matched generated matrix, connected-chain, and specialized results cover selected "
                   "Spike output paths, not complete C control flow, RTL timing, or FPGA parity"),
         "rtl_revision": inventory["rtl_revision"],
         "source_inventory_sha256": _sha(INVENTORY),

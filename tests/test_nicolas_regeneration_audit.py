@@ -23,7 +23,8 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     assert report["status_counts"] == {
         "generated_object_selected_spike_result_matched": 156,
         "generated_connected_chain_spike_result_matched": 6,
-        "separate_evidence_requires_scope_review": 7,
+        "generated_specialized_selected_spike_result_matched": 3,
+        "separate_evidence_requires_scope_review": 4,
         "no_direct_source_receipt": 2,
     }
     rows = {row["name"]: row for row in report["entries"]}
@@ -40,11 +41,14 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
         "selected_spike_result"]["object_archive_verified"] is False
     assert all(rows[name]["selected_spike_result"]["object_archive_verified"]
                for name in chains if name != "matmul_tiled_fp8_128x128_chain")
+    assert {name for name, row in rows.items() if row["status"] ==
+            "generated_specialized_selected_spike_result_matched"} == {
+                "vpu_softmax", "spad_requant", "spad_requant_fp4"}
     for row in rows.values():
         if row["status"] in {
                 "generated_object_selected_spike_result_matched",
-                "generated_connected_chain_spike_result_matched"}:
-            assert row["family"] in {"asymmetric_matrix", "other_tiled_matrix"}
+                "generated_connected_chain_spike_result_matched",
+                "generated_specialized_selected_spike_result_matched"}:
             assert row["selected_spike_result"]["checked_output_metrics"]
         else:
             assert "selected_spike_result" not in row
@@ -65,4 +69,13 @@ def test_report_rejects_stale_connected_chain_binding() -> None:
                  "matmul_tiled_fp6_64x64_chain")
     chain["source_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="stale chain source binding"):
+        build_report(inventory)
+
+
+def test_report_rejects_stale_specialized_binding() -> None:
+    inventory = json.loads(INVENTORY.read_text())
+    softmax = next(row for row in inventory["entries"] if row["name"] ==
+                   "vpu_softmax")
+    softmax["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="stale specialized source binding"):
         build_report(inventory)

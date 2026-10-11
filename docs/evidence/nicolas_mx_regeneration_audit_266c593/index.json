@@ -760,33 +760,65 @@
     {
       "family": "vpu",
       "name": "vpu_softmax",
-      "other_receipt_statuses": [
-        "source_vpu_softmax_matched_on_pinned_spike"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_bf16_values": 512
+        },
+        "compiler_revision": "3f9af556cb6b25046f0ba896c8db6a1576723d41",
+        "elf_sha256": "7d7a5e4c45a128bbd1ff3cf6942b81cc08fe89bac59896fbab6386ad5d991bef",
+        "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+        "object_sha256": "05309fa0733bbe0ea405d8b58bbd9a9ead66b0e37deac6d4d020eada3d496567",
+        "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+        "receipt": "docs/evidence/mx_public_vpu_softmax_3f9af55/e4m3_fp4_vpu/artifact_manifest.json",
+        "receipt_schema": "mx_gemmini.nicolas_vpu_softmax_spike.v1",
+        "receipt_sha256": "fbe538f2dbb4825bab1030b803d0d38d947304cb43ec3c76329657f1a62638d6",
+        "spike_log_sha256": "7d1b05700c4f9757b437b79793e930ff0b2a016e7e68c92c74af715968c2eb38"
+      },
       "source_reference_count": 10,
       "source_sha256": "cfb112304eb23e4e950b337fe7e2307a48520c62b58e2042321caf66bd505d51",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "spad_requant",
       "name": "spad_requant",
-      "other_receipt_statuses": [
-        "source_and_compiled_flat_tiled_fp8_matched_on_pinned_spike"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_e8m0_scales": 128,
+          "compared_fp8_codes": 4096
+        },
+        "compiler_revision": "9d202b80b4876af1d3e078c7a545f69e0e215277",
+        "elf_sha256": "79378001743391314a24277cf2819aa99ce8f566437063fd40d9350835899840",
+        "object_sha256": "0240b6eec6d97974a7933ee4d2eece0cc7ccf27a20e1d32bfa68f7b39c87afbd",
+        "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+        "receipt": "docs/evidence/nicolas_spad_requant_fp8_compiled_9d202b8_266c593/e4m3_fp4_vpu/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp8_spad_requant_compiler_spike.v1",
+        "receipt_sha256": "d2a98c3d74281aee54a62eed336bdd44ad8be56f7a121e2061b90afd7a037d91",
+        "spike_log_sha256": "a05ef35d1feb2f19d7f0c7b515b5af8c0ca7b721bf159e3e077da3c60832053a"
+      },
       "source_reference_count": 2,
       "source_sha256": "51af741fcfd14b031daa03b12ce6a3f03ee12f9d1f79bad5cabf3089087da508",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "spad_requant",
       "name": "spad_requant_fp4",
-      "other_receipt_statuses": [
-        "source_and_compiled_flat_tiled_fp4_matched_on_pinned_spike",
-        "source_and_public_object_matched_on_pinned_spike"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_e8m0_scales": 512,
+          "compared_fp4_codes": 16384
+        },
+        "compiler_revision": "d4ed0d8e0fea4acb089a198f7fec11dbd03f67f1",
+        "elf_sha256": "4c183d43653c07185e895e8b1047ff602ce1aeb393dbf079c3daeca5cb54b0f6",
+        "object_sha256": "ab3975ad7ad33a913ceadc7858d3ab934ab1b41a5aa16f54bb9be8b733e7b067",
+        "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+        "receipt": "docs/evidence/nicolas_fp4_dual_public_object_d4ed0d8_266c593/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp4_dual_public_object_spike.v1",
+        "receipt_sha256": "fca3528abed15b66262785c046e458cf90097f35930361795ff07269a91afde2",
+        "spike_log_sha256": "5bfefc943bf09890b76d80123ab84be2e6f97f497833056d810ec2bbc4931a0b"
+      },
       "source_reference_count": 3,
       "source_sha256": "812842fd751d7fa0d8fb98a150df29424bdaba65613531335001f9f2260eb884",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "chain",
@@ -4206,13 +4238,14 @@
   ],
   "programs": 171,
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
-  "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v2",
-  "scope": "matched generated matrix and connected-chain results cover selected Spike output paths, not complete C control flow, RTL timing, or FPGA parity",
+  "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v3",
+  "scope": "matched generated matrix, connected-chain, and specialized results cover selected Spike output paths, not complete C control flow, RTL timing, or FPGA parity",
   "source_inventory_sha256": "0dabe21d9ddd60bac9beeaf2942ca0e575c64f11215e9628ab88e89b1a882adf",
   "status_counts": {
     "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
+    "generated_specialized_selected_spike_result_matched": 3,
     "no_direct_source_receipt": 2,
-    "separate_evidence_requires_scope_review": 7
+    "separate_evidence_requires_scope_review": 4
   }
 }
