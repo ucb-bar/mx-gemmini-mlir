@@ -21,10 +21,10 @@ def _fixture(tmp_path: Path, values: dict[str, bytes]):
         (build / "cgen").mkdir(parents=True)
         generated.mkdir()
         (build / "cgen/weights.bin").write_bytes(value)
-        (generated / "weights.bin").write_bytes(value)
         builds[name] = build
         programs.append(SimpleNamespace(name=name))
         rows.append({"name": name, "generated": str(generated),
+                     "weights_bytes": len(value),
                      "weights_sha256": hashlib.sha256(value).hexdigest()})
     return tuple(programs), builds, {"programs": rows}
 

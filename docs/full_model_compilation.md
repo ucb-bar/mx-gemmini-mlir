@@ -342,7 +342,9 @@ python -m tools.build_merlin_catalog \
 `tools.link_merlin_session` consumes the exact version-2 model2MLIR bundle and
 the already built stage objects. It checks the source stage receipts, selected
 site counts, profile identity, shared checkpoint-weight bytes, object hashes,
-and program schedule. It uses Merlin's target-neutral session adapters and
+and program schedule. Merlin's session generator hashes each stage's generated
+weight image without writing a second copy; the linker embeds one verified
+blob from a stage build. It uses Merlin's target-neutral session adapters and
 allocator-site analysis, then emits one RV64 ELF with a Spike memory map and
 an MX-owned link receipt. Every recurrent invocation resets the temporary
 model arena; the session's persistent output and state buffers remain live.

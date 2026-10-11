@@ -46,7 +46,7 @@ def _shared_weight_build(programs: tuple, builds: dict[str, Path], generated: di
         if not path.is_file() or path.is_symlink():
             raise ValueError(f"stage {name} lacks a plain generated weight blob")
         identity = (path.stat().st_size, _sha(path))
-        generated_identity = ((Path(by_name[name]["generated"]) / "weights.bin").stat().st_size,
+        generated_identity = (by_name[name]["weights_bytes"],
                               by_name[name]["weights_sha256"])
         if identity != generated_identity:
             raise ValueError(f"stage {name} weight layout differs from Merlin's session ABI")
@@ -238,7 +238,8 @@ def link_session(
     if output.exists():
         raise ValueError("session output directory must not already exist")
     output.mkdir(parents=True)
-    generated = session_bundle.generate(session_root, output / "generated")
+    generated = session_bundle.generate(
+        session_root, output / "generated", materialize_weights=False)
     weight_name = _shared_weight_build(session.programs, builds, generated)
     estimates = {program.name: estimate_llvm_malloc(
         builds[program.name] / "lower/model.ll") for program in session.programs}
