@@ -104,6 +104,10 @@ The [dense `attn_vpu` source baseline](docs/evidence/nicolas_attn_vpu_source_bas
 pins an unmodified 32×64×64 MX→VPU→requant→MX kernel that passes on Spike,
 plus the corresponding latest-model2MLIR attention graph. A generated
 connected object for this source is still needed.
+Its [generated VPU/requant middle](docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb/README.md)
+replaces all eight vector and requant calls with a data-free RV64 object and
+matches the source's four stage hashes on Spike. The QK and PV matrix calls
+are still issued by the source driver.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

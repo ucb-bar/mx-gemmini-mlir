@@ -1,0 +1,97 @@
+{
+  "bound_mlir_sha256": "82fbd438122a69383986fe7323ae716e307fc2dd849d175abf0d1c2f3e2912d1",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "80b8dd7b16cde46af43cfdd3ba6977ede0ae2f903a77e1d393461356226c4ba0",
+  "manifest_sha256": "5949f10c8eb7acfcd3bf36760317487465492de42ca756c704a0f11167a65200",
+  "plan": {
+    "max_row": 12288,
+    "output_row": 1024,
+    "probability_row": 640,
+    "rounding": "BF16 after each VPU operation",
+    "score_row": 384,
+    "shape_sq_sk_d": [
+      32,
+      64,
+      64
+    ],
+    "steps": [
+      [
+        "muls",
+        384,
+        0,
+        384,
+        256,
+        1,
+        false,
+        15872
+      ],
+      [
+        "rmax",
+        384,
+        0,
+        12288,
+        256,
+        8,
+        false,
+        0
+      ],
+      [
+        "sub",
+        384,
+        12288,
+        384,
+        256,
+        8,
+        true,
+        0
+      ],
+      [
+        "exp",
+        384,
+        0,
+        384,
+        256,
+        1,
+        false,
+        0
+      ],
+      [
+        "rsum",
+        384,
+        0,
+        12320,
+        256,
+        8,
+        false,
+        0
+      ],
+      [
+        "rcp",
+        12320,
+        0,
+        12320,
+        32,
+        1,
+        false,
+        0
+      ],
+      [
+        "mul",
+        384,
+        12320,
+        384,
+        256,
+        8,
+        true,
+        0
+      ]
+    ],
+    "sum_row": 12320,
+    "v_row": 768
+  },
+  "policy_sha256": "f109438e109d899a7462b6c6efc76857be43003cf1c54376c929b3b395c77d3b",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.nicolas_dense_attention_vector_binding.v1",
+  "source_header_sha256": "73932f8da30d760b84c366422aca45f5af98ea93eb5d60e631c31949a35a2365",
+  "source_sha256": "537fcde270abb982b58e6777487d7ea3bc14e5e81da05fb48cb2ac31077a5cd8"
+}

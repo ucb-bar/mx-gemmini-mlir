@@ -1,0 +1,41 @@
+{
+  "binding_manifest_sha256": "fbc7bf6883fd6eccf667f76b0c3230ecd2e0ed51c583f5d2ed41e97b1c258e12",
+  "bound_mlir_sha256": "82fbd438122a69383986fe7323ae716e307fc2dd849d175abf0d1c2f3e2912d1",
+  "command_functs": [
+    33,
+    33,
+    33,
+    33,
+    33,
+    33,
+    33,
+    34
+  ],
+  "compiler_revision": "7cb05435e2d32e9bd9e545f8041dff1ed9458db6",
+  "compiler_source_closure_sha256": "a979d9f412a7428ccdf781fded0591b48e0ae7b1f7952637da6049e65c8cd746",
+  "driver_sha256": "3e6cecf545c32029bdf41a251d43651409af4d25a85010335c5b61bbe6ca46cd",
+  "elf_sha256": "9cee147eb82378c9d80e30a5000ef2518d03d2aebec79c4ad0cbc53437373699",
+  "frontend_mlir_sha256": "80b8dd7b16cde46af43cfdd3ba6977ede0ae2f903a77e1d393461356226c4ba0",
+  "issuer_c_sha256": "547abea3ce2019b57baa0c23897dd5747bed22cc0b1e7ec12cd462a5e1cfaccc",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "npu_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "object_data_section_bytes": 0,
+  "object_sha256": "8750f21c1ee263afa2794d50a5b311d23b4338f0aea617677e656a8b5975314e",
+  "physical_commands_sha256": "4d42f8fc2c06e9915642822b16655d8a89ba3cda47dddb63670380aeb18537b9",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_attention_generated_middle.v1",
+  "scope": "compiler-generated seven VPU and one resident requant commands; QK and PV matrix issue remains in source C",
+  "source_header_sha256": "73932f8da30d760b84c366422aca45f5af98ea93eb5d60e631c31949a35a2365",
+  "source_sha256": "537fcde270abb982b58e6777487d7ea3bc14e5e81da05fb48cb2ac31077a5cd8",
+  "source_spike_log_sha256": "d8aa627da328360b03e88af8ec8eb538401a052c57ce3ca31c3bee59eca26304",
+  "source_stage_hashes": {
+    "O": "5b45f04fa4658640",
+    "P": "946e34c5d2799dfc",
+    "Pq": "ca814c51523f2159",
+    "S": "2983840b82e9ad13"
+  },
+  "spike_log_sha256": "8238ff47d6283d9a699584a753ecc539c0ba8bc94c13cc3eee863ea84114f462",
+  "spike_reproduced_runs": 2,
+  "status": "generated_vector_requant_matches_source_on_pinned_spike"
+}
