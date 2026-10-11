@@ -354,7 +354,12 @@ model arena; the session's persistent output and state buffers remain live.
 `tools.run_linked_merlin_session` rechecks the ELF and capture identities and
 requires every program/step/result digest, zero memref rank mismatches, and a
 guest `DONE`. It reports numerical qualification as pending even on a
-structurally complete run. For example:
+structurally complete run.
+
+The [four-session link archive](evidence/four_checkpoint_session_links_20261011/README.md)
+records full checkpoint ELF identities and memory layouts for TinyLlama,
+Qwen, Gemma, and SmolVLA. Their Spike runs remain separate execution gates.
+For example:
 
 ```sh
 python -m tools.link_merlin_session \

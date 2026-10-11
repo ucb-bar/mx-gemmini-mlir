@@ -1,0 +1,214 @@
+{
+  "date": "2026-10-11",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "qualification": "structural_link_only",
+  "schema": "mx_gemmini.four_checkpoint_session_links.v1",
+  "sessions": {
+    "DeepSeek-R1-Distill-Qwen-1.5B": {
+      "arena_layout": {
+        "arena_base": 15837691904,
+        "arena_bytes": 8589934592,
+        "mem_bytes": 22548578304,
+        "weights_base": 8589934592
+      },
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 343,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 344,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 7166992088,
+      "elf_sha256": "91ee7b7a8d496003c334db3fbe9ca7f2cc78550f0cebf19e86df4c85523c2cb9",
+      "expected_result_records": 99,
+      "numeric_parity": "not_established",
+      "programs": [
+        {
+          "capture_model_sha256": "d98737d6c812f467f7b6280d37291f868fae6b3cd66d6ad5d46e891e67b1cabb",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 253,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "00ff17354fde2eacc87a9a0ff6ebc53cbecc54ca2915e52ed8df7dadaa3c6334",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 253,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 7108352000,
+      "shared_weight_sha256": "d02e3f498bbf90fe95cf5b670fb0b07c94ed9e708c808cb5aebed73f575cca18",
+      "spike_memory_bytes": 22548578304,
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "Gemma-2-2B": {
+      "arena_layout": {
+        "arena_base": 21474836480,
+        "arena_bytes": 12884901888,
+        "mem_bytes": 32212254720,
+        "weights_base": 8589934592
+      },
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 293,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 294,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 12951772616,
+      "elf_sha256": "3a79b5d9ef6e83b7c9c4af6939013aba405eaec503b3456da5edbd2079dc6f26",
+      "expected_result_records": 99,
+      "numeric_parity": "not_established",
+      "programs": [
+        {
+          "capture_model_sha256": "f75f264f2dd13928175d01c2f3f339f2ec98f545de4ed75a7a28caca6a00eb01",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 235,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "ba25769f62085f60749dec88f1ebdac89b448843bb424dc60366c76cd5398f82",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 235,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 12816663552,
+      "shared_weight_sha256": "289be793cdbbc1efb12760addb7542fedf60d68c40ee7ab6bc8f5fd9419c79ac",
+      "spike_memory_bytes": 32212254720,
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "SmolVLA": {
+      "arena_layout": {
+        "arena_base": 3221225472,
+        "arena_bytes": 5368709120,
+        "mem_bytes": 7516192768,
+        "weights_base": 8589934592
+      },
+      "bindings": [
+        {
+          "name": "prefix_pad_masks",
+          "source_output": 0,
+          "source_program": "prefix_encode",
+          "target_input": 505,
+          "target_program": "flow_denoise"
+        },
+        {
+          "name": "prefix_kv_cache",
+          "source_output": 1,
+          "source_program": "prefix_encode",
+          "target_input": 506,
+          "target_program": "flow_denoise"
+        },
+        {
+          "name": "decoded_flow_state",
+          "source_output": 0,
+          "source_program": "flow_denoise",
+          "target_input": 0,
+          "target_program": "action_decode"
+        }
+      ],
+      "elf_bytes": 916148928,
+      "elf_sha256": "cf482dd11f6651c0680479a77694a80c2b97f9c3d22b290440cb29501a03645e",
+      "expected_result_records": 33,
+      "numeric_parity": "not_established",
+      "programs": [
+        {
+          "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+          "name": "prefix_encode",
+          "outputs": 2,
+          "selected_operations": 211,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+          "name": "flow_denoise",
+          "outputs": 3,
+          "selected_operations": 116,
+          "steps": 10
+        },
+        {
+          "capture_model_sha256": "c194700d5a9e19aa83456862f666a41559c83e51b992709bba598d681176224b",
+          "name": "action_decode",
+          "outputs": 1,
+          "selected_operations": 0,
+          "steps": 1
+        }
+      ],
+      "shared_weight_bytes": 906639456,
+      "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+      "spike_memory_bytes": 7516192768,
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "TinyLlama": {
+      "arena_layout": {
+        "arena_base": 13153337344,
+        "arena_bytes": 6442450944,
+        "mem_bytes": 18253611008,
+        "weights_base": 8589934592
+      },
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 205,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 206,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 4423935472,
+      "elf_sha256": "6c7f0cd9b6a79ccc9874c7a24caa262bc6c87ea9c338748342d868e1be15ffcf",
+      "expected_result_records": 99,
+      "numeric_parity": "not_established",
+      "programs": [
+        {
+          "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 199,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 199,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 4400193536,
+      "shared_weight_sha256": "9be0ca271944ab7db0ee33c6652debf84fc3e0cc1924af1d4d0bb84906841dee",
+      "spike_memory_bytes": 18253611008,
+      "status": "linked_experimental_numeric_qualification_pending"
+    }
+  }
+}
