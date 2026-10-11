@@ -21,7 +21,20 @@ def _resource_digest(resources: dict[str, bytes]) -> str:
 
 
 def _validate_frontend(frontend_mlir: str, manifest: dict, profile: dict,
-                       width: int = 128) -> int:
+                       width: int = 128, *, source_sha256: str | None = None,
+                       header_sha256: str | None = None) -> int:
+    if manifest.get("schema") == "mx_gemmini.portable_chain_binding.v1":
+        from .standard_chain_handoff import validate_portable_chain
+        first, second = validate_portable_chain(
+            frontend_mlir, manifest, profile, precision="FP8",
+            source_driver_sha256=source_sha256,
+            source_header_sha256=header_sha256)
+        m = first[0]
+        if (m not in range(16, 129, 16) or width not in (64, 96, 128) or
+                (width == 64 and m != 64) or
+                first != (m, width, width) or second != (m, width, width)):
+            raise ValueError("portable FP8 chain lacks a supported square source shape")
+        return m
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func
@@ -65,7 +78,9 @@ def render_plain_chain(frontend_mlir: str, manifest: dict, profile: dict,
                        resources: dict[str, bytes], *, source_sha256: str,
                        header_sha256: str, width: int = 128) -> str:
     """Bind two captured sites to checked wire data and a resident edge."""
-    m = _validate_frontend(frontend_mlir, manifest, profile, width)
+    m = _validate_frontend(frontend_mlir, manifest, profile, width,
+                           source_sha256=source_sha256,
+                           header_sha256=header_sha256)
     _validate_resources(resources, m, width)
     c1_row, c2_row = (128, 512) if width == 64 else (2048, 4096)
     plan = plan_fp8_resident_pair(
@@ -134,7 +149,9 @@ def lower_plain_chain(mlir_text: str, frontend_mlir: str, manifest: dict,
     from xdsl.dialects.func import Func, FuncOp
     from xdsl.parser import Parser
 
-    m = _validate_frontend(frontend_mlir, manifest, profile, width)
+    m = _validate_frontend(frontend_mlir, manifest, profile, width,
+                           source_sha256=source_sha256,
+                           header_sha256=header_sha256)
     _validate_resources(resources, m, width)
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)

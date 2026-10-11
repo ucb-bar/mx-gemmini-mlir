@@ -58,7 +58,9 @@ def render_fp4_plain_chain(profile: dict, resources: dict[str, bytes], *,
                            dimension: int = 64) -> str:
     frontend_attrs = ""
     if frontend_mlir is not None or frontend_manifest is not None:
-        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension)
+        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension,
+                           source_sha256=source_sha256,
+                           header_sha256=header_sha256)
         manifest_sha = hashlib.sha256(json.dumps(
             frontend_manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         frontend_attrs = (f'mx.frontend_mlir_sha256 = "{hashlib.sha256(frontend_mlir.encode()).hexdigest()}",\n'
@@ -105,7 +107,9 @@ def render_fp4_plain_chain(profile: dict, resources: dict[str, bytes], *,
 }}
 '''
     lower_fp4_plain_chain(text, profile, resources, frontend_mlir=frontend_mlir,
-                          frontend_manifest=frontend_manifest, dimension=dimension)
+                          frontend_manifest=frontend_manifest, dimension=dimension,
+                          source_sha256=source_sha256,
+                          header_sha256=header_sha256)
     return text
 
 
@@ -113,9 +117,13 @@ def lower_fp4_plain_chain(mlir_text: str, profile: dict,
                           resources: dict[str, bytes], *,
                           frontend_mlir: str | None = None,
                           frontend_manifest: dict | None = None,
-                          dimension: int = 64):
+                          dimension: int = 64,
+                          source_sha256: str | None = None,
+                          header_sha256: str | None = None):
     if frontend_mlir is not None or frontend_manifest is not None:
-        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension)
+        _validate_frontend(frontend_mlir, frontend_manifest, profile, dimension,
+                           source_sha256=source_sha256,
+                           header_sha256=header_sha256)
         manifest_sha = hashlib.sha256(json.dumps(
             frontend_manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if (f'mx.frontend_mlir_sha256 = "{hashlib.sha256(frontend_mlir.encode()).hexdigest()}"'
@@ -130,9 +138,20 @@ def lower_fp4_plain_chain(mlir_text: str, profile: dict,
 
 
 def _validate_frontend(frontend_mlir: str | None, manifest: dict | None,
-                       profile: dict, dimension: int) -> None:
+                       profile: dict, dimension: int, *,
+                       source_sha256: str | None = None,
+                       header_sha256: str | None = None) -> None:
     if not isinstance(frontend_mlir, str) or not isinstance(manifest, dict):
         raise ValueError("FP4 resident pair needs both frontend IR and manifest")
+    if manifest.get("schema") == "mx_gemmini.portable_chain_binding.v1":
+        from .standard_chain_handoff import validate_portable_chain
+        shapes = validate_portable_chain(
+            frontend_mlir, manifest, profile, precision="FP4",
+            source_driver_sha256=source_sha256,
+            source_header_sha256=header_sha256)
+        if shapes != ((dimension,) * 3,) * 2:
+            raise ValueError("portable FP4 chain lacks a qualified square source shape")
+        return
     from xdsl.context import Context
     from xdsl.dialects.builtin import Builtin
     from xdsl.dialects.func import Func
