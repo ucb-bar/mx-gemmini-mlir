@@ -310,9 +310,10 @@ whole-model build using the target catalog and writes `mx_stage_probe.json`.
 It rejects a changed capture `model.mlir` and a linked catalog missing any
 source region selected from the raw capture. With `--spike-extlib` it also runs
 the linked ELF using the pinned Gemmini Spike extension and records the raw
-console and completion status. It enables the first-output SHA256 only for
-f32 results, as Merlin's current bare-metal digest does not support SmolVLA's
-boolean prefix output. Completion is not a numerical parity gate.
+console and completion status. Merlin's bare-metal digest now supports f32,
+i64, and boolean first outputs, including SmolVLA's prefix result. The stage
+probe enables it for these typed outputs. Completion is not a numerical
+parity gate.
 
 ```sh
 python -m tools.build_merlin_stage \

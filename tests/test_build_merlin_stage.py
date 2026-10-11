@@ -19,6 +19,10 @@ def test_first_output_digest_matches_merlin_supported_dtype(tmp_path) -> None:
     np.save(golden, np.zeros((2,), dtype=np.float32))
     assert _can_hash_first_output(tmp_path)
     np.save(golden, np.zeros((2,), dtype=np.bool_))
+    assert _can_hash_first_output(tmp_path)
+    np.save(golden, np.zeros((2,), dtype=np.int64))
+    assert _can_hash_first_output(tmp_path)
+    np.save(golden, np.zeros((2,), dtype=np.float16))
     assert not _can_hash_first_output(tmp_path)
     golden.unlink()
     with pytest.raises(ValueError, match="golden.npy"):

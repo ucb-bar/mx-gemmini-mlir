@@ -35,11 +35,12 @@ def _capture_model(stage: Path) -> Path:
 
 
 def _can_hash_first_output(stage: Path) -> bool:
-    """The current Merlin bare-metal digest supports only f32 first outputs."""
+    """Enable Merlin's canonical first-output digest for supported scalar types."""
     golden = stage / "golden.npy"
     if not golden.is_file() or golden.is_symlink():
         raise ValueError("MX whole-stage build needs a plain golden.npy")
-    return np.load(golden, mmap_mode="r", allow_pickle=False).dtype == np.dtype("float32")
+    return np.load(golden, mmap_mode="r", allow_pickle=False).dtype in {
+        np.dtype("float32"), np.dtype("int64"), np.dtype("bool")}
 
 
 def _raw_selected_regions(source: Path, profile: dict) -> set[str]:
