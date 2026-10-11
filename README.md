@@ -166,9 +166,11 @@ The [combined FP4 and EXPSUM path](docs/evidence/nicolas_flash_mid_fp4_expsum_ty
 emits 146 MX commands and a data-free RV64 object; it matches all 4,096 BF16
 source outputs twice on pinned Spike.
 The [64×2,048×64 streamed flash source baseline](docs/evidence/nicolas_flash_llama_stream_source_baseline_e9ded36_0344bcb/README.md)
-now pins the canonical `attn_flash_llama.c` wrapper, a model2MLIR capture,
-and all 4,096 BF16 source outputs across two Spike runs. Its streamed K/V
-layout is the next typed compiler target; no compiler object is claimed yet.
+pins the canonical `attn_flash_llama.c` wrapper, a model2MLIR capture,
+and all 4,096 BF16 source outputs across two Spike runs. The [typed streamed
+program](docs/evidence/nicolas_flash_llama_stream_typed_e9ded36_0344bcb/README.md)
+now emits a data-free RV64 object with 484 MX commands and 50 fences. It
+matches all 4,096 BF16 source outputs twice on pinned Spike.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

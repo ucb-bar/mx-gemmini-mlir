@@ -1,6 +1,6 @@
 # Streamed flash attention source baseline on Spike
 
-This is the next compiler target after the resident flash cases. Nicolas's
+This is the source oracle for the streamed compiler path. Nicolas's
 unmodified `attn_flash_llama.c` wrapper selects 64 queries, 2,048 keys,
 dimension 64, and `BK=256` on the pinned `npu-exploration` `0344bcb` source.
 The core selects **streamed K/V** with two K buffers, three V buffers, and a
@@ -19,14 +19,13 @@ The canonical [source driver](driver.c) ran twice on Nicolas's pinned Spike
 extension. Both runs matched the source's expected hash `dc33d078bc537b19`
 and all **4,096 BF16 output words** were identical. The [receipt](receipt.json)
 pins source and generator revisions, frontend, profile, toolchain, simulator,
-ELF, and logs. This archive is a source oracle; it does not contain a compiler
-object or establish typed lowering for streamed K/V.
+ELF, and logs. This archive is a source oracle; the matching typed lowering
+and object have their own [Spike qualification](../nicolas_flash_llama_stream_typed_e9ded36_0344bcb/README.md).
 
-The streamed lowerer must allocate the two K and three V buffers, issue
-strided block DMAs before their consumers, preserve gated scale-half ownership,
-and place score/output/statistics rows according to this source layout. It
-must then produce a data-free object and match every BF16 output against this
-oracle on Spike.
+The typed lowerer allocates the two K and three V buffers, issues strided
+block DMAs before their consumers, preserves gated scale-half ownership,
+and places score/output/statistics rows according to this source layout. Its
+data-free object matches every BF16 output against this oracle on Spike.
 
 To replay the source baseline, set `NPU_ROOT` to `npu-exploration` `0344bcb`,
 `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64
