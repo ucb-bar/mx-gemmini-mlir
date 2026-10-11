@@ -13,6 +13,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -81,7 +82,8 @@ def _build_extension(source: Path, vpu_ref: Path, riscv_root: Path,
 
 
 def _run_case(case_key: str, rtl_root: Path, riscv_root: Path,
-              object_root: Path, extension: Path, out_dir: Path) -> dict:
+              object_root: Path, extension: Path, out_dir: Path,
+              scale_mode: str) -> dict:
     case = CASES[case_key]
     source = rtl_root / "software/gemmini-rocc-tests/bareMetalC" / case.source_name
     header = rtl_root / "software/gemmini-rocc-tests/include" / case.header_name
@@ -107,7 +109,36 @@ def _run_case(case_key: str, rtl_root: Path, riscv_root: Path,
     compiler_case = replace(case, label=case.label.replace("Spike fallback",
                                                    "accumulator candidate"))
     driver = out_dir / "mx_driver.c"
-    driver.write_text(_driver(compiler_case))
+    driver_text = _driver(compiler_case)
+    if scale_mode == "hardware_constant_0x7f":
+        scale_lengths = {entry["name"]: entry["minimum_bytes"]
+                         for entry in object_manifest["buffer_abi"]
+                         if entry["name"] in ("activation_scales", "weight_scales")}
+        if set(scale_lengths) != {"activation_scales", "weight_scales"} or any(
+                not isinstance(value, int) or value < 1 or value > 8192
+                for value in scale_lengths.values()):
+            raise ValueError("accumulator object has unsupported scale buffer ABI")
+        declarations = (
+            f"  static uint8_t constant_a[{scale_lengths['activation_scales']}] "
+            "__attribute__((aligned(64)));\n"
+            f"  static uint8_t constant_b[{scale_lengths['weight_scales']}] "
+            "__attribute__((aligned(64)));\n"
+            f"  for (int i = 0; i < {scale_lengths['activation_scales']}; ++i) "
+            "constant_a[i] = 0x7f;\n"
+            f"  for (int i = 0; i < {scale_lengths['weight_scales']}; ++i) "
+            "constant_b[i] = 0x7f;\n")
+        if driver_text.count("int main(void) {\n") != 1:
+            raise ValueError("Nicolas driver has no unique main insertion point")
+        driver_text = driver_text.replace("int main(void) {\n",
+                                          "int main(void) {\n" + declarations)
+        old = "A_scales_row, C_hw, scratch_output_scales, B_in, B_scales_col);"
+        new = "constant_a, C_hw, scratch_output_scales, B_in, constant_b);"
+        if driver_text.count(old) != 1:
+            raise ValueError("Nicolas driver has no unique scale-bearing issue call")
+        driver_text = driver_text.replace(old, new)
+        driver_text = driver_text.replace("accumulator candidate:",
+                                          "accumulator candidate constant scales:")
+    driver.write_text(driver_text)
     flags = ["-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DMX_ROCKET", "-DBAREMETAL=1",
              "-mcmodel=medany", "-std=gnu99", "-O2", "-ffast-math", "-fno-common",
              "-fno-builtin-printf", "-fno-tree-loop-distribute-patterns",
@@ -133,12 +164,19 @@ def _run_case(case_key: str, rtl_root: Path, riscv_root: Path,
     log = out_dir / "spike.log"
     log.write_text(run.stdout)
     comparisons = case.shape[0] * case.shape[1]
-    if (run.returncode or
-            f"0 mismatches / {comparisons} BF16 values" not in run.stdout or
-            "accumulator candidate" not in run.stdout):
-        raise ValueError(f"{case_key} accumulator candidate did not match all BF16 values")
-    return {"schema": "mx_gemmini.nicolas_accumulator_candidate_spike.v1",
-            "status": "experimental_accumulator_spike_full_bf16_matched",
+    match = re.search(rf"(\d+) mismatches / {comparisons} BF16 values", run.stdout)
+    if match is None or "accumulator candidate" not in run.stdout:
+        raise ValueError(f"{case_key} candidate produced no full BF16 comparison")
+    mismatches = int(match.group(1))
+    if scale_mode == "source_header" and (run.returncode or mismatches != 0):
+        raise ValueError(f"{case_key} header-scale candidate did not match source golden")
+    if scale_mode == "hardware_constant_0x7f" and (
+            run.returncode == 0 or not 0 < mismatches <= comparisons):
+        raise ValueError(f"{case_key} constant scales did not expose expected divergence")
+    result = {"schema": "mx_gemmini.nicolas_accumulator_candidate_spike.v1",
+            "status": ("experimental_accumulator_spike_full_bf16_matched"
+                       if scale_mode == "source_header" else
+                       "experimental_constant_scales_diverge_from_source_golden"),
             "case": case_key, "rtl_revision": RTL_REVISION,
             "source_driver_sha256": case.source_sha256,
             "source_header_sha256": case.header_sha256,
@@ -147,10 +185,15 @@ def _run_case(case_key: str, rtl_root: Path, riscv_root: Path,
             "driver_sha256": _sha(driver), "elf_sha256": _sha(elf),
             "extension_sha256": _sha(extension), "spike_sha256": _sha(spike),
             "spike_log_sha256": _sha(log),
-            "bf16_values_checked": comparisons, "mismatches": 0,
+            "bf16_values_checked": comparisons, "mismatches": mismatches,
             "model_scope": "experimental_mx_smem_shadow_to_accumulator_mvout",
             "rtl_or_fpga_qualified": False,
             "source_hardware_scale_semantics_matched": False}
+    if scale_mode == "hardware_constant_0x7f":
+        result.update(scale_mode=scale_mode, spike_exit_code=run.returncode,
+                      source_hardware_scale_values_matched=True,
+                      source_hardware_scale_transport_matched=False)
+    return result
 
 
 def main() -> None:
@@ -158,6 +201,8 @@ def main() -> None:
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--object-root", type=Path, default=DEFAULT_OBJECTS)
+    parser.add_argument("--scale-mode", choices=("source_header", "hardware_constant_0x7f"),
+                        default="source_header")
     args = parser.parse_args()
     for name in ("rtl_root", "riscv_root", "object_root", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
@@ -167,7 +212,8 @@ def main() -> None:
     args.out_dir.mkdir(parents=True)
     extension = _build_extension(source, vpu_ref, args.riscv_root, args.out_dir)
     receipts = [_run_case(case, args.rtl_root, args.riscv_root, args.object_root,
-                          extension, args.out_dir / case) for case in CASES_HARDWARE]
+                          extension, args.out_dir / case, args.scale_mode)
+                for case in CASES_HARDWARE]
     index = {"schema": "mx_gemmini.nicolas_accumulator_candidate_index.v1",
              "status": "experimental_accumulator_spike_full_bf16_matched",
              "rtl_revision": RTL_REVISION,
@@ -178,6 +224,14 @@ def main() -> None:
                  receipt["bf16_values_checked"] for receipt in receipts),
              "rtl_or_fpga_qualified": False,
              "source_hardware_scale_semantics_matched": False}
+    if args.scale_mode == "hardware_constant_0x7f":
+        index.update(schema="mx_gemmini.nicolas_accumulator_scale_divergence_index.v1",
+                     status="experimental_constant_scales_diverge_from_source_golden",
+                     scale_mode=args.scale_mode,
+                     total_bf16_mismatches=sum(
+                         receipt["mismatches"] for receipt in receipts),
+                     source_hardware_scale_values_matched=True,
+                     source_hardware_scale_transport_matched=False)
     (args.out_dir / "index.json").write_text(
         json.dumps(index, indent=2, sort_keys=True) + "\n")
     print(args.out_dir / "index.json")
