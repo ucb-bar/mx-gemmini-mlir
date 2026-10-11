@@ -1,0 +1,23 @@
+{
+  "bound_mlir_sha256": "83c56d713777df0df49b51159ced87a52ec5118699198c0ad17fb4ed4143f435",
+  "compiler_revision": "af0b4ad333ab462df9d96db0f0d227c3a16ded89",
+  "compiler_source_closure_sha256": "75e5fe4fcd2817f04b95ff42c16bd601db7ea0f2349c118c20d06c791cf520f7",
+  "emitter": "tools.emit_mx_object",
+  "lowering_family": "source_contract",
+  "native_verifier_sha256": "14fc7868d778eda59268c3291214e4fe57c8c52a00011e9169428ed8b4f6b967",
+  "object_manifest_sha256": "773e46491815938a47fdc86aee53ccc7c058b5ea35cadd678e037959a7f744f6",
+  "object_sha256": "e0c419c985f7f2bbb9613bc2a52c722254f0d859eda1b7cea24f966034fd186f",
+  "physical_program_sha256": "812a316471457c09fc3cfca7dc0fe732701d8cbc4269c7dae1bb14cd5c877fe9",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "schema": "mx_gemmini.compiler_object_dispatch.v1",
+  "status": "rv64_rocc_object_built",
+  "verified_graph_counts": {
+    "contracts": 1,
+    "lut_uploads": 0,
+    "resident_contracts": 0,
+    "runtime_luts": 0,
+    "source_resources": 4,
+    "spad_requants": 0,
+    "vpu_commands": 0
+  }
+}
