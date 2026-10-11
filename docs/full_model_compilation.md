@@ -31,6 +31,26 @@ probe, so its capture uses the installed `Gemma2Config` defaults with random
 weights. SmolVLA uses LeRobot 0.5.1 in a task-local environment with random
 weights and a 64×64 image. Neither is a pretrained-output parity test.
 
+The MX [whole-graph contraction importer](../mx_gemmini_support/model2mlir_worklist.py)
+now strictly parses and verifies all four captured modules. It preserves
+source region IDs, module names, rank-two shapes, element types, and the other
+contraction families in a target-profile-bound worklist. The four probes
+contain respectively **20, 14, 20, and 198** contraction regions; only
+**15, 8, 15, and 93** currently appear as rank-two `linalg.matmul` operations.
+SmolVLA has 14 BF16 rank-two matmuls and seven whose K dimension needs MX
+32-element scale-group padding. The remaining groups include batched
+attention, bias-bearing `addmm`, and an im2col convolution. The worklist is
+an input to future lowering and carries no executable placement claim.
+
+Produce one worklist with:
+
+```sh
+python -m tools.plan_model2mlir_worklist \
+  --mlir docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --out /new/tinyllama-mx-worklist.json
+```
+
 ## Integration path
 
 1. Have Merlin ingest the complete model2MLIR module, parameter manifest, and
@@ -41,6 +61,8 @@ weights and a 64×64 image. Neither is a pretrained-output parity test.
    scratchpad allocation, command ordering, and RoCC emission. Define a
    compiled RV64 host lane for embedding, normalization, rotary position,
    masks, softmax, control, and any operation without a legal MX mapping.
+   Extend the worklist importer to lower the rank-two, batched, and bias-bearing
+   sites while preserving their original SSA dependencies.
 3. Link both lanes with explicit buffers and synchronization into one
    standalone executable. Verify that every captured op has an executable
    owner and that no runtime input or checkpoint weight is silently omitted.

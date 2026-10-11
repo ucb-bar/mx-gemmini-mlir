@@ -9,6 +9,11 @@ classifier is given raw model2MLIR linalg syntax. Even a general parser would
 still need whole-graph lowering, weight/state binding, CPU/MX partitioning,
 linking, and numerical checks.
 
+The separate `tools.plan_model2mlir_worklist` importer now strictly parses
+these four graphs and records their contraction sites with the selected MX
+profile. It emits no object. See the [whole-model path](../../full_model_compilation.md)
+for the per-model site counts and remaining executable lowering steps.
+
 The captures deliberately use reduced random-weight structures:
 
 - TinyLlama: 2/22 decoder layers, sequence length 8, tokens to logits.

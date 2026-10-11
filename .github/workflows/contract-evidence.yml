@@ -72,6 +72,7 @@ jobs:
             tests/test_standard_chain_handoff.py \
             tests/test_nicolas_portable_chain_evidence.py \
             tests/test_full_model_compile_preflight_evidence.py \
+            tests/test_model2mlir_worklist.py \
             tests/test_full_vpu_branch_public_evidence.py \
             tests/test_wide_vpu_pair_evidence.py \
             tests/test_square_128_vpu_pair_evidence.py \
