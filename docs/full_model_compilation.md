@@ -405,6 +405,12 @@ independent quantized reference. The native f32 encoder and packed buffer
 glue stay in this target package; Merlin's graph inventory, catalog ABI,
 memref shim, host lowering, and session orchestration remain shared.
 
+The [two-layer recurrent arena-reset comparison](evidence/tiny_two_layer_arena_reset_crossing_20261011/README.md)
+shows the reset-run's prefill and decode steps 0–1 preserved all nine result
+and state digests, then completed decode step 2 where the earlier no-reset
+binary exhausted its arena. It is a partial execution result; the reset run
+had not reached guest `DONE` when archived.
+
 For a receipt-bound stage, `tools.build_merlin_stage` runs Merlin's actual
 whole-model build using the target catalog and writes `mx_stage_probe.json`.
 It rejects a changed capture `model.mlir` and a linked catalog missing any

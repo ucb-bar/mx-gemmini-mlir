@@ -1,0 +1,38 @@
+{
+  "capture_program_sha256": {
+    "decode": "78d370529dc3b12ef1168e216d1640fee39d2f8372f14c659c2e9c18896a238a",
+    "prefill": "78980b12f4696c0007e8d079b2d57a44b77821141dfe586d490462565f66bd6b"
+  },
+  "common_first_nine_result_digests": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.tiny_two_layer_arena_reset_crossing.v1",
+  "scope": "two-layer random-weight TinyLlama prefill plus recurrent decode",
+  "selected_mx_calls_per_program": {
+    "decode": 19,
+    "prefill": 19
+  },
+  "status": "reset_passed_prior_failure_step_full_session_pending",
+  "step_2_output_digests": [
+    "18056185e7d08a13d811e4a24bb5ebadbe08797cf6a2651475b4e3ffcba39dd7",
+    "f4d9395cb47bba921358bb633e9ef88d5c3517bca023d64d019b36bc8158eb14",
+    "56e4351400a76315f51b8664889840bae811623d66ec51d46090b5477f66e168"
+  ],
+  "with_reset": {
+    "completed_result_digests": 12,
+    "elf_sha256": "b58350f1178735be97f801231798e2a85f17aa8dfedb13e0253598433afa9934",
+    "guest_done": false,
+    "last_completed_step": {
+      "program": "decode",
+      "step": 2
+    },
+    "next_step_started": 3,
+    "valid_prefix_log_sha256": "472277109e7c2a7d40f63d293cd19912e2bd459dacb9a5c1dbc61ea6d6ec90a1"
+  },
+  "without_reset": {
+    "completed_result_digests": 9,
+    "elf_sha256": "3328a72a1e0265db77bcf672223705cc85a063f6a8e71227dbff308cbd7c554d",
+    "guest_failure": "FATAL: model arena -- exhausted at decode step 2",
+    "log_sha256": "bb31eaa1569e77a81f0ec8cf4e2626f29ead9877431a0b19150bdfd29218db83",
+    "process_exit_code": 0
+  }
+}
