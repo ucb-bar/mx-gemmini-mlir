@@ -422,7 +422,29 @@
       "source_sha256": "4fee567ca604c0245dd690d7fd9b55234f135364bc7699144e00c810f6418351"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "45fa43db13da6792d2db91cef4710e981bbc3f7238cac46f1dbccff5215f7acc",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "68702e6a2dced0307831041e9493b25957d387e1e54b385ccfc40b7ddcf97299",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "b97eb2293c6003f1d3bd2d3f515b0b148646cde267b4e1f3256426cc9416ce73",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e4m3_lut_64x64_requant",
       "source_sha256": "745c37bd183c2a7bfdc9219b14ce5579b4254a65456381a08602c4b2cf6534ab"
@@ -7178,6 +7200,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 124,
-  "without_direct_hash_reference": 47
+  "with_direct_hash_reference": 125,
+  "without_direct_hash_reference": 46
 }
