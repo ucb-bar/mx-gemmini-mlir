@@ -1,8 +1,8 @@
-"""Compile one full-K model2MLIR matmul stripe to a data-free MX object and Spike ELF.
+"""Compile one full-K model2MLIR matmul output region to an MX object and ELF.
 
 The full model graph names the site; supplied .npy files provide its actual
-runtime operands. The result is an executed projection stripe, not a compiled
-whole-model inference session.
+runtime operands. The region may span the complete N axis. Other model ops
+and the recurrent inference session remain outside this one program.
 """
 
 from __future__ import annotations
@@ -182,11 +182,18 @@ def main() -> None:
     difference = np.abs(hardware_values[:args.row_count] - pytorch_values)
     if not np.isfinite(difference).all():
         raise ValueError("model projection comparison has nonfinite values")
+    complete_projection = (args.row_start == 0 and args.row_count == site["shape_mnk"][0]
+                           and args.column_start == 0 and
+                           args.column_count == site["shape_mnk"][1])
     summary = {
         "schema": "mx_gemmini.model2mlir_projection_execution.v1",
-        "status": "full_k_projection_stripe_matched_on_spike" if args.run_spike else
-                  "full_k_projection_stripe_elf_built_unexecuted",
-        "scope": "one model2MLIR matmul output stripe; other model operations uncompiled",
+        "status": ("complete_projection_matched_on_spike" if complete_projection else
+                   "full_k_projection_stripe_matched_on_spike") if args.run_spike else
+                  ("complete_projection_elf_built_unexecuted" if complete_projection else
+                   "full_k_projection_stripe_elf_built_unexecuted"),
+        "scope": ("one complete rank-two model projection; other model operations uncompiled"
+                  if complete_projection else
+                  "one model2MLIR matmul output stripe; other model operations uncompiled"),
         "model2mlir_source_closure_sha256": MODEL2MLIR_SOURCE_CLOSURE,
         "mxq_revision": MXQ_REVISION,
         "full_model_mlir_sha256": worklist["source_mlir_sha256"],

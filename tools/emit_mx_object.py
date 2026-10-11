@@ -137,7 +137,10 @@ def main() -> None:
     if not cc.is_file() or not nm.is_file() or not readelf.is_file():
         parser.error("selected RISC-V toolchain lacks GCC, nm, or readelf")
     obj = args.out_dir / "mx_issue.o"
-    command = [str(cc), "-std=gnu99", "-O2", "-ffreestanding", "-fno-common",
+    # The command stream is already ordered. O1 keeps large issuers' constants
+    # in instructions; O0 emits a .rodata pool, while O2 spends minutes here.
+    issuer_opt_level = "-O1" if len(program.steps) > 10000 else "-O2"
+    command = [str(cc), "-std=gnu99", issuer_opt_level, "-ffreestanding", "-fno-common",
                "-mcmodel=medany", "-march=rv64gc", "-Wa,-march=rv64gc",
                "-c", str(issuer), "-o", str(obj)]
     compiled = subprocess.run(command, cwd=args.out_dir, text=True,
@@ -181,6 +184,8 @@ def main() -> None:
         "rtl_revision": _git_revision(args.rtl_root),
         "defined_symbol": "mx_issue", "undefined_symbols": [],
     }
+    if issuer_opt_level != "-O2":
+        receipt["issuer_opt_level"] = issuer_opt_level
     if host_requant:
         receipt["host_output_format"] = program.output_format
         receipt["status"] = "rv64_rocc_composed_object_built"

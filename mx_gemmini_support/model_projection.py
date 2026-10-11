@@ -108,7 +108,8 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
     if (any(type(value) is not int for value in (row_start, row_count,
                                                 column_start, column_count, tile_k)) or
             row_start < 0 or row_count <= 0 or row_start + row_count > m or
-            column_start < 0 or column_count != 32 or column_start + column_count > n or
+            column_start < 0 or column_count < 32 or column_count % 32 or
+            column_start + column_count > n or
             column_start % 32 or k % 32 or tile_k < 32 or tile_k % 32 or k % tile_k):
         raise ValueError("projection stripe or K tile is outside complete FP8 MX bounds")
     mesh = profile["geometry"]["mesh_columns"]
@@ -160,7 +161,7 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
         "schema": "mx_gemmini.source_payload.v1",
         "site_id": "functional:matmul", "precision": "FP8",
         "shape_mnk": [padded_m, column_count, k],
-        "tile_mnk": [padded_m, column_count, tile_k],
+        "tile_mnk": [padded_m, 32, tile_k],
         "profile_sha256": profile_sha256(profile),
         "origin": MODEL2MLIR_PROJECTION_ORIGIN,
         "model2mlir_projection": {
