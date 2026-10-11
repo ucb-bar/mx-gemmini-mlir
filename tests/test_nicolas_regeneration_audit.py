@@ -23,13 +23,13 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     assert report["status_counts"] == {
         "generated_object_selected_spike_result_matched": 156,
         "generated_connected_chain_spike_result_matched": 6,
-        "generated_specialized_selected_spike_result_matched": 7,
-        "no_direct_source_receipt": 2,
+        "generated_specialized_selected_spike_result_matched": 8,
+        "no_direct_source_receipt": 1,
     }
     rows = {row["name"]: row for row in report["entries"]}
     assert {name for name, row in rows.items()
             if row["status"] == "no_direct_source_receipt"} == {
-                "matmul_ws_mx_generic", "matmul_single_tile_test"}
+                "matmul_single_tile_test"}
     chains = {name for name, row in rows.items()
               if row["family"] == "other_tiled_matrix" and
               row["status"] == "generated_connected_chain_spike_result_matched"}
@@ -44,11 +44,18 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
             "generated_specialized_selected_spike_result_matched"} == {
                 "vpu_softmax", "spad_requant", "spad_requant_fp4",
                 "chain_pipelined", "chain_vpu_spad_requant", "mx_mem_bw",
-                "vpu_ops"}
+                "vpu_ops", "matmul_ws_mx_generic"}
     assert rows["vpu_ops"]["selected_spike_result"]["checked_output_metrics"] == {
         "bf16_values_checked": 13056, "source_check_count": 29,
         "snapshot_count": 30}
     assert rows["vpu_ops"]["selected_spike_result"]["qualified_profile_count"] == 2
+    generic = rows["matmul_ws_mx_generic"]["selected_spike_result"]
+    assert generic["checked_output_metrics"] == {
+        "bf16_values_checked": 16384, "packed_bytes_checked": 8192,
+        "e8m0_scales_checked": 512}
+    assert generic["source_transport"] == "fixed_mmio"
+    assert generic["compiled_transport"] == "rocket_rocc"
+    assert generic["source_mmio_issue_qualification"] == "not_tested"
     for row in rows.values():
         if row["status"] in {
                 "generated_object_selected_spike_result_matched",
@@ -82,6 +89,15 @@ def test_report_rejects_stale_vpu_program_binding() -> None:
     vpu = next(row for row in inventory["entries"] if row["name"] == "vpu_ops")
     vpu["source_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="incomplete Nicolas VPU program archive"):
+        build_report(inventory)
+
+
+def test_report_rejects_stale_generic_fp6_binding() -> None:
+    inventory = json.loads(INVENTORY.read_text())
+    generic = next(row for row in inventory["entries"]
+                   if row["name"] == "matmul_ws_mx_generic")
+    generic["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="incomplete Nicolas generic FP6 numerical archive"):
         build_report(inventory)
 
 

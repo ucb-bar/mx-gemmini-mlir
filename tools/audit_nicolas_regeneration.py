@@ -218,6 +218,8 @@ def _full_matrix_result(entry: dict) -> dict | None:
 
 def _full_specialized_result(entry: dict) -> dict | None:
     """Validate complete selected outputs for non-matrix MX sources."""
+    if entry["name"] == "matmul_ws_mx_generic":
+        return _full_ws_generic_result(entry)
     if entry["name"] == "vpu_ops":
         return _full_vpu_program_result(entry)
     if entry["name"] == "chain_vpu_spad_requant":
@@ -291,6 +293,87 @@ def _full_specialized_result(entry: dict) -> dict | None:
             result["model2mlir_revision"] = model2mlir_revision
         return result
     return None
+
+
+def _full_ws_generic_result(entry: dict) -> dict:
+    """Validate the Rocket numerical replay without claiming MMIO parity."""
+    directory = ROOT / "docs/evidence/nicolas_ws_generic_portable_a042643_266c593"
+    index = json.loads((directory / "index.json").read_text())
+    if (index.get("schema") != "mx_gemmini.nicolas_ws_generic_portable_archive.v1" or
+            index.get("status") != "current_model2mlir_rocket_numerical_replay_matched" or
+            index.get("source_sha256") != entry["source_sha256"] or
+            index.get("rtl_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            index.get("source_transport") != "fixed_mmio" or
+            index.get("compiled_transport") != "rocket_rocc" or
+            index.get("source_mmio_issue_qualification") != "not_tested" or
+            index.get("same_profile_reproduction_exact") is not True or
+            (index.get("bf16_values_checked"), index.get("packed_bytes_checked"),
+             index.get("e8m0_scales_checked")) != (16384, 8192, 512)):
+        raise ValueError("incomplete Nicolas generic FP6 numerical archive")
+    required = {"model2mlir.mlir", "frontend_binding.json", "profile_bound.mlir",
+                "payload_bound.mlir", "bundle/manifest.json", "bundle/activation_lut.bin",
+                "bundle/weight_lut.bin", "bundle/output_lut.bin",
+                "object/mx_issue.o", "object/object_manifest.json",
+                "object/physical_program.json", "run/mx_driver.c",
+                "run/mx_program.elf", "run/spike.log", "receipt.json"}
+    files = index.get("files_sha256", {})
+    if not required <= set(files):
+        raise ValueError("Nicolas generic FP6 archive omits compiler evidence")
+    for name, digest in files.items():
+        _require_digest(digest, f"Nicolas generic FP6 {name}")
+        if _sha(directory / name) != digest:
+            raise ValueError(f"changed Nicolas generic FP6 artifact {name}")
+    receipt_path = directory / "receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    if (receipt.get("schema") != "mx_gemmini.nicolas_ws_generic_portable_spike.v1" or
+            receipt.get("status") !=
+            "source_header_selected_outputs_matched_on_pinned_spike" or
+            receipt.get("source_driver_sha256") != entry["source_sha256"] or
+            receipt.get("source_header_sha256") != index["source_header_sha256"] or
+            receipt.get("model2mlir_revision") != index["model2mlir_revision"] or
+            receipt.get("compiler_revision") != index["compiler_revision"] or
+            receipt.get("source_transport") != "fixed_mmio" or
+            receipt.get("compiled_transport") != "rocket_rocc" or
+            receipt.get("source_mmio_issue_qualification") != "not_tested" or
+            receipt.get("source_header_projection_policy") !=
+            "radiance_header_fp6_lut_v1" or
+            (receipt.get("bf16_values_checked"), receipt.get("packed_bytes_checked"),
+             receipt.get("e8m0_scales_checked"), receipt.get("mismatches")) !=
+            (16384, 8192, 512, 0) or
+            json.loads((directory / "reproduction_receipt.json").read_text()) != receipt or
+            _sha(directory / "reproduction_receipt.json") !=
+            index.get("reproduction_receipt_sha256")):
+        raise ValueError("Nicolas generic FP6 source or reproduction receipt differs")
+    for name, field in (("model2mlir.mlir", "frontend_mlir_sha256"),
+                        ("frontend_binding.json", "frontend_binding_sha256"),
+                        ("payload_bound.mlir", "bound_mlir_sha256"),
+                        ("object/mx_issue.o", "object_sha256"),
+                        ("run/mx_program.elf", "elf_sha256"),
+                        ("run/spike.log", "spike_log_sha256")):
+        if _sha(directory / name) != receipt.get(field):
+            raise ValueError(f"changed Nicolas generic FP6 {name}")
+    for field in ("profile_sha256", "model2mlir_source_closure_sha256",
+                  "spike_extension_sha256", "spike_binary_sha256",
+                  "riscv_gcc_sha256", "native_mx_opt_sha256"):
+        _require_digest(receipt.get(field), f"Nicolas generic FP6 {field}")
+    revision = receipt.get("compiler_revision")
+    if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+        raise ValueError("Nicolas generic FP6 compiler revision is not pinned")
+    return {"receipt": str(receipt_path.relative_to(ROOT)),
+            "receipt_sha256": _sha(receipt_path),
+            "receipt_schema": receipt["schema"],
+            "profile_sha256": receipt["profile_sha256"],
+            "compiler_revision": revision,
+            "model2mlir_revision": receipt["model2mlir_revision"],
+            "object_sha256": receipt["object_sha256"],
+            "elf_sha256": receipt["elf_sha256"],
+            "spike_log_sha256": receipt["spike_log_sha256"],
+            "source_transport": "fixed_mmio", "compiled_transport": "rocket_rocc",
+            "source_mmio_issue_qualification": "not_tested",
+            "checked_output_metrics": {"bf16_values_checked": 16384,
+                                       "packed_bytes_checked": 8192,
+                                       "e8m0_scales_checked": 512}}
 
 
 def _full_vpu_program_result(entry: dict) -> dict:

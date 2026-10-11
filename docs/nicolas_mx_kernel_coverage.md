@@ -12,8 +12,8 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **169 programs have at least one direct source-hash reference; two
-have none.** A matching hash establishes provenance only. Some referenced
+exact hash. **170 programs have at least one direct source-hash reference; one
+has none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
 with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
@@ -22,8 +22,9 @@ The [program-level regeneration audit](evidence/nicolas_mx_regeneration_audit_26
 validates selected-path generated-object Spike receipts for 156 matrix/LUT
 names, generated-executable receipts for all six connected FP4/FP6/FP8 matrix
 chains, and complete selected outputs for VPU softmax, both scratchpad
-requant programs, both connected VPU chains, and the memory readout. The
-monolithic VPU program and two debug programs remain separate. Its categories
+requant programs, both connected VPU chains, the memory readout, the full
+VPU operation stream, and the Rocket numerical replay of the legacy FP6
+MMIO debug data. The single-tile debug program remains separate. Its categories
 retain each receipt's actual scope rather than treating every source-hash match as a full
 program qualification.
 
@@ -115,10 +116,14 @@ the audited selected-output count to **168 of 171**. The full
 [`vpu_ops` program replay](evidence/nicolas_vpu_ops_program_public_266c593/README.md)
 raises that count to **169 of 171**: one compiler-issued object runs all 30
 ordered VPU commands and matches 13,056 BF16 values against the source reference
-under both VPU Rocket profiles. The two remaining debug programs lack direct
-source-bound compiler receipts.
+under both VPU Rocket profiles. The [legacy generic FP6 data replay](evidence/nicolas_ws_generic_portable_a042643_266c593/README.md)
+raises the count to **170 of 171**: clean current model2MLIR emits the portable
+matmul, and the generated Rocket object matches 16,384 BF16 values, 8,192
+packed bytes, and 512 scales from the debug header. Its original fixed MMIO
+issue path remains unqualified. The single-tile debug program lacks a direct
+source-bound compiler receipt and has its numerical checker commented out.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
-remains archived. The 169 source-hash references above include many weaker
+remains archived. The 170 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
 
 The [64³ resident FP8 chain replay](evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/README.md)
@@ -149,6 +154,7 @@ one of the six connected programs beyond the 156 matrix/LUT replay count.
 | Direct Nicolas FP6 source through public object compiler | [128×128×512 typed object replay](evidence/nicolas_plain_fp6_typed_object_95fc6d5_266c593/README.md), [128³ repeated-LUT replay](evidence/nicolas_plain_fp6_128_aliased_lut_public_6c6b27a_266c593/README.md) | Both checked-in programs preserve their packed source arrays and all 64 A/B/C LUT lines; their generated objects each match all 16,384 BF16 source goldens on pinned Spike in serial mode. The older 128³ source has repeated LUT codes and uses a distinct structural capture witness. Alternating-buffer RTL timing is not qualified by these results. |
 | Nicolas FP6 LUT-index requantized readout through public object compiler | [128×128×512 requant replay](evidence/nicolas_fp6_requant_typed_object_b25fa48_266c593/README.md) | The checked-in `matmul_tiled_fp6_128x128x512_requant` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike in serial mode. Other FP6 shapes and alternating-buffer RTL timing still need qualification. |
 | VPU | [29 source checks](compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations), [14 public VPU objects](evidence/nicolas_vpu_public_objects_266c593/README.md), [full `vpu_ops` program replay](evidence/nicolas_vpu_ops_program_public_266c593/README.md), [public softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md) | The public compiler lowers all 14 base/fused VPU operation classes. A single generated object issues all 30 ordered `vpu_ops.c` VPU commands, including dependent operations, timed snapshots, and a write-after-read reload; 13,056 BF16 values match the source reference under both VPU Rocket profiles. The CPU input/reference flow remains a thin C driver, FP4 VPU operand semantics are not inferred from this BF16 replay, and RTL timing remains unqualified. |
+| Legacy generic FP6 MMIO debug data | [Current model2MLIR Rocket replay](evidence/nicolas_ws_generic_portable_a042643_266c593/README.md) | Its source header's FP6 operands and 64-line LUT banks feed a compiler-generated Rocket object. All 16,384 BF16 values, 8,192 packed bytes, and 512 output scales match on Spike. The original fixed MMIO issue path and timing are unqualified; this is a numerical source-data result. |
 | Connected MX/VPU/requant | [64³ resident FP8 chain](evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/README.md), [full connected chain](compiled_mx_pipeline.md#matrixvpurequant-source-chain), [pipelined source](compiled_mx_pipeline.md#source-preloaded-pipelined-issue-on-nicolass-spike) | The named 64³ source matches C1/C2 codes and scales through a public object on pinned Spike. Other checked graphs run; arbitrary source control flow and scheduling are not supported. |
 | Bandwidth and microarchitectural tests | [Typed seven-phase MX memory benchmark replay](evidence/nicolas_mem_bw_typed_public_9cb0e4a_266c593/README.md), [single native DRAM-loop replay](evidence/nicolas_fp8_native_dram_public_1ef6f85_266c593/README.md), [two N-chunk loops](evidence/nicolas_fp8_native_nc_public_57b26ce_266c593/README.md), [two loop-managed-scale variants](evidence/nicolas_fp8_native_ls_public_126f138_266c593/README.md), [native K tiling](evidence/nicolas_fp8_native_kt_public_af0b4ad_266c593/README.md), [two scale-control variants](evidence/nicolas_fp8_native_scale_control_public_c2e25ce_266c593/README.md), [native store ReLU](evidence/nicolas_fp8_native_relu_public_c729276_266c593/README.md), and other matrix DRAM-loop variants | The nine native-loop programs match all BF16 outputs and command operands on Spike. `mx_mem_bw` lowers typed transfer ops and matches seven source phase geometries and the full 16 KiB readout. Benchmark timing parity and performance counters remain unqualified. |
 

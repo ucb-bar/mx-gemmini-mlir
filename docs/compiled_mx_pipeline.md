@@ -3490,6 +3490,27 @@ For the nonzero candidate, use a Python environment with PyTorch and add
 `--adds-bf16 0x3fc0`. The replay refuses a changed Nicolas FP8 model and
 records the source, model, profile, object, ELF, and Spike hashes.
 
+### Current portable model2MLIR capture for Nicolas's generic FP6 data
+
+The latest pinned model2MLIR `a042643` emits a standard `linalg.matmul` for
+the PyTorch 128³ operation. It does not expose the older MX external-quantizer
+handoff API. The MX out-of-tree
+[`standard_matmul_handoff.py`](../mx_gemmini_support/standard_matmul_handoff.py)
+checks the exact fill→matmul→return data flow and binds an explicit source
+payload and RTL-legal E3M2 LUT mode. It does not claim that the f32 example
+tensors carry Nicolas's quantized operand values.
+
+The [generic FP6 replay](evidence/nicolas_ws_generic_portable_a042643_266c593/README.md)
+uses the checked-in `matmul_ws_mx_generic.c` header's packed arrays, E8M0
+scales, and full 64-line LUT banks. Its header's BF16, packed-index, and
+output-scale arrays are self-consistent under the declared Radiance FP6 host
+projection. The generated data-free Rocket object matches **16,384 BF16
+values, 8,192 packed bytes, and 512 scales** on Nicolas's pinned Spike. Two
+clean builds reproduce the frontend capture, bound MLIR, object, ELF, and
+Spike log exactly. The original debug source issues through fixed MMIO; that
+command transport and its performance remain outside this Rocket numerical
+qualification.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

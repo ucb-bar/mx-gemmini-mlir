@@ -3,10 +3,28 @@
     {
       "family": "other_mx",
       "name": "matmul_ws_mx_generic",
-      "other_receipt_statuses": [],
-      "source_reference_count": 0,
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "bf16_values_checked": 16384,
+          "e8m0_scales_checked": 512,
+          "packed_bytes_checked": 8192
+        },
+        "compiled_transport": "rocket_rocc",
+        "compiler_revision": "cacb34e046eed5468951652b93ecb420ed33f016",
+        "elf_sha256": "8f5afd6cf6b9c2d71ccd530fec5fd9c4d3c0dcc402490247dcbca7655fa6a7e7",
+        "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+        "object_sha256": "a962ca2e30540af0df7a16e746a761a833f12fdd46f75c61fbc6c368be63bfae",
+        "profile_sha256": "704ec0fb715064fc64c672439c24286f137c74d37dbb7394e4e4b03317ad9737",
+        "receipt": "docs/evidence/nicolas_ws_generic_portable_a042643_266c593/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_ws_generic_portable_spike.v1",
+        "receipt_sha256": "9b73fc334775fb505554dd7424b8380c0fcf6995efe2e6a0f4a92c62337b6533",
+        "source_mmio_issue_qualification": "not_tested",
+        "source_transport": "fixed_mmio",
+        "spike_log_sha256": "e5dc27a7efb7730fb593844a12bf1031ef8bd81b9d2b5984161b2ea42019e312"
+      },
+      "source_reference_count": 4,
       "source_sha256": "dcbf940fbe7c40b135cb1f8e656196d0187aac326cfef673ed01012f45d9fb47",
-      "status": "no_direct_source_receipt"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
@@ -4278,11 +4296,11 @@
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
   "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v3",
   "scope": "matched generated matrix, connected-chain, and specialized results cover selected Spike output paths, not complete C control flow, RTL timing, or FPGA parity",
-  "source_inventory_sha256": "7370fcc0327681541552e3517a767bbdd0d40f44b19202a143b238061a7e6ff5",
+  "source_inventory_sha256": "b270b773c782f6c402e2ddd6336c6fccfcbe3a353a87c86cb5c4463a272a6cff",
   "status_counts": {
     "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
-    "generated_specialized_selected_spike_result_matched": 7,
-    "no_direct_source_receipt": 2
+    "generated_specialized_selected_spike_result_matched": 8,
+    "no_direct_source_receipt": 1
   }
 }

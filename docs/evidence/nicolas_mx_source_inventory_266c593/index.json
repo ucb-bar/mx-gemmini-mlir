@@ -1,7 +1,36 @@
 {
   "entries": [
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_ws_generic_portable_a042643_266c593/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "81051bf7ab8d38c4ed9dd6fc7d72fe456b3a5f5edaa064bba2be4fa31654befa",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_ws_generic_portable_a042643_266c593/index.json",
+          "schema": "mx_gemmini.nicolas_ws_generic_portable_archive.v1",
+          "sha256": "50d3f276f388a519ae76ddd6378b7f55b49211df4cc749cfb5fdaccc6f682475",
+          "status": "current_model2mlir_rocket_numerical_replay_matched"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_ws_generic_portable_a042643_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_ws_generic_portable_spike.v1",
+          "sha256": "9b73fc334775fb505554dd7424b8380c0fcf6995efe2e6a0f4a92c62337b6533",
+          "status": "source_header_selected_outputs_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_ws_generic_portable_a042643_266c593/reproduction_receipt.json",
+          "schema": "mx_gemmini.nicolas_ws_generic_portable_spike.v1",
+          "sha256": "9b73fc334775fb505554dd7424b8380c0fcf6995efe2e6a0f4a92c62337b6533",
+          "status": "source_header_selected_outputs_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_mx",
       "name": "matmul_ws_mx_generic",
       "source_sha256": "dcbf940fbe7c40b135cb1f8e656196d0187aac326cfef673ed01012f45d9fb47"
@@ -8322,6 +8351,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 169,
-  "without_direct_hash_reference": 2
+  "with_direct_hash_reference": 170,
+  "without_direct_hash_reference": 1
 }
