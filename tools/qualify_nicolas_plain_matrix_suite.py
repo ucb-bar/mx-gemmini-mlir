@@ -7,6 +7,7 @@ compile performance instrumentation or the other Nicolas C programs.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 from pathlib import Path
@@ -82,6 +83,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", action="append", choices=CASES,
                         help="case to replay; omit to run every direct case")
+    parser.add_argument("--jobs", type=int, default=1,
+                        help="independent source cases to replay concurrently")
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "riscv-root",
                  "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
@@ -89,6 +92,8 @@ def main() -> None:
     selected = args.case or list(CASES)
     if len(selected) != len(set(selected)):
         parser.error("each Nicolas source case must be selected once")
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
     rtl_root = args.rtl_root.resolve()
@@ -117,7 +122,8 @@ def main() -> None:
                                                           sort_keys=True) + "\n")
 
     write_index()
-    for key in selected:
+
+    def replay(key: str) -> tuple[str, int]:
         case = CASES[key]
         profile = ROOT / "profiles/gemmini-mx-cleanup-266c593" / f"{case.profile_name}.json"
         directory = args.out_dir / key
@@ -132,26 +138,32 @@ def main() -> None:
             "--mx-opt", str(args.mx_opt.resolve()),
             "--out-dir", str(directory),
         ]
-        print(f"replaying {key}", flush=True)
         run = subprocess.run(command, cwd=ROOT, text=True,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              check=False)
         (args.out_dir / f"{key}.log").write_text(run.stdout)
-        if run.returncode:
-            index["status"] = "failed"
-            index["failed_case"] = key
+        return key, run.returncode
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        for key, returncode in executor.map(replay, selected):
+            case = CASES[key]
+            profile = ROOT / "profiles/gemmini-mx-cleanup-266c593" / f"{case.profile_name}.json"
+            directory = args.out_dir / key
+            if returncode:
+                index["status"] = "failed"
+                index["failed_case"] = key
+                write_index()
+                raise SystemExit(f"{key} failed; see {args.out_dir / (key + '.log')}")
+            try:
+                record = _record(key, directory, profile, rtl_root, compiler_revision)
+            except (ValueError, KeyError, FileNotFoundError):
+                index["status"] = "failed"
+                index["failed_case"] = key
+                write_index()
+                raise
+            index["cases"].append(record)
             write_index()
-            raise SystemExit(f"{key} failed; see {args.out_dir / (key + '.log')}")
-        try:
-            record = _record(key, directory, profile, rtl_root, compiler_revision)
-        except (ValueError, KeyError, FileNotFoundError):
-            index["status"] = "failed"
-            index["failed_case"] = key
-            write_index()
-            raise
-        index["cases"].append(record)
-        write_index()
-        print(f"matched {key}: {index['cases'][-1]['outputs_checked']} outputs", flush=True)
+            print(f"matched {key}: {record['outputs_checked']} outputs", flush=True)
     index["status"] = "all_selected_source_goldens_matched_on_pinned_spike"
     index["total_outputs_checked"] = sum(row["outputs_checked"] for row in index["cases"])
     write_index()
