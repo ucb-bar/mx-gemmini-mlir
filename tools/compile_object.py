@@ -30,6 +30,7 @@ EMITTERS = {
     "vpu_softmax": "tools.emit_vpu_softmax_object",
     "vpu_elementwise": "tools.emit_vpu_elementwise_object",
     "vpu_sequence": "tools.emit_vpu_sequence_object",
+    "attention_vector": "tools.emit_attention_vector_object",
     "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
     "asymmetric_source": "tools.emit_asymmetric_object",
 }
@@ -41,6 +42,7 @@ MANIFEST_SCHEMAS = {
     "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
     "vpu_elementwise": "mx_gemmini.vpu_elementwise_linkable_object.v1",
     "vpu_sequence": "mx_gemmini.vpu_sequence_linkable_object.v1",
+    "attention_vector": "mx_gemmini.attention_vector_linkable_object.v1",
     "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
     "asymmetric_source": "mx_gemmini.asymmetric_source_linkable_object.v1",
 }
@@ -74,6 +76,10 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     counts = (report["contracts"], report["resident_contracts"],
               report["vpu_commands"], report["spad_requants"])
     sequence_schema = module.attributes.get("mx.vpu_sequence_schema")
+    if (sequence_schema is None and not source and not runtime and
+            counts == (0, 0, 7, 1) and
+            module.attributes.get("mx.source_mlir_sha256") is not None):
+        return "attention_vector", report
     if sequence_schema is not None:
         if getattr(sequence_schema, "data", None) != "mx_gemmini.vpu_sequence.v1":
             raise ValueError("MX VPU sequence schema is unsupported")
@@ -138,6 +144,8 @@ def main() -> None:
                         help="checked runtime input files for a connected pair")
     parser.add_argument("--abi-json", type=Path,
                         help="runtime buffer map for a connected pair")
+    parser.add_argument("--binding-json", type=Path,
+                        help="source and frontend binding for dense attention vector")
     parser.add_argument("--recipe-json", type=Path,
                         help="checked asymmetric source recipe")
     parser.add_argument("--source-driver", type=Path,
@@ -168,6 +176,8 @@ def main() -> None:
     asymmetric_inputs = (args.recipe_json, args.source_driver, args.source_header)
     if family != "asymmetric_source" and any(asymmetric_inputs):
         raise ValueError("asymmetric source files require an asymmetric MLIR graph")
+    if family != "attention_vector" and args.binding_json is not None:
+        raise ValueError("--binding-json requires a dense attention vector graph")
     if family != "full_vpu_branch" and (args.preloaded_mlir is not None or
                                         args.issue_schedule != "program_order_with_dependency_fences"):
         raise ValueError("preloaded MLIR and issue schedule require a full MX/VPU branch")
@@ -185,6 +195,10 @@ def main() -> None:
         if args.bundle or args.resources_dir or args.abi_json:
             raise ValueError("typed FP4 dual requant object has a fixed five-buffer ABI")
         extra = []
+    elif family == "attention_vector":
+        if args.bundle or args.resources_dir or args.abi_json or args.binding_json is None:
+            raise ValueError("dense attention vector object needs --binding-json only")
+        extra = ["--binding-json", str(args.binding_json.resolve())]
     elif family == "asymmetric_source":
         if (args.bundle or args.resources_dir or args.abi_json or
                 not all(asymmetric_inputs)):

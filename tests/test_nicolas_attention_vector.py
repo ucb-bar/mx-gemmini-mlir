@@ -9,10 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.nicolas_attention_vector import _audit_frontend_edges
+from mx_gemmini_support.nicolas_attention_vector import (
+    _audit_frontend_edges, lower_dense_attention_vector)
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.vector_lowering import lower_vector_commands
 from mx_gemmini_support.verify_profile_ir import verify_ir
+from tools.compile_object import classify
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,3 +82,27 @@ def test_bound_attention_vector_rejects_other_profile() -> None:
                            "MxGemminiRocketConfig.json")
     with pytest.raises(ValueError, match="profile digest differs"):
         lower_vector_commands(bound, profile)
+
+
+def test_public_object_family_lowers_exact_archived_commands() -> None:
+    bound = (COMPILED / "attention.vector_bound.mlir").read_text()
+    binding = json.loads((COMPILED / "vector_binding.json").read_text())
+    family, _ = classify(bound, PROFILE)
+    assert family == "attention_vector"
+    commands = lower_dense_attention_vector(bound, PROFILE, binding)
+    physical = json.loads((COMPILED / "physical_commands.json").read_text())
+    assert [asdict(command) for command in commands] == physical["commands"]
+
+
+def test_public_object_family_rejects_edited_schedule_or_binding() -> None:
+    bound = (COMPILED / "attention.vector_bound.mlir").read_text()
+    binding = json.loads((COMPILED / "vector_binding.json").read_text())
+    with pytest.raises(ValueError, match="VPU step 0 differs"):
+        lower_dense_attention_vector(
+            bound.replace("src1_row = 384 : i32", "src1_row = 385 : i32", 1),
+            PROFILE, {**binding, "bound_mlir_sha256": hashlib.sha256(
+                bound.replace("src1_row = 384 : i32", "src1_row = 385 : i32", 1)
+                .encode()).hexdigest()})
+    with pytest.raises(ValueError, match="manifest digest differs"):
+        lower_dense_attention_vector(bound, PROFILE,
+                                     {**binding, "source_sha256": "0" * 64})

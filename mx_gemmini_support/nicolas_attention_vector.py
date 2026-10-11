@@ -9,11 +9,32 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from .model2mlir_worklist import build_model2mlir_worklist
 from .target_profile import profile_sha256
 from .vector_lowering import lower_vector_commands
-from .verify_profile_ir import _text_attr
+from .verify_profile_ir import (_bool_attr, _int_attr, _operation_name,
+                                _text_attr, verify_ir)
+
+
+VECTOR_STEPS = (
+    ("muls", 384, 0, 384, 256, 1, False, 0x3e00),
+    ("rmax", 384, 0, 0x3000, 256, 8, False, 0),
+    ("sub", 384, 0x3000, 384, 256, 8, True, 0),
+    ("exp", 384, 0, 384, 256, 1, False, 0),
+    ("rsum", 384, 0, 0x3020, 256, 8, False, 0),
+    ("rcp", 0x3020, 0, 0x3020, 32, 1, False, 0),
+    ("mul", 384, 0x3020, 384, 256, 8, True, 0),
+)
+
+
+def _dense_plan() -> dict:
+    return {"shape_sq_sk_d": [32, 64, 64], "score_row": 384,
+            "probability_row": 640, "v_row": 768, "output_row": 1024,
+            "max_row": 0x3000, "sum_row": 0x3020,
+            "steps": [list(step) for step in VECTOR_STEPS],
+            "rounding": "BF16 after each VPU operation"}
 
 
 SOURCE_CALLS = (
@@ -122,20 +143,10 @@ def render_dense_attention_vector(frontend: str, source: str,
     if (score, probability, v_base, output) != (384, 640, 768, 1024):
         raise ValueError("dense attention scratchpad plan differs")
     vector_rows, row_length = sq * sk // 8, sk // 8
-    steps = (
-        ("muls", score, 0, score, vector_rows, 1, False, 0x3e00),
-        ("rmax", score, 0, 0x3000, vector_rows, row_length, False, 0),
-        ("sub", score, 0x3000, score, vector_rows, row_length, True, 0),
-        ("exp", score, 0, score, vector_rows, 1, False, 0),
-        ("rsum", score, 0, 0x3020, vector_rows, row_length, False, 0),
-        ("rcp", 0x3020, 0, 0x3020, sq, 1, False, 0),
-        ("mul", score, 0x3020, score, vector_rows, row_length, True, 0),
-    )
-    plan = {"shape_sq_sk_d": [sq, sk, d], "score_row": score,
-            "probability_row": probability, "v_row": v_base,
-            "output_row": output, "max_row": 0x3000,
-            "sum_row": 0x3020, "steps": [list(step) for step in steps],
-            "rounding": "BF16 after each VPU operation"}
+    steps = VECTOR_STEPS
+    if vector_rows != 256 or row_length != 8:
+        raise ValueError("dense attention VPU geometry differs")
+    plan = _dense_plan()
     policy = _sha(json.dumps(plan, sort_keys=True, separators=(",", ":")).encode())
     binding = {"schema": "mx_gemmini.nicolas_dense_attention_vector_binding.v1",
                "source_sha256": _sha(source.encode()),
@@ -176,3 +187,78 @@ def render_dense_attention_vector(frontend: str, source: str,
     binding["manifest_sha256"] = digest
     binding["bound_mlir_sha256"] = _sha(mlir.encode())
     return mlir, binding
+
+
+def lower_dense_attention_vector(mlir_text: str, profile: dict,
+                                 binding: dict) -> tuple:
+    """Check the pinned source-derived schedule before issuing physical commands."""
+    from xdsl.context import Context
+    from xdsl.dialects.builtin import Builtin
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
+    from xdsl.parser import Parser
+
+    report = verify_ir(mlir_text, profile)
+    if (report["contracts"], report["resident_contracts"],
+            report["vpu_commands"], report["spad_requants"]) != (0, 0, 7, 1):
+        raise ValueError("dense attention middle needs seven VPU and one requant operation")
+    if (binding.get("schema") != "mx_gemmini.nicolas_dense_attention_vector_binding.v1" or
+            binding.get("plan") != _dense_plan() or
+            binding.get("profile_sha256") != profile_sha256(profile) or
+            binding.get("bound_mlir_sha256") != _sha(mlir_text.encode())):
+        raise ValueError("dense attention vector binding differs from graph or profile")
+    for name in ("source_sha256", "source_header_sha256", "frontend_mlir_sha256",
+                 "contract_sha256", "policy_sha256", "manifest_sha256"):
+        if re.fullmatch(r"[0-9a-f]{64}", binding.get(name, "")) is None:
+            raise ValueError(f"dense attention {name} binding is malformed")
+    policy = _sha(json.dumps(binding["plan"], sort_keys=True,
+                             separators=(",", ":")).encode())
+    unsigned = {key: value for key, value in binding.items()
+                if key not in ("manifest_sha256", "bound_mlir_sha256")}
+    manifest = _sha(json.dumps(unsigned, sort_keys=True).encode())
+    if binding["policy_sha256"] != policy or binding["manifest_sha256"] != manifest:
+        raise ValueError("dense attention policy or manifest digest differs")
+
+    context = Context(allow_unregistered=True)
+    context.load_dialect(Builtin)
+    context.load_dialect(Func)
+    module = Parser(context, mlir_text).parse_module()
+    for attr, key in (("mx.profile_sha256", "profile_sha256"),
+                      ("mx.contract_sha256", "contract_sha256"),
+                      ("mx.policy_sha256", "policy_sha256"),
+                      ("mx.source_mlir_sha256", "frontend_mlir_sha256"),
+                      ("prov.quantization_manifest_sha256", "manifest_sha256")):
+        if _text_attr(module, attr) != binding[key]:
+            raise ValueError(f"dense attention module {attr} differs from binding")
+    funcs = [op for op in module.walk() if isinstance(op, FuncOp)]
+    if len(funcs) != 1 or len(funcs[0].body.blocks) != 1 or funcs[0].body.block.args:
+        raise ValueError("dense attention vector needs one argument-free function")
+    ops = list(funcs[0].body.block.ops)
+    if ([_operation_name(op) for op in ops] !=
+            ["mx_gemmini.vpu_execute"] * 7 +
+            ["mx_gemmini.spad_requant", "func.return"] or
+            not isinstance(ops[-1], ReturnOp) or ops[-1].operands or
+            any(op.operands or op.results or op.regions for op in ops[:-1])):
+        raise ValueError("dense attention vector operation order or SSA differs")
+    for index, (op, expected) in enumerate(zip(ops[:7], VECTOR_STEPS)):
+        kind, src1, src2, dst, count, rlen, broadcast, immediate = expected
+        if (_text_attr(op, "site_id") != f"softmax:{index}" or
+                _text_attr(op, "kind") != kind or
+                tuple(_int_attr(op, field) for field in
+                      ("src1_row", "src2_row", "dst_row", "rows",
+                       "reduction_length", "immediate_bf16")) !=
+                (src1, src2, dst, count, rlen, immediate) or
+                _bool_attr(op, "broadcast") != broadcast):
+            raise ValueError(f"dense attention VPU step {index} differs from source")
+    req = ops[7]
+    if (_text_attr(req, "site_id") != "probability:requant" or
+            (_int_attr(req, "source_row"), _int_attr(req, "destination_row"),
+             _int_attr(req, "m"), _int_attr(req, "n"),
+             _int_attr(req, "scale_dram_address")) != (384, 640, 32, 64, 0) or
+            _text_attr(req, "output_format") != "fp8_e4m3" or
+            _text_attr(req, "scale_buffer") != "p_scales" or
+            not _bool_attr(req, "tiled") or not _bool_attr(req, "resident")):
+        raise ValueError("dense attention requant placement or scale binding differs")
+    commands = lower_vector_commands(mlir_text, profile)
+    if [command.funct for command in commands] != [33] * 7 + [34]:
+        raise ValueError("dense attention command schedule differs")
+    return commands
