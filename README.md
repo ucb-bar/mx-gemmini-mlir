@@ -154,6 +154,10 @@ all 8,192 BF16 outputs twice on Spike. It exercises the explicit VPU scale
 path used when `1/√d` cannot be folded into Q's E8M0 scales. Both flash shapes
 produce byte-identical objects through the public object compiler and their
 archived Spike qualification runs; FPGA execution is outside this checkpoint.
+The [64×128×64 FP4 flash configuration](docs/evidence/nicolas_flash_mid_fp4_typed_a042643_0344bcb/README.md)
+uses Nicolas's same source core with generated packed E2M1 operands. Its typed
+quad-mesh path and resident FP4 probability requantization match all 4,096
+BF16 outputs against the source twice on Spike.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
