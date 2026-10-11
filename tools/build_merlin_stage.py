@@ -14,6 +14,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import numpy as np
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,6 +34,14 @@ def _capture_model(stage: Path) -> Path:
     return source
 
 
+def _can_hash_first_output(stage: Path) -> bool:
+    """The current Merlin bare-metal digest supports only f32 first outputs."""
+    golden = stage / "golden.npy"
+    if not golden.is_file() or golden.is_symlink():
+        raise ValueError("MX whole-stage build needs a plain golden.npy")
+    return np.load(golden, mmap_mode="r", allow_pickle=False).dtype == np.dtype("float32")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", type=Path, required=True)
@@ -41,7 +51,7 @@ def main() -> None:
     parser.add_argument("--merlin-src", type=Path, required=True)
     parser.add_argument("--llvm-install", type=Path, required=True)
     parser.add_argument("--riscv-root", type=Path, required=True)
-    parser.add_argument("--arena-mb", type=int, default=512)
+    parser.add_argument("--arena-mb", type=int, default=2048)
     parser.add_argument("--output-dump-cap", type=int, default=1)
     parser.add_argument("--spike-extlib", type=Path,
                         help="run the built ELF on Spike with this pinned Gemmini extension")
@@ -52,6 +62,7 @@ def main() -> None:
     if work.exists():
         parser.error("--workdir must not already exist")
     source = _capture_model(stage)
+    output_sha256 = _can_hash_first_output(stage)
     capture_sha = hashlib.sha256(source.read_bytes()).hexdigest()
     if args.arena_mb <= 0 or args.output_dump_cap <= 0 or args.spike_timeout <= 0:
         parser.error("arena, dump cap and Spike timeout must be positive")
@@ -73,24 +84,29 @@ def main() -> None:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower.device_build import DeviceRouting
     from merlin.runtime.backends import spike_model
+    from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
     from mx_gemmini_support.target_profile import profile_sha256
 
     device = DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
+        prepared_transform=MXBF16CatalogPreparation(profile),
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root),
     )
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb, backend="scalar", device=device,
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
-        output_dump_cap=args.output_dump_cap, output_sha256=True,
+        output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
     )
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     elf = Path(result["elf"])
     catalog = json.loads((work / "device_catalog/mx_catalog.json").read_text(encoding="utf-8"))
+    bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
+    widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
+                    if bf16_receipt.is_file() else 0)
     receipt = {
         "schema": "mx_gemmini.merlin_stage_probe.v1",
         "status": "linked_experimental_numeric_qualification_pending",
@@ -99,10 +115,13 @@ def main() -> None:
         "catalog_manifest": str(work / "device_catalog/mx_catalog.json"),
         "selected_operations": catalog["covered_contractions"],
         "unbound_precision_proposals": len(catalog["unbound_precision_proposals"]),
+        "widened_bf16_contractions": widened_bf16,
         "unique_kernels": catalog["unique_kernels"],
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),
         "mem_bytes": result["mem_bytes"],
+        "arena_mb": args.arena_mb,
+        "first_output_sha256_enabled": output_sha256,
     }
     if args.spike_extlib is not None:
         extlib = args.spike_extlib.resolve(strict=True)

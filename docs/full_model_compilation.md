@@ -70,10 +70,11 @@ stage graphs; repeated decode or flow steps execute those graphs again.
 Qwen's other regions are predominantly the 84 bias epilogues in each stage;
 their matrix components are separately proposed for FP4. SmolVLA has
 additional contraction shapes and ABI forms that the current MX importer
-retains for host or further VPU legalization. These are candidate counts,
-with no executable MX placement, quantized reference, linked session, or Spike
-inference result. The captures use synthetic inputs and are not paper-ready
-quality measurements. SmolVLA was recaptured with xDSL 0.65 so all four graphs
+retains for host or further VPU legalization. These are the original candidate
+counts. Later sections report executable contraction subsets, but there is no
+quantized reference, linked session, or full Spike inference result. The
+captures use synthetic inputs and are not paper-ready quality measurements.
+SmolVLA was recaptured with xDSL 0.65 so all four graphs
 can be parsed in the same Merlin environment.
 
 ## First compiler probe
@@ -180,11 +181,12 @@ python -m tools.emit_runtime_issuer \
   --out-dir /new/output/directory
 ```
 
-The remaining target work is an MX catalog entry that accepts Merlin's live
-dense tensors, performs exact FP8/FP4 quantization and padding, invokes this
-issuer, converts BF16 readout back to the graph's type, and records one source
-region per call. Batched attention and bias-bearing contractions require their
-own legalizations. Merlin's existing host path should run all remaining graph
+The target package now has a source-bound MX catalog entry that accepts live
+dense tensors, performs FP8/FP4 quantization and padding, invokes this issuer,
+converts BF16 readout back to the graph's type, and records one source region
+per call. Its numerical qualification is incomplete. The original addmm bias
+remains on the host after its matrix component is routed. Merlin's existing
+host path should run all remaining graph
 operations and its session runtime should carry KV caches and SmolVLA action
 state. The 4096-element output limit in Merlin's saved-model diagnostic also
 needs a larger or chunked readback for complete LM logits; it is an execution
@@ -252,13 +254,17 @@ routes without skipped calls. The catalog status remains
 `compiled_experimental_numeric_qualification_pending`.
 
 Exact source binding now inventories all four full-checkpoint sessions. The
-current f32 catalog binds 199 sites in each TinyLlama stage, 253 in each Qwen
-stage, and 235 in each Gemma stage. SmolVLA binds 139 prefix-encode and 116
-flow-denoise sites. The 72 remaining SmolVLA prefix proposals are BF16
-`addmm` matrix components: they require a BF16 source ABI and target-owned
-conversion, which the current uniform-f32 catalog does not implement.
-Action decode contains no direct MX contraction proposal. The planner reports
-these 72 regions explicitly as unbound; the catalog's `coverage_complete`
+f32 catalog binds 199 sites in each TinyLlama stage, 253 in each Qwen stage,
+and 235 in each Gemma stage. SmolVLA originally bound 139 prefix-encode and
+116 flow-denoise sites; the other 72 prefix proposals were BF16 `addmm` matrix
+components. `MXBF16CatalogPreparation` now widens those exact zero-initialized
+BF16 matmuls to the catalog's f32 pointer ABI and narrows the matrix result
+before the original BF16 bias epilogue. The transformed SmolVLA prefix source
+binds all 211 selected matmuls with no unbound precision proposals and 12
+unique kernels. The 211-site catalog compiled to a relocatable RV64 object
+with a 7,964,672-byte shared workspace. This is structural coverage, not BF16
+numerical parity. Action decode contains no direct MX contraction proposal.
+The catalog's `coverage_complete`
 only means that every operation listed in its exact binding table has a
 compiled implementation. VPU operators and other host operations are not
 covered by that field.
@@ -267,10 +273,14 @@ All four model families' bound prefill/prefix/flow subsets now compile as
 relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
 sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
 139 sites and nine kernels, and SmolVLA flow 116 sites and ten kernels. These
-objects are catalog probes; only TinyLlama prefill has passed Merlin's full
-host/device build and ELF link so far. That build used 512 MiB of arena and
+objects are catalog probes. TinyLlama prefill and SmolVLA's original 139-route
+f32-only prefix have passed Merlin's full host/device build and ELF link; the
+211-route BF16-prepared prefix build is in progress. TinyLlama used a 512 MiB
+arena and
 produced a 4.4 GB ELF with 199 routed MX operations from a full checkpoint
-capture with explicit eager attention. No complete model
+capture with explicit eager attention. Its first Spike run exhausted the
+512 MiB arena. The stage probe now defaults to 2 GiB, pending a fresh run.
+No complete model
 inference or independent quantized parity claim follows from linking it.
 
 For a prepared graph, the standalone builder is:
@@ -297,7 +307,9 @@ For a receipt-bound stage, `tools.build_merlin_stage` runs Merlin's actual
 whole-model build using the target catalog and writes `mx_stage_probe.json`.
 It rejects a changed capture `model.mlir`. With `--spike-extlib` it also runs
 the linked ELF using the pinned Gemmini Spike extension and records the raw
-console and completion status. Completion is not a numerical parity gate.
+console and completion status. It enables the first-output SHA256 only for
+f32 results, as Merlin's current bare-metal digest does not support SmolVLA's
+boolean prefix output. Completion is not a numerical parity gate.
 
 ```sh
 python -m tools.build_merlin_stage \
@@ -330,7 +342,7 @@ conversion contract on `main` at `6f1acb6e6`. That admits
 an f32 model contraction only when the catalog names a real target-native
 datapath and a hashed numeric policy. The selected Nicolas profile now exports
 direct FP4 and FP8 datapath facts into Merlin, satisfying that structural gate.
-The conversion route still requires a target-owned dense f32 catalog wrapper,
+The conversion route now has a target-owned dense f32 catalog wrapper,
 source-bound numeric policy, and a runnable object. This is not a reason to
 label f32 as an MX hardware dtype. `runtime_quant.c` also still mixes reusable
 numerical encoding with MX physical packing; the generic numerical part should be
