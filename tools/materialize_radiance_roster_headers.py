@@ -29,6 +29,8 @@ def main() -> None:
                         help="frontend roster index whose driver/header hashes must match")
     parser.add_argument("--compatible-source-revision", action="store_true",
                         help="allow another Radiance revision only if all 31 driver/header hashes match")
+    parser.add_argument("--check-only", action="store_true",
+                        help="verify all source headers without generating or modifying them")
     parser.add_argument("--out", type=Path, help="write a JSON materialization report")
     args = parser.parse_args()
     source = args.source_root.resolve()
@@ -57,6 +59,8 @@ def main() -> None:
         header = kernel.data_header
         existed = header.is_file()
         if not existed:
+            if args.check_only:
+                raise ValueError(f"read-only source is missing header: {header}")
             if kernel.datatype == "FP6":
                 if kernel.shape[:2] != (128, 128):
                     raise ValueError(f"unsupported FP6 header shape: {kernel.shape}")

@@ -42,6 +42,8 @@ def main() -> None:
     parser.add_argument("--compatible-source-revision", action="store_true",
                         help="allow a different Radiance revision only with identical driver, "
                              "header, frontend, physical, ELF, and Spike artifacts")
+    parser.add_argument("--read-only-source", action="store_true",
+                        help="require prebuilt golden tool and existing headers; never write source tree")
     args = parser.parse_args()
     if not 1 <= args.jobs <= 4:
         parser.error("--jobs must be between 1 and 4")
@@ -74,10 +76,15 @@ def main() -> None:
     out.mkdir(parents=True)
     source = args.source_root.resolve()
     rtl = args.rtl_root.resolve()
-    print("building Radiance golden tool", flush=True)
-    subprocess.run(["make", "-C", str(source / "lib/golden"), "mx_golden"],
-                   check=True)
-    print("materializing and checking 31 source driver headers", flush=True)
+    if args.read_only_source:
+        if not (source / "lib/golden/mx_golden").is_file():
+            raise ValueError("read-only source lacks prebuilt Radiance golden tool")
+        print("checking prebuilt Radiance golden tool and source headers", flush=True)
+    else:
+        print("building Radiance golden tool", flush=True)
+        subprocess.run(["make", "-C", str(source / "lib/golden"), "mx_golden"],
+                       check=True)
+        print("materializing and checking 31 source driver headers", flush=True)
     materialize = [
         sys.executable, "-m", "tools.materialize_radiance_roster_headers",
         "--source-root", str(source),
@@ -86,6 +93,8 @@ def main() -> None:
     ]
     if args.compatible_source_revision:
         materialize.append("--compatible-source-revision")
+    if args.read_only_source:
+        materialize.append("--check-only")
     subprocess.run(materialize, cwd=ROOT, check=True)
     print("capturing 31 PyTorch/model2MLIR contractions", flush=True)
     subprocess.run([
@@ -152,6 +161,7 @@ def main() -> None:
         "baseline_source_revision": expected_front["source_revision"],
         "compatible_source_revision": (
             front["source_revision"] != expected_front["source_revision"]),
+        "read_only_source": args.read_only_source,
         "rtl_revision": front["rtl_revision"],
         "covered_drivers": 31,
         "fullout_drivers": 23,

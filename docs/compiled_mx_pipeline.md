@@ -1963,6 +1963,12 @@ same flag to the separate header-materialization command when using that
 revision. Without the flag, the command requires the exact baseline Radiance
 revision.
 
+For a prepared Radiance checkout, append `--read-only-source`. This requires
+the golden executable and all 31 headers to exist, verifies their hashes,
+and performs the capture and Spike replay without running `make` or writing
+into the source checkout. The flag rejects any missing header instead of
+generating it. Outputs still go to the selected new `--out-dir`.
+
 A third run used that command at compiler `66df445`. Its
 [reproduction receipt](evidence/radiance_mx_gemm_latest_e9ded36_ee22/one_command_66df445/reproduction.json)
 and per-driver receipts show the same captured MLIR, physical source files,
