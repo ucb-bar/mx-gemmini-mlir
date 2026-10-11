@@ -1,0 +1,58 @@
+{
+  "compiler_revision": "748b9842463b883d88e60196b270d40aa5c20d96",
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "rows": [
+    {
+      "artifact": "tinyllama.mlir.gz",
+      "bytes": 183540,
+      "compile_object_result": "ParseError: <unknown>:3:23",
+      "linalg_generic": 112,
+      "linalg_matmul": 15,
+      "model": "tinyllama",
+      "mx_ops": 0,
+      "opaque": 0,
+      "scope": "2 of 22 decoder layers; random weights; tokens to logits",
+      "sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b"
+    },
+    {
+      "artifact": "deepseek_r1_distill_qwen_1_5b.mlir.gz",
+      "bytes": 115494,
+      "compile_object_result": "ParseError: <unknown>:3:23",
+      "linalg_generic": 76,
+      "linalg_matmul": 8,
+      "model": "deepseek_r1_distill_qwen_1_5b",
+      "mx_ops": 0,
+      "opaque": 0,
+      "scope": "1 of 28 decoder layers; random weights; tokens to logits",
+      "sha256": "91857cfab3105ecd7308b50981b5899a95bb2d2101b81dc6ad338e9c68ceef40"
+    },
+    {
+      "artifact": "gemma2_2b.mlir.gz",
+      "bytes": 251892,
+      "compile_object_result": "ParseError: <unknown>:3:23",
+      "linalg_generic": 167,
+      "linalg_matmul": 15,
+      "model": "gemma2_2b",
+      "mx_ops": 0,
+      "opaque": 0,
+      "scope": "2 of 26 decoder layers; default Gemma2Config; random weights; tokens to logits",
+      "sha256": "18f2693246b8ec2deb34ba7bafd99825844ad34c39c70e4c3e5694d63899cdd1"
+    },
+    {
+      "artifact": "smolvla.mlir.gz",
+      "bytes": 1249129,
+      "compile_object_result": "ParseError: <unknown>:3:27",
+      "linalg_generic": 720,
+      "linalg_matmul": 93,
+      "model": "smolvla",
+      "mx_ops": 0,
+      "opaque": 0,
+      "scope": "1 VLM layer and 1 expert layer; random weights; one denoise step",
+      "sha256": "329e4238431e1079d76ee71e23a47f49bff6e48e7651e21b207bff18a51fe119"
+    }
+  ],
+  "schema": "mx_gemmini.full_model_compile_preflight.v1",
+  "status": "frontend_smoke_captured_full_model_compile_declined"
+}

@@ -3571,6 +3571,12 @@ separate qualification gates.
 4. Validate the experimentally matched alternating FP6 scale path against
    RTL, then qualify the Radiance MMIO/FPGA issue path separately from Rocket
    RoCC.
+5. Complete the [whole-model path](full_model_compilation.md): ingest full
+   model2MLIR graphs and weights, partition legal MX/VPU work from compiled
+   host work, link a standalone session executable, and compare full-depth
+   checkpoint outputs and recurrent states against PyTorch. The current
+   [four-model preflight](evidence/full_model_compile_preflight_a042643_748b984/README.md)
+   records frontend capture success and MX object compilation refusal.
 
 ## Nicolas two-tile MX+VPU scheduling source baseline
 
