@@ -300,7 +300,10 @@ objects are catalog probes. Full host/device stage ELFs have linked for both
 prefill and decode of TinyLlama (199 routes each), Qwen (253 each), and Gemma
 (235 each); SmolVLA prefix and flow link with 211 and 116 MX routes, and its
 action decode links through Merlin's host lane with zero MX routes. These are
-full-checkpoint captures. Gemma's first build hit the 900-second limit while
+full-checkpoint captures. Their
+[nine-stage receipt summary](evidence/four_checkpoint_stage_links_20261011/README.md)
+records the source digests, FP4/FP8 call counts, and linked ELF sizes without
+publishing checkpoints. Gemma's first build hit the 900-second limit while
 converting its ~10 GB weight image; the 3600-second retry linked. TinyLlama's
 first Spike run exhausted a 512 MiB arena. A 2 GiB relink also reached a
 guest `FATAL model arena exhausted` after 348 calls despite Spike returning
