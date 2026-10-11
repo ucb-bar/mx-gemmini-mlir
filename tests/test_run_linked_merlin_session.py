@@ -59,3 +59,7 @@ def test_guest_arena_failure_is_not_hidden_by_spike_exit_zero() -> None:
     with pytest.raises(ValueError, match="complete valid session"):
         observe_session_output(_log() + "FATAL model arena exhausted\n",
                                _session(), exit_code=0)
+    for marker in ("FATAL: model arena -- exhausted", "FAIL session state",
+                   "FAIL session output ABI"):
+        with pytest.raises(ValueError, match="complete valid session"):
+            observe_session_output(_log() + marker + "\n", _session(), exit_code=0)

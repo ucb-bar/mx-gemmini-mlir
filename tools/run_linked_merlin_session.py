@@ -65,7 +65,8 @@ def observe_session_output(log: str, session, *, exit_code: int) -> dict:
     done = "DONE" in log.splitlines()
     metrics = [line for line in log.splitlines()
                if line.startswith("METRIC memref_rank_mismatch ")]
-    guest_failure = any(line.startswith("FATAL ") or "*** FAILED" in line
+    guest_failure = any(line.startswith(("FATAL:", "FATAL ", "FAIL session"))
+                        or "*** FAILED" in line
                         for line in log.splitlines())
     complete = not guest_failure and exit_code == 0 and done and seen == len(expected) and metrics == [
         "METRIC memref_rank_mismatch 0"]
