@@ -302,6 +302,20 @@
           "schema": "mx_gemmini.nicolas_fp6_connected_resident_spike.v1",
           "sha256": "1da3e60ad06bbc0f4302fe2c609f3128f1918107579e75d96dc82dd818078afe",
           "status": "source_and_compiler_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp6_64/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "af6facef2a670300e0b173a4e258e40727b923a4527ad226f49f47225d63713d",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp6_64/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "58a08824d8841973c995ed38d0f1428c45a814ef77c8b7e58b4a2467b766dbb6",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         }
       ],
       "family": "other_tiled_matrix",
@@ -323,6 +337,20 @@
           "schema": "mx_gemmini.nicolas_fp6_connected_resident_spike.v1",
           "sha256": "cc88786b48531833887e1639919e33b803cc01679df74845a705ccaed71b1e4b",
           "status": "source_and_compiler_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp6_128/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "622eaf383d3d734fd2ba3c2d2cd34d0cfe7638f9fbef5fe6af6e32f941bd31a8",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp6_128/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "10d68e7c0702ebb3dc6d3e7e8119c3fe391a7bac80d2a9eafa251e62b762a06a",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         }
       ],
       "family": "other_tiled_matrix",
@@ -1500,6 +1528,13 @@
     },
     {
       "evidence_references": [
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/model2mlir_tinyllama_attention_softmax_a042643_266c593/binding_manifest.json",
+          "schema": "mx_gemmini.nicolas_vpu_softmax_binding.v1",
+          "sha256": "3d25c35b06908e6ae512affeeed9acebb517dfcf2f4a213170aa477b2b7e26cf",
+          "status": null
+        },
         {
           "field": "source_sha256",
           "path": "docs/evidence/mx_public_vpu_softmax_3f9af55/e4m3_fp4_vpu/artifact_manifest.json",
@@ -5272,6 +5307,20 @@
           "schema": "mx_gemmini.nicolas_connected_plain_chain_64x64.v1",
           "sha256": "c21b12875192c4749ec4f2385cf6e169d89efdcbf76b29cc9f3ca3109b88af1c",
           "status": "source_connected_chain_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp8_64/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "df3765ecc7ad7aaea393bc042ccbed79c82e96b94c11b85fa7094ebb894ac154",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp8_64/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "360356071c6931a7ddf5d8d04e42a72457dab82d0fe1899f0eae9abac778486b",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         }
       ],
       "family": "other_tiled_matrix",
@@ -5545,6 +5594,20 @@
           "schema": "mx_gemmini.nicolas_connected_plain_chain_64x96.v1",
           "sha256": "24c1e3593da073ade5871b5465b7e71c802748eed664780ec1094e2ee3a71994",
           "status": "derived_source_connected_chain_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp8_128/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "c320eb17c4aa5503bb709987e9610ca414039a3d6ad7e3f0c857d24b4204fa7f",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp8_128/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "958c719343ec76f269e843c7b1f93f7631770e8dd52d96af14a6bdaa08de1000",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         },
         {
           "field": "source_sha256",
@@ -5951,6 +6014,20 @@
           "schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
           "sha256": "ee312cd5d7a5bab07166db027604a010b28db62af0e4056a96db12c0bae14e45",
           "status": "source_and_compiler_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp4_64/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "b2ffcea929780d2985ec3ae69b7939ccec5db4d68094a7d82eba8e8d342da9b1",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp4_64/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "3ea5b3ab1c0d4ceb4f37e3024a8d143fd1d5fcdb3e57d1abff4909fcc7532962",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         }
       ],
       "family": "other_tiled_matrix",
@@ -5972,6 +6049,20 @@
           "schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
           "sha256": "abb63c5ac7dedce1426bdc13c6ecbc7d9e4d87ffde11b2fe2b5672d499a19f6d",
           "status": "source_and_compiler_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp4_128/frontend_binding.json",
+          "schema": "mx_gemmini.portable_chain_binding.v1",
+          "sha256": "efb45b0bd215d0f81a51575dad5df3715320c50065fe6136fdc39b4c637489d9",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_portable_chains_a042643_266c593/fp4_128/receipt.json",
+          "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+          "sha256": "daa0dc00493f1593d4b6e06dc441855e4f4c6607c23d39321a1dacbf55a07c12",
+          "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
         }
       ],
       "family": "other_tiled_matrix",
