@@ -19,6 +19,9 @@ import sys
 
 from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.nicolas_attention_matrix import lower_dense_attention_matrix
+from mx_gemmini_support.nicolas_attention_io import (
+    lower_dense_attention_operands, lower_dense_attention_readout,
+    lower_dense_attention_scales)
 from mx_gemmini_support.nicolas_attention_vector import render_dense_attention_vector
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _source_closure
@@ -60,12 +63,53 @@ def _driver(middle: str) -> str:
                   .replace(pv, "mx_issue_pv(scale_sink);"))
 
 
+def _driver_with_io(compute: str) -> str:
+    """Replace source matrix transfers and result readouts with generated calls."""
+    first = compute.index("static void mvout_rows")
+    last = compute.index("void mx_issue_qk", first)
+    prototypes = "\n".join(
+        "void mx_issue_" + name + "(" +
+        ", ".join("const void *" + buffer for buffer in buffers) + ");"
+        for name, buffers in (
+            ("scales", ("Q_SCALES", "KT_SCALES", "V_SCALES")),
+            ("operands", ("Q_IN", "KT_IN", "V_IN")),
+            ("score", ("S_hw",)), ("probability", ("P_hw",)),
+            ("probability_codes", ("p_codes_hw",)), ("output", ("O_hw",))))
+    compute = compute[:first] + prototypes + "\n" + compute[last:]
+    replacements = (
+        ("  mvin_A((const uint8_t *)Q_IN, SQ, D, SP_Q);\n"
+         "  mvin_B((const uint8_t *)KT_IN, D, SK, SP_KT);\n"
+         "  mvin_B((const uint8_t *)V_IN, SK, D, SP_V);",
+         "  mx_issue_operands(Q_IN, KT_IN, V_IN);"),
+        ("  gemmini_mx_load_scales((uint64_t)Q_SCALES, sizeof(Q_SCALES), 0);                    // act half 0\n"
+         "  gemmini_mx_load_scales((uint64_t)KT_SCALES, sizeof(KT_SCALES), 1);                  // wgt half 0\n"
+         "  gemmini_mx_load_scales_2d((uint64_t)V_SCALES, D, SK / 32, D, 4096, 1);              // wgt half 1",
+         "  mx_issue_scales(Q_SCALES, KT_SCALES, V_SCALES);"),
+        ("mvout_rows(S_hw, SP_S, ROWS16(SQ, SK));", "mx_issue_score(S_hw);"),
+        ("mvout_rows(O_hw, SP_O, ROWS16(SQ, D));", "mx_issue_output(O_hw);"),
+        ("mvout_rows(P_hw, SP_S, ROWS16(SQ, SK));", "mx_issue_probability(P_hw);"),
+        ("mvout_rows(p_codes_hw, SP_P, ROWS8(SQ, SK));",
+         "mx_issue_probability_codes(p_codes_hw);"),
+    )
+    for old, new in replacements:
+        if compute.count(old) != 1:
+            raise ValueError("dense attention source transfer or readout seam differs")
+        compute = compute.replace(old, new)
+    if any(token in compute for token in (
+            "gemmini_extended_mvin(", "gemmini_extended_mvout(",
+            "gemmini_mx_load_scales(", "gemmini_mx_load_scales_2d(")):
+        raise ValueError("dense attention driver retained handwritten transfer commands")
+    return compute
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("npu-root", "profile", "rtl-root", "riscv-root",
                  "spike-extension", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--mx-opt", type=Path)
+    parser.add_argument("--generated-io", action="store_true",
+                        help="also replace source scale, operand, and readout commands")
     args = parser.parse_args()
     for name in ("npu_root", "profile", "rtl_root", "riscv_root",
                  "spike_extension", "out_dir"):
@@ -121,9 +165,37 @@ def main() -> None:
         if data_bytes:
             raise ValueError(f"dense attention {stage} issuer embeds source data")
         objects.append(obj)
-    driver = out / "attn_vpu_generated_compute.c"
-    driver.write_text(_driver(
-        (VECTOR_EVIDENCE / "attn_vpu_generated_middle.c").read_text()))
+    io_objects = {}
+    if args.generated_io:
+        io_plans = [
+            ("scales", lower_dense_attention_scales(profile),
+             ("Q_SCALES", "KT_SCALES", "V_SCALES")),
+            ("operands", lower_dense_attention_operands(profile),
+             ("Q_IN", "KT_IN", "V_IN")),
+        ]
+        for name, buffer in (("score", "S_hw"), ("probability", "P_hw"),
+                             ("probability_codes", "p_codes_hw"),
+                             ("output", "O_hw")):
+            io_plans.append((name, lower_dense_attention_readout(profile, name),
+                             (buffer,)))
+        for name, commands, buffers in io_plans:
+            directory = out / name
+            directory.mkdir()
+            (directory / "mx_issue.c").write_text(
+                emit_c(list(commands), transport="rocket_rocc", buffers=buffers,
+                       symbol=f"mx_issue_{name}"))
+            obj, data_bytes = _compile_object(directory, args.riscv_root,
+                                              symbol=f"mx_issue_{name}")
+            if data_bytes:
+                raise ValueError(f"dense attention {name} issuer embeds source data")
+            io_objects[name] = obj
+            objects.append(obj)
+    driver = out / ("attn_vpu_generated_io.c" if args.generated_io else
+                    "attn_vpu_generated_compute.c")
+    compute_driver = _driver(
+        (VECTOR_EVIDENCE / "attn_vpu_generated_middle.c").read_text())
+    driver.write_text(_driver_with_io(compute_driver) if args.generated_io else
+                      compute_driver)
     (out / "attn_vpu.h").write_bytes(header)
     shutil.copyfile(SOURCE_EVIDENCE / "attn_vpu_expect.h",
                     out / "attn_vpu_expect.h")
@@ -140,7 +212,8 @@ def main() -> None:
         _run([str(cc), *flags, "-c", str(path), "-o", str(obj)],
              cwd=out, log=out / f"source_{index}.log")
         objects.append(obj)
-    elf = out / "attn_vpu_generated_compute.elf"
+    elf = out / ("attn_vpu_generated_io.elf" if args.generated_io else
+                 "attn_vpu_generated_compute.elf")
     _run([str(cc), "-nostdlib", "-nostartfiles", "-static", "-T",
           str(bench / "test.ld"), *(str(obj) for obj in objects),
           "-lm", "-lgcc", "-o", str(elf)], cwd=out, log=out / "link.log")
@@ -160,9 +233,15 @@ def main() -> None:
             "attn_vpu PASSED" not in logs[0]):
         raise ValueError("compiler-issued attention compute differs from source on Spike")
     receipt = {
-        "schema": "mx_gemmini.nicolas_attention_generated_compute.v1",
-        "status": "generated_qk_vpu_requant_pv_compute_matches_source_on_spike",
-        "scope": ("all QK, VPU, resident requant, and PV compute commands generated; "
+        "schema": ("mx_gemmini.nicolas_attention_generated_io.v1" if args.generated_io
+                   else "mx_gemmini.nicolas_attention_generated_compute.v1"),
+        "status": ("generated_attention_io_and_compute_matches_source_on_spike"
+                   if args.generated_io else
+                   "generated_qk_vpu_requant_pv_compute_matches_source_on_spike"),
+        "scope": ("all scale loads, operand transfers, QK, VPU, requant, PV, "
+                  "and readouts generated; source checker still flushes/fences"
+                  if args.generated_io else
+                  "all QK, VPU, resident requant, and PV compute commands generated; "
                   "source C still issues operand/scale transfers and readouts"),
         "compiler_revision": _git_revision(ROOT),
         "compiler_source_closure_sha256": _source_closure(
@@ -185,8 +264,13 @@ def main() -> None:
         "spike_reproduced_runs": 2,
         "stage_hashes": expected_hashes,
     }
+    if args.generated_io:
+        receipt["io_object_sha256"] = {name: _sha(path)
+                                       for name, path in io_objects.items()}
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-    print("compiler-issued QK/VPU/requant/PV compute matched all source hashes on Spike")
+    print("compiler-issued attention " + ("I/O and compute" if args.generated_io
+                                           else "compute") +
+          " matched all source hashes on Spike")
 
 
 if __name__ == "__main__":
