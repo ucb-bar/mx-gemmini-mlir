@@ -21,9 +21,10 @@ frontend, compiler, and target profile revisions.
 The generic FP6 debug source uses a fixed MMIO gateway. Its compiler replay
 qualifies the header's BF16, packed, and scale values through a Rocket object
 captured with current model2MLIR; it does not qualify the original MMIO issue
-sequence. The **one remaining entry**, `matmul_single_tile_test`, has no direct
-source-hash receipt. Its golden-comparison loop is commented out, so its
-printed PASS line alone is not a numerical oracle.
+sequence. The **one remaining entry**, `matmul_single_tile_test`, has a
+[source-only diagnostic](../nicolas_single_tile_source_audit_266c593/README.md)
+but no compiler result receipt. Its golden-comparison loop is commented out,
+so its printed PASS line is not a numerical oracle.
 
 This audit does **not** claim that the compiler regenerated every instruction
 or the complete C control flow of the 170 selected paths. The `vpu_ops`

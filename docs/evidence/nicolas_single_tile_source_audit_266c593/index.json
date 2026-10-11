@@ -1,0 +1,39 @@
+{
+  "active_mvin_a_tile_coordinates": [
+    [
+      1,
+      1
+    ]
+  ],
+  "active_mvin_b_tile_coordinates": [
+    [
+      1,
+      1
+    ]
+  ],
+  "active_output_comparisons": 0,
+  "compiler_selected_output_qualification": "not_tested",
+  "header": "matmul_data_mx_fp8.h",
+  "header_declared_k_scale_groups": 16,
+  "header_scale_groups_identical": true,
+  "header_sha256": "0d67d2adf0913c79754365bb37cf8f0918cbdb12c286316c4479c30c9aadfad0",
+  "printed_pass_is_numerical_evidence": false,
+  "readout": "fixed_mmio_scratchpad",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "scale_upload": "constant_0x7f_not_header_scales",
+  "schema": "mx_gemmini.nicolas_single_tile_source_audit.v1",
+  "shape_mnk": [
+    32,
+    32,
+    32
+  ],
+  "shape_required_k_scale_groups": 1,
+  "source": "matmul_single_tile_test.c",
+  "source_sha256": "99917208653896f8bbb46597b4a067a98eb39c588ea4d93bb491a0808c8a6cdc",
+  "status": "debug_source_has_no_active_numerical_oracle",
+  "tile_mnk": [
+    16,
+    16,
+    16
+  ]
+}

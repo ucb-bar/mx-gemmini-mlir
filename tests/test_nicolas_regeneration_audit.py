@@ -24,12 +24,14 @@ def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
         "generated_object_selected_spike_result_matched": 156,
         "generated_connected_chain_spike_result_matched": 6,
         "generated_specialized_selected_spike_result_matched": 8,
-        "no_direct_source_receipt": 1,
+        "diagnostic_only_no_numerical_oracle": 1,
     }
     rows = {row["name"]: row for row in report["entries"]}
     assert {name for name, row in rows.items()
-            if row["status"] == "no_direct_source_receipt"} == {
+            if row["status"] == "diagnostic_only_no_numerical_oracle"} == {
                 "matmul_single_tile_test"}
+    assert rows["matmul_single_tile_test"]["source_diagnostic"][
+        "active_output_comparisons"] == 0
     chains = {name for name, row in rows.items()
               if row["family"] == "other_tiled_matrix" and
               row["status"] == "generated_connected_chain_spike_result_matched"}

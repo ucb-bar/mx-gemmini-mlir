@@ -12,8 +12,9 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **170 programs have at least one direct source-hash reference; one
-has none.** A matching hash establishes provenance only. Some referenced
+exact hash. **All 171 programs have at least one direct source-hash reference.**
+The last reference is a [source-only diagnostic](evidence/nicolas_single_tile_source_audit_266c593/README.md),
+not a compiler execution receipt. A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
 with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
@@ -120,10 +121,12 @@ under both VPU Rocket profiles. The [legacy generic FP6 data replay](evidence/ni
 raises the count to **170 of 171**: clean current model2MLIR emits the portable
 matmul, and the generated Rocket object matches 16,384 BF16 values, 8,192
 packed bytes, and 512 scales from the debug header. Its original fixed MMIO
-issue path remains unqualified. The single-tile debug program lacks a direct
-source-bound compiler receipt and has its numerical checker commented out.
+issue path remains unqualified. The [single-tile debug source audit](evidence/nicolas_single_tile_source_audit_266c593/README.md)
+pins the remaining C source and explains why its printed PASS is not a
+numerical oracle: the active code loads only tile `(1,1)`, uses constant scales,
+and has the BF16 comparison loop commented out. It has no compiler result receipt.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
-remains archived. The 170 source-hash references above include many weaker
+remains archived. The 171 source-hash-covered programs above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
 
 The [64³ resident FP8 chain replay](evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/README.md)

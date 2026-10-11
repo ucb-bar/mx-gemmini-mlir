@@ -64,7 +64,15 @@
       "source_sha256": "d9b20beb693cd70dacf02d1b22bbd4ab7d85fd1f2466e38ba9aa41e9bc14e176"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_single_tile_source_audit_266c593/index.json",
+          "schema": "mx_gemmini.nicolas_single_tile_source_audit.v1",
+          "sha256": "1ff6b989e70f0aff21742912159876f45c3f65cdd08ef5a6a86734a140c5dd6e",
+          "status": "debug_source_has_no_active_numerical_oracle"
+        }
+      ],
       "family": "other_mx",
       "name": "matmul_single_tile_test",
       "source_sha256": "99917208653896f8bbb46597b4a067a98eb39c588ea4d93bb491a0808c8a6cdc"
@@ -8351,6 +8359,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 170,
-  "without_direct_hash_reference": 1
+  "with_direct_hash_reference": 171,
+  "without_direct_hash_reference": 0
 }

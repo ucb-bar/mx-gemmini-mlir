@@ -31,9 +31,12 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
     assert len(names) == len(set(names))
     with_refs = sum(bool(entry["evidence_references"])
                     for entry in inventory["entries"])
-    assert inventory["with_direct_hash_reference"] == with_refs == 169
-    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 2
+    assert inventory["with_direct_hash_reference"] == with_refs == 171
+    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 0
     by_name = {entry["name"]: entry for entry in inventory["entries"]}
+    assert any("nicolas_single_tile_source_audit_266c593" in ref["path"] and
+               ref["status"] == "debug_source_has_no_active_numerical_oracle"
+               for ref in by_name["matmul_single_tile_test"]["evidence_references"])
     assert any("nicolas_mem_bw_physical_public_4a24503" in ref["path"]
                for ref in by_name["mx_mem_bw"]["evidence_references"])
     assert any("nicolas_mem_bw_typed_public_9cb0e4a" in ref["path"]

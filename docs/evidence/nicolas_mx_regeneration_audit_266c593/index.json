@@ -50,10 +50,18 @@
     {
       "family": "other_mx",
       "name": "matmul_single_tile_test",
-      "other_receipt_statuses": [],
-      "source_reference_count": 0,
+      "other_receipt_statuses": [
+        "debug_source_has_no_active_numerical_oracle"
+      ],
+      "source_diagnostic": {
+        "active_output_comparisons": 0,
+        "compiler_selected_output_qualification": "not_tested",
+        "receipt": "docs/evidence/nicolas_single_tile_source_audit_266c593/index.json",
+        "receipt_sha256": "1ff6b989e70f0aff21742912159876f45c3f65cdd08ef5a6a86734a140c5dd6e"
+      },
+      "source_reference_count": 1,
       "source_sha256": "99917208653896f8bbb46597b4a067a98eb39c588ea4d93bb491a0808c8a6cdc",
-      "status": "no_direct_source_receipt"
+      "status": "diagnostic_only_no_numerical_oracle"
     },
     {
       "family": "other_tiled_matrix",
@@ -4296,11 +4304,11 @@
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
   "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v3",
   "scope": "matched generated matrix, connected-chain, and specialized results cover selected Spike output paths, not complete C control flow, RTL timing, or FPGA parity",
-  "source_inventory_sha256": "b270b773c782f6c402e2ddd6336c6fccfcbe3a353a87c86cb5c4463a272a6cff",
+  "source_inventory_sha256": "bd49993a8648b0915d1802720ab3a61c384855724975e995c7d148fcce2f8ffc",
   "status_counts": {
+    "diagnostic_only_no_numerical_oracle": 1,
     "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
-    "generated_specialized_selected_spike_result_matched": 8,
-    "no_direct_source_receipt": 1
+    "generated_specialized_selected_spike_result_matched": 8
   }
 }

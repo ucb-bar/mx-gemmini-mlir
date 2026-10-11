@@ -604,12 +604,33 @@ def build_report(inventory: dict) -> dict:
         chain_proof = _full_chain_result(entry) if proof is None else None
         specialized_proof = (_full_specialized_result(entry)
                              if proof is None and chain_proof is None else None)
+        diagnostic = None
+        if entry["name"] == "matmul_single_tile_test":
+            refs = [ref for ref in entry["evidence_references"] if
+                    ref["schema"] == "mx_gemmini.nicolas_single_tile_source_audit.v1"]
+            if len(refs) != 1:
+                raise ValueError("single-tile debug source audit is missing or ambiguous")
+            ref = refs[0]
+            path = ROOT / ref["path"]
+            if _sha(path) != ref["sha256"]:
+                raise ValueError("single-tile debug source audit changed")
+            diagnostic = json.loads(path.read_text())
+            if (diagnostic.get("source_sha256") != entry["source_sha256"] or
+                    diagnostic.get("rtl_revision") != inventory["rtl_revision"] or
+                    diagnostic.get("status") !=
+                    "debug_source_has_no_active_numerical_oracle" or
+                    diagnostic.get("active_output_comparisons") != 0 or
+                    diagnostic.get("printed_pass_is_numerical_evidence") is not False or
+                    diagnostic.get("compiler_selected_output_qualification") != "not_tested"):
+                raise ValueError("single-tile audit does not prove its limited scope")
         if proof is not None:
             status = "generated_object_selected_spike_result_matched"
         elif chain_proof is not None:
             status = "generated_connected_chain_spike_result_matched"
         elif specialized_proof is not None:
             status = "generated_specialized_selected_spike_result_matched"
+        elif diagnostic is not None:
+            status = "diagnostic_only_no_numerical_oracle"
         elif entry["evidence_references"]:
             status = "separate_evidence_requires_scope_review"
         else:
@@ -623,6 +644,12 @@ def build_report(inventory: dict) -> dict:
             row["other_receipt_statuses"] = sorted({
                 ref["status"] for ref in entry["evidence_references"]
                 if isinstance(ref["status"], str)})
+            if diagnostic is not None:
+                row["source_diagnostic"] = {
+                    "receipt": ref["path"], "receipt_sha256": ref["sha256"],
+                    "active_output_comparisons": diagnostic["active_output_comparisons"],
+                    "compiler_selected_output_qualification": diagnostic[
+                        "compiler_selected_output_qualification"]}
         rows.append(row)
     counts = Counter(row["status"] for row in rows)
     return {
