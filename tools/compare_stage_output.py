@@ -60,7 +60,7 @@ def compare_output(log: str, reference: np.ndarray, *, kind: str) -> dict:
             "rmse": float(np.sqrt(np.mean(difference * difference))),
             "max_abs": float(np.max(np.abs(difference))),
             "max_rel": float(np.max(np.abs(difference) / np.maximum(np.abs(rhs), 1e-12))),
-            "cosine": float(np.sum(lhs * rhs) / denominator),
+            "cosine": float(np.clip(np.sum(lhs * rhs) / denominator, -1.0, 1.0)),
             "target_argmax": np.argmax(target, axis=-1).tolist(),
             "reference_argmax": np.argmax(expected, axis=-1).tolist(),
             "argmax_equal": bool(np.array_equal(
