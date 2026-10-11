@@ -251,3 +251,71 @@ def test_native_k_tiled_accumulation_matches_source() -> None:
         directory / "source_baseline/spike.log")
     assert "native multi-loop (2 chunks) test PASSED" in (
         directory / "source_baseline/spike.log").read_text()
+
+
+@pytest.mark.parametrize("variant,scale_mode", [
+    ("nc_2d", "direct_2d"), ("nc_wait", "wait"),
+])
+def test_native_scale_control_matches_source(variant: str,
+                                             scale_mode: str) -> None:
+    directory = (ROOT / "docs/evidence/"
+                 "nicolas_fp8_native_scale_control_public_c2e25ce_266c593" /
+                 variant)
+    case = CASES[f"fp8_128x128x128_native_dram_{variant}"]
+    receipt = json.loads((directory / "receipt.json").read_text())
+    audit = json.loads((directory / "native_dram_equivalence.json").read_text())
+    physical = json.loads((directory / "object/physical_program.json").read_text())
+    obj = json.loads((directory / "object/object_manifest.json").read_text())
+    manifest, resources = load_bundle(directory / "bundle")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
+    assert receipt["compiler_revision"] == "c2e25ce2c8d5b9701b02837d307b922ae16cd749"
+    assert receipt["rtl_revision"] == RTL_REVISION
+    assert receipt["model2mlir_revision"] == MODEL2MLIR_REVISION
+    assert receipt["mxq_revision"] == MXQ_REVISION
+    assert receipt["profile_sha256"] == profile_sha256(profile)
+    assert receipt["case"] == case.key
+    assert receipt["source_driver_sha256"] == manifest["source_driver_sha256"] == (
+        case.source_sha256)
+    assert receipt["source_header_sha256"] == case.header_sha256
+    assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+    assert receipt["native_dram_loop"] is True
+    assert receipt["native_dram_scale_mode"] == scale_mode
+    assert receipt["mismatches"] == 0 and receipt["outputs_checked"] == 16384
+    assert len(resources["golden_bf16"]) == 32768
+    selected = "nc2_2d" if variant == "nc_2d" else "nc2_wait"
+    assert selected_native_dram((directory / "payload_bound.mlir").read_text(),
+                                profile, manifest) == selected
+    assert audit["source_driver_sha256"] == case.source_sha256
+    assert audit["native_chunk_count"] == 2
+    assert audit["native_command_functs"] == [9, 10, 11, 12, 13, 8] * 2
+    assert audit["scale_uploads"] == 4
+    assert audit["b_spad_ids"] == [1, 2]
+    assert audit["explicit_operand_dma_commands"] == 0
+    assert audit["explicit_output_dma_commands"] == 0
+    assert audit.get("scale_config_wait_bit") == (True if variant == "nc_wait"
+                                                   else None)
+    assert audit["physical_program_sha256"] == _sha(
+        directory / "object/physical_program.json")
+    assert receipt["native_dram_equivalence_sha256"] == _sha(
+        directory / "native_dram_equivalence.json")
+    assert physical["plan"]["native_dram_n_chunks"] == 2
+    assert physical["plan"].get("native_dram_scale_wait") == (
+        True if variant == "nc_wait" else None)
+    assert obj["allocated_data_section_bytes"] == 0
+    assert receipt["object_sha256"] == _sha(directory / "object/mx_issue.o")
+    assert receipt["spike_log_sha256"] == _sha(directory / "run/spike.log")
+    assert "0 mismatches / 16384 BF16 values" in (
+        directory / "run/spike.log").read_text()
+    assert receipt["source_baseline"]["source_spike_exit_code"] == 0
+    assert receipt["source_baseline"]["source_golden_bf16_values_checked"] == 16384
+    assert receipt["source_baseline"]["source_elf_sha256"] == _sha(
+        directory / "source_baseline/program.elf")
+    assert receipt["source_baseline"]["source_spike_log_sha256"] == _sha(
+        directory / "source_baseline/spike.log")
+    assert "native multi-loop (2 chunks) test PASSED" in (
+        directory / "source_baseline/spike.log").read_text()
+    if variant == "nc_2d":
+        assert _sha(directory / "object/mx_issue.o") == _sha(
+            ROOT / "docs/evidence/nicolas_fp8_native_nc_public_57b26ce_266c593/"
+            "nc2/object/mx_issue.o")
