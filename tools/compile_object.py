@@ -29,6 +29,7 @@ EMITTERS = {
     "full_vpu_branch": "tools.emit_full_vpu_branch_object",
     "vpu_softmax": "tools.emit_vpu_softmax_object",
     "vpu_elementwise": "tools.emit_vpu_elementwise_object",
+    "vpu_sequence": "tools.emit_vpu_sequence_object",
     "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
     "asymmetric_source": "tools.emit_asymmetric_object",
 }
@@ -39,6 +40,7 @@ MANIFEST_SCHEMAS = {
     "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
     "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
     "vpu_elementwise": "mx_gemmini.vpu_elementwise_linkable_object.v1",
+    "vpu_sequence": "mx_gemmini.vpu_sequence_linkable_object.v1",
     "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
     "asymmetric_source": "mx_gemmini.asymmetric_source_linkable_object.v1",
 }
@@ -71,6 +73,16 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
         raise ValueError("asymmetric source graph lacks its recipe or payload binding")
     counts = (report["contracts"], report["resident_contracts"],
               report["vpu_commands"], report["spad_requants"])
+    sequence_schema = module.attributes.get("mx.vpu_sequence_schema")
+    if sequence_schema is not None:
+        if getattr(sequence_schema, "data", None) != "mx_gemmini.vpu_sequence.v1":
+            raise ValueError("MX VPU sequence schema is unsupported")
+        if not source and not runtime and counts[0:2] == (0, 0) and (
+                2 <= counts[2] <= 32 and counts[3] == 0):
+            from mx_gemmini_support.vpu_sequence_program import _flat_vpu_function
+            _flat_vpu_function(mlir_text)
+            return "vpu_sequence", report
+        raise ValueError("MX VPU sequence needs only 2..32 typed VPU operations")
     if not source and not runtime and counts == (0, 0, 6, 0):
         return "vpu_softmax", report
     if not source and not runtime and counts == (0, 0, 1, 0):
@@ -165,7 +177,7 @@ def main() -> None:
         if args.mlir.name.endswith(".gz"):
             raise ValueError("source MX object currently needs plain .mlir")
         extra = ["--bundle", str(args.bundle.resolve())]
-    elif family in {"vpu_softmax", "vpu_elementwise"}:
+    elif family in {"vpu_softmax", "vpu_elementwise", "vpu_sequence"}:
         if args.bundle or args.resources_dir or args.abi_json is None:
             raise ValueError("standalone VPU object needs --abi-json only")
         extra = ["--abi-json", str(args.abi_json.resolve())]
@@ -193,7 +205,9 @@ def main() -> None:
             extra += ["--preloaded-mlir", str(args.preloaded_mlir.resolve()),
                       "--issue-schedule", args.issue_schedule]
     if args.mx_opt is not None:
-        with tempfile.TemporaryDirectory(prefix="mx-object-verify-") as temp:
+        args.out_dir.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="mx-object-verify-",
+                                         dir=args.out_dir.parent) as temp:
             native_input = Path(temp) / "input.mlir"
             native_input.write_bytes(mlir_bytes)
             subprocess.run([str(args.mx_opt.resolve()), str(native_input),
