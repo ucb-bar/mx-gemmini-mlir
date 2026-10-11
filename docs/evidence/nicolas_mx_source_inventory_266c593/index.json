@@ -360,7 +360,29 @@
       "source_sha256": "b3d523976586bddd742f1856bf060a71f75c804c0fe178a6090e1065d40864f0"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e5m2_lut_requant_public_8e9706f_266c593/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "7a308d2eef00ab65199c4715a45a6b8a681b0b9fc999d71201aea3dd18134362",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e5m2_lut_requant_public_8e9706f_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "3388e1365b11a0b1ac8bd57e88c60c6420d5ee72e9bd3d92b624b43c99dc73bd",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e5m2_lut_requant_public_8e9706f_266c593/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "f96deff9c15906a54ed2aa7688f7563e57040fabb86544333ba3ba2920f9bee6",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_64x64_requant",
       "source_sha256": "bf113953a7da5df1b9b4399fb0e56d6ae2eb76b75f1ec5996aa0f44796e4e68e"
@@ -7332,6 +7354,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 131,
-  "without_direct_hash_reference": 40
+  "with_direct_hash_reference": 132,
+  "without_direct_hash_reference": 39
 }
