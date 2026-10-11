@@ -1,0 +1,38 @@
+{
+  "allocated_data_section_bytes": 0,
+  "command_count": 37,
+  "compiler_revision": "9d202b80b4876af1d3e078c7a545f69e0e215277",
+  "compiler_source_closure_sha256": "592650ac708129742ba66c943672261c0f83927589f981e01c30096c9d2583ce",
+  "compiler_spike": {
+    "compared_e8m0_scales": 128,
+    "compared_fp8_codes": 4096,
+    "elf_sha256": "79378001743391314a24277cf2819aa99ce8f566437063fd40d9350835899840",
+    "exit_code": 0,
+    "spike_log_sha256": "a05ef35d1feb2f19d7f0c7b515b5af8c0ca7b721bf159e3e077da3c60832053a"
+  },
+  "connected_mlir_sha256": "9820b56c29f6b270846939c31dc2400dc1ed43df252d8c4b45c9b0e43e8b9869",
+  "driver_patch_sha256": "74f23872ab5b8cac9a385dca616236dfb2c814d651734ca807f32c5318145c86",
+  "driver_sha256": "39d4880894db40f8a7eb7335a5dec42ec0d7d58c51f826597ea180451979a3ec",
+  "extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "extension_sha256": "2f586c3d351f7e30df8e3459f4976f632b0ff0e890b7d5fcaaa061c685f601c3",
+  "issuer_c_sha256": "85d372a4672451d58ac0935399c1a5e80012f971a5bed3b067741a2286635ec3",
+  "object_sha256": "0240b6eec6d97974a7933ee4d2eece0cc7ccf27a20e1d32bfa68f7b39c87afbd",
+  "physical_program_sha256": "261dfd7bcf748ad7ef2b264ef57d19678ade49ae32fd8fc41db0e9c59998a080",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "reference_header_sha256": "72ed54217ac242f78b24399fb1620c59b5842110290d0ee768e1fbdc84011c3e",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_fp8_spad_requant_compiler_spike.v1",
+  "scope": "Nicolas source input and per-element oracle; compiler-issued flat and tiled SPAD_REQUANT",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_sha256": "51af741fcfd14b031daa03b12ce6a3f03ee12f9d1f79bad5cabf3089087da508",
+  "source_spike": {
+    "compared_e8m0_scales": 128,
+    "compared_fp8_codes": 4096,
+    "elf_sha256": "5117834cdc651540413ca10b31ed14e0c71ed20ea27b6a7c4dccdcde77086f14",
+    "exit_code": 0,
+    "spike_log_sha256": "285c8188a722d0b9c36e2f061733149510357a71e5c284a9637aa1f46e398c47"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_and_compiled_flat_tiled_fp8_matched_on_pinned_spike"
+}

@@ -1,0 +1,2 @@
+# Unified patches retain original source context, including blank context lines.
+docs/evidence/**/compiler_driver.patch whitespace=-blank-at-eol

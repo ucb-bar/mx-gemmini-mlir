@@ -12,7 +12,7 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **148 programs have at least one direct source-hash reference; 23
+exact hash. **149 programs have at least one direct source-hash reference; 22
 have none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
@@ -43,10 +43,11 @@ each match another 2,048 packed bytes and 128 scales.
 [Ten E2M3/E5M2 mesh replays](evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/README.md)
 add 40,960 packed bytes and 2,560 scales.
 [Five E3M2 DIM8/DIM32 mesh replays](evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/README.md)
-add 20,480 packed bytes and 1,280 scales. Numerical replay coverage is now
-**138 of 171 named MX source programs**.
+add 20,480 packed bytes and 1,280 scales. These matrix/LUT numerical replay
+suites cover **138 of 171 named MX source programs**. The separate source
+program qualifications below are outside that matrix/LUT count.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
-remains archived. The 148 source-hash references above include many weaker
+remains archived. The 149 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
 
 | Source family | Compiler evidence | Coverage boundary |
@@ -65,6 +66,7 @@ forms of evidence and are not a count of compiler-regenerated programs.
 | Nicolas larger FP4 requantized readout through public object compiler | [128×128×512 requant replay](evidence/nicolas_fp4_large_requant_typed_object_03490a5_266c593/README.md) | The checked-in `matmul_tiled_fp4_128x128x512_requant` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike. Other shapes and modes still need qualification. |
 | Nicolas DIM32 FP4 requantized readout through public object compiler | [128³ DIM32 requant replay](evidence/nicolas_fp4_dim32_requant_typed_object_f475d05_266c593/README.md) | The checked-in `matmul_tiled_fp4_128x128_requant_dim32` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike with the DIM32 extension. Other DIM32 modes still need qualification. |
 | Nicolas flat and tiled FP4 scratchpad requant through public object compiler | [64×128 dual-layout replay](evidence/nicolas_fp4_dual_public_object_d4ed0d8_266c593/README.md) | The pinned `spad_requant_fp4.c` source checker and compiler-linked driver each pass 16,384 FP4 code and 512 scale comparisons on Spike. The typed graph is generated from checked source geometry; it is not a model2MLIR capture. |
+| Nicolas flat and tiled FP8 scratchpad requant through generated object | [32×64 dual-layout replay](evidence/nicolas_spad_requant_fp8_compiled_9d202b8_266c593/README.md) | The pinned `spad_requant.c` source checker and compiler-linked driver each pass 4,096 E4M3 code and 128 scale comparisons on Spike under both DIM16 VPU profiles. The typed graph is source-bound and the driver retains no handwritten accelerator commands. This synthetic C test has no PyTorch capture. |
 | Direct Nicolas FP6 source through public object compiler | [128×128×512 typed object replay](evidence/nicolas_plain_fp6_typed_object_95fc6d5_266c593/README.md) | The checked-in `matmul_tiled_fp6_128x128x512` packed arrays, all 64 LUT lines for A/B/C, and all 16,384 BF16 source goldens match on pinned Spike in serial mode. The alternating-buffer RTL schedule is not qualified by this result. |
 | Nicolas FP6 LUT-index requantized readout through public object compiler | [128×128×512 requant replay](evidence/nicolas_fp6_requant_typed_object_b25fa48_266c593/README.md) | The checked-in `matmul_tiled_fp6_128x128x512_requant` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike in serial mode. Other FP6 shapes and alternating-buffer RTL timing still need qualification. |
 | VPU | [29 source checks](compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations), [compiler-issued operations](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations), [public softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md) | All named VPU checks have compiler-issued counterparts, and softmax runs through the public object CLI. The entire `vpu_ops.c` control flow is not compiled as one MLIR program. |

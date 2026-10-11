@@ -1,0 +1,4 @@
+spad_requant 32x64: flat 0, tiled 0 code mismatches; scales 0, 0 mismatches; 224 cycles (compiler issue+readout)
+spad_requant PASSED
+Gemmini extension configured with:
+    dim = 16

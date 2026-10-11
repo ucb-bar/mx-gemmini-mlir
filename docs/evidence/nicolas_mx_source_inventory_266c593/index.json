@@ -1004,7 +1004,22 @@
       "source_sha256": "cfb112304eb23e4e950b337fe7e2307a48520c62b58e2042321caf66bd505d51"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_spad_requant_fp8_compiled_9d202b8_266c593/e4m3_fp4_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_fp8_spad_requant_compiler_spike.v1",
+          "sha256": "d2a98c3d74281aee54a62eed336bdd44ad8be56f7a121e2061b90afd7a037d91",
+          "status": "source_and_compiled_flat_tiled_fp8_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_spad_requant_fp8_compiled_9d202b8_266c593/e4m3_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_fp8_spad_requant_compiler_spike.v1",
+          "sha256": "fe041cccdb5aed7b732b64fc439f21b7c61243426b8701bfb5bd33e8556909c5",
+          "status": "source_and_compiled_flat_tiled_fp8_matched_on_pinned_spike"
+        }
+      ],
       "family": "spad_requant",
       "name": "spad_requant",
       "source_sha256": "51af741fcfd14b031daa03b12ce6a3f03ee12f9d1f79bad5cabf3089087da508"
@@ -7706,6 +7721,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 148,
-  "without_direct_hash_reference": 23
+  "with_direct_hash_reference": 149,
+  "without_direct_hash_reference": 22
 }
