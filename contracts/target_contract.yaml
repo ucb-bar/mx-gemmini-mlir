@@ -1,28 +1,129 @@
-# Explicitly selected Merlin support metadata for the source-scoped layout prototype.
-# There is no executable backend, matrix lowering, oracle, or certified RTL fact bundle.
-name: mx_gemmini
-version: 0.1
-family: tensor_resident
-source:
-  rtl_repository: https://github.com/ucb-bar/gemmini
-  rtl_commit: f0167390b56fb315deea90ac1fc3983772e92d82
-  rtl_config: GemminiMxFPConfigs.standaloneMxFPConfig
-  mxgen_commit: a27ce3cd81513210c21f971ec3977defd13fa21e
-capabilities: {}
-memory_model: {}
-compiler_obligations:
-  - derive a source-bound RTL fact bundle for the selected standalone configuration
-  - review MXFP8, MXFP6, and MXFP4 numerical behavior against its simulator
-  - schedule operand, scale, and LUT transfers against scratchpad and bank capacity
-  - preserve BF16 accumulator state across K waves
-hardware_promises: []
-runtime_promises: []
-legality: []
 certification:
-  status: uncertified
-confidence: low
-requires_human_review: true
-notes: >-
-  Discovery of this provider only identifies the owner of an isolated compiler
-  layout prototype. The source-derived payload packers are not Merlin compiler
-  plugins, executable target capabilities, or hardware verdicts.
+  phase0_admitted: false
+  status: structural_unqualified
+compiler_obligations:
+- bind exact profile and numerical policy to every generated object
+- pad and re-quantize unsupported tails before MX dispatch
+- account for every captured operation and provide a compiled host owner
+- preserve MX/VPU fences, scales, live state, and full result readback
+compute_units:
+- accumulate:
+  - acc: bf16
+    in: mxfp4
+    weight: mxfp4
+  - acc: bf16
+    in: mxfp8
+    weight: mxfp8
+  dtypes:
+  - mxfp4
+  - mxfp8
+  exposure: external_backend
+  kind: systolic
+  name: mx_pe
+  ops:
+  - matmul
+  requant:
+    ref: mx_gemmini.spad_requant
+  scaling: block_e8m0
+  semantic_capabilities:
+  - arbitrary_mnk: false
+    batch: true
+    dtypes:
+    - mxfp4
+    - mxfp8
+    family: contraction
+    notes: MX source tails require explicit zero padding and scale regeneration
+    operand_pairs:
+    - in: mxfp4
+      weight: mxfp4
+    - in: mxfp8
+      weight: mxfp8
+    ranks:
+    - 2
+    - 3
+    - 4
+- dtypes:
+  - bf16
+  exposure: external_backend
+  kind: vector
+  name: vpu
+  ops:
+  - softmax
+  semantic_capabilities:
+  - dtypes:
+    - bf16
+    family: softmax
+    notes: Only source-checked BF16 row softmax is declared; other VPU ops require
+      per-op lowering
+    ranks:
+    - 2
+endpoint_kind: external_backend
+family: tensor_resident
+mx_direct_modes:
+- activation_format: fp4_e2m1
+  pe_mode: 0
+  weight_format: fp4_e2m1
+- activation_format: fp8_e4m3
+  pe_mode: 8
+  weight_format: fp8_e4m3
+mx_resources:
+  accumulator_banks: 2
+  accumulator_bytes: 65536
+  dma_bus_width_bits: 512
+  dma_max_bytes: 64
+  execute_queue_entries: 8
+  has_loop_retire_counter: false
+  has_mx_mmio_requant: false
+  load_queue_entries: 8
+  lut: false
+  lut_config: null
+  max_in_flight_mem_reqs: 32
+  max_spad_writer_bytes: 64
+  mx_mmio_base: 536936448
+  performance_counters: 8
+  requantizer: true
+  requantizer_config:
+    base_address: 268435456
+    gpu_input_lanes: 16
+    input_lanes: 64
+    max_output_bits: 8
+    min_output_bits: 4
+    output_lanes: 32
+  scale_block_elements: 32
+  scale_mem_config:
+    banks: 8
+    base_address: 536870912
+    size_bytes: 16384
+    subbank_line_bytes: 16
+    subbanks_per_bank: 2
+  scratchpad_banks: 4
+  scratchpad_bytes: 262144
+  spad_requant: true
+  store_queue_entries: 2
+  vpu: true
+  vpu_config:
+    exp_sub: true
+    exp_sum: true
+    units: 2
+name: mx_gemmini
+notes: Source-derived capability selection only; Spike and RTL qualification are separate.
+runtime:
+  default_backend: simulator
+source:
+  mxgen_commit: dba3e7e706efa156d96efe595cd9935c825ea14d
+  profile_sha256: e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d
+  profile_source_sha256:
+    chipyard/GemminiConfigs.scala: 6daa7877515063a4d2239a209ead9d7d9bebd15893ef8a2434f58b0c14446ec4
+    mxgen/src/main/scala/mxgen/Classifier.scala: 0c3d7ad5565ba726936b589e347503ba9ac5432421f442f2d9700793aea99187
+    mxgen/src/main/scala/mxgen/MxParameters.scala: 7043e8bab83d6a0c02352b3699ba6f0e891fbf3fb76727fa060480f771bbe870
+    src/main/scala/gemmini/Arithmetic.scala: 2260ecb6eeaab448d15b04cba6b8c9d17f5ac683daf5e407851606d2dc2b0fe0
+    src/main/scala/gemmini/ConfigsFP.scala: a374da3c0b060c8bd301f7abfe3a2e2aa35861766340d53e936e00b2e4b75505
+    src/main/scala/gemmini/GemminiConfigs.scala: 6e1163b58f471315ec0a03802d88dc6a2cf1ab622dcddaeb7d422c38e25f82cf
+    src/main/scala/gemmini/GemminiISA.scala: 1c6e57b665de06e1be04f01791ea8edb6641d0d44cde2e0e3fbd0830f074d262
+    src/main/scala/gemmini/MxConfigFragments.scala: 4fa439ea860da11e61d2e389ee628dc769600c3a7b44f22be465b7dd21d498ce
+    src/main/scala/gemmini/SpadRequant.scala: c823950ec4feaba439786e6408a8a9636a521a50328ef370681a656d41e0e287
+    src/main/scala/gemmini/vpu/Vpu.scala: deda04dad155421ce0aae04344e1b701f6ad5bddf2aebdb4adf2be8c3f2d5689
+  rtl_commit: 266c593f2cb51d7e3fe83fc0317072b585ac3c52
+  rtl_config: MxE4M3Fp4VpuGemminiRocketConfig
+  rtl_repository: https://github.com/ucb-bar/gemmini
+version: '0.2'
