@@ -13,13 +13,18 @@ from .verify_profile_ir import _operation_name, _text_attr, verify_ir
 
 
 SOURCE_SHA256 = "53b5f60844725aa9e289a1c3833002fe777c2a3b41ea64a31b05c2237eb32277"
+CHUNK_SOURCE_SHA256 = {
+    2: "eb80572c6e1a9ad1a700d4a98d28e106dda214bca377903cea30e37ebd3f7879",
+    4: "88cab5f1ff321e1bb34687654d226dc134f0bd74c13d68ae1e88b9e79f20e99a",
+}
 _SHAPE = [128, 128, 128]
 _ATTR = "mx.native_dram_loop"
 
 
-def _check_source(profile: dict, manifest: dict) -> None:
+def _check_source(profile: dict, manifest: dict, chunks: int) -> None:
     if (manifest.get("origin") != "nicolas_source_header_specialization" or
-            manifest.get("source_driver_sha256") != SOURCE_SHA256 or
+            manifest.get("source_driver_sha256") !=
+            ({1: SOURCE_SHA256, **CHUNK_SOURCE_SHA256}.get(chunks)) or
             manifest.get("precision") != "FP8" or
             manifest.get("output_format") is not None or
             manifest.get("shape_mnk") != _SHAPE or
@@ -31,12 +36,13 @@ def _check_source(profile: dict, manifest: dict) -> None:
         raise ValueError("native DRAM-loop schedule differs from pinned source and profile")
 
 
-def bind_native_dram(mlir_text: str, profile: dict, manifest: dict) -> str:
+def bind_native_dram(mlir_text: str, profile: dict, manifest: dict,
+                     chunks: int = 1) -> str:
     """Select Nicolas's native loop after the typed contraction is source-bound."""
     from xdsl.dialects.builtin import StringAttr
     from xdsl.printer import Printer
 
-    _check_source(profile, manifest)
+    _check_source(profile, manifest, chunks)
     verify_ir(mlir_text, profile)
     module = _parse_module(mlir_text)
     if (_text_attr(module, "mx.payload_manifest_sha256") != manifest_sha256(manifest) or
@@ -47,7 +53,7 @@ def bind_native_dram(mlir_text: str, profile: dict, manifest: dict) -> str:
              _operation_name(op) != "mx_gemmini.resource"] != [
                 "mx_gemmini.contract", "mx_gemmini.readout_bf16"]):
         raise ValueError("native DRAM loop needs one source-bound BF16 contraction")
-    module.attributes[_ATTR] = StringAttr("single")
+    module.attributes[_ATTR] = StringAttr("single" if chunks == 1 else str(chunks))
     stream = StringIO()
     Printer(stream=stream).print_op(module)
     rendered = stream.getvalue() + "\n"
@@ -56,22 +62,23 @@ def bind_native_dram(mlir_text: str, profile: dict, manifest: dict) -> str:
 
 
 def selected_native_dram(mlir_text: str, profile: dict,
-                         manifest: dict) -> bool:
+                         manifest: dict) -> int | None:
     module = _parse_module(mlir_text)
     selected = _text_attr(module, _ATTR)
     if selected is None:
-        return False
-    if selected != "single" or _text_attr(module, "mx.payload_manifest_sha256") != \
+        return None
+    if selected not in {"single", "2", "4"} or _text_attr(module, "mx.payload_manifest_sha256") != \
             manifest_sha256(manifest) or _text_attr(module, "mx.i_chunks") is not None:
         raise ValueError("native DRAM loop is not bound to selected payload")
-    _check_source(profile, manifest)
-    return True
+    chunks = 1 if selected == "single" else int(selected)
+    _check_source(profile, manifest, chunks)
+    return chunks
 
 
 def lower_native_dram(base: PhysicalProgram, profile: dict,
-                      manifest: dict) -> PhysicalProgram:
+                      manifest: dict, chunks: int = 1) -> PhysicalProgram:
     """Issue LoopMatmul's DRAM A/B loads and C store, without explicit DMA."""
-    _check_source(profile, manifest)
+    _check_source(profile, manifest, chunks)
     plan = base.plan
     if (base.shape != (128, 128, 128) or base.output_format != "bf16" or
             base.mode != "spike_serial" or not base.source_golden_preserving or
@@ -88,23 +95,57 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
              if isinstance(step.command, Command)] != [7, 0, 0, 0, 0]):
         raise ValueError("native DRAM loop base command stream has changed")
 
-    steps = [*by_phase["configure"][:2], *by_phase["upload_scales"],
-             *by_phase["configure"][2:5], *by_phase["select_scales"]]
+    steps = list(by_phase["configure"][:2])
+    if chunks == 1:
+        steps.extend(by_phase["upload_scales"])
+    else:
+        nc = 128 // chunks
+        for c in range(chunks):
+            for buffer, offset, count, dest, selector in (
+                    ("activation_scales", 0, 128, c * 4 * 128, 0),
+                    ("weight_scales", c * nc, nc, c * 4 * nc, 1)):
+                rs1 = Operand(buffer=buffer, byte_offset=offset,
+                              address_mask=(1 << 40) - 1,
+                              or_bits=128 << 40)
+                rs2 = (4 << 46) | (dest << 33) | (selector << 32) | count
+                steps.append(PhysicalStep("upload_chunk_scales", c,
+                                          _cmd(27, rs1, rs2)))
+        steps.append(PhysicalStep("upload_chunk_scales", None, Fence()))
+    steps.extend(by_phase["configure"][2:5])
+    if chunks == 1:
+        steps.extend(by_phase["select_scales"])
+    else:
+        j = 8 // chunks
+        selector_bits = (8 * chunks << 51) | (j << 42) | (8 << 33)
+        steps.append(PhysicalStep("select_scales", None,
+                                  _cmd(26, Operand(
+                                      buffer="scratch_output_scales",
+                                      address_mask=(1 << 33) - 1,
+                                      or_bits=selector_bits), 1)))
 
     def issue(command: Command | Fence) -> None:
         steps.append(PhysicalStep("native_dram_loop", None, command))
 
-    issue(_cmd(9, 0, (8 << 32) | (8 << 16) | 8))
-    issue(_cmd(10, Operand(buffer="activation"), Operand(buffer="weight")))
-    issue(_cmd(11, 0, Operand(buffer="output_bf16")))
-    issue(_cmd(12, 128, 128))
-    issue(_cmd(13, 0, 128))
-    issue(_cmd(8, (1 << 18) | (1 << 16), 0))
+    for c in range(chunks):
+        j = 8 // chunks
+        nc = 128 // chunks
+        issue(_cmd(9, 0, (8 << 32) | (j << 16) | 8))
+        issue(_cmd(10, Operand(buffer="activation") if c == 0 else 0,
+                   Operand(buffer="weight", byte_offset=c * nc)))
+        issue(_cmd(11, 0,
+                   Operand(buffer="output_bf16", byte_offset=c * nc * 2)))
+        issue(_cmd(12, 128, 128))
+        issue(_cmd(13, 0, 128))
+        b_spad_id = 1 if chunks == 1 else 1 + (c & 1)
+        issue(_cmd(8, (1 << 18) | (b_spad_id << 16), 0))
     issue(Fence())
     return PhysicalProgram(base.profile_sha256, base.payload_manifest_sha256,
                            base.mode, base.shape,
                            {**plan, "execution_transport": "native_dram_loop",
-                            "native_dram_source_sha256": SOURCE_SHA256},
+                            "native_dram_source_sha256":
+                            SOURCE_SHA256 if chunks == 1 else
+                            CHUNK_SOURCE_SHA256[chunks],
+                            **({} if chunks == 1 else {"native_dram_n_chunks": chunks})},
                            tuple(steps), base.source_golden_preserving,
                            base.derived_expected_bf16, base.output_format,
                            base.tiled_quant_readout,

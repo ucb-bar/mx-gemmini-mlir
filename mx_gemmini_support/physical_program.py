@@ -664,4 +664,5 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                                        resources, mode=mode)
     if chunks is not None:
         return lower_i_chunks(base, profile, manifest, chunks)
-    return lower_native_dram(base, profile, manifest) if native_dram else base
+    return (lower_native_dram(base, profile, manifest, native_dram)
+            if native_dram is not None else base)
