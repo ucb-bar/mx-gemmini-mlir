@@ -1,0 +1,53 @@
+{
+  "abi_json_sha256": "3a363b19ff04206b99fd62910aa3dc47fb276938ec00f23b26f9923d8762a481",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "f3519a38e7d74d2a7ea1368d087a3b6ac8cda812b69f41607b4d00f5b03197ee",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "src1",
+      "position": 0,
+      "role": "read",
+      "slot": "src1"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 0,
+      "name": "src2",
+      "position": 1,
+      "role": "unused",
+      "slot": "src2"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 256,
+      "name": "output",
+      "position": 2,
+      "role": "write",
+      "slot": "output"
+    }
+  ],
+  "command_count": 9,
+  "compiler_revision": "ba671ec2eeca6a35a5974f7369536d8d23f3db56",
+  "compiler_source_closure_sha256": "4c3914c451f331592f478e7b0c2bfd6852ff8b4aab7f745bb7ee94da83807c4d",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "cbb3fd98caeb0c643b03bd38ad0913d977221270d1dcefc000b502f935c4731b",
+  "issuer_h_sha256": "3bab666e1d9ea8c04fea0eee519f2cda5fb847868a6ce02411043bbc1477862a",
+  "mlir_container_sha256": "f3519a38e7d74d2a7ea1368d087a3b6ac8cda812b69f41607b4d00f5b03197ee",
+  "object_sha256": "60cdbaee27aa0e8af6f259a1872b51760d4233e853dcfe63936672b5651cf78a",
+  "physical_program_sha256": "047b4e5ec908d0c5e86e5efa3380c0549068ec51ff681c007d6a20f7c6e32877",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vpu_elementwise_linkable_object.v1",
+  "status": "rv64_rocc_vpu_elementwise_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": [],
+  "vpu_kind": "rmax"
+}

@@ -1,0 +1,3 @@
+compiled VPU rsum: 0 mismatches
+Gemmini extension configured with:
+    dim = 16

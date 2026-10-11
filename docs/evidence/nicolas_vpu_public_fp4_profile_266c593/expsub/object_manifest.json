@@ -1,0 +1,53 @@
+{
+  "abi_json_sha256": "dcfe17d5260042777d8ead60fa6b3cd802bc3ab20cf7946834412d8e11d3ed4a",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "25f56ed5c993adb6f8775919b6e5c18cd5a2ce3ae5fb293696ef71c4b46cd723",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "a",
+      "position": 0,
+      "role": "read",
+      "slot": "src1"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 256,
+      "name": "b",
+      "position": 1,
+      "role": "read",
+      "slot": "src2"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "output",
+      "position": 2,
+      "role": "write",
+      "slot": "output"
+    }
+  ],
+  "command_count": 13,
+  "compiler_revision": "ba671ec2eeca6a35a5974f7369536d8d23f3db56",
+  "compiler_source_closure_sha256": "4c3914c451f331592f478e7b0c2bfd6852ff8b4aab7f745bb7ee94da83807c4d",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "476607b28ccf231f9b0952705e79e58460fe194a477c60d6300ecaedaa1a20e9",
+  "issuer_h_sha256": "442554999fb60ad64f929a70c6dcbaaacea1d09781fa4c61a8131792b2928ced",
+  "mlir_container_sha256": "25f56ed5c993adb6f8775919b6e5c18cd5a2ce3ae5fb293696ef71c4b46cd723",
+  "object_sha256": "e9b882fd0f64cab53dcf024d4ecaf865b71567d0f84a43292a70753bcddb8004",
+  "physical_program_sha256": "fa549a9e2fa65aef452cac33614721f31fef5dba45174aa0c578d1d51b6b71e4",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vpu_elementwise_linkable_object.v1",
+  "status": "rv64_rocc_vpu_elementwise_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": [],
+  "vpu_kind": "expsub"
+}

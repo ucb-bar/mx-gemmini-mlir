@@ -722,7 +722,7 @@
         "compiler_vpu_ordering_source_checks_matched_reference",
         "compiler_vpu_source_variants_matched_reference"
       ],
-      "source_reference_count": 33,
+      "source_reference_count": 47,
       "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569",
       "status": "separate_evidence_requires_scope_review"
     },
@@ -4109,7 +4109,7 @@
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
   "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v1",
   "scope": "a matched generated-object result is a selected Spike execution path, not complete C control flow, RTL timing, or FPGA parity",
-  "source_inventory_sha256": "54559f6a93a9864f9550d845801136902a4970e599ac6f8ada517c1a904297f4",
+  "source_inventory_sha256": "7e2dde9deddeac9b04fd962183086e059b55cf0b3a1fe8a32b1ccb04130d5ac6",
   "status_counts": {
     "generated_object_selected_spike_result_matched": 156,
     "no_direct_source_receipt": 2,

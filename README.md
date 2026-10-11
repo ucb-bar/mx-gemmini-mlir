@@ -12,6 +12,9 @@ RoCC commands for source-bound DIM16 MX+VPU profiles; see
 The [public VPU object replay](docs/evidence/nicolas_vpu_public_objects_266c593/README.md)
 compiles all 14 base and fused Nicolas VPU operation classes from typed MLIR
 to data-free RV64 objects and checks 6,144 BF16 outputs on pinned Spike.
+The [FP4-capable VPU profile replay](docs/evidence/nicolas_vpu_public_fp4_profile_266c593/README.md)
+rebinds the same captures and independently matches those BF16 results under
+Nicolas's second VPU Rocket configuration.
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0
