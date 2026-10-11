@@ -384,6 +384,17 @@ for _chunks, _name, _sha256 in (
          "B_in", "B_scales_col"), f"FP8 128 cubed chunked{_chunks}",
         i_chunks=_chunks)
 
+_chunk2d_key = "fp8_128x128x128_chunked_2d"
+CASES[_chunk2d_key] = Case(
+    _chunk2d_key, "FP8", (128, 128, 128), (128, 128, 128),
+    "matmul_tiled_fp8_128x128_chunked_2d.c", "matmul_fp8_128x128.h",
+    "1bdf2d901039ec068fc597ee8b8a57c21f1f13bfb0a38de6b107f640093aebb9",
+    _CHUNK_HEADER_SHA256, "MxGemminiRocketConfig",
+    ("activation", "activation_scales", "output_bf16",
+     "scratch_output_scales", "weight", "weight_scales"),
+    ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+     "B_in", "B_scales_col"), "FP8 128 cubed chunked 2D scales", i_chunks=2)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -548,15 +559,22 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     if _sha(driver) != case.source_sha256 or _sha(header) != case.header_sha256:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
-    if case.i_chunks == 4:
-        if source.strip() != ('// 4-chunk variant of matmul_tiled_fp8_128x128_chunked '
-                              '(32 rows per chunk; chunks alternate the 2 acc banks).\n'
-                              '#define NCHUNKS 4\n'
-                              '#include "matmul_tiled_fp8_128x128_chunked.c"'):
-            raise ValueError("Nicolas four-chunk wrapper changed")
+    if case.i_chunks == 4 or case.key == _chunk2d_key:
+        expected = (
+            '// 4-chunk variant of matmul_tiled_fp8_128x128_chunked '
+            '(32 rows per chunk; chunks alternate the 2 acc banks).\n'
+            '#define NCHUNKS 4\n'
+            '#include "matmul_tiled_fp8_128x128_chunked.c"'
+            if case.i_chunks == 4 else
+            '// matmul_tiled_fp8_128x128_chunked with 2-D MX_LOAD_SCALES '
+            '(no host packing).\n'
+            '#define SCALES_2D 1\n'
+            '#include "matmul_tiled_fp8_128x128_chunked.c"')
+        if source.strip() != expected:
+            raise ValueError("Nicolas I-chunk wrapper changed")
         core = driver.parent / "matmul_tiled_fp8_128x128_chunked.c"
         if _sha(core) != CASES["fp8_128x128x128_chunked2"].source_sha256:
-            raise ValueError("Nicolas four-chunk include changed")
+            raise ValueError("Nicolas I-chunk include changed")
         source = core.read_text()
     if case.i_chunks and case.i_chunks != 1 and (
             "#define NCHUNKS 2" not in source or

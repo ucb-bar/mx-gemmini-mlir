@@ -12,8 +12,9 @@ from .verify_profile_ir import _operation_name, _text_attr, verify_ir
 
 
 CHUNK_SOURCE_HASHES = {
-    2: "c2cd8affbbbd079a3553bcfc8bf46246114c8a2ff62e38f07994447cb512661e",
-    4: "12bc6da5f5a54f87a4df95664a8259f6b0610675a92d0259121cbf13fe891275",
+    2: {"c2cd8affbbbd079a3553bcfc8bf46246114c8a2ff62e38f07994447cb512661e",
+        "1bdf2d901039ec068fc597ee8b8a57c21f1f13bfb0a38de6b107f640093aebb9"},
+    4: {"12bc6da5f5a54f87a4df95664a8259f6b0610675a92d0259121cbf13fe891275"},
 }
 _SHAPE = [128, 128, 128]
 
@@ -21,7 +22,7 @@ _SHAPE = [128, 128, 128]
 def _check_source(profile: dict, manifest: dict, chunks: int) -> None:
     if (chunks not in CHUNK_SOURCE_HASHES or
             manifest.get("origin") != "nicolas_source_header_specialization" or
-            manifest.get("source_driver_sha256") != CHUNK_SOURCE_HASHES[chunks] or
+            manifest.get("source_driver_sha256") not in CHUNK_SOURCE_HASHES[chunks] or
             manifest.get("precision") != "FP8" or
             manifest.get("output_format") is not None or
             manifest.get("shape_mnk") != _SHAPE or
