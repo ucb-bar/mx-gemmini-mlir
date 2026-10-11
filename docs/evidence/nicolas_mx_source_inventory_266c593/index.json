@@ -1073,6 +1073,34 @@
       "evidence_references": [
         {
           "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_chain_public_266c593/e4m3_fp4_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_chain_public_spike.v1",
+          "sha256": "fc62baa52a628855eec6563e7f5d10530c4edab64915fc85d256e72875081d88",
+          "status": "source_chain_matched_by_public_object_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_chain_public_266c593/e4m3_vpu/receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_chain_public_spike.v1",
+          "sha256": "052ae04c928086caf7d41d996a258401ce8f02038fab7f97f3590129eee52371",
+          "status": "source_chain_matched_by_public_object_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_chain_public_266c593/index.json",
+          "schema": "mx_gemmini.nicolas_vpu_chain_public_archive.v1",
+          "sha256": "e05d357bf390ebaab94ea0a903f72d0864a8e585d7845dd49bc3c6d9542ab686",
+          "status": null
+        },
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_vpu_chain_public_266c593/reproduction_receipt.json",
+          "schema": "mx_gemmini.nicolas_vpu_chain_public_spike.v1",
+          "sha256": "052ae04c928086caf7d41d996a258401ce8f02038fab7f97f3590129eee52371",
+          "status": "source_chain_matched_by_public_object_on_pinned_spike"
+        },
+        {
+          "field": "source_sha256",
           "path": "docs/evidence/nicolas_vpu_elementwise_compiled_266c593/add/binding.json",
           "schema": "mx_gemmini.nicolas_elementwise_vpu_binding.v1",
           "sha256": "00365c42af0c3fc956b3dc4acb58ec85103db7be72729980da047a74d8be21e2",
