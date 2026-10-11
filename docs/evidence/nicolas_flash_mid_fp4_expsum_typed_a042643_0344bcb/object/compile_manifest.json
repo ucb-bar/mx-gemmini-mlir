@@ -1,0 +1,30 @@
+{
+  "bound_mlir_sha256": "ab5cef4f622fb8937424fdb90e13a40502b10c35f28fe245cc89e931b44d41d5",
+  "compiler_revision": "2cd201d04a887ef06282d27a3428e79d7cd6fdd0",
+  "compiler_source_closure_sha256": "633c19eec30dca90ea2297095124ee4c87d7d441f17feab359d68bdc3418f1cb",
+  "emitter": "tools.emit_flash_program_object",
+  "lowering_family": "flash_program",
+  "native_verifier_sha256": "77610bfe834403a876827e5632b1dec5ea2a1ebb53c72c56c04a2804442649c2",
+  "object_manifest_sha256": "4158b56c611034ee4e42c45e7b20c0742dc893045eec7fdbe4cac910174cddbd",
+  "object_sha256": "3f1276fa666894fde45f32aa5f675c80ddaf0e09f329f677a5b6e9d5da65433d",
+  "physical_program_sha256": "a1d9ff52f7bd5a039f88c125edf03457b1fc703b1577435fe7dc1dccdfce6e9b",
+  "precursor_mlir_sha256": "cce8457e2fe88ac3f35dc4815258557a2eb5bdd52ce950d8f6c877fd4daefd84",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.compiler_object_dispatch.v1",
+  "source_core_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "source_header_sha256": "0d7b01496bd4c0ad6f7fe49bccbb0cb8f97e5f2acdf210bf207b0de808344678",
+  "source_wrapper_sha256": "fca0f83b3a81ecb5210bc69a08f2329bcb70447441b2e02b88e5388e7aa9218c",
+  "status": "rv64_rocc_object_built",
+  "verified_graph_counts": {
+    "contracts": 0,
+    "flash_setups": 1,
+    "lut_uploads": 0,
+    "memory_phases": 19,
+    "resident_contracts": 0,
+    "runtime_luts": 0,
+    "source_resources": 0,
+    "spad_matmuls": 8,
+    "spad_requants": 4,
+    "vpu_commands": 31
+  }
+}

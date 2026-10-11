@@ -162,6 +162,9 @@ The [fused EXPSUM variant](docs/evidence/nicolas_flash_mid_expsum_typed_a042643_
 of the 64×128×64 FP8 flash program emits four typed EXPSUM operations and a
 data-free RV64 object. Source and compiler drivers match all 4,096 BF16
 outputs twice on pinned Spike. This work uses only Spike and pinned source RTL.
+The [combined FP4 and EXPSUM path](docs/evidence/nicolas_flash_mid_fp4_expsum_typed_a042643_0344bcb/README.md)
+emits 146 MX commands and a data-free RV64 object; it matches all 4,096 BF16
+source outputs twice on pinned Spike.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

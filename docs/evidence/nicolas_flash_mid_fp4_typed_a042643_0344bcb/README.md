@@ -42,5 +42,7 @@ The qualification reads the archived header and checks its digest. The
 generator recipe above explains its provenance; running the qualification
 does not require PyTorch. The small FP8 fused EXPSUM path has its own
 [qualification](../nicolas_flash_mid_expsum_typed_a042643_0344bcb/README.md).
+FP4 with fused EXPSUM has a separate [source parity
+run](../nicolas_flash_mid_fp4_expsum_typed_a042643_0344bcb/README.md).
 Causal masking, streamed K/V, larger FP4 shapes, and pipelined compiler
 scheduling have separate gates.

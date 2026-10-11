@@ -1,0 +1,119 @@
+{
+  "allocated_data_section_bytes": 0,
+  "binding_json_sha256": "e9d3d0c871a2464ea8a75e3c0778a83e6651dae47164962fb5dbc8713c40df06",
+  "bound_mlir_sha256": "ab5cef4f622fb8937424fdb90e13a40502b10c35f28fe245cc89e931b44d41d5",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 128,
+      "name": "Q_SCALES_FOLDED",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 256,
+      "name": "KT_SCALES",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 256,
+      "name": "V_SCALES",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 2048,
+      "name": "Q4_IN",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 4096,
+      "name": "KT4_IN",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 4096,
+      "name": "V4_IN",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 2048,
+      "name": "scale_sink",
+      "position": 6,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 64,
+      "name": "p_scales_0",
+      "position": 7,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 64,
+      "name": "p_scales_1",
+      "position": 8,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid_fp4_expsum",
+      "minimum_bytes": 8192,
+      "name": "O_HW",
+      "position": 9,
+      "role": "write"
+    }
+  ],
+  "command_count": 146,
+  "compiler_revision": "2cd201d04a887ef06282d27a3428e79d7cd6fdd0",
+  "compiler_source_closure_sha256": "633c19eec30dca90ea2297095124ee4c87d7d441f17feab359d68bdc3418f1cb",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 21,
+  "input_format": "fp4_e2m1",
+  "issuer_c_sha256": "96602900b556d1381542cfd4c0d8465178a287aa8bbf1310baa5472b9f26c52b",
+  "issuer_h_sha256": "14f9b2a437b215b1704d6533b7d6430ec8071f250bbad46f3b43cea644b8f64c",
+  "mlir_container_sha256": "ab5cef4f622fb8937424fdb90e13a40502b10c35f28fe245cc89e931b44d41d5",
+  "object_sha256": "3f1276fa666894fde45f32aa5f675c80ddaf0e09f329f677a5b6e9d5da65433d",
+  "physical_program_sha256": "a1d9ff52f7bd5a039f88c125edf03457b1fc703b1577435fe7dc1dccdfce6e9b",
+  "precursor_mlir_sha256": "cce8457e2fe88ac3f35dc4815258557a2eb5bdd52ce950d8f6c877fd4daefd84",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schedule": "fenced_serial",
+  "schema": "mx_gemmini.flash_program_linkable_object.v1",
+  "shape_sq_sk_d_bk": [
+    64,
+    128,
+    64,
+    32
+  ],
+  "softmax_mode": "expsum",
+  "source_core_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "source_header_sha256": "0d7b01496bd4c0ad6f7fe49bccbb0cb8f97e5f2acdf210bf207b0de808344678",
+  "source_wrapper_sha256": "fca0f83b3a81ecb5210bc69a08f2329bcb70447441b2e02b88e5388e7aa9218c",
+  "status": "rv64_rocc_typed_flash_program_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
