@@ -43,6 +43,23 @@ python -m tools.qualify_nicolas_flash_mid_typed --variant fa \
   --mx-opt "$MX_GEMMINI_OPT" --out-dir "$OUT_DIR"
 ```
 
+To build only the same linkable object through the public compiler, use a
+different fresh output directory. The default variant uses `attn_flash.c`
+as both its source core and wrapper:
+
+```sh
+python -m tools.compile_object \
+  --mlir docs/evidence/nicolas_flash_fa_typed_a042643_0344bcb/flash_fa.mlir \
+  --precursor-mlir docs/evidence/nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/attention.model2mlir.mlir \
+  --binding-json docs/evidence/nicolas_flash_fa_typed_a042643_0344bcb/binding.json \
+  --source-core "$NPU_ROOT/baremetal/mxgemmini/src/attn_flash.c" \
+  --source-wrapper "$NPU_ROOT/baremetal/mxgemmini/src/attn_flash.c" \
+  --source-header docs/evidence/nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/attn_vpu_fa.h.gz \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt "$MX_GEMMINI_OPT" --out-dir "$OBJECT_OUT_DIR"
+```
+
 This qualifies the E4M3, noncausal, resident K/V source shape on the pinned
 MX+VPU configuration. FP4, causal masks, fused VPU variants, streamed K/V,
 and pipelined scheduling remain separate work.

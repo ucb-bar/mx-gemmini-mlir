@@ -41,6 +41,23 @@ python -m tools.qualify_nicolas_flash_mid_typed \
   --mx-opt "$MX_GEMMINI_OPT" --out-dir "$OUT_DIR"
 ```
 
+To build just the same linkable object through the public compiler, use a
+different fresh output directory. This checks the typed graph against the
+model2MLIR capture, source core, wrapper, and packed header before lowering:
+
+```sh
+python -m tools.compile_object \
+  --mlir docs/evidence/nicolas_flash_mid_typed_a042643_0344bcb/flash_mid.mlir \
+  --precursor-mlir docs/evidence/nicolas_attn_vpu_mid_source_baseline_a042643_0344bcb/attention.model2mlir.mlir \
+  --binding-json docs/evidence/nicolas_flash_mid_typed_a042643_0344bcb/binding.json \
+  --source-core "$NPU_ROOT/baremetal/mxgemmini/src/attn_flash.c" \
+  --source-wrapper "$NPU_ROOT/baremetal/mxgemmini/src/attn_flash_mid.c" \
+  --source-header docs/evidence/nicolas_attn_vpu_mid_source_baseline_a042643_0344bcb/attn_vpu_mid.h.gz \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root "$RTL_ROOT" --riscv-root "$RISCV_ROOT" \
+  --mx-opt "$MX_GEMMINI_OPT" --out-dir "$OBJECT_OUT_DIR"
+```
+
 This qualifies the E4M3, noncausal, four-block source shape on the pinned
 MX+VPU configuration. Other flash shapes, FP4, causal masks, fused VPU
 variants, and pipelined scheduling remain separate work.

@@ -134,8 +134,8 @@ stage hashes.
 The [64×256×128 dense `attn_vpu_fa` program](docs/evidence/nicolas_attn_vpu_fa_typed_program_a042643_0344bcb/README.md)
 also compiles from a clean model2MLIR capture through the same shape-derived
 path. Its one data-free object issues 702 MX commands and one fence; two
-Spike runs match all 4,096 score words and four source stage hashes. The
-separate blocked `attn_flash` kernels and full models remain open.
+Spike runs match all 4,096 score words and four source stage hashes. Full
+model compilation remains open.
 The [four-block `attn_flash_mid` source oracle](docs/evidence/nicolas_attn_flash_mid_source_baseline_a042643_0344bcb/README.md)
 pins an unmodified Spike run and reproducible full-output hash for the next
 compiler target. The compiler now verifies and encodes pitched matrix DMA,
@@ -145,11 +145,15 @@ emits one data-free RV64 object and matches all 2,048 BF16 source scores twice
 on Spike. The [complete typed four-block program](docs/evidence/nicolas_flash_mid_typed_a042643_0344bcb/README.md)
 now emits one data-free RV64 object with a fenced serial schedule. All 4,096
 BF16 outputs match Nicolas's pipelined source twice on Spike. Pipelined
-compiler scheduling and other flash configurations remain open.
+compiler scheduling and other flash configurations remain open. The typed
+graph now also builds through the public `python -m tools.compile_object`
+entry point, using its model2MLIR capture and pinned source binding.
 The [default 64×256×128 flash shape](docs/evidence/nicolas_flash_fa_typed_a042643_0344bcb/README.md)
 also lowers from a clean model2MLIR capture to a data-free object and matches
 all 8,192 BF16 outputs twice on Spike. It exercises the explicit VPU scale
-path used when `1/√d` cannot be folded into Q's E8M0 scales.
+path used when `1/√d` cannot be folded into Q's E8M0 scales. Both flash shapes
+produce byte-identical objects through the public object compiler and their
+archived Spike qualification runs; FPGA execution is outside this checkpoint.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
