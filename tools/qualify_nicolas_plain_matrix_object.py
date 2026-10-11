@@ -20,6 +20,7 @@ from mx_gemmini_support.bind_payload import bind_payload, select_bf16_output_lay
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.chunked_i import bind_i_chunks
 from mx_gemmini_support.native_dram import bind_native_dram
+from mx_gemmini_support.smem_readback import bind_smem_zero_readout
 from mx_gemmini_support.source_gemm import SourceGemm
 from mx_gemmini_support.source_fp6 import read_source_fp6_payload
 from mx_gemmini_support.source_payload import (NICOLAS_SOURCE_HEADER_ORIGIN,
@@ -55,6 +56,7 @@ class Case:
     native_dram_scale_mode: str = "preload"
     native_dram_k_tiles: int = 1
     native_dram_store_activation: str = "none"
+    smem_zero_readout: bool = False
 
 
 CASES = {
@@ -68,6 +70,17 @@ CASES = {
          "scratch_output_scales", "weight", "weight_scales"),
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 64 cubed"),
+    "fp8_64x64x64_smem_mvout": Case(
+        "fp8_64x64x64_smem_mvout", "FP8", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp8_64x64_smem_mvout.c", "matmul_fp8_64x64.h",
+        "7c3b43b252143a3495ecada4e6d23cfaccae6fa07e5922ebc02cc5737345eb41",
+        "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 64 cubed zero-base SMEM readout",
+        smem_zero_readout=True),
     "fp8_64x64x64_requant": Case(
         "fp8_64x64x64_requant", "FP8", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp8_64x64_requant.c", "matmul_fp8_64x64.h",
@@ -549,6 +562,41 @@ def _audit_alternate_fp8_mvin(object_dir: Path, profile: dict,
             "object_sha256": _sha(object_dir / "mx_issue.o")}
 
 
+def _audit_smem_zero_readout(object_dir: Path, profile: dict,
+                              case: Case) -> dict:
+    """Match the source's scratchpad-zero C store and flat BF16 readback."""
+    physical = json.loads((object_dir / "physical_program.json").read_text())
+    plan = physical["plan"]
+    steps = physical["steps"]
+    compute = [step["command"] for step in steps
+               if step["phase"] == "compute" and step["command"].get("funct") == 8]
+    reads = [step["command"] for step in steps
+             if step["phase"] == "readout" and step["command"].get("funct") == 3]
+    stores = [step["command"] for step in steps
+              if step["phase"] == "configure" and step["command"].get("funct") == 0
+              and step["command"]["rs1"].get("immediate") == 2]
+    if (not case.smem_zero_readout or profile["geometry"]["mesh_columns"] != 16 or
+            physical["shape_mnk"] != [64, 64, 64] or
+            plan.get("c_spad_dest") != 0 or
+            plan.get("readout_transport") != "spad_mvout_zero_base" or
+            len(compute) != 1 or len(stores) != 1 or len(reads) != 32 or
+            compute[0]["rs2"].get("immediate") != 0x238 or
+            stores[0]["rs2"].get("immediate") != 16 or
+            [command["rs2"].get("immediate") & 0xffffffff for command in reads] !=
+            list(range(0, 512, 16)) or
+            [command["rs1"].get("byte_offset") for command in reads] !=
+            [row * 16 for row in range(0, 512, 16)]):
+        raise ValueError("zero-base scratchpad commands differ from source geometry")
+    return {"schema": "mx_gemmini.nicolas_fp8_smem_zero_readout_audit.v1",
+            "source_driver_sha256": case.source_sha256,
+            "profile_sha256": profile_sha256(profile),
+            "physical_program_sha256": _sha(object_dir / "physical_program.json"),
+            "compute_c_scratchpad_row": 0,
+            "readout_rows": list(range(0, 512, 16)),
+            "readout_transport": "spad_mvout_zero_base",
+            "readout_count": len(reads)}
+
+
 def _audit_chunked_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
     """Check the source I-chunk loop, scale placement, and bank-toggle commands."""
     if case.i_chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
@@ -963,6 +1011,30 @@ def _run_plain_fp6_source(rtl_root: Path, riscv_root: Path,
             "source_golden_bf16_values_checked": 128 * 128}
 
 
+def _run_smem_fp8_source(rtl_root: Path, riscv_root: Path,
+                          out_dir: Path, source: Path) -> dict:
+    """Run the pinned zero-base SMEM source under its Spike path."""
+    from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+    software = rtl_root / "software/gemmini-rocc-tests"
+    build = out_dir / "source_baseline"
+    elf = _compile_program(build, source, software,
+                           riscv_root / "bin/riscv64-unknown-elf-gcc", None)
+    so = out_dir / "run/libgemmini.so"
+    result = subprocess.run([str(riscv_root / "bin/spike"), f"--extlib={so}",
+                             "--extension=gemmini", str(elf)],
+                            cwd=build, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, check=False)
+    log = build / "spike.log"
+    log.write_text(result.stdout)
+    if (result.returncode or
+            "fp8 WS matmul test PASSED (no mismatches)." not in result.stdout):
+        raise ValueError("Nicolas zero-base SMEM FP8 source failed on pinned Spike")
+    return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
+            "source_spike_exit_code": result.returncode,
+            "source_golden_bf16_values_checked": 64 * 64}
+
+
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     """Admit only a Nicolas test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
@@ -1040,7 +1112,8 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                 "gemmini_loop_ws" if case.native_dram else
                 "gemmini_loop_ws_spad",
                 "C_hw" if case.native_dram else
-                "gemmini_mx_read_smem" if alternate_mvin else
+                "gemmini_mx_read_smem" if alternate_mvin or
+                case.smem_zero_readout else
                 "gemmini_extended_mvout")
     if not case.quant_output:
         required += ("C_out_bf16",)
@@ -1073,6 +1146,10 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                 "gemmini_extended_config_st(MATMUL_N * sizeof(uint16_t), RELU, ACC_SCALE_IDENTITY)",
                 "(C_out_bf16[i][j] & 0x8000) ? 0 : C_out_bf16[i][j]")):
         raise ValueError("Nicolas native ReLU store/golden branch changed")
+    if case.smem_zero_readout and any(marker not in source for marker in (
+            "int SPAD_DEST = 0;", "gemmini_mx_read_smem(&C_hw[0][0], 0, MATMUL_M * MATMUL_N);",
+            "gemmini_config_st(DIM * sizeof(elem_t));", "0x38);")):
+        raise ValueError("Nicolas zero-base SMEM readback source changed")
     header_text = header.read_text()
     for axis, extent in zip(("M", "N", "K"), case.shape):
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
@@ -1328,6 +1405,8 @@ def main(default_case: str | None = None) -> None:
                                  scale_mode=case.native_dram_scale_mode,
                                  k_tiles=case.native_dram_k_tiles,
                                  store_activation=case.native_dram_store_activation)
+    if case.smem_zero_readout:
+        bound = bind_smem_zero_readout(bound, profile, manifest)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -1352,6 +1431,11 @@ def main(default_case: str | None = None) -> None:
         native_audit = _audit_native_dram_fp8(object_dir, profile, case)
         (args.out_dir / "native_dram_equivalence.json").write_text(
             json.dumps(native_audit, indent=2, sort_keys=True) + "\n")
+    smem_audit = None
+    if case.smem_zero_readout:
+        smem_audit = _audit_smem_zero_readout(object_dir, profile, case)
+        (args.out_dir / "smem_readout_equivalence.json").write_text(
+            json.dumps(smem_audit, indent=2, sort_keys=True) + "\n")
     mesh_dim = profile["geometry"]["mesh_columns"]
     if profile["geometry"]["mesh_rows"] != mesh_dim:
         raise ValueError("Nicolas source qualifier needs a square MX mesh")
@@ -1369,7 +1453,10 @@ def main(default_case: str | None = None) -> None:
         if case.native_dram else
         _run_plain_fp6_source(rtl_root, args.riscv_root.resolve(),
                               args.out_dir, kernel.driver)
-        if case.key == "fp6_128x128x128" else None)
+        if case.key == "fp6_128x128x128" else
+        _run_smem_fp8_source(rtl_root, args.riscv_root.resolve(),
+                             args.out_dir, kernel.driver)
+        if case.smem_zero_readout else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -1425,6 +1512,10 @@ def main(default_case: str | None = None) -> None:
         receipt["fp6_capture_codebook_role"] = "unique_structural_witness_not_source_lut"
         receipt["fp6_capture_policy_sha256"] = _sha(
             args.out_dir / "source_line0_policy.yaml")
+    if case.smem_zero_readout:
+        receipt["source_baseline"] = source_baseline
+        receipt["smem_readout_equivalence_sha256"] = _sha(
+            args.out_dir / "smem_readout_equivalence.json")
     if case.i_chunks > 1:
         receipt["i_chunks"] = case.i_chunks
         receipt["chunk_equivalence_sha256"] = _sha(

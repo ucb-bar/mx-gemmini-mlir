@@ -656,14 +656,18 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     """Lower the bound source, including a pinned I-chunk schedule if selected."""
     from .chunked_i import lower_i_chunks, selected_i_chunks
     from .native_dram import lower_native_dram, selected_native_dram
+    from .smem_readback import lower_smem_zero_readout, selected_smem_zero_readout
 
     chunks = selected_i_chunks(mlir_text, profile, manifest)
     native_dram = selected_native_dram(mlir_text, profile, manifest)
-    if chunks is not None and native_dram:
+    smem_zero_readout = selected_smem_zero_readout(mlir_text, profile, manifest)
+    if sum((chunks is not None, native_dram is not None, smem_zero_readout)) > 1:
         raise ValueError("MX source selects incompatible physical schedules")
     base = _lower_bound_source_regular(mlir_text, profile, manifest,
                                        resources, mode=mode)
     if chunks is not None:
         return lower_i_chunks(base, profile, manifest, chunks)
+    if smem_zero_readout:
+        return lower_smem_zero_readout(base, profile, manifest)
     return (lower_native_dram(base, profile, manifest, native_dram, resources)
             if native_dram is not None else base)
