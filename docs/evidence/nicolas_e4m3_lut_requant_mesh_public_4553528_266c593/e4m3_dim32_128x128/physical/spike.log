@@ -1,0 +1,3 @@
+lowered MX 128x128x128: 0 E4M3 packed-LUT-index mismatches, 0 E8M0 scale mismatches
+Gemmini extension configured with:
+    dim = 32
