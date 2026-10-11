@@ -1,0 +1,32 @@
+{
+  "b_spad_ids": [
+    1,
+    2
+  ],
+  "derived_expected_bf16_sha256": "8a1362f002e02043196d51decaf38e38e26abb01955561f7454ddae68c7fd12d",
+  "explicit_operand_dma_commands": 0,
+  "explicit_output_dma_commands": 0,
+  "loop_scale_configurations": 4,
+  "native_chunk_count": 2,
+  "native_command_functs": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    8
+  ],
+  "output_column_bytes_per_chunk": 128,
+  "physical_program_sha256": "5db98e7a53046411c493f0d54f612eb7223fdfad24993ba2c467c94aa3a49ba8",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "scale_uploads": 0,
+  "schema": "mx_gemmini.nicolas_fp8_native_dram_ls_audit.v1",
+  "source_driver_sha256": "cf9c3431d3fab5dd71e4956fb785cd73b1c49651a3d1c9ff44046f29b22b17cf",
+  "store_activation": "relu"
+}

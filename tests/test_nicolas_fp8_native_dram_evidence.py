@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.native_dram import bind_native_dram, selected_native_dram
+from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.qualify_nicolas_plain_matrix_object import (
@@ -319,3 +320,71 @@ def test_native_scale_control_matches_source(variant: str,
         assert _sha(directory / "object/mx_issue.o") == _sha(
             ROOT / "docs/evidence/nicolas_fp8_native_nc_public_57b26ce_266c593/"
             "nc2/object/mx_issue.o")
+
+
+def test_native_relu_store_matches_source() -> None:
+    directory = ROOT / "docs/evidence/nicolas_fp8_native_relu_public_c729276_266c593"
+    case = CASES["fp8_128x128x128_native_dram_relu"]
+    receipt = json.loads((directory / "receipt.json").read_text())
+    audit = json.loads((directory / "native_dram_equivalence.json").read_text())
+    physical = json.loads((directory / "object/physical_program.json").read_text())
+    obj = json.loads((directory / "object/object_manifest.json").read_text())
+    manifest, resources = load_bundle(directory / "bundle")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
+    mlir = (directory / "payload_bound.mlir").read_text()
+    assert receipt["compiler_revision"] == "c7292768d0184f06b82dcfc87a3419a8a4831a8f"
+    assert receipt["rtl_revision"] == RTL_REVISION
+    assert receipt["model2mlir_revision"] == MODEL2MLIR_REVISION
+    assert receipt["mxq_revision"] == MXQ_REVISION
+    assert receipt["profile_sha256"] == profile_sha256(profile)
+    assert receipt["case"] == case.key
+    assert receipt["source_driver_sha256"] == manifest["source_driver_sha256"] == (
+        case.source_sha256)
+    assert receipt["source_header_sha256"] == case.header_sha256
+    assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+    assert receipt["native_dram_store_activation"] == "relu"
+    assert receipt["mismatches"] == 0 and receipt["outputs_checked"] == 16384
+    assert selected_native_dram(mlir, profile, manifest) == "ls2_relu"
+    assert audit["source_driver_sha256"] == case.source_sha256
+    assert audit["store_activation"] == "relu"
+    assert audit["native_chunk_count"] == 2
+    assert audit["native_command_functs"] == [9, 10, 11, 12, 13, 8] * 2
+    assert audit["loop_scale_configurations"] == 4
+    assert audit["scale_uploads"] == 0
+    assert audit["explicit_operand_dma_commands"] == 0
+    assert audit["explicit_output_dma_commands"] == 0
+    assert audit["physical_program_sha256"] == _sha(
+        directory / "object/physical_program.json")
+    assert receipt["native_dram_equivalence_sha256"] == _sha(
+        directory / "native_dram_equivalence.json")
+    assert physical["plan"]["native_dram_store_activation"] == "relu"
+    assert physical["source_golden_preserving"] is False
+    assert physical["golden_derivation"] == "bf16_store_relu_sign_clear"
+    store = [step["command"] for step in physical["steps"]
+             if step["phase"] == "configure" and
+             step["command"].get("funct") == 0 and
+             step["command"]["rs1"].get("immediate") == 6]
+    assert len(store) == 1 and store[0]["rs2"]["immediate"] == 256
+    source = resources["golden_bf16"]
+    assert len(source) == 32768
+    expected = b"".join(b"\x00\x00" if source[i + 1] & 0x80 else source[i:i + 2]
+                        for i in range(0, len(source), 2))
+    assert sum(bool(source[i + 1] & 0x80) for i in range(0, len(source), 2)) == 8492
+    program = lower_bound_source(mlir, profile, manifest, resources)
+    assert program.derived_expected_bf16 == expected
+    assert audit["derived_expected_bf16_sha256"] == hashlib.sha256(expected).hexdigest()
+    assert physical["derived_expected_bf16_sha256"] == hashlib.sha256(expected).hexdigest()
+    assert obj["allocated_data_section_bytes"] == 0
+    assert receipt["object_sha256"] == _sha(directory / "object/mx_issue.o")
+    assert receipt["spike_log_sha256"] == _sha(directory / "run/spike.log")
+    assert "0 mismatches / 16384 BF16 values" in (
+        directory / "run/spike.log").read_text()
+    assert receipt["source_baseline"]["source_spike_exit_code"] == 0
+    assert receipt["source_baseline"]["source_golden_bf16_values_checked"] == 16384
+    assert receipt["source_baseline"]["source_elf_sha256"] == _sha(
+        directory / "source_baseline/program.elf")
+    assert receipt["source_baseline"]["source_spike_log_sha256"] == _sha(
+        directory / "source_baseline/spike.log")
+    assert "native multi-loop (2 chunks) test PASSED" in (
+        directory / "source_baseline/spike.log").read_text()
