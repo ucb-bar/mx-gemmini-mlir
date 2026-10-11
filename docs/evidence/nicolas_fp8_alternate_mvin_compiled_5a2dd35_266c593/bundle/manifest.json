@@ -1,0 +1,87 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "precision": "FP8",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "resources": {
+    "activation": {
+      "bytes": 1024,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "4d133c999eac29fb3c5726146c5b15038006219bbc72351a5e5d9a4d8a565091",
+      "shape": [
+        32,
+        32
+      ]
+    },
+    "activation_scales": {
+      "bytes": 32,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "a2463fde7e3077cd6abb23bb66c4a48f98f9ee2f77367475db07910229cf5e5d",
+      "shape": [
+        1,
+        32
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 2048,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "f9e3983981d5a499f7a50b01de401635f0a3a012fa774f8d176ce8429ce80166",
+      "shape": [
+        32,
+        32
+      ]
+    },
+    "output_scales": {
+      "bytes": 32,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "ecc5696e63e1849622f1a47556aa725c6d16d5a19244847b9393a8be822693f1",
+      "shape": [
+        1,
+        32
+      ]
+    },
+    "weight": {
+      "bytes": 1024,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "fcd1bace0bfa7fa125e93c7be30333e7ec5ef2324df0b34ed2a2f2ccf8648998",
+      "shape": [
+        32,
+        32
+      ]
+    },
+    "weight_scales": {
+      "bytes": 32,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "89661ad7088865dbb7d8e39b6f41aa98aa94d12f3e4ff6b2480ebcd7911102a3",
+      "shape": [
+        1,
+        32
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    32,
+    32,
+    32
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "d9b20beb693cd70dacf02d1b22bbd4ab7d85fd1f2466e38ba9aa41e9bc14e176",
+  "source_header_sha256": "70c32822155c5e329b761952a06f4a36836361b18622d22114d48b58fd708fc6",
+  "tile_mnk": [
+    32,
+    32,
+    32
+  ]
+}

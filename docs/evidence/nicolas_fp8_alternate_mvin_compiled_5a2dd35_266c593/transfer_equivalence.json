@@ -1,0 +1,83 @@
+{
+  "compiler_transfer_pairs": {
+    "move_activation": [
+      [
+        0,
+        0
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        512,
+        32
+      ],
+      [
+        528,
+        48
+      ]
+    ],
+    "move_weight": [
+      [
+        0,
+        16320
+      ],
+      [
+        16,
+        16336
+      ],
+      [
+        512,
+        16352
+      ],
+      [
+        528,
+        16368
+      ]
+    ]
+  },
+  "object_sha256": "69926e33aa470b821571ec5fb402f1270615d6972f16d1d39f53ee5da8bb7a1d",
+  "physical_program_sha256": "347c18a5097e24a041dcd932293e4a294d04715830bebc84a08014807f022eda",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "schema": "mx_gemmini.nicolas_alternate_fp8_mvin_audit.v1",
+  "source_driver_sha256": "d9b20beb693cd70dacf02d1b22bbd4ab7d85fd1f2466e38ba9aa41e9bc14e176",
+  "source_transfer_pairs": {
+    "move_activation": [
+      [
+        0,
+        0
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        512,
+        32
+      ],
+      [
+        528,
+        48
+      ]
+    ],
+    "move_weight": [
+      [
+        0,
+        16320
+      ],
+      [
+        16,
+        16336
+      ],
+      [
+        512,
+        16352
+      ],
+      [
+        528,
+        16368
+      ]
+    ]
+  }
+}
