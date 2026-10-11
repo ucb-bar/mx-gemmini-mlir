@@ -81,6 +81,9 @@ def main() -> None:
     parser.add_argument("--riscv-root", type=Path, required=True)
     parser.add_argument("--arena-mb", type=int, default=2048)
     parser.add_argument("--output-dump-cap", type=int, default=1)
+    parser.add_argument("--compile-timeout-s", type=int,
+                        default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
+                        help="wall-clock limit per compiler/link command; 0 disables it")
     parser.add_argument("--spike-extlib", type=Path,
                         help="run the built ELF on Spike with this pinned Gemmini extension")
     parser.add_argument("--spike-timeout", type=int, default=600)
@@ -92,8 +95,9 @@ def main() -> None:
     source = _capture_model(stage)
     output_sha256 = _can_hash_first_output(stage)
     capture_sha = hashlib.sha256(source.read_bytes()).hexdigest()
-    if args.arena_mb <= 0 or args.output_dump_cap <= 0 or args.spike_timeout <= 0:
-        parser.error("arena, dump cap and Spike timeout must be positive")
+    if (args.arena_mb <= 0 or args.output_dump_cap <= 0 or args.spike_timeout <= 0
+            or args.compile_timeout_s < 0):
+        parser.error("arena, dump cap and Spike timeout must be positive; compile timeout cannot be negative")
     profile_path = args.profile.resolve(strict=True)
     riscv_root = args.riscv_root.resolve(strict=True)
     llvm_root = args.llvm_install.resolve(strict=True)
@@ -109,6 +113,7 @@ def main() -> None:
     os.environ["MERLIN_CLANG"] = str(llvm_root / "bin/clang")
     os.environ["MERLIN_RISCV_GCC"] = str(riscv_root / "bin/riscv64-unknown-elf-gcc")
     os.environ["MERLIN_SPIKE"] = str(riscv_root / "bin/spike")
+    os.environ["MERLIN_COMPILE_TIMEOUT_S"] = str(args.compile_timeout_s)
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower.device_build import DeviceRouting
     from merlin.runtime.backends import spike_model
@@ -128,6 +133,7 @@ def main() -> None:
         stage, work, arena_mb=args.arena_mb, backend="scalar", device=device,
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
+        output_all_sha256=True,
     )
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
@@ -153,7 +159,9 @@ def main() -> None:
         "build_hash": result.get("build_hash"),
         "mem_bytes": result["mem_bytes"],
         "arena_mb": args.arena_mb,
+        "compile_timeout_s": args.compile_timeout_s,
         "first_output_sha256_enabled": output_sha256,
+        "all_output_sha256_enabled": True,
     }
     if args.spike_extlib is not None:
         extlib = args.spike_extlib.resolve(strict=True)

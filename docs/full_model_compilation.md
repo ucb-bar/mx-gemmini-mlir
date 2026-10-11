@@ -266,8 +266,8 @@ binds all 211 selected matmuls with no unbound precision proposals and 12
 unique kernels. The 211-site catalog compiled to a relocatable RV64 object
 with a 7,964,672-byte shared workspace. This is structural coverage, not BF16
 numerical parity. Action decode contains no direct MX contraction proposal.
-The catalog's `coverage_complete`
-only means that every operation listed in its exact binding table has a
+The catalog's `coverage_complete` only means that every operation listed in
+its exact binding table has a
 compiled implementation. VPU operators and other host operations are not
 covered by that field.
 
@@ -275,15 +275,15 @@ All four model families' bound prefill/prefix/flow subsets now compile as
 relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
 sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
 139 sites and nine kernels, and SmolVLA flow 116 sites and ten kernels. These
-objects are catalog probes. TinyLlama prefill and SmolVLA's original 139-route
-f32-only prefix have passed Merlin's full host/device build and ELF link; the
-211-route BF16-prepared prefix build is in progress. TinyLlama used a 512 MiB
-arena and
-produced a 4.4 GB ELF with 199 routed MX operations from a full checkpoint
-capture with explicit eager attention. Its first Spike run exhausted the
-512 MiB arena. The stage probe now defaults to 2 GiB, pending a fresh run.
-No complete model
-inference or independent quantized parity claim follows from linking it.
+objects are catalog probes. Full host/device stage ELFs have linked for
+TinyLlama prefill (199 routes, 4.4 GB), Qwen prefill (253 routes, 7.1 GB),
+and SmolVLA prefix (211 routes after BF16 preparation, 911 MB). These use
+full checkpoint captures. Gemma prefill compiled and routed 235 sites but its
+first build hit Merlin's 900-second timeout while converting the ~10 GB weight
+image with `ld -r -b binary`; a retry uses a 3600-second per-command limit.
+TinyLlama's first Spike run exhausted the 512 MiB arena. The stage probe now
+defaults to 2 GiB, and a larger-arena Spike run is in progress. No complete
+model inference or independent quantized parity follows from these links.
 
 For a prepared graph, the standalone builder is:
 
@@ -312,8 +312,12 @@ source region selected from the raw capture. With `--spike-extlib` it also runs
 the linked ELF using the pinned Gemmini Spike extension and records the raw
 console and completion status. Merlin's bare-metal digest now supports f32,
 i64, and boolean first outputs, including SmolVLA's prefix result. The stage
-probe enables it for these typed outputs. Completion is not a numerical
-parity gate.
+probe also requests indexed raw-storage digests for every result, including
+state results. These records need independently captured typed references
+before they become correctness evidence. Completion is not a numerical parity
+gate.
+The probe's `--compile-timeout-s` defaults to 3600 for multi-gigabyte
+checkpoint weight images; `0` disables the command limit.
 
 ```sh
 python -m tools.build_merlin_stage \
