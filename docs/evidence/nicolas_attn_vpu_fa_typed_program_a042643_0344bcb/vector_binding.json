@@ -1,0 +1,97 @@
+{
+  "bound_mlir_sha256": "d5684a6dfc419eea3ad75d3534b87facc9165299b0b533b831a3c936284ed212",
+  "contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_mlir_sha256": "074066324401345c377e77140f084096fbabbedcae80321595320ccd2abaa5bf",
+  "manifest_sha256": "972868f8ae048d2a4698929fee764ca3d3e2491a47e9e0e7e20ef325de4968a3",
+  "plan": {
+    "max_row": 12288,
+    "output_row": 7680,
+    "probability_row": 4608,
+    "rounding": "BF16 after each VPU operation",
+    "score_row": 2560,
+    "shape_sq_sk_d": [
+      64,
+      256,
+      128
+    ],
+    "steps": [
+      [
+        "muls",
+        2560,
+        0,
+        2560,
+        2048,
+        1,
+        false,
+        15797
+      ],
+      [
+        "rmax",
+        2560,
+        0,
+        12288,
+        2048,
+        32,
+        false,
+        0
+      ],
+      [
+        "sub",
+        2560,
+        12288,
+        2560,
+        2048,
+        32,
+        true,
+        0
+      ],
+      [
+        "exp",
+        2560,
+        0,
+        2560,
+        2048,
+        1,
+        false,
+        0
+      ],
+      [
+        "rsum",
+        2560,
+        0,
+        12352,
+        2048,
+        32,
+        false,
+        0
+      ],
+      [
+        "rcp",
+        12352,
+        0,
+        12352,
+        64,
+        1,
+        false,
+        0
+      ],
+      [
+        "mul",
+        2560,
+        12352,
+        2560,
+        2048,
+        32,
+        true,
+        0
+      ]
+    ],
+    "sum_row": 12352,
+    "v_row": 5632
+  },
+  "policy_sha256": "7ce8f6c363d1a1bc43ff6965df4ff5422b09c072f8dce232b7cfa573617fe11d",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.nicolas_dense_attention_vector_binding.v1",
+  "source_header_sha256": "eac98b37ca119bb92af72307f63d3f8f469905019627ba3450650828aa785de5",
+  "source_sha256": "537fcde270abb982b58e6777487d7ea3bc14e5e81da05fb48cb2ac31077a5cd8"
+}

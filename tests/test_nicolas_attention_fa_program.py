@@ -1,6 +1,8 @@
 """The largest dense attention source shape uses typed MX commands on Spike."""
 
 import gzip
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -20,6 +22,7 @@ from tools.qualify_nicolas_dense_attention import replace_source_kernel
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/evidence/nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb"
+ARCHIVE = ROOT / "docs/evidence/nicolas_attn_vpu_fa_typed_program_a042643_0344bcb"
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
                        "MxE4M3Fp4VpuGemminiRocketConfig.json")
 CORE = Path("/scratch/agustin/tmp/npu-exploration-mx-source-20261009/"
@@ -85,3 +88,36 @@ def test_native_verifier_accepts_fa_shape(tmp_path: Path) -> None:
     run = subprocess.run([str(executable.resolve()), str(source), "-o", "/dev/null"],
                          capture_output=True, text=True)
     assert run.returncode == 0, run.stderr
+
+
+def test_fa_spike_archive_matches_source_and_object_manifest() -> None:
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    receipt = json.loads((ARCHIVE / "receipt.json").read_text())
+    source = json.loads((SOURCE / "receipt.json").read_text())
+    obj = json.loads((ARCHIVE / "object/object_manifest.json").read_text())
+    dispatch = json.loads((ARCHIVE / "object/compile_manifest.json").read_text())
+    physical = json.loads((ARCHIVE / "object/physical_program.json").read_text())
+    log = (ARCHIVE / "spike_1.log").read_text()
+    assert receipt["source_baseline_sha256"] == sha(SOURCE / "receipt.json")
+    assert receipt["stage_hashes"] == source["source_stage_hashes"]
+    assert receipt["spike_reproduced_runs"] == 2
+    assert receipt["typed_mlir_sha256"] == sha(ARCHIVE / "attention.program_bound.mlir")
+    assert receipt["vector_mlir_sha256"] == sha(ARCHIVE / "attention.vector_bound.mlir")
+    assert receipt["binding_sha256"] == sha(ARCHIVE / "vector_binding.json")
+    assert receipt["object_sha256"] == obj["object_sha256"] == sha(
+        ARCHIVE / "object/mx_issue.o")
+    assert receipt["object_manifest_sha256"] == sha(ARCHIVE / "object/object_manifest.json")
+    assert receipt["compile_manifest_sha256"] == sha(ARCHIVE / "object/compile_manifest.json")
+    assert receipt["driver_sha256"] == sha(ARCHIVE / "attn_vpu_typed_program.c")
+    assert receipt["elf_sha256"] == sha(ARCHIVE / "attn_vpu_typed_program.elf")
+    assert receipt["spike_log_sha256"] == sha(ARCHIVE / "spike_1.log")
+    assert dispatch["lowering_family"] == "attention_program"
+    assert dispatch["verified_graph_counts"]["memory_phases"] == 10
+    assert dispatch["verified_graph_counts"]["spad_matmuls"] == 2
+    assert obj["allocated_data_section_bytes"] == 0
+    assert obj["embedded_operand_bytes"] == obj["embedded_golden_bytes"] == 0
+    assert obj["command_count"] == 702 and obj["fence_count"] == 1
+    assert len(physical["commands"]) == 703
+    assert "check S vs mesh golden: 0/4096 4-element words differ" in log
+    assert "check hashes vs Spike: match (0 of 4 differ)" in log
+    assert "attn_vpu PASSED" in log

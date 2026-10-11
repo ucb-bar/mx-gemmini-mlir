@@ -130,7 +130,12 @@ The [64×128×64 `attn_vpu_mid` program](docs/evidence/nicolas_attn_vpu_mid_type
 uses the same source-bound lowering with geometry derived from its model2MLIR
 capture and source header. One data-free object issues all 302 MX commands and
 one fence; two Spike runs match all 2,048 score words and all four source
-stage hashes. Larger flash-shape attention and full models remain open.
+stage hashes.
+The [64×256×128 dense `attn_vpu_fa` program](docs/evidence/nicolas_attn_vpu_fa_typed_program_a042643_0344bcb/README.md)
+also compiles from a clean model2MLIR capture through the same shape-derived
+path. Its one data-free object issues 702 MX commands and one fence; two
+Spike runs match all 4,096 score words and four source stage hashes. The
+separate blocked `attn_flash` kernels and full models remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
