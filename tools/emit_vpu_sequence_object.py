@@ -8,10 +8,11 @@ import hashlib
 import json
 from pathlib import Path
 
-from mx_gemmini_support.command_ir import emit_c
+from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.verify_profile_ir import verify_ir
-from mx_gemmini_support.vpu_sequence_program import lower_vpu_sequence
+from mx_gemmini_support.vpu_sequence_program import (TIMELINE_ABI_SCHEMA,
+                                                      lower_vpu_sequence)
 from tools.compile_mx import _git_revision, _source_closure
 from tools.emit_resident_pair_object import _compile_object, _file_sha, _load_mlir
 
@@ -52,15 +53,22 @@ def main() -> None:
         ", ".join(f"const void *{item.name}" for item in buffers) +
         ");\n\n#endif\n")
     physical = args.out_dir / "physical_program.json"
-    physical.write_text(json.dumps({
+    physical_data = {
         "schema": "mx_gemmini.vpu_sequence_physical.v1",
         "profile_sha256": profile_sha256(profile),
         "bound_mlir_sha256": hashlib.sha256(mlir_bytes).hexdigest(),
         "operations": plan.operations,
         "inputs": [asdict(item) for item in plan.inputs],
         "outputs": [asdict(item) for item in plan.outputs],
-        "commands": [asdict(command) for command in plan.commands],
-    }, indent=2, sort_keys=True) + "\n")
+        "commands": [asdict(command) if isinstance(command, Command) else
+                     {"kind": "fence"} for command in plan.commands],
+    }
+    if plan.abi_schema == TIMELINE_ABI_SCHEMA:
+        physical_data.update(
+            buffer_map_schema=plan.abi_schema,
+            captures=[asdict(item) for item in plan.captures],
+            reloads=[asdict(item) for item in plan.reloads])
+    physical.write_text(json.dumps(physical_data, indent=2, sort_keys=True) + "\n")
     obj, data_bytes = _compile_object(args.out_dir, args.riscv_root)
     abi = [{"name": item.name, "position": index,
             "role": "read" if index < len(plan.inputs) else "write",
@@ -91,6 +99,8 @@ def main() -> None:
             args.riscv_root / "bin/riscv64-unknown-elf-gcc"),
         "defined_symbol": "mx_issue", "undefined_symbols": [],
     }
+    if plan.abi_schema == TIMELINE_ABI_SCHEMA:
+        manifest["buffer_map_schema"] = plan.abi_schema
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     print(f"linkable VPU sequence: {obj}")

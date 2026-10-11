@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from mx_gemmini_support.command_ir import Fence
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.vpu_sequence_program import lower_vpu_sequence
 from tools.compile_object import classify
@@ -93,3 +94,39 @@ def test_sequence_rejects_profile_without_vpu() -> None:
     rebound = _graph().replace(profile_sha256(PROFILE), profile_sha256(plain))
     with pytest.raises(ValueError, match="no VPU"):
         classify(rebound, plain)
+
+
+def test_timeline_captures_overwritten_results_and_reloads_input() -> None:
+    timeline = {
+        "schema": "mx_gemmini.vpu_sequence_buffer_map.v2",
+        "inputs": ABI["inputs"],
+        "outputs": [
+            {"name": "sum", "row": 8192, "rows": 64, "after_operation": 0},
+            {"name": "half", "row": 8192, "rows": 64, "after_operation": 1},
+            {"name": "maximum", "row": 12288, "rows": 16, "after_operation": 2},
+        ],
+        "reloads": [{"input": "b", "row": 0, "after_operation": 1}],
+    }
+    plan = lower_vpu_sequence(_graph(), PROFILE, timeline)
+    assert [item.name for item in plan.outputs] == ["sum", "half", "maximum"]
+    assert [item.after_operation for item in plan.captures] == [0, 1, 2]
+    assert [item.input for item in plan.reloads] == ["b"]
+    commands = plan.commands
+    operation_indices = [index for index, command in enumerate(commands)
+                         if getattr(command, "funct", None) == 33]
+    assert len(operation_indices) == 3
+    assert [getattr(command, "funct", "fence") for command in commands[
+        operation_indices[0] + 1:operation_indices[1]]] == [3] * 4 + ["fence"]
+    assert [getattr(command, "funct", "fence") for command in commands[
+        operation_indices[1] + 1:operation_indices[2]]] == [2] * 4 + [3] * 4 + ["fence"]
+    assert [getattr(command, "funct", "fence") for command in commands[
+        operation_indices[2] + 1:]] == [3, "fence"]
+    assert sum(isinstance(command, Fence) for command in commands) == 3
+    with pytest.raises(ValueError, match="outside the operation list"):
+        lower_vpu_sequence(_graph(), PROFILE, {
+            **timeline, "outputs": [{**timeline["outputs"][0],
+                                      "after_operation": 3}]})
+    with pytest.raises(ValueError, match="invalid reload"):
+        lower_vpu_sequence(_graph(), PROFILE, {
+            **timeline, "reloads": [{"input": "missing", "row": 0,
+                                      "after_operation": 1}]})
