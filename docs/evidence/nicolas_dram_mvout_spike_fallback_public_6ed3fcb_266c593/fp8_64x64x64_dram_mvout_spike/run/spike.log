@@ -1,0 +1,3 @@
+compiled Nicolas FP8 64 cubed DRAM-mvout Spike fallback: 0 mismatches / 4096 BF16 values
+Gemmini extension configured with:
+    dim = 16

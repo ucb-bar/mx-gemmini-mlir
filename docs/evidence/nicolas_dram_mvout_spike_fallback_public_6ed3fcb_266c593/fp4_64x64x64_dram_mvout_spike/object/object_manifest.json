@@ -1,0 +1,95 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "09eb1f02a4afd6690589efd7b4ef89bc2a19d17eee9f685b08dc6e131619f2e7",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_m_nibbles",
+      "maximum_byte_offset": 1072,
+      "minimum_bytes": 2048,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [
+        1099511627775
+      ],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 7936,
+      "minimum_bytes": 8192,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 3,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_n_nibbles",
+      "maximum_byte_offset": 1552,
+      "minimum_bytes": 2048,
+      "name": "weight",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "address_masks": [
+        1099511627775
+      ],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "weight_scales",
+      "position": 5,
+      "role": "read"
+    }
+  ],
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "a1bee125715d5d84ead1800ff744d8dc8cdfebd9f99a7bbe8d32a81b2b4de35b",
+  "issuer_h_sha256": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+  "mode": "spike_serial",
+  "object_emitter_sha256": "e457c84aa453048308a62128bfcf1200ac565253da068ddfe077f6ea9b8cad8d",
+  "object_sha256": "35bf5a39a2c553991348b1cc7bab59f896d132c355fcf217bc1d7b8516c7ef1e",
+  "payload_manifest_sha256": "f2bcf75227ae4a9e489d32178f02fabfe8c8533ca405641c4cbbf46849b33af9",
+  "physical_program_sha256": "0b32043d24bf2beafd822c80d773251362c13c798c8a64cc1147a843ca6fce56",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.linkable_object.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "source_bundle_manifest_sha256": "e52cb0c3abf6ada7b34c4380b929867ba97e963ebf70fe7b0cc34d21d36e24fd",
+  "status": "rv64_rocc_issuer_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
