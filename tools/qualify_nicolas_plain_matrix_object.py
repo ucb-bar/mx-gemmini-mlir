@@ -54,6 +54,7 @@ class Case:
     native_dram_chunks: int = 1
     native_dram_scale_mode: str = "preload"
     native_dram_k_tiles: int = 1
+    native_dram_store_activation: str = "none"
 
 
 CASES = {
@@ -476,6 +477,19 @@ for _suffix, _sha256, _mode in (
         f"FP8 128 cubed native DRAM {_suffix}", native_dram=True,
         native_dram_chunks=2, native_dram_scale_mode=_mode)
 
+_relu_key = "fp8_128x128x128_native_dram_relu"
+CASES[_relu_key] = Case(
+    _relu_key, "FP8", (128, 128, 128), (128, 128, 128),
+    "matmul_tiled_fp8_128x128_dramloop_relu.c", "matmul_fp8_128x128.h",
+    "cf9c3431d3fab5dd71e4956fb785cd73b1c49651a3d1c9ff44046f29b22b17cf",
+    _CHUNK_HEADER_SHA256, "MxGemminiRocketConfig",
+    ("activation", "activation_scales", "output_bf16",
+     "weight", "weight_scales"),
+    ("A_in", "A_scales_row", "C_hw", "B_in", "B_scales_col"),
+    "FP8 128 cubed native DRAM ReLU", native_dram=True,
+    native_dram_chunks=2, native_dram_scale_mode="loop",
+    native_dram_store_activation="relu")
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -648,6 +662,7 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
     chunks = case.native_dram_chunks
     loop_scales = case.native_dram_scale_mode == "loop"
     scale_wait = case.native_dram_scale_mode == "wait"
+    store_relu = case.native_dram_store_activation == "relu"
     if chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
         raise ValueError("native column-loop audit needs the pinned DIM16 case")
     physical = json.loads((object_dir / "physical_program.json").read_text())
@@ -659,6 +674,8 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
             ("loop_managed" if loop_scales else None) or
             physical["plan"].get("native_dram_scale_wait") !=
             (True if scale_wait else None) or
+            physical["plan"].get("native_dram_store_activation") !=
+            ("relu" if store_relu else None) or
             any(step["phase"] in {"move_activation", "move_weight", "compute",
                                    "readout"} for step in steps)):
         raise ValueError("compiler did not select native column-loop transport")
@@ -689,6 +706,16 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
               and step["command"].get("funct") == 27]
     selectors = [step["command"] for step in steps
                  if step["phase"] == "select_scales"]
+    stores = [step["command"] for step in steps if step["phase"] == "configure"
+              and step["command"].get("funct") == 0 and
+              step["command"]["rs1"].get("immediate") in {2, 6}]
+    if (len(stores) != 1 or stores[0]["rs1"]["immediate"] !=
+            (6 if store_relu else 2) or
+            stores[0]["rs2"]["immediate"] != 256 or
+            physical.get("golden_derivation") !=
+            ("bf16_store_relu_sign_clear" if store_relu else None) or
+            physical.get("source_golden_preserving", True) != (not store_relu)):
+        raise ValueError("native column-loop store activation differs from source")
     if loop_scales:
         per_loop = [step for step in steps if step["phase"] == "loop_scales"]
         if (scales or selectors or
@@ -739,6 +766,9 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
             "native_chunk_count": chunks,
             "native_command_functs": [command["funct"] for command in native[:-1]],
             "scale_uploads": len(scales),
+            **({"store_activation": "relu",
+                "derived_expected_bf16_sha256":
+                physical["derived_expected_bf16_sha256"]} if store_relu else {}),
             **({"scale_config_wait_bit": True} if scale_wait else {}),
             **({"loop_scale_configurations": 2 * chunks}
                if loop_scales else {}),
@@ -934,6 +964,10 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
             '// dramloop_nc with 2-D scale loads and NO fence: CONFIG_SCALE_MEM waits in HW (rs2[16]).\n'
             '#define SCALES_2D 1\n#define SCALE_WAIT 1\n'
             '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
+        "matmul_tiled_fp8_128x128_dramloop_relu.c":
+            '// dramloop_ls with ReLU on the accumulated output (store-path activation); golden = relu(C_out_bf16).\n'
+            '#define NCHUNKS 2\n#define LOOP_SCALES 1\n#define RELU_OUT 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"',
     }
     if case.native_dram and case.source_name in native_wrappers:
         if source.strip() != native_wrappers[case.source_name]:
@@ -998,6 +1032,11 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                 "&C_hw[0][c * NC]", "1 + (c & 1)",
                 "NCHUNKS * K", "gemmini_loop_ws(I, J, K")):
         raise ValueError("Nicolas native column-chunk loop source changed")
+    if case.native_dram_store_activation == "relu" and any(
+            marker not in source for marker in (
+                "gemmini_extended_config_st(MATMUL_N * sizeof(uint16_t), RELU, ACC_SCALE_IDENTITY)",
+                "(C_out_bf16[i][j] & 0x8000) ? 0 : C_out_bf16[i][j]")):
+        raise ValueError("Nicolas native ReLU store/golden branch changed")
     header_text = header.read_text()
     for axis, extent in zip(("M", "N", "K"), case.shape):
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
@@ -1108,6 +1147,9 @@ int main(void) {{
     scratch_decl = ("static uint8_t scratch_output_scales[2048] "
                     "__attribute__((aligned(64)));\n"
                     if "scratch_output_scales" in case.buffer_abi else "")
+    expected_bf16 = ("((C_out_bf16[i][j] & 0x8000) ? 0 : C_out_bf16[i][j])"
+                     if case.native_dram_store_activation == "relu" else
+                     "C_out_bf16[i][j]")
     return f"""#include <stdint.h>
 #include <stdio.h>
 #include "include/gemmini_testutils.h"
@@ -1120,9 +1162,9 @@ static uint16_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
   int errors = 0;
   for (int i = 0; i < MATMUL_M; ++i)
     for (int j = 0; j < MATMUL_N; ++j)
-      if (C_hw[i][j] != C_out_bf16[i][j]) {{
+      if (C_hw[i][j] != {expected_bf16}) {{
         if (errors < 8) printf("mismatch %d,%d got %x want %x\\n",
-                               i,j,C_hw[i][j],C_out_bf16[i][j]);
+                               i,j,C_hw[i][j],{expected_bf16});
         ++errors;
       }}
   printf("compiled Nicolas {case.label}: %d mismatches / %d BF16 values\\n",
@@ -1240,7 +1282,8 @@ def main(default_case: str | None = None) -> None:
         bound = bind_native_dram(bound, profile, manifest,
                                  case.native_dram_chunks,
                                  scale_mode=case.native_dram_scale_mode,
-                                 k_tiles=case.native_dram_k_tiles)
+                                 k_tiles=case.native_dram_k_tiles,
+                                 store_activation=case.native_dram_store_activation)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -1342,6 +1385,9 @@ def main(default_case: str | None = None) -> None:
         receipt["source_baseline"] = source_baseline
         if case.native_dram_scale_mode != "preload":
             receipt["native_dram_scale_mode"] = case.native_dram_scale_mode
+        if case.native_dram_store_activation != "none":
+            receipt["native_dram_store_activation"] = (
+                case.native_dram_store_activation)
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
     print(output)

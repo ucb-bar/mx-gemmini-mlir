@@ -49,6 +49,7 @@ class PhysicalProgram:
     derived_vpu_scalar_bf16: int | None = None
     derived_vpu_scalar_chain: tuple[tuple[str, int], ...] | None = None
     golden_origin: str = "source_header"
+    golden_derivation: str | None = None
 
     def receipt(self) -> dict:
         steps = []
@@ -71,7 +72,7 @@ class PhysicalProgram:
                 any(step.phase in {"vpu", "spad_requant"} for step in self.steps)):
             receipt["source_golden_preserving"] = self.source_golden_preserving
         if self.derived_expected_bf16 is not None:
-            receipt["golden_derivation"] = (
+            receipt["golden_derivation"] = self.golden_derivation or (
                 "bf16_scalar_chain_rne" if self.derived_vpu_scalar_chain is not None
                 else "bf16_exact_multiply_by_two" if self.derived_vpu_scalar_bf16 is None
                 else "bf16_scalar_adds_rne" if self.plan.get("vector_tile_policy") ==
@@ -664,5 +665,5 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                                        resources, mode=mode)
     if chunks is not None:
         return lower_i_chunks(base, profile, manifest, chunks)
-    return (lower_native_dram(base, profile, manifest, native_dram)
+    return (lower_native_dram(base, profile, manifest, native_dram, resources)
             if native_dram is not None else base)

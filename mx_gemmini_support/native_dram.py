@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from io import StringIO
+from typing import Mapping
 
 from .chunked_i import _parse_module
 from .command_ir import Command, Fence, Operand
@@ -26,6 +27,7 @@ PRELOAD_VARIANT_SOURCE_SHA256 = {
     "nc2_2d": "4d5fffa5153779041d4f271cad33c6971af028b03031eb21d7d547d06aba4854",
     "nc2_wait": "c69f99fcc6bb791f705ce94c7ceeef8a10efc80a4fcdb47e1ba7e578ce5ea974",
 }
+RELU_SOURCE_SHA256 = "cf9c3431d3fab5dd71e4956fb785cd73b1c49651a3d1c9ff44046f29b22b17cf"
 _SHAPE = [128, 128, 128]
 _ATTR = "mx.native_dram_loop"
 
@@ -35,7 +37,8 @@ def _check_source(profile: dict, manifest: dict,
     expected_source = {1: SOURCE_SHA256, **CHUNK_SOURCE_SHA256,
                        **LOOP_SCALE_SOURCE_SHA256,
                        **PRELOAD_VARIANT_SOURCE_SHA256,
-                       "kt2": K_TILED_SOURCE_SHA256}.get(selection)
+                       "kt2": K_TILED_SOURCE_SHA256,
+                       "ls2_relu": RELU_SOURCE_SHA256}.get(selection)
     if (manifest.get("origin") != "nicolas_source_header_specialization" or
             expected_source is None or
             manifest.get("source_driver_sha256") != expected_source or
@@ -52,12 +55,16 @@ def _check_source(profile: dict, manifest: dict,
 
 def bind_native_dram(mlir_text: str, profile: dict, manifest: dict,
                      chunks: int = 1, *, scale_mode: str = "preload",
-                     k_tiles: int = 1) -> str:
+                     k_tiles: int = 1, store_activation: str = "none") -> str:
     """Select Nicolas's native loop after the typed contraction is source-bound."""
     from xdsl.dialects.builtin import StringAttr
     from xdsl.printer import Printer
 
-    selection: int | str = ("nc2_2d" if chunks == 2 and k_tiles == 1 and
+    if store_activation not in {"none", "relu"}:
+        raise ValueError("native DRAM loop store activation is not supported")
+    selection: int | str = ("ls2_relu" if chunks == 2 and k_tiles == 1 and
+                            scale_mode == "loop" and store_activation == "relu" else
+                            "nc2_2d" if chunks == 2 and k_tiles == 1 and
                             scale_mode == "direct_2d" else
                             "nc2_wait" if chunks == 2 and k_tiles == 1 and
                             scale_mode == "wait" else
@@ -65,6 +72,8 @@ def bind_native_dram(mlir_text: str, profile: dict, manifest: dict,
                             scale_mode == "loop" else
                             chunks if scale_mode == "preload" and k_tiles == 1 else
                             f"ls{chunks}" if scale_mode == "loop" else "unknown")
+    if store_activation != "none" and selection != "ls2_relu":
+        raise ValueError("native DRAM loop activation needs the pinned ReLU recipe")
     _check_source(profile, manifest, selection)
     verify_ir(mlir_text, profile)
     module = _parse_module(mlir_text)
@@ -91,7 +100,7 @@ def selected_native_dram(mlir_text: str, profile: dict,
     selected = _text_attr(module, _ATTR)
     if selected is None:
         return None
-    if selected not in {"single", "2", "4", "ls2", "ls4", "kt2", "nc2_2d", "nc2_wait"} or _text_attr(module, "mx.payload_manifest_sha256") != \
+    if selected not in {"single", "2", "4", "ls2", "ls4", "kt2", "nc2_2d", "nc2_wait", "ls2_relu"} or _text_attr(module, "mx.payload_manifest_sha256") != \
             manifest_sha256(manifest) or _text_attr(module, "mx.i_chunks") is not None:
         raise ValueError("native DRAM loop is not bound to selected payload")
     selection: int | str = (1 if selected == "single" else
@@ -102,15 +111,14 @@ def selected_native_dram(mlir_text: str, profile: dict,
 
 def lower_native_dram(base: PhysicalProgram, profile: dict,
                       manifest: dict,
-                      selection: int | str = 1) -> PhysicalProgram:
+                      selection: int | str, resources: Mapping[str, bytes]) -> PhysicalProgram:
     """Issue LoopMatmul's DRAM A/B loads and C store, without explicit DMA."""
     _check_source(profile, manifest, selection)
-    chunks = (2 if selection in {"kt2", "nc2_2d", "nc2_wait"} else
+    chunks = (2 if selection in {"kt2", "nc2_2d", "nc2_wait", "ls2_relu"} else
               int(selection[2:]) if isinstance(selection, str) else selection)
-    loop_scales = isinstance(selection, str)
-    if selection in {"nc2_2d", "nc2_wait"}:
-        loop_scales = False
+    loop_scales = selection in {"ls2", "ls4", "kt2", "ls2_relu"}
     scale_wait = selection == "nc2_wait"
+    store_relu = selection == "ls2_relu"
     k_tiles = 2 if selection == "kt2" else 1
     plan = base.plan
     if (base.shape != (128, 128, 128) or base.output_format != "bf16" or
@@ -147,7 +155,11 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                                           _cmd(27, rs1, rs2)))
         if not scale_wait:
             steps.append(PhysicalStep("upload_chunk_scales", None, Fence()))
-    steps.extend(by_phase["configure"][2:5])
+    configure = list(by_phase["configure"][2:5])
+    if store_relu:
+        # gemmini_extended_config_st(2 * N, RELU, ACC_SCALE_IDENTITY).
+        configure[-1] = PhysicalStep("configure", None, _cmd(0, 6, 256))
+    steps.extend(configure)
     if loop_scales:
         pass
     elif chunks == 1:
@@ -192,6 +204,12 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                          1 + ((c * k_tiles + t) & 1))
             issue(_cmd(8, (1 << 18) | (b_spad_id << 16) | int(t > 0), 0))
     issue(Fence())
+    source_golden = resources.get("golden_bf16")
+    if store_relu and (source_golden is None or len(source_golden) != 128 * 128 * 2):
+        raise ValueError("native ReLU loop needs its complete source BF16 golden")
+    relu_golden = (b"".join(
+        b"\x00\x00" if source_golden[i + 1] & 0x80 else source_golden[i:i + 2]
+        for i in range(0, len(source_golden), 2)) if store_relu else None)
     return PhysicalProgram(base.profile_sha256, base.payload_manifest_sha256,
                            base.mode, base.shape,
                            {**plan, "execution_transport": "native_dram_loop",
@@ -199,17 +217,21 @@ def lower_native_dram(base: PhysicalProgram, profile: dict,
                             {1: SOURCE_SHA256, **CHUNK_SOURCE_SHA256,
                              **LOOP_SCALE_SOURCE_SHA256,
                              **PRELOAD_VARIANT_SOURCE_SHA256,
-                             "kt2": K_TILED_SOURCE_SHA256}[selection],
+                             "kt2": K_TILED_SOURCE_SHA256,
+                             "ls2_relu": RELU_SOURCE_SHA256}[selection],
                             **({} if chunks == 1 else {"native_dram_n_chunks": chunks}),
                             **({"native_dram_scale_mode": "loop_managed"}
                                if loop_scales else {}),
                             **({"native_dram_k_tiles": k_tiles}
                                if k_tiles > 1 else {}),
                             **({"native_dram_scale_wait": True}
-                               if scale_wait else {})},
-                           tuple(steps), base.source_golden_preserving,
-                           base.derived_expected_bf16, base.output_format,
+                               if scale_wait else {}),
+                            **({"native_dram_store_activation": "relu"}
+                               if store_relu else {})},
+                           tuple(steps), not store_relu,
+                           relu_golden, base.output_format,
                            base.tiled_quant_readout,
                            base.derived_vpu_scalar_bf16,
                            base.derived_vpu_scalar_chain,
-                           base.golden_origin)
+                           base.golden_origin,
+                           "bf16_store_relu_sign_clear" if store_relu else None)
