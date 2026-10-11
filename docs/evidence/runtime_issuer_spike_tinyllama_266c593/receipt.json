@@ -1,0 +1,12 @@
+{
+  "schema": "mx_gemmini.runtime_issuer_spike_diagnostic.v1",
+  "status": "two_live_encoded_pointer_calls_matched",
+  "scope": "one archived TinyLlama projection, two distinct runtime buffer addresses",
+  "compared_bf16_outputs": 1024,
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "payload_manifest_sha256": "0d4493ed355aeb99391275775f6988a07db0630d59fae9e12d28a2c7d598e071",
+  "issuer_sha256": "1e42fb9c0dfe9add3262002cb68db9993d0db5bfb67c07542a69204c56c602ac",
+  "elf_sha256": "cb0b8d64f451f065650a4cfe2b73d6169453af3e5056ba48a6db417ece0df6aa",
+  "spike_log_sha256": "477a85d18ad1faf5baf42112e838b2f738b510821361a7b86aa16e384a482117",
+  "spike_exit_code": 0
+}
