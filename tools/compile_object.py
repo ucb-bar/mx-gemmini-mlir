@@ -32,6 +32,7 @@ EMITTERS = {
     "vpu_sequence": "tools.emit_vpu_sequence_object",
     "attention_vector": "tools.emit_attention_vector_object",
     "attention_program": "tools.emit_attention_program_object",
+    "flash_program": "tools.emit_flash_program_object",
     "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
     "asymmetric_source": "tools.emit_asymmetric_object",
 }
@@ -45,6 +46,7 @@ MANIFEST_SCHEMAS = {
     "vpu_sequence": "mx_gemmini.vpu_sequence_linkable_object.v1",
     "attention_vector": "mx_gemmini.attention_vector_linkable_object.v1",
     "attention_program": "mx_gemmini.attention_program_linkable_object.v1",
+    "flash_program": "mx_gemmini.flash_program_linkable_object.v1",
     "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
     "asymmetric_source": "mx_gemmini.asymmetric_source_linkable_object.v1",
 }
@@ -80,13 +82,24 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     sequence_schema = module.attributes.get("mx.vpu_sequence_schema")
     attention_schema = module.attributes.get("mx.attention_program_schema")
     if attention_schema is not None:
-        if getattr(attention_schema, "data", None) != (
-                "mx_gemmini.nicolas_dense_attention_program.v1"):
+        schema = getattr(attention_schema, "data", None)
+        if schema == "mx_gemmini.nicolas_dense_attention_program.v1":
+            if (not source and not runtime and sequence_schema is None and
+                    counts == (0, 0, 7, 1) and report["memory_phases"] == 10 and
+                    report["spad_matmuls"] == 2):
+                return "attention_program", report
+        elif schema == "mx_gemmini.nicolas_flash_attention_program.v1":
+            if (not source and not runtime and sequence_schema is None and
+                    counts in {(0, 0, 39, 4), (0, 0, 43, 4)} and
+                    report["memory_phases"] == 19 and
+                    report["spad_matmuls"] == 8 and
+                    report["flash_setups"] == 1 and
+                    report["source_resources"] == 0 and
+                    report["lut_uploads"] == 0 and
+                    report["runtime_luts"] == 0):
+                return "flash_program", report
+        else:
             raise ValueError("MX attention program schema is unsupported")
-        if (not source and not runtime and sequence_schema is None and
-                counts == (0, 0, 7, 1) and report["memory_phases"] == 10 and
-                report["spad_matmuls"] == 2):
-            return "attention_program", report
         raise ValueError("MX attention program stage inventory differs")
     if (sequence_schema is None and not source and not runtime and
             counts == (0, 0, 7, 1) and
@@ -157,15 +170,19 @@ def main() -> None:
     parser.add_argument("--abi-json", type=Path,
                         help="runtime buffer map for a connected pair")
     parser.add_argument("--binding-json", type=Path,
-                        help="source and frontend binding for dense attention vector")
+                        help="source and frontend binding for attention")
     parser.add_argument("--precursor-mlir", type=Path,
-                        help="checked typed VPU/requant precursor for dense attention")
+                        help="checked frontend or VPU/requant precursor for attention")
     parser.add_argument("--recipe-json", type=Path,
                         help="checked asymmetric source recipe")
     parser.add_argument("--source-driver", type=Path,
                         help="pinned asymmetric source C program or generator")
     parser.add_argument("--source-header", type=Path,
-                        help="pinned asymmetric packed-data header")
+                        help="pinned source packed-data header")
+    parser.add_argument("--source-core", type=Path,
+                        help="pinned flash attention source core")
+    parser.add_argument("--source-wrapper", type=Path,
+                        help="pinned flash attention source wrapper")
     parser.add_argument("--mx-opt", type=Path,
                         help="also run the native MX dialect verifier")
     parser.add_argument("--preloaded-mlir", type=Path,
@@ -188,12 +205,17 @@ def main() -> None:
     mlir_text = mlir_bytes.decode()
     family, report = classify(mlir_text, profile)
     asymmetric_inputs = (args.recipe_json, args.source_driver, args.source_header)
-    if family != "asymmetric_source" and any(asymmetric_inputs):
+    flash_inputs = (args.source_core, args.source_wrapper, args.source_header)
+    if family != "asymmetric_source" and (args.recipe_json or args.source_driver):
         raise ValueError("asymmetric source files require an asymmetric MLIR graph")
-    if family not in {"attention_vector", "attention_program"} and args.binding_json is not None:
-        raise ValueError("--binding-json requires a dense attention graph")
-    if family != "attention_program" and args.precursor_mlir is not None:
-        raise ValueError("--precursor-mlir requires a dense attention program")
+    if family != "flash_program" and (args.source_core or args.source_wrapper):
+        raise ValueError("flash source files require a flash attention graph")
+    if family not in {"asymmetric_source", "flash_program"} and args.source_header:
+        raise ValueError("--source-header requires a source-bound graph")
+    if family not in {"attention_vector", "attention_program", "flash_program"} and args.binding_json is not None:
+        raise ValueError("--binding-json requires an attention graph")
+    if family not in {"attention_program", "flash_program"} and args.precursor_mlir is not None:
+        raise ValueError("--precursor-mlir requires an attention program")
     if family != "full_vpu_branch" and (args.preloaded_mlir is not None or
                                         args.issue_schedule != "program_order_with_dependency_fences"):
         raise ValueError("preloaded MLIR and issue schedule require a full MX/VPU branch")
@@ -221,6 +243,16 @@ def main() -> None:
             raise ValueError("dense attention program needs --binding-json and --precursor-mlir only")
         extra = ["--binding-json", str(args.binding_json.resolve()),
                  "--precursor-mlir", str(args.precursor_mlir.resolve())]
+    elif family == "flash_program":
+        if (args.bundle or args.resources_dir or args.abi_json or
+                args.binding_json is None or args.precursor_mlir is None or
+                not all(flash_inputs)):
+            raise ValueError("flash attention program needs --binding-json, --precursor-mlir, --source-core, --source-wrapper, and --source-header")
+        extra = ["--binding-json", str(args.binding_json.resolve()),
+                 "--precursor-mlir", str(args.precursor_mlir.resolve()),
+                 "--source-core", str(args.source_core.resolve()),
+                 "--source-wrapper", str(args.source_wrapper.resolve()),
+                 "--source-header", str(args.source_header.resolve())]
     elif family == "asymmetric_source":
         if (args.bundle or args.resources_dir or args.abi_json or
                 not all(asymmetric_inputs)):
@@ -273,11 +305,11 @@ def main() -> None:
                 args.preloaded_mlir.read_bytes()).hexdigest() or
             built.get("issue_schedule") != args.issue_schedule):
         raise ValueError("full MX/VPU object precursor or schedule differs")
-    if family == "attention_program" and built.get("precursor_mlir_sha256") != hashlib.sha256(
+    if family in {"attention_program", "flash_program"} and built.get("precursor_mlir_sha256") != hashlib.sha256(
             gzip.decompress(args.precursor_mlir.read_bytes()) if
             args.precursor_mlir.name.endswith(".mlir.gz") else
             args.precursor_mlir.read_bytes()).hexdigest():
-        raise ValueError("dense attention object precursor differs")
+        raise ValueError("attention object precursor differs")
     manifest = {
         "schema": "mx_gemmini.compiler_object_dispatch.v1",
         "status": "rv64_rocc_object_built",
@@ -300,12 +332,17 @@ def main() -> None:
     if family == "full_vpu_branch":
         manifest["preloaded_mlir_sha256"] = built["preloaded_mlir_sha256"]
         manifest["issue_schedule"] = args.issue_schedule
-    if family == "attention_program":
+    if family in {"attention_program", "flash_program"}:
         manifest["precursor_mlir_sha256"] = built["precursor_mlir_sha256"]
         manifest["verified_graph_counts"].update({
             "memory_phases": report["memory_phases"],
             "spad_matmuls": report["spad_matmuls"],
+            "flash_setups": report["flash_setups"],
         })
+    if family == "flash_program":
+        for name in ("source_core_sha256", "source_wrapper_sha256",
+                     "source_header_sha256"):
+            manifest[name] = built[name]
     if args.mx_opt is not None:
         manifest["native_verifier_sha256"] = _sha(args.mx_opt.resolve())
     (args.out_dir / "compile_manifest.json").write_text(

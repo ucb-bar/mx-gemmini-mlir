@@ -91,3 +91,17 @@ def test_compiler_selects_exact_dual_fp4_requant_graph():
                             'scale_buffer = "scales_hw"')
     with pytest.raises(ValueError, match="output binding differs"):
         classify(altered, profile)
+
+
+@pytest.mark.parametrize(("variant", "vpu_commands"), [
+    ("mid", 39), ("fa", 43),
+])
+def test_compiler_selects_source_bound_flash_program(variant, vpu_commands):
+    graph = (ROOT / f"docs/evidence/nicolas_flash_{variant}_typed_a042643_0344bcb/"
+             f"flash_{variant}.mlir").read_text()
+    profile = load_profile(PROFILES / "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    family, report = classify(graph, profile)
+    assert family == "flash_program"
+    assert (report["memory_phases"], report["flash_setups"],
+            report["spad_matmuls"], report["vpu_commands"],
+            report["spad_requants"]) == (19, 1, 8, vpu_commands, 4)
