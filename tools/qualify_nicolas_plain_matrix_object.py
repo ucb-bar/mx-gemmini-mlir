@@ -53,6 +53,7 @@ class Case:
     native_dram: bool = False
     native_dram_chunks: int = 1
     native_dram_scale_mode: str = "preload"
+    native_dram_k_tiles: int = 1
 
 
 CASES = {
@@ -444,6 +445,19 @@ for _chunks, _name, _sha256 in (
         native_dram=True, native_dram_chunks=_chunks,
         native_dram_scale_mode="loop")
 
+_kt_key = "fp8_128x128x128_native_dram_kt2"
+CASES[_kt_key] = Case(
+    _kt_key, "FP8", (128, 128, 128), (128, 128, 128),
+    "matmul_tiled_fp8_128x128_dramloop_kt.c", "matmul_fp8_128x128.h",
+    "586910dcd6445a3ba0fc0e9db485d85de3ea265b8efe7464931ba3ff005dfa08",
+    _CHUNK_HEADER_SHA256, "MxGemminiRocketConfig",
+    ("activation", "activation_scales", "output_bf16",
+     "weight", "weight_scales"),
+    ("A_in", "A_scales_row", "C_hw", "B_in", "B_scales_col"),
+    "FP8 128 cubed native DRAM K-tiled", native_dram=True,
+    native_dram_chunks=2, native_dram_scale_mode="loop",
+    native_dram_k_tiles=2)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -611,6 +625,8 @@ def _audit_native_dram_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
 def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
                               case: Case) -> dict:
     """Audit Nicolas's N-column loop sequence and alternating B bank."""
+    if case.native_dram_k_tiles == 2:
+        return _audit_native_dram_kt_fp8(object_dir, profile, case)
     chunks = case.native_dram_chunks
     loop_scales = case.native_dram_scale_mode == "loop"
     if chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
@@ -701,6 +717,81 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
                if loop_scales else {}),
             "output_column_bytes_per_chunk": nc * 2,
             "b_spad_ids": [1 + (c & 1) for c in range(chunks)],
+            "explicit_operand_dma_commands": 0,
+            "explicit_output_dma_commands": 0}
+
+
+def _audit_native_dram_kt_fp8(object_dir: Path, profile: dict,
+                              case: Case) -> dict:
+    """Audit four native launches over two N chunks and two K tiles."""
+    if (case.native_dram_chunks != 2 or case.native_dram_k_tiles != 2 or
+            case.native_dram_scale_mode != "loop" or
+            profile["geometry"]["mesh_columns"] != 16):
+        raise ValueError("K-tiled native audit needs Nicolas's DIM16 recipe")
+    physical = json.loads((object_dir / "physical_program.json").read_text())
+    plan = physical["plan"]
+    steps = physical["steps"]
+    if (physical["shape_mnk"] != [128, 128, 128] or
+            plan.get("execution_transport") != "native_dram_loop" or
+            plan.get("native_dram_n_chunks") != 2 or
+            plan.get("native_dram_k_tiles") != 2 or
+            plan.get("native_dram_scale_mode") != "loop_managed" or
+            any(step["phase"] in {"move_activation", "move_weight", "compute",
+                                   "readout", "upload_scales", "select_scales"}
+                for step in steps)):
+        raise ValueError("compiler did not select native K-tiled DRAM loop")
+    ordered = [(step["phase"], step["command"].get("funct")) for step in steps
+               if step["phase"] in {"loop_scales", "native_dram_loop"}]
+    # Keep the source's scale pointer pair immediately before each loop.
+    expected_order = []
+    for _ in range(4):
+        expected_order.extend([("loop_scales", 31), ("loop_scales", 32)])
+        expected_order.extend(("native_dram_loop", funct)
+                              for funct in (9, 10, 11, 12, 13, 8))
+    expected_order.append(("native_dram_loop", None))
+    if ordered != expected_order:
+        raise ValueError("native K-tile loop issue order differs from source")
+    scale = [step["command"] for step in steps if step["phase"] == "loop_scales"]
+    native = [step["command"] for step in steps
+              if step["phase"] == "native_dram_loop" and
+              step["command"].get("funct") is not None]
+    for c in range(2):
+        for t in range(2):
+            index = c * 2 + t
+            pointers, pitch = scale[2 * index:2 * index + 2]
+            if (pointers["rs1"]["buffer"] != "activation_scales" or
+                    pointers["rs1"]["byte_offset"] != t * 256 or
+                    pointers["rs2"]["buffer"] != "weight_scales" or
+                    pointers["rs2"]["byte_offset"] != t * 256 + c * 64 or
+                    pitch["rs1"]["immediate"] != 128 or
+                    pitch["rs2"]["immediate"] != 128):
+                raise ValueError("native K-tile scale slice differs from source")
+            command = native[6 * index:6 * index + 6]
+            expected = (
+                (0, (4 << 32) | (4 << 16) | 8),
+                ("activation", "weight"),
+                (0, "output_bf16" if t == 1 else 0),
+                (128, 128),
+                (0, 128),
+                ((1 << 18) | ((1 + (index & 1)) << 16) | int(t > 0), 0),
+            )
+            actual = tuple(tuple(item[register]["buffer"] if
+                                 item[register]["buffer"] is not None else
+                                 item[register]["immediate"]
+                                 for register in ("rs1", "rs2")) for item in command)
+            if (actual != expected or
+                    command[1]["rs1"]["byte_offset"] != t * 64 or
+                    command[1]["rs2"]["byte_offset"] != t * 64 * 128 + c * 64 or
+                    (t == 1 and command[2]["rs2"]["byte_offset"] != c * 128)):
+                raise ValueError("native K-tile pointer, accumulation, or bank differs")
+    return {"schema": "mx_gemmini.nicolas_fp8_native_dram_kt_audit.v1",
+            "source_driver_sha256": case.source_sha256,
+            "profile_sha256": profile_sha256(profile),
+            "physical_program_sha256": _sha(object_dir / "physical_program.json"),
+            "native_chunk_count": 2, "k_tiles_per_chunk": 2,
+            "loop_scale_configurations": len(scale),
+            "native_command_functs": [command["funct"] for command in native],
+            "accumulating_loops": 2, "store_loops": 2,
             "explicit_operand_dma_commands": 0,
             "explicit_output_dma_commands": 0}
 
@@ -798,6 +889,12 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
             '#define NCHUNKS 4\n'
             '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
             if case.native_dram_scale_mode == "preload" else
+            '// dramloop_nc with native K-tiling: 2 chunks x 2 K-tiles of 64, accumulating loops (C on the last), loop scales.\n'
+            '#define NCHUNKS 2\n'
+            '#define K_TILES 2\n'
+            '#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
+            if case.native_dram_k_tiles == 2 else
             '// dramloop_nc with LOOP-MANAGED scales (2 chunks): no MX_LOAD_SCALES / CONFIG_SCALE_MEM / fence.\n'
             '#define NCHUNKS 2\n'
             '#define LOOP_SCALES 1\n'
@@ -1110,7 +1207,8 @@ def main(default_case: str | None = None) -> None:
     if case.native_dram:
         bound = bind_native_dram(bound, profile, manifest,
                                  case.native_dram_chunks,
-                                 scale_mode=case.native_dram_scale_mode)
+                                 scale_mode=case.native_dram_scale_mode,
+                                 k_tiles=case.native_dram_k_tiles)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
