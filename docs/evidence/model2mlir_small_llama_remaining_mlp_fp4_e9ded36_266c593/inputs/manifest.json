@@ -1,0 +1,87 @@
+{
+  "input_ids_npy_sha256": "2f592e5f96dabc61ae824578e1e735437a94f137a39128aab85f3b1ff8bdec7b",
+  "loader_sha256": "aa859e6ffb6ec765c372511a97d63aba6205b8a5dd092cb2ac5b36864d9c2c5b",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "schema": "mx_gemmini.small_llama_all_mlp_operands.v1",
+  "seed": 0,
+  "sites": {
+    "b0.dn": {
+      "activation_npy_sha256": "0bda6bb57a98426e8ab4592969bfd6a836879b63627c062531782615ec1a4b4b",
+      "activation_sha256": "be1652fc8e8578aeb3e0911449367babf65e00f256a6e9e88755825e4f550d33",
+      "fqn": "blocks.0.mlp.dn",
+      "region_id": "matmul_8",
+      "source_shape_mnk": [
+        8,
+        128,
+        344
+      ],
+      "weight_npy_sha256": "15322661358558cd5f4b47a555619a0c3d1b34ff64040439c163db64c7631d45",
+      "weight_sha256": "e4a6afc617dd466b74007058f0418fe810cca6c26eb9483bf79820a98d86de8d"
+    },
+    "b0.g": {
+      "activation_npy_sha256": "519fb0c58fe19c0381f21ddeb1b1c578cbf85daa6faee0bcb96719444586866c",
+      "activation_sha256": "f7f6349e9daea70b153399a981dfebff24d73444d4f86e6e7cf3ed38f6f9c067",
+      "fqn": "blocks.0.mlp.g",
+      "region_id": "matmul_6",
+      "source_shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "weight_npy_sha256": "40b3d11187b98ff4543e6ed84c84ed7ae04344325a5da2f0ab38ed50ee45bdf2",
+      "weight_sha256": "fe4e523de8d6b77189e555851209bd457c43e46f1a969852959b2ae404106a9b"
+    },
+    "b0.u": {
+      "activation_npy_sha256": "519fb0c58fe19c0381f21ddeb1b1c578cbf85daa6faee0bcb96719444586866c",
+      "activation_sha256": "f7f6349e9daea70b153399a981dfebff24d73444d4f86e6e7cf3ed38f6f9c067",
+      "fqn": "blocks.0.mlp.u",
+      "region_id": "matmul_7",
+      "source_shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "weight_npy_sha256": "e828863888bac31b1e1d3fc939bbfcc228ffaed4bb85234986f1a715008e2da9",
+      "weight_sha256": "3e2b80cd3e4763a6cb3b045ccae400d984ae2275987cebf7a0bd868836f559a5"
+    },
+    "b1.dn": {
+      "activation_npy_sha256": "1125656e2429a70cc8dd9d08213e9d628d97d0cbcb5ddeb2aa4371c665f2dc28",
+      "activation_sha256": "41dce2f174871448c10fc5c5c9504825a4a930aa31b17446291968feadbaf6fe",
+      "fqn": "blocks.1.mlp.dn",
+      "region_id": "matmul_17",
+      "source_shape_mnk": [
+        8,
+        128,
+        344
+      ],
+      "weight_npy_sha256": "d921b3758b3d8e18e18160f721393d0c86175f99806fa79ba00bfe8153cd899d",
+      "weight_sha256": "658591a286abfad7e32b98b71adb07e55c5558303703bbf101e5c7eff348a624"
+    },
+    "b1.g": {
+      "activation_npy_sha256": "191db7b0ec5df5d682688a3ad2c5a72191498557b9fc19d0a5ebbe8db0c34439",
+      "activation_sha256": "13d4a8b4c68404bd66369a111c4cd65f9e1e624d033bce4197c7296bf9860b2a",
+      "fqn": "blocks.1.mlp.g",
+      "region_id": "matmul_15",
+      "source_shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "weight_npy_sha256": "d89372c87b95838a94d6edd27c4698ae93669c34a4b8200ba7f69e59c98e0813",
+      "weight_sha256": "9eba10102f0811d324ec8a490470ea388cbb37827b2cf853a51f32f08eb75645"
+    },
+    "b1.u": {
+      "activation_npy_sha256": "191db7b0ec5df5d682688a3ad2c5a72191498557b9fc19d0a5ebbe8db0c34439",
+      "activation_sha256": "13d4a8b4c68404bd66369a111c4cd65f9e1e624d033bce4197c7296bf9860b2a",
+      "fqn": "blocks.1.mlp.u",
+      "region_id": "matmul_16",
+      "source_shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "weight_npy_sha256": "46b6edab2b80edb82182345f638e2eed20a4600be55cadedda92740f2f7a1fb4",
+      "weight_sha256": "86552a1603c466f83e400ef0cc9bdc2ef104bcb957d63ef2a852f5027d28daae"
+    }
+  }
+}

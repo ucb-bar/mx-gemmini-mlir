@@ -2,9 +2,9 @@
 
 Licensed under Apache-2.0; see [LICENSE](LICENSE).
 
-The [current model2MLIR small LLaMA MLP replay](docs/evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593/README.md)
-compiles two complete FP4 projections with N/K padding and matches all
-15,360 padded BF16 results on Nicolas's pinned MX Spike model. Whole-model
+The [current model2MLIR small LLaMA MLP replays](docs/evidence/model2mlir_small_llama_remaining_mlp_fp4_e9ded36_266c593/README.md)
+compile all six FP4 gate/up/down projections with N/K padding and match all
+53,248 padded BF16 results on Nicolas's pinned MX Spike model. Whole-model
 execution remains in progress.
 
 The MLIR dialect includes `readout_to_smem` and `wait` operations for

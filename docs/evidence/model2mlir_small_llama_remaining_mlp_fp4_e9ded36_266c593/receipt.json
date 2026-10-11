@@ -1,0 +1,57 @@
+{
+  "input_manifest_sha256": "16608b906b5a588519f8d147c0c17f5b764af1393dfd9260572e56dd73551c1a",
+  "schema": "mx_gemmini.small_llama_mlp_fp4_padding_replay.v1",
+  "scope": "layer-0 up and layer-1 gate/up/down rank-two matmuls; other model operators uncompiled",
+  "sites": {
+    "b0.u": {
+      "compared_bf16_values": 11264,
+      "elf_sha256": "8d6f7ec0263a2ada8f4203bfa153df35c67154a273b3c0789e6fdbec4aa631e3",
+      "model_output_values": 2752,
+      "object_sha256": "dc14fd8d9c17bde5f56bd7f863fb3adfdeee8e6f58f4ccb7167a00daa0f14935",
+      "padded_shape_mnk": [
+        32,
+        352,
+        128
+      ],
+      "region_id": "matmul_7"
+    },
+    "b1.dn": {
+      "compared_bf16_values": 4096,
+      "elf_sha256": "410995f0aebad99541c0e674fe8750b04772d0ef6926a81d1df8e2f00c5b14ea",
+      "model_output_values": 1024,
+      "object_sha256": "aa632ff41f08bed1a5072a177f7085bfcd381c99e6f1300dcdd371b757e24099",
+      "padded_shape_mnk": [
+        32,
+        128,
+        352
+      ],
+      "region_id": "matmul_17"
+    },
+    "b1.g": {
+      "compared_bf16_values": 11264,
+      "elf_sha256": "16ceaa5a15579c10e11a3a38148edc5ce3736b5589061af584ebdb78ad331a5b",
+      "model_output_values": 2752,
+      "object_sha256": "dc14fd8d9c17bde5f56bd7f863fb3adfdeee8e6f58f4ccb7167a00daa0f14935",
+      "padded_shape_mnk": [
+        32,
+        352,
+        128
+      ],
+      "region_id": "matmul_15"
+    },
+    "b1.u": {
+      "compared_bf16_values": 11264,
+      "elf_sha256": "e85f85be62b28831fa90da27fe8f5f6f66dd116b37bb5896deaba3177cc6872b",
+      "model_output_values": 2752,
+      "object_sha256": "dc14fd8d9c17bde5f56bd7f863fb3adfdeee8e6f58f4ccb7167a00daa0f14935",
+      "padded_shape_mnk": [
+        32,
+        352,
+        128
+      ],
+      "region_id": "matmul_16"
+    }
+  },
+  "source_model_mlir_sha256": "7bb8e557870364395c0e188aba749037b517057c286e022b48e41866870f6c21",
+  "status": "four_remaining_projections_matched_on_pinned_spike"
+}

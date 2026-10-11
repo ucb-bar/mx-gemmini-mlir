@@ -1,0 +1,42 @@
+{
+  "compared_bf16_values": 4096,
+  "elf_sha256": "410995f0aebad99541c0e674fe8750b04772d0ef6926a81d1df8e2f00c5b14ea",
+  "excluded_addmm_bias_epilogue": false,
+  "full_model_mlir_sha256": "cf7c4a36bb72a319289fadd296514aa201f9bb187f3e2547496404a3ec7d6099",
+  "model2mlir_source_closure_sha256": "559efcf9232c1375df1fb12bd131edc0e3daba7d1364df25725bb2ef7a0e2027",
+  "model_output_values": 1024,
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": "aa632ff41f08bed1a5072a177f7085bfcd381c99e6f1300dcdd371b757e24099",
+  "padded_shape_mnk": [
+    32,
+    128,
+    352
+  ],
+  "padding_output_values": 3072,
+  "precision": "FP4",
+  "pytorch_f32_vs_mx_bf16_max_absolute_error": 0.12339372932910919,
+  "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.029523475095629692,
+  "run_receipt_sha256": "d62ad6cc17ed97374be2e284008b7e3198e006fa72b8d9a0c22ac4397b7b5701",
+  "run_status": "model_projection_matched_on_pinned_spike",
+  "schema": "mx_gemmini.model2mlir_projection_execution.v1",
+  "scope": "one complete rank-two model projection; other model operations uncompiled",
+  "site": {
+    "column_count": 128,
+    "column_start": 0,
+    "fqn": "blocks.1.mlp.dn",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "41dce2f174871448c10fc5c5c9504825a4a930aa31b17446291968feadbaf6fe",
+    "region_id": "matmul_17",
+    "row_count": 8,
+    "row_start": 0,
+    "source_mlir_sha256": "cf7c4a36bb72a319289fadd296514aa201f9bb187f3e2547496404a3ec7d6099",
+    "source_op": "matmul",
+    "source_shape_mnk": [
+      8,
+      128,
+      344
+    ],
+    "weight_sha256": "658591a286abfad7e32b98b71adb07e55c5558303703bbf101e5c7eff348a624"
+  },
+  "status": "complete_projection_matched_on_spike"
+}

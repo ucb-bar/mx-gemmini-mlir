@@ -19,6 +19,8 @@ from mx_gemmini_support.target_profile import load_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593"
+REMAINING_ARCHIVE = (ROOT / "docs/evidence/"
+                     "model2mlir_small_llama_remaining_mlp_fp4_e9ded36_266c593")
 GRAPH = (ROOT / "docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593/"
          "small_llama.model2mlir.mlir.gz")
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
@@ -29,13 +31,18 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-@pytest.mark.parametrize("name,region,shape,padded,logical", [
-    ("g", "matmul_6", [8, 344, 128], [32, 352, 128], 2752),
-    ("dn", "matmul_8", [8, 128, 344], [32, 128, 352], 1024),
+@pytest.mark.parametrize("archive,name,region,shape,padded,logical", [
+    (ARCHIVE, "g", "matmul_6", [8, 344, 128], [32, 352, 128], 2752),
+    (ARCHIVE, "dn", "matmul_8", [8, 128, 344], [32, 128, 352], 1024),
+    (REMAINING_ARCHIVE, "b0.u", "matmul_7", [8, 344, 128], [32, 352, 128], 2752),
+    (REMAINING_ARCHIVE, "b1.g", "matmul_15", [8, 344, 128], [32, 352, 128], 2752),
+    (REMAINING_ARCHIVE, "b1.u", "matmul_16", [8, 344, 128], [32, 352, 128], 2752),
+    (REMAINING_ARCHIVE, "b1.dn", "matmul_17", [8, 128, 344], [32, 128, 352], 1024),
 ])
 def test_complete_model_derived_projection_matched_on_spike(
-        name: str, region: str, shape: list[int], padded: list[int], logical: int) -> None:
-    site_dir = ARCHIVE / name
+        archive: Path, name: str, region: str, shape: list[int], padded: list[int],
+        logical: int) -> None:
+    site_dir = archive / name
     manifest, _ = load_bundle(site_dir / "bundle")
     summary = json.loads((site_dir / "summary.json").read_text())
     obj = json.loads((site_dir / "object/object_manifest.json").read_text())
@@ -69,29 +76,39 @@ def test_complete_model_derived_projection_matched_on_spike(
     assert np.count_nonzero(golden[:shape[0], shape[1]:]) == 0
 
 
-@pytest.mark.parametrize("name,axis", [("g", 1), ("dn", 2)])
-def test_padding_extent_is_bound_to_source_shape(name: str, axis: int) -> None:
-    manifest, _ = load_bundle(ARCHIVE / name / "bundle")
+@pytest.mark.parametrize("archive,name,axis", [
+    (ARCHIVE, "g", 1), (ARCHIVE, "dn", 2),
+    (REMAINING_ARCHIVE, "b0.u", 1), (REMAINING_ARCHIVE, "b1.dn", 2),
+])
+def test_padding_extent_is_bound_to_source_shape(archive: Path, name: str,
+                                                 axis: int) -> None:
+    manifest, _ = load_bundle(archive / name / "bundle")
     changed = json.loads(json.dumps(manifest))
     changed["shape_mnk"][axis] -= 32
     with pytest.raises(ValueError, match="padded shape"):
         validate_model2mlir_projection(changed)
 
 
-def test_captured_operands_identify_archived_model_sites() -> None:
-    inputs = ARCHIVE / "inputs"
+@pytest.mark.parametrize("archive,names,status", [
+    (ARCHIVE, ("g", "dn"), "two_complete_projections_matched_on_pinned_spike"),
+    (REMAINING_ARCHIVE, ("b0.u", "b1.g", "b1.u", "b1.dn"),
+     "four_remaining_projections_matched_on_pinned_spike"),
+])
+def test_captured_operands_identify_archived_model_sites(
+        archive: Path, names: tuple[str, ...], status: str) -> None:
+    inputs = archive / "inputs"
     manifest = json.loads((inputs / "manifest.json").read_text())
-    receipt = json.loads((ARCHIVE / "receipt.json").read_text())
-    assert receipt["status"] == "two_complete_projections_matched_on_pinned_spike"
+    receipt = json.loads((archive / "receipt.json").read_text())
+    assert receipt["status"] == status
     assert receipt["input_manifest_sha256"] == _sha(inputs / "manifest.json")
     assert receipt["source_model_mlir_sha256"] == _sha(GRAPH)
     assert manifest["model2mlir_revision"] == "e9ded36eb85abf2d9097ac4dc11457c825853388"
     assert _sha(inputs / "input_ids.npy") == manifest["input_ids_npy_sha256"]
-    for name in ("g", "dn"):
+    for name in names:
         site = manifest["sites"][name]
         assert _sha(inputs / f"{name}.activation.npy") == site["activation_npy_sha256"]
         assert _sha(inputs / f"{name}.weight.npy") == site["weight_npy_sha256"]
-        summary = json.loads((ARCHIVE / name / "summary.json").read_text())
+        summary = json.loads((archive / name / "summary.json").read_text())
         assert summary["site"]["input_sha256"] == site["activation_sha256"]
         assert summary["site"]["weight_sha256"] == site["weight_sha256"]
         assert receipt["sites"][name]["object_sha256"] == summary["object_sha256"]
