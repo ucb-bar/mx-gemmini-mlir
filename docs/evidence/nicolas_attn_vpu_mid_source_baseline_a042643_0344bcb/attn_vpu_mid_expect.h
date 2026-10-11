@@ -1,0 +1,4 @@
+#define EXP_HASH_S 0x0096a8da30785bffULL
+#define EXP_HASH_P 0xe1e703dbca70d942ULL
+#define EXP_HASH_PQ 0xacde72ab3f3f5459ULL
+#define EXP_HASH_O 0xf36330f2c41bdea9ULL
