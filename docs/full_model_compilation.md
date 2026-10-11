@@ -263,6 +263,16 @@ only means that every operation listed in its exact binding table has a
 compiled implementation. VPU operators and other host operations are not
 covered by that field.
 
+All four model families' bound prefill/prefix/flow subsets now compile as
+relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
+sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
+139 sites and nine kernels, and SmolVLA flow 116 sites and ten kernels. These
+objects are catalog probes; only TinyLlama prefill has passed Merlin's full
+host/device build and ELF link so far. That build used 512 MiB of arena and
+produced a 4.4 GB ELF with 199 routed MX operations from a full checkpoint
+capture with explicit eager attention. No complete model
+inference or independent quantized parity claim follows from linking it.
+
 For a prepared graph, the standalone builder is:
 
 ```sh
@@ -275,13 +285,30 @@ python -m tools.build_merlin_catalog \
   --out-dir /new/catalog-output
 ```
 
-The remaining full-model gates are Merlin's host graph object and final ELF,
+The remaining full-model gates are host/device ELF builds for the other stages,
 serial workspace admission against a selected memory map, full session
 link/run on Nicolas's Spike, VPU placement beyond the existing softmax
 contract, and comparison of every output and recurrent state against an
 independent quantized PyTorch reference. The native f32 encoder and packed
 buffer glue stay in this target package; Merlin's graph inventory, catalog
 ABI, memref shim, host lowering, and session orchestration remain shared.
+
+For a receipt-bound stage, `tools.build_merlin_stage` runs Merlin's actual
+whole-model build using the target catalog and writes `mx_stage_probe.json`.
+It rejects a changed capture `model.mlir`. With `--spike-extlib` it also runs
+the linked ELF using the pinned Gemmini Spike extension and records the raw
+console and completion status. Completion is not a numerical parity gate.
+
+```sh
+python -m tools.build_merlin_stage \
+  --stage /path/to/session/stages/prefill \
+  --workdir /new/stage-build \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --merlin-src /path/to/merlin/src \
+  --llvm-install /path/to/llvm-install \
+  --riscv-root /path/to/riscv-tools \
+  --spike-extlib /path/to/pinned/libgemmini.so
+```
 
 ## Compiler ownership
 
