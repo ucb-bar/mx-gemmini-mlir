@@ -137,6 +137,24 @@ _VARIANTS = {
         "output_format": "fp8_e4m3", "output_projection": "lut",
         "quant_spad_dest": "activation_footprint",
     },
+    "matmul_tiled_fp8_e4m3_lut_64x128x128_requant_dim32.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x128x128_dim32.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
+        "shape": [64, 128, 128], "activation_array": "A_in_hw[32][128]",
+        "use_lut": True, "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "lut_lines_by_array": {"A_lut": 32, "B_lut": 64, "C_lut": 32},
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": "activation_footprint",
+    },
+    "matmul_tiled_fp8_e4m3_lut_128x64x128_requant_dim32.c": {
+        "header": "matmul_data_mx_lut_e4m3_128x64x128_dim32.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
+        "shape": [128, 64, 128], "activation_array": "A_in_hw[64][128]",
+        "use_lut": True, "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "lut_lines_by_array": {"A_lut": 64, "B_lut": 32, "C_lut": 64},
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+        "quant_spad_dest": "activation_footprint",
+    },
     "matmul_tiled_fp8_e4m3_lut_64x64_dim32.c": {
         "header": "matmul_data_mx_lut_e4m3_64x64_dim32.h",
         "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
@@ -369,7 +387,9 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             raise ValueError("Nicolas E2M3 weight format encoding changed")
     for lut_array in variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")
                                  if variant["use_lut"] else ()):
-        if f'{lut_array}[{variant.get("lut_lines", 32)}][{variant["lut_words_per_line"]}]' not in header_text:
+        lines = variant.get("lut_lines_by_array", {}).get(
+            lut_array, variant.get("lut_lines", 32))
+        if f'{lut_array}[{lines}][{variant["lut_words_per_line"]}]' not in header_text:
             raise ValueError(f"Nicolas source {lut_array} changed")
     if variant.get("output_projection") == "lut" and (
             "#define QUANT_LUT_UPDATE_GRANULARITY 1" not in source_text or
@@ -536,7 +556,8 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     if (recipe.get("schema") != "mx_gemmini.asymmetric_source_recipe.v1" or
             recipe.get("site_id") != "functional:matmul" or
             recipe.get("shape") not in ([16, 32, 32], [64, 64, 64], [128, 128, 128],
-                                        [128, 128, 256]) or
+                                        [128, 128, 256], [64, 128, 128],
+                                        [128, 64, 128]) or
             recipe.get("frontend_capture_format") != "mxfp8" or
             recipe.get("profile_sha256") != profile_sha256(profile) or
             (recipe.get("compute") not in (ASYM_CELL, DIRECT_CELL, FP6_FP4_CELL,
@@ -801,12 +822,13 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
             text, name="C_scales_row", ctype="uint8_t",
             dimensions="[MATMUL_GN][MATMUL_M]", count=m * n // 32, maximum=255))
     if variant["use_lut"]:
-        lut_lines = variant.get("lut_lines", 32)
         for c_name, resource in (("A_lut", "activation_lut"),
                                  ("B_lut", "weight_lut"),
                                  ("C_lut", "output_lut")):
             if c_name not in variant.get("lut_arrays", ("A_lut", "B_lut", "C_lut")):
                 continue
+            lut_lines = variant.get("lut_lines_by_array", {}).get(
+                c_name, variant.get("lut_lines", 32))
             resources[resource] = _bytes(_array(text, name=c_name, ctype="uint32_t",
                                                dimensions=f"[{lut_lines}][{lut_words}]",
                                                count=lut_lines * lut_words,
@@ -839,11 +861,12 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
     if variant["use_lut"]:
         words = variant["lut_words_per_line"]
         bits = variant["lut_entry_bits"]
-        lut_lines = variant.get("lut_lines", 32)
+        lut_lines = {name: variant.get("lut_lines_by_array", {}).get(
+            name, variant.get("lut_lines", 32)) for name in ("A_lut", "B_lut", "C_lut")}
         all_luts = {
-            "activation_lut": ((lut_lines, words), 32, f"row_pair_lut_{bits}bit"),
-            "weight_lut": ((lut_lines, words), 32, f"column_pair_lut_{bits}bit"),
-            "output_lut": ((lut_lines, words), 32, f"output_pair_lut_{bits}bit"),
+            "activation_lut": ((lut_lines["A_lut"], words), 32, f"row_pair_lut_{bits}bit"),
+            "weight_lut": ((lut_lines["B_lut"], words), 32, f"column_pair_lut_{bits}bit"),
+            "output_lut": ((lut_lines["C_lut"], words), 32, f"output_pair_lut_{bits}bit"),
         }
         names = {"A_lut": "activation_lut", "B_lut": "weight_lut",
                  "C_lut": "output_lut"}
@@ -975,13 +998,16 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
                 (activation_altfmt << 6) | (weight_altfmt_diff << 31)
     issue("configure", _cmd(0, config_ex, 1 << 48))
     if use_lut:
-        for resource, selector in (("weight_lut", 0), ("activation_lut", 1),
-                                   ("output_lut", 2)):
+        for resource, selector, c_name in (("weight_lut", 0, "B_lut"),
+                                           ("activation_lut", 1, "A_lut"),
+                                           ("output_lut", 2, "C_lut")):
             if resource not in resources:
                 continue
+            lut_lines = variant.get("lut_lines_by_array", {}).get(
+                c_name, variant.get("lut_lines", 32))
             issue("upload_lut", _cmd(29, Operand(buffer=resource),
                                      (lut_entry_bits << 34) | (selector << 32) |
-                                     variant.get("lut_lines", 32)))
+                                     lut_lines))
     else:
         issue("disable_lut", _cmd(30, 0, 0))
     issue("upload_scales", _cmd(27, Operand(buffer="activation_scales"),
