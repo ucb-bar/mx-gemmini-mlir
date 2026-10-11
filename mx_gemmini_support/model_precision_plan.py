@@ -16,6 +16,10 @@ MODES = {
 }
 
 
+def _round_up(value: int, group: int = 32) -> int:
+    return (value + group - 1) // group * group
+
+
 def _legal(profile: dict, fmt: str) -> bool:
     operand, projection, pe_mode = MODES[fmt]
     try:
@@ -45,12 +49,16 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
 
     attention = defaultdict(list)
     for site in worklist["other_contraction_regions"]:
-        if site["source_op"] == "batch_matmul" and ".self_attn" in (site["fqn"] or ""):
-            attention[site["fqn"]].append(site["region_id"])
+        module = site["fqn"] or ""
+        if (site["source_op"] == "batch_matmul" and
+                module.rsplit(".", 1)[-1] in {"attn", "self_attn"}):
+            attention[module].append(site["region_id"])
     attention_stages = {
         region: stage for regions in attention.values() if len(regions) == 2
         for region, stage in zip(regions, ("qk", "pv"))
     }
+    batched_shapes = {site["region_id"]: site["shape_bmnk"]
+                      for site in worklist["rank3_batch_matmuls"]}
     sites = []
     for site in worklist["rank2_matmuls"]:
         shape = site["shape_mnk"]
@@ -59,11 +67,16 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         preferred = "mxfp4" if ordinary else "mxfp8"
         selected = (preferred if aligned and _legal(profile, preferred) else
                     "mxfp8" if aligned else "host")
+        padded = [_round_up(value) for value in shape]
         sites.append({
             "region_id": site["region_id"], "fqn": site["fqn"],
             "source_op": site["source_op"], "shape_mnk": shape,
             "role": "regular_matmul" if ordinary else "other_rank2_contraction",
             "preferred_format": preferred, "selected_format": selected,
+            "mx_padded_shape_mnk": padded,
+            "output_crop_mn": shape[:2],
+            "post_padding_candidate_format": (
+                preferred if _legal(profile, preferred) else "host"),
             "status": ("requires_bf16_operand_cast_and_lowering"
                        if selected != "host" and site["element_type"] == "bf16" else
                        "requires_quantization_and_executable_lowering" if selected != "host"
@@ -82,9 +95,14 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         else:
             selected, preferred = "host", "host"
             status, reason = "requires_host_lowering", None
+        shape = batched_shapes.get(site["region_id"])
         sites.append({
             "region_id": site["region_id"], "fqn": site["fqn"],
             "source_op": site["source_op"], "role": stage or "unclassified",
+            **({"shape_bmnk": shape,
+                "mx_padded_shape_bmnk": [shape[0]] +
+                [_round_up(value) for value in shape[1:]],
+                "output_crop_bmn": shape[:3]} if stage and shape else {}),
             "preferred_format": preferred, "selected_format": selected,
             "required_operand_boundary": (
                 "quantize_q_and_k_to_mxfp8_with_e8m0_scales" if stage == "qk" else

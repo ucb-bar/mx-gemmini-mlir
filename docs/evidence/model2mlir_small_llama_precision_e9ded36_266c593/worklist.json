@@ -1,0 +1,321 @@
+{
+  "contraction_region_count": 19,
+  "contraction_region_kinds": {
+    "batch_matmul": 4,
+    "matmul": 15
+  },
+  "function": "forward",
+  "legal_mx_compute_modes": [
+    {
+      "activation_format": "fp4_e2m1",
+      "activation_projection": "direct",
+      "pe_mode": 0,
+      "weight_format": "fp4_e2m1",
+      "weight_projection": "direct"
+    },
+    {
+      "activation_format": "fp8_e4m3",
+      "activation_projection": "direct",
+      "pe_mode": 8,
+      "weight_format": "fp8_e4m3",
+      "weight_projection": "direct"
+    }
+  ],
+  "other_contraction_regions": [
+    {
+      "fqn": "blocks.0.attn",
+      "operations": {
+        "arith.constant": 1,
+        "linalg.generic": 1,
+        "tensor.splat": 1
+      },
+      "region_id": "matmul_3",
+      "source_op": "batch_matmul"
+    },
+    {
+      "fqn": "blocks.0.attn",
+      "operations": {
+        "arith.constant": 1,
+        "linalg.generic": 1,
+        "tensor.splat": 1
+      },
+      "region_id": "matmul_4",
+      "source_op": "batch_matmul"
+    },
+    {
+      "fqn": "blocks.1.attn",
+      "operations": {
+        "arith.constant": 1,
+        "linalg.generic": 1,
+        "tensor.splat": 1
+      },
+      "region_id": "matmul_12",
+      "source_op": "batch_matmul"
+    },
+    {
+      "fqn": "blocks.1.attn",
+      "operations": {
+        "arith.constant": 1,
+        "linalg.generic": 1,
+        "tensor.splat": 1
+      },
+      "region_id": "matmul_13",
+      "source_op": "batch_matmul"
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rank2_matmuls": [
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn.q",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_0",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn.k",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_1",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn.v",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_2",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn.o",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_5",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.mlp.g",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_6",
+      "shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.mlp.u",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_7",
+      "shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.mlp.dn",
+      "k_requires_32_element_scale_padding": true,
+      "region_id": "matmul_8",
+      "shape_mnk": [
+        8,
+        128,
+        344
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn.q",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_9",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn.k",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_10",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn.v",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_11",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn.o",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_14",
+      "shape_mnk": [
+        8,
+        128,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.mlp.g",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_15",
+      "shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.mlp.u",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_16",
+      "shape_mnk": [
+        8,
+        344,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.mlp.dn",
+      "k_requires_32_element_scale_padding": true,
+      "region_id": "matmul_17",
+      "shape_mnk": [
+        8,
+        128,
+        344
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "lm",
+      "k_requires_32_element_scale_padding": false,
+      "region_id": "matmul_18",
+      "shape_mnk": [
+        8,
+        256,
+        128
+      ],
+      "source_op": "matmul",
+      "status": "requires_explicit_mx_quantization_and_program_lowering"
+    }
+  ],
+  "rank3_batch_matmuls": [
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn",
+      "region_id": "matmul_3",
+      "shape_bmnk": [
+        4,
+        8,
+        8,
+        32
+      ],
+      "source_op": "batch_matmul",
+      "status": "requires_explicit_mx_quantization_and_batched_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.0.attn",
+      "region_id": "matmul_4",
+      "shape_bmnk": [
+        4,
+        8,
+        32,
+        8
+      ],
+      "source_op": "batch_matmul",
+      "status": "requires_explicit_mx_quantization_and_batched_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn",
+      "region_id": "matmul_12",
+      "shape_bmnk": [
+        4,
+        8,
+        8,
+        32
+      ],
+      "source_op": "batch_matmul",
+      "status": "requires_explicit_mx_quantization_and_batched_lowering"
+    },
+    {
+      "element_type": "f32",
+      "fqn": "blocks.1.attn",
+      "region_id": "matmul_13",
+      "shape_bmnk": [
+        4,
+        8,
+        32,
+        8
+      ],
+      "source_op": "batch_matmul",
+      "status": "requires_explicit_mx_quantization_and_batched_lowering"
+    }
+  ],
+  "schema": "mx_gemmini.model2mlir_contraction_worklist.v1",
+  "source_mlir_sha256": "cf7c4a36bb72a319289fadd296514aa201f9bb187f3e2547496404a3ec7d6099",
+  "status": "frontend_import_only_no_executable_placement"
+}

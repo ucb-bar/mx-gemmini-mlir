@@ -90,6 +90,13 @@ The existing six connected FP8/FP4/FP6 source chains validate the MX object
 lowerer for those graph families. They do not establish any of the complete
 model gates above.
 
+The [current model2MLIR small LLaMA probe](evidence/model2mlir_small_llama_precision_e9ded36_266c593/README.md)
+uses revision `e9ded36` and captures a complete two-layer random-weight
+LLaMA-style graph with zero opaque operations. Its precision proposal now
+recognizes both `attn` QK/PV pairs as FP8 sites and records the padded MX
+shapes needed for the six unaligned MLP matmuls. It remains a frontend and
+placement probe, with no whole-model executable.
+
 ## First executed model-derived contraction
 
 The [TinyLlama projection archive](evidence/model2mlir_tinyllama_projection_a042643_266c593/README.md)

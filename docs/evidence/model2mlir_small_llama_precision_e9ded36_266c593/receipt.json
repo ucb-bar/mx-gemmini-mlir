@@ -1,0 +1,19 @@
+{
+  "capture_backend": "fx_importer",
+  "compressed_frontend_sha256": "7bb8e557870364395c0e188aba749037b517057c286e022b48e41866870f6c21",
+  "contraction_regions": 19,
+  "frontend_mlir_sha256": "cf7c4a36bb72a319289fadd296514aa201f9bb187f3e2547496404a3ec7d6099",
+  "model2mlir_loader_sha256": "aa859e6ffb6ec765c372511a97d63aba6205b8a5dd092cb2ac5b36864d9c2c5b",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "opaque_operation_count": 0,
+  "precision_counts": {
+    "host": 6,
+    "mxfp4": 9,
+    "mxfp8": 4
+  },
+  "precision_proposal_sha256": "af19d14c8cc1e0421dc3067fb3ab11e3cdb14a7f4f838c8276e56ae4e915ae56",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.small_llama_latest_model2mlir_precision_probe.v1",
+  "status": "frontend_and_precision_proposal_only_no_executable_model",
+  "worklist_sha256": "56a225d732d357ece43e622f26f0e7c38cece0e6e83d8a187ccf3f52b61e53d6"
+}
