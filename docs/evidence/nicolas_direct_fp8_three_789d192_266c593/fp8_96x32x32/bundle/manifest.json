@@ -1,0 +1,87 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "precision": "FP8",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "resources": {
+    "activation": {
+      "bytes": 3072,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "cfffc4fe7689ba364153f2fdfe43e112e79ccc4d59a86a06f2b18542f461dc23",
+      "shape": [
+        96,
+        32
+      ]
+    },
+    "activation_scales": {
+      "bytes": 96,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "431b7bac501473b7c82e93d424b771b54d55c9786b1ac122f47ff520719240f7",
+      "shape": [
+        1,
+        96
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 6144,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "6be2d5e169edc1e27db5915fd86603ff13484c4405c7c34cbb7d93d365f36cab",
+      "shape": [
+        96,
+        32
+      ]
+    },
+    "output_scales": {
+      "bytes": 96,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "c8f87369720b11acae1e79b8d7eadadec9ce8f856bb6d1c032598cfac6f72305",
+      "shape": [
+        1,
+        96
+      ]
+    },
+    "weight": {
+      "bytes": 1024,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "68c723994558419b341d9eced921f08864d4961f5139b5bdd2a892db48dce7bd",
+      "shape": [
+        32,
+        32
+      ]
+    },
+    "weight_scales": {
+      "bytes": 32,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "c8e4b8638aad7cbab0bd5c7f84dcb73a915efd6f3393ac7da41731a2cdabb681",
+      "shape": [
+        1,
+        32
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    96,
+    32,
+    32
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "58a6152c1fd60cc62d4125fe6bde759e2c5cc8f34cb0cfd409c3042596168d33",
+  "source_header_sha256": "872254ca7a0de8ab0d49ea51a5df357f5c2b7703114356a6eaec363297079cc7",
+  "tile_mnk": [
+    96,
+    32,
+    32
+  ]
+}

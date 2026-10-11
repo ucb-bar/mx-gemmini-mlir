@@ -1,0 +1,80 @@
+{
+  "cases": [
+    {
+      "case": "fp8_64x64x64",
+      "elf_sha256": "6bb1edd0776cb7a276587e0b0679274cf792cf05c50319d2ca87e98d2cfc5321",
+      "mesh_dim": 16,
+      "object_sha256": "1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab",
+      "outputs_checked": 4096,
+      "precision": "FP8",
+      "profile_name": "MxGemminiRocketConfig",
+      "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+      "quant_output": false,
+      "receipt": "fp8_64x64x64/receipt.json",
+      "receipt_sha256": "8a75f4b42b3c655586a90f8dba4dda270ab4d96c7881a8f2e9add0ef1061fba4",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "source_driver_sha256": "16622c9da9a0b5e8a1875b926ab4a504a994714c4a5f5a2db420d79f89fd7a00",
+      "source_header_sha256": "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+      "spike_log_sha256": "aba789966a9dfee455d846e5aefce1629c963578f32c423dc3b672d75855ff1a"
+    },
+    {
+      "case": "fp8_64x64x64_requant",
+      "elf_sha256": "75d375540a73797862eb1e93bdecf91da24b865fbe2fc6069b3fff43c59cb931",
+      "mesh_dim": 16,
+      "object_sha256": "64738e8b32611dbecd4918be4e536532305997899e5a99189ecd183bc4986332",
+      "outputs_checked": 4224,
+      "precision": "FP8",
+      "profile_name": "MxGemminiRocketConfig",
+      "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+      "quant_output": true,
+      "receipt": "fp8_64x64x64_requant/receipt.json",
+      "receipt_sha256": "1f0c666647a2e0b9862d0069e3b8aef6f3ddee64082829abc7274b7f4fdf8b31",
+      "shape_mnk": [
+        64,
+        64,
+        64
+      ],
+      "source_driver_sha256": "95c5676526ed5817af6b8fac4d0274eb1b86c985fa1cc2287545b2605a490d0c",
+      "source_header_sha256": "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+      "spike_log_sha256": "0ff75386b9eff1794821a9e0e65841b8c952baec0a5983ae877979ed39e9812c"
+    },
+    {
+      "case": "fp8_96x32x32",
+      "elf_sha256": "800e377265e5b2fd93cb6c60201f6ef72747d1896811f2b1c58e967cd19dbca7",
+      "mesh_dim": 16,
+      "object_sha256": "db8554af6fc78dc65c2c82dc16b3722c4f9e84aed974925b08b56bf460d7b22e",
+      "outputs_checked": 3072,
+      "precision": "FP8",
+      "profile_name": "MxGemminiRocketConfig",
+      "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+      "quant_output": false,
+      "receipt": "fp8_96x32x32/receipt.json",
+      "receipt_sha256": "ecda967362534bc17a6cd2d0fb034ad69b7f703131b6da19f70bfbd325e1b84e",
+      "shape_mnk": [
+        96,
+        32,
+        32
+      ],
+      "source_driver_sha256": "58a6152c1fd60cc62d4125fe6bde759e2c5cc8f34cb0cfd409c3042596168d33",
+      "source_header_sha256": "872254ca7a0de8ab0d49ea51a5df357f5c2b7703114356a6eaec363297079cc7",
+      "spike_log_sha256": "1547614accde511eade4f3f54fbb43cb02ebc1e4f390f552371becc0de91dcf7"
+    }
+  ],
+  "compiler_revision": "789d192aadc3ad6efb65ad4c15bf310000fb47ed",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_plain_matrix_object_suite.v1",
+  "scope": "direct Nicolas matrix numerical outputs through public typed object compiler",
+  "selected_cases": [
+    "fp8_64x64x64",
+    "fp8_64x64x64_requant",
+    "fp8_96x32x32"
+  ],
+  "status": "all_selected_source_goldens_matched_on_pinned_spike",
+  "total_outputs_checked": 11392
+}

@@ -254,7 +254,22 @@
       "source_sha256": "450779560f0f90618f4e18375419ea6cb19979377d1ea30992c9759695f64ab2"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_64x64x64/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "05c6203b3d3bce44f4087e09ff96fe67cb879cb3c917b36701a9a802f178ed70",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_64x64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "8a75f4b42b3c655586a90f8dba4dda270ab4d96c7881a8f2e9add0ef1061fba4",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_64x64",
       "source_sha256": "16622c9da9a0b5e8a1875b926ab4a504a994714c4a5f5a2db420d79f89fd7a00"
@@ -1164,7 +1179,22 @@
       "source_sha256": "2d87a0a987c90f7855e69ae46e3429e490a6d4661a63f3d6d4d3043b777dd689"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_64x64x64_requant/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "6e596ddfbf50a98ededd83b91b8cd9d572aaa04b3065c6f3ade4dc26858d18a2",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_64x64x64_requant/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "1f0c666647a2e0b9862d0069e3b8aef6f3ddee64082829abc7274b7f4fdf8b31",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_64x64_requant",
       "source_sha256": "95c5676526ed5817af6b8fac4d0274eb1b86c985fa1cc2287545b2605a490d0c"
@@ -4243,7 +4273,22 @@
       "source_sha256": "5b0f17b108bf81e5146f513f0ca325490a6a15eb55bcbf25178881577a0cfb38"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_96x32x32/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "7c7cfb80a50c3812731156a7254fae791bd973b00341ffe5cf7f9e188ca03b7d",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_direct_fp8_three_789d192_266c593/fp8_96x32x32/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "ecda967362534bc17a6cd2d0fb034ad69b7f703131b6da19f70bfbd325e1b84e",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_96x32x32",
       "source_sha256": "58a6152c1fd60cc62d4125fe6bde759e2c5cc8f34cb0cfd409c3042596168d33"
@@ -6765,6 +6810,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 103,
-  "without_direct_hash_reference": 68
+  "with_direct_hash_reference": 106,
+  "without_direct_hash_reference": 65
 }

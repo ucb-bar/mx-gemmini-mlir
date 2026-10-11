@@ -1,0 +1,134 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "output_format": "fp8_e4m3",
+  "output_oracle": "nicolas_mxquant_po2_rne_v1",
+  "precision": "FP8",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "resources": {
+    "activation": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "row_major_codes",
+      "sha256": "0158adcdaf41bbc5a3df05f53de636fe1f9e055dedebb3e397eeeb52950f0905",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "1c6d8611a787314a3e7291929f8cf5e052ddd4fd29e26cb7b27e45f675e84bb6",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "35bdfcfd9089f9c9217bc6991c2cc96f9e45bb37c0173d533cc065faa3943619",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "golden_fp8": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "golden_fp8.bin",
+      "layout": "row_major_fp8_e4m3",
+      "sha256": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "golden_output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "golden_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "6625ebf5f262e3085af8b4bc649f3f1f4c4f4d4df9d833d50d3b3306b3d24fa6",
+      "shape": [
+        64,
+        2
+      ]
+    },
+    "nicolas_fp8": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "nicolas_fp8.bin",
+      "layout": "row_major_fp8_e4m3",
+      "sha256": "cd65846c428648eb74fe86783c852ae5b0fcfaddf9ad10fafaa15a2a5248ef95",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "nicolas_output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "nicolas_output_scales.bin",
+      "layout": "row_major_n_group_e8m0",
+      "sha256": "6625ebf5f262e3085af8b4bc649f3f1f4c4f4d4df9d833d50d3b3306b3d24fa6",
+      "shape": [
+        64,
+        2
+      ]
+    },
+    "output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "output_scales.bin",
+      "layout": "n_group_row_e8m0",
+      "sha256": "63d1cbe244197b3d2ee528c4a043b61e2cd5a8f61b01e10efc837cb23ae5b010",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "weight": {
+      "bytes": 4096,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "row_major_codes",
+      "sha256": "00c9e28307640ff2e473661e73a00663280238776530969fcbf8ccd568703c40",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "7b9d61d7c1b427c548951e9bf9a94e8109528f154e8ff599f46bf977bd5c4a4f",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.source_payload.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "95c5676526ed5817af6b8fac4d0274eb1b86c985fa1cc2287545b2605a490d0c",
+  "source_header_sha256": "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+  "source_quant_golden_convention": "source_header",
+  "tile_mnk": [
+    64,
+    64,
+    64
+  ]
+}
