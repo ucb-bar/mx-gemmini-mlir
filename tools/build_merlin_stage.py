@@ -70,6 +70,26 @@ def _require_source_coverage(expected_regions: set[str], catalog: dict) -> None:
         )
 
 
+def _observe_spike_evidence(console: str, source: Path, build_hash: str,
+                            *, first_typed: bool) -> dict:
+    """Check completed console records against the captured result ABI."""
+    from merlin.common.mlir_query import forward_signature
+    from merlin.runtime.backends.spike_model import parse_console
+    from merlin.runtime.output_digest import observe_output_digests
+
+    _, outputs = forward_signature(source)
+    parsed = parse_console(console)
+    if parsed["output_dtype"] != outputs[0][1]:
+        raise ValueError("Spike first-output wire dtype differs from the capture")
+    hash_lines = [line for line in console.splitlines()
+                  if line.startswith("METRIC build_hash ")]
+    if hash_lines != [f"METRIC build_hash {build_hash}"]:
+        raise ValueError("Spike build hash differs from the linked stage")
+    if parsed["metrics"].get("memref_rank_mismatch") != 0:
+        raise ValueError("Spike reported a memref rank mismatch")
+    return observe_output_digests(console, outputs, require_first_typed=first_typed)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", type=Path, required=True)
@@ -122,13 +142,13 @@ def main() -> None:
     from mx_gemmini_support.target_profile import profile_sha256
 
     expected_regions = _raw_selected_regions(source, profile)
-    device = DeviceRouting(
+    device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
         prepared_transform=MXBF16CatalogPreparation(profile),
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root),
-    )
+    ) if expected_regions else None)
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb, backend="scalar", device=device,
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
@@ -138,8 +158,15 @@ def main() -> None:
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     elf = Path(result["elf"])
-    catalog = json.loads((work / "device_catalog/mx_catalog.json").read_text(encoding="utf-8"))
-    _require_source_coverage(expected_regions, catalog)
+    catalog_path = work / "device_catalog/mx_catalog.json"
+    if device is None:
+        if catalog_path.exists():
+            raise RuntimeError("host-only stage unexpectedly emitted an MX catalog")
+        catalog = {"covered_contractions": 0, "unbound_precision_proposals": [],
+                   "unique_kernels": 0, "bindings": []}
+    else:
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        _require_source_coverage(expected_regions, catalog)
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
@@ -148,7 +175,8 @@ def main() -> None:
         "status": "linked_experimental_numeric_qualification_pending",
         "capture_model_sha256": capture_sha,
         "profile_sha256": profile_sha256(profile),
-        "catalog_manifest": str(work / "device_catalog/mx_catalog.json"),
+        "catalog_manifest": str(catalog_path) if device is not None else None,
+        "execution_route": "mx_gemmini_and_host" if device is not None else "host_only",
         "selected_operations": catalog["covered_contractions"],
         "expected_selected_operations": len(expected_regions),
         "raw_selected_source_coverage_complete": True,
@@ -185,6 +213,13 @@ def main() -> None:
             "exit_code": exit_code, "done": exit_code == 0 and "DONE\n" in console,
             "log": str(log),
         }
+        if receipt["spike"]["done"]:
+            try:
+                receipt["spike"]["output_digests"] = _observe_spike_evidence(
+                    console, source, result["build_hash"], first_typed=output_sha256)
+            except (ValueError, spike_model.SpikeModelError) as exc:
+                receipt["spike"]["done"] = False
+                receipt["spike"]["output_evidence_error"] = str(exc)
         if not receipt["spike"]["done"]:
             receipt["status"] = "spike_inference_incomplete"
     path = work / "mx_stage_probe.json"
