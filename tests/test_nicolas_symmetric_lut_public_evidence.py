@@ -10,7 +10,7 @@ from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.qualify_nicolas_plain_matrix_object import (
     MODEL2MLIR_REVISION, MXQ_REVISION, RTL_REVISION,
 )
-from tools.qualify_nicolas_symmetric_lut_public_suite import CASES, SCHEMA
+from tools.qualify_nicolas_symmetric_lut_public_suite import CASES, DEFAULT_CASES, SCHEMA
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,8 +33,8 @@ def test_three_same_format_lut_sources_have_complete_public_object_replays() -> 
     assert index["rtl_revision"] == RTL_REVISION
     assert index["model2mlir_revision"] == MODEL2MLIR_REVISION
     assert index["mxq_revision"] == MXQ_REVISION
-    assert index["selected_cases"] == list(CASES)
-    assert [row["case"] for row in index["cases"]] == list(CASES)
+    assert index["selected_cases"] == list(DEFAULT_CASES)
+    assert [row["case"] for row in index["cases"]] == list(DEFAULT_CASES)
     assert index["matched_sources"] == 3
     assert index["total_bf16_outputs_checked"] == 12288
 

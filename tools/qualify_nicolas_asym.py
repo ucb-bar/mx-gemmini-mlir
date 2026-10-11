@@ -117,14 +117,26 @@ def main() -> None:
         source = software / "bareMetalC/matmul_tiled_fp4_64x64.c"
         header = software / "include/matmul_fp4_64x64.h"
     elif args.symmetric_lut:
-        if args.source_suffix or args.source_shape != "64x64" or args.mesh_dim != 16:
-            parser.error("same-format LUT source selection needs DIM16 64x64 and no source suffix")
+        if args.source_suffix:
+            parser.error("same-format LUT source selection does not take a source suffix")
         name = args.symmetric_lut
         precision = "fp6" if name == "e2m3" else "fp8"
         lut_suffix = "_lut" if name != "e5m2" else ""
         suffix = f"{name}_{name}"
-        source = software / f"bareMetalC/matmul_tiled_{precision}_{name}{lut_suffix}_64x64.c"
-        header = software / f"include/matmul_data_mx_lut_{name}_64x64.h"
+        if args.mesh_dim == 16 and args.source_shape == "64x64":
+            source_name = f"matmul_tiled_{precision}_{name}{lut_suffix}_64x64.c"
+            header_name = f"matmul_data_mx_lut_{name}_64x64.h"
+        elif name == "e4m3" and (args.mesh_dim, args.source_shape) in {
+                (32, "64x64"), (8, "64x64"), (8, "128x128")}:
+            dim_suffix = f"_dim{args.mesh_dim}"
+            nonrequant = "_nonrequant" if args.mesh_dim == 8 else ""
+            source_name = (f"matmul_tiled_fp8_e4m3_lut_{args.source_shape}"
+                           f"{nonrequant}{dim_suffix}.c")
+            header_name = f"matmul_data_mx_lut_e4m3_{args.source_shape}{dim_suffix}.h"
+        else:
+            parser.error("same-format LUT source shape and mesh are not registered")
+        source = software / "bareMetalC" / source_name
+        header = software / "include" / header_name
     else:
         suffix = args.source_suffix or {"lut": "e4m3_fp4", "direct": "e4m3s_fp4",
                   "fp6_lut": "fp6_fp4", "fp4_fp6_lut": "fp4_fp6",

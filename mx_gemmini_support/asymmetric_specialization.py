@@ -95,6 +95,25 @@ _VARIANTS = {
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
         "lut_words_per_line": 4, "lut_entry_bits": 8,
     },
+    "matmul_tiled_fp8_e4m3_lut_64x64_dim32.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64_dim32.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+    },
+    "matmul_tiled_fp8_e4m3_lut_64x64_nonrequant_dim8.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64_dim8.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+    },
+    "matmul_tiled_fp8_e4m3_lut_128x128_nonrequant_dim8.c": {
+        "header": "matmul_data_mx_lut_e4m3_128x128_dim8.h",
+        "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
+        "shape": [128, 128, 128], "activation_array": "A_in_hw[64][128]",
+        "use_lut": True, "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "lut_lines": 64,
+    },
     "matmul_tiled_fp8_e5m2_64x64.c": {
         "header": "matmul_data_mx_lut_e5m2_64x64.h",
         "cell": E5M2_E5M2_CELL,

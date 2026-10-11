@@ -27,6 +27,8 @@ class Case:
     header: str
     source_sha256: str
     header_sha256: str
+    mesh_dim: int = 16
+    source_shape: str = "64x64"
 
 
 CASES = {
@@ -48,7 +50,29 @@ CASES = {
         "matmul_data_mx_lut_e5m2_64x64.h",
         "b3d523976586bddd742f1856bf060a71f75c804c0fe178a6090e1065d40864f0",
         "45469edcf03546c70772f3eef8fc90b679c2728f4207116d27e1e685070c454c"),
+    "e4m3_dim32_64": Case(
+        "MxDim32AllGemminiRocketConfig",
+        "matmul_tiled_fp8_e4m3_lut_64x64_dim32.c",
+        "matmul_data_mx_lut_e4m3_64x64_dim32.h",
+        "c1ca615dfc976af1a2ee55a0aaf8460180106d1bef6bc709b52a5f0d87b1f6c4",
+        "cd913cb3a83a9946833363eb9bee31a33d952362af7b4aa8f437e5fa9f5bc3f2",
+        32),
+    "e4m3_dim8_64": Case(
+        "MxDim8AllGemminiRocketConfig",
+        "matmul_tiled_fp8_e4m3_lut_64x64_nonrequant_dim8.c",
+        "matmul_data_mx_lut_e4m3_64x64_dim8.h",
+        "a871838208da00e9d4b55b653d195730092f5098984764c8beaa80f43d43617a",
+        "742d91da250434c15ea8ca9aa66f6bf2fed8b14047d0621b77d10e174125d569",
+        8),
+    "e4m3_dim8_128": Case(
+        "MxDim8AllGemminiRocketConfig",
+        "matmul_tiled_fp8_e4m3_lut_128x128_nonrequant_dim8.c",
+        "matmul_data_mx_lut_e4m3_128x128_dim8.h",
+        "b64b94df6ebe1b3642f57a1ff506943c099bcd418b2523ee85b65bb69ab5e31f",
+        "05ab49d9b8d9ce68d64c5aaca404f037df285fb0de509b984eff8b4b472bdea8",
+        8, "128x128"),
 }
+DEFAULT_CASES = ("e2m3", "e4m3", "e5m2")
 
 
 def _sha(path: Path) -> str:
@@ -68,9 +92,11 @@ def _record(key: str, directory: Path, profile_path: Path,
     log = directory / "physical/spike.log"
     physical = directory / "object/physical_program.json"
     profile = load_profile(profile_path, rtl_root=rtl_root)
+    side = int(case.source_shape.split("x")[0])
+    expected_outputs = side * side
     if (receipt.get("status") != "source_golden_matched_on_pinned_spike" or
             receipt.get("spike_exit_code") != 0 or
-            receipt.get("compared_bf16_outputs") != 4096 or
+            receipt.get("compared_bf16_outputs") != expected_outputs or
             receipt.get("source_driver_sha256") != case.source_sha256 or
             receipt.get("source_header_sha256") != case.header_sha256 or
             receipt.get("compiler_revision") != compiler_revision or
@@ -78,6 +104,7 @@ def _record(key: str, directory: Path, profile_path: Path,
             receipt.get("model2mlir_revision") != MODEL2MLIR_REVISION or
             receipt.get("mxq_revision") != MXQ_REVISION or
             receipt.get("profile_name") != case.profile or
+            receipt.get("mesh_dim") != case.mesh_dim or
             receipt.get("profile_sha256") != profile_sha256(profile) or
             receipt.get("public_object_sha256") != _sha(obj) or
             receipt.get("public_object_dispatch_sha256") != _sha(dispatch) or
@@ -97,7 +124,7 @@ def _record(key: str, directory: Path, profile_path: Path,
         "source_header_sha256": case.header_sha256,
         "profile_name": case.profile,
         "profile_sha256": receipt["profile_sha256"],
-        "compared_bf16_outputs": 4096,
+        "compared_bf16_outputs": expected_outputs,
         "receipt": f"{key}/receipt.json", "receipt_sha256": _sha(receipt_path),
         "object_sha256": _sha(obj), "elf_sha256": _sha(elf),
         "spike_log_sha256": _sha(log),
@@ -106,11 +133,16 @@ def _record(key: str, directory: Path, profile_path: Path,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--case", action="append", choices=CASES,
+                        help="source case to replay; default is the three DIM16 modes")
     parser.add_argument("--jobs", type=int, default=1)
     for name in ("model2mlir-root", "mxq-root", "rtl-root", "riscv-root",
                  "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
+    selected = args.case or list(DEFAULT_CASES)
+    if len(selected) != len(set(selected)):
+        parser.error("each Nicolas LUT source case must be selected once")
     if args.jobs < 1:
         parser.error("--jobs must be positive")
     if args.out_dir.exists():
@@ -123,7 +155,8 @@ def main() -> None:
             _revision(mxq_root) != MXQ_REVISION):
         raise ValueError("Nicolas LUT suite needs pinned RTL, model2MLIR, and MXQuant")
     software = rtl_root / "software/gemmini-rocc-tests"
-    for case in CASES.values():
+    for key in selected:
+        case = CASES[key]
         if (_sha(software / "bareMetalC" / case.source) != case.source_sha256 or
                 _sha(software / "include" / case.header) != case.header_sha256):
             raise ValueError(f"Nicolas LUT source/header differs: {case.source}")
@@ -131,10 +164,10 @@ def main() -> None:
     args.out_dir.mkdir(parents=True)
     index = {
         "schema": SCHEMA, "status": "running",
-        "scope": "three pinned same-format LUT C numerical outputs via fresh model2MLIR and public RV64 objects",
+        "scope": "selected pinned same-format LUT C numerical outputs via fresh model2MLIR and public RV64 objects",
         "compiler_revision": compiler_revision, "rtl_revision": RTL_REVISION,
         "model2mlir_revision": MODEL2MLIR_REVISION, "mxq_revision": MXQ_REVISION,
-        "selected_cases": list(CASES), "cases": [],
+        "selected_cases": selected, "cases": [],
     }
 
     def write_index() -> None:
@@ -146,7 +179,9 @@ def main() -> None:
         profile = ROOT / "profiles/gemmini-mx-cleanup-266c593" / f"{case.profile}.json"
         command = [
             sys.executable, "-m", "tools.qualify_nicolas_asym",
-            "--public-object", "--symmetric-lut", key,
+            "--public-object", "--symmetric-lut", key.split("_")[0],
+            "--mesh-dim", str(case.mesh_dim),
+            "--source-shape", case.source_shape,
             "--model2mlir-root", str(model2mlir_root),
             "--mxq-root", str(mxq_root), "--rtl-root", str(rtl_root),
             "--profile", str(profile), "--riscv-root", str(args.riscv_root.resolve()),
@@ -161,7 +196,7 @@ def main() -> None:
 
     write_index()
     with ThreadPoolExecutor(max_workers=args.jobs) as executor:
-        for key, returncode in executor.map(replay, CASES):
+        for key, returncode in executor.map(replay, selected):
             if returncode:
                 index["status"], index["failed_case"] = "failed", key
                 write_index()
@@ -177,8 +212,10 @@ def main() -> None:
                 raise
             index["cases"].append(record)
             write_index()
-            print(f"matched {key}: 4096 BF16 outputs", flush=True)
-    index["status"] = "all_three_source_goldens_matched_on_pinned_spike"
+            print(f"matched {key}: {record['compared_bf16_outputs']} BF16 outputs", flush=True)
+    index["status"] = ("all_three_source_goldens_matched_on_pinned_spike"
+                       if selected == list(DEFAULT_CASES) else
+                       "all_selected_source_goldens_matched_on_pinned_spike")
     index["matched_sources"] = len(index["cases"])
     index["total_bf16_outputs_checked"] = sum(
         row["compared_bf16_outputs"] for row in index["cases"])
