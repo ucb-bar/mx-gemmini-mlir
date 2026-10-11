@@ -1,6 +1,8 @@
 """The default flash shape lowers an explicit VPU scale before each softmax."""
 
 import gzip
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -22,6 +24,7 @@ PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
 CORE = ("static uint64_t run_serial(void)\n"
         "gemmini_mx_load_scales_2d_gated\n"
         "gemmini_mxquant_config_mvout_managed\n")
+EVIDENCE = ROOT / "docs/evidence/nicolas_flash_fa_typed_a042643_0344bcb"
 
 
 def _inputs() -> tuple[str, str]:
@@ -66,3 +69,32 @@ def test_default_flash_rejects_changed_scale_and_unselected_shape() -> None:
                         shape=FA_SHAPE, block_k=64)
     with pytest.raises(ValueError, match="selected source shape"):
         flash_buffer_abi(FA_SHAPE, 32)
+
+
+def test_archived_default_flash_matches_every_bf16_output_twice() -> None:
+    receipt = json.loads((EVIDENCE / "receipt.json").read_text())
+    manifest = json.loads((EVIDENCE / "object_manifest.json").read_text())
+    physical = json.loads((EVIDENCE / "physical_program.json").read_text())
+    sha = lambda name: hashlib.sha256((EVIDENCE / name).read_bytes()).hexdigest()
+    assert receipt["status"] == "typed_flash_fa_full_bf16_source_parity"
+    assert receipt["schedule"] == "fenced_serial"
+    assert receipt["compared_bf16_words"] == 8192
+    assert receipt["source_runs"] == receipt["compiler_runs"] == 2
+    assert receipt["source_output_hash"] == "fba97c66241b47bf"
+    assert manifest["command_count"] == 236 and manifest["fence_count"] == 21
+    assert manifest["allocated_data_section_bytes"] == 0
+    assert manifest["embedded_operand_bytes"] == manifest["embedded_golden_bytes"] == 0
+    assert receipt["object_sha256"] == manifest["object_sha256"] == sha("mx_issue.o")
+    assert receipt["bound_mlir_sha256"] == sha("flash_fa.mlir")
+    assert receipt["physical_program_sha256"] == sha("physical_program.json")
+    assert len(physical["commands"]) == 257
+    words = []
+    for kind in ("source", "generated"):
+        for run in (1, 2):
+            log = (EVIDENCE / f"{kind}_spike_{run}.log").read_text()
+            line = next(line for line in log.splitlines()
+                        if line.startswith("O BF16 words "))
+            values = line.removeprefix("O BF16 words ")
+            assert len(values) == 32768
+            words.append(values)
+    assert len(set(words)) == 1

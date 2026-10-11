@@ -146,6 +146,10 @@ on Spike. The [complete typed four-block program](docs/evidence/nicolas_flash_mi
 now emits one data-free RV64 object with a fenced serial schedule. All 4,096
 BF16 outputs match Nicolas's pipelined source twice on Spike. Pipelined
 compiler scheduling and other flash configurations remain open.
+The [default 64×256×128 flash shape](docs/evidence/nicolas_flash_fa_typed_a042643_0344bcb/README.md)
+also lowers from a clean model2MLIR capture to a data-free object and matches
+all 8,192 BF16 outputs twice on Spike. It exercises the explicit VPU scale
+path used when `1/√d` cannot be folded into Q's E8M0 scales.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

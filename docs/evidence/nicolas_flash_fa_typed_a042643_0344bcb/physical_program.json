@@ -1,0 +1,4554 @@
+{
+  "bound_mlir_sha256": "9f276eff3a9c4b885a2b2d369d5f44c1801df698c850d1e236a70736ff8d52b6",
+  "commands": [
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "Q_SCALES",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 70368744177664
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 316659348799552,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277440,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 64,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277504,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 2048,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 2112,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277632,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 4096,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277696,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 4160,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277760,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 6144,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277824,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "Q_IN",
+        "byte_offset": 6208,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277888,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 256,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281536,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 4096,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281600,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 8192,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281664,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 12288,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281728,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 16384,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281792,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 20480,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281856,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 24576,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281920,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 28672,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505281984,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505277952,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 64,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278016,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 2048,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278080,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 2112,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278144,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 4096,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278208,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 4160,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278272,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 6144,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278336,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 6208,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278400,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 256,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 64,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282048,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 4160,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282112,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 8256,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282176,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 12352,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282240,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 16448,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282304,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 20544,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282368,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 24640,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282432,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 28736,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282496,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 8192,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278464,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 8256,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278528,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 10240,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278592,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 10304,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278656,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 12288,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278720,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 12352,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278784,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 14336,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278848,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 14400,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278912,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 256,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 128,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282560,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 4224,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282624,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 8320,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282688,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 12416,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282752,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 16512,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282816,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 20608,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282880,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 24704,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505282944,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 28800,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283008,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 16384,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505278976,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 16448,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279040,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 18432,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279104,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 18496,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279168,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 20480,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279232,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 20544,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279296,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 22528,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279360,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 22592,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279424,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 256,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 192,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283072,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 4288,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283136,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 8384,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283200,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 12480,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 16576,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283328,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 20672,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283392,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 24768,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283456,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "KT_IN",
+        "byte_offset": 28864,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505283520,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1048833,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 24576,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279488,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 24640,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279552,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 26624,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279616,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 26688,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279680,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 28672,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279744,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 28736,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279808,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 30720,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279872,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 2,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "V_IN",
+        "byte_offset": 30784,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503874505279936,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 114692,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 281474976710656,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 128,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "KT_SCALES",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 281474976710656
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18295877781160000,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 1170953529662111744
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34360000516,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4608,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 35184372089656,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998836948992,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1035272228,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252487008460800,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998878892032,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 273,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998836948992,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252572907806720,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 265,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 34,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 30,
+        "buffer": "p_scales_0",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 905977856
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4194368,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "V_SCALES",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 140737488355328
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18190324664893568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 2314885427200262144
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 17180393476,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 6144,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1024,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 59373627900728,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "KT_SCALES",
+        "byte_offset": 64,
+        "immediate": null,
+        "or_bits": 281474976710656
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18295877781160000,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 1170953529662111744
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34360000516,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 5120,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 52776558134072,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098348580864,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1035272228,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252521368203264,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282179395389952,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 43,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282230933948928,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 33,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282230890957568,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098391572480,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 273,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098348580864,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252590087680000,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 265,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248116964160,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248119061312,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 34,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 30,
+        "buffer": "p_scales_1",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 910176256
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4194368,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "V_SCALES",
+        "byte_offset": 256,
+        "immediate": null,
+        "or_bits": 140737488355328
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18190324664893568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 2314885427200262144
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 17180393476,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 6400,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1536,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 54975581389624,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310525265408,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 530,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310688843264,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "KT_SCALES",
+        "byte_offset": 128,
+        "immediate": null,
+        "or_bits": 281474976710656
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18295877781160000,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 1170953529662111744
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34360000516,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 5632,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 35184372089656,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998836948992,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1035272228,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252521368199168,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282162215520832,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 43,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282282472507968,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 33,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282282430565312,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998878892032,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 273,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2253998836948992,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252590087675904,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 265,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248120109888,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248119061312,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 34,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 30,
+        "buffer": "p_scales_0",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 905977856
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4194368,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "V_SCALES",
+        "byte_offset": 512,
+        "immediate": null,
+        "or_bits": 140737488355328
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18190324664893568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 2314885427200262144
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 17180393476,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 6144,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2048,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37383395345208,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310528411136,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 530,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310621734400,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "KT_SCALES",
+        "byte_offset": 192,
+        "immediate": null,
+        "or_bits": 281474976710656
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18295877781160000,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 1170953529662111744
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34360000516,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 6144,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 52776558134072,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098348580864,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 1035272228,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252521368203264,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282179395389952,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 43,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282213754079744,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 33,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282213711088320,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098391572480,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 273,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2255098348580864,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 37,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2252590087680000,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 265,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248115915584,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 34,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248119061312,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 34,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 30,
+        "buffer": "p_scales_1",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 910176256
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4194368,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 27,
+      "rs1": {
+        "address_mask": 1099511627775,
+        "address_shift": 0,
+        "buffer": "V_SCALES",
+        "byte_offset": 768,
+        "immediate": null,
+        "or_bits": 140737488355328
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 18190324664893568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 26,
+      "rs1": {
+        "address_mask": 8589934591,
+        "address_shift": 0,
+        "buffer": "scale_sink",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 2314885427200262144
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 393217,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 9,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 17180393476,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 24,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 6400,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2560,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 8,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 0,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 54975581389624,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310524216832,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 530,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310688843264,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 32,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 282248070826816,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 38,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 33,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4507310526313984,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 530,
+        "or_bits": 0
+      }
+    },
+    {
+      "kind": "fence"
+    },
+    {
+      "funct": 0,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 2,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 16,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 0,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861056,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 256,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861072,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 512,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861088,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 768,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861104,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 1024,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861120,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 1280,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861136,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 1536,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861152,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 1792,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861168,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 2048,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861184,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 2304,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861200,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 2560,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861216,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 2816,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861232,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 3072,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861248,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 3328,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861264,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 3584,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861280,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 3840,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861296,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 4096,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861312,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 4352,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861328,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 4608,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861344,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 4864,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861360,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 5120,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861376,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 5376,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861392,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 5632,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861408,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 5888,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861424,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 6144,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861440,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 6400,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861456,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 6656,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861472,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 6912,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861488,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 7168,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861504,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 7424,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861520,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 7680,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861536,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 7936,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861552,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 8192,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861568,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 8448,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861584,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 8704,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861600,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 8960,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861616,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 9216,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861632,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 9472,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861648,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 9728,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861664,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 9984,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861680,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 10240,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861696,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 10496,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861712,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 10752,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861728,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 11008,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861744,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 11264,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861760,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 11520,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861776,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 11776,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861792,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 12032,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861808,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 12288,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861824,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 12544,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861840,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 12800,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861856,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 13056,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861872,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 13312,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861888,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 13568,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861904,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 13824,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861920,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 14080,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861936,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 14336,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861952,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 14592,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861968,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 14848,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346861984,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 15104,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346862000,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 15360,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346862016,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 15616,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346862032,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 15872,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346862048,
+        "or_bits": 0
+      }
+    },
+    {
+      "funct": 3,
+      "rs1": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": "O_HW",
+        "byte_offset": 16128,
+        "immediate": null,
+        "or_bits": 0
+      },
+      "rs2": {
+        "address_mask": null,
+        "address_shift": 0,
+        "buffer": null,
+        "byte_offset": 0,
+        "immediate": 4503668346862064,
+        "or_bits": 0
+      }
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.flash_fa_serial_physical.v1"
+}
