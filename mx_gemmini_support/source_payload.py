@@ -158,6 +158,26 @@ def validate_model2mlir_attention_pv(manifest: dict) -> None:
             type(tile[2]) is not int or tile[2] < 32 or
             tile[2] % 32 or padded_k % tile[2]):
         raise ValueError("model2MLIR attention PV padding or K tile differs")
+    producer = manifest.get("upstream_producer")
+    if producer is not None:
+        if (not isinstance(producer, dict) or
+                set(producer) != {"schema", "status", "full_model_mlir_sha256",
+                                  "qk_region_id", "softmax_region_id",
+                                  "softmax_summary_sha256", "probability_bf16_sha256",
+                                  "qk_golden_bf16_sha256", "head_shape_mk"} or
+                producer["schema"] != "mx_gemmini.vpu_softmax_probability_producer.v1" or
+                producer["status"] != "model_qk_to_vpu_softmax_matched_on_pinned_spike" or
+                producer["full_model_mlir_sha256"] != site["source_mlir_sha256"] or
+                producer["head_shape_mk"] != [m, k] or
+                not isinstance(producer["qk_region_id"], str) or
+                not producer["qk_region_id"] or
+                not isinstance(producer["softmax_region_id"], str) or
+                not producer["softmax_region_id"] or
+                any(not isinstance(producer[key], str) or
+                    re.fullmatch(r"[0-9a-f]{64}", producer[key]) is None
+                    for key in ("softmax_summary_sha256", "probability_bf16_sha256",
+                                "qk_golden_bf16_sha256"))):
+            raise ValueError("model2MLIR attention PV upstream producer differs")
 
 
 def validate_target_mesh_reference(manifest: dict) -> None:

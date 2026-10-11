@@ -15,6 +15,7 @@ from mx_gemmini_support.model_attention_qk import (
     write_model_attention_pv_bundle, write_model_attention_qk_bundle,
 )
 from mx_gemmini_support.model_projection import portable_projection_shape
+from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from mx_gemmini_support.verify_profile_ir import verify_ir
 from tools.compile_mx import _run, _sha, _source_closure
@@ -36,6 +37,9 @@ def main() -> None:
     parser.add_argument("--batch-index", type=int, required=True)
     parser.add_argument("--tile-k", type=int, required=True)
     parser.add_argument("--mx-opt", type=Path)
+    for name in ("upstream-softmax-summary", "upstream-probability-bf16",
+                 "upstream-qk-bundle", "source-pv-input-receipt"):
+        parser.add_argument(f"--{name}", type=Path)
     parser.add_argument("--run-spike", action="store_true")
     args = parser.parse_args()
     for name in ("full_model_mlir", "activation_npy", "weight_npy", "model2mlir_root",
@@ -44,6 +48,12 @@ def main() -> None:
         setattr(args, name, getattr(args, name).resolve())
     if args.out_dir.exists():
         parser.error(f"refusing to overwrite {args.out_dir}")
+    producer_paths = (args.upstream_softmax_summary, args.upstream_probability_bf16,
+                      args.upstream_qk_bundle, args.source_pv_input_receipt)
+    if any(path is not None for path in producer_paths):
+        if args.stage != "pv" or any(path is None for path in producer_paths):
+            parser.error("upstream softmax requires PV and all four producer inputs")
+        producer_paths = tuple(path.resolve() for path in producer_paths)
     if _source_closure(args.model2mlir_root,
                        list((args.model2mlir_root / "m2m").rglob("*.py"))) != MODEL2MLIR_SOURCE_CLOSURE:
         raise ValueError("selected model2MLIR source closure differs")
@@ -77,13 +87,66 @@ def main() -> None:
         raise ValueError("selected batch matmul is not an eligible attention head")
     activation = np.load(args.activation_npy, allow_pickle=False)
     weight = np.load(args.weight_npy, allow_pickle=False)
+    upstream_producer = None
+    if args.upstream_softmax_summary is not None:
+        softmax_path, probability_path, qk_path, pv_receipt_path = producer_paths
+        softmax = json.loads(softmax_path.read_text())
+        qk_manifest, qk_resources = load_bundle(qk_path)
+        qk_site = qk_manifest.get("model2mlir_attention_qk", {})
+        qk_matches = [row for row in worklist["rank3_batch_matmuls"]
+                      if row["region_id"] == qk_site.get("region_id")]
+        pv_receipt = json.loads(pv_receipt_path.read_text())
+        probability_bytes = probability_path.read_bytes()
+        if len(probability_bytes) != 2 * source_m * source_k:
+            raise ValueError("upstream BF16 probability has wrong PV head shape")
+        probability_words = np.frombuffer(probability_bytes, dtype="<u2")
+        probability_f32 = (probability_words.astype(np.uint32) << 16).view(
+            np.float32).reshape(source_m, source_k)
+        if (softmax.get("status") != "model_qk_to_vpu_softmax_matched_on_pinned_spike" or
+                softmax.get("full_model_mlir_sha256") != worklist["source_mlir_sha256"] or
+                softmax.get("profile_sha256") != profile_sha256(profile) or
+                softmax.get("probability_head0_bf16_sha256") !=
+                hashlib.sha256(probability_bytes).hexdigest() or
+                softmax.get("qk_golden_bf16_sha256") !=
+                hashlib.sha256(qk_resources["golden_bf16"]).hexdigest() or
+                qk_manifest.get("profile_sha256") != profile_sha256(profile) or
+                qk_site.get("source_mlir_sha256") != worklist["source_mlir_sha256"] or
+                qk_site.get("fqn") != site["fqn"] or
+                qk_site.get("batch_index") != args.batch_index or
+                len(qk_matches) != 1 or
+                qk_site.get("source_shape_bmnk") != qk_matches[0]["shape_bmnk"] or
+                qk_site.get("source_shape_bmnk") != [batch, source_m, source_k,
+                                                       source_n] or
+                f'prov.region_id = "{softmax.get("source_softmax_region_id")}"' not in
+                full_model or
+                pv_receipt.get("full_model_mlir_sha256") !=
+                worklist["source_mlir_sha256"] or
+                pv_receipt.get("region_id") != site["region_id"] or
+                pv_receipt.get("fqn") != site["fqn"] or
+                pv_receipt.get("source_shape_bmnk") != site["shape_bmnk"] or
+                pv_receipt.get("weight_sha256") != hashlib.sha256(weight.tobytes()).hexdigest() or
+                activation.dtype != np.float32 or
+                not np.array_equal(activation, probability_f32)):
+            raise ValueError("upstream VPU probability or model PV weight differs")
+        upstream_producer = {
+            "schema": "mx_gemmini.vpu_softmax_probability_producer.v1",
+            "status": softmax["status"],
+            "full_model_mlir_sha256": worklist["source_mlir_sha256"],
+            "qk_region_id": qk_site["region_id"],
+            "softmax_region_id": softmax["source_softmax_region_id"],
+            "softmax_summary_sha256": _sha(softmax_path),
+            "probability_bf16_sha256": _sha(probability_path),
+            "qk_golden_bf16_sha256": softmax["qk_golden_bf16_sha256"],
+            "head_shape_mk": [source_m, source_k],
+        }
     args.out_dir.mkdir(parents=True)
     writer = (write_model_attention_qk_bundle if args.stage == "qk" else
               write_model_attention_pv_bundle)
     manifest = writer(
         args.out_dir / "bundle", worklist=worklist, site=site,
         batch_index=args.batch_index, activation=activation, weight=weight,
-        tile_k=args.tile_k, profile=profile, reference_root=args.reference_root)
+        tile_k=args.tile_k, profile=profile, reference_root=args.reference_root,
+        **({"upstream_producer": upstream_producer} if upstream_producer else {}))
     m, n, k = manifest["shape_mnk"]
     a = torch.zeros((m, k), dtype=torch.float32)
     b = torch.zeros((k, n), dtype=torch.float32)
@@ -108,6 +171,8 @@ def main() -> None:
         "format": "fp8_e4m3", "scale_format": "e8m0",
         "rounding": "mxq_bf16_operand_rne",
     }
+    if upstream_producer is not None:
+        specialization["upstream_producer"] = upstream_producer
     specialization_digest = hashlib.sha256(json.dumps(
         specialization, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     binding = (f'contract_sha256 = "{_sha(contract)}", '
@@ -175,6 +240,8 @@ def main() -> None:
                    f"{args.stage}_head_elf_built_unexecuted"),
         "scope": ("one batched self-attention QK head; scaling, mask, softmax, and PV uncompiled"
                   if args.stage == "qk" else
+                  "PV head consumes separately executed model-derived QK/VPU softmax BF16 probabilities; on-device routing uncompiled"
+                  if upstream_producer is not None else
                   "one batched self-attention PV head; QK, scale, mask, and softmax uncompiled"),
         "site": manifest[f"model2mlir_attention_{args.stage}"],
         "padded_shape_mnk": manifest["shape_mnk"],
@@ -187,6 +254,8 @@ def main() -> None:
         "run_receipt_sha256": _sha(run / "artifact_manifest.json"),
         "run_status": receipt.get("status"),
     }
+    if upstream_producer is not None:
+        summary["upstream_producer"] = upstream_producer
     (args.out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     print(json.dumps(summary, indent=2, sort_keys=True))
 

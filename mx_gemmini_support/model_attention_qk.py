@@ -25,13 +25,15 @@ def _sha(data: bytes) -> str:
 def _write_model_attention_bundle(directory: Path, *, stage: str, worklist: dict,
                                   site: dict, batch_index: int, activation, weight,
                                   tile_k: int, profile: dict,
-                                  reference_root: Path) -> dict:
+                                  reference_root: Path,
+                                  upstream_producer: dict | None = None) -> dict:
     """Quantize captured QK or PV operands with explicit source K padding."""
     import numpy as np
     import torch
     from mxq.nn.operand_capture import functional_contraction_operands
 
     if (stage not in {"qk", "pv"} or
+            (stage == "qk" and upstream_producer is not None) or
             worklist.get("schema") != "mx_gemmini.model2mlir_contraction_worklist.v1" or
             site not in worklist.get("rank3_batch_matmuls", []) or
             site.get("source_op") != "batch_matmul" or
@@ -121,6 +123,8 @@ def _write_model_attention_bundle(directory: Path, *, stage: str, worklist: dict
         "resources": {name: resource.descriptor(name)
                       for name, resource in sorted(resources.items())},
     }
+    if upstream_producer is not None:
+        manifest["upstream_producer"] = dict(upstream_producer)
     (validate_model2mlir_attention_qk if stage == "qk" else
      validate_model2mlir_attention_pv)(manifest)
     (directory / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -142,9 +146,11 @@ def write_model_attention_qk_bundle(directory: Path, *, worklist: dict, site: di
 def write_model_attention_pv_bundle(directory: Path, *, worklist: dict, site: dict,
                                     batch_index: int, activation, weight,
                                     tile_k: int, profile: dict,
-                                    reference_root: Path) -> dict:
+                                    reference_root: Path,
+                                    upstream_producer: dict | None = None) -> dict:
     """Quantize one captured PV head with zero padding along its short K axis."""
     return _write_model_attention_bundle(
         directory, stage="pv", worklist=worklist, site=site,
         batch_index=batch_index, activation=activation, weight=weight,
-        tile_k=tile_k, profile=profile, reference_root=reference_root)
+        tile_k=tile_k, profile=profile, reference_root=reference_root,
+        upstream_producer=upstream_producer)
