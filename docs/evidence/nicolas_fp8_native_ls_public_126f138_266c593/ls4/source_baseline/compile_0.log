@@ -1,0 +1,11 @@
+In file included from /scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/include/gemmini_testutils.h:16,
+                 from /scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/bareMetalC/matmul_tiled_fp8_128x128_dramloop_nc.c:11,
+                 from /scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/bareMetalC/matmul_tiled_fp8_128x128_dramloop_ls4.c:4:
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/include/gemmini.h: In function 'tiled_matmul_outer':
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/include/gemmini.h:932:22: warning: overflow in conversion from 'acc_scale_t' {aka 'float'} to 'acc_t' {aka 'const long unsigned int'} changes value from '+QNaN' to '0' [-Woverflow]
+  932 |     const acc_t qc = c / (a*bert_scale*bert_scale);
+      |                      ^
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/include/gemmini.h: In function 'tiled_norm':
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/gemmini-rocc-tests/include/gemmini.h:3707:26: warning: overflow in conversion from 'acc_scale_t' {aka 'float'} to 'acc_t' {aka 'const long unsigned int'} changes value from '+QNaN' to '0' [-Woverflow]
+ 3707 |         const acc_t qc = c / (a*bert_scale*bert_scale);
+      |                          ^

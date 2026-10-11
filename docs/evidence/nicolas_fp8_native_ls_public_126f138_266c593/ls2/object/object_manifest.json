@@ -1,0 +1,79 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "5a524eb06a16cbad10d2d470dce4c9c34247f62af7d3a7ceafd5bce956ba5347",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 16384,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 512,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 128,
+      "minimum_bytes": 32768,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 64,
+      "minimum_bytes": 16384,
+      "name": "weight",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 64,
+      "minimum_bytes": 512,
+      "name": "weight_scales",
+      "position": 4,
+      "role": "read"
+    }
+  ],
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "bc2d7379b77a1baf1178b5dfa800789b130e26383b1275939ec124a3889e7788",
+  "issuer_h_sha256": "5312fb58c0721fc802422501f835cf48c0935db2f084da029fa9ebabfb44463c",
+  "mode": "spike_serial",
+  "object_emitter_sha256": "e457c84aa453048308a62128bfcf1200ac565253da068ddfe077f6ea9b8cad8d",
+  "object_sha256": "cb351d2ac13617959ff7037ce75085a3dba3957d8c51f4a7b28e9ae6f81054f2",
+  "payload_manifest_sha256": "cf5d7c02b4ea9b8c63f4549e2a630c06bfe5e7d28a23905076f381833233a16b",
+  "physical_program_sha256": "ed2f4aedc0ac37459bc889a0deca3519a88c6d4f21521a78364e333feeff00a1",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.linkable_object.v1",
+  "shape_mnk": [
+    128,
+    128,
+    128
+  ],
+  "source_bundle_manifest_sha256": "d8b3fa6ffdc45dea939a01d9616fdf020c0d2872639891b1b92ae40db1832cb4",
+  "status": "rv64_rocc_issuer_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
