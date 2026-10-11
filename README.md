@@ -102,8 +102,7 @@ programs. Its full-program compiler gaps are tracked separately from the ISA
 test roster.
 The [dense `attn_vpu` source baseline](docs/evidence/nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/README.md)
 pins an unmodified 32×64×64 MX→VPU→requant→MX kernel that passes on Spike,
-plus the corresponding latest-model2MLIR attention graph. A generated
-connected object for this source is still needed.
+plus the corresponding current model2MLIR attention graph.
 Its [generated VPU/requant middle](docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb/README.md)
 replaces all eight vector and requant calls with a data-free RV64 object and
 matches the source's four stage hashes on Spike. The QK and PV matrix calls
@@ -121,7 +120,12 @@ typed graph and object for the complete command schedule remain to be built.
 The [single-object replay](docs/evidence/nicolas_attn_vpu_single_object_e9ded36_0344bcb/README.md)
 combines all 127 source-equivalent command items into one data-free RV64
 object. The complete score and output hashes match the source on Spike in two
-identical runs. QK/PV and I/O still need typed MLIR lowering.
+identical runs. The [typed attention program](docs/evidence/nicolas_attn_vpu_typed_program_e9ded36_0344bcb/README.md)
+now lowers QK/PV, VPU/requant, scale and operand DMA, and readouts from one
+profile-bound MLIR graph through the public object CLI. Its one data-free
+object is byte identical to the single-object replay, and the source checker
+matches all four stage hashes twice on Spike. This qualification is bound to
+the pinned 32×64×64 source kernel; other shapes and full models remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

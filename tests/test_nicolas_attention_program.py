@@ -1,6 +1,7 @@
 """Typed dense attention must lower every source stage into the pinned stream."""
 
 from dataclasses import asdict
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,7 @@ from tools.compile_object import classify
 ROOT = Path(__file__).resolve().parents[1]
 VECTOR = ROOT / "docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb"
 PHYSICAL = ROOT / "docs/evidence/nicolas_attn_vpu_single_object_e9ded36_0344bcb"
+TYPED = ROOT / "docs/evidence/nicolas_attn_vpu_typed_program_e9ded36_0344bcb"
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
                        "MxE4M3Fp4VpuGemminiRocketConfig.json")
 
@@ -76,3 +78,26 @@ def test_native_attention_ops_check_geometry_and_source(tmp_path: Path) -> None:
                              capture_output=True, text=True)
     assert invalid.returncode != 0
     assert "nonoverlapping rows" in invalid.stderr
+
+
+def test_archived_typed_attention_receipt_matches_object_and_source() -> None:
+    receipt = json.loads((TYPED / "receipt.json").read_text())
+    dispatch = json.loads((TYPED / "typed/compile_manifest.json").read_text())
+    built = json.loads((TYPED / "typed/object_manifest.json").read_text())
+    physical = json.loads((TYPED / "typed/physical_program.json").read_text())
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    assert receipt["typed_mlir_sha256"] == sha(TYPED / "attention.program_bound.mlir")
+    assert receipt["typed_object_sha256"] == sha(TYPED / "typed/mx_issue.o")
+    assert receipt["typed_object_sha256"] == sha(PHYSICAL / "mx_issue.o")
+    assert receipt["typed_compile_manifest_sha256"] == sha(
+        TYPED / "typed/compile_manifest.json")
+    assert receipt["elf_sha256"] == sha(TYPED / "attn_vpu_typed_program.elf")
+    assert receipt["spike_log_sha256"] == sha(TYPED / "spike_1.log")
+    assert receipt["stage_hashes"] == json.loads(
+        (PHYSICAL / "receipt.json").read_text())["stage_hashes"]
+    assert dispatch["lowering_family"] == "attention_program"
+    assert dispatch["verified_graph_counts"]["memory_phases"] == 10
+    assert dispatch["verified_graph_counts"]["spad_matmuls"] == 2
+    assert built["command_count"] == 126 and built["fence_count"] == 1
+    assert built["allocated_data_section_bytes"] == 0
+    assert len(physical["commands"]) == 127
