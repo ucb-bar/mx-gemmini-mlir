@@ -1,0 +1,38 @@
+{
+  "frontend_mlir_sha256": "80b8dd7b16cde46af43cfdd3ba6977ede0ae2f903a77e1d393461356226c4ba0",
+  "generated_header_sha256": "73932f8da30d760b84c366422aca45f5af98ea93eb5d60e631c31949a35a2365",
+  "generator_args": [
+    "--sq",
+    "32",
+    "--sk",
+    "64",
+    "--d",
+    "64",
+    "--seed",
+    "0"
+  ],
+  "generator_dependency_sha256": "31c50d1a7eca96041361ed9bfffbb28754a00ca1a3f1839739eeb5c5322c79af",
+  "generator_sha256": "0a30effcffb85da5db7e100068cfb3f0df683a15a3f6adb415cb622d55ebced6",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model2mlir_source_closure_sha256": "559efcf9232c1375df1fb12bd131edc0e3daba7d1364df25725bb2ef7a0e2027",
+  "npu_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "npu_source_sha256": "537fcde270abb982b58e6777487d7ea3bc14e5e81da05fb48cb2ac31077a5cd8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_attn_vpu_source_baseline.v1",
+  "scope": "unmodified attn_vpu.c with deterministic default 32x64x64 generated data; source oracle and model2MLIR graph only, no compiler-generated connected object",
+  "source_elf_sha256": "e847ca48a7abf8cb68be07de4784bb741458d10b3a11ded7316dc4d8b2b608ab",
+  "source_header_gzip_sha256": "1017bff5435148b936f98eec14e0f0e61157e5b5bf0d9cb3a34f671b2bbdfae5",
+  "source_spike_log_sha256": "d8aa627da328360b03e88af8ec8eb538401a052c57ce3ca31c3bee59eca26304",
+  "source_spike_reproduced_runs": 2,
+  "source_stage_hashes": {
+    "O": "5b45f04fa4658640",
+    "P": "946e34c5d2799dfc",
+    "Pq": "ca814c51523f2159",
+    "S": "2983840b82e9ad13"
+  },
+  "spike_binary_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "original_source_matched_on_pinned_spike",
+  "worklist_sha256": "7c2be74429cbd102b8369c0a8da3ffdb66c402ca297d18f7a77bd1b79fac3802"
+}

@@ -1,0 +1,13 @@
+attn_vpu: Sq=32 Sk=64 d=64, softmax on the VPU (spad rows: S 256, P 128, O 256)
+check S vs mesh golden: 0/512 4-element words differ
+check hashes: S 2983840b82e9ad13  P 946e34c5d2799dfc  Pq ca814c51523f2159  O 5b45f04fa4658640
+check hashes vs Spike: match (0 of 4 differ)
+accuracy over 32 of 32 rows
+accuracy O: rel_fro 16610 ppm vs exact softmax + same MX steps | 49681 ppm vs fp32 softmax of the mesh S | 72887 ppm vs fp64 attention
+accuracy P: max |P_vpu - P_fp32| = 2062 ppm
+accuracy P: max |rowsum - 1| = 8026 ppm
+PERF attn_vpu: 553 cycles (mesh ideal 1024 for QK^T + PV = 185%)
+PERF host fp32 softmax alone: 264685 cycles
+attn_vpu PASSED
+Gemmini extension configured with:
+    dim = 16

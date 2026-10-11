@@ -100,6 +100,10 @@ Nicolas's [current application-kernel roster](docs/nicolas_application_kernel_co
 also includes 63 TinyLlama, VPU attention, flash attention, MLP, and benchmark
 programs. Its full-program compiler gaps are tracked separately from the ISA
 test roster.
+The [dense `attn_vpu` source baseline](docs/evidence/nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/README.md)
+pins an unmodified 32×64×64 MX→VPU→requant→MX kernel that passes on Spike,
+plus the corresponding latest-model2MLIR attention graph. A generated
+connected object for this source is still needed.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
