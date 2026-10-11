@@ -25,6 +25,11 @@ and [16 DIM8/16/32 cases](evidence/nicolas_direct_sixteen_28936e2_266c593/README
 cover **34 distinct direct matrix programs** through fresh model2MLIR
 capture, public object compilation, and full-output Spike checks. Their
 indices record 300,896 comparisons across BF16 values, quantized bytes, and scales.
+The [three same-format LUT source programs](evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/README.md)
+also pass through public data-free objects with their dedicated E2M3, E4M3,
+and E5M2 Rocket profiles, matching 12,288 BF16 values. Together, these
+exhaustive suites cover the numerical results of **111 distinct named MX
+source programs** from the 171-program roster.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
 remains archived. The 121 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
@@ -32,6 +37,7 @@ forms of evidence and are not a count of compiler-regenerated programs.
 | Source family | Compiler evidence | Coverage boundary |
 |---|---|---|
 | Asymmetric matrix modes | [74-program public-object suite](evidence/nicolas_asym_public_suite_e6923e8_266c593/README.md), [mode matrices](compiled_mx_pipeline.md#dedicated-dim16-asymmetric-mode-matrix), and [stock-model gap](compiled_mx_pipeline.md#isolated-weight-lut-spike-correction-across-all-legal-modes) | All 74 pinned `matmul_tiled_asym_*` C programs match 360,960 BF16 source outputs through generated public objects on Spike. This is named-program numerical coverage; separate legal-mode tests still expose the stock Spike gap, and no FPGA timing parity is claimed. |
+| Same-format LUT E2M3/E4M3/E5M2 | [Three dedicated-profile public-object replays](evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/README.md) | All three named 64³ BF16 source programs match through generated public objects on Spike. Their requantized sibling programs and larger LUT shapes remain outside this suite. |
 | FP8/FP4/FP6 matrix and quantized output | [Source shapes and precision cases](compiled_mx_pipeline.md#nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6), [requantizer modes](compiled_mx_pipeline.md#the-nicolas-requantizer-wrappers-three-output-modes) | Selected source programs and full outputs pass. Chunked, DRAM-loop, transfer, and performance variants are not exhaustively reproduced from typed MLIR. |
 | Direct Nicolas FP8 source through public object compiler | [128³ typed object replay](evidence/nicolas_plain_fp8_typed_object_7d7a660_266c593/README.md) | The checked-in `matmul_tiled_fp8_128x128` packed arrays and all 16,384 BF16 source goldens match on pinned Spike. This covers the matrix result, not the C test's cache experiment or performance counters. |
 | Additional direct Nicolas source shapes | [15-case suite](evidence/nicolas_direct_matrix_suite_9df3384_266c593/README.md), [three FP8 cases](evidence/nicolas_direct_fp8_three_789d192_266c593/README.md), [16 DIM8/16/32 cases](evidence/nicolas_direct_sixteen_28936e2_266c593/README.md) | Full-output replays cover 34 distinct source programs across FP8, FP4, FP6, irregular shapes, and DIM8/16/32 BF16 and requantized readout. The archives retain frontend graphs, bound graphs, objects, ELFs, and Spike logs for each newly added case. |

@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "case": "e2m3",
+      "compared_bf16_outputs": 4096,
+      "elf_sha256": "af65740f06810c87bc9504a3177be2e6d58257bc5198e078a6187abc63128b04",
+      "object_sha256": "7fa45165f16346f6ce997007269a539e917c2da9fd1f46e6259a17a752912acf",
+      "profile_name": "MxE2M3OnlyGemminiRocketConfig",
+      "profile_sha256": "1f1aecc7cbfbd3294466cbfa48cb9d9a11af76191694426a8b8957df796571ca",
+      "receipt": "e2m3/receipt.json",
+      "receipt_sha256": "7419167a659eaedbb91538847e9abf48362fc569d8e8842bbebb2dfeccabbced",
+      "source_driver_sha256": "a142f11d56ffca02baf620d7bc94e125721618f1e41b806625d3403a49269e15",
+      "source_header_sha256": "78e21f8aa147979d91fb70358163b83164505eb38565f256ff4d03156a773cd0",
+      "source_program": "matmul_tiled_fp6_e2m3_lut_64x64",
+      "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356"
+    },
+    {
+      "case": "e4m3",
+      "compared_bf16_outputs": 4096,
+      "elf_sha256": "00fbdfff38673482176953fe7580d555bb8233cada66f344114599733b7639dc",
+      "object_sha256": "4d7e79d06af5ee53db093eed0d81d6389494ac4497dcd8e8ab328d774ba5f109",
+      "profile_name": "MxE4M3LutGemminiRocketConfig",
+      "profile_sha256": "b3519f0b21ead0f99ba986cbc3d4d0bd4618cf7199d157015c24bda70cdbc04a",
+      "receipt": "e4m3/receipt.json",
+      "receipt_sha256": "94fb450123905966f13c9369fb4d7d45d01a469107065269365eb84e084b3d6d",
+      "source_driver_sha256": "4fee567ca604c0245dd690d7fd9b55234f135364bc7699144e00c810f6418351",
+      "source_header_sha256": "35b5dad4bdc4a5421a96f38abe1cea1c587305081dd7002213f582cba66b5e5c",
+      "source_program": "matmul_tiled_fp8_e4m3_lut_64x64",
+      "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356"
+    },
+    {
+      "case": "e5m2",
+      "compared_bf16_outputs": 4096,
+      "elf_sha256": "d466728c99a4b966224bf232e50e12abc70861df0308859473352c629e167134",
+      "object_sha256": "da4543ae70b8c8843840aeeab2b8e980a2cfd7ca8be391354bd5358ff70e4603",
+      "profile_name": "MxE5M2GemminiRocketConfig",
+      "profile_sha256": "d72cd0a16418117dd22cf65bd79918695c7e9dc7ac4ae92d189f9387be2f3ff1",
+      "receipt": "e5m2/receipt.json",
+      "receipt_sha256": "c6f2bc9346deb91f1b93fccb3053c8d1add6d6c736668d7383b14be3694e7cf0",
+      "source_driver_sha256": "b3d523976586bddd742f1856bf060a71f75c804c0fe178a6090e1065d40864f0",
+      "source_header_sha256": "45469edcf03546c70772f3eef8fc90b679c2728f4207116d27e1e685070c454c",
+      "source_program": "matmul_tiled_fp8_e5m2_64x64",
+      "spike_log_sha256": "e0140f9b255b38f106de2d62351b0fe3680c45f451eea17e0ffe8a1796176356"
+    }
+  ],
+  "compiler_revision": "4e30dcfafa7c81dfaec0c49e2d056d14e037ba7a",
+  "matched_sources": 3,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_symmetric_lut_public_suite.v1",
+  "scope": "three pinned same-format LUT C numerical outputs via fresh model2MLIR and public RV64 objects",
+  "selected_cases": [
+    "e2m3",
+    "e4m3",
+    "e5m2"
+  ],
+  "status": "all_three_source_goldens_matched_on_pinned_spike",
+  "total_bf16_outputs_checked": 12288
+}

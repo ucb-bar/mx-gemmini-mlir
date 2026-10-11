@@ -75,6 +75,11 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
         source = CASES[key].source_name.removesuffix(".c")
         assert any("nicolas_direct_sixteen_28936e2" in ref["path"] for ref in
                    by_name[source]["evidence_references"])
+    for source in ("matmul_tiled_fp6_e2m3_lut_64x64",
+                   "matmul_tiled_fp8_e4m3_lut_64x64",
+                   "matmul_tiled_fp8_e5m2_64x64"):
+        assert any("nicolas_symmetric_lut_public_4e30dcf" in ref["path"] for ref in
+                   by_name[source]["evidence_references"])
     assert any("mx_public_vpu_softmax_3f9af55" in ref["path"] for ref in
                by_name["vpu_softmax"]["evidence_references"])
     for entry in inventory["entries"]:

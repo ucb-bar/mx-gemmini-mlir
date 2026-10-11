@@ -332,6 +332,27 @@
           "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
           "sha256": "1f9da0e8d8851f22e8b7816639fbd95704c2b2fa12b46876b191f5db4981aa0e",
           "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e5m2/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "48cb3ce31745d0dfb053c3c38eeb78c3c9fe296c487c3f52f22a82dffa6dc3eb",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e5m2/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "c6f2bc9346deb91f1b93fccb3053c8d1add6d6c736668d7383b14be3694e7cf0",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e5m2/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "41f1eeb4fbd13266349cccd089ce290d31fab7c521d97b9538a7465312ea6f2f",
+          "status": null
         }
       ],
       "family": "other_tiled_matrix",
@@ -373,6 +394,27 @@
           "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
           "sha256": "ac615c63d80e616f5807426cbb0fbda3510e457b29ca837149b8b29f4a443be1",
           "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e4m3/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "85e70f7b719a96e2f1610e5240254a7b880ea4e44627eb2e870c50facff3c450",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e4m3/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "94fb450123905966f13c9369fb4d7d45d01a469107065269365eb84e084b3d6d",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e4m3/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "b90b94e1429c35e210b51ac72b47e1fb62250fbe7a0d7540a435b97e837e0a46",
+          "status": null
         }
       ],
       "family": "other_tiled_matrix",
@@ -428,6 +470,27 @@
           "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
           "sha256": "0984ade4cb76c9d15b4507d93f731e6474deae99256b2c79d225b43e84344c2a",
           "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e2m3/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "3dd3005f9e50f294f3d37a26c5444e011420d4637ac95d464fb6427507d3ef11",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e2m3/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "7419167a659eaedbb91538847e9abf48362fc569d8e8842bbebb2dfeccabbced",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/e2m3/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "0400f7ae269c89143b1fc9b81c3752b4f4e45598f68d884de8379bcdb941e90f",
+          "status": null
         }
       ],
       "family": "other_tiled_matrix",
