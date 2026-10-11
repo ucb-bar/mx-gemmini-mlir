@@ -48,7 +48,8 @@ def _check_source_policy(source_wrapper: str, source_core: str,
                          source_header: str, shape: DenseAttentionShape,
                          block_k: int, input_format: str,
                          softmax_mode: str, causal: bool,
-                         block_first: int, block_last: int) -> None:
+                         block_first: int, block_last: int,
+                         v3: bool) -> None:
     header = _source_defines(source_header)
     fp4 = input_format == "fp4_e2m1"
     expected = {"ATTN_SQ": str(shape.sq), "ATTN_SK": str(shape.sk),
@@ -66,6 +67,8 @@ def _check_source_policy(source_wrapper: str, source_core: str,
         allowed = {"BK": str(block_k)}
         if variable_blocks:
             allowed.update(BK_FIRST=str(block_first), BK_LAST=str(block_last))
+        if not v3:
+            allowed["ATTN_V3"] = "0"
         suffix = ("_llama_causal" if causal else "_llama" if shape == STREAM_SHAPE
                   else "_mid_fp4" if fp4 else "_mid")
         optional = {"ATTN_HEADER": f'"attn_vpu{suffix}.h"',
@@ -134,7 +137,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                      input_format: str = "fp8_e4m3",
                      softmax_mode: str = "split", causal: bool = False,
-                     block_first: int | None = None, block_last: int | None = None
+                     block_first: int | None = None, block_last: int | None = None,
+                     v3: bool = True
                      ) -> tuple[str, dict]:
     """Render a source-bound, fenced QK/softmax/requant/PV program."""
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
@@ -142,6 +146,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     block_first = block_k if block_first is None else block_first
     block_last = block_k if block_last is None else block_last
     variable_blocks = block_first != block_k or block_last != block_k
+    if type(v3) is not bool:
+        raise ValueError("flash V-buffer policy must be boolean")
     if (type(block_first) is not int or type(block_last) is not int or
             block_first <= 0 or block_last <= 0 or
             block_first > block_k or block_last > block_k or
@@ -149,7 +155,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             shape.sk < block_first + block_last or
             (variable_blocks and (shape, block_k, input_format, block_first,
                                   block_last, causal, softmax_mode) !=
-             (STREAM_SHAPE, 256, "fp8_e4m3", 64, 192, False, "split"))):
+             (STREAM_SHAPE, 256, "fp8_e4m3", 64, 192, False, "split")) or
+            (not v3 and (shape, block_k, input_format, block_first,
+                         block_last, causal, softmax_mode) !=
+             (STREAM_SHAPE, 256, "fp8_e4m3", 256, 256, False, "split"))):
         raise ValueError("flash compiler has no selected key-block schedule")
     if softmax_mode not in {"split", "expsum"} or (
             softmax_mode == "expsum" and
@@ -167,7 +176,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         raise ValueError("pinned flash source or geometry differs")
     _check_source_policy(source_wrapper, source_core, source_header,
                          shape, block_k, input_format, softmax_mode, causal,
-                         block_first, block_last)
+                         block_first, block_last, v3)
     _audit_frontend_edges(frontend, shape, causal=causal)
     streamed = (shape, block_k, input_format) == (STREAM_SHAPE, 256, "fp8_e4m3")
     if streamed:
@@ -199,7 +208,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     rows8 = lambda m, n: m * n // (16 * qt)
     rows16 = lambda m, n: m * n * 2 // 16
     SP_Q, SP_V, SP_KT = 0, rows8(SQ, D), 4096
-    k_buffers, v_buffers = (2, 3) if streamed else (NB, NB)
+    k_buffers, v_buffers = (2, 3 if v3 else 2) if streamed else (NB, NB)
     SP_P = SP_KT + k_buffers * rows8(D, BK)
     ST = SP_V + v_buffers * rows8(BK, D)
     SP_O = 3 * 4096 + rows16(SQ, BK) + rows16(SQ, D)
@@ -217,6 +226,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     folded = D == 64
     variant = ("llama_causal_stream" if causal else
                "llama_vb_stream" if variable_blocks else
+               "llama_wide_stream" if streamed and not v3 else
                "llama_stream" if streamed else
                "mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
                "mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
@@ -231,6 +241,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
               "output_rows": [_output_j(j) for j in range(NB)]}
     if streamed:
         policy["kv_stream_buffers"] = [k_buffers, v_buffers]
+    if not v3:
+        policy["v3"] = False
     if variable_blocks:
         policy["block_first"] = block_first
         policy["block_last"] = block_last
@@ -459,14 +471,16 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                     input_format: str = "fp8_e4m3",
                     softmax_mode: str = "split", causal: bool = False,
-                    block_first: int | None = None, block_last: int | None = None
+                    block_first: int | None = None, block_last: int | None = None,
+                    v3: bool = True
                     ) -> tuple[Command | Fence, ...]:
     """Require the exact source-bound serial graph before issuing commands."""
     expected, _ = render_flash_mid(frontend, source_core, source_wrapper,
                                    source_header, profile, shape=shape,
                                    block_k=block_k, input_format=input_format,
                                    softmax_mode=softmax_mode, causal=causal,
-                                   block_first=block_first, block_last=block_last)
+                                   block_first=block_first, block_last=block_last,
+                                   v3=v3)
     if mlir_text != expected:
         raise ValueError("flash typed graph or source binding differs")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,

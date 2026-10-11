@@ -179,6 +179,9 @@ this does not yet establish compilation of a captured TinyLlama head.
 The [uneven-block 64+7×256+192 variant](docs/evidence/nicolas_flash_llama_vb_stream_typed_e9ded36_0344bcb/README.md)
 also lowers through the public compiler. Its 508-command object matches all
 4,096 source BF16 outputs twice on Spike for the same synthetic operands.
+The [two-V-buffer variant](docs/evidence/nicolas_flash_llama_wide_stream_typed_e9ded36_0344bcb/README.md)
+uses `ATTN_V3=0` and relocates statistics to scratchpad row 2304. Its
+484-command object also matches every source output twice on Spike.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

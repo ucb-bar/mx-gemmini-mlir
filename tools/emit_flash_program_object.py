@@ -28,6 +28,7 @@ PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256 = "fca0f83b3a81ecb5210bc69a08f2329bcb704474
 PINNED_LLAMA_WRAPPER_SHA256 = "1245d6c5d994687eda049ff4ddfa7577c0cf0e246b26767c4bb6ba6e641224f2"
 PINNED_LLAMA_CAUSAL_WRAPPER_SHA256 = "687f2d4be5cf00dabbe4daccc0b07f71a2cc24e6521e17cbbff9db48fac3319f"
 PINNED_LLAMA_VB_WRAPPER_SHA256 = "945c3e655e017d62a595c59b4ae0c0ced52bda550df570d30ac01801c48b7bec"
+PINNED_LLAMA_WIDE_WRAPPER_SHA256 = "52b30d227a98b6901d7e9c93eeb5fef1564d8e19fbe41dead1e908e09df0072f"
 
 
 def _source_text(path: Path) -> str:
@@ -67,9 +68,11 @@ def main() -> None:
     block_first = binding["policy"].get("block_first", block_k)
     block_last = binding["policy"].get("block_last", block_k)
     variable_blocks = block_first != block_k or block_last != block_k
+    v3 = binding["policy"].get("v3", True)
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
                                              causal=causal)
     wrapper_sha256 = (PINNED_LLAMA_VB_WRAPPER_SHA256 if variable_blocks else
+                      PINNED_LLAMA_WIDE_WRAPPER_SHA256 if v3 is False else
                       PINNED_LLAMA_CAUSAL_WRAPPER_SHA256 if causal else
                       PINNED_LLAMA_WRAPPER_SHA256
                       if shape == STREAM_SHAPE and block_k == 256
@@ -89,16 +92,17 @@ def main() -> None:
     expected, selected = render_flash_mid(
         frontend, core, wrapper, header, profile, shape=shape, block_k=block_k,
         input_format=input_format, softmax_mode=softmax_mode, causal=causal,
-        block_first=block_first, block_last=block_last)
+        block_first=block_first, block_last=block_last, v3=v3)
     if binding != selected or mlir_bytes.decode() != expected:
         raise ValueError("typed flash source, frontend, graph, or binding differs")
     commands = lower_flash_mid(
         expected, frontend, core, wrapper, header, profile,
         shape=shape, block_k=block_k, input_format=input_format,
         softmax_mode=softmax_mode, causal=causal,
-        block_first=block_first, block_last=block_last)
+        block_first=block_first, block_last=block_last, v3=v3)
     slug = ("flash_llama_causal_stream" if causal else
             "flash_llama_vb_stream" if variable_blocks else
+            "flash_llama_wide_stream" if v3 is False else
             "flash_llama_stream" if shape == STREAM_SHAPE and block_k == 256 else
             "flash_mid_fp4_expsum" if softmax_mode == "expsum" and input_format == "fp4_e2m1"
             else "flash_mid_expsum" if softmax_mode == "expsum" else
@@ -129,9 +133,10 @@ def main() -> None:
         "shape_sq_sk_d_bk": dims,
         "input_format": input_format,
         "softmax_mode": softmax_mode,
-        "causal": causal,
-        "block_first": block_first,
-        "block_last": block_last,
+        **({"causal": True} if causal else {}),
+        **({"block_first": block_first, "block_last": block_last}
+           if variable_blocks else {}),
+        **({"v3": False} if not v3 else {}),
         "buffer_abi": [{"name": name, "position": index,
                         "role": "write" if name in {"scale_sink", "p_scales_0",
                                                     "p_scales_1", "O_HW"} else "read",
