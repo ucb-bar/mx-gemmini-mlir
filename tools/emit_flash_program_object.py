@@ -24,6 +24,7 @@ PINNED_CORE_SHA256 = "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f3359
 PINNED_MID_WRAPPER_SHA256 = "5f46198f35539b261ccbc2c689ce56beb823ba7e6ec74d8ff60936418619089f"
 PINNED_MID_FP4_WRAPPER_SHA256 = "650ceb3c3b77cfd5b91521b879921debe9e35832fe1d1c5435ad09ee1fb6d6c0"
 PINNED_MID_EXPSUM_WRAPPER_SHA256 = "549b0440b05b149c84059985f3b20f55338da7af879d8272557f662cb263824d"
+PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256 = "fca0f83b3a81ecb5210bc69a08f2329bcb70447441b2e02b88e5388e7aa9218c"
 
 
 def _source_text(path: Path) -> str:
@@ -58,7 +59,9 @@ def main() -> None:
     input_format = binding["policy"].get("input_format", "fp8_e4m3")
     softmax_mode = binding["policy"].get("softmax_mode", "split")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
-    wrapper_sha256 = (PINNED_MID_EXPSUM_WRAPPER_SHA256 if softmax_mode == "expsum"
+    wrapper_sha256 = (PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256
+                      if softmax_mode == "expsum" and input_format == "fp4_e2m1"
+                      else PINNED_MID_EXPSUM_WRAPPER_SHA256 if softmax_mode == "expsum"
                       else PINNED_MID_FP4_WRAPPER_SHA256 if input_format == "fp4_e2m1"
                       else PINNED_MID_WRAPPER_SHA256 if block_k == 32
                       else PINNED_CORE_SHA256)
@@ -78,7 +81,8 @@ def main() -> None:
         expected, frontend, core, wrapper, header, profile,
         shape=shape, block_k=block_k, input_format=input_format,
         softmax_mode=softmax_mode)
-    slug = ("flash_mid_expsum" if softmax_mode == "expsum" else
+    slug = ("flash_mid_fp4_expsum" if softmax_mode == "expsum" and input_format == "fp4_e2m1"
+            else "flash_mid_expsum" if softmax_mode == "expsum" else
             "flash_mid_fp4" if input_format == "fp4_e2m1" else
             "flash_mid" if block_k == 32 else "flash_fa")
     args.out_dir.mkdir(parents=True)

@@ -126,7 +126,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
     if softmax_mode not in {"split", "expsum"} or (
             softmax_mode == "expsum" and
-            (shape, block_k, input_format) != (SHAPE, 32, "fp8_e4m3")):
+            (shape, block_k, input_format) not in {
+                (SHAPE, 32, "fp8_e4m3"), (SHAPE, 32, "fp4_e2m1")}):
         raise ValueError("flash compiler has no selected softmax mode")
     if (DenseAttentionShape.from_header(source_header) != shape or
             (source_wrapper != source_core and
@@ -164,7 +165,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = ("mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
+    variant = ("mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
+               "mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
                else "mid" if folded else "fa")
     policy = {"schema": f"mx_gemmini.flash_{variant}_serial_policy.v1",
               "shape_sq_sk_d_bk": [SQ, SK, D, BK],

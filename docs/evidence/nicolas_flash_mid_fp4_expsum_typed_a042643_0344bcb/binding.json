@@ -1,0 +1,56 @@
+{
+  "frontend_sha256": "cce8457e2fe88ac3f35dc4815258557a2eb5bdd52ce950d8f6c877fd4daefd84",
+  "header_sha256": "0d7b01496bd4c0ad6f7fe49bccbb0cb8f97e5f2acdf210bf207b0de808344678",
+  "manifest_sha256": "64cfc92e2a54224c7ca35d2152a3d174bae26c2e275ea7b8566921a70ac2fa02",
+  "policy": {
+    "block_order": [
+      "QK",
+      "softmax",
+      "requant",
+      "PV",
+      "update"
+    ],
+    "fenced": true,
+    "fold_q_scale_shift": 3,
+    "input_format": "fp4_e2m1",
+    "output_rows": [
+      13056,
+      12544,
+      8448,
+      12544
+    ],
+    "probability_rows": [
+      4352,
+      4416,
+      4352,
+      4416
+    ],
+    "schema": "mx_gemmini.flash_mid_fp4_expsum_serial_policy.v1",
+    "score_rows": [
+      8192,
+      12288,
+      8192,
+      12288
+    ],
+    "shape_sq_sk_d_bk": [
+      64,
+      128,
+      64,
+      32
+    ],
+    "softmax_mode": "expsum",
+    "spad_q_v_kt_p_st_o": [
+      0,
+      128,
+      4096,
+      4352,
+      384,
+      13056
+    ]
+  },
+  "policy_sha256": "fcf0e490886285a7263d31dc7b3d6a849e4a65bbdcf4fdc4a2c3a8aa4050354f",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.flash_mid_fp4_expsum_serial_binding.v1",
+  "source_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "wrapper_sha256": "fca0f83b3a81ecb5210bc69a08f2329bcb70447441b2e02b88e5388e7aa9218c"
+}
