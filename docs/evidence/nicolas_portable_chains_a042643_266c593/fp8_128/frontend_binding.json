@@ -1,0 +1,30 @@
+{
+  "precision": "FP8",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "schema": "mx_gemmini.portable_chain_binding.v1",
+  "sites": [
+    {
+      "format": "mxfp8",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    },
+    {
+      "format": "mxfp8",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul_1",
+      "status": "quantized"
+    }
+  ],
+  "source_driver_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
+  "source_header_sha256": "875a0889c489b4f213e15b6f7e55aa6e49b1e7ba46de44c574a33e6b97487af0",
+  "source_mlir_sha256": "e78ddaebf3385984f2c5cf6a7ed5201fe679ed9a6c748624b4837a30b7048bff"
+}

@@ -24,6 +24,8 @@ jobs:
       - name: Check issuer, profile refusal, and archived numerical evidence
         run: |
           python -m tools.report_mx_profile_qualification --check
+          python -m tools.archive_nicolas_portable_chains \
+            --out-dir docs/evidence/nicolas_portable_chains_a042643_266c593 --check
           python -m pytest -q \
             tests/test_command_ir.py \
             tests/test_bind_profile.py \
@@ -67,6 +69,8 @@ jobs:
             tests/test_resident_vpu_graph.py \
             tests/test_connected_scalar_chain_evidence.py \
             tests/test_connected_scalar_chain_nonzero_evidence.py \
+            tests/test_standard_chain_handoff.py \
+            tests/test_nicolas_portable_chain_evidence.py \
             tests/test_full_vpu_branch_public_evidence.py \
             tests/test_wide_vpu_pair_evidence.py \
             tests/test_square_128_vpu_pair_evidence.py \

@@ -1,0 +1,32 @@
+{
+  "bound_mlir_sha256": "e37a7ad255e5088f6c12f7ac2069b885af3f0b34efa77f525a8f21b90015cfe0",
+  "checked_outputs": {
+    "c1_codes": 4096,
+    "c1_scales": 128,
+    "c2_codes": 4096,
+    "c2_scales": 128
+  },
+  "compiler_spike": {
+    "elf_sha256": "6dbe38c65ffe0f6a1c5fde18f55bb9cb4d654fea5846234c5b3d1b24b5d244c2",
+    "exit_code": 0,
+    "matched": true,
+    "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+  },
+  "dimension": 64,
+  "frontend_binding_sha256": "b2ffcea929780d2985ec3ae69b7939ccec5db4d68094a7d82eba8e8d342da9b1",
+  "frontend_mlir_sha256": "42d31a797eb3de71db50b58d86327f229e62fd9bc0df524ae5fb8d4e7783592a",
+  "header_sha256": "2df2bf78912754631985f8d8803251125dc52a2b7e772c41eab65c24b79b278e",
+  "object_manifest_sha256": "53c3c0c1db5fe5661ec521878a9e4e6e010dd28a0fd184e581bf3ab566a06e21",
+  "object_sha256": "48ea0bd0105212f6762e2b19b473a1eed475acf275bf21e6751cdb292a9f142c",
+  "physical_sha256": "8b3ea1d28e59b60ad68d6d070bd08d09b171939956152bd73a481e3041e42408",
+  "precision": "FP4",
+  "prior_source_qualified_stream": {
+    "baseline_command_count": 69,
+    "baseline_receipt_sha256": "ee312cd5d7a5bab07166db027604a010b28db62af0e4056a96db12c0bae14e45",
+    "scope": "all physical commands equal to source-qualified stream"
+  },
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "schema": "mx_gemmini.nicolas_portable_chain_case.v1",
+  "source_sha256": "83a9ba1742da993d263bfcae1f9da9d1640e8ee1bfb556dfa05d30e612324257",
+  "status": "compiler_matched_both_source_header_outputs_on_pinned_spike"
+}

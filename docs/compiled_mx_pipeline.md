@@ -3511,6 +3511,37 @@ Spike log exactly. The original debug source issues through fixed MMIO; that
 command transport and its performance remain outside this Rocket numerical
 qualification.
 
+### Current model2MLIR connected-chain source qualification
+
+The [six-case archive](evidence/nicolas_portable_chains_a042643_266c593/README.md)
+starts with fresh PyTorch `C2 = (A @ B1) @ B2` captures from the clean
+model2MLIR `a042643` source closure. The MX handoff verifies both ordered
+`linalg.matmul` sites and their SSA connection, then binds each capture to
+Nicolas's pinned FP8, FP4, or FP6 C source header and RTL-legal profile. The
+existing resident-pair lowerer and public `tools.compile_object` CLI emit
+data-free RV64 Rocket/RoCC objects. Linked programs match every source-header
+C1/C2 code and E8M0 scale on Nicolas's pinned Spike: **122,880 codes and
+3,840 scales** across the 64³ and 128³ precision ladder. The archive pins
+frontend, source, profile, tool, object, ELF, and Spike-log hashes. A second
+run reproduced its suite receipt and 51 selected artifacts byte-for-byte.
+
+Reproduce the suite with:
+
+```sh
+python -m tools.qualify_nicolas_portable_chains \
+  --model2mlir-root /path/to/clean/model2MLIR-a042643 \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --mx-opt build/tools/mx-gemmini-opt \
+  --out-dir /new/mx-portable-chains
+```
+
+This is a source-bound numerical result for six named chain programs, which
+were already counted in the Nicolas selected-output roster. The f32 capture
+establishes graph structure; the pinned headers supply quantized runtime
+operands and goldens. General graph lifetimes and RTL/FPGA execution remain
+separate qualification gates.
+
 ## Remaining gates
 
 1. Qualify the source-compatible FP8 and FP6 host epilogues on RTL or FPGA

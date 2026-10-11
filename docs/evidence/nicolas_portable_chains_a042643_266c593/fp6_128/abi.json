@@ -1,0 +1,22 @@
+{
+  "inputs": {
+    "a1_activation": "a1_activation",
+    "a1_lut": "a1_lut",
+    "a1_scales": "a1_scales",
+    "b1_lut": "b1_lut",
+    "b1_scales": "b1_scales",
+    "b1_weight": "b1_weight",
+    "b2_lut": "b2_lut",
+    "b2_scales": "b2_scales",
+    "b2_weight": "b2_weight",
+    "c1_lut": "c1_lut",
+    "c2_lut": "c2_lut"
+  },
+  "outputs": {
+    "c1_scales": "c1_scales",
+    "c1_tiled_observed": "c1_tiled_observed",
+    "c2_scales": "c2_scales",
+    "c2_tiled": "c2_tiled"
+  },
+  "schema": "mx_gemmini.resident_pair_buffer_map.v1"
+}
