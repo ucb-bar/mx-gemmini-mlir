@@ -28,6 +28,7 @@ EMITTERS = {
     "resident_vpu_pair": "tools.emit_resident_vpu_object",
     "full_vpu_branch": "tools.emit_full_vpu_branch_object",
     "vpu_softmax": "tools.emit_vpu_softmax_object",
+    "vpu_elementwise": "tools.emit_vpu_elementwise_object",
     "fp4_dual_requant": "tools.emit_fp4_dual_requant_object",
     "asymmetric_source": "tools.emit_asymmetric_object",
 }
@@ -37,6 +38,7 @@ MANIFEST_SCHEMAS = {
     "resident_vpu_pair": "mx_gemmini.resident_vpu_linkable_object.v1",
     "full_vpu_branch": "mx_gemmini.full_vpu_branch_linkable_object.v1",
     "vpu_softmax": "mx_gemmini.vpu_softmax_linkable_object.v1",
+    "vpu_elementwise": "mx_gemmini.vpu_elementwise_linkable_object.v1",
     "fp4_dual_requant": "mx_gemmini.fp4_dual_requant_linkable_object.v1",
     "asymmetric_source": "mx_gemmini.asymmetric_source_linkable_object.v1",
 }
@@ -71,6 +73,8 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
               report["vpu_commands"], report["spad_requants"])
     if not source and not runtime and counts == (0, 0, 6, 0):
         return "vpu_softmax", report
+    if not source and not runtime and counts == (0, 0, 1, 0):
+        return "vpu_elementwise", report
     if not source and not runtime and counts == (0, 0, 0, 2):
         from mx_gemmini_support.fp4_dual_requant import lower_fp4_dual_requant
         lower_fp4_dual_requant(mlir_text, profile)
@@ -161,9 +165,9 @@ def main() -> None:
         if args.mlir.name.endswith(".gz"):
             raise ValueError("source MX object currently needs plain .mlir")
         extra = ["--bundle", str(args.bundle.resolve())]
-    elif family == "vpu_softmax":
+    elif family in {"vpu_softmax", "vpu_elementwise"}:
         if args.bundle or args.resources_dir or args.abi_json is None:
-            raise ValueError("VPU softmax object needs --abi-json only")
+            raise ValueError("standalone VPU object needs --abi-json only")
         extra = ["--abi-json", str(args.abi_json.resolve())]
     elif family == "fp4_dual_requant":
         if args.bundle or args.resources_dir or args.abi_json:

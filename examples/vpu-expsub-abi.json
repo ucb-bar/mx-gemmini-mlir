@@ -1,0 +1,10 @@
+{
+  "schema": "mx_gemmini.vpu_elementwise_buffer_map.v1",
+  "inputs": {
+    "src1": "a",
+    "src2": "b"
+  },
+  "outputs": {
+    "output": "output"
+  }
+}
