@@ -280,7 +280,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         elif name == "mx_gemmini.readout_quantized":
             output = _text_attr(op, "output_format")
             projection = _text_attr(op, "output_projection")
-            lut_output = (projection == "lut" and output in {"fp8_e4m3", "fp8_e5m2"} and
+            lut_output = (projection == "lut" and output in {
+                              "fp6_e2m3", "fp8_e4m3", "fp8_e5m2"} and
                           profile["resources"]["lut"] and
                           profile["resources"]["requantizer"] and
                           any(cell["activation_format"] == output and

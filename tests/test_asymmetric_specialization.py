@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
+                                                           E2M3_E2M3_CELL,
                                                            E4M3_E4M3_CELL,
                                                            E5M2_E5M2_CELL,
                                                            bind_asymmetric_payload,
@@ -76,6 +77,18 @@ def test_e5m2_lut_index_readout_uses_semantic_output_format():
     with pytest.raises(ValueError, match="absent from selected profile"):
         verify_ir(bound.replace('output_projection = "lut"',
                                 'output_projection = "direct"'), profile)
+
+
+def test_e2m3_lut_index_readout_uses_semantic_output_format():
+    profile = _profile("MxE2M3OnlyGemminiRocketConfig")
+    recipe = _recipe(profile) | {
+        "compute": E2M3_E2M3_CELL.copy(),
+        "source_layout": {"output_format": "fp6_e2m3", "output_projection": "lut"},
+    }
+    bound = specialize_handoff(CAPTURE, profile, recipe)
+    assert 'output_format = "fp6_e2m3"' in bound
+    assert 'output_projection = "lut"' in bound
+    assert verify_ir(bound, profile)["contracts"] == 1
 
 
 def test_legacy_binder_cannot_silently_change_to_asymmetric():

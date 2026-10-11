@@ -111,6 +111,14 @@ _VARIANTS = {
         "output_format": "fp8_e5m2", "output_projection": "lut",
         "quant_spad_dest": 0,
     },
+    "matmul_tiled_fp6_e2m3_lut_64x64_requant.c": {
+        "header": "matmul_data_mx_lut_e2m3_64x64.h",
+        "cell": E2M3_E2M3_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 3, "lut_entry_bits": 6,
+        "output_format": "fp6_e2m3", "output_projection": "lut",
+        "quant_spad_dest": 0,
+    },
     "matmul_tiled_fp8_e4m3_lut_64x64_requant_dim8.c": {
         "header": "matmul_data_mx_lut_e4m3_64x64_dim8.h",
         "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
@@ -401,7 +409,7 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
             raise ValueError(f"Nicolas source {lut_array} changed")
     if variant.get("output_projection") == "lut" and (
             "#define QUANT_LUT_UPDATE_GRANULARITY 1" not in source_text or
-            "((uint64_t)(0) << 14)" not in source_text or
+            f"((uint64_t)({1 if variant['output_format'] == 'fp6_e2m3' else 0}) << 14)" not in source_text or
             f"C_proj_hw[{m // 2}][{n}]" not in header_text or
             "C_scales_row[MATMUL_GN][MATMUL_M]" not in header_text):
         raise ValueError("Nicolas packed LUT readout contract changed")
@@ -616,7 +624,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
         op.attributes["profile_sha256"] = StringAttr(digest)
     if recipe.get("source_layout", {}).get("output_projection") == "lut":
         output_format = recipe["source_layout"].get("output_format")
-        if output_format not in {"fp8_e4m3", "fp8_e5m2"}:
+        if output_format not in {"fp8_e4m3", "fp8_e5m2", "fp6_e2m3"}:
             raise ValueError("packed LUT readout format is not supported")
         function = readout.parent_op()
         if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
@@ -1004,7 +1012,8 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     weight_altfmt_diff = variant.get("weight_altfmt_diff",
                                      int(cell["weight_format"] == "fp6_e2m3"))
     config_ex = (1 << 16) | (weight_code << 12) | (activation_code << 10) | \
-                ((0 if quantized_lut else 3) << 14) | (int(use_lut) << 5) | (1 << 2) | \
+                ((format_code[variant["output_format"]] if quantized_lut else 3) << 14) | \
+                (int(use_lut) << 5) | (1 << 2) | \
                 (activation_altfmt << 6) | (weight_altfmt_diff << 31)
     issue("configure", _cmd(0, config_ex, 1 << 48))
     if use_lut:

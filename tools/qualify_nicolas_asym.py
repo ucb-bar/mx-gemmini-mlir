@@ -74,8 +74,8 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
     if args.symmetric_lut_requant and (
-            args.symmetric_lut not in {"e4m3", "e5m2"} or not args.physical or
-            (args.symmetric_lut == "e5m2" and
+            args.symmetric_lut not in {"e2m3", "e4m3", "e5m2"} or not args.physical or
+            (args.symmetric_lut in {"e2m3", "e5m2"} and
              (args.mesh_dim, args.source_shape) != (16, "64x64")) or
             (args.symmetric_lut == "e4m3" and
              (args.mesh_dim, args.source_shape) not in {
