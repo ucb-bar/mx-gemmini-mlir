@@ -2,7 +2,9 @@
 
 The full model graph names the site; supplied .npy files provide its actual
 runtime operands. The region may span the complete N axis. Other model ops
-and the recurrent inference session remain outside this one program.
+and the recurrent inference session remain outside this one program. For an
+addmm source region, this executes its linalg.matmul component; the bias-add
+epilogue remains outside the isolated program.
 """
 
 from __future__ import annotations
@@ -46,6 +48,7 @@ def main() -> None:
     parser.add_argument("--column-start", type=int, default=0)
     parser.add_argument("--column-count", type=int, default=32)
     parser.add_argument("--tile-k", type=int, default=128)
+    parser.add_argument("--precision", choices=("fp8", "fp4"), default="fp8")
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--run-spike", action="store_true")
     args = parser.parse_args()
@@ -78,6 +81,14 @@ def main() -> None:
     if len(matches) != 1:
         raise ValueError("full model has no unique rank-two matmul at the selected region")
     site = matches[0]
+    if site["source_op"] == "addmm" and not any(
+        other["source_op"] == "addmm" and other["fqn"] == site["fqn"]
+        for other in worklist["other_contraction_regions"]
+    ):
+        raise ValueError("addmm projection lacks its separate bias-add epilogue")
+    fmt, mode = (("fp8_e4m3", 8) if args.precision == "fp8" else ("fp4_e2m1", 0))
+    require_compute(profile, fmt, fmt, pe_mode=mode,
+                    activation_projection="direct", weight_projection="direct")
     activation = np.load(args.activation_npy, allow_pickle=False)
     weight = np.load(args.weight_npy, allow_pickle=False)
     args.out_dir.mkdir(parents=True)
@@ -87,7 +98,8 @@ def main() -> None:
         activation=activation, weight=weight,
         row_start=args.row_start, row_count=args.row_count,
         column_start=args.column_start, column_count=args.column_count,
-        tile_k=args.tile_k, profile=profile, reference_root=args.reference_root)
+        tile_k=args.tile_k, profile=profile, reference_root=args.reference_root,
+        precision=args.precision.upper())
     m, n, k = manifest["shape_mnk"]
     a = torch.zeros((m, k), dtype=torch.float32)
     a[:args.row_count] = torch.from_numpy(
@@ -107,8 +119,6 @@ def main() -> None:
     (args.out_dir / "projection.model2mlir.mlir").write_text(capture.mlir_text)
     contract = ROOT / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
     policy = ROOT / "examples/default-policy.yaml"
-    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
-                    activation_projection="direct", weight_projection="direct")
     contract_digest = _sha(contract)
     policy_digest = _sha(policy)
     specialization = {
@@ -116,7 +126,7 @@ def main() -> None:
         "source_mlir_sha256": worklist["source_mlir_sha256"],
         "isolated_mlir_sha256": hashlib.sha256(capture.mlir_text.encode()).hexdigest(),
         "selected_site": manifest["model2mlir_projection"],
-        "format": "fp8_e4m3", "scale_format": "e8m0",
+        "format": fmt, "scale_format": "e8m0",
         "rounding": "mxq_bf16_operand_rne",
     }
     specialization_digest = hashlib.sha256(json.dumps(
@@ -133,9 +143,9 @@ def main() -> None:
       %as: tensor<{k // 32}x{m}xi8>, %b: tensor<{k}x{n}xi8>,
       %bs: tensor<{k // 32}x{n}xi8>) -> tensor<{m}x{n}xbf16> {{
     %acc = "mx_gemmini.contract"(%a, %as, %b, %bs) {{
-      site_id = "functional:matmul", activation_format = "fp8_e4m3",
-      weight_format = "fp8_e4m3", activation_projection = "direct",
-      weight_projection = "direct", pe_mode = 8 : i32, {binding}}}
+      site_id = "functional:matmul", activation_format = "{fmt}",
+      weight_format = "{fmt}", activation_projection = "direct",
+      weight_projection = "direct", pe_mode = {mode} : i32, {binding}}}
       : (tensor<{m}x{k}xi8>, tensor<{k // 32}x{m}xi8>, tensor<{k}x{n}xi8>,
          tensor<{k // 32}x{n}xi8>) -> tensor<{m}x{n}xbf16>
     %out = "mx_gemmini.readout_bf16"(%acc) {{site_id = "functional:matmul", {binding}}}
@@ -198,6 +208,8 @@ def main() -> None:
         "mxq_revision": MXQ_REVISION,
         "full_model_mlir_sha256": worklist["source_mlir_sha256"],
         "site": manifest["model2mlir_projection"],
+        "precision": args.precision.upper(),
+        "excluded_addmm_bias_epilogue": site["source_op"] == "addmm",
         "padded_shape_mnk": manifest["shape_mnk"],
         "compared_bf16_values": m * n if args.run_spike else 0,
         "model_output_values": args.row_count * n,

@@ -1,5 +1,19 @@
 # Full model compilation through model2MLIR and MX Gemmini
 
+The [four-model precision proposals](evidence/model_precision_proposals_a042643_266c593/README.md)
+bind the current FP8/FP4 placement intent to each archived model2MLIR graph
+and the pinned MX+VPU profile. They are placement plans, not executable
+whole-model programs. FP8 is the general baseline and the active attention
+QK/PV choice; aligned ordinary matmuls are proposed for FP4.
+
+The [FP4 projection archive](evidence/model2mlir_four_model_fp4_vpu_a042643_266c593/README.md)
+records one full-width `q_proj` matmul from each reduced random-weight model
+executed on pinned MX Spike, with every BF16 output matched to an independent
+MX arithmetic reference. Qwen and SmolVLA bias additions and all other model
+operators remain outside those single-matmul programs. Full-model execution
+still needs partitioning, buffer routing, other operator lowerers, and session
+state.
+
 The acceptance target is a complete inference session, from model2MLIR capture
 through a standalone target executable. For the causal language models this
 means prefill, repeated decode, KV-cache updates, and logits with the intended

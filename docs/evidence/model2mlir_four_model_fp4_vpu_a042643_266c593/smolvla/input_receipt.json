@@ -1,0 +1,22 @@
+{
+  "activation_npy_sha256": "c396d23919782896f10c223a335fe2d54f20673eae9ef7776ac3bd19d73bdf5f",
+  "activation_sha256": "6993b18af53330155940a51a339c36156e79ff05342238ecc73176c44a91e533",
+  "excluded_addmm_bias_epilogue": true,
+  "model": "smolvla",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "module_fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn.q_proj",
+  "region_id": "matmul_0",
+  "schema": "mx_gemmini.random_model_projection_inputs.v1",
+  "scope": "reduced random-weight model forward; layer-0 q_proj matmul operands",
+  "seed": 20261010,
+  "shape_mnk": [
+    16,
+    768,
+    768
+  ],
+  "source_op": "addmm",
+  "torch_version": "2.10.0+cu128",
+  "transformers_version": "5.3.0",
+  "weight_npy_sha256": "f7cd750100d0e18e2b12a8aeb264d631b8599016f283e00cccc6ae43702a88cf",
+  "weight_sha256": "97d92cdfb0a914b1f1de2b318230703dc88ba21c5f87d42fad82f9728112c825"
+}

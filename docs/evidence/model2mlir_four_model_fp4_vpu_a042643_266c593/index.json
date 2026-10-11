@@ -1,0 +1,70 @@
+{
+  "rows": [
+    {
+      "compared_bf16_values": 65536,
+      "elf_sha256": "f1ee5a879715531a088aae3669170f43e7b9ebb67b6c10696ee7ec9425e65875",
+      "excluded_addmm_bias_epilogue": false,
+      "model": "tinyllama",
+      "model_output_values": 16384,
+      "object_sha256": "200b92067a425ba21d1969274c513c838a5c4f6ceda62512ef6ce9f9efe48840",
+      "padded_shape_mnk": [
+        32,
+        2048,
+        2048
+      ],
+      "precision": "FP4",
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.31792354583740234,
+      "status": "complete_projection_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 49152,
+      "elf_sha256": "6e4002b0e7b85c337b68169e33c274b39c65032dc9969cc091908db4b26357f7",
+      "excluded_addmm_bias_epilogue": true,
+      "model": "deepseek_r1_distill_qwen_1_5b",
+      "model_output_values": 6144,
+      "object_sha256": "7947eb916be795fc1e8cec26cf1dcd7061aad6029685aaac81f0e9d6c79a65f8",
+      "padded_shape_mnk": [
+        32,
+        1536,
+        1536
+      ],
+      "precision": "FP4",
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.27950045466423035,
+      "status": "complete_projection_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 65536,
+      "elf_sha256": "32e08cdbff43c706af64cdd294a90e93da12f272feec1507a29f0984b6ad99fc",
+      "excluded_addmm_bias_epilogue": false,
+      "model": "gemma2_2b",
+      "model_output_values": 8192,
+      "object_sha256": "c7d3146d0e251f4cef76fdb1f5ce3b6f49bae91676145d002956905e9f6a5a3d",
+      "padded_shape_mnk": [
+        32,
+        2048,
+        2304
+      ],
+      "precision": "FP4",
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.3436130881309509,
+      "status": "complete_projection_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 24576,
+      "elf_sha256": "c0a5e2c87a73a0545ae2b8577a85a1b546ba279b1882652baad407f9cb9bf772",
+      "excluded_addmm_bias_epilogue": true,
+      "model": "smolvla",
+      "model_output_values": 12288,
+      "object_sha256": "051c8a16a1f4b50ba718b2da0ec8ec4e0b33d1614cc80317fff312628648acaa",
+      "padded_shape_mnk": [
+        32,
+        768,
+        768
+      ],
+      "precision": "FP4",
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.20034432411193848,
+      "status": "complete_projection_matched_on_spike"
+    }
+  ],
+  "schema": "mx_gemmini.four_model_fp4_vpu_projection_suite.v1",
+  "scope": "full-width layer-0 q_proj matmul only; reduced random-weight captures"
+}

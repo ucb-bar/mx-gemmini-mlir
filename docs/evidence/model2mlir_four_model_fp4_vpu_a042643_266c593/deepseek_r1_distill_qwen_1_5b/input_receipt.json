@@ -1,0 +1,22 @@
+{
+  "activation_npy_sha256": "e72bcacd560ecdbe2a58a060b9526873cc3668a207650a04087c2179de5b736b",
+  "activation_sha256": "029c59367dff463185be739f3a3523ed9f25873fc6563a40c7ce88359778e3ae",
+  "excluded_addmm_bias_epilogue": true,
+  "model": "deepseek_r1_distill_qwen_1_5b",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "module_fqn": "lm.model.layers.0.self_attn.q_proj",
+  "region_id": "matmul_1",
+  "schema": "mx_gemmini.random_model_projection_inputs.v1",
+  "scope": "reduced random-weight model forward; layer-0 q_proj matmul operands",
+  "seed": 20261010,
+  "shape_mnk": [
+    4,
+    1536,
+    1536
+  ],
+  "source_op": "addmm",
+  "torch_version": "2.10.0+cu128",
+  "transformers_version": "5.9.0",
+  "weight_npy_sha256": "79e79de130ca5df50b25d3e43391648a5b5b425ae5cee995e44a78802ed28b9c",
+  "weight_sha256": "e91c668bd71897fd21c7dfe6d9695d0cf3472ed28f2b5ad084a41d0451e469bb"
+}

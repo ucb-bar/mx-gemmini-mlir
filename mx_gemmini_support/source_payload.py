@@ -39,7 +39,7 @@ def validate_model2mlir_projection(manifest: dict) -> None:
     site = manifest.get("model2mlir_projection")
     shape = manifest.get("shape_mnk")
     if (manifest.get("origin") != MODEL2MLIR_PROJECTION_ORIGIN or
-            manifest.get("precision") != "FP8" or
+            manifest.get("precision") not in {"FP8", "FP4"} or
             manifest.get("output_format") is not None or
             any(key in manifest for key in ("source_driver_sha256", "source_header_sha256",
                                             "source_derivation")) or
@@ -57,7 +57,7 @@ def validate_model2mlir_projection(manifest: dict) -> None:
     if (site["golden_model_sha256"] != MODEL2MLIR_PROJECTION_GOLDEN_SHA256 or
             not all(isinstance(site[key], str) and site[key]
                 for key in ("region_id", "fqn", "source_op")) or
-            site["source_op"] != "matmul" or
+            site["source_op"] not in {"matmul", "addmm"} or
             not isinstance(site["source_shape_mnk"], list) or
             len(site["source_shape_mnk"]) != 3 or
             any(type(dim) is not int or dim <= 0 for dim in site["source_shape_mnk"]) or
@@ -67,9 +67,10 @@ def validate_model2mlir_projection(manifest: dict) -> None:
                 for key in ("row_count", "column_count"))):
         raise ValueError("model2MLIR projection site or slice is malformed")
     m, n, k = site["source_shape_mnk"]
+    spatial_tile = 16 if manifest["precision"] == "FP8" else 32
     if (site["row_start"] + site["row_count"] > m or
             site["column_start"] + site["column_count"] > n or
-            shape[0] != ((site["row_count"] + 15) // 16) * 16 or
+            shape[0] != ((site["row_count"] + spatial_tile - 1) // spatial_tile) * spatial_tile or
             site["column_count"] < 32 or site["column_count"] % 32 or
             shape[1:] != [site["column_count"], k] or
             manifest.get("tile_mnk", [None, None, None])[:2] != [shape[0], 32]):

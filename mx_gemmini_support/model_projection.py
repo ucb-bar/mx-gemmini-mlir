@@ -1,4 +1,4 @@
-"""Bind an actual model2MLIR rank-two site to an FP8 MX output stripe.
+"""Bind an actual model2MLIR rank-two site to an FP8/FP4 MX output stripe.
 
 The caller supplies the site's floating operands. The frontend graph contains
 their types and provenance, but not their runtime values. This module records
@@ -82,7 +82,8 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
                                   activation, weight, row_start: int,
                                   row_count: int, column_start: int,
                                   column_count: int, tile_k: int,
-                                  profile: dict, reference_root: Path) -> dict:
+                                  profile: dict, reference_root: Path,
+                                  precision: str = "FP8") -> dict:
     """Quantize one full-K model projection stripe and write checked resources.
 
     `activation` and `weight` are complete f32 matrices for the selected
@@ -93,9 +94,11 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
     import torch
     from mxq.nn.operand_capture import functional_contraction_operands
 
+    if precision not in {"FP8", "FP4"}:
+        raise ValueError("model projection needs FP8 or FP4 precision")
     if (worklist.get("schema") != "mx_gemmini.model2mlir_contraction_worklist.v1" or
             site not in worklist.get("rank2_matmuls", []) or
-            site.get("source_op") != "matmul" or
+            site.get("source_op") not in {"matmul", "addmm"} or
             site.get("element_type") != "f32" or
             worklist.get("profile_sha256") != profile_sha256(profile)):
         raise ValueError("projection site is absent from the selected model2MLIR worklist")
@@ -111,24 +114,32 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
             column_start < 0 or column_count < 32 or column_count % 32 or
             column_start + column_count > n or
             column_start % 32 or k % 32 or tile_k < 32 or tile_k % 32 or k % tile_k):
-        raise ValueError("projection stripe or K tile is outside complete FP8 MX bounds")
+        raise ValueError("projection stripe or K tile is outside complete MX bounds")
     mesh = profile["geometry"]["mesh_columns"]
     if mesh != 16 or profile["geometry"]["mesh_rows"] != 16:
         raise ValueError("model projection slice currently needs the qualified DIM16 profile")
-    padded_m = ((row_count + 15) // 16) * 16
+    spatial_tile = 16 if precision == "FP8" else 32
+    padded_m = ((row_count + spatial_tile - 1) // spatial_tile) * spatial_tile
     raw_a = np.ascontiguousarray(activation[row_start:row_start + row_count])
     raw_b = np.ascontiguousarray(weight[:, column_start:column_start + column_count])
     a = torch.zeros((padded_m, k), dtype=torch.bfloat16)
     a[:row_count] = torch.from_numpy(raw_a).to(torch.bfloat16)
     b = torch.from_numpy(raw_b).to(torch.bfloat16)
-    encoded = functional_contraction_operands(a, b, "mxfp8")
+    mx_format = "mxfp8" if precision == "FP8" else "mxfp4"
+    encoded = functional_contraction_operands(a, b, mx_format)
     packed = pack_direct_operands(
-        "mxfp8", encoded.activation_codes.tolist(), encoded.weight_codes.tolist())
+        mx_format, encoded.activation_codes.tolist(), encoded.weight_codes.tolist())
     a_scales = encoded.activation_scales.T.contiguous().numpy().tobytes()
     b_scales = encoded.weight_scales.T.contiguous().numpy().tobytes()
     resources = {
-        "activation": Resource(packed.activation_bytes, (padded_m, k), 8, "row_major_codes"),
-        "weight": Resource(packed.weight_bytes, (k, column_count), 8, "row_major_codes"),
+        "activation": Resource(packed.activation_bytes,
+                               (padded_m if precision == "FP8" else padded_m // 2, k),
+                               8, "row_major_codes" if precision == "FP8" else
+                               "packed_even_odd_m_nibbles"),
+        "weight": Resource(packed.weight_bytes,
+                           (k, column_count if precision == "FP8" else column_count // 2),
+                           8, "row_major_codes" if precision == "FP8" else
+                           "packed_even_odd_n_nibbles"),
         "activation_scales": Resource(a_scales, (k // 32, padded_m), 8, "k_group_row_e8m0"),
         "weight_scales": Resource(b_scales, (k // 32, column_count), 8, "k_group_column_e8m0"),
         "output_scales": Resource(bytes(padded_m * column_count // 32),
@@ -153,13 +164,13 @@ def write_model_projection_bundle(directory: Path, *, worklist: dict, site: dict
         subprocess.run([str(executable), str(padded_m), str(column_count), str(k),
                         *(str(directory / f"{name}.bin") for name in
                           ("activation", "weight", "activation_scales", "weight_scales")),
-                        str(golden_path), "0"], check=True,
+                        str(golden_path), "0" if precision == "FP8" else "2"], check=True,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     resources["golden_bf16"] = Resource(golden_path.read_bytes(),
                                          (padded_m, column_count), 16, "row_major_bf16")
     manifest = {
         "schema": "mx_gemmini.source_payload.v1",
-        "site_id": "functional:matmul", "precision": "FP8",
+        "site_id": "functional:matmul", "precision": precision,
         "shape_mnk": [padded_m, column_count, k],
         "tile_mnk": [padded_m, 32, tile_k],
         "profile_sha256": profile_sha256(profile),

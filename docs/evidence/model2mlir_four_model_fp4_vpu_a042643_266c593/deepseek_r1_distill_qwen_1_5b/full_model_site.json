@@ -1,0 +1,18 @@
+{
+  "payload_manifest_sha256": "132d99e3aadc8765ec5f6b7e74695d61e54466efd84bc4244ab6426f2a414c73",
+  "selected_site": {
+    "element_type": "f32",
+    "fqn": "lm.model.layers.0.self_attn.q_proj",
+    "k_requires_32_element_scale_padding": false,
+    "region_id": "matmul_1",
+    "shape_mnk": [
+      4,
+      1536,
+      1536
+    ],
+    "source_op": "addmm",
+    "status": "requires_explicit_mx_quantization_and_program_lowering"
+  },
+  "source_mlir_sha256": "91857cfab3105ecd7308b50981b5899a95bb2d2101b81dc6ad338e9c68ceef40",
+  "worklist_schema": "mx_gemmini.model2mlir_contraction_worklist.v1"
+}

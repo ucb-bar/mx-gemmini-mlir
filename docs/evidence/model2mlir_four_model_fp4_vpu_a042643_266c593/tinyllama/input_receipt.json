@@ -1,0 +1,13 @@
+{
+  "activation_npy_sha256": "92d4d2aecc78470875339e2f28f254de444f1ea97d642f42fc764a5c1c59bacb",
+  "activation_sha256": "88a090e1f56ae445fe53076a94881f8d630cda710ccfabbdf2a34a6753c9ccc4",
+  "input_ids_sha256": "be844b78b84ed20ef03a9f9112377885ed5e87d1dc39c2c7234f35f39f5fe57c",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "schema": "mx_gemmini.tinyllama_random_projection_inputs.v1",
+  "scope": "2-layer random-weight TinyLlama; one full-K layer-0 q_proj activation and weight",
+  "seed": 20261010,
+  "torch_version": "2.10.0+cu128",
+  "transformers_version": "5.9.0",
+  "weight_npy_sha256": "1e56b8a92806e076365fc309e611871465e2c1bea9bd51ebe4312fec63011c58",
+  "weight_sha256": "082b3ca5fbe12fadc4a3df4220ca638382a7194fc643d6d163390e19a18ad988"
+}
