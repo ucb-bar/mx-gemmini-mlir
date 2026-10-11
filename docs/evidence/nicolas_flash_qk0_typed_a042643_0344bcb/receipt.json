@@ -1,0 +1,22 @@
+{
+  "bound_mlir_sha256": "890abf00a3c8d84f908d2b782350e222724ca4aff093afa0e315bb8d5f758f18",
+  "compared_bf16_words": 2048,
+  "compiler_runs": 2,
+  "data_baseline_sha256": "3a633e748d344414e9d4bede551bea180a2a61a33221da47d4d2916ac7f2ef38",
+  "driver_sha256": "5a32bbcc600ab4a617e9e43aab943803a85e1df1d7fcb2a8790f35210e75fb01",
+  "generated_elf_sha256": "199c1df40d9574d778e4eafd196333320d3f52d4aa794471e835654d37fd29ee",
+  "generated_log_sha256": "ab19f6b515d14a5a91cbcfeb3e0fe0921ea10fa38cd600d0d3c1b95bed128e00",
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "native_verifier_sha256": "5c03e39752c326491eecaf88a675bdb5b4892005ad8622716ccbf986d799281c",
+  "object_manifest_sha256": "e61a899ca3317aece477f382d45f908437a80f600b206f25ace333087fe7be97",
+  "object_sha256": "df97e3244d6a42b2567b231765bc3de4936fb629fba91667c7a023601d5b3f70",
+  "physical_program_sha256": "5e30523112144cc2d6c0cda676599c608575749aee0ccdae139fe99881fe3136",
+  "schema": "mx_gemmini.flash_qk0_spike_parity.v1",
+  "source_baseline_sha256": "ec7703946e1a317a5145901ba140daab976b49fea404e0e350ddb1424c7a1dda",
+  "source_elf_sha256": "577def3458adb5a51e561a441da05afd6a344269bed7549bf9aa0c507fc2e9e8",
+  "source_log_sha256": "ab19f6b515d14a5a91cbcfeb3e0fe0921ea10fa38cd600d0d3c1b95bed128e00",
+  "source_runs": 2,
+  "source_score_hash": "52bca547381dac69",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "typed_flash_qk0_full_bf16_source_parity"
+}

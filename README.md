@@ -141,8 +141,10 @@ pins an unmodified Spike run and reproducible full-output hash for the next
 compiler target. Its online softmax and pipelined block schedule still need
 typed lowering. The compiler now verifies and encodes pitched matrix DMA,
 gated weight-scale loads, and managed scale-half scratchpad matmuls as typed
-operations for this pinned MX+VPU RTL. The complete blocked schedule and its
-compiler-generated Spike parity remain open.
+operations for this pinned MX+VPU RTL. Its [typed first QK block](docs/evidence/nicolas_flash_qk0_typed_a042643_0344bcb/README.md)
+emits one data-free RV64 object and matches all 2,048 BF16 source scores twice
+on Spike. The complete blocked schedule and compiler-generated final output
+parity remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
