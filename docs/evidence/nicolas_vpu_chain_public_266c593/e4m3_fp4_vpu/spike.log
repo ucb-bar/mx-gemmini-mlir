@@ -1,0 +1,3 @@
+compiled VPU chain: 0 middle mismatches, 0 result mismatches
+Gemmini extension configured with:
+    dim = 16

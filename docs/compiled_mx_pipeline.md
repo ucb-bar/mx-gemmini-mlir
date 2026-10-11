@@ -574,6 +574,25 @@ This is a source-specific schedule qualification. General graph scheduling,
 the monolithic 29-case compiler executable, and RTL/FPGA validation are
 separate work.
 
+### Public object for a dependent VPU sequence
+
+The [public sequence replay](evidence/nicolas_vpu_chain_public_266c593/README.md)
+revisits Nicolas's ADD→in-place MULS→RMAX case through the public
+tools.compile_object entry point. A PyTorch graph is captured with upstream
+model2MLIR e9ded36, then a source-checked binding forms three ordered typed
+VPU operations. The new sequence lowerer checks that each scratchpad source
+has been initialized, preserves the three funct-33 commands in order, and
+emits runtime input transfers plus both intermediate and final readouts.
+Its object contains no operand or golden bytes.
+
+The generated object matches all **512 intermediate BF16 values** and
+**128 final BF16 values** against Nicolas's vpu_ref.h on pinned Spike under
+both Rocket VPU profiles. A second build of the first profile reproduces its
+frontend, object, ELF, and simulator receipt hashes. The two profiles share
+the same issuer and outputs but retain distinct bound MLIR and profile hashes.
+This qualifies one dependent chain through the public object API; the
+monolithic source test and RTL timing remain separate.
+
 ### Compiler-issued BF16 VPU softmax
 
 `tools.qualify_nicolas_vpu_softmax` captures `torch.softmax` on a 16×32 BF16

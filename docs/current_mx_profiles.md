@@ -74,6 +74,10 @@ The [public BF16 softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.m
 lowers its six typed VPU operations plus configuration, transfers, and readout
 to a data-free RV64 object. Nicolas's checker reports zero mismatches across
 all 512 BF16 outputs on each of the two named VPU Rocket profiles.
+The [public dependent-chain object](evidence/nicolas_vpu_chain_public_266c593/README.md)
+uses an explicit three-op sequence schema with runtime buffer spans. It
+checks scratchpad initialization, emits ADD→MULS→RMAX in order, and matches
+512 intermediate plus 128 final BF16 values on both VPU Rocket profiles.
 `spad_requant` may bind its E8M0 output destination as
 `scale_buffer = "name"` with `scale_dram_address = 0`. The issuer then takes `name` as a
 runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it

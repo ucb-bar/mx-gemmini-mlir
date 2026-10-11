@@ -1,0 +1,32 @@
+{
+  "compiler_revision": "3a0b74c217176720a58915d0614c30e8a5d4e0a7",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "model2mlir_source_closure_sha256": "559efcf9232c1375df1fb12bd131edc0e3daba7d1364df25725bb2ef7a0e2027",
+  "reference_sha256": "459726e52e7d19c51bada75b2e3ded16f64371799d5bc443750eb22e8616b17b",
+  "reproduction_receipt_sha256": "052ae04c928086caf7d41d996a258401ce8f02038fab7f97f3590129eee52371",
+  "rows": [
+    {
+      "compared_middle_bf16": 512,
+      "compared_result_bf16": 128,
+      "mismatches": 0,
+      "profile_name": "e4m3_vpu",
+      "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+      "receipt": "e4m3_vpu/receipt.json",
+      "receipt_sha256": "052ae04c928086caf7d41d996a258401ce8f02038fab7f97f3590129eee52371"
+    },
+    {
+      "compared_middle_bf16": 512,
+      "compared_result_bf16": 128,
+      "mismatches": 0,
+      "profile_name": "e4m3_fp4_vpu",
+      "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+      "receipt": "e4m3_fp4_vpu/receipt.json",
+      "receipt_sha256": "fc62baa52a628855eec6563e7f5d10530c4edab64915fc85d256e72875081d88"
+    }
+  ],
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_vpu_chain_public_archive.v1",
+  "scope": "three dependent BF16 VPU operations from Nicolas vpu_ops.c; no complete 29-check program or RTL timing claim",
+  "source_receipt_sha256": "6a9f8b2407e2f78066be6855b9950f22981802af5dcd7d042b34a9c5426e71d5",
+  "source_sha256": "6343e70302b6c73f2cc1bf203428ca5ae3e67cebf58841a91a540b3031d4b569"
+}

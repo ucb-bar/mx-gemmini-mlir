@@ -85,3 +85,11 @@ def test_sequence_requires_explicit_schema_and_flat_function() -> None:
         classify(mlir.replace("    func.return",
                               '    %c0 = "arith.constant"() {value = 0 : i32} : () -> i32\n'
                               "    func.return"), PROFILE)
+
+
+def test_sequence_rejects_profile_without_vpu() -> None:
+    plain = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
+    rebound = _graph().replace(profile_sha256(PROFILE), profile_sha256(plain))
+    with pytest.raises(ValueError, match="no VPU"):
+        classify(rebound, plain)

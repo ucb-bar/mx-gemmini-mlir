@@ -1,0 +1,58 @@
+{
+  "abi_json_sha256": "3a6ff3f1cd9c1f4ace9de83c2fcf5fad8080c4ecf29e3c0be09ce820f1c4c016",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "7935046ea2b2a76e9d0173891560a331e1f7c16c4cdb92f47cdc2d04dd9466ea",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "a",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "b",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "middle",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 256,
+      "name": "result",
+      "position": 3,
+      "role": "write"
+    }
+  ],
+  "command_count": 19,
+  "compiler_revision": "3a0b74c217176720a58915d0614c30e8a5d4e0a7",
+  "compiler_source_closure_sha256": "4f5b03473892d02f2bb39e22113d7c240812b7e18aa60af1491e83177866fa03",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "c9a9cd5f2d2f1e5e88df983f2f34eb820834ed582f3505c017079cccd6835df1",
+  "issuer_h_sha256": "5416cc5a3a1c244ac45b338dfa716074c630c8d51c3d3f3ab54d09ee95d5d2f3",
+  "mlir_container_sha256": "7935046ea2b2a76e9d0173891560a331e1f7c16c4cdb92f47cdc2d04dd9466ea",
+  "object_sha256": "0cd2da10dd28c9f44d03fbe55472858ab24293047c6642ef9dfaf913a1eddb5d",
+  "operation_count": 3,
+  "physical_program_sha256": "8d81402bc32140ec346a2ad24992bbd87b0992df488eb71ab1156f5d01cca355",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vpu_sequence_linkable_object.v1",
+  "status": "rv64_rocc_vpu_sequence_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

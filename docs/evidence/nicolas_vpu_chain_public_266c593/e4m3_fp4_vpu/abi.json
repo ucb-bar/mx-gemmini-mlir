@@ -1,0 +1,27 @@
+{
+  "inputs": [
+    {
+      "name": "a",
+      "row": 0,
+      "rows": 64
+    },
+    {
+      "name": "b",
+      "row": 4096,
+      "rows": 64
+    }
+  ],
+  "outputs": [
+    {
+      "name": "middle",
+      "row": 8192,
+      "rows": 64
+    },
+    {
+      "name": "result",
+      "row": 12288,
+      "rows": 16
+    }
+  ],
+  "schema": "mx_gemmini.vpu_sequence_buffer_map.v1"
+}
