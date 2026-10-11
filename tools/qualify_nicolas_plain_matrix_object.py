@@ -50,6 +50,36 @@ class Case:
 
 
 CASES = {
+    "fp8_64x64x64": Case(
+        "fp8_64x64x64", "FP8", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp8_64x64.c", "matmul_fp8_64x64.h",
+        "16622c9da9a0b5e8a1875b926ab4a504a994714c4a5f5a2db420d79f89fd7a00",
+        "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 64 cubed"),
+    "fp8_64x64x64_requant": Case(
+        "fp8_64x64x64_requant", "FP8", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp8_64x64_requant.c", "matmul_fp8_64x64.h",
+        "95c5676526ed5817af6b8fac4d0274eb1b86c985fa1cc2287545b2605a490d0c",
+        "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_quantized",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 64 cubed requant", True),
+    "fp8_96x32x32": Case(
+        "fp8_96x32x32", "FP8", (96, 32, 32), (96, 32, 32),
+        "matmul_tiled_fp8_96x32x32.c", "matmul_fp8_96x32x32.h",
+        "58a6152c1fd60cc62d4125fe6bde759e2c5cc8f34cb0cfd409c3042596168d33",
+        "872254ca7a0de8ab0d49ea51a5df357f5c2b7703114356a6eaec363297079cc7",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 96x32x32"),
     "fp8_32x32x32": Case(
         "fp8_32x32x32", "FP8", (32, 32, 32), (32, 32, 32),
         "matmul_tiled_fp8_32x32x32.c", "matmul_fp8_32x32x32.h",
