@@ -41,22 +41,32 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
     quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}
+    packed_lut = program.plan.get("quant_output_layout") == "packed_even_odd_m_lut_indices"
     host_fp8 = program.output_format == "radiance_header_fp8"
     host_fp6 = program.output_format == "radiance_header_fp6"
     host_header = host_fp8 or host_fp6
     packed_fp4 = program.output_format == "fp4_e2m1"
     packed_fp6 = program.output_format == "fp6_e3m2"
-    quant_name = "nicolas_fp6" if packed_fp6 else "nicolas_fp4" if packed_fp4 else "nicolas_fp8"
+    quant_name = ("golden_lut_indices" if packed_lut else "nicolas_fp6" if packed_fp6
+                  else "nicolas_fp4" if packed_fp4 else "nicolas_fp8")
     source_quant_name = ("source_fp6_packed" if packed_fp6 else
                          "source_fp4_packed" if packed_fp4 and
                          "source_fp4_packed" in resources else "golden_fp8")
-    quant_bytes = m * n // (2 if packed_fp4 or packed_fp6 else 1)
+    quant_bytes = m * n // (2 if packed_lut or packed_fp4 or packed_fp6 else 1)
     if quantized:
-        if (quant_name not in resources or "nicolas_output_scales" not in resources or
-                source_quant_name not in resources or
-                "golden_output_scales" not in resources or
-                m * n // 32 > 2048):
+        if packed_lut:
+            if (program.output_format != "fp8_e4m3" or
+                    len(resources.get("golden_lut_indices", b"")) != quant_bytes or
+                    len(resources.get("golden_output_scales", b"")) != m * n // 32 or
+                    "output_lut" not in resources):
+                raise ValueError("packed E4M3 LUT output lacks source codes, scales, or LUT")
+        elif (quant_name not in resources or "nicolas_output_scales" not in resources or
+              source_quant_name not in resources or
+              "golden_output_scales" not in resources or
+              m * n // 32 > 2048):
             raise ValueError("quantized output needs code and scale goldens within runtime capacity")
+        if m * n // 32 > 2048:
+            raise ValueError("quantized scale output exceeds runtime capacity")
         runtime_declarations = (
             f"static uint8_t output_quantized[{quant_bytes}] __attribute__((aligned(64)));\n"
             "static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));\n")
@@ -126,7 +136,8 @@ int main(void) {{
 }}
 '''
     if quantized:
-        quant_label = ("FP6 packed-index" if packed_fp6 else
+        quant_label = ("E4M3 packed-LUT-index" if packed_lut else
+                       "FP6 packed-index" if packed_fp6 else
                        "FP4 packed-code" if packed_fp4 else "FP8 code")
         code_loop = f'''  for (uint32_t i = 0; i < {quant_bytes}; ++i) {{
     if (output_quantized[i] != {quant_name}[i]) {{
@@ -152,6 +163,27 @@ int main(void) {{
       }}
     }}
 '''
+        scale_loop = (f'''  for (uint32_t row = 0; row < {m}; ++row)
+    for (uint32_t group = 0; group < {n // 32}; ++group) {{
+      uint32_t got_index = row * {n // 32} + group;
+      uint32_t expected_index = group * {m} + row;
+      if (scratch_output_scales[got_index] != golden_output_scales[expected_index]) {{
+        if (scale_errors < 8)
+          printf("SCALE MISMATCH (%u,%u): got=0x%02x expected=0x%02x\\n",
+                 row, group, scratch_output_scales[got_index],
+                 golden_output_scales[expected_index]);
+        ++scale_errors;
+      }}
+    }}
+''' if packed_lut else f'''  for (uint32_t i = 0; i < {m * n // 32}; ++i) {{
+    if (scratch_output_scales[i] != nicolas_output_scales[i]) {{
+      if (scale_errors < 8)
+        printf("SCALE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
+               i, scratch_output_scales[i], nicolas_output_scales[i]);
+      ++scale_errors;
+    }}
+  }}
+''')
         driver = f'''#include <stdint.h>
 #include <stdio.h>
 {externs}
@@ -162,14 +194,7 @@ int main(void) {{
   mx_issue({arguments});
   int code_errors = 0;
   int scale_errors = 0;
-{code_loop}  for (uint32_t i = 0; i < {m * n // 32}; ++i) {{
-    if (scratch_output_scales[i] != nicolas_output_scales[i]) {{
-      if (scale_errors < 8)
-        printf("SCALE MISMATCH %u: got=0x%02x expected=0x%02x\\n",
-               i, scratch_output_scales[i], nicolas_output_scales[i]);
-      ++scale_errors;
-    }}
-  }}
+{code_loop}{scale_loop}
   printf("lowered MX {m}x{n}x{k}: %d {quant_label} mismatches, %d E8M0 scale mismatches\\n",
          code_errors, scale_errors);
   return code_errors != 0 || scale_errors != 0;
@@ -210,12 +235,16 @@ int main(void) {{
             else "derived_bf16_adds" if program.plan.get("vector_tile_policy") ==
             "bf16_adds_scalar_each_output_tile_v1" else "derived_bf16_muls")
     if quantized:
-        receipt["golden_basis"] = (
+        receipt["golden_basis"] = ("nicolas_source_packed_e4m3_lut_indices_and_e8m0"
+                                   if packed_lut else
             "nicolas_vpu_x2_spad_requant_from_source_bf16" if program.tiled_quant_readout else
             "nicolas_fp6_e3m2_lut_from_source_bf16" if packed_fp6 else
             "nicolas_fp4_e3m1_e2m1_from_source_bf16" if packed_fp4 else
             "nicolas_mxquant_po2_rne_from_source_bf16")
-        if packed_fp6:
+        if packed_lut:
+            receipt["source_quant_code_format"] = "packed_e4m3_lut_index"
+            receipt["target_quant_code_format"] = "packed_e4m3_lut_index"
+        elif packed_fp6:
             receipt["source_quant_code_format"] = "packed_fp6_lut_index"
             receipt["target_quant_code_format"] = "packed_fp6_lut_index"
             receipt["source_quant_code_differences"] = sum(
@@ -231,9 +260,10 @@ int main(void) {{
         else:
             receipt["source_quant_code_differences"] = sum(
                 a != b for a, b in zip(resources["golden_fp8"], resources["nicolas_fp8"]))
-        receipt["source_quant_scale_differences"] = sum(
-            a != b for a, b in zip(resources["golden_output_scales"],
-                                   resources["nicolas_output_scales"]))
+        if not packed_lut:
+            receipt["source_quant_scale_differences"] = sum(
+                a != b for a, b in zip(resources["golden_output_scales"],
+                                       resources["nicolas_output_scales"]))
     if host_header:
         receipt["golden_basis"] = ("radiance_header_fp6_from_mx_bf16" if host_fp6 else
                                    "radiance_header_fp8_from_mx_bf16")

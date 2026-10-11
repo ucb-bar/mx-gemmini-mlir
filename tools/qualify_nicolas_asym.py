@@ -47,6 +47,8 @@ def main() -> None:
                         help="Nicolas source pair, for example e2m3_e5m2")
     parser.add_argument("--symmetric-lut", choices=("e2m3", "e4m3", "e5m2"),
                         help="Nicolas's named same-format LUT source test")
+    parser.add_argument("--symmetric-lut-requant", action="store_true",
+                        help="select the packed E4M3 LUT-index output source")
     parser.add_argument("--symmetric-fp4", action="store_true",
                         help="Nicolas's named direct FP4 by FP4 BF16 source test")
     parser.add_argument("--generated-mode", choices=(
@@ -70,6 +72,10 @@ def main() -> None:
                  "riscv-root", "mx-opt", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
+    if args.symmetric_lut_requant and (
+            args.symmetric_lut != "e4m3" or args.source_shape != "64x64" or
+            args.mesh_dim != 16 or not args.physical):
+        parser.error("packed E4M3 LUT readout needs --symmetric-lut e4m3, DIM16, 64x64")
     if args.public_object and not args.physical:
         parser.error("public asymmetric object requires physical lowering")
     if args.out_dir.exists():
@@ -124,7 +130,8 @@ def main() -> None:
         lut_suffix = "_lut" if name != "e5m2" else ""
         suffix = f"{name}_{name}"
         if args.mesh_dim == 16 and args.source_shape == "64x64":
-            source_name = f"matmul_tiled_{precision}_{name}{lut_suffix}_64x64.c"
+            source_name = (f"matmul_tiled_{precision}_{name}{lut_suffix}_64x64"
+                           f"{'_requant' if args.symmetric_lut_requant else ''}.c")
             header_name = f"matmul_data_mx_lut_{name}_64x64.h"
         elif name == "e4m3" and (args.mesh_dim, args.source_shape) in {
                 (32, "64x64"), (8, "64x64"), (8, "128x128")}:
@@ -276,7 +283,9 @@ def main() -> None:
                          cwd=build_dir, text=True, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, check=False)
     (build_dir / "spike.log").write_text(run.stdout)
-    expected = (f"lowered MX {m}x{n}x{k}: 0 BF16 mismatches" if args.physical else
+    expected = (f"lowered MX {m}x{n}x{k}: 0 E4M3 packed-LUT-index mismatches, "
+                "0 E8M0 scale mismatches" if args.symmetric_lut_requant else
+                f"lowered MX {m}x{n}x{k}: 0 BF16 mismatches" if args.physical else
                 "lowered asymmetric E4M3xFP4 64x64x64: 0 BF16 mismatches")
     passed = run.returncode == 0 and expected in run.stdout
     receipt = {
@@ -326,7 +335,9 @@ def main() -> None:
         "object_sha256": {obj.name: sha256(obj) for obj in objects},
         "spike_log_sha256": sha256(build_dir / "spike.log"),
         "spike_exit_code": run.returncode,
-        "compared_bf16_outputs": m * n,
+        **({"compared_packed_lut_bytes": m * n // 2,
+            "compared_e8m0_scales": m * n // 32} if args.symmetric_lut_requant else
+           {"compared_bf16_outputs": m * n}),
     }
     if standalone_receipt is not None:
         receipt["physical_program_sha256"] = sha256(build_dir / "physical_program.json")

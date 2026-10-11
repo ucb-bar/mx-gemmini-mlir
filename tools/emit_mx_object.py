@@ -62,15 +62,20 @@ def _referenced_buffers(program, manifest: dict) -> list[dict]:
                       program.plan.get("bf16_output_layout") != "row_major_bf16"
                       else "row_major_bf16")
         elif name == "output_quantized":
-            length = m * n // (2 if program.output_format in {
+            packed_lut = (program.plan.get("quant_output_layout") ==
+                          "packed_even_odd_m_lut_indices")
+            length = m * n // (2 if packed_lut or program.output_format in {
                 "fp4_e2m1", "fp6_e3m2", "radiance_header_fp6"} else 1)
             role = "write"
-            layout = ("pair_major_nibble_codes" if program.output_format ==
+            layout = ("packed_even_odd_m_lut_indices" if packed_lut else
+                      "pair_major_nibble_codes" if program.output_format ==
                       "radiance_header_fp6" else "tiled_quantized" if
                       program.tiled_quant_readout else "row_major_codes")
         elif name == "scratch_output_scales":
-            length = m * n // 32 if host_requant else 2048
-            role, layout = ("write" if host_requant else "scratch"), "e8m0_scale_storage"
+            packed_lut = (program.plan.get("quant_output_layout") ==
+                          "packed_even_odd_m_lut_indices")
+            length = m * n // 32 if host_requant or packed_lut else 2048
+            role, layout = ("write" if host_requant or packed_lut else "scratch"), "e8m0_scale_storage"
         else:
             raise ValueError(f"physical command references unknown runtime buffer {name}")
         masks = {operand.address_mask for operand in uses[name]

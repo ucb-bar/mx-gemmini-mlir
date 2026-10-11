@@ -281,6 +281,13 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             output = _text_attr(op, "output_format")
             if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
                 raise ValueError("MX quantized readout output is absent from selected profile")
+            projection = _text_attr(op, "output_projection")
+            if projection is not None and (projection != "lut" or output != "fp8_e4m3" or
+                                           (payload_manifest is not None and (
+                                               payload_manifest.get("recipe", {}).get(
+                                                   "source_layout", {}).get("output_projection") != "lut" or
+                                               "output_lut" not in source_resources))):
+                raise ValueError("MX packed LUT readout lacks matching source LUT and recipe")
         elif name == "mx_gemmini.host_requantize":
             fp8 = (_text_attr(op, "output_format") == "fp8_e4m3" and
                    _text_attr(op, "quant_policy") == "radiance_header_fp8_v1" and

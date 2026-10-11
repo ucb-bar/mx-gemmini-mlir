@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
+                                                           E4M3_E4M3_CELL,
                                                            bind_asymmetric_payload,
                                                            emit_baremetal, lower_asymmetric_physical,
                                                            source_recipe,
@@ -43,6 +44,22 @@ def test_explicit_recipe_selects_mixed_lut_mode():
     assert 'weight_format = "fp4_e2m1"' in bound
     assert 'pe_mode = 10 : i32' in bound
     assert verify_ir(bound, profile)["contracts"] == 1
+
+
+def test_packed_lut_readout_is_typed_and_profile_bound():
+    profile = _profile("MxE4M3LutGemminiRocketConfig")
+    recipe = _recipe(profile) | {
+        "compute": E4M3_E4M3_CELL.copy(),
+        "source_layout": {"output_format": "fp8_e4m3", "output_projection": "lut"},
+    }
+    bound = specialize_handoff(CAPTURE, profile, recipe)
+    assert '"mx_gemmini.readout_quantized"' in bound
+    assert 'output_projection = "lut"' in bound
+    assert 'tensor<32x64xi8>, tensor<64x2xi8>' in bound
+    assert verify_ir(bound, profile)["contracts"] == 1
+    with pytest.raises(ValueError, match="packed LUT readout format"):
+        specialize_handoff(CAPTURE, profile, recipe | {
+            "source_layout": {"output_format": "fp4_e2m1", "output_projection": "lut"}})
 
 
 def test_legacy_binder_cannot_silently_change_to_asymmetric():

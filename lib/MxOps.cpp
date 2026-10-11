@@ -213,9 +213,13 @@ LogicalResult ReadoutBF16Op::verify() {
 LogicalResult ReadoutQuantizedOp::verify() {
   if (failed(verifyBinding(*this))) return failure();
   auto output = (*this)->getAttrOfType<StringAttr>("output_format");
+  auto projection = (*this)->getAttrOfType<StringAttr>("output_projection");
   if (!output || !isNamedFormat(output.getValue()) ||
       !(*this)->hasAttr("profile_sha256"))
     return emitOpError("requires a profile-bound named output format");
+  if (projection && (projection.getValue() != "lut" ||
+                     output.getValue() != "fp8_e4m3"))
+    return emitOpError("supports LUT output projection only for E4M3");
   auto codes = dyn_cast<RankedTensorType>(getCodes().getType());
   auto scales = dyn_cast<RankedTensorType>(getScales().getType());
   if (!codes || !scales || codes.getRank() != 2 || scales.getRank() != 2 ||
@@ -223,7 +227,8 @@ LogicalResult ReadoutQuantizedOp::verify() {
       !scales.getElementType().isInteger(8))
     return emitOpError("requires rank-two i8 code and scale tensors");
   if (codes.hasStaticShape() && scales.hasStaticShape() &&
-      (((output.getValue() == "fp4_e2m1" ||
+      ((((projection && projection.getValue() == "lut") ||
+         output.getValue() == "fp4_e2m1" ||
          output.getValue() == "fp6_e3m2" || output.getValue() == "fp6_e2m3")
             ? codes.getDimSize(0) * 2 != scales.getDimSize(0)
             : codes.getDimSize(0) != scales.getDimSize(0)) ||

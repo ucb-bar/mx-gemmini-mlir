@@ -95,6 +95,13 @@ _VARIANTS = {
         "activation_array": "A_in_hw[32][64]", "use_lut": True,
         "lut_words_per_line": 4, "lut_entry_bits": 8,
     },
+    "matmul_tiled_fp8_e4m3_lut_64x64_requant.c": {
+        "header": "matmul_data_mx_lut_e4m3_64x64.h",
+        "cell": E4M3_E4M3_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "output_format": "fp8_e4m3", "output_projection": "lut",
+    },
     "matmul_tiled_fp8_e4m3_lut_64x64_dim32.c": {
         "header": "matmul_data_mx_lut_e4m3_64x64_dim32.h",
         "cell": E4M3_E4M3_CELL, "mesh_dim": 32,
@@ -329,6 +336,12 @@ def source_recipe(source: Path, header: Path, profile: dict) -> dict:
                                  if variant["use_lut"] else ()):
         if f'{lut_array}[{variant.get("lut_lines", 32)}][{variant["lut_words_per_line"]}]' not in header_text:
             raise ValueError(f"Nicolas source {lut_array} changed")
+    if variant.get("output_projection") == "lut" and (
+            "#define QUANT_LUT_UPDATE_GRANULARITY 1" not in source_text or
+            "((uint64_t)(0) << 14)" not in source_text or
+            "C_proj_hw[32][64]" not in header_text or
+            "C_scales_row[MATMUL_GN][MATMUL_M]" not in header_text):
+        raise ValueError("Nicolas packed LUT readout contract changed")
     altfmt_match = re.search(r"^#define MX_ALTFMT\s+([01])\b", source_text, re.M)
     config_altfmt = int(altfmt_match.group(1)) if altfmt_match else 0
     if cell["activation_format"] != "fp4_e2m1" and config_altfmt != int(
@@ -474,8 +487,8 @@ def _recheck_recipe(recipe: dict, source: Path, header: Path, profile: dict) -> 
 def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     """Change a captured site's MX semantics only with an explicit source recipe."""
     from xdsl.context import Context
-    from xdsl.dialects.builtin import Builtin, IntegerAttr, StringAttr
-    from xdsl.dialects.func import Func
+    from xdsl.dialects.builtin import Builtin, IntegerAttr, StringAttr, TensorType, UnregisteredOp, i8
+    from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
     from xdsl.printer import Printer
 
@@ -531,6 +544,28 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
         contract.attributes[key] = IntegerAttr(value, 32) if key == "pe_mode" else StringAttr(value)
     for op in operations:
         op.attributes["profile_sha256"] = StringAttr(digest)
+    if recipe.get("source_layout", {}).get("output_projection") == "lut":
+        if recipe["source_layout"].get("output_format") != "fp8_e4m3":
+            raise ValueError("packed LUT readout format is not supported")
+        function = readout.parent_op()
+        if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
+            raise ValueError("packed LUT readout needs a returning function")
+        old_return = function.get_return_op()
+        if list(old_return.operands) != list(readout.results):
+            raise ValueError("captured BF16 readout is not the returned result")
+        m, n, _ = recipe["shape"]
+        quant = UnregisteredOp.with_name("mx_gemmini.readout_quantized").create(
+            operands=readout.operands,
+            result_types=[TensorType(i8, [m // 2, n]), TensorType(i8, [m, n // 32])],
+            attributes={**readout.attributes,
+                        "output_format": StringAttr("fp8_e4m3"),
+                        "output_projection": StringAttr("lut")})
+        block = readout.parent
+        block.insert_op_before(quant, readout)
+        block.insert_op_before(ReturnOp(*quant.results), old_return)
+        block.erase_op(old_return)
+        block.erase_op(readout)
+        function.update_function_type()
     stream = StringIO()
     Printer(stream=stream).print_op(module)
     result = stream.getvalue() + "\n"
@@ -569,12 +604,17 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
                   if _operation_name(op).startswith("mx_gemmini.") and
                   _operation_name(op) not in {"mx_gemmini.resource", "mx_gemmini.upload_lut"}]
     cell = recipe["compute"]
+    quantized_lut = recipe.get("source_layout", {}).get("output_projection") == "lut"
+    readout_name = ("mx_gemmini.readout_quantized" if quantized_lut else
+                    "mx_gemmini.readout_bf16")
     if ([_operation_name(op) for op in operations] !=
-            ["mx_gemmini.contract", "mx_gemmini.readout_bf16"] or
+            ["mx_gemmini.contract", readout_name] or
             any(_text_attr(op, "site_id") != recipe["site_id"] for op in operations) or
             any(_text_attr(operations[0], key) != value for key, value in cell.items()
                 if key != "pe_mode") or
-            _int_attr(operations[0], "pe_mode") != cell["pe_mode"]):
+            _int_attr(operations[0], "pe_mode") != cell["pe_mode"] or
+            (quantized_lut and (_text_attr(operations[1], "output_format") != "fp8_e4m3" or
+                                _text_attr(operations[1], "output_projection") != "lut"))):
         raise ValueError("bound asymmetric MLIR compute tuple or site differs from recipe")
     return cell
 
@@ -582,6 +622,8 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
 def emit_baremetal(mlir_text: str, profile: dict, recipe: dict, *, source: Path,
                    header: Path) -> str:
     """Emit the bounded historical C diagnostic from a verified contract."""
+    if recipe.get("source_layout", {}).get("output_projection") == "lut":
+        raise ValueError("historical asymmetric C diagnostic does not support packed LUT readout")
     cell = _validate_bound_site(mlir_text, profile, recipe, source=source, header=header)
     if cell["activation_format"] != "fp8_e4m3":
         raise ValueError("historical asymmetric C diagnostic only supports E4M3 activation")
@@ -710,6 +752,13 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
                                       dimensions=golden_shape,
                                       count=m * n, maximum=0xffff), 2),
     }
+    if variant.get("output_projection") == "lut":
+        resources["golden_lut_indices"] = bytes(_array(
+            text, name="C_proj_hw", ctype="uint8_t", dimensions=f"[{m // 2}][{n}]",
+            count=m * n // 2, maximum=255))
+        resources["golden_output_scales"] = bytes(_array(
+            text, name="C_scales_row", ctype="uint8_t",
+            dimensions="[MATMUL_GN][MATMUL_M]", count=m * n // 32, maximum=255))
     if variant["use_lut"]:
         lut_lines = variant.get("lut_lines", 32)
         for c_name, resource in (("A_lut", "activation_lut"),
@@ -741,6 +790,11 @@ def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) 
         "weight_scales": ((k // 32, n), 8, "k_group_column_e8m0"),
         "golden_bf16": ((m, n), 16, "row_major_bf16"),
     }
+    if variant.get("output_projection") == "lut":
+        shapes["golden_lut_indices"] = ((m // 2, n), 8,
+                                         "packed_even_odd_m_lut_indices")
+        shapes["golden_output_scales"] = ((n // 32, m), 8,
+                                           "output_column_group_row_e8m0")
     if variant["use_lut"]:
         words = variant["lut_words_per_line"]
         bits = variant["lut_entry_bits"]
@@ -853,8 +907,12 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     b_end = 8192 if dim == 16 else min(16384, scratchpad_rows)
     c_base = 128 if recipe["shape"] == [64, 64, 64] and dim == 16 else ti * tki * dim
     b_base = b_end - tki * tj * dim
+    quantized_lut = variant.get("output_projection") == "lut"
+    output_bytes = m * n // 2 if quantized_lut else m * n * 2
+    if quantized_lut:
+        c_base = 0
     if (b_base < ti * tki * dim or b_end > scratchpad_rows or
-            c_base + m * n * 2 // dim > b_base):
+            c_base + output_bytes // dim > b_base):
         raise ValueError("asymmetric operand and BF16 readout rows exceed profile scratchpad")
     steps: list[PhysicalStep] = []
 
@@ -871,7 +929,7 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     weight_altfmt_diff = variant.get("weight_altfmt_diff",
                                      int(cell["weight_format"] == "fp6_e2m3"))
     config_ex = (1 << 16) | (weight_code << 12) | (activation_code << 10) | \
-                (3 << 14) | (int(use_lut) << 5) | (1 << 2) | \
+                ((0 if quantized_lut else 3) << 14) | (int(use_lut) << 5) | (1 << 2) | \
                 (activation_altfmt << 6) | (weight_altfmt_diff << 31)
     issue("configure", _cmd(0, config_ex, 1 << 48))
     if use_lut:
@@ -912,8 +970,9 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     issue("compute", _cmd(8, 0, (c_base << 32) | 0x200 | 0x38))
     issue("compute", Fence())
     issue("readout", _config_st(dim))
-    for row in range(0, m * n * 2 // dim, dim):
-        issue("readout", _transfer(3, "output_bf16", row * dim, c_base + row,
+    for row in range(0, output_bytes // dim, dim):
+        issue("readout", _transfer(3, "output_quantized" if quantized_lut else
+                                   "output_bf16", row * dim, c_base + row,
                                    dim=dim))
     issue("readout", Fence())
     plan = {"shape_mnk": [m, n, k_dim], "tile_mnk": [m, n, k_dim],
@@ -923,5 +982,9 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
             "scratchpad_rows": scratchpad_rows, "mesh_dim": dim,
             "a_row": a_base, "b_row": b_base, "c_row": c_base,
             "tiles_i": ti, "tiles_j": tj, "tiles_k": tki}
+    if quantized_lut:
+        plan["quant_output_layout"] = "packed_even_odd_m_lut_indices"
     return PhysicalProgram(profile_sha256(profile), payload_digest,
-                           "spike_serial", (m, n, k_dim), plan, tuple(steps)), resources, resource_manifest
+                           "spike_serial", (m, n, k_dim), plan, tuple(steps),
+                           source_golden_preserving=not quantized_lut,
+                           output_format="fp8_e4m3" if quantized_lut else "bf16"), resources, resource_manifest
