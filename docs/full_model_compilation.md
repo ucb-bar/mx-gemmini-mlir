@@ -290,6 +290,16 @@ completed on Nicolas's Spike with 19 MX calls and a full-logit digest. Its
 output differs from the unquantized PyTorch golden; no quantized numerical
 reference has been established for that run.
 
+The selected MX+VPU profile declares a direct BF16 rank-two row-softmax
+capability. The captured prefill/prefix softmax regions expose f32 rank-three
+inputs: 22 TinyLlama `[1,32,128]`, 28 Qwen `[1,12,128]`, 26 Gemma
+`[1,8,128]`, and 28 SmolVLA regions (12 `[1,12,1024]`, 16 `[1,15,113]`).
+Thus none is a direct match for that VPU contract. The compiler still needs an
+explicit flatten/cast boundary, tiled VPU softmax schedule, restored tensor
+shape, and a quantized numerical reference before those regions can be moved
+from the host. A profile containing a VPU does not mean these operations are
+currently executed on it.
+
 For a prepared graph, the standalone builder is:
 
 ```sh
