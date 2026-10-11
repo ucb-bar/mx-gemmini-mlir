@@ -361,6 +361,23 @@ python -m tools.build_merlin_stage \
   --spike-extlib /path/to/pinned/libgemmini.so
 ```
 
+`tools.run_linked_merlin_stage` reruns an existing stage ELF without rebuilding
+its checkpoint weight object. It checks the capture and profile hashes, pins
+the Spike and extension binaries in a separate run receipt, rejects a changed
+ELF, and applies the same output/state ABI evidence gate on completion. Pass
+`--spike-extlib` for MX-routed stages; a host-only stage can use plain Spike.
+
+```sh
+python -m tools.run_linked_merlin_stage \
+  --stage /path/to/session/stages/prefill \
+  --build-receipt /path/to/stage-build/mx_stage_probe.json \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --merlin-src /path/to/merlin/src \
+  --riscv-root /path/to/riscv-tools \
+  --spike-extlib /path/to/pinned/libgemmini.so \
+  --out-dir /new/spike-run
+```
+
 ## Compiler ownership
 
 The `mx_gemmini_support` package is the MX backend's Python and C support,
