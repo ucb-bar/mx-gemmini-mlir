@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "compared_bf16_values": 1024,
+      "elf_sha256": "5691ea9502db3be6bfe1bf0bb447cbd1707a03275208573600e9123124ba9b17",
+      "model": "tinyllama",
+      "model_output_values": 512,
+      "object_sha256": "3b0c0a79b787df7514bc5d5047f34afff4dc0a299695b9f68434deab6c3a67ff",
+      "padded_shape_mnk": [
+        16,
+        64,
+        32
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.020842041820287704,
+      "status": "pv_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 2048,
+      "elf_sha256": "4f8ac10e550af0f734bce7909ed68177e29b09b7fd057a0b50f1b576cdfddef5",
+      "model": "deepseek_r1_distill_qwen_1_5b",
+      "model_output_values": 512,
+      "object_sha256": "3fc4c9f5f8c1d0f04dfb7702da028f914d612d46bc060696912dfd3cfaf34a3b",
+      "padded_shape_mnk": [
+        16,
+        128,
+        32
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.017095673829317093,
+      "status": "pv_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 4096,
+      "elf_sha256": "64fc0a56e842a736f707e3358a015a2940cea417d6cc73e44660b388cb6cb4bd",
+      "model": "gemma2_2b",
+      "model_output_values": 1024,
+      "object_sha256": "050e8900984d5b1897bb49daa0d4750ace507f78221512f6705a7308f0a88bb1",
+      "padded_shape_mnk": [
+        16,
+        256,
+        32
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.026044271886348724,
+      "status": "pv_head_matched_on_spike"
+    },
+    {
+      "compared_bf16_values": 1024,
+      "elf_sha256": "9873ad4a0a30f8ff8f969613a136498057cc97811193f1a29fca4950d9ed50b7",
+      "model": "smolvla",
+      "model_output_values": 1024,
+      "object_sha256": "3b0c0a79b787df7514bc5d5047f34afff4dc0a299695b9f68434deab6c3a67ff",
+      "padded_shape_mnk": [
+        16,
+        64,
+        32
+      ],
+      "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.006172565743327141,
+      "status": "pv_head_matched_on_spike"
+    }
+  ],
+  "schema": "mx_gemmini.four_model_fp8_pv_head_suite.v1",
+  "scope": "one head of first PV batched matmul per reduced random-weight model; QK-softmax-PV connection uncompiled"
+}

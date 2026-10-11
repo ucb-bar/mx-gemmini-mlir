@@ -1,0 +1,24 @@
+{
+  "activation_npy_sha256": "23b5c9f88730a07f2a7177dac08e3709cdb0c9fc6f053bce13c71e0e60694aca",
+  "activation_sha256": "30544908194705691ee646632da6e05888c56327deefa6eebecc234902e27955",
+  "batch_index": 0,
+  "fqn": "lm.model.layers.0.self_attn",
+  "full_model_mlir_sha256": "18f2693246b8ec2deb34ba7bafd99825844ad34c39c70e4c3e5694d63899cdd1",
+  "fx_node": "bmm_2",
+  "model": "gemma2_2b",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "region_id": "matmul_5",
+  "schema": "mx_gemmini.model2mlir_random_pv_inputs.v1",
+  "scope": "reduced random-weight model; first attention PV batch, head zero only",
+  "seed": 20261010,
+  "source_shape_bmnk": [
+    8,
+    4,
+    256,
+    4
+  ],
+  "torch_version": "2.10.0+cu128",
+  "transformers_version": "5.9.0",
+  "weight_npy_sha256": "5ef7028c99d12169a4bdfd4822ea2d9f5d8d1e59d0e6c5ac07bdfd79e7bd6c40",
+  "weight_sha256": "33ddd6821860548738e30d9c83f2cf2872a273a80bac6e96954dd1c027577d71"
+}

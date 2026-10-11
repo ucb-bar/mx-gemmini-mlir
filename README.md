@@ -20,7 +20,10 @@ captures real attention operands from current model2MLIR exports and runs one
 head per model on the pinned MX Spike model, matching every padded BF16 output
 to the independent Radiance arithmetic reference. It covers TinyLlama,
 DeepSeek-R1-Distill-Qwen-1.5B, Gemma 2 2B, and SmolVLA; scaling, softmax,
-PV, and full-model inference still need lowering.
+and full-model inference still need lowering. A separate
+[four-model FP8 PV replay](docs/evidence/model2mlir_four_model_fp8_pv_vpu_a042643_266c593/README.md)
+matches all 8,192 padded BF16 values across the four PV heads after explicit
+32-element K padding. The QK and PV programs are not yet connected.
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0

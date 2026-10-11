@@ -1,0 +1,34 @@
+{
+  "compared_bf16_values": 4096,
+  "elf_sha256": "64fc0a56e842a736f707e3358a015a2940cea417d6cc73e44660b388cb6cb4bd",
+  "model_output_values": 1024,
+  "object_sha256": "050e8900984d5b1897bb49daa0d4750ace507f78221512f6705a7308f0a88bb1",
+  "padded_shape_mnk": [
+    16,
+    256,
+    32
+  ],
+  "pytorch_f32_vs_mx_bf16_max_absolute_error": 0.30467724800109863,
+  "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.026044271886348724,
+  "run_receipt_sha256": "7d0474ab039a5192f4e6ac9b125ac647a5fb129ca5ffef525c3f0aa31287c478",
+  "run_status": "model_attention_pv_matched_on_pinned_spike",
+  "schema": "mx_gemmini.model2mlir_attention_pv_execution.v1",
+  "scope": "one batched self-attention PV head; QK, scale, mask, and softmax uncompiled",
+  "site": {
+    "batch_index": 0,
+    "fqn": "lm.model.layers.0.self_attn",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "30544908194705691ee646632da6e05888c56327deefa6eebecc234902e27955",
+    "region_id": "matmul_5",
+    "source_mlir_sha256": "18f2693246b8ec2deb34ba7bafd99825844ad34c39c70e4c3e5694d63899cdd1",
+    "source_op": "batch_matmul",
+    "source_shape_bmnk": [
+      8,
+      4,
+      256,
+      4
+    ],
+    "weight_sha256": "33ddd6821860548738e30d9c83f2cf2872a273a80bac6e96954dd1c027577d71"
+  },
+  "status": "pv_head_matched_on_spike"
+}

@@ -42,10 +42,10 @@ Run the archive checks with:
 python -m pytest -q tests/test_four_model_fp8_attention_qk_evidence.py
 ```
 
-To regenerate operands, use `tools.prepare_tinyllama_attention_qk_inputs` for
-TinyLlama or `tools.prepare_model_attention_qk_inputs` for the other three,
+To regenerate operands, use `tools.prepare_tinyllama_attention_head_inputs` for
+TinyLlama or `tools.prepare_model_attention_head_inputs` for the other three,
 with the corresponding archived full graph and pinned model2MLIR source.
-Then run `tools.qualify_model_attention_qk` with the saved arrays, source
+Then run `tools.qualify_model_attention_head` with `--stage qk`, the saved arrays, source
 region, batch index zero, pinned MXQuant and Radiance arithmetic sources,
 profile, RTL and RISC-V toolchains, and `--run-spike`. The model-specific
 source regions and K tile sizes are `matmul_4`/64 for TinyLlama,

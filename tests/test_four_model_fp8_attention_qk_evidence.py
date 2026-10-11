@@ -40,6 +40,10 @@ def test_model_qk_head_matches_source_site_and_pinned_spike(model: str) -> None:
     site = next(row for row in worklist["rank3_batch_matmuls"]
                 if row["region_id"] == summary["site"]["region_id"])
     batch, m, n, k = site["shape_bmnk"]
+    pair = [row for row in worklist["rank3_batch_matmuls"]
+            if row["fqn"] == site["fqn"]]
+    assert len(pair) == 2 and pair[0] == site
+    assert pair[1]["shape_bmnk"] == [batch, m, k, n]
     padded_m, padded_n, padded_k = summary["padded_shape_mnk"]
     assert summary["status"] == "qk_head_matched_on_spike"
     assert summary["site"]["source_mlir_sha256"] == worklist["source_mlir_sha256"]
