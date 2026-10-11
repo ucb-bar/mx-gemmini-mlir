@@ -14,8 +14,54 @@ from pathlib import Path
 import yaml
 
 from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
+from mx_gemmini_support.dense_contraction import MAX_UNROLLED_COMMANDS, plan_dense_shape
 from mx_gemmini_support.model_precision_plan import build_model_precision_plan
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
+
+
+def summarize_dense_shape_plans(proposal: dict, profile: dict) -> dict:
+    """Count source-independent matrix schedules without claiming placement."""
+    counts: Counter[str] = Counter()
+    failures: list[dict] = []
+    max_tiles = max_waves = max_commands = 0
+    for site in proposal["sites"]:
+        selected = site["selected_format"]
+        if selected not in {"mxfp4", "mxfp8"}:
+            continue
+        batched = "shape_bmnk" in site
+        shape = site.get("shape_bmnk") if batched else site.get("shape_mnk")
+        if not isinstance(shape, list) or len(shape) != (4 if batched else 3):
+            counts["missing_static_shape"] += 1
+            continue
+        matrix_shape = tuple(shape[1:] if batched else shape)
+        try:
+            planned = plan_dense_shape(
+                profile, matrix_shape, precision="FP4" if selected == "mxfp4" else "FP8")
+        except (KeyError, ValueError) as error:
+            counts["unplanned_shape"] += 1
+            if len(failures) < 8:
+                failures.append({"region_id": site["region_id"], "reason": str(error)})
+            continue
+        if batched:
+            counts["rank3_slice_shape_plan"] += 1
+        elif site.get("element_type") == "f32":
+            counts["rank2_f32_dense_plan"] += 1
+        else:
+            counts["rank2_plan_needs_source_cast"] += 1
+        max_tiles = max(max_tiles, planned.output_tiles)
+        max_waves = max(max_waves, planned.k_waves)
+        max_commands = max(max_commands, planned.estimated_commands)
+        if planned.estimated_commands > MAX_UNROLLED_COMMANDS:
+            counts["uses_compact_command_issuer"] += 1
+    return {
+        "status": "shape_schedule_only_no_executable_placement",
+        "counts": dict(sorted(counts.items())),
+        "max_output_tiles_per_call": max_tiles,
+        "max_k_waves_per_tile": max_waves,
+        "max_estimated_commands_per_call": max_commands,
+        "unrolled_command_limit": MAX_UNROLLED_COMMANDS,
+        "first_failures": failures,
+    }
 
 
 def audit_session(root: Path, profile: dict) -> dict:
@@ -52,6 +98,7 @@ def audit_session(root: Path, profile: dict) -> dict:
             "operation_families": dict(sorted(families.items())),
             "contraction_regions": worklist["contraction_region_count"],
             "precision_proposal": proposal["selected_format_counts"],
+            "dense_shape_plans": summarize_dense_shape_plans(proposal, profile),
             "unlowered_operation_count": len(inventory["ops"]),
         })
     return {

@@ -217,6 +217,72 @@ without unresolved symbols. This is the per-kernel ABI handoff. A
 prepared-model catalog builder, exact source-operation bindings, and session
 execution remain open.
 
+The regular matrix command order is now shared by source qualification and
+`emit_planned_runtime_issuer`. The latter takes the selected profile, FP4/FP8
+mode, padded dimensions, and tile without any operand or golden payload.
+`plan_dense_shape` chooses a conservative mesh tile from a logical M×N×K
+shape, and `emit_dense_contraction` combines that plan with the dense adapter.
+For both archived small-LLaMA projections, the shape-planned issuer emitted
+the exact same C command stream as the payload-qualified path; the gate site
+also ran through the shape-planned entry on Nicolas's Spike with all 2,752
+logical outputs matching. This establishes command parity for those shapes.
+It does not establish a general numerical qualification or full-model
+placement for the other shapes in the captured sessions.
+
+Large model dimensions use `emit_compact_runtime_issuer`, which emits C loops
+over output tiles and K waves. A host trace compares every command operand and
+fence against the source-qualified unrolled schedule for FP4 gate/down and
+an FP8 TinyLlama projection. Both FP4 sites also passed on Nicolas's pinned
+Spike with the compact issuer: 2,752 and 1,024 logical output values matched.
+The compact source stays under 7 KiB even for an 18,992-tile vocabulary
+projection. These tests qualify command order and those executed shapes;
+they do not establish numerical accuracy for every model site.
+
+`mx_gemmini_support.merlin_catalog_plan` now binds selected FP4 rank-two and
+FP8 attention contractions to exact Merlin source regions, operation
+ordinals, shapes, and tensor types. `merlin_catalog_builder` emits one
+relocatable RV64 object and a hashed source-conversion manifest for Merlin's
+`DeviceRouting.catalog_builder` callback. Equal shapes share a kernel, and
+all kernels reuse one aligned serial workspace. On the archived two-layer
+small-LLaMA graph, 19 operations mapped to six kernels and Merlin's rewrite
+and catalog binder accepted the object and shim. On full checkpoint TinyLlama
+prefill, 199 selected operations mapped to seven kernels, with a 43,149,312
+byte shared workspace; the full graph rewrite and binder accepted all 199
+routes without skipped calls. The catalog status remains
+`compiled_experimental_numeric_qualification_pending`.
+
+Exact source binding now inventories all four full-checkpoint sessions. The
+current f32 catalog binds 199 sites in each TinyLlama stage, 253 in each Qwen
+stage, and 235 in each Gemma stage. SmolVLA binds 139 prefix-encode and 116
+flow-denoise sites. The 72 remaining SmolVLA prefix proposals are BF16
+`addmm` matrix components: they require a BF16 source ABI and target-owned
+conversion, which the current uniform-f32 catalog does not implement.
+Action decode contains no direct MX contraction proposal. The planner reports
+these 72 regions explicitly as unbound; the catalog's `coverage_complete`
+only means that every operation listed in its exact binding table has a
+compiled implementation. VPU operators and other host operations are not
+covered by that field.
+
+For a prepared graph, the standalone builder is:
+
+```sh
+MERLIN_TARGET_PATH=/path/to/mx-gemmini-mlir \
+python -m tools.build_merlin_catalog \
+  --prepared /path/to/model.prepared.mlir \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/riscv-tools \
+  --out-dir /new/catalog-output
+```
+
+The remaining full-model gates are Merlin's host graph object and final ELF,
+serial workspace admission against a selected memory map, full session
+link/run on Nicolas's Spike, VPU placement beyond the existing softmax
+contract, and comparison of every output and recurrent state against an
+independent quantized PyTorch reference. The native f32 encoder and packed
+buffer glue stay in this target package; Merlin's graph inventory, catalog
+ABI, memref shim, host lowering, and session orchestration remain shared.
+
 ## Compiler ownership
 
 The `mx_gemmini_support` package is the MX backend's Python and C support,
