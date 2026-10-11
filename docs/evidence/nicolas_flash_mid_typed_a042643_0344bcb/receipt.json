@@ -1,0 +1,23 @@
+{
+  "bound_mlir_sha256": "ce53a88d06a6bfce3a245b027c8f1cc1b6419d61a86cd8c2c4da9bb6b6ed2b98",
+  "compared_bf16_words": 4096,
+  "compiler_runs": 2,
+  "data_baseline_sha256": "3a633e748d344414e9d4bede551bea180a2a61a33221da47d4d2916ac7f2ef38",
+  "driver_sha256": "d25426c2227fbbc8e3cac9e46b28f0b52bdb60da1438b8c82fa5bd578934bdc5",
+  "generated_elf_sha256": "9368cbf230f287a06e4dc237febe0ef2f29fb4a82942426fdadb7c37a879755b",
+  "generated_log_sha256": "b24a08b5fef769df43d16ec4ec5ac3208589caf601131e07961a844ea8c14ac0",
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "native_verifier_sha256": "2516a246e270e424b634ad699fb2c514fea1608182468a3274c13d264364b79d",
+  "object_manifest_sha256": "ca6507895425bf96e39efc999175a02727904cbce0a40a41ef3f7502c0b835fd",
+  "object_sha256": "cc9058537f64815ea5a53dca992c97fb5da4f8ad016de1d927f0eb664b8bb8ef",
+  "physical_program_sha256": "8ebfa17f19c27c47c6dda67ff9d94d0b37468371dcb524c8493a35d17897e6ab",
+  "schedule": "fenced_serial",
+  "schema": "mx_gemmini.flash_mid_serial_spike_parity.v1",
+  "source_baseline_sha256": "ec7703946e1a317a5145901ba140daab976b49fea404e0e350ddb1424c7a1dda",
+  "source_elf_sha256": "b3e34436f23f73b8a108c494b0f960547fc45776c727755b5820b3f0d06738ad",
+  "source_log_sha256": "aea7018e7ce84947b375d7fa184c23933e997793e09dd2827a913f29f8b9c86e",
+  "source_output_hash": "cd7aef4d68d1e0d9",
+  "source_runs": 2,
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "typed_flash_mid_full_bf16_source_parity"
+}

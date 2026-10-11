@@ -1,0 +1,104 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "ce53a88d06a6bfce3a245b027c8f1cc1b6419d61a86cd8c2c4da9bb6b6ed2b98",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 128,
+      "name": "Q_SCALES_FOLDED",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 256,
+      "name": "KT_SCALES",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 256,
+      "name": "V_SCALES",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 4096,
+      "name": "Q_IN",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 8192,
+      "name": "KT_IN",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 8192,
+      "name": "V_IN",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 2048,
+      "name": "scale_sink",
+      "position": 6,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 64,
+      "name": "p_scales_0",
+      "position": 7,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 64,
+      "name": "p_scales_1",
+      "position": 8,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_mid",
+      "minimum_bytes": 8192,
+      "name": "O_HW",
+      "position": 9,
+      "role": "write"
+    }
+  ],
+  "command_count": 156,
+  "compiler_revision": "d0e5d62e10d6c1d94c4b2c13e28cc2627731d0cf",
+  "compiler_source_closure_sha256": "77c2f0d1837b2aeca33c970e13db3a772706f98b0e264a8f6454511157b4e022",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 21,
+  "issuer_c_sha256": "6b21aad234f858763026d44ad5f4afb61b1c1b44a8c223b69298304170664014",
+  "object_sha256": "cc9058537f64815ea5a53dca992c97fb5da4f8ad016de1d927f0eb664b8bb8ef",
+  "physical_program_sha256": "8ebfa17f19c27c47c6dda67ff9d94d0b37468371dcb524c8493a35d17897e6ab",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schedule": "fenced_serial",
+  "schema": "mx_gemmini.flash_mid_serial_linkable_object.v1",
+  "status": "rv64_rocc_typed_flash_mid_serial_spike_matched",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

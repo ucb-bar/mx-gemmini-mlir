@@ -138,13 +138,14 @@ Spike runs match all 4,096 score words and four source stage hashes. The
 separate blocked `attn_flash` kernels and full models remain open.
 The [four-block `attn_flash_mid` source oracle](docs/evidence/nicolas_attn_flash_mid_source_baseline_a042643_0344bcb/README.md)
 pins an unmodified Spike run and reproducible full-output hash for the next
-compiler target. Its online softmax and pipelined block schedule still need
-typed lowering. The compiler now verifies and encodes pitched matrix DMA,
+compiler target. The compiler now verifies and encodes pitched matrix DMA,
 gated weight-scale loads, and managed scale-half scratchpad matmuls as typed
 operations for this pinned MX+VPU RTL. Its [typed first QK block](docs/evidence/nicolas_flash_qk0_typed_a042643_0344bcb/README.md)
 emits one data-free RV64 object and matches all 2,048 BF16 source scores twice
-on Spike. The complete blocked schedule and compiler-generated final output
-parity remain open.
+on Spike. The [complete typed four-block program](docs/evidence/nicolas_flash_mid_typed_a042643_0344bcb/README.md)
+now emits one data-free RV64 object with a fenced serial schedule. All 4,096
+BF16 outputs match Nicolas's pipelined source twice on Spike. Pipelined
+compiler scheduling and other flash configurations remain open.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.

@@ -1,6 +1,8 @@
 """Whole four-block flash graph has an executable, source-bound serial lowering."""
 
 import gzip
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -24,6 +26,7 @@ CORE = ("static uint64_t run_serial(void)\n"
         "gemmini_mx_load_scales_2d_gated\n"
         "gemmini_mxquant_config_mvout_managed\n")
 WRAPPER = '#define BK 32\n#include "attn_flash.c"\n'
+EVIDENCE = ROOT / "docs/evidence/nicolas_flash_mid_typed_a042643_0344bcb"
 
 
 def _inputs() -> tuple[str, str]:
@@ -64,5 +67,34 @@ def test_flash_mid_requires_gated_weight_slice_before_managed_matmul() -> None:
         lower_flash_mid(mlir.replace("weight_half = 0 : i32",
                                      "weight_half = 1 : i32", 1),
                         frontend, CORE, WRAPPER, header, PROFILE)
+
+
+def test_archived_flash_mid_matches_every_bf16_output_twice() -> None:
+    receipt = json.loads((EVIDENCE / "receipt.json").read_text())
+    manifest = json.loads((EVIDENCE / "object_manifest.json").read_text())
+    physical = json.loads((EVIDENCE / "physical_program.json").read_text())
+    sha = lambda name: hashlib.sha256((EVIDENCE / name).read_bytes()).hexdigest()
+    assert receipt["status"] == "typed_flash_mid_full_bf16_source_parity"
+    assert receipt["schedule"] == "fenced_serial"
+    assert receipt["compared_bf16_words"] == 4096
+    assert receipt["source_runs"] == receipt["compiler_runs"] == 2
+    assert receipt["source_output_hash"] == "cd7aef4d68d1e0d9"
+    assert manifest["command_count"] == 156 and manifest["fence_count"] == 21
+    assert manifest["allocated_data_section_bytes"] == 0
+    assert manifest["embedded_operand_bytes"] == manifest["embedded_golden_bytes"] == 0
+    assert receipt["object_sha256"] == manifest["object_sha256"] == sha("mx_issue.o")
+    assert receipt["bound_mlir_sha256"] == sha("flash_mid.mlir")
+    assert receipt["physical_program_sha256"] == sha("physical_program.json")
+    assert len(physical["commands"]) == 177
+    words = []
+    for kind in ("source", "generated"):
+        for run in (1, 2):
+            log = (EVIDENCE / f"{kind}_spike_{run}.log").read_text()
+            line = next(line for line in log.splitlines()
+                        if line.startswith("O BF16 words "))
+            values = line.removeprefix("O BF16 words ")
+            assert len(values) == 16384
+            words.append(values)
+    assert len(set(words)) == 1
 
 

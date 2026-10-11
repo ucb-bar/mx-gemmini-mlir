@@ -19,8 +19,9 @@ Spike log SHA-256**, recorded in its [replay receipt](replay_receipt.json).
 The clean model2MLIR `a042643` capture in the linked data archive gives the
 equivalent full QK→softmax→PV tensor dataflow. The source's online softmax,
 managed scale-half protocol, block buffers, and overlapping matrix/VPU issue
-require a separate typed schedule. This archive is its source oracle; it
-does not contain a compiler-generated blocked-attention object.
+require a separate typed schedule. The [compiler-generated serial schedule](../nicolas_flash_mid_typed_a042643_0344bcb/README.md)
+now matches every BF16 output on Spike. This archive remains the original
+source oracle; its ELF does not contain compiler-generated MX commands.
 
 From the repository root, set `NPU_ROOT` to pinned `npu-exploration`
 `0344bcb`, `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to
