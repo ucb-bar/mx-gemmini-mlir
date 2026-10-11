@@ -90,6 +90,54 @@ The existing six connected FP8/FP4/FP6 source chains validate the MX object
 lowerer for those graph families. They do not establish any of the complete
 model gates above.
 
+## Reuse Merlin's whole-model path
+
+Merlin already owns model2MLIR capture bundles, external checkpoint weights,
+host lowering for the rest of a graph, source-region accounting, an explicit
+device catalog hook, bare-metal linking, Spike execution, and multi-program
+session bindings. The MX compiler should implement a **target-owned catalog
+builder** for Merlin's `DeviceRouting.catalog_builder` boundary. It should
+not create another model graph compiler or host runtime here. The latest
+model2MLIR `main` checked on 2026-10-11 was `02c61c2`; existing archived MX
+captures remain pinned to their older recorded revisions until recaptured.
+
+The first executable handoff is `tools.emit_runtime_issuer`. It takes a
+payload-bound model2MLIR-derived MX program and emits a data-free RV64 object
+with six pointer arguments: packed activation codes, activation E8M0 scales,
+packed weight codes, weight E8M0 scales, BF16 output, and scale scratch. It
+binds the exact source payload and target profile, records the required buffer extents,
+and rejects a non-row-major or non-BF16 schedule. The object has no embedded
+operand, golden, or allocated data sections. A two-call TinyLlama projection
+diagnostic [passed on Nicolas's pinned Spike](evidence/runtime_issuer_spike_tinyllama_266c593/README.md)
+with the same tensor bytes at two
+distinct address sets: both 512-element BF16 outputs matched the independent
+archived golden. This establishes a live **encoded** operand ABI for one
+projection, not a Merlin dense-tensor call or whole-model inference.
+
+To build that object from the checked-in projection:
+
+```sh
+python -m tools.emit_runtime_issuer \
+  --mlir docs/evidence/model2mlir_tinyllama_projection_a042643_266c593/projection.payload_bound.mlir \
+  --bundle docs/evidence/model2mlir_tinyllama_projection_a042643_266c593/bundle \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
+  --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+  --riscv-root /path/to/pinned/riscv-tools \
+  --out-dir /new/output/directory
+```
+
+The remaining target work is an MX catalog entry that accepts Merlin's live
+dense tensors, performs exact FP8/FP4 quantization and padding, invokes this
+issuer, converts BF16 readout back to the graph's type, and records one source
+region per call. Batched attention and bias-bearing contractions require their
+own legalizations. Merlin's existing host path should run all remaining graph
+operations and its session runtime should carry KV caches and SmolVLA action
+state. The 4096-element output limit in Merlin's saved-model diagnostic also
+needs a larger or chunked readback for complete LM logits; it is an execution
+tooling limit, not a reason to write another graph runtime. Full checkpoint
+captures and reference outputs must be selected for each named model before
+claiming pretrained inference.
+
 The [current model2MLIR small LLaMA probe](evidence/model2mlir_small_llama_precision_e9ded36_266c593/README.md)
 uses revision `e9ded36` and captures a complete two-layer random-weight
 LLaMA-style graph with zero opaque operations. Its precision proposal now
