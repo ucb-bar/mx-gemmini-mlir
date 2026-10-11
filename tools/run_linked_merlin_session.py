@@ -65,7 +65,9 @@ def observe_session_output(log: str, session, *, exit_code: int) -> dict:
     done = "DONE" in log.splitlines()
     metrics = [line for line in log.splitlines()
                if line.startswith("METRIC memref_rank_mismatch ")]
-    complete = exit_code == 0 and done and seen == len(expected) and metrics == [
+    guest_failure = any(line.startswith("FATAL ") or "*** FAILED" in line
+                        for line in log.splitlines())
+    complete = not guest_failure and exit_code == 0 and done and seen == len(expected) and metrics == [
         "METRIC memref_rank_mismatch 0"]
     if exit_code == 0 and not complete:
         raise ValueError("Spike exited successfully without a complete valid session")

@@ -50,3 +50,12 @@ def test_timeout_preserves_only_a_valid_prefix() -> None:
     assert not report["complete"]
     assert report["observed_events"] == 3
     assert len(report["output_digests"]) == 2
+
+
+def test_guest_arena_failure_is_not_hidden_by_spike_exit_zero() -> None:
+    guest_log = "SESSION_BEGIN 0 0\nFATAL model arena exhausted\n*** FAILED ***\n"
+    with pytest.raises(ValueError, match="complete valid session"):
+        observe_session_output(guest_log, _session(), exit_code=0)
+    with pytest.raises(ValueError, match="complete valid session"):
+        observe_session_output(_log() + "FATAL model arena exhausted\n",
+                               _session(), exit_code=0)
