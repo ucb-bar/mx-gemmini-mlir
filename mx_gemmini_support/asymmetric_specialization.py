@@ -103,6 +103,14 @@ _VARIANTS = {
         "output_format": "fp8_e4m3", "output_projection": "lut",
         "quant_spad_dest": 0,
     },
+    "matmul_tiled_fp8_e5m2_64x64_requant.c": {
+        "header": "matmul_data_mx_lut_e5m2_64x64.h",
+        "cell": E5M2_E5M2_CELL,
+        "activation_array": "A_in_hw[32][64]", "use_lut": True,
+        "lut_words_per_line": 4, "lut_entry_bits": 8,
+        "output_format": "fp8_e5m2", "output_projection": "lut",
+        "quant_spad_dest": 0,
+    },
     "matmul_tiled_fp8_e4m3_lut_64x64_requant_dim8.c": {
         "header": "matmul_data_mx_lut_e4m3_64x64_dim8.h",
         "cell": E4M3_E4M3_CELL, "mesh_dim": 8,
@@ -607,7 +615,8 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
     for op in operations:
         op.attributes["profile_sha256"] = StringAttr(digest)
     if recipe.get("source_layout", {}).get("output_projection") == "lut":
-        if recipe["source_layout"].get("output_format") != "fp8_e4m3":
+        output_format = recipe["source_layout"].get("output_format")
+        if output_format not in {"fp8_e4m3", "fp8_e5m2"}:
             raise ValueError("packed LUT readout format is not supported")
         function = readout.parent_op()
         if not isinstance(function, FuncOp) or not isinstance(function.get_return_op(), ReturnOp):
@@ -620,7 +629,7 @@ def specialize_handoff(mlir_text: str, profile: dict, recipe: dict) -> str:
             operands=readout.operands,
             result_types=[TensorType(i8, [m // 2, n]), TensorType(i8, [m, n // 32])],
             attributes={**readout.attributes,
-                        "output_format": StringAttr("fp8_e4m3"),
+                        "output_format": StringAttr(output_format),
                         "output_projection": StringAttr("lut")})
         block = readout.parent
         block.insert_op_before(quant, readout)
@@ -675,7 +684,8 @@ def _validate_bound_site(mlir_text: str, profile: dict, recipe: dict, *,
             any(_text_attr(operations[0], key) != value for key, value in cell.items()
                 if key != "pe_mode") or
             _int_attr(operations[0], "pe_mode") != cell["pe_mode"] or
-            (quantized_lut and (_text_attr(operations[1], "output_format") != "fp8_e4m3" or
+            (quantized_lut and (_text_attr(operations[1], "output_format") !=
+                                recipe["source_layout"]["output_format"] or
                                 _text_attr(operations[1], "output_projection") != "lut"))):
         raise ValueError("bound asymmetric MLIR compute tuple or site differs from recipe")
     return cell
@@ -1055,4 +1065,4 @@ def lower_asymmetric_physical(mlir_text: str, profile: dict, recipe: dict, *,
     return PhysicalProgram(profile_sha256(profile), payload_digest,
                            "spike_serial", (m, n, k_dim), plan, tuple(steps),
                            source_golden_preserving=not quantized_lut,
-                           output_format="fp8_e4m3" if quantized_lut else "bf16"), resources, resource_manifest
+                           output_format=variant["output_format"] if quantized_lut else "bf16"), resources, resource_manifest

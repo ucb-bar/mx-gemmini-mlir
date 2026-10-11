@@ -81,7 +81,7 @@ def Mx_ReadoutBF16Op : Mx_Op<"readout_bf16"> {
 }
 
 def Mx_ReadoutQuantizedOp : Mx_Op<"readout_quantized"> {
-  let summary = "Read packed MX output codes and E8M0 output scales";
+  let summary = "Read MX output codes, including packed LUT indices, and E8M0 scales";
   let arguments = (ins AnyTensor:$accumulator, StrAttr:$site_id,
                    StrAttr:$output_format,
                    OptionalAttr<StrAttr>:$output_projection,

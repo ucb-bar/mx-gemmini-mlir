@@ -279,10 +279,19 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 raise ValueError("MX BF16 readout has an unsupported memory layout")
         elif name == "mx_gemmini.readout_quantized":
             output = _text_attr(op, "output_format")
-            if output is None or output not in profile["candidate_output_modes"] or output == "bf16":
-                raise ValueError("MX quantized readout output is absent from selected profile")
             projection = _text_attr(op, "output_projection")
-            if projection is not None and (projection != "lut" or output != "fp8_e4m3" or
+            lut_output = (projection == "lut" and output in {"fp8_e4m3", "fp8_e5m2"} and
+                          profile["resources"]["lut"] and
+                          profile["resources"]["requantizer"] and
+                          any(cell["activation_format"] == output and
+                              cell["weight_format"] == output and
+                              cell["activation_projection"] == "lut" and
+                              cell["weight_projection"] == "lut"
+                              for cell in profile["legal_compute"]))
+            if output is None or output == "bf16" or (
+                    output not in profile["candidate_output_modes"] and not lut_output):
+                raise ValueError("MX quantized readout output is absent from selected profile")
+            if projection is not None and (not lut_output or
                                            (payload_manifest is not None and (
                                                payload_manifest.get("recipe", {}).get(
                                                    "source_layout", {}).get("output_projection") != "lut" or

@@ -74,12 +74,15 @@ def main() -> None:
         parser.add_argument(f"--{name}", required=True, type=Path)
     args = parser.parse_args()
     if args.symmetric_lut_requant and (
-            args.symmetric_lut != "e4m3" or not args.physical or
-            (args.mesh_dim, args.source_shape) not in {
+            args.symmetric_lut not in {"e4m3", "e5m2"} or not args.physical or
+            (args.symmetric_lut == "e5m2" and
+             (args.mesh_dim, args.source_shape) != (16, "64x64")) or
+            (args.symmetric_lut == "e4m3" and
+             (args.mesh_dim, args.source_shape) not in {
                 (16, "64x64"), (8, "64x64"), (32, "64x64"),
                 (8, "128x128"), (32, "128x128"),
-                (32, "64x128x128"), (32, "128x64x128")}):
-        parser.error("packed E4M3 LUT readout needs a registered E4M3 mesh and shape")
+                (32, "64x128x128"), (32, "128x64x128")})):
+        parser.error("packed FP8 LUT readout needs a registered format, mesh, and shape")
     if args.public_object and not args.physical:
         parser.error("public asymmetric object requires physical lowering")
     if args.out_dir.exists():
@@ -290,7 +293,7 @@ def main() -> None:
                          cwd=build_dir, text=True, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, check=False)
     (build_dir / "spike.log").write_text(run.stdout)
-    expected = (f"lowered MX {m}x{n}x{k}: 0 E4M3 packed-LUT-index mismatches, "
+    expected = (f"lowered MX {m}x{n}x{k}: 0 {args.symmetric_lut.upper()} packed-LUT-index mismatches, "
                 "0 E8M0 scale mismatches" if args.symmetric_lut_requant else
                 f"lowered MX {m}x{n}x{k}: 0 BF16 mismatches" if args.physical else
                 "lowered asymmetric E4M3xFP4 64x64x64: 0 BF16 mismatches")

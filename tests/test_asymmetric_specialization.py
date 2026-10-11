@@ -8,6 +8,7 @@ import pytest
 
 from mx_gemmini_support.asymmetric_specialization import (ASYM_CELL, DIRECT_CELL,
                                                            E4M3_E4M3_CELL,
+                                                           E5M2_E5M2_CELL,
                                                            bind_asymmetric_payload,
                                                            emit_baremetal, lower_asymmetric_physical,
                                                            source_recipe,
@@ -60,6 +61,21 @@ def test_packed_lut_readout_is_typed_and_profile_bound():
     with pytest.raises(ValueError, match="packed LUT readout format"):
         specialize_handoff(CAPTURE, profile, recipe | {
             "source_layout": {"output_format": "fp4_e2m1", "output_projection": "lut"}})
+
+
+def test_e5m2_lut_index_readout_uses_semantic_output_format():
+    profile = _profile("MxE5M2GemminiRocketConfig")
+    recipe = _recipe(profile) | {
+        "compute": E5M2_E5M2_CELL.copy(),
+        "source_layout": {"output_format": "fp8_e5m2", "output_projection": "lut"},
+    }
+    bound = specialize_handoff(CAPTURE, profile, recipe)
+    assert 'output_format = "fp8_e5m2"' in bound
+    assert 'output_projection = "lut"' in bound
+    assert verify_ir(bound, profile)["contracts"] == 1
+    with pytest.raises(ValueError, match="absent from selected profile"):
+        verify_ir(bound.replace('output_projection = "lut"',
+                                'output_projection = "direct"'), profile)
 
 
 def test_legacy_binder_cannot_silently_change_to_asymmetric():

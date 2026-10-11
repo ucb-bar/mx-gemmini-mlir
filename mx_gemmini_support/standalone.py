@@ -20,12 +20,12 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     """Write a source-independent command issuer, data object, and receipt."""
     if program.mode not in {"spike_serial", "rtl_alternating"}:
         raise ValueError("unknown standalone MX physical mode")
-    if program.output_format not in {"bf16", "fp8_e4m3", "fp4_e2m1", "fp6_e3m2",
+    if program.output_format not in {"bf16", "fp8_e4m3", "fp8_e5m2", "fp4_e2m1", "fp6_e3m2",
                                      "radiance_header_fp8", "radiance_header_fp6"}:
         raise ValueError("standalone MX output format is not qualified")
     if (not program.source_golden_preserving and
             program.derived_expected_bf16 is None and
-            program.output_format not in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} and
+            program.output_format not in {"fp8_e4m3", "fp8_e5m2", "fp4_e2m1", "fp6_e3m2"} and
             program.golden_origin != "target_mesh_reference"):
         raise ValueError("source BF16 golden does not cover these MX VPU/requant operations")
     if any(name not in resources for name in ("activation", "weight", "activation_scales",
@@ -40,7 +40,7 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     names = tuple(sorted(referenced))
     issuer = emit_c(commands, transport="rocket_rocc", buffers=names)
     m, n, k = program.shape
-    quantized = program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"}
+    quantized = program.output_format in {"fp8_e4m3", "fp8_e5m2", "fp4_e2m1", "fp6_e3m2"}
     packed_lut = program.plan.get("quant_output_layout") == "packed_even_odd_m_lut_indices"
     host_fp8 = program.output_format == "radiance_header_fp8"
     host_fp6 = program.output_format == "radiance_header_fp6"
@@ -55,11 +55,11 @@ def write_standalone_sources(directory: Path, program: PhysicalProgram,
     quant_bytes = m * n // (2 if packed_lut or packed_fp4 or packed_fp6 else 1)
     if quantized:
         if packed_lut:
-            if (program.output_format != "fp8_e4m3" or
+            if (program.output_format not in {"fp8_e4m3", "fp8_e5m2"} or
                     len(resources.get("golden_lut_indices", b"")) != quant_bytes or
                     len(resources.get("golden_output_scales", b"")) != m * n // 32 or
                     "output_lut" not in resources):
-                raise ValueError("packed E4M3 LUT output lacks source codes, scales, or LUT")
+                raise ValueError("packed FP8 LUT output lacks source codes, scales, or LUT")
         elif (quant_name not in resources or "nicolas_output_scales" not in resources or
               source_quant_name not in resources or
               "golden_output_scales" not in resources or
@@ -136,7 +136,8 @@ int main(void) {{
 }}
 '''
     if quantized:
-        quant_label = ("E4M3 packed-LUT-index" if packed_lut else
+        quant_label = (f"{program.output_format.removeprefix('fp8_').upper()} packed-LUT-index"
+                       if packed_lut else
                        "FP6 packed-index" if packed_fp6 else
                        "FP4 packed-code" if packed_fp4 else "FP8 code")
         code_loop = f'''  for (uint32_t i = 0; i < {quant_bytes}; ++i) {{
@@ -235,7 +236,7 @@ int main(void) {{
             else "derived_bf16_adds" if program.plan.get("vector_tile_policy") ==
             "bf16_adds_scalar_each_output_tile_v1" else "derived_bf16_muls")
     if quantized:
-        receipt["golden_basis"] = ("nicolas_source_packed_e4m3_lut_indices_and_e8m0"
+        receipt["golden_basis"] = (f"nicolas_source_packed_{program.output_format}_lut_indices_and_e8m0"
                                    if packed_lut else
             "nicolas_vpu_x2_spad_requant_from_source_bf16" if program.tiled_quant_readout else
             "nicolas_fp6_e3m2_lut_from_source_bf16" if packed_fp6 else
