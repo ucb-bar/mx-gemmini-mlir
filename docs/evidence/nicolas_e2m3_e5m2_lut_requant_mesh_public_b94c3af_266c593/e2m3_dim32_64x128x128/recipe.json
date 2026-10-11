@@ -1,0 +1,48 @@
+{
+  "compute": {
+    "activation_format": "fp6_e2m3",
+    "activation_projection": "lut",
+    "pe_mode": 9,
+    "weight_format": "fp6_e2m3",
+    "weight_projection": "lut"
+  },
+  "frontend_capture_format": "mxfp8",
+  "profile_sha256": "05503daf9003b20811efcd0d91da19f08b7ae0ec51a2c167992fff7c2e484780",
+  "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+  "shape": [
+    64,
+    128,
+    128
+  ],
+  "site_id": "functional:matmul",
+  "source_driver_sha256": "2a3d4cf18aa12b30d38d932b9ad0f7d403e78ff6c1352cdee4b6810e43b9dd6c",
+  "source_header_sha256": "4f04d0b55b9cc7b44ff9ea50be813ea34d3831a48dca3c3abbcd3cc494fd7258",
+  "source_layout": {
+    "activation_array": "A_in_hw[32][128]",
+    "config_altfmt": 1,
+    "header": "matmul_data_mx_lut_e2m3_64x128x128_dim32.h",
+    "lut_arrays": [
+      "A_lut",
+      "B_lut",
+      "C_lut"
+    ],
+    "lut_entry_bits": 6,
+    "lut_lines_by_array": {
+      "A_lut": 32,
+      "B_lut": 64,
+      "C_lut": 32
+    },
+    "lut_words_per_line": 3,
+    "mesh_dim": 32,
+    "output_format": "fp6_e2m3",
+    "output_projection": "lut",
+    "quant_spad_dest": "activation_footprint",
+    "shape": [
+      64,
+      128,
+      128
+    ],
+    "use_lut": true,
+    "weight_altfmt_diff": 0
+  }
+}

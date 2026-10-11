@@ -1596,13 +1596,57 @@
       "source_sha256": "c1ca615dfc976af1a2ee55a0aaf8460180106d1bef6bc709b52a5f0d87b1f6c4"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "77f11dce6a250e604959b11c6366f248867a14f4d0a3a8e1c4d72adc6a08dd2e",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "7c57f78f6aea3c63c375ea89b2122caf96c431f308fa4fe49ee68d8794e84bf2",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "e80e6f3c3c5bcd9c39b159f7a379ea2ac7b7df5bdbc8adb017fd24b6d858d3e4",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_64x64_requant_dim32",
       "source_sha256": "471d8be3d12e463c6bc2436adfdee324d933320e859dd40eef91af429941501f"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "aab49e31b5edd762dbe0be00b4fb7c3d121cf9ccbdf7fbb91dc668851f94ab91",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "4fe19caebce06c6d84fd3c1af806600f8fc86c2d3a87a9ceb22e9fc15d461532",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "25090557db552cae7505e48cb4bbaa481a56913d4fdd31ae7dc3502d01ff093f",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e2m3_lut_64x64_requant_dim32",
       "source_sha256": "2998f86c22b1aaa7dc1b5188c33a9b572a43ee4fe6db8db33a2e114494299116"
@@ -1642,13 +1686,57 @@
       "source_sha256": "18b7cd8e06be147093686d93ecf944405d3c300e46e948973df5304cc899e9d2"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "3b1fc25c52025cfe5bb2046999bf17effe422d5d42ac950112cfd4955830c5db",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "40575f218dbf46f5afa30930332138565d921461fdbc0a7498c7cafaccebf2c1",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "e8d05a9de08bed03b8de081d5b292fcb13960ce0c274b69d43d84816a857c33a",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_128x128_requant_dim32",
       "source_sha256": "f8f515e1291bafa2fcf4729cfc6450d730696946d091793370fd54aa4329b468"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "e34d97fa942e6d98b0858b0119c83e51e065f8a4982a70eecb606a009f2b27ab",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "8ba49b6b52aa648a7908145362a513b86448cb67ddd8d4be72927021c84eccc4",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "8064179584dd2ea3b7e5dfc73373e2fb2b6501d4e9d9a9a7d1b3da2ce32276f7",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e2m3_lut_128x128_requant_dim32",
       "source_sha256": "6f7cb93e702a1544597150dfea4e77b6806686f3682702275b9e530833a8996d"
@@ -1716,25 +1804,113 @@
       "source_sha256": "b6b1f7b3be79fbb66d4e77927b5c703cbd25993d23a385fa6e1b877314a8d009"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x64x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "5eb6ede746e85ebbf159b3345bb67f2de89c63dfe0aafee9894b9649def402f7",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x64x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "28c11fc0d7d467ec4ea9c771ca6eee574fcaa95a0461b00ab9cb7b7c2612dc01",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_128x64x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "64818c26456dd5dabf0947943ba44be63bdced2d25adb2447e74eebd5fd6486f",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_128x64x128_requant_dim32",
       "source_sha256": "687397930a882749b32a3458918a2c653ed98bc52f9f4d92c764d91350238b62"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "59d62fee5f3cd0bad062382a1af1d0bfd159890fd1394e788fdc84d0752fdbbe",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "3816f1f448907007626ab09444d71c152d2161efc94b03905affef3b46291eb5",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim32_64x128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "abc413aeff55f8cfe0cafed0c0ae3b6df74064bb22586fef36fe09a3cc434cdd",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_64x128x128_requant_dim32",
       "source_sha256": "1db73a123726068dba3a2299f587d3ba84f42b3f7cb7d90ebdd5f75bddb76427"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x64x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "e68973789524963672da7f1766ac443fed8e83654ee5922121a927b7fb3f17e7",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x64x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "357a7e806fdc66975fc0dea747855f8df467543beefac1b915f883ed0b74e6f3",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_128x64x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "5f9d5d7f571396442daac61da37999695b56b7c03eb6523174379d38a45b2ab2",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e2m3_lut_128x64x128_requant_dim32",
       "source_sha256": "169aa3f3a45fcec86525cdaf2d9e620df0db53104c5c08d0bf474c3361459bf4"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "dc7c88286f1c78d4b6aa1dea1dd52989cb591f9859d0892e42eefdb9e9f3b38b",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "d52877b0160010b6517e9af426ea28180ae485250addc3efb2328884b7773afd",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim32_64x128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "630a24459a2c6912da49b57fbff913659b137f118314e0c159591907fb1539c8",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e2m3_lut_64x128x128_requant_dim32",
       "source_sha256": "2a3d4cf18aa12b30d38d932b9ad0f7d403e78ff6c1352cdee4b6810e43b9dd6c"
@@ -3201,13 +3377,57 @@
       "source_sha256": "56291b1d6f38addff5751755d7a01c8beb650c384f663a1179d88eeda3420567"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim8_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "95e0e18bc81155623ae9b84361e9ea63aad8fd229811e5904fad7dea62650887",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim8_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "34ecd666e32c5004e544012d648e81d871063699ff66983b1bb80d2f4b73db7c",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e5m2_dim8_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "32458a8e4a95f66cf66c34cfbc35beeec45aa620ad9c8816d533cb56c1e40fd9",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e5m2_64x64_requant_dim8",
       "source_sha256": "219beb7a5c0c901dd147cdff6191737a3335f928a5ffdf5bbca6b2ea71f4f024"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim8_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "0515452da10f035c63c0ee73968bfaee3abb7c2908292214d3f456f149448d2b",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim8_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "972e5b7c05bdb6319ce1d506b1a663180b0576f2c98a5f1632cf050d7f2915a2",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e2m3_e5m2_lut_requant_mesh_public_b94c3af_266c593/e2m3_dim8_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "e390b0c99c405b472e18d022c7125f16c6c7738a6272ee958b534b2fecee3c42",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e2m3_lut_64x64_requant_dim8",
       "source_sha256": "687f2c672a202e99673e6a39c3c40c24f8c77788e283140118a685fc26fa7af9"
@@ -7376,6 +7596,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 133,
-  "without_direct_hash_reference": 38
+  "with_direct_hash_reference": 143,
+  "without_direct_hash_reference": 28
 }

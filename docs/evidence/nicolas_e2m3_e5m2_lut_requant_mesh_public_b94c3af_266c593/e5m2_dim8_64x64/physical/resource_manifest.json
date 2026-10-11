@@ -1,0 +1,166 @@
+{
+  "origin": "nicolas_source_header_specialization",
+  "profile_sha256": "29da32388a217e55e50764bd2503a2b733f815ff34053d4f95a8a397269d2b9d",
+  "recipe": {
+    "compute": {
+      "activation_format": "fp8_e5m2",
+      "activation_projection": "lut",
+      "pe_mode": 4,
+      "weight_format": "fp8_e5m2",
+      "weight_projection": "lut"
+    },
+    "frontend_capture_format": "mxfp8",
+    "profile_sha256": "29da32388a217e55e50764bd2503a2b733f815ff34053d4f95a8a397269d2b9d",
+    "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+    "shape": [
+      64,
+      64,
+      64
+    ],
+    "site_id": "functional:matmul",
+    "source_driver_sha256": "219beb7a5c0c901dd147cdff6191737a3335f928a5ffdf5bbca6b2ea71f4f024",
+    "source_header_sha256": "d68e92ee8c114f5ead690ad176f32bc5ee876b2864c2c1643ea7decb5d29f124",
+    "source_layout": {
+      "activation_array": "A_in_hw[32][64]",
+      "config_altfmt": 1,
+      "header": "matmul_data_mx_lut_e5m2_64x64_dim8.h",
+      "lut_arrays": [
+        "A_lut",
+        "B_lut",
+        "C_lut"
+      ],
+      "lut_entry_bits": 8,
+      "lut_lines_by_array": {
+        "A_lut": 32,
+        "B_lut": 32,
+        "C_lut": 32
+      },
+      "lut_words_per_line": 4,
+      "mesh_dim": 8,
+      "output_format": "fp8_e5m2",
+      "output_projection": "lut",
+      "quant_spad_dest": "activation_footprint",
+      "shape": [
+        64,
+        64,
+        64
+      ],
+      "use_lut": true,
+      "weight_altfmt_diff": 0
+    }
+  },
+  "resources": {
+    "activation": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "activation.bin",
+      "layout": "packed_even_odd_m_nibbles",
+      "sha256": "44496fb750a1ac72f1caff82a40f0cac5fa373901a8cab1f2bd80d33dc30f9b3",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "activation_lut": {
+      "bytes": 512,
+      "element_bits": 32,
+      "file": "activation_lut.bin",
+      "layout": "row_pair_lut_8bit",
+      "sha256": "389482aa3ee1d60547b5b7ef700564734c6fd42186a84a3b6cd08fbd4b3bcf98",
+      "shape": [
+        32,
+        4
+      ]
+    },
+    "activation_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "activation_scales.bin",
+      "layout": "k_group_row_e8m0",
+      "sha256": "61052cfe27d3608e61cb904f93efa7b3d398341c554197d3bf764c73ad6b0668",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "golden_bf16": {
+      "bytes": 8192,
+      "element_bits": 16,
+      "file": "golden_bf16.bin",
+      "layout": "row_major_bf16",
+      "sha256": "cc72a86de178d27417000f5649a7c794c041fcca4e29a1959ad7320da70279b2",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "golden_lut_indices": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "golden_lut_indices.bin",
+      "layout": "packed_even_odd_m_lut_indices",
+      "sha256": "0b129db297cd953a60c6d03063c3df1e86423da3bc4613840abbca42190db03a",
+      "shape": [
+        32,
+        64
+      ]
+    },
+    "golden_output_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "golden_output_scales.bin",
+      "layout": "output_column_group_row_e8m0",
+      "sha256": "67dcfb4aec974288bd1987f6c2d9c4303c755efa2233a0cab0a55540428b9ce0",
+      "shape": [
+        2,
+        64
+      ]
+    },
+    "output_lut": {
+      "bytes": 512,
+      "element_bits": 32,
+      "file": "output_lut.bin",
+      "layout": "output_pair_lut_8bit",
+      "sha256": "db91866e595af00e25f36f2a880449df8592af107265d7ca41e0cfcb920777ac",
+      "shape": [
+        32,
+        4
+      ]
+    },
+    "weight": {
+      "bytes": 2048,
+      "element_bits": 8,
+      "file": "weight.bin",
+      "layout": "packed_even_odd_n_nibbles",
+      "sha256": "cbe848c1b0a8586a8b4d7e7b096da0e64dcdc73250223891d57195351a5141c2",
+      "shape": [
+        64,
+        32
+      ]
+    },
+    "weight_lut": {
+      "bytes": 512,
+      "element_bits": 32,
+      "file": "weight_lut.bin",
+      "layout": "column_pair_lut_8bit",
+      "sha256": "fd5fd6ebad7f25adaaa3d53a048f1d28d67cf215437f1f5b9df085943c279707",
+      "shape": [
+        32,
+        4
+      ]
+    },
+    "weight_scales": {
+      "bytes": 128,
+      "element_bits": 8,
+      "file": "weight_scales.bin",
+      "layout": "k_group_column_e8m0",
+      "sha256": "430e8904125dcd5723f98cec6b95a3b6d052d3103ebfbc54070ae2dd48aaa61b",
+      "shape": [
+        2,
+        64
+      ]
+    }
+  },
+  "schema": "mx_gemmini.asymmetric_resource_manifest.v2",
+  "site_id": "functional:matmul"
+}
