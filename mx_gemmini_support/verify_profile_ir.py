@@ -225,8 +225,9 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 raise ValueError("MX scratchpad matmul source or profile binding differs")
             lower = (lower_managed_spad_matmul if name ==
                      "mx_gemmini.managed_matmul_spad" else lower_spad_matmul)
-            kwargs = {"activation_half": _int_attr(op, "activation_half")} if name == \
-                "mx_gemmini.managed_matmul_spad" else {}
+            kwargs = ({"activation_half": _int_attr(op, "activation_half"),
+                       "input_format": _text_attr(op, "input_format") or "fp8_e4m3"}
+                      if name == "mx_gemmini.managed_matmul_spad" else {})
             lower(
                 profile, m=_int_attr(op, "m"), n=_int_attr(op, "n"),
                 k=_int_attr(op, "k"), a_row=_int_attr(op, "activation_row"),
@@ -245,7 +246,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     _text_attr(op, "profile_sha256") != digest or
                     not _text_attr(op, "site_id") or op.operands or op.results):
                 raise ValueError("MX flash setup source or profile binding differs")
-            lower_flash_setup(profile, store_stride_bytes=_int_attr(op, "store_stride_bytes"))
+            lower_flash_setup(profile, store_stride_bytes=_int_attr(op, "store_stride_bytes"),
+                              input_format=_text_attr(op, "input_format") or "fp8_e4m3")
             flash_setups += 1
             continue
         for local, module_name in (("contract_sha256", "mx.contract_sha256"),

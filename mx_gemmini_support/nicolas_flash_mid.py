@@ -45,11 +45,14 @@ def _source_defines(source: str) -> dict[str, str]:
 
 def _check_source_policy(source_wrapper: str, source_core: str,
                          source_header: str, shape: DenseAttentionShape,
-                         block_k: int) -> None:
+                         block_k: int, input_format: str) -> None:
     header = _source_defines(source_header)
+    fp4 = input_format == "fp4_e2m1"
     expected = {"ATTN_SQ": str(shape.sq), "ATTN_SK": str(shape.sk),
                 "ATTN_D": str(shape.d), "ATTN_CAUSAL": "0",
                 "ATTN_HEADS": "1", "ATTN_SCALE_IN_Q": "0"}
+    if fp4:
+        expected["ATTN_FP4"] = "1"
     guards = {name for name in header if name.startswith("INCLUDE_ATTN_VPU_")}
     if (len(guards) != 1 or set(header) != set(expected) | guards or
             any(header.get(name) != value for name, value in expected.items())):
@@ -57,8 +60,9 @@ def _check_source_policy(source_wrapper: str, source_core: str,
     if source_wrapper != source_core:
         wrapper = _source_defines(source_wrapper)
         allowed = {"BK": str(block_k)}
-        optional = {"ATTN_HEADER": f'"attn_vpu_mid.h"',
-                    "ATTN_EXPECT": f'"attn_flash_mid_expect.h"'}
+        suffix = "_mid_fp4" if fp4 else "_mid"
+        optional = {"ATTN_HEADER": f'"attn_vpu{suffix}.h"',
+                    "ATTN_EXPECT": f'"attn_flash{suffix}_expect.h"'}
         if (wrapper.get("BK") != str(block_k) or
                 set(wrapper) - set(allowed) - set(optional) or
                 any(wrapper[name] != value for name, value in optional.items()
@@ -67,17 +71,23 @@ def _check_source_policy(source_wrapper: str, source_core: str,
             raise ValueError("flash source wrapper selects an unsupported policy")
 
 
-def flash_buffer_abi(shape: DenseAttentionShape, block_k: int
+def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
+                     input_format: str = "fp8_e4m3"
                      ) -> tuple[tuple[str, ...], tuple[int, ...]]:
-    """Runtime byte buffers for the two pinned resident FP8 flash shapes."""
-    if (shape, block_k) not in ((SHAPE, BK), (FA_SHAPE, 64)):
+    """Runtime byte buffers for the selected resident flash source shape."""
+    if (shape, block_k, input_format) not in (
+            (SHAPE, BK, "fp8_e4m3"), (FA_SHAPE, 64, "fp8_e4m3"),
+            (SHAPE, BK, "fp4_e2m1")):
         raise ValueError("flash compiler has no selected source shape")
     sq, sk, d = shape.sq, shape.sk, shape.d
+    fp4 = input_format == "fp4_e2m1"
+    qt = 2 if fp4 else 1
     names = (("Q_SCALES_FOLDED" if d == 64 else "Q_SCALES"),
-             "KT_SCALES", "V_SCALES", "Q_IN", "KT_IN", "V_IN",
+             "KT_SCALES", "V_SCALES", "Q4_IN" if fp4 else "Q_IN",
+             "KT4_IN" if fp4 else "KT_IN", "V4_IN" if fp4 else "V_IN",
              "scale_sink", "p_scales_0", "p_scales_1", "O_HW")
     lengths = (sq * d // 32, d * sk // 32, sk * d // 32,
-               sq * d, d * sk, sk * d, 2048,
+               sq * d // qt, d * sk // qt, sk * d // qt, 2048,
                sq * block_k // 32, sq * block_k // 32, sq * d * 2)
     return names, lengths
 
@@ -104,10 +114,11 @@ def _alpha(j: int) -> int:
 
 def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      source_header: str, profile: dict, *,
-                     shape: DenseAttentionShape = SHAPE, block_k: int = BK
+                     shape: DenseAttentionShape = SHAPE, block_k: int = BK,
+                     input_format: str = "fp8_e4m3"
                      ) -> tuple[str, dict]:
     """Render a source-bound, fenced QK/softmax/requant/PV program."""
-    buffers, buffer_bytes = flash_buffer_abi(shape, block_k)
+    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
     if (DenseAttentionShape.from_header(source_header) != shape or
             (source_wrapper != source_core and
              (f'#define BK {block_k}' not in source_wrapper or
@@ -118,15 +129,17 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             'gemmini_mxquant_config_mvout_managed' not in source_core):
         raise ValueError("pinned flash source or geometry differs")
     _check_source_policy(source_wrapper, source_core, source_header,
-                         shape, block_k)
+                         shape, block_k, input_format)
     _audit_frontend_edges(frontend, shape)
     shape.validate(profile)
     if (profile.get("source", {}).get("gemmini_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
         raise ValueError("flash needs Nicolas's managed-scale MX RTL")
     SQ, SK, D, BK = shape.sq, shape.sk, shape.d, block_k
+    fp4 = input_format == "fp4_e2m1"
+    qt = 2 if fp4 else 1
     NB = SK // BK
-    rows8 = lambda m, n: m * n // 16
+    rows8 = lambda m, n: m * n // (16 * qt)
     rows16 = lambda m, n: m * n * 2 // 16
     SP_Q, SP_V, SP_KT = 0, rows8(SQ, D), 4096
     SP_P = SP_KT + NB * rows8(D, BK)
@@ -142,7 +155,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = "mid" if folded else "fa"
+    variant = "mid_fp4" if fp4 else "mid" if folded else "fa"
     policy = {"schema": f"mx_gemmini.flash_{variant}_serial_policy.v1",
               "shape_sq_sk_d_bk": [SQ, SK, D, BK],
               "block_order": ["QK", "softmax", "requant", "PV", "update"],
@@ -151,6 +164,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
               "score_rows": [_score(j) for j in range(NB)],
               "probability_rows": [_probability(j) for j in range(NB)],
               "output_rows": [_output_j(j) for j in range(NB)]}
+    if fp4:
+        policy["input_format"] = input_format
     binding = {"schema": f"mx_gemmini.flash_{variant}_serial_binding.v1",
                "profile_sha256": profile_sha256(profile),
                "source_sha256": _sha(source_core.encode()),
@@ -212,15 +227,16 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         qk = kind == "qk"
         m, n, k = SQ, BK if qk else D, D if qk else BK
         a = SP_Q if qk else _probability(j)
-        b_end = (SP_KT + (j + 1) * D * BK // 16 if qk else
-                 SP_V + (j + 1) * BK * D // 16)
+        b_end = (SP_KT + (j + 1) * D * BK // (16 * qt) if qk else
+                 SP_V + (j + 1) * BK * D // (16 * qt))
         c = _score(j) if qk else _output_j(j)
         return control("managed_matmul_spad", f"{kind}{j}:matmul",
                        f"m = {m} : i32, n = {n} : i32, k = {k} : i32, "
                        f"activation_row = {a} : i32, weight_end_row = {b_end} : i32, "
                        f"output_row = {c} : i32, weight_half = {half} : i32, "
                        f"activation_half = {1 if qk else 0} : i32, "
-                       'scale_sink_buffer = "scale_sink"')
+                       'scale_sink_buffer = "scale_sink"' +
+                       (f', input_format = "{input_format}"' if fp4 else ""))
 
     lines = [
         "builtin.module attributes {",
@@ -232,30 +248,38 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         f'  mx.policy_sha256 = "{policy_digest}",',
         f'  prov.quantization_manifest_sha256 = "{manifest}"',
         "} {", f"  func.func @mx_issue({args}) {{",
+    ]
+    setup = control("flash_setup", "flash:setup",
+                    f"store_stride_bytes = {2 * BK} : i32" +
+                    (f', input_format = "{input_format}"' if fp4 else ""))
+    if fp4:
+        # The quad layout must be selected before the first activation scale DMA.
+        lines.append(setup)
+    lines.extend([
         memory("scale_dma", buffers[0],
                "scales:q_folded" if folded else "scales:q",
                f"row_bytes = {SQ} : i32, rows = {D // 32} : i32, pitch_bytes = {SQ} : i32, "
                "destination_byte = 4096 : i32, selector = 0 : i32"),
         wait("scales:q_fence"),
-        memory("dma_matrix", "Q_IN", "operand:q",
-               f"matrix_rows = {SQ} : i32, matrix_cols = {D} : i32, "
+        memory("dma_matrix", buffers[3], "operand:q",
+               f"matrix_rows = {SQ // qt} : i32, matrix_cols = {D} : i32, "
                "burst_cols = 64 : i32, spad_row = 0 : i32"),
-    ]
+    ])
     for j in range(NB):
-        lines.append(memory("dma_matrix", "KT_IN", f"operand:kt{j}",
-                            f"matrix_rows = {D} : i32, matrix_cols = {BK} : i32, "
-                            f"burst_cols = {min(BK, 64)} : i32, "
+        lines.append(memory("dma_matrix", buffers[4], f"operand:kt{j}",
+                            f"matrix_rows = {D} : i32, matrix_cols = {BK // qt} : i32, "
+                            f"burst_cols = {min(BK // qt, 64)} : i32, "
                             f"spad_row = {SP_KT + j * rows8(D, BK)} : i32, "
-                            f"source_stride_bytes = {SK} : i32, "
-                            f"source_offset_bytes = {j * BK} : i32"))
-        lines.append(memory("dma_matrix", "V_IN", f"operand:v{j}",
-                            f"matrix_rows = {BK} : i32, matrix_cols = {D} : i32, "
-                            f"burst_cols = 64 : i32, "
+                            f"source_stride_bytes = {SK // qt} : i32, "
+                            f"source_offset_bytes = {j * BK // qt} : i32"))
+        lines.append(memory("dma_matrix", buffers[5], f"operand:v{j}",
+                            f"matrix_rows = {BK} : i32, matrix_cols = {D // qt} : i32, "
+                            f"burst_cols = {min(D // qt, 64)} : i32, "
                             f"spad_row = {SP_V + j * rows8(BK, D)} : i32, "
-                            f"source_stride_bytes = {D} : i32, "
-                            f"source_offset_bytes = {j * BK * D} : i32"))
-    lines.append(control("flash_setup", "flash:setup",
-                         f"store_stride_bytes = {2 * BK} : i32"))
+                            f"source_stride_bytes = {D // qt} : i32, "
+                            f"source_offset_bytes = {j * BK * D // qt} : i32"))
+    if not fp4:
+        lines.append(setup)
     n_mm = 0
     for j in range(NB):
         s = _score(j)
@@ -294,7 +318,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                              f"source_row = {s} : i32, "
                              f"destination_row = {_probability(j)} : i32, "
                              f"m = {SQ} : i32, n = {BK} : i32, "
-                             'output_format = "fp8_e4m3", tiled = true, resident = true, '
+                             f'output_format = "{input_format}", tiled = true, resident = true, '
                              f'scale_dram_address = 0 : i64, scale_buffer = "p_scales_{j & 1}"'))
         lines.append(wait(f"probability{j}:fence"))
         lines.extend((gated("pv", j, n_mm & 1), managed("pv", j, n_mm & 1),
@@ -325,13 +349,14 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
 
 def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     source_wrapper: str, source_header: str, profile: dict, *,
-                    shape: DenseAttentionShape = SHAPE, block_k: int = BK
+                    shape: DenseAttentionShape = SHAPE, block_k: int = BK,
+                    input_format: str = "fp8_e4m3"
                     ) -> tuple[Command | Fence, ...]:
     """Require the exact source-bound serial graph before issuing commands."""
     expected, _ = render_flash_mid(frontend, source_core, source_wrapper,
                                    source_header, profile, shape=shape,
-                                   block_k=block_k)
+                                   block_k=block_k, input_format=input_format)
     if mlir_text != expected:
         raise ValueError("flash typed graph or source binding differs")
-    buffers, buffer_bytes = flash_buffer_abi(shape, block_k)
+    buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
     return lower_flash_commands(mlir_text, profile, buffers, buffer_bytes)

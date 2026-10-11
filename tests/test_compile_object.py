@@ -94,7 +94,7 @@ def test_compiler_selects_exact_dual_fp4_requant_graph():
 
 
 @pytest.mark.parametrize(("variant", "vpu_commands"), [
-    ("mid", 39), ("fa", 43),
+    ("mid", 39), ("fa", 43), ("mid_fp4", 39),
 ])
 def test_compiler_selects_source_bound_flash_program(variant, vpu_commands):
     graph = (ROOT / f"docs/evidence/nicolas_flash_{variant}_typed_a042643_0344bcb/"

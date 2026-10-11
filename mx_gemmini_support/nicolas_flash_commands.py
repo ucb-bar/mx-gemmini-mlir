@@ -89,7 +89,8 @@ def lower_flash_commands(mlir_text: str, profile: dict,
             if op.operands:
                 raise ValueError("flash setup takes no buffer")
             commands.extend(lower_flash_setup(
-                profile, store_stride_bytes=_int_attr(op, "store_stride_bytes")))
+                profile, store_stride_bytes=_int_attr(op, "store_stride_bytes"),
+                input_format=_text_attr(op, "input_format") or "fp8_e4m3"))
         elif name == "mx_gemmini.managed_matmul_spad":
             if op.operands:
                 raise ValueError("flash managed matmul takes no buffer")
@@ -106,7 +107,8 @@ def lower_flash_commands(mlir_text: str, profile: dict,
                 b_end_row=_int_attr(op, "weight_end_row"),
                 output_row=_int_attr(op, "output_row"),
                 weight_half=half, activation_half=_int_attr(op, "activation_half"),
-                scale_sink=sink))
+                scale_sink=sink,
+                input_format=_text_attr(op, "input_format") or "fp8_e4m3"))
         elif name == "mx_gemmini.vpu_execute":
             if op.operands:
                 raise ValueError("flash VPU operation takes physical rows")

@@ -576,14 +576,20 @@ LogicalResult MatmulSpadOp::verify() {
 
 LogicalResult ManagedMatmulSpadOp::verify() {
   if (failed(verifyMemoryIds(*this))) return failure();
+  auto formatAttr = getInputFormatAttr();
+  auto format = formatAttr ? formatAttr.getValue() : "fp8_e4m3";
+  if (format != "fp8_e4m3" && format != "fp4_e2m1")
+    return emitOpError("managed matmul input format must be E4M3 or E2M1");
+  int64_t qt = format == "fp4_e2m1" ? 2 : 1;
   int64_t m = getM(), n = getN(), k = getK();
   int64_t a = getActivationRow(), bEnd = getWeightEndRow(), c = getOutputRow();
-  int64_t bStart = bEnd - k * n / 16;
-  int64_t aEnd = a + m * k / 16, cEnd = c + m * n * 2 / 16;
+  int64_t bStart = bEnd - k * n / (16 * qt);
+  int64_t aEnd = a + m * k / (16 * qt), cEnd = c + m * n * 2 / 16;
   auto overlaps = [](int64_t l0, int64_t l1, int64_t r0, int64_t r1) {
     return l0 < r1 && r0 < l1;
   };
-  if (m <= 0 || n <= 0 || k <= 0 || m % 16 || n % 16 || k % 16 ||
+  if (m <= 0 || n <= 0 || k <= 0 || m % (16 * qt) ||
+      n % (16 * qt) || k % 16 ||
       m >= (1 << 16) || n >= (1 << 16) || k >= (1 << 16) ||
       a < 0 || bStart < 0 || c < 0 || aEnd > (1 << 14) ||
       bEnd > (1 << 14) || cEnd > (1 << 14) ||
@@ -606,6 +612,10 @@ LogicalResult ManagedMatmulSpadOp::verify() {
 
 LogicalResult FlashSetupOp::verify() {
   if (failed(verifyMemoryIds(*this))) return failure();
+  auto formatAttr = getInputFormatAttr();
+  auto format = formatAttr ? formatAttr.getValue() : "fp8_e4m3";
+  if (format != "fp8_e4m3" && format != "fp4_e2m1")
+    return emitOpError("flash setup input format must be E4M3 or E2M1");
   int64_t stride = getStoreStrideBytes();
   if (stride <= 0 || stride % 16 || stride >= (1 << 16))
     return emitOpError("flash BF16 store stride must fit a complete DIM16 row");

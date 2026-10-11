@@ -97,7 +97,8 @@ def lower_spad_matmul(profile: dict, *, m: int, n: int, k: int,
 def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
                               a_row: int, b_end_row: int, output_row: int,
                               weight_half: int, activation_half: int,
-                              scale_sink: str) -> tuple[Command, ...]:
+                              scale_sink: str,
+                              input_format: str = "fp8_e4m3") -> tuple[Command, ...]:
     """Issue one managed-scale loop after its gated weight-scale load.
 
     The caller owns the schedule: it must place a gated load for the same
@@ -113,19 +114,24 @@ def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
             not profile.get("resources", {}).get("vpu") or
             not profile.get("resources", {}).get("spad_requant")):
         raise ValueError("managed MX scratchpad matmul needs the pinned DIM16 MX+VPU RTL")
-    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+    if input_format not in {"fp8_e4m3", "fp4_e2m1"}:
+        raise ValueError("managed MX matmul input format is unsupported")
+    fp4 = input_format == "fp4_e2m1"
+    qt = 2 if fp4 else 1
+    require_compute(profile, input_format, input_format, pe_mode=0 if fp4 else 8,
                     activation_projection="direct", weight_projection="direct")
     if (any(type(value) is not int for value in
             (m, n, k, a_row, b_end_row, output_row, weight_half, activation_half)) or
-            any(value <= 0 or value % 16 for value in (m, n, k)) or
+            any(value <= 0 or value % (32 if fp4 else 16) for value in (m, n)) or
+            k <= 0 or k % 16 or
             max(m, n, k) >= 1 << 16 or
             weight_half not in (0, 1) or activation_half not in (0, 1) or
             not isinstance(scale_sink, str) or
             re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", scale_sink) is None):
         raise ValueError("managed MX scratchpad matmul geometry or scale half is unsupported")
-    b_start = b_end_row - k * n // 16
+    b_start = b_end_row - k * n // (16 * qt)
     limit = profile["resources"]["scratchpad_bytes"] // 16
-    spans = ((a_row, a_row + m * k // 16),
+    spans = ((a_row, a_row + m * k // (16 * qt)),
              (b_start, b_end_row),
              (output_row, output_row + m * n * 2 // 16))
     if (any(start < 0 or start >= end or end > limit for start, end in spans) or
@@ -133,7 +139,7 @@ def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
                 for i, left in enumerate(spans) for right in spans[i + 1:]) or
             max(a_row, b_end_row, output_row) >= 1 << 14):
         raise ValueError("managed MX scratchpad matmul placement overlaps or exceeds profile")
-    i, j, kk = m // 16, n // 16, k // 16
+    i, j, kk = m // (16 * qt), n // (16 * qt), k // 16
     return (
         Command(26, Operand(buffer=scale_sink, address_mask=(1 << 33) - 1,
                             or_bits=(weight_half << 61) | (activation_half << 60) |
@@ -147,21 +153,26 @@ def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
     )
 
 
-def lower_flash_setup(profile: dict, *, store_stride_bytes: int) -> tuple[Command, ...]:
-    """Configure Nicolas's E4M3 mesh and BF16 scratchpad drain once per pass."""
+def lower_flash_setup(profile: dict, *, store_stride_bytes: int,
+                      input_format: str = "fp8_e4m3") -> tuple[Command, ...]:
+    """Configure the selected MX mesh and BF16 scratchpad drain."""
     if (profile.get("source", {}).get("gemmini_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
             profile.get("transport") != "rocket_rocc" or
             not profile.get("resources", {}).get("vpu") or
             not profile.get("resources", {}).get("spad_requant")):
         raise ValueError("flash setup needs the pinned MX+VPU Rocket profile")
-    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+    if input_format not in {"fp8_e4m3", "fp4_e2m1"}:
+        raise ValueError("flash mesh input format is unsupported")
+    fp4 = input_format == "fp4_e2m1"
+    require_compute(profile, input_format, input_format, pe_mode=0 if fp4 else 8,
                     activation_projection="direct", weight_projection="direct")
     if (type(store_stride_bytes) is not int or store_stride_bytes <= 0 or
             store_stride_bytes % 16 or store_stride_bytes >= 1 << 16):
         raise ValueError("flash BF16 store stride is unsupported")
     return (
-        Command(0, Operand(immediate=(1 << 16) | (3 << 14) | (1 << 2)),
+        Command(0, Operand(immediate=(1 << 16) | (3 << 14) |
+                ((2 << 12) | (2 << 10) if fp4 else 0) | (1 << 2)),
                 Operand(immediate=1 << 48)),
         Command(0, Operand(immediate=2), Operand(immediate=store_stride_bytes)),
     )
