@@ -1,0 +1,24 @@
+{
+  "schema": "mx_gemmini.runtime_f32_projection_spike.v1",
+  "status": "live_f32_to_fp4_projection_matched",
+  "scope": "one model2MLIR small-LLaMA MLP projection, runtime f32 padding and MX quantization",
+  "site": "dn",
+  "logical_shape_mnk": [
+    8,
+    128,
+    344
+  ],
+  "padded_shape_mnk": [
+    32,
+    128,
+    352
+  ],
+  "compared_bf16_outputs": 4096,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "payload_manifest_sha256": "7f6e60f0e842cfb43fc4efee1ab7dac83e86e297c58ffd166dae32e95485b765",
+  "issuer_sha256": "930b4fbe84b3c23d65140515ff8869da21e21760ebf5fd9daaf5e4173a7c055d",
+  "quantizer_source_sha256": "f3006067b8ccdb643150a86235d686b95ad73f1f200c9c62ac9b909682b5c97e",
+  "elf_sha256": "fe248fa16e3c7cc946181215870069be808532ee06d959579be2d3698cc4379f",
+  "spike_log_sha256": "2ddf4159f32262247f972076c1abda4c8fe6e7c43dc9dc5db56aff7759932550",
+  "spike_exit_code": 0
+}

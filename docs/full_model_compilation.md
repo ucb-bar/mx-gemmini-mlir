@@ -138,6 +138,29 @@ tooling limit, not a reason to write another graph runtime. Full checkpoint
 captures and reference outputs must be selected for each named model before
 claiming pretrained inference.
 
+The MX runtime now has a freestanding C encoder for live f32 operands. It
+reproduces the pinned MXQuant BF16/E8M0 FP8 and FP4 bytes, including the
+target's different activation and weight packing orders. A [pinned Spike
+replay](evidence/runtime_f32_projection_spike_266c593/README.md) pads two
+small-LLaMA FP4 MLP projections at runtime, converts their live f32 operands,
+calls the data-free issuer, and checks all 15,360 BF16 readouts. These are
+separate projections; the dense three-pointer catalog wrapper and complete
+model link remain open.
+
+## Compiler ownership
+
+The `mx_gemmini_support` package is the MX backend's Python and C support,
+not a replacement for Merlin's graph compiler. Merlin already owns the
+target-neutral `linalg-on-tensors` structural reader, model and session
+orchestration, source-bound catalog binding, dense memref shim, host lowering,
+and link/runtime infrastructure. The MX package owns only MX profile legality,
+precision and E8M0 policy, packed physical layout, command generation, and
+target ABI glue. Its current `model2mlir_worklist` duplicates some generic
+source-graph parsing; whole-model integration should consume Merlin's existing
+structural inventory rather than make that MX parser a second graph frontend.
+The catalog builder belongs in this target package, but it must implement
+Merlin's generic `DeviceRouting.catalog_builder` interface.
+
 The [current model2MLIR small LLaMA probe](evidence/model2mlir_small_llama_precision_e9ded36_266c593/README.md)
 uses revision `e9ded36` and captures a complete two-layer random-weight
 LLaMA-style graph with zero opaque operations. Its precision proposal now
