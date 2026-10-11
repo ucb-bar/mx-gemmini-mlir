@@ -1,0 +1,29 @@
+{
+  "b_spad_ids": [
+    1,
+    2
+  ],
+  "explicit_operand_dma_commands": 0,
+  "explicit_output_dma_commands": 0,
+  "native_chunk_count": 2,
+  "native_command_functs": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    8
+  ],
+  "output_column_bytes_per_chunk": 128,
+  "physical_program_sha256": "fc601138dd13750172024ae7ddcbb7e80f3c0eb6195d8e6f9f32c03b324c8230",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "scale_uploads": 4,
+  "schema": "mx_gemmini.nicolas_fp8_native_dram_nc_audit.v1",
+  "source_driver_sha256": "eb80572c6e1a9ad1a700d4a98d28e106dda214bca377903cea30e37ebd3f7879"
+}

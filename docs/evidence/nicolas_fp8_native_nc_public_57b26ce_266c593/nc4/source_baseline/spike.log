@@ -1,0 +1,5 @@
+fp8 WS native multi-loop (4 chunks) test PASSED (no mismatches).
+PERF fp8_128x128_dramloop_nc4 scales=10 loops=82 total=233 ideal=8192 util(loops)=9990%
+PERF_HW fp8_128x128_dramloop_nc4 exe_active=8680 ex=8778 ld=7930 st=7062 ld_ex=6991 st_ex=6977 ld_st=5325 ld_st_ex=7331 idle=-50312
+Gemmini extension configured with:
+    dim = 16

@@ -91,3 +91,56 @@ def test_native_schedule_rejects_other_source_and_tampered_selection() -> None:
                              profile, manifest)
     with pytest.raises(ValueError, match="one source-bound"):
         bind_native_dram(mlir, profile, manifest)
+
+
+@pytest.mark.parametrize("chunks", [2, 4])
+def test_native_column_chunk_source_and_compiler_match(chunks: int) -> None:
+    directory = ROOT / "docs/evidence/nicolas_fp8_native_nc_public_57b26ce_266c593" / (
+        f"nc{chunks}")
+    case = CASES[f"fp8_128x128x128_native_dram_nc{chunks}"]
+    receipt = json.loads((directory / "receipt.json").read_text())
+    audit = json.loads((directory / "native_dram_equivalence.json").read_text())
+    physical = json.loads((directory / "object/physical_program.json").read_text())
+    object_manifest = json.loads((directory / "object/object_manifest.json").read_text())
+    manifest, resources = load_bundle(directory / "bundle")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
+    mlir = (directory / "payload_bound.mlir").read_text()
+    assert receipt["compiler_revision"] == "57b26cef780947aa125622b24b154ae055599b35"
+    assert receipt["rtl_revision"] == RTL_REVISION
+    assert receipt["model2mlir_revision"] == MODEL2MLIR_REVISION
+    assert receipt["mxq_revision"] == MXQ_REVISION
+    assert receipt["profile_sha256"] == profile_sha256(profile)
+    assert receipt["case"] == case.key
+    assert receipt["source_driver_sha256"] == manifest["source_driver_sha256"] == (
+        case.source_sha256)
+    assert receipt["source_header_sha256"] == case.header_sha256
+    assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+    assert receipt["native_dram_loop"] is True
+    assert receipt["outputs_checked"] == 16384 and receipt["mismatches"] == 0
+    assert len(resources["golden_bf16"]) == 32768
+    assert selected_native_dram(mlir, profile, manifest) == chunks
+    assert audit["source_driver_sha256"] == case.source_sha256
+    assert audit["native_chunk_count"] == chunks
+    assert audit["native_command_functs"] == [9, 10, 11, 12, 13, 8] * chunks
+    assert audit["scale_uploads"] == 2 * chunks
+    assert audit["b_spad_ids"] == [1 + (c & 1) for c in range(chunks)]
+    assert audit["explicit_operand_dma_commands"] == 0
+    assert audit["explicit_output_dma_commands"] == 0
+    assert audit["physical_program_sha256"] == _sha(
+        directory / "object/physical_program.json")
+    assert receipt["native_dram_equivalence_sha256"] == _sha(
+        directory / "native_dram_equivalence.json")
+    assert physical["plan"]["native_dram_n_chunks"] == chunks
+    assert object_manifest["allocated_data_section_bytes"] == 0
+    assert receipt["object_sha256"] == _sha(directory / "object/mx_issue.o")
+    assert receipt["spike_log_sha256"] == _sha(directory / "run/spike.log")
+    assert "0 mismatches / 16384 BF16 values" in (directory / "run/spike.log").read_text()
+    assert receipt["source_baseline"]["source_spike_exit_code"] == 0
+    assert receipt["source_baseline"]["source_golden_bf16_values_checked"] == 16384
+    assert receipt["source_baseline"]["source_elf_sha256"] == _sha(
+        directory / "source_baseline/program.elf")
+    assert receipt["source_baseline"]["source_spike_log_sha256"] == _sha(
+        directory / "source_baseline/spike.log")
+    assert f"native multi-loop ({chunks} chunks) test PASSED" in (
+        directory / "source_baseline/spike.log").read_text()
