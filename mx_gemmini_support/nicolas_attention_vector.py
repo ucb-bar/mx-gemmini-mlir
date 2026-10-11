@@ -124,7 +124,7 @@ def _audit_frontend_edges(frontend: str,
             scale_source.operands[0].owner.name != "arith.constant"):
         raise ValueError("dense attention source scale differs from 1/sqrt(d)")
     constant = str(scale_source.operands[0].owner)
-    match = re.search(r"([0-9]+\.[0-9]+e[+-][0-9]+) : f32", constant)
+    match = re.search(r"([0-9]+(?:\.[0-9]+)?(?:e[+-]?[0-9]+)?) : f32", constant)
     if (match is None or not math.isclose(float(match.group(1)),
                                         1 / math.sqrt(shape.d), rel_tol=1e-6)):
         raise ValueError("dense attention source scale differs from 1/sqrt(d)")

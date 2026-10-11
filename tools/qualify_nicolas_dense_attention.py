@@ -25,8 +25,11 @@ BASELINES = {
              "attn_vpu.h.gz", "attn_vpu_expect.h", "npu_source_sha256"),
     "mid": ("nicolas_attn_vpu_mid_source_baseline_a042643_0344bcb",
             "attn_vpu_mid.h.gz", "attn_vpu_mid_expect.h", "source_core_sha256"),
+    "fa": ("nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb",
+           "attn_vpu_fa.h.gz", "attn_vpu_fa_expect.h", "source_core_sha256"),
 }
-EXPECTED_SHAPES = {"base": (32, 64, 64), "mid": (64, 128, 64)}
+EXPECTED_SHAPES = {"base": (32, 64, 64), "mid": (64, 128, 64),
+                   "fa": (64, 256, 128)}
 CONTRACT = ROOT / "mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml"
 
 
@@ -78,7 +81,7 @@ def replace_source_kernel(source: str, *, variant: str) -> str:
                                          "gemmini_mx_load_scales_2d(",
                                          "gemmini_mxquant_config_mvout(")):
         raise ValueError("source checker retained a handwritten kernel command")
-    if variant == "mid":
+    if variant in ("mid", "fa"):
         source = "#define ATTN_HOST_SOFTMAX 0\n#define ATTN_ACC_ROWS 16\n" + source
     return source
 
@@ -113,8 +116,8 @@ def main() -> None:
     shape = DenseAttentionShape.from_header(header.decode())
     if (shape.sq, shape.sk, shape.d) != EXPECTED_SHAPES[args.variant]:
         raise ValueError("dense attention source variant shape differs")
-    if args.variant == "mid":
-        wrapper = args.npu_root / "baremetal/mxgemmini/src/attn_vpu_mid.c"
+    if args.variant in ("mid", "fa"):
+        wrapper = args.npu_root / f"baremetal/mxgemmini/src/attn_vpu_{args.variant}.c"
         if _sha(wrapper) != baseline["source_wrapper_sha256"]:
             raise ValueError("dense attention source wrapper differs")
     vector, binding = render_dense_attention_vector(
