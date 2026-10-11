@@ -1,0 +1,5 @@
+fp8 WS chunked matmul test PASSED (no mismatches).
+PERF fp8_128x128_chunk2 M=128 N=128 K=128 DIM=16 load=825 compute=143 mvout=707 total=1675 ideal=8192 util=5728.6%
+PERF_HW fp8_128x128_chunk2 exe_active=4109 loop_active=3314 ex_only=3915 st_ex=2094 spad_a_wait=1948 overlap_haz=2840 st_only=2071 rs_full=1466 other=-7937
+Gemmini extension configured with:
+    dim = 16

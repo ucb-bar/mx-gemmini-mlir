@@ -639,13 +639,57 @@
       "source_sha256": "1a0016d2ca9ebcca5840b31486ed6bda2df4cf3756aec0922781db398c98d5ce"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk2/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "9bdcee62a0606d4bd018b0b15c13a93ea58f131ca15348aa4967d89c272e1d88",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk2/chunk_equivalence.json",
+          "schema": "mx_gemmini.nicolas_fp8_i_chunks_audit.v1",
+          "sha256": "22069b2ec5e010dfc16ed3168d264322aab52a6375d86033d9096d9ae62fd77e",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk2/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "7a67cc4c6347c1072400d8dcaede0ce91e8c9cfb3545c722f403ad38d923ecbd",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_128x128_chunked",
       "source_sha256": "c2cd8affbbbd079a3553bcfc8bf46246114c8a2ff62e38f07994447cb512661e"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk4/bundle/manifest.json",
+          "schema": "mx_gemmini.source_payload.v1",
+          "sha256": "9f27364f06cd3f115d125c38e1840a6cab5815a264069db3e111f0d4cefeb327",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk4/chunk_equivalence.json",
+          "schema": "mx_gemmini.nicolas_fp8_i_chunks_audit.v1",
+          "sha256": "ff472f099099b597fa337f953cdaf92ad5fdf436ca79f6b603bd13b9e647177f",
+          "status": null
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_fp8_chunked_public_fbe26eb_266c593/chunk4/receipt.json",
+          "schema": "mx_gemmini.nicolas_plain_fp8_typed_object_spike.v1",
+          "sha256": "a91cc6d172fe64eb5182d4751c00eede711d0af8c7c37b4e8f89b562bb0e227a",
+          "status": "source_golden_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_128x128_chunked4",
       "source_sha256": "12bc6da5f5a54f87a4df95664a8259f6b0610675a92d0259121cbf13fe891275"
@@ -7743,6 +7787,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 150,
-  "without_direct_hash_reference": 21
+  "with_direct_hash_reference": 152,
+  "without_direct_hash_reference": 19
 }
