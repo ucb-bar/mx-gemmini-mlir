@@ -308,9 +308,14 @@ converting its ~10 GB weight image; the 3600-second retry linked. TinyLlama's
 first Spike run exhausted a 512 MiB arena. A 2 GiB relink also reached a
 guest `FATAL model arena exhausted` after 348 calls despite Spike returning
 process exit code zero. The ELF link and process exit are not an inference
-result. The LLVM IR contains 690 literal allocation sites totaling 4.34 GiB;
-a larger arena is being tested. SmolVLA flow ran one captured flow input on
-Spike with every result/state digest present, and host-only action decode
+result. The LLVM IR contains 690 literal allocation sites totaling 4.34 GiB.
+A 5 GiB manual relink of the full-checkpoint TinyLlama prefill did subsequently
+reach guest `DONE` on pinned Spike. Its 32,000-logit digest matches the
+separately linked full TinyLlama session's prefill digest exactly; see the
+[execution record](evidence/tiny_full_checkpoint_prefill_spike_20261011/README.md).
+This is stage execution and cross-link agreement, not full-session completion
+or independent quantized numerical parity. SmolVLA flow ran one captured flow
+input on Spike with every result/state digest present, and host-only action decode
 matched all 1,600 captured PyTorch f32 output values on its separately
 captured input. Neither proves recurrent handoff or quantized full-model
 parity.
