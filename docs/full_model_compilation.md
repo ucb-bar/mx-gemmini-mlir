@@ -23,6 +23,59 @@ Python fallback, and outputs must be checked against the same model and inputs
 in PyTorch. A graph capture or an MX matrix object alone does not pass this
 gate.
 
+The default [Merlin target contract](../contracts/target_contract.yaml) is now
+generated from the pinned `MxE4M3Fp4VpuGemminiRocketConfig` profile. It
+declares the direct FP4 E2M1 and FP8 E4M3 PE modes, BF16 accumulation, and
+the source-observed BF16 row softmax VPU capability. It remains marked
+`structural_unqualified` and `phase0_admitted: false`: a mode declaration is
+not an executable catalog or a numerical result. The previous standalone
+prototype contract is retained as
+[`target_contract-f016-historical.yaml`](../contracts/target_contract-f016-historical.yaml).
+Regenerate and check the selected contract with:
+
+```sh
+python -m mx_gemmini_support.merlin_profile_contract \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --out contracts/target_contract.yaml --check
+```
+
+For a current full-checkpoint session bundle, run:
+
+```sh
+python -m tools.audit_model2mlir_session --session /path/to/session \
+  --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+  --out /path/to/new-audit.json
+```
+
+The tool verifies bundle integrity, inventories each stage through Merlin,
+and reports FP4/FP8 candidate counts alongside all
+remaining operation families. Its `unlowered_operation_count` intentionally
+equals the stage's operation count until an executable catalog and host/device
+partition have been built and verified.
+
+On 2026-10-11, the current model2MLIR `02c61c2` plus the changes on this
+branch captured all four full pretrained checkpoints as explicit sessions.
+Every stage had zero opaque operations and passed the model2MLIR stage-receipt
+and whole-bundle integrity checks. The MX structural audit used Merlin's shared
+parser and the selected Nicolas MX+VPU profile. Counts below sum distinct
+stage graphs; repeated decode or flow steps execute those graphs again.
+
+| Session | Stage graphs | MLIR operations | Proposed FP4 matmuls | Proposed FP8 QK/PV | Other contraction regions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| TinyLlama | 2 | 7,245 | 310 | 88 | 2 |
+| DeepSeek Qwen 1.5B | 2 | 8,851 | 394 | 112 | 170 |
+| Gemma 2 2B | 2 | 10,107 | 366 | 104 | 2 |
+| SmolVLA | 3 | 9,564 | 302 | 25 | 141 |
+
+Qwen's other regions are predominantly the 84 bias epilogues in each stage;
+their matrix components are separately proposed for FP4. SmolVLA has
+additional contraction shapes and ABI forms that the current MX importer
+retains for host or further VPU legalization. These are candidate counts,
+with no executable MX placement, quantized reference, linked session, or Spike
+inference result. The captures use synthetic inputs and are not paper-ready
+quality measurements. SmolVLA was recaptured with xDSL 0.65 so all four graphs
+can be parsed in the same Merlin environment.
+
 ## First compiler probe
 
 The [four-model preflight archive](evidence/full_model_compile_preflight_a042643_748b984/README.md)
@@ -166,12 +219,12 @@ Merlin's generic `DeviceRouting.catalog_builder` interface.
 Merlin's catalog route now has an explicit, target-neutral source dtype
 conversion contract on `main` at `6f1acb6e6`. That admits
 an f32 model contraction only when the catalog names a real target-native
-datapath and a hashed numeric policy. The current MX provider contract still
-declares no executable compute-unit datapaths, so the conversion route cannot
-be enabled for MX until the selected Nicolas profile exports those facts into
-Merlin. This is target profile integration work, not a reason to label f32 as
-an MX hardware dtype. `runtime_quant.c` also still mixes reusable numerical
-encoding with MX physical packing; the generic numerical part should be
+datapath and a hashed numeric policy. The selected Nicolas profile now exports
+direct FP4 and FP8 datapath facts into Merlin, satisfying that structural gate.
+The conversion route still requires a target-owned dense f32 catalog wrapper,
+source-bound numeric policy, and a runnable object. This is not a reason to
+label f32 as an MX hardware dtype. `runtime_quant.c` also still mixes reusable
+numerical encoding with MX physical packing; the generic numerical part should be
 promoted to Merlin when its shared C runtime API is established, while the
 target's byte layout and command ABI stay here.
 
