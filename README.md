@@ -118,6 +118,10 @@ The [generated I/O replay](docs/evidence/nicolas_attn_vpu_generated_io_e9ded36_0
 also replaces source scale loads, operand DMAs, and result readouts with
 data-free objects. All four source stage hashes still match on Spike; one
 typed graph and object for the complete command schedule remain to be built.
+The [single-object replay](docs/evidence/nicolas_attn_vpu_single_object_e9ded36_0344bcb/README.md)
+combines all 127 source-equivalent command items into one data-free RV64
+object. The complete score and output hashes match the source on Spike in two
+identical runs. QK/PV and I/O still need typed MLIR lowering.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
