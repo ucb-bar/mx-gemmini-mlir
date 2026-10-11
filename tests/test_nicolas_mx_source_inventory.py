@@ -31,8 +31,8 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
     assert len(names) == len(set(names))
     with_refs = sum(bool(entry["evidence_references"])
                     for entry in inventory["entries"])
-    assert inventory["with_direct_hash_reference"] == with_refs == 121
-    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 50
+    assert inventory["with_direct_hash_reference"] == with_refs == 124
+    assert inventory["without_direct_hash_reference"] == 171 - with_refs == 47
     by_name = {entry["name"]: entry for entry in inventory["entries"]}
     assert not by_name["matmul_tiled_fp8_128x128_dramloop"]["evidence_references"]
     assert any("nicolas_plain_fp8_typed_object_7d7a660" in ref["path"] for ref in
@@ -79,6 +79,11 @@ def test_nicolas_mx_inventory_references_real_source_receipts() -> None:
                    "matmul_tiled_fp8_e4m3_lut_64x64",
                    "matmul_tiled_fp8_e5m2_64x64"):
         assert any("nicolas_symmetric_lut_public_4e30dcf" in ref["path"] for ref in
+                   by_name[source]["evidence_references"])
+    for source in ("matmul_tiled_fp8_e4m3_lut_64x64_dim32",
+                   "matmul_tiled_fp8_e4m3_lut_64x64_nonrequant_dim8",
+                   "matmul_tiled_fp8_e4m3_lut_128x128_nonrequant_dim8"):
+        assert any("nicolas_e4m3_lut_shapes_public_4f316ac" in ref["path"] for ref in
                    by_name[source]["evidence_references"])
     assert any("mx_public_vpu_softmax_3f9af55" in ref["path"] for ref in
                by_name["vpu_softmax"]["evidence_references"])

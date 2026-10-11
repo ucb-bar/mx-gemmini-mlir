@@ -1480,7 +1480,29 @@
       "source_sha256": "fa9a48f66a663c6befce1cbf562d7998472c73dd55fd3313ff9b2a55ddef1129"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim32_64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "2aec111ffb0fda3c813ad4bf38200c076f74571cbfe35d1f5ec54621c1c1d750",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim32_64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "4a091df2cc08fb6e1f7f6ebb3cb43d92ce8dee0361519f8d8dad477de13aa655",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim32_64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "45665031f8c5b1458202c283288c108d5d181669b4f32bfbbff20c04d9dfbb57",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e4m3_lut_64x64_dim32",
       "source_sha256": "c1ca615dfc976af1a2ee55a0aaf8460180106d1bef6bc709b52a5f0d87b1f6c4"
@@ -2841,13 +2863,57 @@
       "source_sha256": "56b92684810d6e57b28b7b0c2d89375fe7eeced7667a4571d38f23ff34b91bd3"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "4ea1e052922ea3ad1acc1b6d0024ddef55b38bb32efff58d3d06e8b11ea9645d",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "1bdfc5295c7d9eecadba8b7acf77d24e71976b7c88998adcc12b9ae93f108051",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "16499ae1ecd572380d4a509c5d927acc197f774b304d69b77386ca853d0115a9",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e4m3_lut_64x64_nonrequant_dim8",
       "source_sha256": "a871838208da00e9d4b55b653d195730092f5098984764c8beaa80f43d43617a"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "baac3abfe4e9b377116f6b252e832c5240a0ba31b815214d1e0d083f2b67f4ab",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "70a443d2b3201d9817a05174e5777f690754654c434fb2f5557ab4ae9bdb8a68",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e4m3_lut_shapes_public_4f316ac_266c593/e4m3_dim8_128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "10a37efcd17eabdf5e2a5613087a960db7cc9f93eef2e5ef36962f3c0b59ef6a",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_e4m3_lut_128x128_nonrequant_dim8",
       "source_sha256": "b64b94df6ebe1b3642f57a1ff506943c099bcd418b2523ee85b65bb69ab5e31f"
@@ -7112,6 +7178,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 121,
-  "without_direct_hash_reference": 50
+  "with_direct_hash_reference": 124,
+  "without_direct_hash_reference": 47
 }
