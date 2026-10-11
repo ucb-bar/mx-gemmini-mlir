@@ -1,0 +1,26 @@
+{
+  "format": "fp8_e4m3",
+  "isolated_mlir_sha256": "442bf555c6da5b5d3f44c09cd3e9fe9acbf2a3e767ab62d93482430e98e96ebf",
+  "rounding": "mxq_bf16_operand_rne",
+  "scale_format": "e8m0",
+  "schema": "mx_gemmini.model2mlir_projection_quantization.v1",
+  "selected_site": {
+    "column_count": 2048,
+    "column_start": 0,
+    "fqn": "lm.model.layers.0.self_attn.q_proj",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "88a090e1f56ae445fe53076a94881f8d630cda710ccfabbdf2a34a6753c9ccc4",
+    "region_id": "matmul_1",
+    "row_count": 8,
+    "row_start": 0,
+    "source_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+    "source_op": "matmul",
+    "source_shape_mnk": [
+      8,
+      2048,
+      2048
+    ],
+    "weight_sha256": "082b3ca5fbe12fadc4a3df4220ca638382a7194fc643d6d163390e19a18ad988"
+  },
+  "source_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b"
+}

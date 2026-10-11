@@ -20,6 +20,7 @@ from mx_gemmini_support.verify_profile_ir import verify_ir
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/model2mlir_tinyllama_projection_a042643_266c593"
+FULL_ARCHIVE = ROOT / "docs/evidence/model2mlir_tinyllama_full_qproj_a042643_266c593"
 FULL_GRAPH = ROOT / "docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz"
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
 
@@ -90,3 +91,44 @@ def test_model_payload_rejects_provenance_and_shape_forgery() -> None:
     changed["source_header_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="distinct source contract"):
         validate_model2mlir_projection(changed)
+
+
+def test_complete_q_projection_is_one_compiled_mx_program() -> None:
+    summary = json.loads((FULL_ARCHIVE / "summary.json").read_text())
+    manifest, resources = load_bundle(FULL_ARCHIVE / "bundle")
+    inputs = json.loads((FULL_ARCHIVE / "input_receipt.json").read_text())
+    bound = (FULL_ARCHIVE / "projection.payload_bound.mlir").read_text()
+    assert summary["status"] == "complete_projection_matched_on_spike"
+    assert summary["scope"] == (
+        "one complete rank-two model projection; other model operations uncompiled")
+    assert summary["site"]["source_shape_mnk"] == [8, 2048, 2048]
+    assert summary["site"]["column_count"] == 2048
+    assert summary["site"]["weight_sha256"] == inputs["weight_sha256"]
+    assert summary["padded_shape_mnk"] == [16, 2048, 2048]
+    assert (summary["compared_bf16_values"], summary["model_output_values"],
+            summary["padding_output_values"]) == (32768, 16384, 16384)
+    assert manifest["tile_mnk"] == [16, 32, 128]
+    assert portable_projection_shape((FULL_ARCHIVE / "projection.model2mlir.mlir").read_text()) == (
+        16, 2048, 2048)
+    report = verify_ir(bound, PROFILE)
+    assert report["contracts"] == 1 and report["source_resources"] == 4
+    physical = lower_bound_source(bound, PROFILE, manifest, resources)
+    archived = gzip.decompress((FULL_ARCHIVE / "object/physical_program.json.gz").read_bytes())
+    receipt = json.loads(archived)
+    assert physical.receipt() == receipt
+    assert len(receipt["steps"]) == 36998
+    assert len(receipt["plan"]["output_tiles"]) == 64
+    obj = json.loads((FULL_ARCHIVE / "object/object_manifest.json").read_text())
+    run = json.loads((FULL_ARCHIVE / "run/artifact_manifest.json").read_text())
+    assert obj["physical_program_sha256"] == hashlib.sha256(archived).hexdigest()
+    assert obj["issuer_opt_level"] == "-O1"
+    assert obj["object_sha256"] == summary["object_sha256"]
+    assert obj["allocated_data_section_bytes"] == 0
+    assert obj["embedded_operand_bytes"] == obj["embedded_golden_bytes"] == 0
+    assert run["compiler_revision"].startswith("816c5dd")
+    assert run["status"] == "model_projection_matched_on_pinned_spike"
+    assert run["compared_bf16_outputs"] == 32768
+    assert run["elf_sha256"] == summary["elf_sha256"]
+    assert _sha(FULL_ARCHIVE / "run/artifact_manifest.json") == summary["run_receipt_sha256"]
+    assert "lowered MX 16x2048x2048: 0 BF16 mismatches" in (
+        FULL_ARCHIVE / "run/spike.log").read_text()

@@ -87,3 +87,9 @@ Spike matches an independent hardware arithmetic reference on all 512 BF16
 outputs; 256 belong to the eight real token rows and 256 to required DIM16
 padding. The module remains only one stripe of one projection. The full
 TinyLlama, Qwen, Gemma, and SmolVLA compile gates above remain open.
+
+The same path now covers the [complete layer-0 TinyLlama q_proj](evidence/model2mlir_tinyllama_full_qproj_a042643_266c593/README.md):
+8×2048×2048 before row padding, all 2048 output columns, and all K groups.
+Its one compiled object matched 16,384 model outputs and 16,384 padded outputs
+on pinned Spike. This advances matrix lowering scale while the whole-program
+acceptance gate remains open.
