@@ -1,0 +1,75 @@
+In file included from /scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:4:
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:60:30: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   60 |   const bool forced_virt : 1 {false};
+      |                              ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:61:23: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   61 |   const bool hlvx : 1 {false};
+      |                       ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:62:21: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   62 |   const bool lr : 1 {false};
+      |                     ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:63:28: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   63 |   const bool ss_access : 1 {false};
+      |                            ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:64:30: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   64 |   const bool clean_inval : 1 {false};
+      |                              ^
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc: In member function ‘void gemmini_t::config(reg_t, reg_t)’:
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:501:13: warning: format ‘%lu’ expects argument of type ‘long unsigned int’, but argument 2 has type ‘double’ [-Wformat=]
+  501 |     dprintf("GEMMINI: config_mvin - set load scale from %lu to %lu\n", gemmini_state.load_scales[state_id], scale_t_bits_to_scale_t(rs1 >> 32));
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                                                          |
+      |                                                                                                          double
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:26:65: note: in definition of macro ‘dprintf’
+   26 | #define dprintf(...) { if (p->get_log_commits_enabled()) printf(__VA_ARGS__); }
+      |                                                                 ^~~~~~~~~~~
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:501:59: note: format string is defined here
+  501 |     dprintf("GEMMINI: config_mvin - set load scale from %lu to %lu\n", gemmini_state.load_scales[state_id], scale_t_bits_to_scale_t(rs1 >> 32));
+      |                                                         ~~^
+      |                                                           |
+      |                                                           long unsigned int
+      |                                                         %f
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:501:13: warning: format ‘%lu’ expects argument of type ‘long unsigned int’, but argument 3 has type ‘double’ [-Wformat=]
+  501 |     dprintf("GEMMINI: config_mvin - set load scale from %lu to %lu\n", gemmini_state.load_scales[state_id], scale_t_bits_to_scale_t(rs1 >> 32));
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                                                                                    |
+      |                                                                                                                                    double
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:26:65: note: in definition of macro ‘dprintf’
+   26 | #define dprintf(...) { if (p->get_log_commits_enabled()) printf(__VA_ARGS__); }
+      |                                                                 ^~~~~~~~~~~
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:501:66: note: format string is defined here
+  501 |     dprintf("GEMMINI: config_mvin - set load scale from %lu to %lu\n", gemmini_state.load_scales[state_id], scale_t_bits_to_scale_t(rs1 >> 32));
+      |                                                                ~~^
+      |                                                                  |
+      |                                                                  long unsigned int
+      |                                                                %f
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:564:17: warning: format ‘%llx’ expects argument of type ‘long long unsigned int’, but argument 2 has type ‘reg_t’ {aka ‘long unsigned int’} [-Wformat=]
+  564 |         dprintf("GEMMINI: config_mvout - rs1 is %llx\n", rs1);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  ~~~
+      |                                                          |
+      |                                                          reg_t {aka long unsigned int}
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:26:65: note: in definition of macro ‘dprintf’
+   26 | #define dprintf(...) { if (p->get_log_commits_enabled()) printf(__VA_ARGS__); }
+      |                                                                 ^~~~~~~~~~~
+/scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini.cc:564:52: note: format string is defined here
+  564 |         dprintf("GEMMINI: config_mvout - rs1 is %llx\n", rs1);
+      |                                                 ~~~^
+      |                                                    |
+      |                                                    long long unsigned int
+      |                                                 %lx
+In file included from /scratch/agustin/tmp/gemmini-mx-cleanup-20261009/software/libgemmini/gemmini_perf.cc:4:
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:60:30: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   60 |   const bool forced_virt : 1 {false};
+      |                              ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:61:23: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   61 |   const bool hlvx : 1 {false};
+      |                       ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:62:21: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   62 |   const bool lr : 1 {false};
+      |                     ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:63:28: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   63 |   const bool ss_access : 1 {false};
+      |                            ^
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/include/riscv/mmu.h:64:30: warning: default member initializers for bit-fields only available with ‘-std=c++20’ or ‘-std=gnu++20’ [-Wc++20-extensions]
+   64 |   const bool clean_inval : 1 {false};
+      |                              ^

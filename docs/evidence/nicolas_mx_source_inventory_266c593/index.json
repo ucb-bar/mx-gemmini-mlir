@@ -1658,7 +1658,15 @@
       "source_sha256": "6bbcf587aa5ccfdf99ff2b1a46a08117067ed056a68c3bc30b267ee7fcd350d4"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_sha256",
+          "path": "docs/evidence/nicolas_mem_bw_physical_public_4a24503_266c593/receipt.json",
+          "schema": "mx_gemmini.nicolas_mem_bw_physical_object_spike.v1",
+          "sha256": "b4e204d7565ac0aa08025d4924327f7ff11d07df7a2aafeeaa3116d9c8bc8818",
+          "status": "source_memory_phases_and_full_mvout_matched_on_pinned_spike"
+        }
+      ],
       "family": "other_mx",
       "name": "mx_mem_bw",
       "source_sha256": "d23c749184ede0db1cb0b4ee67f3e29d8d80ddee4ddf589dd949fc7c40a3b922"
@@ -8132,6 +8140,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 168,
-  "without_direct_hash_reference": 3
+  "with_direct_hash_reference": 169,
+  "without_direct_hash_reference": 2
 }

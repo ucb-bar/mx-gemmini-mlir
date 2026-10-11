@@ -12,7 +12,7 @@ they are not in this MX roster.
 
 The [machine-readable source inventory](evidence/nicolas_mx_source_inventory_266c593/index.json)
 pins every listed C file's SHA-256 and searches archived receipts for that
-exact hash. **168 programs have at least one direct source-hash reference; three
+exact hash. **169 programs have at least one direct source-hash reference; two
 have none.** A matching hash establishes provenance only. Some referenced
 receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
@@ -87,7 +87,7 @@ suites cover **156 of 171 named MX source programs** for their selected Spike
 execution paths. The separate source
 program qualifications below are outside that matrix/LUT count.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
-remains archived. The 168 source-hash references above include many weaker
+remains archived. The 169 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
 
 The [64³ resident FP8 chain replay](evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/README.md)
@@ -119,7 +119,7 @@ one named source program beyond the 156 matrix/LUT numerical replay count.
 | Nicolas FP6 LUT-index requantized readout through public object compiler | [128×128×512 requant replay](evidence/nicolas_fp6_requant_typed_object_b25fa48_266c593/README.md) | The checked-in `matmul_tiled_fp6_128x128x512_requant` packed source output and scales match exactly: 8,192 packed bytes and 512 E8M0 scales on pinned Spike in serial mode. Other FP6 shapes and alternating-buffer RTL timing still need qualification. |
 | VPU | [29 source checks](compiled_mx_pipeline.md#nicolas-vpu-source-oracle-across-all-operations), [compiler-issued operations](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations), [public softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md) | All named VPU checks have compiler-issued counterparts, and softmax runs through the public object CLI. The entire `vpu_ops.c` control flow is not compiled as one MLIR program. |
 | Connected MX/VPU/requant | [64³ resident FP8 chain](evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/README.md), [full connected chain](compiled_mx_pipeline.md#matrixvpurequant-source-chain), [pipelined source](compiled_mx_pipeline.md#source-preloaded-pipelined-issue-on-nicolass-spike) | The named 64³ source matches C1/C2 codes and scales through a public object on pinned Spike. Other checked graphs run; arbitrary source control flow and scheduling are not supported. |
-| Bandwidth and microarchitectural tests | [Single native DRAM-loop replay](evidence/nicolas_fp8_native_dram_public_1ef6f85_266c593/README.md), [two N-chunk loops](evidence/nicolas_fp8_native_nc_public_57b26ce_266c593/README.md), [two loop-managed-scale variants](evidence/nicolas_fp8_native_ls_public_126f138_266c593/README.md), [native K tiling](evidence/nicolas_fp8_native_kt_public_af0b4ad_266c593/README.md), [two scale-control variants](evidence/nicolas_fp8_native_scale_control_public_c2e25ce_266c593/README.md), [native store ReLU](evidence/nicolas_fp8_native_relu_public_c729276_266c593/README.md), source `mx_mem_bw.c`, and other matrix DRAM-loop variants | The nine native-loop programs match all BF16 outputs and command operands on Spike. Other benchmark control flows and performance counters remain unqualified. |
+| Bandwidth and microarchitectural tests | [Seven-phase MX memory benchmark replay](evidence/nicolas_mem_bw_physical_public_4a24503_266c593/README.md), [single native DRAM-loop replay](evidence/nicolas_fp8_native_dram_public_1ef6f85_266c593/README.md), [two N-chunk loops](evidence/nicolas_fp8_native_nc_public_57b26ce_266c593/README.md), [two loop-managed-scale variants](evidence/nicolas_fp8_native_ls_public_126f138_266c593/README.md), [native K tiling](evidence/nicolas_fp8_native_kt_public_af0b4ad_266c593/README.md), [two scale-control variants](evidence/nicolas_fp8_native_scale_control_public_c2e25ce_266c593/README.md), [native store ReLU](evidence/nicolas_fp8_native_relu_public_c729276_266c593/README.md), and other matrix DRAM-loop variants | The nine native-loop programs match all BF16 outputs and command operands on Spike. `mx_mem_bw` matches seven source phase geometries and the full 16 KiB readout through generated physical commands. Dedicated typed MLIR transfer ops, benchmark timing parity, and other performance counters remain unqualified. |
 
 The [31-driver Radiance replay](evidence/radiance_mx_gemm_f193c8f_80f84ca/README.md)
 is a different roster. It proves the current Radiance MX GEMM sources, not all
