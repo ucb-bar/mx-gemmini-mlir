@@ -28,6 +28,11 @@ The [TinyLlama QK-to-VPU softmax seam](docs/evidence/model2mlir_tinyllama_attent
 uses the captured 1/8 scale and causal mask to feed QK BF16 results into a
 compiled 16×32 VPU softmax object. Pinned Spike matches all 512 BF16 outputs
 against Nicolas's reference. Host staging still separates the QK and VPU runs.
+The [connected TinyLlama attention-head replay](docs/evidence/model2mlir_tinyllama_connected_attention_head_a042643_266c593/README.md)
+then feeds the exact VPU BF16 probability bytes to a compiler-generated FP8
+PV object with the captured V tensor. Pinned Spike matches all 1,024 padded
+BF16 outputs. This is three separately executed programs with host staging;
+on-device QK→VPU→PV routing and full-model inference remain open.
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0
@@ -91,6 +96,10 @@ are source recipes excluded from its build.
 Nicolas's separate [171-program MX test roster](docs/nicolas_mx_kernel_coverage.md)
 has broader source variants; its qualified mode classes do not yet establish
 compiler regeneration of every named program.
+Nicolas's [current application-kernel roster](docs/nicolas_application_kernel_coverage.md)
+also includes 63 TinyLlama, VPU attention, flash attention, MLP, and benchmark
+programs. Its full-program compiler gaps are tracked separately from the ISA
+test roster.
 The [read-once weight-stationary cases](docs/compiled_mx_pipeline.md#read-once-weight-stationary-radiance-mx-kernels)
 also match the FP8 and FP4 down-projection source goldens and load each packed
 weight tile once per K wave.
