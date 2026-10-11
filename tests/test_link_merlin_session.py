@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.link_merlin_session import _shared_weight_build
+from tools.link_merlin_session import _session_main, _shared_weight_build
 
 
 def _fixture(tmp_path: Path, values: dict[str, bytes]):
@@ -46,3 +46,9 @@ def test_stage_build_must_match_merlin_generated_abi(tmp_path: Path) -> None:
     (builds["prefill"] / "cgen/weights.bin").write_bytes(b"rewritten")
     with pytest.raises(ValueError, match="weight layout differs"):
         _shared_weight_build(programs, builds, generated)
+
+
+def test_bare_metal_session_reclaims_temporary_allocations_per_step() -> None:
+    source = _session_main([2, 1], weights_base=0x200000000)
+    assert source.index("merlin_arena_reset();") < source.index("merlin_session_run_step(")
+    assert source.count("merlin_arena_reset();") == 1

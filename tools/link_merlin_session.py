@@ -134,6 +134,7 @@ void htif_puts(const char *);
 void htif_putd(long);
 void htif_putc(char);
 void htif_exit(int);
+void merlin_arena_reset(void);
 unsigned long long merlin_memref_rank_mismatches(void);
 {declarations}
 static const int OUTPUT_COUNTS[MERLIN_SESSION_N_PROGRAMS] = {{{counts}}};
@@ -174,6 +175,7 @@ int main(int hart) {{
     for (long step = 0; step < steps; ++step) {{
       htif_puts("SESSION_BEGIN "); htif_putd(program); htif_putc(' ');
       htif_putd(step); htif_putc('\\n');
+      merlin_arena_reset();
       if (merlin_session_run_step(program, weights, step, 0) != 0) {{
         htif_puts("FAIL session state\\n"); htif_exit(1); return 1;
       }}
