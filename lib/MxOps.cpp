@@ -600,5 +600,13 @@ LogicalResult ManagedMatmulSpadOp::verify() {
   return success();
 }
 
+LogicalResult FlashSetupOp::verify() {
+  if (failed(verifyMemoryIds(*this))) return failure();
+  int64_t stride = getStoreStrideBytes();
+  if (stride <= 0 || stride % 16 || stride >= (1 << 16))
+    return emitOpError("flash BF16 store stride must fit a complete DIM16 row");
+  return success();
+}
+
 #define GET_OP_CLASSES
 #include "MxGemmini/MxOps.cpp.inc"

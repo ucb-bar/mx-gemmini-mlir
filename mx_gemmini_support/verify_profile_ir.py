@@ -146,6 +146,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
     memory_phases = 0
     spad_matmuls = 0
+    flash_setups = 0
     runtime_luts = 0
     source_resources: dict[str, object] = {}
     lut_uploads: set[str] = set()
@@ -232,6 +233,18 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 weight_half=_int_attr(op, "weight_half"),
                 scale_sink=_text_attr(op, "scale_sink_buffer"), **kwargs)
             spad_matmuls += 1
+            continue
+        if name == "mx_gemmini.flash_setup":
+            from .nicolas_attention_matrix import lower_flash_setup
+            source = _text_attr(module, "mx.source_sha256")
+            if (not attention_program or source is None or
+                    re.fullmatch(r"[0-9a-f]{64}", source) is None or
+                    _text_attr(op, "source_sha256") != source or
+                    _text_attr(op, "profile_sha256") != digest or
+                    not _text_attr(op, "site_id") or op.operands or op.results):
+                raise ValueError("MX flash setup source or profile binding differs")
+            lower_flash_setup(profile, store_stride_bytes=_int_attr(op, "store_stride_bytes"))
+            flash_setups += 1
             continue
         for local, module_name in (("contract_sha256", "mx.contract_sha256"),
                                    ("policy_sha256", "mx.policy_sha256"),
@@ -478,7 +491,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 lut_uploads != (set(LUTS) & set(payload_manifest["resources"]))):
             raise ValueError("MX source resource or LUT upload set is incomplete")
     if not (contracts or vpu_commands or spad_requants or resident_contracts or
-            memory_phases or spad_matmuls):
+            memory_phases or spad_matmuls or flash_setups):
         raise ValueError("MX profile-bound IR has no executable or contraction operation")
     return {"schema": "mx_gemmini.profile_ir_check.v1",
             "status": profile["qualification"], "profile_sha256": digest,
@@ -486,6 +499,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             "vpu_commands": vpu_commands, "spad_requants": spad_requants,
             "resident_contracts": resident_contracts,
             "memory_phases": memory_phases, "spad_matmuls": spad_matmuls,
+            "flash_setups": flash_setups,
             "source_resources": len(source_resources), "lut_uploads": len(lut_uploads),
             "runtime_luts": runtime_luts}
 

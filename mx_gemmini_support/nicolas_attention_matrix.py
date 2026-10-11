@@ -145,3 +145,23 @@ def lower_managed_spad_matmul(profile: dict, *, m: int, n: int, k: int,
         Command(8, Operand(immediate=0),
                 Operand(immediate=(output_row << 32) | 0x200 | 0x100 | 0x38)),
     )
+
+
+def lower_flash_setup(profile: dict, *, store_stride_bytes: int) -> tuple[Command, ...]:
+    """Configure Nicolas's E4M3 mesh and BF16 scratchpad drain once per pass."""
+    if (profile.get("source", {}).get("gemmini_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            profile.get("transport") != "rocket_rocc" or
+            not profile.get("resources", {}).get("vpu") or
+            not profile.get("resources", {}).get("spad_requant")):
+        raise ValueError("flash setup needs the pinned MX+VPU Rocket profile")
+    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+                    activation_projection="direct", weight_projection="direct")
+    if (type(store_stride_bytes) is not int or store_stride_bytes <= 0 or
+            store_stride_bytes % 16 or store_stride_bytes >= 1 << 16):
+        raise ValueError("flash BF16 store stride is unsupported")
+    return (
+        Command(0, Operand(immediate=(1 << 16) | (3 << 14) | (1 << 2)),
+                Operand(immediate=1 << 48)),
+        Command(0, Operand(immediate=2), Operand(immediate=store_stride_bytes)),
+    )

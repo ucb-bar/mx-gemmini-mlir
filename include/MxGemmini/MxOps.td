@@ -245,3 +245,9 @@ def Mx_ManagedMatmulSpadOp : Mx_Op<"managed_matmul_spad"> {
                    I32Attr:$activation_half, StrAttr:$scale_sink_buffer,
                    StrAttr:$profile_sha256, StrAttr:$source_sha256);
 }
+
+def Mx_FlashSetupOp : Mx_Op<"flash_setup"> {
+  let summary = "Configure the FP8 MX mesh and BF16 scratchpad store for flash attention";
+  let arguments = (ins StrAttr:$site_id, I32Attr:$store_stride_bytes,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
