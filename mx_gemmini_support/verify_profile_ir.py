@@ -319,6 +319,12 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             if "memory_layout" in op.attributes and layout not in {
                     "row_major_bf16", "output_tile_major_bf16"}:
                 raise ValueError("MX BF16 readout has an unsupported memory layout")
+            source_memory = _text_attr(op, "source_memory")
+            if "source_memory" in op.attributes and source_memory not in {
+                    "scratchpad", "accumulator"}:
+                raise ValueError("MX BF16 readout has an unsupported source memory")
+            if source_memory == "accumulator" and layout != "row_major_bf16":
+                raise ValueError("MX accumulator BF16 readout needs row_major_bf16 layout")
         elif name == "mx_gemmini.readout_quantized":
             output = _text_attr(op, "output_format")
             projection = _text_attr(op, "output_projection")

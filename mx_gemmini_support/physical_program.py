@@ -184,6 +184,10 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
             (host_requant and (names[-2] != readout_name or len(names) != 3))):
         raise ValueError("physical MX lowering requires a matching output readout")
     memory_layout = _text_attr(readout[0], "memory_layout")
+    source_memory = _text_attr(readout[0], "source_memory")
+    accumulator_selected = _text_attr(module, "mx.accumulator_dram_readout") is not None
+    if (source_memory == "accumulator") != accumulator_selected:
+        raise ValueError("MX accumulator source memory needs its bound physical route")
     if memory_layout is not None and (
             memory_layout not in {"row_major_bf16", "output_tile_major_bf16"} or
             output_format != "bf16" or host_requant or vector_requant):
@@ -657,11 +661,16 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
     from .chunked_i import lower_i_chunks, selected_i_chunks
     from .native_dram import lower_native_dram, selected_native_dram
     from .smem_readback import lower_smem_zero_readout, selected_smem_zero_readout
+    from .accumulator_readback import (lower_accumulator_dram_readout,
+                                       selected_accumulator_dram_readout)
 
     chunks = selected_i_chunks(mlir_text, profile, manifest)
     native_dram = selected_native_dram(mlir_text, profile, manifest)
     smem_zero_readout = selected_smem_zero_readout(mlir_text, profile, manifest)
-    if sum((chunks is not None, native_dram is not None, smem_zero_readout)) > 1:
+    accumulator_readout = selected_accumulator_dram_readout(
+        mlir_text, profile, manifest)
+    if sum((chunks is not None, native_dram is not None, smem_zero_readout,
+            accumulator_readout)) > 1:
         raise ValueError("MX source selects incompatible physical schedules")
     base = _lower_bound_source_regular(mlir_text, profile, manifest,
                                        resources, mode=mode)
@@ -669,5 +678,7 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
         return lower_i_chunks(base, profile, manifest, chunks)
     if smem_zero_readout:
         return lower_smem_zero_readout(base, profile, manifest)
+    if accumulator_readout:
+        return lower_accumulator_dram_readout(base, profile, manifest)
     return (lower_native_dram(base, profile, manifest, native_dram, resources)
             if native_dram is not None else base)

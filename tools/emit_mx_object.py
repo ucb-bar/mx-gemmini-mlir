@@ -102,8 +102,9 @@ def main() -> None:
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     manifest, resources = load_bundle(args.bundle)
     program = lower_bound_source(args.mlir.read_text(), profile, manifest, resources)
-    if program.mode != "spike_serial" or profile.get("transport") != "rocket_rocc":
-        raise ValueError("linkable MX object currently requires Rocket RoCC serial mode")
+    if program.mode not in {"spike_serial", "rtl_accumulator"} or \
+            profile.get("transport") != "rocket_rocc":
+        raise ValueError("linkable MX object requires a supported Rocket RoCC mode")
     buffers = _referenced_buffers(program, manifest)
     if not buffers or not any(entry["role"] == "write" for entry in buffers):
         raise ValueError("linkable MX issuer has no runtime output buffer")
@@ -183,6 +184,10 @@ def main() -> None:
     if host_requant:
         receipt["host_output_format"] = program.output_format
         receipt["status"] = "rv64_rocc_composed_object_built"
+    if program.mode == "rtl_accumulator":
+        receipt["execution_scope"] = "hardware_accumulator_commands_only"
+        receipt["hardware_numerical_qualification"] = "unqualified"
+        receipt["stock_spike_supported"] = False
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(f"linkable MX RoCC issuer: {obj}")

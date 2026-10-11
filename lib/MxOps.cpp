@@ -235,6 +235,13 @@ LogicalResult ReadoutBF16Op::verify() {
   if (layout && layout.getValue() != "row_major_bf16" &&
       layout.getValue() != "output_tile_major_bf16")
     return emitOpError("requires row_major_bf16 or output_tile_major_bf16 memory layout");
+  auto source = (*this)->getAttrOfType<StringAttr>("source_memory");
+  if (source && source.getValue() != "scratchpad" &&
+      source.getValue() != "accumulator")
+    return emitOpError("requires scratchpad or accumulator source memory");
+  if (source && source.getValue() == "accumulator" &&
+      (!layout || layout.getValue() != "row_major_bf16"))
+    return emitOpError("requires row_major_bf16 layout for accumulator source memory");
   return success();
 }
 LogicalResult ReadoutQuantizedOp::verify() {
