@@ -653,7 +653,8 @@ def _lower_bound_source_regular(mlir_text: str, profile: dict, manifest: dict,
                                           "radiance_source_target_mesh_reference" else
                                           manifest["origin"] if manifest.get("origin") in {
                                               "model2mlir_projection_slice",
-                                              "model2mlir_attention_qk_head"} else "source_header"))
+                                              "model2mlir_attention_qk_head",
+                                              "model2mlir_attention_pv_head"} else "source_header"))
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,

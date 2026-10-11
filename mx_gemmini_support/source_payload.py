@@ -31,6 +31,7 @@ DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
 TARGET_MESH_REFERENCE_ORIGIN = "radiance_source_target_mesh_reference"
 MODEL2MLIR_PROJECTION_ORIGIN = "model2mlir_projection_slice"
 MODEL2MLIR_ATTENTION_QK_ORIGIN = "model2mlir_attention_qk_head"
+MODEL2MLIR_ATTENTION_PV_ORIGIN = "model2mlir_attention_pv_head"
 MODEL2MLIR_PROJECTION_GOLDEN_SHA256 = "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988"
 TARGET_MESH_QUANT_CONVENTION = "target_mesh_radiance_header_v1"
 
@@ -116,6 +117,47 @@ def validate_model2mlir_attention_qk(manifest: dict) -> None:
             type(tile[2]) is not int or tile[2] < 32 or
             tile[2] % 32 or k % tile[2]):
         raise ValueError("model2MLIR attention QK padding or K tile differs")
+
+
+def validate_model2mlir_attention_pv(manifest: dict) -> None:
+    """Bind one padded MX PV head to its model2MLIR batched contraction."""
+    site = manifest.get("model2mlir_attention_pv")
+    shape = manifest.get("shape_mnk")
+    if (manifest.get("origin") != MODEL2MLIR_ATTENTION_PV_ORIGIN or
+            manifest.get("precision") != "FP8" or
+            manifest.get("output_format") is not None or
+            any(key in manifest for key in ("source_driver_sha256", "source_header_sha256",
+                                            "source_derivation")) or
+            not isinstance(site, dict) or
+            set(site) != {"source_mlir_sha256", "region_id", "fqn", "source_op",
+                          "source_shape_bmnk", "batch_index", "input_sha256",
+                          "weight_sha256", "golden_model_sha256"} or
+            not isinstance(shape, list) or len(shape) != 3):
+        raise ValueError("model2MLIR attention PV payload lacks a distinct source contract")
+    for key in ("source_mlir_sha256", "input_sha256", "weight_sha256",
+                "golden_model_sha256"):
+        if not isinstance(site[key], str) or re.fullmatch(r"[0-9a-f]{64}", site[key]) is None:
+            raise ValueError(f"model2MLIR attention PV lacks {key}")
+    source = site["source_shape_bmnk"]
+    if (site["golden_model_sha256"] != MODEL2MLIR_PROJECTION_GOLDEN_SHA256 or
+            site["source_op"] != "batch_matmul" or
+            not isinstance(site["region_id"], str) or not site["region_id"] or
+            not isinstance(site["fqn"], str) or ".self_attn" not in site["fqn"] or
+            not isinstance(source, list) or len(source) != 4 or
+            any(type(dim) is not int or dim <= 0 for dim in source) or
+            type(site["batch_index"]) is not int or
+            not 0 <= site["batch_index"] < source[0]):
+        raise ValueError("model2MLIR attention PV source site is malformed")
+    _, m, n, k = source
+    padded_k = ((k + 31) // 32) * 32
+    tile = manifest.get("tile_mnk")
+    if (n < k or
+            shape != [((m + 15) // 16) * 16, ((n + 31) // 32) * 32, padded_k] or
+            not isinstance(tile, list) or len(tile) != 3 or
+            tile[:2] != [shape[0], 32] or
+            type(tile[2]) is not int or tile[2] < 32 or
+            tile[2] % 32 or padded_k % tile[2]):
+        raise ValueError("model2MLIR attention PV padding or K tile differs")
 
 
 def validate_target_mesh_reference(manifest: dict) -> None:
@@ -697,6 +739,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         validate_model2mlir_projection(manifest)
     elif manifest.get("origin") == MODEL2MLIR_ATTENTION_QK_ORIGIN:
         validate_model2mlir_attention_qk(manifest)
+    elif manifest.get("origin") == MODEL2MLIR_ATTENTION_PV_ORIGIN:
+        validate_model2mlir_attention_pv(manifest)
     elif manifest.get("origin") not in {"radiance_source_header_specialization",
                                         NICOLAS_SOURCE_HEADER_ORIGIN}:
         raise ValueError("unknown MX payload origin")

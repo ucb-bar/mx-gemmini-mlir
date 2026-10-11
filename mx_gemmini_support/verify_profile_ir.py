@@ -94,12 +94,14 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN,
                                      ATTENTION_PV_PROXY_ORIGIN,
                                      DERIVED_GEMM_FIXTURE_ORIGIN,
+                                     MODEL2MLIR_ATTENTION_PV_ORIGIN,
                                      MODEL2MLIR_ATTENTION_QK_ORIGIN,
                                      MODEL2MLIR_PROJECTION_ORIGIN,
                                      TARGET_MESH_REFERENCE_ORIGIN,
                                      validate_attention_qk_candidate,
                                      validate_attention_pv_proxy,
                                      validate_derived_gemm_fixture,
+                                     validate_model2mlir_attention_pv,
                                      validate_model2mlir_attention_qk,
                                      validate_model2mlir_projection,
                                      validate_target_mesh_reference)
@@ -117,6 +119,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             validate_model2mlir_projection(payload_manifest)
         elif payload_manifest.get("origin") == MODEL2MLIR_ATTENTION_QK_ORIGIN:
             validate_model2mlir_attention_qk(payload_manifest)
+        elif payload_manifest.get("origin") == MODEL2MLIR_ATTENTION_PV_ORIGIN:
+            validate_model2mlir_attention_pv(payload_manifest)
         elif "source_derivation" in payload_manifest:
             raise ValueError("derived MX payload must declare its candidate origin")
         for resource_name, descriptor in payload_manifest["resources"].items():
@@ -259,6 +263,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                         "nicolas_source_header_specialization",
                         "model2mlir_projection_slice",
                         "model2mlir_attention_qk_head",
+                        "model2mlir_attention_pv_head",
                         "nicolas_generated_header_specialization"}:
                     raise ValueError("MX contract payload differs from selected source bundle")
             elif local_payload is not None or _text_attr(op, "payload_origin") is not None:
