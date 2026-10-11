@@ -1,0 +1,3 @@
+dense f32 MX g: 0 output mismatches
+Gemmini extension configured with:
+    dim = 16

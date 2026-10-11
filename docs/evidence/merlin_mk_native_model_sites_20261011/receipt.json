@@ -1,0 +1,229 @@
+{
+  "cases": [
+    {
+      "artifacts": {
+        "mx_issue.c": "53d10a097de3533ffc2cdd17f8a61973843f07184ed28762216e69beda111817",
+        "schedule.mk": "b2a0b2b94eb14add65b4a140716b3a07e82d3605ec989231968ea2456da6046e",
+        "spike.log": "4322f35a571dcfa7eec9eda3b1937b699d027dd7d22139c9f38424f8d90ca668"
+      },
+      "bundle_manifest_sha256": "fd50c1bc19d932288e00746b4919f2663aa2da6f05a84ee43d1f334209d16ed9",
+      "case": "fp4_gate",
+      "compared_logical_outputs": 2752,
+      "expected_log": "dense f32 MX g: 0 output mismatches",
+      "golden_bf16_sha256": "d5f98c595bec498c91612d50ae3acf376596b571c98c754378253e6a992e33e8",
+      "precision": "FP4",
+      "shape_mnk": [
+        32,
+        352,
+        128
+      ],
+      "status": "pinned_spike_bf16_golden_matched"
+    },
+    {
+      "artifacts": {
+        "mx_issue.c": "71cbff973ac7c34fcb0d5c75cebd92af1322ee586094a0d1bd210f195fd7fc8e",
+        "schedule.mk": "2cddc4465ee28f2ad043ce9c04beb7f707ea1b18240ba8d6790a8d57af332822",
+        "spike.log": "ab42abeed20f4422e786be53acc2ad2aab02ef4b723667e299447d468f624e6d"
+      },
+      "bundle_manifest_sha256": "ec2aa18d9bd4d3c3453383271921d10b36dcefc44bb3f0ffb94784c6b612d65e",
+      "case": "fp4_down",
+      "compared_logical_outputs": 1024,
+      "expected_log": "dense f32 MX dn: 0 output mismatches",
+      "golden_bf16_sha256": "d9438aee507309de402fc4cde1beb19190f06853049ea0185dcb4e56b263043f",
+      "precision": "FP4",
+      "shape_mnk": [
+        32,
+        128,
+        352
+      ],
+      "status": "pinned_spike_bf16_golden_matched"
+    },
+    {
+      "artifacts": {
+        "mx_issue.c": "99855d4907fe2ca46ce9381e18bc833122c97b7a589cb4d8f3aa1c03fe05dd62",
+        "schedule.mk": "87322714d418e58ddef06d73d71ee17bbfaa58a6a7a04a8891a31acee11142e3",
+        "spike.log": "3b93cc608b911041e5808ab69e4dae54c6ddebff41caaf6507e25aebfd7805f2"
+      },
+      "bundle_manifest_sha256": "28673ddca71c26ce9c73bb28868677f0a91fbb9c9c162d49ad42fb663407d579",
+      "case": "fp8_qk",
+      "compared_logical_outputs": 512,
+      "expected_log": "native scheduled FP8 QK: 0 BF16 mismatches",
+      "golden_bf16_sha256": "35827be2988598a3df9704e4d44b6b872ee0a704bde3901f5a04bdb9d57c6f0a",
+      "precision": "FP8",
+      "shape_mnk": [
+        16,
+        32,
+        64
+      ],
+      "status": "pinned_spike_bf16_golden_matched"
+    }
+  ],
+  "full_tiny_prefill_catalog": {
+    "estimated_dynamic_rocc_commands_native": 129226,
+    "estimated_dynamic_rocc_commands_serial": 29218058,
+    "kernels": [
+      {
+        "policy_sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+        "precision": "mxfp4",
+        "schedule_sha256": "e3c777c18f4590d57d44eb4daf469d424d3a1d178ee0d65d7fc5f83e81e4b79a",
+        "symbol": "mx_dense_kernel_0",
+        "tile_mnk": [
+          128,
+          128,
+          512
+        ]
+      },
+      {
+        "policy_sha256": "e87314e6f0c33121f8f030faaa81e2070b11e10cd63e78014de23284a727b929",
+        "precision": "mxfp4",
+        "schedule_sha256": "be52aa68c946c1481349a29929bc3dfafd341e98c27493a25042c8ca4cf8225b",
+        "symbol": "mx_dense_kernel_1",
+        "tile_mnk": [
+          128,
+          128,
+          512
+        ]
+      },
+      {
+        "policy_sha256": "f79746dbd183f1be243b4fa9c03f1da05249d7cdc2c7b2ee43a731a12b2fe5c6",
+        "precision": "mxfp4",
+        "schedule_sha256": "8d42362a2b2273b0c46b3876f0ac7647532f1913008ae5ea0e32f4cf4861d626",
+        "symbol": "mx_dense_kernel_2",
+        "tile_mnk": [
+          128,
+          128,
+          512
+        ]
+      },
+      {
+        "policy_sha256": "3bc18762b9dd88c09e5ed2be53aa40808c759db49774f4a9e2a916e4a2946b1a",
+        "precision": "mxfp4",
+        "schedule_sha256": "d3e85fc84a475a13ca4396489059f968f07b5f36423dfbd960b02e0b659e018d",
+        "symbol": "mx_dense_kernel_3",
+        "tile_mnk": [
+          128,
+          128,
+          512
+        ]
+      },
+      {
+        "policy_sha256": "4fdab541de025cd6b127363ed3e9df8daf0b26f092d2b88c92eea2221ace6465",
+        "precision": "mxfp4",
+        "schedule_sha256": "95296436e1d8cf5cfc70798c80d88de635381c9cc883bc3ed8f730be172a93f6",
+        "symbol": "mx_dense_kernel_4",
+        "tile_mnk": [
+          128,
+          128,
+          512
+        ]
+      },
+      {
+        "policy_sha256": "9a84c90dfc1a5e2a3009c165fb97af94042e717199bd80b875aa5f37987a099f",
+        "precision": "mxfp8",
+        "schedule_sha256": "94686b796ad73bc816e40aaca249d8299622430b734699a664318c38e80dbb06",
+        "symbol": "mx_dense_kernel_5",
+        "tile_mnk": [
+          128,
+          32,
+          64
+        ]
+      },
+      {
+        "policy_sha256": "3db5374858330643770ddd737073503e7340d86594a2770306858bb4932cf549",
+        "precision": "mxfp8",
+        "schedule_sha256": "c4dd418bbef14ef2a8de82f3214e8a0b1f8f5e1a8d6c32f1b51727d8bb32e689",
+        "symbol": "mx_dense_kernel_6",
+        "tile_mnk": [
+          128,
+          64,
+          32
+        ]
+      }
+    ],
+    "matched_contractions": 199,
+    "note": "RoCC command count is not cycle or speedup evidence",
+    "object_sha256": "1c62d7c7483028eb8c87fef044a28f60478ede859b48e9cc367d59f35d3ce65c",
+    "policy_artifact_sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+    "policy_ir": "merlin.schedule",
+    "schedule_ir": "merlin.mk",
+    "source_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+    "status": "compiled_only_not_spike_executed",
+    "unique_kernels": 7
+  },
+  "native_catalogs": [
+    {
+      "matched_contractions": 199,
+      "object_sha256": "1c62d7c7483028eb8c87fef044a28f60478ede859b48e9cc367d59f35d3ce65c",
+      "policy_ir": "merlin.schedule",
+      "schedule_ir": "merlin.mk",
+      "source_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+      "stage": "tinyllama_prefill",
+      "status": "compiled_only_not_spike_executed",
+      "unique_kernels": 7
+    },
+    {
+      "matched_contractions": 253,
+      "object_sha256": "852838ec7786fc423f4edafb09e3978d0fb67b4e39557a2e510c8f9bafe284d1",
+      "policy_ir": "merlin.schedule",
+      "schedule_ir": "merlin.mk",
+      "source_sha256": "d98737d6c812f467f7b6280d37291f868fae6b3cd66d6ad5d46e891e67b1cabb",
+      "stage": "qwen_prefill",
+      "status": "compiled_only_not_spike_executed",
+      "unique_kernels": 7
+    },
+    {
+      "matched_contractions": 235,
+      "object_sha256": "fc82b89693e0c93c1bad1729a300ec637d91be2f2aeb5815a09d933fe7fdefe4",
+      "policy_ir": "merlin.schedule",
+      "schedule_ir": "merlin.mk",
+      "source_sha256": "f75f264f2dd13928175d01c2f3f339f2ec98f545de4ed75a7a28caca6a00eb01",
+      "stage": "gemma_prefill",
+      "status": "compiled_only_not_spike_executed",
+      "unique_kernels": 8
+    },
+    {
+      "matched_contractions": 211,
+      "object_sha256": "10064a9cd21778de4e335ed79a89f5c34ca290e234fb537a1fc22c51b52117b4",
+      "policy_ir": "merlin.schedule",
+      "schedule_ir": "merlin.mk",
+      "source_sha256": "f7be4c59e48a4eb322ed0eb7eb50f3d41e275eee0b654098f19318b5353066a5",
+      "stage": "smolvla_prefix",
+      "status": "compiled_only_not_spike_executed",
+      "unique_kernels": 12
+    },
+    {
+      "matched_contractions": 116,
+      "object_sha256": "d6b280a0ba3fe01b42f22bd345f1782fd1a00437cea2fe92169fb1ef0936357e",
+      "policy_ir": "merlin.schedule",
+      "schedule_ir": "merlin.mk",
+      "source_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "stage": "smolvla_flow",
+      "status": "compiled_only_not_spike_executed",
+      "unique_kernels": 10
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "row_tile_parity": {
+    "compared_bf16_outputs": 32768,
+    "log_sha256": "beb5ffd842cd1977e9de412a5aefc68d2ba58b541a9c84829d3d99f5e20bec35",
+    "native_source_sha256": "96eb550c452bd8029b72067c9756452e235844aaff89b3e2aecbae828efe271c",
+    "native_tile_mnk": [
+      128,
+      32,
+      64
+    ],
+    "nonzero_outputs": 32768,
+    "precision": "FP4",
+    "schedule_sha256": "08cc6d462e20b00bdd6a87b34542afe1c2b3feb53717de8498f1406c7082dcdb",
+    "serial_source_sha256": "cf1b89a54510e7b428648fc7b11111b78bf8516a325cc2a7b351d6b5e51d4bac",
+    "shape_mnk": [
+      1024,
+      32,
+      64
+    ],
+    "status": "native_equals_serial_on_pinned_spike"
+  },
+  "schema": "mx_gemmini.merlin_mk_native_model_sites.v1",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "three_model_derived_native_sites_matched_on_pinned_spike"
+}

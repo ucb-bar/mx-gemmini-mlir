@@ -1,0 +1,3 @@
+native M1024 row tiles: 0 BF16 mismatches, 32768 nonzero
+Gemmini extension configured with:
+    dim = 16

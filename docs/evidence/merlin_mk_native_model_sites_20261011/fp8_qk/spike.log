@@ -1,0 +1,3 @@
+native scheduled FP8 QK: 0 BF16 mismatches
+Gemmini extension configured with:
+    dim = 16

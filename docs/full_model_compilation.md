@@ -274,6 +274,20 @@ its exact binding table has a
 compiled implementation. VPU operators and other host operations are not
 covered by that field.
 
+The catalog now selects a checked native DRAM-loop schedule for each direct
+FP4/FP8 contraction. A verified `schedule.plan` binds the selected policy to
+each exact catalog symbol, and the builder reads that policy before lowering.
+The target owns the profile gates and MX instruction semantics; Merlin's
+target-neutral `mk` IR carries counted M/N/K loops,
+alternating scratchpad slot parity, and source/target buffer offsets. Every
+catalog kernel has a `.schedule.mlir` policy artifact and canonical `.mk`
+artifact, with policy, schedule, and instruction-set SHA-256s in the manifest.
+This replaces the serial command issuer in new
+full-model catalog builds. The [native schedule evidence](evidence/merlin_mk_native_model_sites_20261011/README.md)
+records three model-derived Spike goldens and the compiled 199-site TinyLlama
+catalog. Existing linked model ELFs still use the older serial catalogs and
+do not establish native whole-model execution or performance.
+
 The linked decode or flow stage catalogs place the selected contractions as
 follows. FP4 covers ordinary matrix work; FP8 covers the admitted attention
 contractions. Each count is per invocation, so recurrent steps reuse the
