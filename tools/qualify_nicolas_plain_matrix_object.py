@@ -57,6 +57,7 @@ class Case:
     native_dram_k_tiles: int = 1
     native_dram_store_activation: str = "none"
     smem_zero_readout: bool = False
+    dram_mvout_spike_fallback: bool = False
 
 
 CASES = {
@@ -81,6 +82,41 @@ CASES = {
         ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
          "B_in", "B_scales_col"), "FP8 64 cubed zero-base SMEM readout",
         smem_zero_readout=True),
+    "fp8_64x64x64_dram_mvout_spike": Case(
+        "fp8_64x64x64_dram_mvout_spike", "FP8", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp8_64x64_DRAMMvout.c", "matmul_fp8_64x64.h",
+        "0c866be0565b1ea0c8f675bdf0468123da53acfd3e130dcb6d9aecc8c95d86a4",
+        "1e6cea94563028a7cd37b486b30ac227b3bcb3eeddd1978430cfa5e8b94d1ecc",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 64 cubed DRAM-mvout Spike fallback",
+        smem_zero_readout=True, dram_mvout_spike_fallback=True),
+    "fp4_64x64x64_dram_mvout_spike": Case(
+        "fp4_64x64x64_dram_mvout_spike", "FP4", (64, 64, 64), (64, 64, 64),
+        "matmul_tiled_fp4_64x64_DRAMMvout.c", "matmul_fp4_64x64.h",
+        "c1729048ccab7836598b55bdb747d6c75489d792683abd300c10368627301155",
+        "22851fc6ff791f2748a2bbc501aa98176c4cf26b73c7dcea13dcca2a6202c06b",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in_hw", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP4 64 cubed DRAM-mvout Spike fallback",
+        smem_zero_readout=True, dram_mvout_spike_fallback=True),
+    "fp8_128x128x256_dram_mvout_spike": Case(
+        "fp8_128x128x256_dram_mvout_spike", "FP8", (128, 128, 256),
+        (128, 128, 128),
+        "matmul_tiled_fp8_128x128x256_DRAMMvout.c",
+        "matmul_fp8_128x128x256.h",
+        "2d87a0a987c90f7855e69ae46e3429e490a6d4661a63f3d6d4d3043b777dd689",
+        "feab7b991acf85b79819c8d7285ccd236330d1a83f79500a2a7144081591209c",
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), "FP8 128x128x256 DRAM-mvout Spike fallback",
+        smem_zero_readout=True, dram_mvout_spike_fallback=True),
     "fp8_64x64x64_requant": Case(
         "fp8_64x64x64_requant", "FP8", (64, 64, 64), (64, 64, 64),
         "matmul_tiled_fp8_64x64_requant.c", "matmul_fp8_64x64.h",
@@ -575,24 +611,30 @@ def _audit_smem_zero_readout(object_dir: Path, profile: dict,
     stores = [step["command"] for step in steps
               if step["phase"] == "configure" and step["command"].get("funct") == 0
               and step["command"]["rs1"].get("immediate") == 2]
+    m, n, _ = case.shape
+    c_rows = m * n * 2 // 16
     if (not case.smem_zero_readout or profile["geometry"]["mesh_columns"] != 16 or
-            physical["shape_mnk"] != [64, 64, 64] or
+            physical["shape_mnk"] != list(case.shape) or
             plan.get("c_spad_dest") != 0 or
             plan.get("readout_transport") != "spad_mvout_zero_base" or
-            len(compute) != 1 or len(stores) != 1 or len(reads) != 32 or
-            compute[0]["rs2"].get("immediate") != 0x238 or
+            plan.get("readout_source_sha256") != case.source_sha256 or
+            len(compute) != len(plan["waves"]) or len(stores) != 1 or
+            len(reads) != c_rows // 16 or
+            [command["rs2"].get("immediate") & 0xffffffff
+             for command in compute] !=
+            [0x2b8] * (len(plan["waves"]) - 1) + [0x238] or
             stores[0]["rs2"].get("immediate") != 16 or
             [command["rs2"].get("immediate") & 0xffffffff for command in reads] !=
-            list(range(0, 512, 16)) or
+            list(range(0, c_rows, 16)) or
             [command["rs1"].get("byte_offset") for command in reads] !=
-            [row * 16 for row in range(0, 512, 16)]):
+            [row * 16 for row in range(0, c_rows, 16)]):
         raise ValueError("zero-base scratchpad commands differ from source geometry")
     return {"schema": "mx_gemmini.nicolas_fp8_smem_zero_readout_audit.v1",
             "source_driver_sha256": case.source_sha256,
             "profile_sha256": profile_sha256(profile),
             "physical_program_sha256": _sha(object_dir / "physical_program.json"),
             "compute_c_scratchpad_row": 0,
-            "readout_rows": list(range(0, 512, 16)),
+            "readout_rows": list(range(0, c_rows, 16)),
             "readout_transport": "spad_mvout_zero_base",
             "readout_count": len(reads)}
 
@@ -1012,7 +1054,7 @@ def _run_plain_fp6_source(rtl_root: Path, riscv_root: Path,
 
 
 def _run_smem_fp8_source(rtl_root: Path, riscv_root: Path,
-                          out_dir: Path, source: Path) -> dict:
+                          out_dir: Path, source: Path, case: Case) -> dict:
     """Run the pinned zero-base SMEM source under its Spike path."""
     from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
 
@@ -1029,10 +1071,13 @@ def _run_smem_fp8_source(rtl_root: Path, riscv_root: Path,
     log.write_text(result.stdout)
     if (result.returncode or
             "fp8 WS matmul test PASSED (no mismatches)." not in result.stdout):
-        raise ValueError("Nicolas zero-base SMEM FP8 source failed on pinned Spike")
+        raise ValueError("Nicolas zero-base SMEM source failed on pinned Spike")
     return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
             "source_spike_exit_code": result.returncode,
-            "source_golden_bf16_values_checked": 64 * 64}
+            "source_golden_bf16_values_checked": case.shape[0] * case.shape[1],
+            "source_execution_path": ("SPIKE_SIM_scratchpad_fallback" if
+                                      case.dram_mvout_spike_fallback else
+                                      "SPIKE_SIM_scratchpad_readback")}
 
 
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
@@ -1146,9 +1191,15 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
                 "gemmini_extended_config_st(MATMUL_N * sizeof(uint16_t), RELU, ACC_SCALE_IDENTITY)",
                 "(C_out_bf16[i][j] & 0x8000) ? 0 : C_out_bf16[i][j]")):
         raise ValueError("Nicolas native ReLU store/golden branch changed")
-    if case.smem_zero_readout and any(marker not in source for marker in (
-            "int SPAD_DEST = 0;", "gemmini_mx_read_smem(&C_hw[0][0], 0, MATMUL_M * MATMUL_N);",
-            "gemmini_config_st(DIM * sizeof(elem_t));", "0x38);")):
+    smem_markers = (("uint32_t c_dest = 0;", "uint32_t c_flag = 0x38;",
+                     "uint32_t c_dest = acc_addr;", "uint32_t c_flag = 0xb8;",
+                     "gemmini_mx_read_smem(&C_hw[0][0], 0, MATMUL_M * MATMUL_N);",
+                     "gemmini_mvout((void *) dram_ptr, acc_tile_addr);")
+                    if case.dram_mvout_spike_fallback else
+                    ("int SPAD_DEST = 0;",
+                     "gemmini_mx_read_smem(&C_hw[0][0], 0, MATMUL_M * MATMUL_N);",
+                     "gemmini_config_st(DIM * sizeof(elem_t));", "0x38);"))
+    if case.smem_zero_readout and any(marker not in source for marker in smem_markers):
         raise ValueError("Nicolas zero-base SMEM readback source changed")
     header_text = header.read_text()
     for axis, extent in zip(("M", "N", "K"), case.shape):
@@ -1455,7 +1506,7 @@ def main(default_case: str | None = None) -> None:
                               args.out_dir, kernel.driver)
         if case.key == "fp6_128x128x128" else
         _run_smem_fp8_source(rtl_root, args.riscv_root.resolve(),
-                             args.out_dir, kernel.driver)
+                             args.out_dir, kernel.driver, case)
         if case.smem_zero_readout else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
@@ -1516,6 +1567,9 @@ def main(default_case: str | None = None) -> None:
         receipt["source_baseline"] = source_baseline
         receipt["smem_readout_equivalence_sha256"] = _sha(
             args.out_dir / "smem_readout_equivalence.json")
+        if case.dram_mvout_spike_fallback:
+            receipt["qualification_scope"] = "SPIKE_SIM_scratchpad_fallback_only"
+            receipt["hardware_accumulator_mvout_qualified"] = False
     if case.i_chunks > 1:
         receipt["i_chunks"] = case.i_chunks
         receipt["chunk_equivalence_sha256"] = _sha(
