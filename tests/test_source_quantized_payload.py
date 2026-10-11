@@ -9,7 +9,7 @@ import sys
 
 import pytest
 
-from mx_gemmini_support.source_gemm import read_source_gemm
+from mx_gemmini_support.source_gemm import SourceGemm, read_source_gemm
 from mx_gemmini_support.source_payload import load_bundle, read_source_payload, write_bundle
 from mx_gemmini_support.quant_reference import (
     quantize_bf16_fp4_output, quantize_bf16_fp8_output)
@@ -34,6 +34,31 @@ def test_nicolas_fp4_reference_packs_even_and_odd_rows():
     empty_codes, empty_scales = quantize_bf16_fp4_output(bytes(2 * 2 * 32), 2, 32)
     assert empty_codes == bytes(32)
     assert list(empty_scales) == [0, 0]
+
+
+def test_utf8_header_with_row_major_output_scales_binds_exact_bytes(tmp_path):
+    def array(ctype: str, name: str, dims: str, values: list[int]) -> str:
+        return (f"static const {ctype} {name}{dims} = {{\n" +
+                ", ".join(str(value) for value in values) + "\n};\n")
+
+    m, n, k = 32, 64, 32
+    header = tmp_path / "data.h"
+    header.write_text("// Nicolas’s row-major scale header\n" + "".join((
+        array("uint8_t", "A_in", "[MATMUL_M][MATMUL_K]", [0] * (m * k)),
+        array("uint8_t", "B_in", "[MATMUL_K][MATMUL_N]", [0] * (k * n)),
+        array("uint8_t", "A_scales_row", "[MATMUL_GK][MATMUL_M]", [127] * m),
+        array("uint8_t", "B_scales_col", "[MATMUL_GK][MATMUL_N]", [127] * n),
+        array("uint16_t", "C_out_bf16", "[MATMUL_M][MATMUL_N]", [0] * (m * n)),
+        array("uint8_t", "C_scales_out", "[MATMUL_M][MATMUL_GN]",
+              list(range(m * (n // 32)))),
+        array("uint8_t", "C_out", "[MATMUL_M][MATMUL_N]", [0] * (m * n)),
+    )), encoding="utf-8")
+    kernel = SourceGemm(tmp_path / "driver.c", header, (m, n, k), (m, n, k),
+                        "FP8", True, False, True)
+    resources = read_source_payload(kernel)
+    assert resources["golden_output_scales"].data == bytes(range(m * 2))
+    assert resources["output_scales"].data == bytes(
+        row * 2 + group for group in range(2) for row in range(m))
 
 
 SOURCE = Path(os.environ.get("RADIANCE_KERNELS_ROOT", "/nonexistent"))
