@@ -1,0 +1,93 @@
+--- a/gemmini.h
++++ b/gemmini.h
+@@ -154,6 +154,8 @@
+   std::vector<uint8_t> mx_scale_a_mem;
+   std::vector<uint8_t> mx_scale_b_mem;
+   std::vector<uint16_t> mx_smem;
++  bool mx_accum_valid;
++  uint32_t mx_accum_m, mx_accum_n;
+ 
+   // FP6 LUTs: per-row 16 × 6-bit FP6 E3M2 codes (one byte each, low 6 bits).
+   // Indexing: lut_x[lut_idx * 16 + entry] = code.
+--- a/gemmini.cc
++++ b/gemmini.cc
+@@ -88,6 +88,7 @@
+   mx_scale_a_mem.clear(); mx_scale_a_mem.resize(8192, 0x7f);
+   mx_scale_b_mem.clear(); mx_scale_b_mem.resize(8192, 0x7f);
+   mx_smem.clear(); mx_smem.resize(sp_matrices * DIM * 16, 0);
++  mx_accum_valid = false; mx_accum_m = mx_accum_n = 0;
+   mx_lut_a.clear(); mx_lut_a.resize(2048 * 16, 0);
+   mx_lut_b.clear(); mx_lut_b.resize(2048 * 16, 0);
+   mx_lut_c.clear(); mx_lut_c.resize(2048 * 16, 0);
+@@ -275,6 +276,43 @@
+   const int block_stride = DIM;
+ 
+   dprintf("GEMMINI: mvout - 0x%02lx cols and 0x%02lx rows from 0x%08lx to addr 0x%08lx\n", cols, rows, sp_addr, dram_addr);
++
++  // Experimental BF16-only MX accumulator shadow. Nicolas's stock Spike computes MX C in
++  // mx_smem; this route checks accumulator-tagged command addresses and copies that result
++  // with the source's packed output geometry. It does not model RTL queue timing or packing.
++  if (accumulator) {
++    if (!gemmini_state.mx_accum_valid || gemmini_state.mx_out_fmt != 3) {
++      fprintf(stderr, "MX accumulator candidate: only a prior BF16 MX result is supported\n");
++      abort();
++    }
++    const uint32_t m = gemmini_state.mx_accum_m, n = gemmini_state.mx_accum_n;
++    const bool act_quad = gemmini_state.mx_act_fmt == 2;
++    const uint32_t group_m = act_quad ? 32 : 16;
++    const uint32_t group_n = 1024 / group_m;
++    if (!m || !n || m % group_m || n % group_n || cols != 16 || rows != 16 ||
++        full || norm_cmd != gemmini_state_t::RESET || gemmini_state.pool_stride != 0 ||
++        gemmini_state.acc_act != gemmini_state_t::NONE ||
++        base_row_addr % DIM || gemmini_state.store_stride != n * (act_quad ? 4u : 2u)) {
++      fprintf(stderr, "MX accumulator candidate: unsupported geometry\n"); abort();
++    }
++    const uint32_t groups_j = n / group_n;
++    const uint32_t group = base_row_addr / DIM;
++    const uint32_t start_m = (group / groups_j) * group_m;
++    const uint32_t start_n = (group % groups_j) * group_n;
++    if (start_m + group_m > m || start_n + group_n > n) {
++      fprintf(stderr, "MX accumulator candidate: address outside C\n"); abort();
++    }
++    for (uint32_t rr = 0; rr < group_m; rr++)
++      for (uint32_t cc = 0; cc < group_n; cc++) {
++        const uint32_t physical_row = act_quad ? rr / 2 : rr;
++        const uint32_t half = act_quad ? rr % 2 : 0;
++        const reg_t address = dram_addr + physical_row * gemmini_state.store_stride +
++                              half * (gemmini_state.store_stride / 2) + cc * 2;
++        p->get_mmu()->store<uint16_t>(address,
++          gemmini_state.mx_smem[(size_t)(start_m + rr) * n + start_n + cc]);
++      }
++    return;
++  }
+ 
+   if (gemmini_state.pool_stride == 0) {
+     for (size_t i = 0; i < rows; ++i) {
+@@ -1407,7 +1441,13 @@
+   // handler used to discard rs1 wholesale, so the MX path ALWAYS accumulated.
+   const bool ex_accumulate = rs1 & 1;
+ 
+-  const uint32_t C_spad = (uint32_t)((rs2 >> 32) & 0xFFFFFFFFu);
++  const uint32_t C_spad_raw = (uint32_t)((rs2 >> 32) & 0xFFFFFFFFu);
++  const bool mx_acc_dst = (C_spad_raw >> 31) != 0;
++  const uint32_t C_spad = C_spad_raw & 0x7fffffffu;
++  if (mx_acc_dst && C_spad != 0) {
++    fprintf(stderr, "MX accumulator candidate: only base row zero supported\n"); abort();
++  }
++  gemmini_state.mx_accum_valid = false;
+   const uint16_t TI = gemmini_state.loop_ws_I;
+   const uint16_t TJ = gemmini_state.loop_ws_J;
+   const uint16_t TK = gemmini_state.loop_ws_K;
+@@ -1469,6 +1509,12 @@
+   // spad bytes raw (DIM int8/row), so byte k of the packed output -> spad[C_spad + k/DIM][k%DIM].
+   // Output word count W (uint16): BF16=M*N, FP8=M*N/2, FP4/FP6=M*N/4 (packing), from mx_out_fmt.
+   auto deposit_to_spad = [&](int M_out, int N_out) {
++    if (mx_acc_dst) {
++      gemmini_state.mx_accum_valid = true;
++      gemmini_state.mx_accum_m = M_out;
++      gemmini_state.mx_accum_n = N_out;
++      return;
++    }
+     if (gemmini_state.mx_dram_out) {   // native DRAM loop: BF16 C -> DRAM, row pitch C_stride elements
+       if (gemmini_state.mx_dram_C == 0) return;
+       for (int m = 0; m < M_out; m++)
