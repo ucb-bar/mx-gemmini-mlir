@@ -1,14 +1,17 @@
 """MX attention transfer packets retain Nicolas's scratchpad placement."""
 
 from pathlib import Path
+import json
 
 import pytest
 
 from mx_gemmini_support.nicolas_attention_io import (
-    lower_dense_attention_operands, lower_dense_attention_readout,
+    ATTENTION_BUFFERS, lower_dense_attention_operands,
+    lower_dense_attention_program, lower_dense_attention_readout,
     lower_dense_attention_scales)
 from mx_gemmini_support.target_profile import load_profile
-from tools.qualify_nicolas_attn_compute import _driver, _driver_with_io
+from tools.qualify_nicolas_attn_compute import (_driver, _driver_one_object,
+                                               _driver_with_io)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,3 +68,27 @@ def test_generated_io_driver_removes_source_transfer_calls() -> None:
         assert source_call not in driver
     with pytest.raises(ValueError, match="source transfer or readout seam differs"):
         _driver_with_io(compute.replace("sizeof(KT_SCALES)", "64", 1))
+
+
+def test_one_object_program_assembles_all_source_stages() -> None:
+    profile = load_profile(PROFILE / "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    evidence = ROOT / "docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb"
+    program = lower_dense_attention_program(
+        (evidence / "attention.vector_bound.mlir").read_text(), profile,
+        json.loads((evidence / "vector_binding.json").read_text()))
+    assert len(program) == 127
+    assert [item.funct for item in program if hasattr(item, "funct")].count(33) == 7
+    assert [item.funct for item in program if hasattr(item, "funct")].count(34) == 1
+    assert {operand.buffer for item in program if hasattr(item, "funct")
+            for operand in (item.rs1, item.rs2) if operand.buffer} == set(ATTENTION_BUFFERS)
+
+
+def test_one_object_driver_retains_only_source_checker_control() -> None:
+    middle = (ROOT / "docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb/"
+              "attn_vpu_generated_middle.c").read_text()
+    driver = _driver_one_object(_driver_with_io(_driver(middle)))
+    assert driver.count("  mx_issue(Q_SCALES, KT_SCALES, V_SCALES") == 1
+    assert "mx_issue_scales(" not in driver
+    assert "mx_issue_qk(" not in driver
+    assert "mx_issue_pv(" not in driver
+    assert "gemmini_flush(0);" in driver

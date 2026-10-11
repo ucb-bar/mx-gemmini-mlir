@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from .command_ir import Command, Operand
+from .command_ir import Command, Fence, Operand
 from .physical_program import _config_ld, _config_st, _transfer
+
+
+ATTENTION_BUFFERS = (
+    "Q_SCALES", "KT_SCALES", "V_SCALES", "Q_IN", "KT_IN", "V_IN",
+    "scale_sink", "S_hw", "p_scales", "O_hw", "P_hw", "p_codes_hw")
 
 
 def _profile_rows(profile: dict) -> int:
@@ -69,3 +74,26 @@ def lower_dense_attention_readout(profile: dict, stage: str) -> tuple[Command, .
     name, start, rows = outputs[stage]
     return (_config_st(16), *(_transfer(3, name, r * 16, start + r)
                               for r in range(0, rows, 16)))
+
+
+def lower_dense_attention_program(mlir_text: str, profile: dict,
+                                  binding: dict) -> tuple[Command | Fence, ...]:
+    """Assemble the source-bound matrix/I/O packets around typed VPU commands."""
+    from .nicolas_attention_matrix import lower_dense_attention_matrix
+    from .nicolas_attention_vector import lower_dense_attention_vector
+
+    vector = lower_dense_attention_vector(mlir_text, profile, binding)
+    program = (
+        *lower_dense_attention_scales(profile), Fence(),
+        *lower_dense_attention_operands(profile),
+        *lower_dense_attention_matrix(profile, "qk"),
+        *lower_dense_attention_readout(profile, "score"),
+        *vector,
+        *lower_dense_attention_matrix(profile, "pv"),
+        *lower_dense_attention_readout(profile, "output"),
+        *lower_dense_attention_readout(profile, "probability"),
+        *lower_dense_attention_readout(profile, "probability_codes"),
+    )
+    if len(program) != 127:
+        raise ValueError("dense attention physical program length differs")
+    return program

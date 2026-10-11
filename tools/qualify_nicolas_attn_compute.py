@@ -9,6 +9,7 @@ source stage hashes. It does not use a bitstream.
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import gzip
 import hashlib
 import json
@@ -18,9 +19,11 @@ import subprocess
 import sys
 
 from mx_gemmini_support.command_ir import emit_c
+from mx_gemmini_support.command_ir import Command
 from mx_gemmini_support.nicolas_attention_matrix import lower_dense_attention_matrix
 from mx_gemmini_support.nicolas_attention_io import (
-    lower_dense_attention_operands, lower_dense_attention_readout,
+    ATTENTION_BUFFERS, lower_dense_attention_operands,
+    lower_dense_attention_program, lower_dense_attention_readout,
     lower_dense_attention_scales)
 from mx_gemmini_support.nicolas_attention_vector import render_dense_attention_vector
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -102,6 +105,35 @@ def _driver_with_io(compute: str) -> str:
     return compute
 
 
+def _driver_one_object(io_driver: str) -> str:
+    """Call one compiler issuer for the whole checked attention command stream."""
+    first = io_driver.index("void mx_issue_scales(")
+    last = io_driver.index("\nint *__errno", first)
+    prototype = ("void mx_issue(" +
+                 ", ".join("const void *" + name for name in ATTENTION_BUFFERS) +
+                 ");\n")
+    io_driver = io_driver[:first] + prototype + io_driver[last:]
+    old_vector_prototype = "void mx_issue(const void *p_scales);\n"
+    if io_driver.count(old_vector_prototype) != 1:
+        raise ValueError("dense attention vector source declaration differs")
+    io_driver = io_driver.replace(old_vector_prototype, "")
+    first = io_driver.index("static void attention(int check) {")
+    last = io_driver.index("\nstatic void rel_errs", first)
+    call = ", ".join(ATTENTION_BUFFERS)
+    body = ("static void attention(int check) {\n"
+            "  (void)check;\n"
+            "  mark(0);\n"
+            f"  mx_issue({call});\n"
+            "  gemmini_fence();\n"
+            "  st[6] = read_cycles();\n"
+            "}\n")
+    io_driver = io_driver[:first] + body + io_driver[last:]
+    scale_call = "  mx_issue_scales(Q_SCALES, KT_SCALES, V_SCALES);"
+    if io_driver.count(scale_call) != 1:
+        raise ValueError("dense attention source scale setup differs")
+    return io_driver.replace(scale_call, "")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("npu-root", "profile", "rtl-root", "riscv-root",
@@ -110,7 +142,11 @@ def main() -> None:
     parser.add_argument("--mx-opt", type=Path)
     parser.add_argument("--generated-io", action="store_true",
                         help="also replace source scale, operand, and readout commands")
+    parser.add_argument("--single-object", action="store_true",
+                        help="link one data-free issuer for the entire attention command stream")
     args = parser.parse_args()
+    if args.single_object:
+        args.generated_io = True
     for name in ("npu_root", "profile", "rtl_root", "riscv_root",
                  "spike_extension", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
@@ -190,12 +226,33 @@ def main() -> None:
                 raise ValueError(f"dense attention {name} issuer embeds source data")
             io_objects[name] = obj
             objects.append(obj)
-    driver = out / ("attn_vpu_generated_io.c" if args.generated_io else
+    single_object = None
+    if args.single_object:
+        full = lower_dense_attention_program(bound, profile, binding)
+        directory = out / "single"
+        directory.mkdir()
+        (directory / "mx_issue.c").write_text(
+            emit_c(list(full), transport="rocket_rocc", buffers=ATTENTION_BUFFERS))
+        single_object, data_bytes = _compile_object(directory, args.riscv_root)
+        if data_bytes:
+            raise ValueError("single dense attention issuer embeds source data")
+        (directory / "physical_program.json").write_text(json.dumps({
+            "schema": "mx_gemmini.nicolas_attention_single_physical.v1",
+            "profile_sha256": profile_sha256(profile),
+            "bound_vector_mlir_sha256": hashlib.sha256(bound.encode()).hexdigest(),
+            "buffers": ATTENTION_BUFFERS,
+            "commands": [asdict(item) if isinstance(item, Command) else
+                         {"kind": "fence"} for item in full],
+        }, indent=2, sort_keys=True) + "\n")
+        objects = [single_object]
+    driver = out / ("attn_vpu_single_object.c" if args.single_object else
+                    "attn_vpu_generated_io.c" if args.generated_io else
                     "attn_vpu_generated_compute.c")
     compute_driver = _driver(
         (VECTOR_EVIDENCE / "attn_vpu_generated_middle.c").read_text())
-    driver.write_text(_driver_with_io(compute_driver) if args.generated_io else
-                      compute_driver)
+    staged_driver = _driver_with_io(compute_driver) if args.generated_io else compute_driver
+    driver.write_text(_driver_one_object(staged_driver) if args.single_object else
+                      staged_driver)
     (out / "attn_vpu.h").write_bytes(header)
     shutil.copyfile(SOURCE_EVIDENCE / "attn_vpu_expect.h",
                     out / "attn_vpu_expect.h")
@@ -212,7 +269,8 @@ def main() -> None:
         _run([str(cc), *flags, "-c", str(path), "-o", str(obj)],
              cwd=out, log=out / f"source_{index}.log")
         objects.append(obj)
-    elf = out / ("attn_vpu_generated_io.elf" if args.generated_io else
+    elf = out / ("attn_vpu_single_object.elf" if args.single_object else
+                 "attn_vpu_generated_io.elf" if args.generated_io else
                  "attn_vpu_generated_compute.elf")
     _run([str(cc), "-nostdlib", "-nostartfiles", "-static", "-T",
           str(bench / "test.ld"), *(str(obj) for obj in objects),
@@ -233,12 +291,17 @@ def main() -> None:
             "attn_vpu PASSED" not in logs[0]):
         raise ValueError("compiler-issued attention compute differs from source on Spike")
     receipt = {
-        "schema": ("mx_gemmini.nicolas_attention_generated_io.v1" if args.generated_io
+        "schema": ("mx_gemmini.nicolas_attention_single_object.v1" if args.single_object
+                   else "mx_gemmini.nicolas_attention_generated_io.v1" if args.generated_io
                    else "mx_gemmini.nicolas_attention_generated_compute.v1"),
-        "status": ("generated_attention_io_and_compute_matches_source_on_spike"
+        "status": ("single_attention_object_matches_source_on_spike" if args.single_object
+                   else "generated_attention_io_and_compute_matches_source_on_spike"
                    if args.generated_io else
                    "generated_qk_vpu_requant_pv_compute_matches_source_on_spike"),
-        "scope": ("all scale loads, operand transfers, QK, VPU, requant, PV, "
+        "scope": ("one data-free object issues all MX attention kernel commands; "
+                  "source checker still flushes/fences; QK/PV and I/O are source-specific physical lowering"
+                  if args.single_object else
+                  "all scale loads, operand transfers, QK, VPU, requant, PV, "
                   "and readouts generated; source checker still flushes/fences"
                   if args.generated_io else
                   "all QK, VPU, resident requant, and PV compute commands generated; "
@@ -267,8 +330,13 @@ def main() -> None:
     if args.generated_io:
         receipt["io_object_sha256"] = {name: _sha(path)
                                        for name, path in io_objects.items()}
+    if single_object is not None:
+        receipt["single_object_sha256"] = _sha(single_object)
+        receipt["single_physical_program_sha256"] = _sha(
+            out / "single/physical_program.json")
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-    print("compiler-issued attention " + ("I/O and compute" if args.generated_io
+    print("compiler-issued attention " + ("single object" if args.single_object else
+                                           "I/O and compute" if args.generated_io
                                            else "compute") +
           " matched all source hashes on Spike")
 
