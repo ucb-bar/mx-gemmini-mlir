@@ -1,0 +1,122 @@
+{
+  "allocated_data_section_bytes": 0,
+  "binding_json_sha256": "3d9b467eab4f0e10d4d832e4c074956a133d92e3d6ea1bd37906ab7c95187d2c",
+  "block_first": 64,
+  "block_last": 192,
+  "bound_mlir_sha256": "f509ee4c2c93681482c6a3a980582906a9bf5aef3f4846d04b76081b062a4fba",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 128,
+      "name": "Q_SCALES_FOLDED",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 4096,
+      "name": "KT_SCALES",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 4096,
+      "name": "V_SCALES",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 4096,
+      "name": "Q_IN",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 131072,
+      "name": "KT_IN",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 131072,
+      "name": "V_IN",
+      "position": 5,
+      "role": "read"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 2048,
+      "name": "scale_sink",
+      "position": 6,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 512,
+      "name": "p_scales_0",
+      "position": 7,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 512,
+      "name": "p_scales_1",
+      "position": 8,
+      "role": "write"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "flat_bytes_source_flash_llama_vb_stream",
+      "minimum_bytes": 8192,
+      "name": "O_HW",
+      "position": 9,
+      "role": "write"
+    }
+  ],
+  "causal": false,
+  "command_count": 508,
+  "compiler_revision": "2c839f98d6cb9e762eb0336755ec27dd7b567a6e",
+  "compiler_source_closure_sha256": "12cf086e34ee639f4c0e6653b4bf3f584d00cff5e9ac3aecb602a9c4b10ec1c5",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "fence_count": 56,
+  "input_format": "fp8_e4m3",
+  "issuer_c_sha256": "c28da6e824846575a357669fe001809a26a08b3d56b57c2a42f0e56b84e42151",
+  "issuer_h_sha256": "91d77f4ce61afd3a9c1f3e741b6661e41fd5bb32a874fbfc7ba8c78eb4c9c055",
+  "mlir_container_sha256": "f509ee4c2c93681482c6a3a980582906a9bf5aef3f4846d04b76081b062a4fba",
+  "object_sha256": "d9eec5b95c9fc2f4ad7b3a6781b4f3675994321c8abc70ae8385ec830b9091b2",
+  "physical_program_sha256": "c4c7fecbd349605b9cceb1d10bfa4ea3d70b8288e637da77a16d5d509b34cbcb",
+  "precursor_mlir_sha256": "abdb301d802b2af42fcc91ad5aff60955fbca82d10926590519a0979063ffd5e",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schedule": "fenced_serial",
+  "schema": "mx_gemmini.flash_program_linkable_object.v1",
+  "shape_sq_sk_d_bk": [
+    64,
+    2048,
+    64,
+    256
+  ],
+  "softmax_mode": "split",
+  "source_core_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "source_header_sha256": "6f978631f1c50dbf04b1b743aafc31715ce73b434e1b790fa5362b4bbda9dc52",
+  "source_wrapper_sha256": "945c3e655e017d62a595c59b4ae0c0ced52bda550df570d30ac01801c48b7bec",
+  "status": "rv64_rocc_typed_flash_program_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}

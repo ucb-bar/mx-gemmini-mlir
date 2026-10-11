@@ -93,9 +93,11 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
                     ((counts in {(0, 0, 31, 4), (0, 0, 39, 4), (0, 0, 43, 4)} and
                       report["memory_phases"] == 19 and
                       report["spad_matmuls"] == 8) or
-                     (counts in {(0, 0, 83, 8), (0, 0, 147, 8)} and
-                      report["memory_phases"] == (36 if counts[2] == 147 else 35) and
-                      report["spad_matmuls"] == 16)) and
+                     ((counts, report["memory_phases"], report["spad_matmuls"]) in {
+                         ((0, 0, 83, 8), 35, 16),
+                         ((0, 0, 147, 8), 36, 16),
+                         ((0, 0, 94, 9), 39, 18),
+                     })) and
                     report["flash_setups"] == 1 and
                     report["source_resources"] == 0 and
                     report["lut_uploads"] == 0 and

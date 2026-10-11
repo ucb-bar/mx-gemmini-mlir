@@ -1,0 +1,97 @@
+{
+  "frontend_sha256": "abdb301d802b2af42fcc91ad5aff60955fbca82d10926590519a0979063ffd5e",
+  "header_sha256": "6f978631f1c50dbf04b1b743aafc31715ce73b434e1b790fa5362b4bbda9dc52",
+  "manifest_sha256": "1ec9db061fcfb0ef2f3cd0dbfeac0a39e3f38eee4cb3725bdf29456be61ade92",
+  "policy": {
+    "block_first": 64,
+    "block_last": 192,
+    "block_lengths": [
+      64,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      256,
+      192
+    ],
+    "block_order": [
+      "QK",
+      "softmax",
+      "requant",
+      "PV",
+      "update"
+    ],
+    "fenced": true,
+    "fold_q_scale_shift": 3,
+    "key_offsets": [
+      0,
+      64,
+      320,
+      576,
+      832,
+      1088,
+      1344,
+      1600,
+      1856
+    ],
+    "kv_stream_buffers": [
+      2,
+      3
+    ],
+    "output_rows": [
+      14848,
+      14336,
+      10240,
+      14336,
+      10240,
+      14336,
+      10240,
+      14336,
+      10240
+    ],
+    "probability_rows": [
+      6144,
+      7168,
+      6144,
+      7168,
+      6144,
+      7168,
+      6144,
+      7168,
+      6144
+    ],
+    "schema": "mx_gemmini.flash_llama_vb_stream_serial_policy.v1",
+    "score_rows": [
+      8192,
+      12288,
+      8192,
+      12288,
+      8192,
+      12288,
+      8192,
+      12288,
+      8192
+    ],
+    "shape_sq_sk_d_bk": [
+      64,
+      2048,
+      64,
+      256
+    ],
+    "spad_q_v_kt_p_st_o": [
+      0,
+      256,
+      4096,
+      6144,
+      3328,
+      14848
+    ]
+  },
+  "policy_sha256": "a553d08b57c44a08bcfbe0e9777b0daace1c34f42d060054704f5f2dd460b1ff",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.flash_llama_vb_stream_serial_binding.v1",
+  "source_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "wrapper_sha256": "945c3e655e017d62a595c59b4ae0c0ced52bda550df570d30ac01801c48b7bec"
+}
