@@ -332,6 +332,163 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
     return vector_ops, host_kind, tilewise_policy, memory_layout
 
 
+def _regular_schedule_steps(profile: dict, precision: str,
+                            shape: tuple[int, int, int], tile: tuple[int, int, int],
+                            plan: dict, resource_lengths: Mapping[str, int], *,
+                            quant_output: bool, matrix_quant_output: bool,
+                            vector_requant: bool, vector_ops: list[tuple[str, dict]],
+                            mode: str) -> tuple[PhysicalStep, ...]:
+    """Issue the common checked source and live-runtime matrix command order."""
+    m, n, k = shape
+    tm, tn, tk = tile
+    dim = profile["geometry"]["mesh_columns"]
+    values_per_byte = 1 if precision == "FP8" else 2
+    pe = dim * values_per_byte
+    ti, tj, tki = tm // pe, tn // pe, tk // dim
+    a_stride = k
+    b_stride = n if precision == "FP8" else n // 2
+    expected_quant_bytes = m * n // (2 if precision in {"FP4", "FP6"} else 1)
+    output_tiles = plan.get("output_tiles", [{"index": 0, "m_start": 0, "n_start": 0}])
+
+    steps: list[PhysicalStep] = []
+
+    def issue(phase: str, command: Command | Fence, wave: int | None = None) -> None:
+        steps.append(PhysicalStep(phase, wave, command))
+
+    # gemmini_extended3_config_ex(..., WS, formats, BF16 output, LUT).
+    fmt = {"FP8": 0, "FP6": 1, "FP4": 2}[precision]
+    config_base = (1 << 16) | (fmt << 12) | (fmt << 10) | \
+                  (int(precision == "FP6") << 5) | (1 << 2)
+    # A requant postpass modifies the accumulator storage. Keep intermediate
+    # K waves in BF16 and select the requested output encoding for the final
+    # wave only, as the handwritten last_k schedule does.
+    config_ex = config_base | ((3 if matrix_quant_output and len(plan["waves"]) > 1
+                                else fmt if matrix_quant_output else 3) << 14)
+    issue("configure", _cmd(7, 0, 0))
+    issue("configure", _cmd(0, config_ex, 1 << 48))
+    issue("configure", _config_ld(a_stride, dim=dim))
+    issue("configure", _config_ld(b_stride, id=1, dim=dim))
+    issue("configure", _config_st(dim if matrix_quant_output else n * 2))
+    issue("configure", Fence())
+
+    if precision == "FP6":
+        for name, sel in (("weight_lut", 0), ("activation_lut", 1), ("output_lut", 2)):
+            if resource_lengths[name] != 64 * 3 * 4:
+                raise ValueError(f"physical FP6 {name} has the wrong byte count")
+            issue("upload_lut", _cmd(29, Operand(buffer=name),
+                                     (6 << 34) | (sel << 32) | 64))
+        issue("upload_lut", Fence())
+
+    scale_half = profile["resources"]["scale_mem_config"]["size_bytes"] // 4
+    if scale_half != 4096:
+        raise ValueError("physical MX scale-half geometry is not yet supported")
+    def lower_output_tile(output_tile: dict) -> None:
+        m_start, n_start = output_tile["m_start"], output_tile["n_start"]
+        for wave in plan["waves"]:
+            index = wave["index"]
+            if matrix_quant_output and index == len(plan["waves"]) - 1 and index > 0:
+                issue("configure_final_output", _cmd(0, config_base | (fmt << 14),
+                                                       1 << 48), index)
+                issue("configure_final_output", Fence(), index)
+            group = wave["k_start"] // 32
+            groups = tk // 32
+            # The pinned Spike LUT compute path ignores selector 1; keep that
+            # workaround local to this explicit execution mode.
+            selector = 0 if precision == "FP6" and mode == "spike_serial" else index & 1
+            dest = selector * scale_half
+            for name, row_bytes, pitch, start, sel in (
+                    ("activation_scales", tm, m, m_start, 0),
+                    ("weight_scales", tn, n, n_start, 1)):
+                offset = group * pitch + start
+                if (offset + (groups - 1) * pitch + row_bytes > resource_lengths[name] or
+                        row_bytes * groups > scale_half):
+                    raise ValueError("physical MX scale wave exceeds bound resource or target half")
+                rs1 = Operand(buffer=name, byte_offset=offset,
+                              address_mask=(1 << 40) - 1, or_bits=pitch << 40)
+                rs2 = (groups << 46) | (dest << 33) | (sel << 32) | row_bytes
+                issue("upload_scales", _cmd(27, rs1, rs2), index)
+            issue("upload_scales", Fence(), index)
+
+            a_row = wave["a_spad_start"]
+            b_end = wave["b_spad_end"]
+            b_start = b_end - tki * tj * dim
+            issue("move_activation", _config_ld(a_stride, dim=dim), index)
+            for i in range(ti):
+                for ki in range(tki):
+                    offset = (m_start // values_per_byte + i * dim) * a_stride + \
+                             wave["k_start"] + ki * dim
+                    if offset + (dim - 1) * a_stride + dim > resource_lengths["activation"]:
+                        raise ValueError("physical MX activation tile exceeds payload")
+                    row = a_row + (i * tki + ki) * dim
+                    issue("move_activation", _transfer(2, "activation", offset, row,
+                                                         dim=dim), index)
+            issue("move_weight", _config_ld(b_stride, dim=dim), index)
+            for ki in range(tki):
+                for j in range(tj):
+                    offset = (wave["k_start"] + ki * dim) * b_stride + \
+                             n_start // values_per_byte + j * dim
+                    if offset + (dim - 1) * b_stride + dim > resource_lengths["weight"]:
+                        raise ValueError("physical MX weight tile exceeds payload")
+                    row = b_start + (ki * tj + j) * dim
+                    issue("move_weight", _transfer(2, "weight", offset, row,
+                                                     dim=dim), index)
+            issue("move_weight", Fence(), index)
+
+            selector_bits = (selector << 60) | (selector << 61)
+            selector_bits |= (tki << 51) | (tj << 42) | (ti << 33)
+            issue("select_scales", _cmd(26, Operand(buffer="scratch_output_scales",
+                                                    address_mask=(1 << 33) - 1,
+                                                    or_bits=selector_bits), 1), index)
+            issue("compute", _cmd(9, 0, (tki << 32) | (tj << 16) | ti), index)
+            issue("compute", _cmd(24, a_row, b_end), index)
+            skips = 0x38 if wave["move_acc_to_spad"] else 0xb8
+            issue("compute", _cmd(8, int(wave["accumulate"]),
+                                  (plan["c_spad_dest"] << 32) | 0x200 | skips), index)
+            issue("compute", Fence(), index)
+
+        for kind, kwargs in vector_ops:
+            if kind == "vpu":
+                issue("vpu", vpu_command(profile, **kwargs))
+            else:
+                issue("spad_requant", spad_requant_command(profile, **kwargs))
+        if vector_ops:
+            issue("vpu_sync", Fence())
+
+        issue("readout", _config_st(dim))
+        readout_rows = m * n // dim if vector_requant else plan["c_rows"]
+        readout_source = (vector_ops[1][1]["destination_row"] if vector_requant
+                          else plan["c_spad_dest"])
+        if plan.get("bf16_output_layout") == "row_major_bf16":
+            rows_per_logical = tn * 2 // dim
+            if readout_rows != tm * rows_per_logical:
+                raise ValueError("row-major BF16 readout disagrees with C scratchpad rows")
+            for local_row in range(tm):
+                offset = ((m_start + local_row) * n + n_start) * 2
+                if offset + tn * 2 > m * n * 2:
+                    raise ValueError("row-major BF16 readout exceeds output shape")
+                issue("readout", _transfer_rect(
+                    3, "output_bf16", offset,
+                    readout_source + local_row * rows_per_logical,
+                    rows=rows_per_logical, cols=dim))
+        else:
+            output_tile_base = output_tile["index"] * (
+                tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
+                if quant_output else tm * tn * 2)
+            for row in range(0, readout_rows, dim):
+                offset = output_tile_base + row * dim
+                if offset + dim * dim > (expected_quant_bytes if quant_output else m * n * 2):
+                    raise ValueError("physical MX readout exceeds output shape")
+                issue("readout", _transfer(
+                    3, "output_quantized" if quant_output else "output_bf16",
+                    offset, readout_source + row, dim=dim))
+        issue("readout", Fence())
+
+    for output_tile in output_tiles:
+        lower_output_tile(output_tile)
+
+    return tuple(steps)
+
+
 def _lower_bound_source_regular(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
@@ -469,141 +626,11 @@ def _lower_bound_source_regular(mlir_text: str, profile: dict, manifest: dict,
                 resources.get("golden_output_scales") != scales):
             raise ValueError("Radiance source header quantized golden differs from BF16 epilogue")
 
-    steps: list[PhysicalStep] = []
-
-    def issue(phase: str, command: Command | Fence, wave: int | None = None) -> None:
-        steps.append(PhysicalStep(phase, wave, command))
-
-    # gemmini_extended3_config_ex(..., WS, formats, BF16 output, LUT).
-    fmt = {"FP8": 0, "FP6": 1, "FP4": 2}[precision]
-    config_base = (1 << 16) | (fmt << 12) | (fmt << 10) | \
-                  (int(precision == "FP6") << 5) | (1 << 2)
-    # A requant postpass modifies the accumulator storage. Keep intermediate
-    # K waves in BF16 and select the requested output encoding for the final
-    # wave only, as the handwritten last_k schedule does.
-    config_ex = config_base | ((3 if matrix_quant_output and len(plan["waves"]) > 1
-                                else fmt if matrix_quant_output else 3) << 14)
-    issue("configure", _cmd(7, 0, 0))
-    issue("configure", _cmd(0, config_ex, 1 << 48))
-    issue("configure", _config_ld(a_stride, dim=dim))
-    issue("configure", _config_ld(b_stride, id=1, dim=dim))
-    issue("configure", _config_st(dim if matrix_quant_output else n * 2))
-    issue("configure", Fence())
-
-    if precision == "FP6":
-        for name, sel in (("weight_lut", 0), ("activation_lut", 1), ("output_lut", 2)):
-            if len(resources[name]) != 64 * 3 * 4:
-                raise ValueError(f"physical FP6 {name} has the wrong byte count")
-            issue("upload_lut", _cmd(29, Operand(buffer=name),
-                                     (6 << 34) | (sel << 32) | 64))
-        issue("upload_lut", Fence())
-
-    scale_half = profile["resources"]["scale_mem_config"]["size_bytes"] // 4
-    if scale_half != 4096:
-        raise ValueError("physical MX scale-half geometry is not yet supported")
-    def lower_output_tile(output_tile: dict) -> None:
-        m_start, n_start = output_tile["m_start"], output_tile["n_start"]
-        for wave in plan["waves"]:
-            index = wave["index"]
-            if matrix_quant_output and index == len(plan["waves"]) - 1 and index > 0:
-                issue("configure_final_output", _cmd(0, config_base | (fmt << 14),
-                                                       1 << 48), index)
-                issue("configure_final_output", Fence(), index)
-            group = wave["k_start"] // 32
-            groups = tk // 32
-            # The pinned Spike LUT compute path ignores selector 1; keep that
-            # workaround local to this explicit execution mode.
-            selector = 0 if precision == "FP6" and mode == "spike_serial" else index & 1
-            dest = selector * scale_half
-            for name, row_bytes, pitch, start, sel in (
-                    ("activation_scales", tm, m, m_start, 0),
-                    ("weight_scales", tn, n, n_start, 1)):
-                offset = group * pitch + start
-                if (offset + (groups - 1) * pitch + row_bytes > len(resources[name]) or
-                        row_bytes * groups > scale_half):
-                    raise ValueError("physical MX scale wave exceeds bound resource or target half")
-                rs1 = Operand(buffer=name, byte_offset=offset,
-                              address_mask=(1 << 40) - 1, or_bits=pitch << 40)
-                rs2 = (groups << 46) | (dest << 33) | (sel << 32) | row_bytes
-                issue("upload_scales", _cmd(27, rs1, rs2), index)
-            issue("upload_scales", Fence(), index)
-
-            a_row = wave["a_spad_start"]
-            b_end = wave["b_spad_end"]
-            b_start = b_end - tki * tj * dim
-            issue("move_activation", _config_ld(a_stride, dim=dim), index)
-            for i in range(ti):
-                for ki in range(tki):
-                    offset = (m_start // values_per_byte + i * dim) * a_stride + \
-                             wave["k_start"] + ki * dim
-                    if offset + (dim - 1) * a_stride + dim > len(resources["activation"]):
-                        raise ValueError("physical MX activation tile exceeds payload")
-                    row = a_row + (i * tki + ki) * dim
-                    issue("move_activation", _transfer(2, "activation", offset, row,
-                                                         dim=dim), index)
-            issue("move_weight", _config_ld(b_stride, dim=dim), index)
-            for ki in range(tki):
-                for j in range(tj):
-                    offset = (wave["k_start"] + ki * dim) * b_stride + \
-                             n_start // values_per_byte + j * dim
-                    if offset + (dim - 1) * b_stride + dim > len(resources["weight"]):
-                        raise ValueError("physical MX weight tile exceeds payload")
-                    row = b_start + (ki * tj + j) * dim
-                    issue("move_weight", _transfer(2, "weight", offset, row,
-                                                     dim=dim), index)
-            issue("move_weight", Fence(), index)
-
-            selector_bits = (selector << 60) | (selector << 61)
-            selector_bits |= (tki << 51) | (tj << 42) | (ti << 33)
-            issue("select_scales", _cmd(26, Operand(buffer="scratch_output_scales",
-                                                    address_mask=(1 << 33) - 1,
-                                                    or_bits=selector_bits), 1), index)
-            issue("compute", _cmd(9, 0, (tki << 32) | (tj << 16) | ti), index)
-            issue("compute", _cmd(24, a_row, b_end), index)
-            skips = 0x38 if wave["move_acc_to_spad"] else 0xb8
-            issue("compute", _cmd(8, int(wave["accumulate"]),
-                                  (plan["c_spad_dest"] << 32) | 0x200 | skips), index)
-            issue("compute", Fence(), index)
-
-        for kind, kwargs in vector_ops:
-            if kind == "vpu":
-                issue("vpu", vpu_command(profile, **kwargs))
-            else:
-                issue("spad_requant", spad_requant_command(profile, **kwargs))
-        if vector_ops:
-            issue("vpu_sync", Fence())
-
-        issue("readout", _config_st(dim))
-        readout_rows = m * n // dim if vector_requant else plan["c_rows"]
-        readout_source = (vector_ops[1][1]["destination_row"] if vector_requant
-                          else plan["c_spad_dest"])
-        if plan.get("bf16_output_layout") == "row_major_bf16":
-            rows_per_logical = tn * 2 // dim
-            if readout_rows != tm * rows_per_logical:
-                raise ValueError("row-major BF16 readout disagrees with C scratchpad rows")
-            for local_row in range(tm):
-                offset = ((m_start + local_row) * n + n_start) * 2
-                if offset + tn * 2 > m * n * 2:
-                    raise ValueError("row-major BF16 readout exceeds output shape")
-                issue("readout", _transfer_rect(
-                    3, "output_bf16", offset,
-                    readout_source + local_row * rows_per_logical,
-                    rows=rows_per_logical, cols=dim))
-        else:
-            output_tile_base = output_tile["index"] * (
-                tm * tn // (2 if precision in {"FP4", "FP6"} else 1)
-                if quant_output else tm * tn * 2)
-            for row in range(0, readout_rows, dim):
-                offset = output_tile_base + row * dim
-                if offset + dim * dim > (expected_quant_bytes if quant_output else m * n * 2):
-                    raise ValueError("physical MX readout exceeds output shape")
-                issue("readout", _transfer(
-                    3, "output_quantized" if quant_output else "output_bf16",
-                    offset, readout_source + row, dim=dim))
-        issue("readout", Fence())
-
-    for output_tile in output_tiles:
-        lower_output_tile(output_tile)
+    steps = _regular_schedule_steps(
+        profile, precision, shape, tile, plan,
+        {name: len(data) for name, data in resources.items()},
+        quant_output=quant_output, matrix_quant_output=matrix_quant_output,
+        vector_requant=vector_requant, vector_ops=vector_ops, mode=mode)
 
     source_golden_preserving = (not vector_ops and not quant_output and
                                 manifest.get("origin") !=

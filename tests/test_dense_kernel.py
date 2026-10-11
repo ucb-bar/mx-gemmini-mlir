@@ -9,9 +9,12 @@ import subprocess
 
 import pytest
 
-from mx_gemmini_support.dense_kernel import emit_dense_f32_kernel
+from mx_gemmini_support.dense_kernel import (emit_dense_f32_batch_kernel,
+                                             emit_dense_f32_kernel,
+                                             emit_shared_workspace_definition)
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.runtime_issuer import RuntimeIssuer, emit_runtime_issuer
+from mx_gemmini_support.planned_runtime_issuer import emit_planned_runtime_issuer
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
 
@@ -93,6 +96,93 @@ def test_dense_wrapper_refuses_changed_extent_or_shape() -> None:
     changed = replace(issuer, buffer_bytes={**issuer.buffer_bytes, "activation": 1})
     with pytest.raises(ValueError, match="extents"):
         emit_dense_f32_kernel(changed, (8, 344, 128), symbol="entry")
+
+
+def test_batched_dense_wrapper_advances_disjoint_slices(tmp_path) -> None:
+    np = pytest.importorskip("numpy")
+    cc = shutil.which("cc")
+    if cc is None:
+        pytest.skip("host C compiler unavailable")
+    profile = load_profile(PROFILE)
+    issuer = emit_planned_runtime_issuer(
+        profile, (32, 32, 32), (32, 32, 32), precision="FP4")
+    batch_kernel = emit_dense_f32_batch_kernel(
+        issuer, (3, 8, 28, 32), symbol="mx_batch_probe")
+    (tmp_path / "adapter.c").write_text(batch_kernel.source)
+    (tmp_path / "stub.c").write_text('''#include <stdint.h>
+unsigned calls = 0;
+void mx_issue_encoded(const void *a, const void *as, const void *b, const void *bs,
+                      const void *out, const void *scratch) {
+  (void)a; (void)as; (void)b; (void)bs; (void)scratch;
+  ++calls;
+  uint16_t *words = (uint16_t *)out;
+  for (unsigned i = 0; i < 32 * 32; ++i) words[i] = (uint16_t)(0x3f80 + calls);
+}
+''')
+    library = tmp_path / "batch.so"
+    subprocess.run([cc, "-shared", "-fPIC", "-O2", "-std=c11", "-Wall", "-Wextra",
+                    "-Werror", "-I", str(ROOT / "mx_gemmini_support"),
+                    str(tmp_path / "adapter.c"), str(tmp_path / "stub.c"),
+                    str(ROOT / "mx_gemmini_support/runtime_quant.c"),
+                    "-lm", "-o", str(library)], check=True)
+    loaded = ctypes.CDLL(str(library))
+    loaded.mx_batch_probe.argtypes = [ctypes.POINTER(ctypes.c_float)] * 3
+    a = np.ones((3, 8, 32), dtype=np.float32)
+    b = np.ones((3, 32, 28), dtype=np.float32)
+    out = np.empty((3, 8, 28), dtype=np.float32)
+    loaded.mx_batch_probe(a.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                          b.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                          out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)))
+    assert ctypes.c_uint.in_dll(loaded, "calls").value == 3
+    for index in range(3):
+        assert np.all(out[index].view(np.uint32) == (0x3f80 + index + 1) << 16)
+
+
+def test_two_catalog_entries_share_one_aligned_serial_workspace(tmp_path) -> None:
+    np = pytest.importorskip("numpy")
+    cc = shutil.which("cc")
+    if cc is None:
+        pytest.skip("host C compiler unavailable")
+    issuer = emit_planned_runtime_issuer(
+        load_profile(PROFILE), (32, 32, 32), (32, 32, 32), precision="FP4")
+    kernels = [emit_dense_f32_kernel(
+        issuer, (8, 28, 32), symbol=f"mx_entry_{index}",
+        shared_workspace_symbol="mx_catalog_workspace") for index in range(2)]
+    assert kernels[0].workspace_bytes == kernels[1].workspace_bytes
+    assert "static uint8_t activation" not in kernels[0].source
+    for index, kernel in enumerate(kernels):
+        (tmp_path / f"entry_{index}.c").write_text(kernel.source)
+    (tmp_path / "workspace.c").write_text(emit_shared_workspace_definition(
+        max(kernel.workspace_bytes for kernel in kernels), symbol="mx_catalog_workspace"))
+    (tmp_path / "stub.c").write_text('''#include <stdint.h>
+unsigned calls = 0;
+void mx_issue_encoded(const void *a, const void *as, const void *b, const void *bs,
+                      const void *out, const void *scratch) {
+  (void)a; (void)as; (void)b; (void)bs; (void)scratch;
+  ++calls;
+  uint16_t *words = (uint16_t *)out;
+  for (unsigned i = 0; i < 32 * 32; ++i) words[i] = (uint16_t)(0x3f80 + calls);
+}
+''')
+    library = tmp_path / "catalog.so"
+    subprocess.run([cc, "-shared", "-fPIC", "-O2", "-std=c11", "-Wall", "-Wextra",
+                    "-Werror", "-I", str(ROOT / "mx_gemmini_support"),
+                    *(str(tmp_path / f"entry_{index}.c") for index in range(2)),
+                    str(tmp_path / "workspace.c"), str(tmp_path / "stub.c"),
+                    str(ROOT / "mx_gemmini_support/runtime_quant.c"),
+                    "-lm", "-o", str(library)], check=True)
+    loaded = ctypes.CDLL(str(library))
+    lhs = np.ones((8, 32), dtype=np.float32)
+    rhs = np.ones((32, 28), dtype=np.float32)
+    for index in range(2):
+        output = np.empty((8, 28), dtype=np.float32)
+        entry = getattr(loaded, f"mx_entry_{index}")
+        entry.argtypes = [ctypes.POINTER(ctypes.c_float)] * 3
+        entry(lhs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+              rhs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+              output.ctypes.data_as(ctypes.POINTER(ctypes.c_float)))
+        assert np.all(output.view(np.uint32) == (0x3f80 + index + 1) << 16)
+    assert ctypes.c_uint.in_dll(loaded, "calls").value == 2
 
 
 def test_direct_fp8_schedule_uses_fp8_packing_without_weight_padding() -> None:

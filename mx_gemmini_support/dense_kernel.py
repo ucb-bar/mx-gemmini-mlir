@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .runtime_issuer import RuntimeIssuer
+from .planned_runtime_issuer import PlannedRuntimeIssuer
 
 
 @dataclass(frozen=True)
@@ -22,22 +23,44 @@ class DenseKernel:
     workspace_bytes: int
 
 
+@dataclass(frozen=True)
+class DenseBatchKernel:
+    source: str
+    symbol: str
+    logical_shape_bmnk: tuple[int, int, int, int]
+    padded_shape_mnk: tuple[int, int, int]
+    workspace_bytes: int
+
+
 def _identifier(value: str) -> bool:
     return bool(value) and (value[0].isalpha() or value[0] == "_") and all(
         char.isalnum() or char == "_" for char in value
     )
 
 
-def emit_dense_f32_kernel(issuer: RuntimeIssuer, logical_shape_mnk: tuple[int, int, int], *,
-                          symbol: str, issuer_symbol: str = "mx_issue_encoded") -> DenseKernel:
+def emit_shared_workspace_definition(size: int, *, symbol: str) -> str:
+    """Define one aligned serial workspace shared by all catalog entries."""
+    if not _identifier(symbol) or type(size) is not int or not 1 <= size <= 0x7fffffff:
+        raise ValueError("MX shared workspace needs a safe symbol and bounded size")
+    return (f"unsigned char {symbol}[{size}] "
+            "__attribute__((aligned(64)));\n")
+
+
+def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
+                          logical_shape_mnk: tuple[int, int, int], *,
+                          symbol: str, issuer_symbol: str = "mx_issue_encoded",
+                          shared_workspace_symbol: str | None = None) -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
-    The issuer must have been independently checked against its profile and
-    source payload. This function validates its buffer extents again before
-    generating a dense adapter; it does not qualify a new shape or datapath.
+    The issuer must have been checked against its profile. A payload-bound
+    issuer has independent source qualification; a shape-planned issuer still
+    needs a separate numerical execution gate. Buffer extents are checked
+    again before generating the adapter.
     """
     if not _identifier(symbol) or not _identifier(issuer_symbol) or symbol == issuer_symbol:
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
+    if shared_workspace_symbol is not None and not _identifier(shared_workspace_symbol):
+        raise ValueError("MX dense adapter needs a safe shared workspace symbol")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -64,17 +87,35 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer, logical_shape_mnk: tuple[int, i
         raise ValueError("MX dense adapter exceeds the selected 32-bit runtime extent")
     padded_a = (lm, lk) != (m, k)
     padded_b = (lk, ln) != (k, n)
-    declarations = []
+    buffers = []
     if padded_a:
-        declarations.append(f"static float padded_a[{m} * {k}] __attribute__((aligned(64)));\n")
+        buffers.append(("padded_a", "float", m * k * 4, m * k))
     if padded_b:
-        declarations.append(f"static float padded_b[{k} * {n}] __attribute__((aligned(64)));\n")
+        buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
         dtype = "uint16_t" if name == "output_bf16" else "uint8_t"
         count = size // 2 if name == "output_bf16" else size
-        declarations.append(
+        buffers.append((name, dtype, size, count))
+    local_buffers = ""
+    if shared_workspace_symbol is None:
+        declarations = [
             f"static {dtype} {name}[{count}] __attribute__((aligned(64)));\n"
-        )
+            for name, dtype, _size, count in buffers
+        ]
+        workspace = sum(size for _name, _dtype, size, _count in buffers)
+    else:
+        declarations = [f"extern unsigned char {shared_workspace_symbol}[];\n"]
+        offset = 0
+        lines = []
+        for name, dtype, size, _count in buffers:
+            offset = (offset + 63) // 64 * 64
+            lines.append(
+                f"  {dtype} *{name} = ({dtype} *)({shared_workspace_symbol} + {offset});\n")
+            offset += size
+        workspace = (offset + 63) // 64 * 64
+        local_buffers = "".join(lines)
+    if workspace > 0x7fffffff:
+        raise ValueError("MX dense adapter workspace exceeds the selected runtime extent")
     a_prepare = (f"""  for (uint32_t i = 0; i < {m}u * {k}u; ++i) padded_a[i] = 0.0f;
   for (uint32_t row = 0; row < {lm}u; ++row)
     for (uint32_t col = 0; col < {lk}u; ++col)
@@ -104,7 +145,7 @@ void {issuer_symbol}(const void *, const void *, const void *, const void *,
 {''.join(declarations)}
 void {symbol}(const float *lhs, const float *rhs, float *out) {{
   if (!lhs || !rhs || !out) __builtin_trap();
-{a_prepare}{b_prepare}  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+{local_buffers}{a_prepare}{b_prepare}  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales) ||
       mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
                          weight, weight_scales)) __builtin_trap();
@@ -112,6 +153,35 @@ void {symbol}(const float *lhs, const float *rhs, float *out) {{
                   output_bf16, scratch_output_scales);
 {copy_output}}}
 """
-    workspace = sum(expected.values()) + (m * k * 4 if padded_a else 0) + (
-        k * n * 4 if padded_b else 0)
     return DenseKernel(source, symbol, logical_shape_mnk, issuer.shape_mnk, workspace)
+
+
+def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
+                                logical_shape_bmnk: tuple[int, int, int, int], *,
+                                symbol: str,
+                                issuer_symbol: str = "mx_issue_encoded",
+                                shared_workspace_symbol: str | None = None) -> DenseBatchKernel:
+    """Call one checked matrix kernel for each disjoint dense batch slice."""
+    if (len(logical_shape_bmnk) != 4 or
+            any(type(value) is not int or value <= 0 for value in logical_shape_bmnk)):
+        raise ValueError("MX batch adapter needs positive B,M,N,K")
+    batch, m, n, k = logical_shape_bmnk
+    if any(value > 0x7fffffff for value in (batch * m * k, batch * k * n,
+                                            batch * m * n)):
+        raise ValueError("MX batch adapter exceeds the selected runtime extent")
+    slice_symbol = f"{symbol}_slice"
+    slice_kernel = emit_dense_f32_kernel(
+        issuer, (m, n, k), symbol=slice_symbol, issuer_symbol=issuer_symbol,
+        shared_workspace_symbol=shared_workspace_symbol)
+    source = slice_kernel.source + f"""
+/* Whole-batch Merlin ABI: each slice has independent dense row-major storage. */
+void {symbol}(const float *lhs, const float *rhs, float *out) {{
+  if (!lhs || !rhs || !out) __builtin_trap();
+  for (size_t batch = 0; batch < {batch}u; ++batch)
+    {slice_symbol}(lhs + batch * {m}u * {k}u,
+                   rhs + batch * {k}u * {n}u,
+                   out + batch * {m}u * {n}u);
+}}
+"""
+    return DenseBatchKernel(source, symbol, logical_shape_bmnk,
+                            issuer.shape_mnk, slice_kernel.workspace_bytes)

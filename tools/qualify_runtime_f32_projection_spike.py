@@ -15,6 +15,8 @@ import subprocess
 
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.dense_kernel import emit_dense_f32_kernel
+from mx_gemmini_support.dense_contraction import emit_dense_contraction
+from mx_gemmini_support.compact_runtime_issuer import emit_compact_runtime_issuer
 from mx_gemmini_support.runtime_issuer import emit_runtime_issuer
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -116,9 +118,17 @@ def main() -> None:
     parser.add_argument("--site", choices=("g", "dn"), required=True)
     parser.add_argument("--dense-adapter", action="store_true",
                         help="run the generated three-pointer catalog adapter")
+    parser.add_argument("--shape-planned", action="store_true",
+                        help="derive the command schedule from profile and logical shape")
+    parser.add_argument("--compact-issuer", action="store_true",
+                        help="run the compact looped Rocket command issuer")
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
+    if (args.shape_planned or args.compact_issuer) and not args.dense_adapter:
+        parser.error("shape-planned or compact schedule requires --dense-adapter")
+    if args.shape_planned and args.compact_issuer:
+        parser.error("choose one command issuer mode")
     rtl, riscv, out = (getattr(args, key).resolve()
                        for key in ("rtl_root", "riscv_root", "out_dir"))
     if out.exists():
@@ -132,8 +142,8 @@ def main() -> None:
     manifest, resources = load_bundle(archive / "bundle")
     program = lower_bound_source((archive / "projection.payload_bound.mlir").read_text(),
                                  profile, manifest, resources)
-    issuer = emit_runtime_issuer(program, manifest)
-    if issuer.precision != "FP4":
+    qualified_issuer = emit_runtime_issuer(program, manifest)
+    if qualified_issuer.precision != "FP4":
         raise ValueError("selected projection is not FP4")
     import numpy as np
 
@@ -143,9 +153,27 @@ def main() -> None:
         raise ValueError("archived model operands are not f32")
     logical_m, logical_k = input_a.shape
     second_k, logical_n = input_b.shape
-    m, n, k = issuer.shape_mnk
+    m, n, k = qualified_issuer.shape_mnk
     if (second_k != logical_k or logical_m > m or logical_n > n or logical_k > k):
         raise ValueError("archived model operand shapes differ from the MX program")
+    generated = None
+    if args.shape_planned:
+        generated = emit_dense_contraction(
+            profile, (logical_m, logical_n, logical_k), precision="FP4",
+            symbol="mx_dense_projection", issuer_symbol="mx_issue_encoded")
+        if (generated.shape_plan.padded_shape_mnk != qualified_issuer.shape_mnk or
+                generated.shape_plan.tile_mnk != tuple(manifest["tile_mnk"]) or
+                generated.issuer.source != qualified_issuer.source):
+            raise ValueError("shape-planned commands differ from source-qualified projection")
+    compact_issuer = None
+    if args.compact_issuer:
+        compact_issuer = emit_compact_runtime_issuer(
+            profile, qualified_issuer.shape_mnk, tuple(manifest["tile_mnk"]),
+            precision="FP4")
+        if compact_issuer.plan != program.plan:
+            raise ValueError("compact MX plan differs from the source-qualified projection")
+    issuer = (compact_issuer if compact_issuer is not None else
+              generated.issuer if generated is not None else qualified_issuer)
     out.mkdir(parents=True)
     (out / "raw_a.bin").write_bytes(input_a.tobytes())
     (out / "raw_b.bin").write_bytes(input_b.tobytes())
@@ -164,8 +192,10 @@ def main() -> None:
     (out / "mx_issue.c").write_text(issuer.source)
     dense_kernel = None
     if args.dense_adapter:
-        dense_kernel = emit_dense_f32_kernel(
-            issuer, (logical_m, logical_n, logical_k), symbol="mx_dense_projection")
+        dense_kernel = (generated.kernel if generated is not None else
+                        emit_dense_f32_kernel(
+                            issuer, (logical_m, logical_n, logical_k),
+                            symbol="mx_dense_projection"))
         (out / "mx_dense.c").write_text(dense_kernel.source)
         driver = _dense_driver(site, m=m, n=n, logical_m=logical_m,
                                logical_n=logical_n)
@@ -235,7 +265,7 @@ def main() -> None:
         "padded_shape_mnk": [m, n, k],
         "compared_bf16_outputs": (logical_m * logical_n if args.dense_adapter else m * n),
         "profile_sha256": issuer.profile_sha256,
-        "payload_manifest_sha256": issuer.payload_manifest_sha256,
+        "payload_manifest_sha256": qualified_issuer.payload_manifest_sha256,
         "issuer_sha256": _sha(out / "mx_issue.c"),
         "quantizer_source_sha256": _sha(ROOT / "mx_gemmini_support/runtime_quant.c"),
         "elf_sha256": _sha(elf), "spike_log_sha256": _sha(out / "spike.log"),
@@ -248,6 +278,10 @@ def main() -> None:
                           "argument_order": ["lhs", "rhs", "out"],
                           "dtypes": ["f32", "f32", "f32"]}
         receipt["relocatable_object_sha256"] = _sha(candidate)
+        receipt["schedule_origin"] = (
+            "compact_loop_profile_and_source_plan_checked" if compact_issuer is not None else
+            "shape_planned_source_parity_checked" if generated is not None else
+            "payload_bound_source_qualified")
     (out / "runtime_f32_projection_spike.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, sort_keys=True))
     if not passed:
