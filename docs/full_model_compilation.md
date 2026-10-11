@@ -272,6 +272,23 @@ its exact binding table has a
 compiled implementation. VPU operators and other host operations are not
 covered by that field.
 
+The linked decode or flow stage catalogs place the selected contractions as
+follows. FP4 covers ordinary matrix work; FP8 covers the admitted attention
+contractions. Each count is per invocation, so recurrent steps reuse the
+same compiled graph.
+
+| Stage | FP4 calls | FP8 calls | Total MX calls |
+| --- | ---: | ---: | ---: |
+| TinyLlama decode | 155 | 44 | 199 |
+| DeepSeek Qwen decode | 197 | 56 | 253 |
+| Gemma 2 decode | 183 | 52 | 235 |
+| SmolVLA prefix | 186 | 25 | 211 |
+| SmolVLA flow | 116 | 0 | 116 |
+
+The counts prove compilation and dispatch ownership of the selected sites.
+They do not prove the FP4/FP8 output quality, and the VPU softmax sites are
+still executed by the host lane.
+
 All four model families' bound prefill/prefix/flow subsets now compile as
 relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
 sites and seven kernels, Gemma 235 sites and eight kernels, SmolVLA prefix
