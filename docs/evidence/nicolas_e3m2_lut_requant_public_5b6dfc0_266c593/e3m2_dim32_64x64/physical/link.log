@@ -1,0 +1,1 @@
+/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/../lib/gcc/riscv64-unknown-elf/13.2.0/../../../../riscv64-unknown-elf/bin/ld: warning: /scratch/agustin/tmp/nicolas-e3m2-lut-requant-5b6dfc0/e3m2_dim32_64x64/physical/asymmetric_program.elf has a LOAD segment with RWX permissions

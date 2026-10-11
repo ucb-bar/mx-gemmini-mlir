@@ -1,0 +1,190 @@
+{
+  "activation_format": "fp6_e3m2",
+  "activation_projection": "lut",
+  "build_log_sha256": {
+    "compile_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "extension_build.log": "a49897432d37bd9fbbf277498db1321b1c9f751eb0ee831ed49c77f6b52d7775",
+    "link.log": "7e4a17f6572114e814ed0785bb78453d5a3e49989fe82348efa56acdadb6d920"
+  },
+  "capture_sites": [
+    {
+      "format": "mxfp8",
+      "fp6_codebook_sha256": null,
+      "kind": "functional",
+      "shape": [
+        64,
+        128,
+        128
+      ],
+      "site_id": "functional:matmul",
+      "status": "quantized"
+    }
+  ],
+  "compared_e8m0_scales": 256,
+  "compared_packed_lut_bytes": 4096,
+  "compiler_revision": "5b6dfc02b0516c5bd5b092686434068bc855ffb4",
+  "compiler_source_closure_sha256": "96a1a47fddf934c496891804a234d74df6ce159d590b58e7e457b9d9525d95de",
+  "elf_sha256": "340fdbee18730d8fdd0cbb7a122c883d4c735ee0694a44250eda34f8493e2552",
+  "extension_sha256": "fffe456441eed89efe8d33eb1cdbd7541e578f7e0e079274ee7f98b9260c8bd5",
+  "extension_source_closure_sha256": "dbbc62171a9393691c575ec278dfdd75ca20fd6a2c9b52825380dad4e5d0af3f",
+  "files_sha256": {
+    "asymmetric_bound.mlir": "b67c28a4ada7cfe6c0b46a857ec1e3f53f2ba8b33d5e2e0f3672c80b259cb761",
+    "handoff.mlir": "a6589fe229745159d85fd428850b9ad8ea5d1b120d8db39590a291ab1b8d5f4a",
+    "model2mlir.mlir": "ffc97f6f28a16c9d9c1ff80e3cbd325cba6020c15f2b867f3e1eff5c764e7100",
+    "quantization_manifest.json": "2bd5e225fd9daeac66e545b5cb8b84dbd2d564d974ebe12e8d4a86cc6c2eea5c",
+    "recipe.json": "10c2c2f43b6c596859a7878e0b3e98a0bf26550b7b8b6d3e72399b5890fec65c"
+  },
+  "frontend_contract_sha256": "b3416a8a7040c4dbd22a7f03840fd819a0b4ec984064482dbeebcd160749f80e",
+  "frontend_policy_sha256": "dc71c668056aac512c42f80f8da1bd92e06c4e3e6460ed1d4fc540e6dcc7f7a3",
+  "generated_c_sha256": "7e7aaeb51aed3f9b9dc169018ae67da3528e5bf15185811150271d5747ea910a",
+  "generated_data_sha256": "f47100f0bb0e565694338ff767f70d6a014f2d1ed9de13af7373022d25d94dca",
+  "generated_driver_sha256": "ad0d8e6b8a0944418a28d96e60a7a9b8c600eb35254ecc459606e58829d2c981",
+  "host_cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+  "mesh_dim": 32,
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mx_opt_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "mx_opt_sha256": "14fc7868d778eda59268c3291214e4fe57c8c52a00011e9169428ed8b4f6b967",
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": {
+    "asymmetric_0.o": "b28dffd4317391898e08e44636ff471b967beb792d09df8f0f67b1d600c549ee",
+    "asymmetric_1.o": "c3159e7bb1e828d3d6222314c7117c2a640038b45e2bbd747d4ad4c34039ca2c",
+    "asymmetric_2.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+    "asymmetric_3.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+  },
+  "opaque_calls": {},
+  "physical_command_count": 31,
+  "physical_fence_count": 4,
+  "physical_inputs_sha256": {
+    "activation.bin": "edc05b68bafef6a22e6f7bb4ccac6fdcb46393b33a68e0d79c437a0e637f5079",
+    "activation_lut.bin": "7a72bc9e11058159347c4c946ec9591d392d7ad967af7b6e9d9244b8c9e317f3",
+    "activation_scales.bin": "f9caee7de004a0d7feec405926d1ad7032f147b8747ddfae1efa8a3084c940ad",
+    "golden_bf16.bin": "2b3e04c3864e5b75e69975ce258e3ada5d1a3356b49c9a6cd51c59719906dd6c",
+    "golden_lut_indices.bin": "1a5b2f97183ff3c688f723933ac050a276378f3905206b266943af9f54b1df6e",
+    "golden_output_scales.bin": "5f6f4d76bf5edb4d2e47d5b9cc7914a4112607e29d128ea6bf52c0d8d188cdf1",
+    "mx_data.S": "f47100f0bb0e565694338ff767f70d6a014f2d1ed9de13af7373022d25d94dca",
+    "mx_driver.c": "ad0d8e6b8a0944418a28d96e60a7a9b8c600eb35254ecc459606e58829d2c981",
+    "mx_issue.c": "7e7aaeb51aed3f9b9dc169018ae67da3528e5bf15185811150271d5747ea910a",
+    "output_lut.bin": "a08074faaee136eb7337416edf14fa94a0c6b3d35134693012ec5fff316da9a4",
+    "physical_program.json": "710150f540ddfd37cf5cf5dfdf14e75f7d145221131ee1a7b3db0aeb81e61220",
+    "resource_manifest.json": "adff4a63d4d9898112013c1e669c04722b4b3132862b4074cd27036c016aaf0d",
+    "weight.bin": "aa23bc30b8a66532b031bee280859824e18654c8047891a37643d65fd6491693",
+    "weight_lut.bin": "f9e8eae7fa3bc41a3c2bc55557761ee8fc980fb21a4aca61554bd1e24f790ca7",
+    "weight_scales.bin": "06e5d510ad262959524cd06cbaf5c335e9c6c0a4a4dcbbd4357a7436b2d23476"
+  },
+  "physical_program_sha256": "710150f540ddfd37cf5cf5dfdf14e75f7d145221131ee1a7b3db0aeb81e61220",
+  "profile_name": "MxDim32AllGemminiRocketConfig",
+  "profile_sha256": "05503daf9003b20811efcd0d91da19f08b7ae0ec51a2c167992fff7c2e484780",
+  "public_object_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_m_nibbles",
+      "maximum_byte_offset": 96,
+      "minimum_bytes": 4096,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_pair_lut_6bit",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 384,
+      "name": "activation_lut",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 256,
+      "name": "activation_scales",
+      "position": 2,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "output_pair_lut_6bit",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 384,
+      "name": "output_lut",
+      "position": 3,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_m_lut_indices",
+      "maximum_byte_offset": 3072,
+      "minimum_bytes": 4096,
+      "name": "output_quantized",
+      "position": 4,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 256,
+      "name": "scratch_output_scales",
+      "position": 5,
+      "role": "write"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "packed_even_odd_n_nibbles",
+      "maximum_byte_offset": 6176,
+      "minimum_bytes": 8192,
+      "name": "weight",
+      "position": 6,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "column_pair_lut_6bit",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 768,
+      "name": "weight_lut",
+      "position": 7,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 512,
+      "name": "weight_scales",
+      "position": 8,
+      "role": "read"
+    }
+  ],
+  "public_object_dispatch_sha256": "b609a88bf42f0e65f66d6e3ccfc236992ccd83af683653ec521c0252a3c97445",
+  "public_object_manifest_sha256": "5eb1c4c190d36ff9ef8a287fb730a8ac52da330da8544d661f23138fd50212b4",
+  "public_object_sha256": "e8263ec0abc84ebdc906a5c3b6919b241c315fe218de53bc7a3be63025469d93",
+  "resource_manifest_sha256": "adff4a63d4d9898112013c1e669c04722b4b3132862b4074cd27036c016aaf0d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+  "scope": "DIM32 64x128x128 e3m2_e3m2 source specialization of one captured PyTorch matmul; checked-in packed inputs, not random PyTorch example inputs; shared physical command IR and standalone emitter; standalone asymmetric MX profile without VPU; public data-free object compiler",
+  "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+  "source_driver_sha256": "2694d913b0fadc5825ecbd84ccf553e9359c1ec85f67d06a6ec22241bd26e21e",
+  "source_header_sha256": "01d86eed1374107d76a001a61d753ce88d30551e36bef14a8b2bda4622c9517a",
+  "spike_exit_code": 0,
+  "spike_extension_revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+  "spike_log_sha256": "14ce63fdb3c6f871950e9fd31d540bade4023825497c2fc03213ca604c182b8a",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "source_golden_matched_on_pinned_spike"
+}

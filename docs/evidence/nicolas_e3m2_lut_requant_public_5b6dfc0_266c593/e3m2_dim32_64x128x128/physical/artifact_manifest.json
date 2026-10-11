@@ -1,0 +1,32 @@
+{
+  "command_count": 31,
+  "fence_count": 4,
+  "files_sha256": {
+    "activation.bin": "edc05b68bafef6a22e6f7bb4ccac6fdcb46393b33a68e0d79c437a0e637f5079",
+    "activation_lut.bin": "7a72bc9e11058159347c4c946ec9591d392d7ad967af7b6e9d9244b8c9e317f3",
+    "activation_scales.bin": "f9caee7de004a0d7feec405926d1ad7032f147b8747ddfae1efa8a3084c940ad",
+    "golden_bf16.bin": "2b3e04c3864e5b75e69975ce258e3ada5d1a3356b49c9a6cd51c59719906dd6c",
+    "golden_lut_indices.bin": "1a5b2f97183ff3c688f723933ac050a276378f3905206b266943af9f54b1df6e",
+    "golden_output_scales.bin": "5f6f4d76bf5edb4d2e47d5b9cc7914a4112607e29d128ea6bf52c0d8d188cdf1",
+    "mx_data.S": "f47100f0bb0e565694338ff767f70d6a014f2d1ed9de13af7373022d25d94dca",
+    "mx_driver.c": "ad0d8e6b8a0944418a28d96e60a7a9b8c600eb35254ecc459606e58829d2c981",
+    "mx_issue.c": "7e7aaeb51aed3f9b9dc169018ae67da3528e5bf15185811150271d5747ea910a",
+    "output_lut.bin": "a08074faaee136eb7337416edf14fa94a0c6b3d35134693012ec5fff316da9a4",
+    "physical_program.json": "710150f540ddfd37cf5cf5dfdf14e75f7d145221131ee1a7b3db0aeb81e61220",
+    "weight.bin": "aa23bc30b8a66532b031bee280859824e18654c8047891a37643d65fd6491693",
+    "weight_lut.bin": "f9e8eae7fa3bc41a3c2bc55557761ee8fc980fb21a4aca61554bd1e24f790ca7",
+    "weight_scales.bin": "06e5d510ad262959524cd06cbaf5c335e9c6c0a4a4dcbbd4357a7436b2d23476"
+  },
+  "golden_basis": "nicolas_source_packed_fp6_e3m2_lut_indices_and_e8m0",
+  "mode": "spike_serial",
+  "payload_manifest_sha256": "0e8600241323bcda7bd773e60ab4f4d12d20158f5b16c781329b7d23c8d191a4",
+  "profile_sha256": "05503daf9003b20811efcd0d91da19f08b7ae0ec51a2c167992fff7c2e484780",
+  "schema": "mx_gemmini.standalone_sources.v1",
+  "shape_mnk": [
+    64,
+    128,
+    128
+  ],
+  "source_quant_code_format": "packed_fp6_e3m2_lut_index",
+  "target_quant_code_format": "packed_fp6_e3m2_lut_index"
+}

@@ -1652,7 +1652,29 @@
       "source_sha256": "2998f86c22b1aaa7dc1b5188c33a9b572a43ee4fe6db8db33a2e114494299116"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "fed699222ea1775c2ca8a56541670e31e5f94ae04f2bae6afa4b3a4553715a90",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "0259a7cd189a2b95c9468a52b9dfa723f15f731f9b97e9951bd496ab57b55fa6",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "f58153ae95dfb32a03fde1cdfb677a11804b8aa07cd943f0c5486f327fa3e003",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e3m2_lut_64x64_requant_dim32",
       "source_sha256": "188e03ac1e3a10bd41e43b1cd3de73b7f2d703855464496252a309e93b799d49"
@@ -1742,7 +1764,29 @@
       "source_sha256": "6f7cb93e702a1544597150dfea4e77b6806686f3682702275b9e530833a8996d"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "ef8e38ded875b29c3d3bcd118ccb78a4065b9b40395c08aff204925370145f1a",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "db9bc4314f3fd4c30b09fd2303d5fc5635bd4e376f5763f588b2fc13548319a7",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "17d252a386f87b29acbd0da61c26cab4eadead38e17b1b7ccdd66ba1c86e6380",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e3m2_lut_128x128_requant_dim32",
       "source_sha256": "765b5d494b6e80f91df85973e2053f7ec3b0c8ef109855a59a09b93c80a5a4be"
@@ -1916,13 +1960,57 @@
       "source_sha256": "2a3d4cf18aa12b30d38d932b9ad0f7d403e78ff6c1352cdee4b6810e43b9dd6c"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x64x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "fd1c7be8901dbd77ea3a8d82d05b37988b9186f831cccfa1fb3c629c6b41be17",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x64x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "889d883b29ef770c9cf2e202ec64f93eb2cfd7adc4ead17cc50f5bdd480115ec",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_128x64x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "a44d34fdfd30e2223aa25aa83c62d7cc9357cdd015b21bf0f3af345fc78d1277",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e3m2_lut_128x64x128_requant_dim32",
       "source_sha256": "2c4e2ef6a8f3baaa64581c67b6dcd80ef33a39edaef5d63ff3a07bf74e99910a"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x128x128/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "5eb1c4c190d36ff9ef8a287fb730a8ac52da330da8544d661f23138fd50212b4",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x128x128/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "7301fb7d540698ae4a46be786ee1933d009e56dda3b2f4feffedb9c6706fcf76",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim32_64x128x128/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "10c2c2f43b6c596859a7878e0b3e98a0bf26550b7b8b6d3e72399b5890fec65c",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e3m2_lut_64x128x128_requant_dim32",
       "source_sha256": "2694d913b0fadc5825ecbd84ccf553e9359c1ec85f67d06a6ec22241bd26e21e"
@@ -3433,7 +3521,29 @@
       "source_sha256": "687f2c672a202e99673e6a39c3c40c24f8c77788e283140118a685fc26fa7af9"
     },
     {
-      "evidence_references": [],
+      "evidence_references": [
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim8_64x64/object/object_manifest.json",
+          "schema": "mx_gemmini.asymmetric_source_linkable_object.v1",
+          "sha256": "f3b75d6e50d9e1c4fdbb07796278cadbb0bfa25d6ce99348853b69ab2ba5bdd9",
+          "status": "rv64_rocc_asymmetric_object_built"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim8_64x64/receipt.json",
+          "schema": "mx_gemmini.nicolas_asymmetric_physical_spike_qualification.v1",
+          "sha256": "436928aeea6fd43acb8ace1f25c53d9f26166cba5de19eaf18636cb7b816c493",
+          "status": "source_golden_matched_on_pinned_spike"
+        },
+        {
+          "field": "source_driver_sha256",
+          "path": "docs/evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/e3m2_dim8_64x64/recipe.json",
+          "schema": "mx_gemmini.asymmetric_source_recipe.v1",
+          "sha256": "2704167c8f08e66b2e351a8a1f0f55241766f86853bda6d817a2956a9227ac92",
+          "status": null
+        }
+      ],
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_e3m2_lut_64x64_requant_dim8",
       "source_sha256": "7fb1b1c75bcb1a4bb6f9b5daea835db136e4df9fc04243d3de382dab85e68dcd"
@@ -7596,6 +7706,6 @@
   "schema": "mx_gemmini.nicolas_mx_source_inventory.v1",
   "scope": "direct C source-hash references only; neither source execution nor compiler parity is implied",
   "software_revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
-  "with_direct_hash_reference": 143,
-  "without_direct_hash_reference": 28
+  "with_direct_hash_reference": 148,
+  "without_direct_hash_reference": 23
 }
