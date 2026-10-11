@@ -61,6 +61,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
     context.load_dialect(Func)
     module = Parser(context, mlir_text).parse_module()
     digest = profile_sha256(profile)
+    attention_program = (_text_attr(module, "mx.attention_program_schema") ==
+                         "mx_gemmini.nicolas_dense_attention_program.v1")
     if _text_attr(module, "mx.profile_sha256") != digest:
         raise ValueError("MX module profile digest differs from selected target profile")
     payload_digest = _text_attr(module, "mx.payload_manifest_sha256")
@@ -142,6 +144,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 raise ValueError(f"MX payload resource {resource_name} descriptor is malformed")
     contracts = encodes = requants = vpu_commands = spad_requants = resident_contracts = 0
     memory_phases = 0
+    spad_matmuls = 0
     runtime_luts = 0
     source_resources: dict[str, object] = {}
     lut_uploads: set[str] = set()
@@ -151,15 +154,18 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         if not name.startswith("mx_gemmini."):
             continue
         if name in {"mx_gemmini.memory_setup", "mx_gemmini.dma_matrix",
-                    "mx_gemmini.load_scales", "mx_gemmini.spad_mvout_linear"}:
+                    "mx_gemmini.load_scales", "mx_gemmini.spad_mvout_linear",
+                    "mx_gemmini.scale_dma"}:
             from .memory_phase import (lower_linear_spad_mvout,
-                                       lower_matrix_mvin, lower_scale_load)
+                                       lower_matrix_mvin, lower_scale_load,
+                                       lower_strided_scale_dma)
             source = _text_attr(module, "mx.source_sha256")
             if (source is None or re.fullmatch(r"[0-9a-f]{64}", source) is None or
                     _text_attr(op, "source_sha256") != source or
                     _text_attr(op, "profile_sha256") != digest or
                     not _text_attr(op, "site_id") or op.results or
-                    profile.get("name") != "MxGemminiRocketConfig"):
+                    (profile.get("name") != "MxGemminiRocketConfig" and
+                     not attention_program)):
                 raise ValueError(f"{name}: source or target memory binding differs")
             if name == "mx_gemmini.memory_setup":
                 if op.operands:
@@ -182,6 +188,13 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                     phase = lower_scale_load(
                         profile, buffer="src", payload_bytes=_int_attr(op, "payload_bytes"),
                         operand=_text_attr(op, "scale_target"))
+                elif name == "mx_gemmini.scale_dma":
+                    phase = lower_strided_scale_dma(
+                        profile, buffer="src", row_bytes=_int_attr(op, "row_bytes"),
+                        rows=_int_attr(op, "rows"),
+                        pitch_bytes=_int_attr(op, "pitch_bytes"),
+                        destination_byte=_int_attr(op, "destination_byte"),
+                        selector=_int_attr(op, "selector"))
                 else:
                     phase = lower_linear_spad_mvout(
                         profile, buffer="dst", total_bytes=_int_attr(op, "total_bytes"),
@@ -190,6 +203,24 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                 if capacity < phase.minimum_buffer_bytes:
                     raise ValueError(f"{name}: runtime buffer is too small")
             memory_phases += 1
+            continue
+        if name == "mx_gemmini.matmul_spad":
+            from .nicolas_attention_matrix import lower_spad_matmul
+            source = _text_attr(module, "mx.source_sha256")
+            if (not attention_program or source is None or
+                    re.fullmatch(r"[0-9a-f]{64}", source) is None or
+                    _text_attr(op, "source_sha256") != source or
+                    _text_attr(op, "profile_sha256") != digest or
+                    not _text_attr(op, "site_id") or op.operands or op.results):
+                raise ValueError("MX scratchpad matmul source or profile binding differs")
+            lower_spad_matmul(
+                profile, m=_int_attr(op, "m"), n=_int_attr(op, "n"),
+                k=_int_attr(op, "k"), a_row=_int_attr(op, "activation_row"),
+                b_end_row=_int_attr(op, "weight_end_row"),
+                output_row=_int_attr(op, "output_row"),
+                weight_half=_int_attr(op, "weight_half"),
+                scale_sink=_text_attr(op, "scale_sink_buffer"))
+            spad_matmuls += 1
             continue
         for local, module_name in (("contract_sha256", "mx.contract_sha256"),
                                    ("policy_sha256", "mx.policy_sha256"),
@@ -435,14 +466,15 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         if (set(source_resources) != expected_resources or
                 lut_uploads != (set(LUTS) & set(payload_manifest["resources"]))):
             raise ValueError("MX source resource or LUT upload set is incomplete")
-    if not (contracts or vpu_commands or spad_requants or resident_contracts or memory_phases):
+    if not (contracts or vpu_commands or spad_requants or resident_contracts or
+            memory_phases or spad_matmuls):
         raise ValueError("MX profile-bound IR has no executable or contraction operation")
     return {"schema": "mx_gemmini.profile_ir_check.v1",
             "status": profile["qualification"], "profile_sha256": digest,
             "contracts": contracts, "encodes": encodes, "requantizes": requants,
             "vpu_commands": vpu_commands, "spad_requants": spad_requants,
             "resident_contracts": resident_contracts,
-            "memory_phases": memory_phases,
+            "memory_phases": memory_phases, "spad_matmuls": spad_matmuls,
             "source_resources": len(source_resources), "lut_uploads": len(lut_uploads),
             "runtime_luts": runtime_luts}
 

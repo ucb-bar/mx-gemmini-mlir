@@ -516,5 +516,44 @@ LogicalResult LoadScalesOp::verify() {
   return verifyMemoryBinding(*this, getBuffer(), bytes);
 }
 
+LogicalResult ScaleDmaOp::verify() {
+  int64_t rowBytes = getRowBytes();
+  int64_t rows = getRows();
+  int64_t pitch = getPitchBytes();
+  int64_t destination = getDestinationByte();
+  int64_t selector = getSelector();
+  if (rowBytes <= 0 || rowBytes % 8 || rows <= 0 || rows >= 256 ||
+      pitch < rowBytes || pitch >= (int64_t{1} << 24) ||
+      destination < 0 || destination % 8 || destination >= (1 << 13) ||
+      (selector != 0 && selector != 1) ||
+      destination + rows * rowBytes > (1 << 13))
+    return emitOpError("strided scale DMA geometry exceeds command fields");
+  return verifyMemoryBinding(*this, getBuffer(), (rows - 1) * pitch + rowBytes);
+}
+
+LogicalResult MatmulSpadOp::verify() {
+  if (failed(verifyMemoryIds(*this))) return failure();
+  int64_t m = getM(), n = getN(), k = getK();
+  int64_t a = getActivationRow(), bEnd = getWeightEndRow();
+  int64_t c = getOutputRow(), half = getWeightHalf();
+  int64_t bStart = bEnd - k * n / 16;
+  if (m <= 0 || n <= 0 || k <= 0 || m % 16 || n % 16 || k % 16 ||
+      m >= (1 << 16) || n >= (1 << 16) || k >= (1 << 16) ||
+      a < 0 || a >= bStart || a + m * k / 16 > bStart ||
+      bStart < 0 || bEnd > c || c + m * n * 2 / 16 > (1 << 14) ||
+      (half != 0 && half != 1))
+    return emitOpError("scratchpad matmul needs complete DIM16 tiles and nonoverlapping rows");
+  auto sink = getScaleSinkBuffer();
+  if (sink.empty()) return emitOpError("requires a scale sink buffer name");
+  for (size_t i = 0; i < sink.size(); ++i) {
+    char ch = sink[i];
+    bool alpha = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+    bool digit = ch >= '0' && ch <= '9';
+    if (!alpha && (i == 0 || !digit))
+      return emitOpError("scale sink buffer must be a C identifier");
+  }
+  return success();
+}
+
 #define GET_OP_CLASSES
 #include "MxGemmini/MxOps.cpp.inc"

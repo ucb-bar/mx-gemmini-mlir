@@ -26,6 +26,7 @@ from mx_gemmini_support.nicolas_attention_io import (
     lower_dense_attention_program, lower_dense_attention_readout,
     lower_dense_attention_scales)
 from mx_gemmini_support.nicolas_attention_vector import render_dense_attention_vector
+from mx_gemmini_support.nicolas_attention_program import render_dense_attention_program
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 from tools.compile_mx import _git_revision, _source_closure
 from tools.emit_resident_pair_object import _compile_object
@@ -144,7 +145,11 @@ def main() -> None:
                         help="also replace source scale, operand, and readout commands")
     parser.add_argument("--single-object", action="store_true",
                         help="link one data-free issuer for the entire attention command stream")
+    parser.add_argument("--typed-program", action="store_true",
+                        help="compile the full typed attention graph with the public object CLI")
     args = parser.parse_args()
+    if args.typed_program:
+        args.single_object = True
     if args.single_object:
         args.generated_io = True
     for name in ("npu_root", "profile", "rtl_root", "riscv_root",
@@ -245,7 +250,27 @@ def main() -> None:
                          {"kind": "fence"} for item in full],
         }, indent=2, sort_keys=True) + "\n")
         objects = [single_object]
-    driver = out / ("attn_vpu_single_object.c" if args.single_object else
+    typed_object = None
+    typed_mlir = None
+    if args.typed_program:
+        typed_mlir = out / "attention.program_bound.mlir"
+        typed_mlir.write_text(render_dense_attention_program(bound, profile, binding))
+        directory = out / "typed"
+        command = [sys.executable, "-m", "tools.compile_object",
+                   "--mlir", str(typed_mlir),
+                   "--precursor-mlir", str(VECTOR_EVIDENCE / "attention.vector_bound.mlir"),
+                   "--binding-json", str(VECTOR_EVIDENCE / "vector_binding.json"),
+                   "--profile", str(args.profile), "--rtl-root", str(args.rtl_root),
+                   "--riscv-root", str(args.riscv_root), "--out-dir", str(directory)]
+        if args.mx_opt:
+            command.extend(("--mx-opt", str(args.mx_opt.resolve())))
+        _run(command, cwd=ROOT, log=out / "typed_compile.log")
+        typed_object = directory / "mx_issue.o"
+        if _sha(typed_object) != _sha(single_object):
+            raise ValueError("typed attention object differs from Spike-qualified physical stream")
+        objects = [typed_object]
+    driver = out / ("attn_vpu_typed_program.c" if args.typed_program else
+                    "attn_vpu_single_object.c" if args.single_object else
                     "attn_vpu_generated_io.c" if args.generated_io else
                     "attn_vpu_generated_compute.c")
     compute_driver = _driver(
@@ -269,7 +294,8 @@ def main() -> None:
         _run([str(cc), *flags, "-c", str(path), "-o", str(obj)],
              cwd=out, log=out / f"source_{index}.log")
         objects.append(obj)
-    elf = out / ("attn_vpu_single_object.elf" if args.single_object else
+    elf = out / ("attn_vpu_typed_program.elf" if args.typed_program else
+                 "attn_vpu_single_object.elf" if args.single_object else
                  "attn_vpu_generated_io.elf" if args.generated_io else
                  "attn_vpu_generated_compute.elf")
     _run([str(cc), "-nostdlib", "-nostartfiles", "-static", "-T",
@@ -291,14 +317,19 @@ def main() -> None:
             "attn_vpu PASSED" not in logs[0]):
         raise ValueError("compiler-issued attention compute differs from source on Spike")
     receipt = {
-        "schema": ("mx_gemmini.nicolas_attention_single_object.v1" if args.single_object
+        "schema": ("mx_gemmini.nicolas_attention_typed_program.v1" if args.typed_program
+                   else "mx_gemmini.nicolas_attention_single_object.v1" if args.single_object
                    else "mx_gemmini.nicolas_attention_generated_io.v1" if args.generated_io
                    else "mx_gemmini.nicolas_attention_generated_compute.v1"),
-        "status": ("single_attention_object_matches_source_on_spike" if args.single_object
+        "status": ("typed_attention_object_matches_source_on_spike" if args.typed_program
+                   else "single_attention_object_matches_source_on_spike" if args.single_object
                    else "generated_attention_io_and_compute_matches_source_on_spike"
                    if args.generated_io else
                    "generated_qk_vpu_requant_pv_compute_matches_source_on_spike"),
-        "scope": ("one data-free object issues all MX attention kernel commands; "
+        "scope": ("one public-CLI RV64 object from typed QK/VPU/requant/PV and I/O ops "
+                  "issues all attention kernel commands; source checker still flushes/fences"
+                  if args.typed_program else
+                  "one data-free object issues all MX attention kernel commands; "
                   "source checker still flushes/fences; QK/PV and I/O are source-specific physical lowering"
                   if args.single_object else
                   "all scale loads, operand transfers, QK, VPU, requant, PV, "
@@ -334,8 +365,14 @@ def main() -> None:
         receipt["single_object_sha256"] = _sha(single_object)
         receipt["single_physical_program_sha256"] = _sha(
             out / "single/physical_program.json")
+    if typed_object is not None:
+        receipt["typed_mlir_sha256"] = _sha(typed_mlir)
+        receipt["typed_object_sha256"] = _sha(typed_object)
+        receipt["typed_compile_manifest_sha256"] = _sha(
+            out / "typed/compile_manifest.json")
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-    print("compiler-issued attention " + ("single object" if args.single_object else
+    print("compiler-issued attention " + ("typed object" if args.typed_program else
+                                           "single object" if args.single_object else
                                            "I/O and compute" if args.generated_io
                                            else "compute") +
           " matched all source hashes on Spike")

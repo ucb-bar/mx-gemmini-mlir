@@ -33,15 +33,37 @@ def lower_dense_attention_matrix(profile: dict, stage: str,
     require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
                     activation_projection="direct", weight_projection="direct")
     spec = STAGES[stage]
-    m, n, k = spec["m"], spec["n"], spec["k"]
-    a, b_end, c = spec["a_row"], spec["b_end_row"], spec["output_row"]
+    return lower_spad_matmul(
+        profile, m=spec["m"], n=spec["n"], k=spec["k"],
+        a_row=spec["a_row"], b_end_row=spec["b_end_row"],
+        output_row=spec["output_row"], weight_half=spec["weight_half"],
+        scale_sink=scale_sink)
+
+
+def lower_spad_matmul(profile: dict, *, m: int, n: int, k: int,
+                      a_row: int, b_end_row: int, output_row: int,
+                      weight_half: int, scale_sink: str) -> tuple[Command, ...]:
+    """Lower one complete DIM16 E4M3 scratchpad matmul with BF16 output."""
+    if (profile.get("transport") != "rocket_rocc" or
+            profile.get("geometry", {}).get("mesh_rows") != 16 or
+            profile.get("geometry", {}).get("mesh_columns") != 16):
+        raise ValueError("MX scratchpad matmul requires a DIM16 Rocket profile")
+    if (any(type(value) is not int for value in
+            (m, n, k, a_row, b_end_row, output_row, weight_half)) or
+            any(value <= 0 or value % 16 for value in (m, n, k)) or
+            max(m, n, k) >= 1 << 16 or weight_half not in (0, 1)):
+        raise ValueError("MX scratchpad matmul geometry or scale half is unsupported")
+    require_compute(profile, "fp8_e4m3", "fp8_e4m3", pe_mode=8,
+                    activation_projection="direct", weight_projection="direct")
+    a, b_end, c = a_row, b_end_row, output_row
     b_start = b_end - k * n // 16
     rows = profile["resources"]["scratchpad_bytes"] // 16
     if (not 0 <= a < b_start or a + m * k // 16 > b_start or
-            b_start < 0 or b_end > c or c + m * n * 2 // 16 > rows):
-        raise ValueError("dense attention matrix scratchpad placement differs")
+            b_start < 0 or b_end > c or c + m * n * 2 // 16 > rows or
+            max(a, b_end, c) >= 1 << 14):
+        raise ValueError("MX scratchpad matmul placement exceeds selected profile")
     i, j, kk = m // 16, n // 16, k // 16
-    wsel = spec["weight_half"]
+    wsel = weight_half
     def command(funct: int, rs1: int | Operand, rs2: int) -> Command:
         return Command(funct, rs1 if isinstance(rs1, Operand) else Operand(immediate=rs1),
                        Operand(immediate=rs2))

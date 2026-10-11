@@ -205,3 +205,22 @@ def Mx_LoadScalesOp : Mx_Op<"load_scales"> {
                    I32Attr:$payload_bytes, StrAttr:$scale_target,
                    StrAttr:$profile_sha256, StrAttr:$source_sha256);
 }
+
+def Mx_ScaleDmaOp : Mx_Op<"scale_dma"> {
+  let summary = "Load pitched E8M0 scale rows into a selected MX scale half";
+  let arguments = (ins AnyMemRef:$buffer, StrAttr:$site_id,
+                   I32Attr:$row_bytes, I32Attr:$rows,
+                   I32Attr:$pitch_bytes, I32Attr:$destination_byte,
+                   I32Attr:$selector,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
+
+def Mx_MatmulSpadOp : Mx_Op<"matmul_spad"> {
+  let summary = "Run a complete E4M3 scratchpad matmul with BF16 drain";
+  let arguments = (ins StrAttr:$site_id,
+                   I32Attr:$m, I32Attr:$n, I32Attr:$k,
+                   I32Attr:$activation_row, I32Attr:$weight_end_row,
+                   I32Attr:$output_row, I32Attr:$weight_half,
+                   StrAttr:$scale_sink_buffer,
+                   StrAttr:$profile_sha256, StrAttr:$source_sha256);
+}
