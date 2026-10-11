@@ -52,6 +52,7 @@ class Case:
     i_chunks: int = 1
     native_dram: bool = False
     native_dram_chunks: int = 1
+    native_dram_scale_mode: str = "preload"
 
 
 CASES = {
@@ -426,6 +427,23 @@ for _chunks, _name, _sha256 in (
          "B_in", "B_scales_col"), f"FP8 128 cubed native DRAM NC{_chunks}",
         native_dram=True, native_dram_chunks=_chunks)
 
+for _chunks, _name, _sha256 in (
+        (2, "matmul_tiled_fp8_128x128_dramloop_ls.c",
+         "b7d8b95e0e8a3cc16730125f3c2bf5477a042754b065cc2e4725973a57fe4e34"),
+        (4, "matmul_tiled_fp8_128x128_dramloop_ls4.c",
+         "946515729cd3d962253b238af23522b849bf6baef721238ec4f2dacfc784a706")):
+    _key = f"fp8_128x128x128_native_dram_ls{_chunks}"
+    CASES[_key] = Case(
+        _key, "FP8", (128, 128, 128), (128, 128, 128), _name,
+        "matmul_fp8_128x128.h", _sha256, _CHUNK_HEADER_SHA256,
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "B_in", "B_scales_col"),
+        f"FP8 128 cubed native DRAM LS{_chunks}",
+        native_dram=True, native_dram_chunks=_chunks,
+        native_dram_scale_mode="loop")
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -594,6 +612,7 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
                               case: Case) -> dict:
     """Audit Nicolas's N-column loop sequence and alternating B bank."""
     chunks = case.native_dram_chunks
+    loop_scales = case.native_dram_scale_mode == "loop"
     if chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
         raise ValueError("native column-loop audit needs the pinned DIM16 case")
     physical = json.loads((object_dir / "physical_program.json").read_text())
@@ -601,6 +620,8 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
     if (physical["shape_mnk"] != [128, 128, 128] or
             physical["plan"].get("execution_transport") != "native_dram_loop" or
             physical["plan"].get("native_dram_n_chunks") != chunks or
+            physical["plan"].get("native_dram_scale_mode") !=
+            ("loop_managed" if loop_scales else None) or
             any(step["phase"] in {"move_activation", "move_weight", "compute",
                                    "readout"} for step in steps)):
         raise ValueError("compiler did not select native column-loop transport")
@@ -629,33 +650,55 @@ def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
             raise ValueError("native column-loop pointer or bank differs from source")
     scales = [step for step in steps if step["phase"] == "upload_chunk_scales"
               and step["command"].get("funct") == 27]
-    expected_scales = []
-    for c in range(chunks):
-        for buffer, offset, count, dest, selector in (
-                ("activation_scales", 0, 128, c * 4 * 128, 0),
-                ("weight_scales", c * nc, nc, c * 4 * nc, 1)):
-            expected_scales.append((c, buffer, offset, 128 << 40,
-                                    (4 << 46) | (dest << 33) |
-                                    (selector << 32) | count))
-    actual_scales = [(step["wave"], step["command"]["rs1"]["buffer"],
-                      step["command"]["rs1"]["byte_offset"],
-                      step["command"]["rs1"]["or_bits"],
-                      step["command"]["rs2"]["immediate"])
-                     for step in scales]
     selectors = [step["command"] for step in steps
                  if step["phase"] == "select_scales"]
-    if (actual_scales != expected_scales or len(selectors) != 1 or
-            selectors[0].get("funct") != 26 or
-            selectors[0]["rs1"]["or_bits"] !=
-            ((8 * chunks << 51) | ((8 // chunks) << 42) | (8 << 33))):
-        raise ValueError("native column-loop scales differ from source")
-    return {"schema": "mx_gemmini.nicolas_fp8_native_dram_nc_audit.v1",
+    if loop_scales:
+        per_loop = [step for step in steps if step["phase"] == "loop_scales"]
+        if (scales or selectors or
+                [step["command"].get("funct") for step in per_loop] !=
+                [31, 32] * chunks):
+            raise ValueError("native loop-managed scale commands differ")
+        for c in range(chunks):
+            pointers, strides = [step["command"] for step in
+                                 per_loop[2 * c:2 * c + 2]]
+            if (per_loop[2 * c]["wave"] != c or
+                    pointers["rs1"]["buffer"] != "activation_scales" or
+                    pointers["rs1"]["byte_offset"] != 0 or
+                    pointers["rs2"]["buffer"] != "weight_scales" or
+                    pointers["rs2"]["byte_offset"] != c * nc or
+                    strides["rs1"]["immediate"] != 128 or
+                    strides["rs2"]["immediate"] != 128):
+                raise ValueError("native loop-managed scale pointers differ")
+    else:
+        expected_scales = []
+        for c in range(chunks):
+            for buffer, offset, count, dest, selector in (
+                    ("activation_scales", 0, 128, c * 4 * 128, 0),
+                    ("weight_scales", c * nc, nc, c * 4 * nc, 1)):
+                expected_scales.append((c, buffer, offset, 128 << 40,
+                                        (4 << 46) | (dest << 33) |
+                                        (selector << 32) | count))
+        actual_scales = [(step["wave"], step["command"]["rs1"]["buffer"],
+                          step["command"]["rs1"]["byte_offset"],
+                          step["command"]["rs1"]["or_bits"],
+                          step["command"]["rs2"]["immediate"])
+                         for step in scales]
+        if (actual_scales != expected_scales or len(selectors) != 1 or
+                selectors[0].get("funct") != 26 or
+                selectors[0]["rs1"]["or_bits"] !=
+                ((8 * chunks << 51) | ((8 // chunks) << 42) | (8 << 33))):
+            raise ValueError("native column-loop scales differ from source")
+    return {"schema": ("mx_gemmini.nicolas_fp8_native_dram_ls_audit.v1"
+                       if loop_scales else
+                       "mx_gemmini.nicolas_fp8_native_dram_nc_audit.v1"),
             "source_driver_sha256": case.source_sha256,
             "profile_sha256": profile_sha256(profile),
             "physical_program_sha256": _sha(object_dir / "physical_program.json"),
             "native_chunk_count": chunks,
             "native_command_functs": [command["funct"] for command in native[:-1]],
             "scale_uploads": len(scales),
+            **({"loop_scale_configurations": 2 * chunks}
+               if loop_scales else {}),
             "output_column_bytes_per_chunk": nc * 2,
             "b_spad_ids": [1 + (c & 1) for c in range(chunks)],
             "explicit_operand_dma_commands": 0,
@@ -748,11 +791,24 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     if _sha(driver) != case.source_sha256 or _sha(header) != case.header_sha256:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
-    if case.native_dram and case.native_dram_chunks == 4:
-        if source.strip() != ('// 4-chunk variant of matmul_tiled_fp8_128x128_dramloop_nc.\n'
-                              '#define NCHUNKS 4\n'
-                              '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'):
-            raise ValueError("Nicolas four-column native-loop wrapper changed")
+    if case.native_dram and (case.native_dram_chunks == 4 or
+                             case.native_dram_scale_mode == "loop"):
+        expected = (
+            '// 4-chunk variant of matmul_tiled_fp8_128x128_dramloop_nc.\n'
+            '#define NCHUNKS 4\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
+            if case.native_dram_scale_mode == "preload" else
+            '// dramloop_nc with LOOP-MANAGED scales (2 chunks): no MX_LOAD_SCALES / CONFIG_SCALE_MEM / fence.\n'
+            '#define NCHUNKS 2\n'
+            '#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"'
+            if case.native_dram_chunks == 2 else
+            '// dramloop_nc with LOOP-MANAGED scales (4 chunks): no MX_LOAD_SCALES / CONFIG_SCALE_MEM / fence.\n'
+            '#define NCHUNKS 4\n'
+            '#define LOOP_SCALES 1\n'
+            '#include "matmul_tiled_fp8_128x128_dramloop_nc.c"')
+        if source.strip() != expected:
+            raise ValueError("Nicolas native column-loop wrapper changed")
         core = driver.parent / "matmul_tiled_fp8_128x128_dramloop_nc.c"
         if _sha(core) != CASES["fp8_128x128x128_native_dram_nc2"].source_sha256:
             raise ValueError("Nicolas four-column native-loop include changed")
@@ -920,14 +976,16 @@ int main(void) {{
   return code_errors != 0 || scale_errors != 0;
 }}
 """
+    scratch_decl = ("static uint8_t scratch_output_scales[2048] "
+                    "__attribute__((aligned(64)));\n"
+                    if "scratch_output_scales" in case.buffer_abi else "")
     return f"""#include <stdint.h>
 #include <stdio.h>
 #include "include/gemmini_testutils.h"
 #include "include/{case.header_name}"
 #include "mx_issue.h"
 static uint16_t C_hw[MATMUL_M][MATMUL_N] __attribute__((aligned(64)));
-static uint8_t scratch_output_scales[2048] __attribute__((aligned(64)));
-int main(void) {{
+{scratch_decl}int main(void) {{
   mx_issue({', '.join(case.call_arguments)});
   gemmini_fence();
   int errors = 0;
@@ -954,10 +1012,11 @@ def run_spike(rtl_root: Path, riscv_root: Path, object_dir: Path,
     build = out_dir / "run"
     build.mkdir()
     abi = json.loads((object_dir / "object_manifest.json").read_text())["buffer_abi"]
+    scratch_slots = [slot for slot in abi
+                     if slot["name"] == "scratch_output_scales"]
     if ([slot["name"] for slot in abi] != list(case.buffer_abi) or
             [slot["position"] for slot in abi] != list(range(len(abi))) or
-            next(slot for slot in abi if slot["name"] == "scratch_output_scales")[
-                "minimum_bytes"] > 2048):
+            any(slot["minimum_bytes"] > 2048 for slot in scratch_slots)):
         raise ValueError("compiled MX object buffer ABI differs from checked driver")
     (build / "mx_driver.c").write_text(_driver(case))
     cc = riscv_root / "bin/riscv64-unknown-elf-gcc"
@@ -1050,7 +1109,8 @@ def main(default_case: str | None = None) -> None:
         bound = bind_i_chunks(bound, profile, manifest, case.i_chunks)
     if case.native_dram:
         bound = bind_native_dram(bound, profile, manifest,
-                                 case.native_dram_chunks)
+                                 case.native_dram_chunks,
+                                 scale_mode=case.native_dram_scale_mode)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -1150,6 +1210,8 @@ def main(default_case: str | None = None) -> None:
         receipt["native_dram_equivalence_sha256"] = _sha(
             args.out_dir / "native_dram_equivalence.json")
         receipt["source_baseline"] = source_baseline
+        if case.native_dram_scale_mode != "preload":
+            receipt["native_dram_scale_mode"] = case.native_dram_scale_mode
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
     print(output)
