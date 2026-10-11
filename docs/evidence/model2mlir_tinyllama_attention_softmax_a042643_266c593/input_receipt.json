@@ -1,0 +1,21 @@
+{
+  "attention_scale": 0.125,
+  "fqn": "lm.model.layers.0.self_attn",
+  "full_model_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+  "fx_node": "_softmax",
+  "mask": "strict_causal_upper_triangle_negative_infinity",
+  "masked_values": 28,
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "pre_softmax_npy_sha256": "9e3507b47585ea5a198362f9abf004898df855ad35e51fb008aa7b7880d72732",
+  "pre_softmax_sha256": "37dfd4f99363ab24d5e8047de115ceb326f8eed6bdb3652d382df20a0f613fcb",
+  "probability_npy_sha256": "227adaaad1f735ac3dc26b01c4d220960b20edb67d9fb07d46e34f16ac696c85",
+  "probability_sha256": "ffd56d70b5760612d472663d4e44970debbbedb526500fc1a8588fa70dc499b3",
+  "pv_region_id": "matmul_5",
+  "qk_input_sha256": "8b40058c46a85908fac098ab6497cd9a327e7b0276772fe7614d7bfa960f8326",
+  "qk_region_id": "matmul_4",
+  "qk_weight_sha256": "364d5155cc139554bd473d1950b6093fd0f2b146ca6ed4ff7c57a658d93eb68c",
+  "schema": "mx_gemmini.tinyllama_attention_softmax_capture.v1",
+  "scope": "first decoder attention layer, head zero, reduced random-weight model",
+  "seed": 20261010,
+  "softmax_region_id": "softmax_0"
+}

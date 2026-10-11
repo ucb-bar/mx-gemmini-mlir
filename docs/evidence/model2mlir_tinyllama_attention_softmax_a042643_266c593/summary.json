@@ -1,0 +1,30 @@
+{
+  "bound_mlir_sha256": "ca86fd15e99853dcf9cce45918c7d8be88bb4dad747d1736be0698f4772cd3b0",
+  "captured_softmax_receipt_sha256": "070110bf06c6215ec6eff75778036a9c8373547315bdd516336496916dfb8d3d",
+  "compared_bf16_values": 512,
+  "elf_sha256": "27e4c572d8b3928fd314db849c9fb1715990787775fed1b8d5d59eba823bc867",
+  "full_model_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+  "model2mlir_revision": "a042643e31366724ca0482389c4ee85a9f88e343",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "object_sha256": "05309fa0733bbe0ea405d8b58bbd9a9ead66b0e37deac6d4d020eada3d496567",
+  "probability_head0_bf16_sha256": "fedcbe58c534efab42f90d4dc584cf7c5f278e24f3f5ed00e391da5cc40ed980",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "qk_golden_bf16_sha256": "35827be2988598a3df9704e4d44b6b872ee0a704bde3901f5a04bdb9d57c6f0a",
+  "quality_diagnostics": {
+    "probability_masked_nonzero_count": 0,
+    "probability_max_absolute_error_vs_source_f32": 0.018835872411727905,
+    "probability_mean_absolute_error_vs_source_f32": 0.0027857718523591757,
+    "probability_row_sum_max_absolute_error": 0.00537109375,
+    "score_mean_absolute_error_vs_source_f32": 0.04357673600316048,
+    "source_masked_values": 28
+  },
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.tinyllama_attention_softmax_spike.v1",
+  "scope": "model-derived QK BF16 scores are host scaled and causally masked, then compiled VPU softmax runs on Spike; PV remains separate",
+  "score_bf16_sha256": "128e283806440d13ceb83dc05f4b2460313bed7aae8d0bfa9df12d29de35cb47",
+  "source_softmax_region_id": "softmax_0",
+  "source_softmax_sha256": "cfb112304eb23e4e950b337fe7e2307a48520c62b58e2042321caf66bd505d51",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "761acd97437d3bc8f3ac47ed2475df49a59e0d1e2e93915a0ebb351d3eb730b6",
+  "status": "model_qk_to_vpu_softmax_matched_on_pinned_spike"
+}

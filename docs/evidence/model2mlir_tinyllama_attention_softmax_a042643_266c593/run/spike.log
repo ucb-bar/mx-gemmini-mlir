@@ -1,0 +1,5 @@
+model attention softmax 16x32: 0 mismatches vs ref
+probability_head0_bf16: 3f80 0000 0000 0000 0000 0000 0000 0000 3f36 3e95 0000 0000 0000 0000 0000 0000 3df3 3e8e 3f1a 0000 0000 0000 0000 0000 3e18 3f08 3e0b 3e38 0000 0000 0000 0000 3ed0 3db4 3e7a 3d83 3e45 0000 0000 0000 3df6 3cb6 3e41 3e58 3ede 3cac 0000 0000 3e1a 3d82 3e58 3d7e 3ece 3d3f 3d8a 0000 3e1e 3dfa 3cd6 3ce7 3e08 3e47 3dfa 3e63
+vpu_softmax PASSED
+Gemmini extension configured with:
+    dim = 16

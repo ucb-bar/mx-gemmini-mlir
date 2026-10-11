@@ -1,0 +1,9 @@
+{
+  "inputs": {
+    "score": "score"
+  },
+  "outputs": {
+    "output": "output"
+  },
+  "schema": "mx_gemmini.vpu_softmax_buffer_map.v1"
+}

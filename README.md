@@ -24,6 +24,10 @@ and full-model inference still need lowering. A separate
 [four-model FP8 PV replay](docs/evidence/model2mlir_four_model_fp8_pv_vpu_a042643_266c593/README.md)
 matches all 8,192 padded BF16 values across the four PV heads after explicit
 32-element K padding. The QK and PV programs are not yet connected.
+The [TinyLlama QK-to-VPU softmax seam](docs/evidence/model2mlir_tinyllama_attention_softmax_a042643_266c593/README.md)
+uses the captured 1/8 scale and causal mask to feed QK BF16 results into a
+compiled 16×32 VPU softmax object. Pinned Spike matches all 512 BF16 outputs
+against Nicolas's reference. Host staging still separates the QK and VPU runs.
 `mx_gemmini_support.command_ir` represents checked physical command fields
 and emits the same stream through Rocket RoCC or the Muon-side Radiance MMIO
 gateway. The source specialization path binds packed operand bytes, E8M0

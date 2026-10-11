@@ -1,0 +1,22 @@
+{
+  "files_sha256": {
+    "binding_manifest.json": "3d25c35b06908e6ae512affeeed9acebb517dfcf2f4a213170aa477b2b7e26cf",
+    "build/mx_driver.c": "539e73c88865b99694f8a9a56b00031f4b4c407a0e0f6e09fbce4301b23ec2b0",
+    "build/mx_program.elf": "27e4c572d8b3928fd314db849c9fb1715990787775fed1b8d5d59eba823bc867",
+    "build/spike.log": "761acd97437d3bc8f3ac47ed2475df49a59e0d1e2e93915a0ebb351d3eb730b6",
+    "object/compile_manifest.json": "c3dfd93a30b37861fb378084acf64a3217c71e7c0fb312f5682f5de616130f8b",
+    "object/mx_issue.c": "a580f370d9d64e732635a92c08748fc9a0d243b29a5ce5533ac7b050a59712b3",
+    "object/mx_issue.o": "05309fa0733bbe0ea405d8b58bbd9a9ead66b0e37deac6d4d020eada3d496567",
+    "object/object_manifest.json": "a43247ea68664dcf3426b9fc677319314c0341072a55cba97b452ca65503bced",
+    "object/physical_program.json": "fd141837f7b9cf698273f28706a71aafa625964592ad28ba686f42304c11941c",
+    "probability_head0_bf16.bin": "fedcbe58c534efab42f90d4dc584cf7c5f278e24f3f5ed00e391da5cc40ed980",
+    "score_bf16.bin": "128e283806440d13ceb83dc05f4b2460313bed7aae8d0bfa9df12d29de35cb47",
+    "softmax.model2mlir.mlir": "9b1c00b23704c3c01fee2d30b6ff105c404321335e6439921ca29421b0f2d961",
+    "softmax.profile_bound.mlir": "ca86fd15e99853dcf9cce45918c7d8be88bb4dad747d1736be0698f4772cd3b0",
+    "softmax_buffer_abi.json": "3dd8b8b6b1b326a83efe4c924dd6ae3ad229d4490624b2098b313c28430fc71f",
+    "summary.json": "3207fd61ee46cbff5277bb5ec80b33483434f8d6562f3d6b0d3e358fde344918"
+  },
+  "run_count": 2,
+  "schema": "mx_gemmini.tinyllama_attention_softmax_reproduction.v1",
+  "status": "two_clean_spike_runs_byte_identical"
+}
