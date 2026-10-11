@@ -22,10 +22,9 @@ The [program-level regeneration audit](evidence/nicolas_mx_regeneration_audit_26
 validates selected-path generated-object Spike receipts for 156 matrix/LUT
 names, generated-executable receipts for all six connected FP4/FP6/FP8 matrix
 chains, and complete selected outputs for VPU softmax, both scratchpad
-requant programs, the pipelined chain, and the memory readout. Two other
-specialized programs and two debug programs
-remain separate. Its categories retain each
-receipt's actual scope rather than treating every source-hash match as a full
+requant programs, both connected VPU chains, and the memory readout. The
+monolithic VPU program and two debug programs remain separate. Its categories
+retain each receipt's actual scope rather than treating every source-hash match as a full
 program qualification.
 
 The [15-case direct suite](evidence/nicolas_direct_matrix_suite_9df3384_266c593/README.md),
@@ -111,9 +110,10 @@ add 40,960 packed bytes and 2,560 scales.
 [Five E3M2 DIM8/DIM32 mesh replays](evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/README.md)
 add 20,480 packed bytes and 1,280 scales. These matrix/LUT numerical replay
 suites cover **156 of 171 named MX source programs** for their selected Spike
-execution paths. The six connected chains and five specialized programs bring
-the audited selected-output count to **167 of 171**. Two other specialized
-programs have separate evidence with narrower scopes.
+execution paths. The six connected chains and six specialized programs bring
+the audited selected-output count to **168 of 171**. The monolithic `vpu_ops`
+program has separate operation-level evidence but no single compiler-issued
+executable replay.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
 remains archived. The 169 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.

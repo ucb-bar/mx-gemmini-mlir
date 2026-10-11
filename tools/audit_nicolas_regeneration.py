@@ -218,6 +218,8 @@ def _full_matrix_result(entry: dict) -> dict | None:
 
 def _full_specialized_result(entry: dict) -> dict | None:
     """Validate complete selected outputs for non-matrix MX sources."""
+    if entry["name"] == "chain_vpu_spad_requant":
+        return _full_resident_vpu_result(entry)
     if entry["name"] in ("chain_pipelined", "mx_mem_bw"):
         return _full_compound_result(entry)
     specification = SPECIALIZED_RESULTS.get(entry["name"])
@@ -287,6 +289,62 @@ def _full_specialized_result(entry: dict) -> dict | None:
             result["model2mlir_revision"] = model2mlir_revision
         return result
     return None
+
+
+def _full_resident_vpu_result(entry: dict) -> dict:
+    """Validate the full 64-cubed connected object against Nicolas's chain."""
+    directory = ROOT / "docs/evidence/nicolas_resident_vpu_object_6c9ed40"
+    path = directory / "qualification_manifest.json"
+    receipt = json.loads(path.read_text())
+    index = json.loads((directory / "index.json").read_text())
+    manifest = json.loads((directory / "object_manifest.json").read_text())
+    metrics = {"compared_bf16_values": 4096,
+               "compared_fp8_codes": 8192, "compared_e8m0_scales": 256}
+    if (receipt.get("schema") != "mx_gemmini.connected_full_chain_sources.v1" or
+            receipt.get("status") != "source_connected_full_chain_matched_on_pinned_spike" or
+            receipt.get("source_facts", {}).get("source_sha256") !=
+            entry["source_sha256"] or
+            receipt.get("rtl_revision") !=
+            "266c593f2cb51d7e3fe83fc0317072b585ac3c52" or
+            receipt.get("spike_exit_code") != 0 or
+            any(receipt.get(key) != value for key, value in metrics.items()) or
+            manifest.get("allocated_data_section_bytes") != 0 or
+            manifest.get("object_sha256") != receipt.get("object_sha256", {}).get(
+                "mx_issue.o") or
+            index.get("files_sha256", {}).get("qualification_manifest.json") != _sha(path) or
+            index.get("status") != "fresh_checkout_spike_full_output_match"):
+        raise ValueError("incomplete or stale resident VPU source qualification")
+    profile_sha = receipt["source_facts"]["profile_sha256"]
+    _require_digest(profile_sha, "resident VPU profile")
+    if (manifest.get("profile_sha256") != profile_sha or
+            index.get("profile_sha256") != profile_sha):
+        raise ValueError("resident VPU profile binding differs")
+    for field in ("elf_sha256", "spike_log_sha256"):
+        _require_digest(receipt.get(field), f"resident VPU {field}")
+    revision = receipt.get("compiler_revision")
+    if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+        raise ValueError("resident VPU has no pinned compiler revision")
+    model2mlir_revision = index.get("model2mlir_revision")
+    if (not isinstance(model2mlir_revision, str) or
+            not HEX160.fullmatch(model2mlir_revision)):
+        raise ValueError("resident VPU has no pinned model2MLIR revision")
+    object_sha = receipt["object_sha256"]["mx_issue.o"]
+    _require_digest(object_sha, "resident VPU object")
+    for name, digest in (("mx_issue.o", object_sha),
+                         ("mx_program.elf", receipt["elf_sha256"]),
+                         ("spike.log", receipt["spike_log_sha256"])):
+        if _sha(directory / name) != digest:
+            raise ValueError(f"changed resident VPU {name}")
+    return {"receipt": str(path.relative_to(ROOT)), "receipt_sha256": _sha(path),
+            "receipt_schema": receipt["schema"],
+            "profile_sha256": profile_sha,
+            "compiler_revision": revision,
+            "model2mlir_revision": model2mlir_revision,
+            "object_sha256": object_sha,
+            "elf_sha256": receipt["elf_sha256"],
+            "spike_log_sha256": receipt["spike_log_sha256"],
+            "checked_output_metrics": metrics,
+            "source_binding_field": "source_facts.source_sha256"}
 
 
 def _full_compound_result(entry: dict) -> dict | None:

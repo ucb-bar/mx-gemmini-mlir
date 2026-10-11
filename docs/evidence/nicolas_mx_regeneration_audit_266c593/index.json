@@ -823,17 +823,26 @@
     {
       "family": "chain",
       "name": "chain_vpu_spad_requant",
-      "other_receipt_statuses": [
-        "derived_nonzero_adds_vpu_chain_matched_on_pinned_spike",
-        "derived_zero_adds_vpu_chain_matched_on_pinned_spike",
-        "source_derived_wide_vpu_pair_matched_on_pinned_spike",
-        "source_mx_vpu_and_narrow_mm2_matched_on_pinned_spike",
-        "source_mx_vpu_requant_and_narrow_mm2_bound_to_typed_graph",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "checked_output_metrics": {
+          "compared_bf16_values": 4096,
+          "compared_e8m0_scales": 256,
+          "compared_fp8_codes": 8192
+        },
+        "compiler_revision": "6c9ed4022ff85175ff289136c568f35a07d0191d",
+        "elf_sha256": "3a63061f85774fb057672640c29c5648265ab28db1d1fe28778984ba9a35fecd",
+        "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+        "object_sha256": "95fd70c5914cad3df2dd9beb691baaef9c0ad5334b40314e85934cc70b527838",
+        "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+        "receipt": "docs/evidence/nicolas_resident_vpu_object_6c9ed40/qualification_manifest.json",
+        "receipt_schema": "mx_gemmini.connected_full_chain_sources.v1",
+        "receipt_sha256": "710f2847e87154de90c8ee192c73b5fa848405f49af019a09ba1ac233c3bbd1a",
+        "source_binding_field": "source_facts.source_sha256",
+        "spike_log_sha256": "7de15ca385d13a01018d94291b329ada53ca26cace1da4b4f558e2aba9595d32"
+      },
       "source_reference_count": 17,
       "source_sha256": "7a75c2c3e6ccefb24b5cbd73df4334b421d64eeba091b4cbb67cf736062a3204",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_specialized_selected_spike_result_matched"
     },
     {
       "family": "chain",
@@ -4265,8 +4274,8 @@
   "status_counts": {
     "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
-    "generated_specialized_selected_spike_result_matched": 5,
+    "generated_specialized_selected_spike_result_matched": 6,
     "no_direct_source_receipt": 2,
-    "separate_evidence_requires_scope_review": 2
+    "separate_evidence_requires_scope_review": 1
   }
 }
