@@ -46,8 +46,7 @@ def _compiler_driver(source: str) -> str:
         raise ValueError("Nicolas FP8 source diagnostic ordering changed")
     flat = source[flat_check:tiled_start].replace("codes_hw[", "codes_flat_hw[")
     tiled = source[tiled_check:].replace("codes_hw[", "codes_tiled_hw[")
-    modified = source[:start] + '''  gemmini_flush(0);
-  memset(scales_hw, 0xa5, sizeof(scales_hw));
+    modified = source[:start] + '''  memset(scales_hw, 0xa5, sizeof(scales_hw));
   memset(scales_hw2, 0xa5, sizeof(scales_hw2));
   memset(codes_flat_hw, 0xa5, sizeof(codes_flat_hw));
   memset(codes_tiled_hw, 0xa5, sizeof(codes_tiled_hw));
@@ -73,7 +72,7 @@ def _compiler_driver(source: str) -> str:
     modified = modified.replace("cycles (requant+mvout)",
                                 "cycles (compiler issue+readout)")
     if any(token in modified for token in (
-            "gemmini_spad_requant(", "gemmini_extended_mvin(",
+            "gemmini_flush(", "gemmini_spad_requant(", "gemmini_extended_mvin(",
             "gemmini_extended_mvout(", "codes_hw[")):
         raise ValueError("FP8 compiler driver retained handwritten MX commands")
     return modified

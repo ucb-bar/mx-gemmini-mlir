@@ -57,6 +57,7 @@ def test_fp8_driver_preserves_oracle_and_replaces_issue() -> None:
     modified = _compiler_driver(original)
     assert "mxr_quant_block(&X[m][32 * b]" in modified
     assert "spad_requant %s" in modified
+    assert "gemmini_flush(" not in modified
     assert "gemmini_spad_requant(" not in modified
     assert "gemmini_extended_mvin(" not in modified
     assert "gemmini_extended_mvout(" not in modified
