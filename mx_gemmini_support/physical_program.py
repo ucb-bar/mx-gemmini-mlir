@@ -651,7 +651,8 @@ def _lower_bound_source_regular(mlir_text: str, profile: dict, manifest: dict,
                            derived_vpu_scalar_bf16, derived_vpu_scalar_chain,
                            golden_origin=("target_mesh_reference" if manifest.get("origin") ==
                                           "radiance_source_target_mesh_reference" else
-                                          "source_header"))
+                                          "model2mlir_projection_slice" if manifest.get("origin") ==
+                                          "model2mlir_projection_slice" else "source_header"))
 
 
 def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,

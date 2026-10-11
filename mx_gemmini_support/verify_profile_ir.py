@@ -94,10 +94,12 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
         from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN,
                                      ATTENTION_PV_PROXY_ORIGIN,
                                      DERIVED_GEMM_FIXTURE_ORIGIN,
+                                     MODEL2MLIR_PROJECTION_ORIGIN,
                                      TARGET_MESH_REFERENCE_ORIGIN,
                                      validate_attention_qk_candidate,
                                      validate_attention_pv_proxy,
                                      validate_derived_gemm_fixture,
+                                     validate_model2mlir_projection,
                                      validate_target_mesh_reference)
         if payload_manifest.get("origin") == ATTENTION_QK_CANDIDATE_ORIGIN:
             validate_attention_qk_candidate(payload_manifest)
@@ -109,6 +111,8 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
             validate_target_mesh_reference(payload_manifest)
             if payload_manifest["target_mesh_reference"]["mesh_dim"] != profile["geometry"]["mesh_columns"]:
                 raise ValueError("MX target mesh reference differs from profile")
+        elif payload_manifest.get("origin") == MODEL2MLIR_PROJECTION_ORIGIN:
+            validate_model2mlir_projection(payload_manifest)
         elif "source_derivation" in payload_manifest:
             raise ValueError("derived MX payload must declare its candidate origin")
         for resource_name, descriptor in payload_manifest["resources"].items():
@@ -249,6 +253,7 @@ def verify_ir(mlir_text: str, profile: dict) -> dict:
                         "radiance_source_derived_attention_pv_proxy",
                         "radiance_source_derived_gemm_fixture",
                         "nicolas_source_header_specialization",
+                        "model2mlir_projection_slice",
                         "nicolas_generated_header_specialization"}:
                     raise ValueError("MX contract payload differs from selected source bundle")
             elif local_payload is not None or _text_attr(op, "payload_origin") is not None:

@@ -197,6 +197,7 @@ LogicalResult ContractOp::verify() {
          origin.getValue() != "radiance_source_derived_attention_qk_candidate" &&
          origin.getValue() != "radiance_source_derived_attention_pv_proxy" &&
          origin.getValue() != "radiance_source_derived_gemm_fixture" &&
+         origin.getValue() != "model2mlir_projection_slice" &&
          origin.getValue() != "nicolas_source_header_specialization" &&
          origin.getValue() != "nicolas_generated_header_specialization"))
       return emitOpError("source payload differs from module binding");

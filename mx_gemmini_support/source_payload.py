@@ -29,7 +29,50 @@ ATTENTION_QK_CANDIDATE_ORIGIN = "radiance_source_derived_attention_qk_candidate"
 ATTENTION_PV_PROXY_ORIGIN = "radiance_source_derived_attention_pv_proxy"
 DERIVED_GEMM_FIXTURE_ORIGIN = "radiance_source_derived_gemm_fixture"
 TARGET_MESH_REFERENCE_ORIGIN = "radiance_source_target_mesh_reference"
+MODEL2MLIR_PROJECTION_ORIGIN = "model2mlir_projection_slice"
+MODEL2MLIR_PROJECTION_GOLDEN_SHA256 = "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988"
 TARGET_MESH_QUANT_CONVENTION = "target_mesh_radiance_header_v1"
+
+
+def validate_model2mlir_projection(manifest: dict) -> None:
+    """Keep an executed model projection slice separate from source goldens."""
+    site = manifest.get("model2mlir_projection")
+    shape = manifest.get("shape_mnk")
+    if (manifest.get("origin") != MODEL2MLIR_PROJECTION_ORIGIN or
+            manifest.get("precision") != "FP8" or
+            manifest.get("output_format") is not None or
+            any(key in manifest for key in ("source_driver_sha256", "source_header_sha256",
+                                            "source_derivation")) or
+            not isinstance(site, dict) or
+            set(site) != {"source_mlir_sha256", "region_id", "fqn", "source_op",
+                          "source_shape_mnk", "row_start", "row_count", "column_start",
+                          "column_count", "input_sha256", "weight_sha256",
+                          "golden_model_sha256"} or
+            not isinstance(shape, list) or len(shape) != 3):
+        raise ValueError("model2MLIR projection payload lacks a distinct source contract")
+    for key in ("source_mlir_sha256", "input_sha256", "weight_sha256",
+                "golden_model_sha256"):
+        if not isinstance(site[key], str) or re.fullmatch(r"[0-9a-f]{64}", site[key]) is None:
+            raise ValueError(f"model2MLIR projection lacks {key}")
+    if (site["golden_model_sha256"] != MODEL2MLIR_PROJECTION_GOLDEN_SHA256 or
+            not all(isinstance(site[key], str) and site[key]
+                for key in ("region_id", "fqn", "source_op")) or
+            site["source_op"] != "matmul" or
+            not isinstance(site["source_shape_mnk"], list) or
+            len(site["source_shape_mnk"]) != 3 or
+            any(type(dim) is not int or dim <= 0 for dim in site["source_shape_mnk"]) or
+            any(type(site[key]) is not int or site[key] < 0
+                for key in ("row_start", "column_start")) or
+            any(type(site[key]) is not int or site[key] <= 0
+                for key in ("row_count", "column_count"))):
+        raise ValueError("model2MLIR projection site or slice is malformed")
+    m, n, k = site["source_shape_mnk"]
+    if (site["row_start"] + site["row_count"] > m or
+            site["column_start"] + site["column_count"] > n or
+            shape[0] != ((site["row_count"] + 15) // 16) * 16 or
+            site["column_count"] != 32 or shape[1:] != [32, k] or
+            manifest.get("tile_mnk", [None, None, None])[:2] != shape[:2]):
+        raise ValueError("model2MLIR projection padded shape differs from source slice")
 
 
 def validate_target_mesh_reference(manifest: dict) -> None:
@@ -607,6 +650,8 @@ def load_bundle(directory: Path) -> tuple[dict, dict[str, bytes]]:
         validate_derived_gemm_fixture(manifest)
     elif manifest.get("origin") == TARGET_MESH_REFERENCE_ORIGIN:
         validate_target_mesh_reference(manifest)
+    elif manifest.get("origin") == MODEL2MLIR_PROJECTION_ORIGIN:
+        validate_model2mlir_projection(manifest)
     elif manifest.get("origin") not in {"radiance_source_header_specialization",
                                         NICOLAS_SOURCE_HEADER_ORIGIN}:
         raise ValueError("unknown MX payload origin")

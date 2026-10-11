@@ -9,12 +9,14 @@ from pathlib import Path
 
 from .resource_ir import attach_source_resources
 from .source_payload import (ATTENTION_QK_CANDIDATE_ORIGIN, ATTENTION_PV_PROXY_ORIGIN,
-                             DERIVED_GEMM_FIXTURE_ORIGIN, NICOLAS_SOURCE_HEADER_ORIGIN,
+                             DERIVED_GEMM_FIXTURE_ORIGIN, MODEL2MLIR_PROJECTION_ORIGIN,
+                             NICOLAS_SOURCE_HEADER_ORIGIN,
                              TARGET_MESH_REFERENCE_ORIGIN,
                              TARGET_MESH_QUANT_CONVENTION,
                              load_bundle, manifest_sha256,
                              validate_attention_qk_candidate, validate_attention_pv_proxy,
-                             validate_derived_gemm_fixture, validate_target_mesh_reference,
+                             validate_derived_gemm_fixture, validate_model2mlir_projection,
+                             validate_target_mesh_reference,
                              vpu_requant_shape_is_legal)
 from .target_profile import load_profile, profile_sha256
 from .verify_profile_ir import _operation_name, _text_attr, verify_ir
@@ -52,6 +54,8 @@ def bind_payload(mlir_text: str, profile: dict, manifest: dict, *,
         validate_target_mesh_reference(manifest)
         if manifest["target_mesh_reference"]["mesh_dim"] != profile["geometry"]["mesh_columns"]:
             raise ValueError("target mesh reference differs from selected profile")
+    elif manifest.get("origin") == MODEL2MLIR_PROJECTION_ORIGIN:
+        validate_model2mlir_projection(manifest)
     elif (manifest.get("origin") not in {"radiance_source_header_specialization",
                                           NICOLAS_SOURCE_HEADER_ORIGIN} or
           "source_derivation" in manifest):

@@ -147,8 +147,6 @@ def main() -> None:
         "compiler_source_closure_sha256": _source_closure(
             compiler_root, sorted((compiler_root / "mx_gemmini_support").glob("*.py")) +
             sorted((compiler_root / "tools").glob("*.py"))),
-        "source_driver_sha256": manifest["source_driver_sha256"],
-        "source_header_sha256": manifest["source_header_sha256"],
         "rtl_revision": _git_revision(args.rtl_root),
         "gemmini_software_revision": _git_revision(software),
         "gemmini_software_source_closure_sha256": _source_closure(
@@ -160,8 +158,16 @@ def main() -> None:
         "build_log_sha256": {path.name: _sha(path) for path in
                              sorted(args.out_dir.glob("compile_*.log")) + [args.out_dir / "link.log"]},
     })
+    if "source_driver_sha256" in manifest:
+        receipt["source_driver_sha256"] = manifest["source_driver_sha256"]
+    if "source_header_sha256" in manifest:
+        receipt["source_header_sha256"] = manifest["source_header_sha256"]
+    if manifest["origin"] == "model2mlir_projection_slice":
+        receipt["payload_origin"] = manifest["origin"]
     if issuer_manifest is not None:
-        receipt["issuer_origin"] = "linkable_source_object"
+        receipt["issuer_origin"] = ("linkable_model_projection_object" if
+                                    manifest["origin"] == "model2mlir_projection_slice" else
+                                    "linkable_source_object")
         receipt["issuer_object_manifest_sha256"] = _sha(issuer_manifest_path)
     if args.run_spike:
         pinned_extension = args.rtl_root / "software/libgemmini"
@@ -205,6 +211,8 @@ def main() -> None:
         passed = result.returncode == 0 and expected in result.stdout
         qualifier = ("target_mesh_reference" if manifest.get("origin") ==
                      "radiance_source_target_mesh_reference" else
+                     "model_projection" if manifest.get("origin") ==
+                     "model2mlir_projection_slice" else
                      "radiance_header" if program.output_format in {
                          "radiance_header_fp8", "radiance_header_fp6"} else
                      "nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
