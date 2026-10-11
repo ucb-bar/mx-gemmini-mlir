@@ -1,0 +1,34 @@
+{
+  "allocated_data_section_bytes": 0,
+  "binding_json_sha256": "fbc7bf6883fd6eccf667f76b0c3230ecd2e0ed51c583f5d2ed41e97b1c258e12",
+  "bound_mlir_sha256": "82fbd438122a69383986fe7323ae716e307fc2dd849d175abf0d1c2f3e2912d1",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_e8m0_scales_32x2",
+      "minimum_bytes": 64,
+      "name": "p_scales",
+      "position": 0,
+      "role": "read"
+    }
+  ],
+  "command_count": 8,
+  "compiler_revision": "396609a8b0371ffa77a10377849d37552274af6f",
+  "compiler_source_closure_sha256": "842295716c9166fa57f86bac63e4a5c4624799d0ac1d4dfab4f6ea641b2276d0",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "547abea3ce2019b57baa0c23897dd5747bed22cc0b1e7ec12cd462a5e1cfaccc",
+  "issuer_h_sha256": "eb898baa886e93379d6ca2834a927479a74481af4c3b4342a6a424cbff167596",
+  "mlir_container_sha256": "82fbd438122a69383986fe7323ae716e307fc2dd849d175abf0d1c2f3e2912d1",
+  "object_sha256": "8750f21c1ee263afa2794d50a5b311d23b4338f0aea617677e656a8b5975314e",
+  "physical_program_sha256": "de3589753d08021d64f0d2d76d6bc94376a690032972cf1473d929f23ea5b129",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.attention_vector_linkable_object.v1",
+  "scope": "seven VPU operations and resident requant; QK and PV matrix issue are external",
+  "status": "rv64_rocc_attention_vector_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
