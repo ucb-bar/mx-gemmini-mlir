@@ -18,6 +18,12 @@ receipts are source-oracle runs or frontend captures, so neither group should
 be read as a count of compiler-regenerated programs. Rebuild the inventory
 with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
+The [program-level regeneration audit](evidence/nicolas_mx_regeneration_audit_266c593/README.md)
+validates selected-path generated-object Spike receipts for 156 matrix/LUT
+names, while listing the six connected matrix chains, seven other specialized
+programs, and two debug programs separately. Its categories retain each
+receipt's actual scope rather than treating every source-hash match as a full
+program qualification.
 
 The [15-case direct suite](evidence/nicolas_direct_matrix_suite_9df3384_266c593/README.md),
 [three FP8 cases](evidence/nicolas_direct_fp8_three_789d192_266c593/README.md),
