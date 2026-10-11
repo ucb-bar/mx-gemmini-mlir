@@ -1,0 +1,13 @@
+{
+  "accumulator_bank_toggle_bits": [
+    256,
+    256
+  ],
+  "compiler_chunk_count": 2,
+  "physical_program_sha256": "0ed399334bb3f8799aa6040379d02415199b1c78d2fd0a3396302ed33b6f27eb",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "scale_uploads": 4,
+  "schema": "mx_gemmini.nicolas_fp8_i_chunks_audit.v1",
+  "source_chunk_count": 2,
+  "source_driver_sha256": "1bdf2d901039ec068fc597ee8b8a57c21f1f13bfb0a38de6b107f640093aebb9"
+}

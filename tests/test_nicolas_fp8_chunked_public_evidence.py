@@ -93,3 +93,39 @@ def test_chunk_selection_rejects_changed_source_or_unbound_attribute() -> None:
                                        'mx.i_chunks = "4"'), profile, manifest)
     with pytest.raises(ValueError, match="one source-bound"):
         bind_i_chunks(mlir, profile, manifest, 2)
+
+
+def test_direct_2d_scale_source_uses_the_same_two_chunk_object() -> None:
+    directory = ROOT / "docs/evidence/nicolas_fp8_chunked_2d_public_287593c_266c593"
+    case = CASES["fp8_128x128x128_chunked_2d"]
+    receipt = json.loads((directory / "receipt.json").read_text())
+    audit = json.loads((directory / "chunk_equivalence.json").read_text())
+    manifest, _ = load_bundle(directory / "bundle")
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json")
+    assert receipt["compiler_revision"] == "287593c43879533e03f7dbcd6f82b6f553e74804"
+    assert receipt["rtl_revision"] == RTL_REVISION
+    assert receipt["model2mlir_revision"] == MODEL2MLIR_REVISION
+    assert receipt["mxq_revision"] == MXQ_REVISION
+    assert receipt["source_driver_sha256"] == manifest["source_driver_sha256"] == (
+        case.source_sha256)
+    assert receipt["status"] == "source_golden_matched_on_pinned_spike"
+    assert receipt["mismatches"] == 0 and receipt["outputs_checked"] == 16384
+    assert receipt["source_baseline"]["source_spike_exit_code"] == 0
+    assert receipt["source_baseline"]["source_golden_bf16_values_checked"] == 16384
+    assert receipt["source_baseline"]["source_elf_sha256"] == _sha(
+        directory / "source_baseline/program.elf")
+    assert receipt["source_baseline"]["source_spike_log_sha256"] == _sha(
+        directory / "source_baseline/spike.log")
+    assert receipt["spike_log_sha256"] == _sha(directory / "run/spike.log")
+    assert "fp8 WS chunked matmul test PASSED (no mismatches)." in (
+        directory / "source_baseline/spike.log").read_text()
+    assert selected_i_chunks((directory / "payload_bound.mlir").read_text(),
+                             profile, manifest) == 2
+    assert audit["source_driver_sha256"] == case.source_sha256
+    assert audit["source_chunk_count"] == audit["compiler_chunk_count"] == 2
+    assert audit["scale_uploads"] == 4
+    assert audit["physical_program_sha256"] == _sha(
+        directory / "object/physical_program.json")
+    assert receipt["object_sha256"] == _sha(directory / "object/mx_issue.o") == _sha(
+        EVIDENCE / "chunk2/object/mx_issue.o")
