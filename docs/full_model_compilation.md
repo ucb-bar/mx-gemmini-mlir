@@ -164,7 +164,7 @@ The catalog builder belongs in this target package, but it must implement
 Merlin's generic `DeviceRouting.catalog_builder` interface.
 
 Merlin's catalog route now has an explicit, target-neutral source dtype
-conversion contract on its `cx/mx-catalog-source-abi` task branch. That admits
+conversion contract on `main` at `6f1acb6e6`. That admits
 an f32 model contraction only when the catalog names a real target-native
 datapath and a hashed numeric policy. The current MX provider contract still
 declares no executable compute-unit datapaths, so the conversion route cannot
