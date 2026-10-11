@@ -23,6 +23,8 @@ EXPECTED = {
     "gemma2_2b": (20, 15, 5, 0, 0),
     "smolvla": (198, 93, 105, 14, 7),
 }
+BATCH_COUNTS = {"tinyllama": 5, "deepseek_r1_distill_qwen_1_5b": 3,
+                "gemma2_2b": 5, "smolvla": 28}
 
 
 @pytest.mark.parametrize("model", EXPECTED)
@@ -40,6 +42,11 @@ def test_captured_model_contractions_have_stable_mx_worklist(model: str) -> None
     assert result["contraction_region_count"] == regions
     assert len(result["rank2_matmuls"]) == rank2
     assert len(result["other_contraction_regions"]) == other
+    assert len(result["rank3_batch_matmuls"]) == BATCH_COUNTS[model]
+    assert all(site["source_op"] == "batch_matmul" and
+               len(site["shape_bmnk"]) == 4 and
+               site["status"] == "requires_explicit_mx_quantization_and_batched_lowering"
+               for site in result["rank3_batch_matmuls"])
     assert sum(site["element_type"] == "bf16" for site in result["rank2_matmuls"]) == bf16
     assert sum(site["k_requires_32_element_scale_padding"]
                for site in result["rank2_matmuls"]) == k_padding

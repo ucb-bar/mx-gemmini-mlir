@@ -53,6 +53,7 @@ def build_model2mlir_worklist(mlir_text: str, profile: dict) -> dict:
 
     groups: OrderedDict[tuple[str, str], dict] = OrderedDict()
     matmuls = []
+    batch_matmuls = []
     for operation in functions[0].walk():
         if _text(operation, "prov.family") == "contraction":
             fqn = _text(operation, "prov.fqn")
@@ -64,6 +65,36 @@ def build_model2mlir_worklist(mlir_text: str, profile: dict) -> dict:
             if fqn:
                 group["fqns"].add(fqn)
             group["operations"].append(operation.name)
+        if (operation.name == "linalg.generic" and
+                _text(operation, "prov.family") == "contraction" and
+                _text(operation, "prov.op") == "batch_matmul"):
+            if (len(operation.operands) != 3 or len(operation.results) != 1 or
+                    _text(operation, "prov.aten") != "aten.bmm.default" or
+                    _text(operation, "prov.region_id") is None):
+                raise ValueError("model2MLIR batch matmul has unsupported source provenance")
+            types = [value.type for value in operation.operands] + [
+                operation.results[0].type]
+            if any(not isinstance(t, TensorType) or
+                   not isinstance(t.element_type, (Float32Type, BFloat16Type)) or
+                   len(t.get_shape()) != 3 for t in types):
+                raise ValueError("model2MLIR batch matmul needs static rank-three tensors")
+            dtypes = {str(t.element_type) for t in types}
+            if len(dtypes) != 1:
+                raise ValueError("model2MLIR batch matmul has mixed element types")
+            (batch, m, k), (rhs_batch, rhs_k, n), output, result = [
+                tuple(t.get_shape()) for t in types]
+            if (not all(type(dim) is int and dim > 0 for dim in
+                        (batch, m, k, rhs_batch, rhs_k, n)) or
+                    batch != rhs_batch or k != rhs_k or
+                    output != (batch, m, n) or result != output):
+                raise ValueError("model2MLIR batch matmul has inconsistent static shapes")
+            batch_matmuls.append({
+                "fqn": _text(operation, "prov.fqn"),
+                "region_id": _text(operation, "prov.region_id"),
+                "source_op": "batch_matmul", "shape_bmnk": [batch, m, n, k],
+                "element_type": next(iter(dtypes)),
+                "status": "requires_explicit_mx_quantization_and_batched_lowering",
+            })
         if operation.name != "linalg.matmul":
             continue
         if (_text(operation, "prov.family") != "contraction" or
@@ -101,6 +132,8 @@ def build_model2mlir_worklist(mlir_text: str, profile: dict) -> dict:
     rank2_groups = {(site["region_id"], site["source_op"]) for site in matmuls}
     if len(rank2_groups) != len(matmuls):
         raise ValueError("model2MLIR contraction has ambiguous rank-two site identity")
+    if len({site["region_id"] for site in batch_matmuls}) != len(batch_matmuls):
+        raise ValueError("model2MLIR contraction has ambiguous batch matmul site identity")
     return {
         "schema": "mx_gemmini.model2mlir_contraction_worklist.v1",
         "status": "frontend_import_only_no_executable_placement",
@@ -111,6 +144,7 @@ def build_model2mlir_worklist(mlir_text: str, profile: dict) -> dict:
         "contraction_region_count": len(groups),
         "contraction_region_kinds": dict(sorted(count_by_kind.items())),
         "rank2_matmuls": matmuls,
+        "rank3_batch_matmuls": batch_matmuls,
         "other_contraction_regions": [
             {"fqn": next(iter(group["fqns"]), None), "region_id": region,
              "source_op": kind,

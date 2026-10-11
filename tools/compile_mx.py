@@ -162,11 +162,14 @@ def main() -> None:
         receipt["source_driver_sha256"] = manifest["source_driver_sha256"]
     if "source_header_sha256" in manifest:
         receipt["source_header_sha256"] = manifest["source_header_sha256"]
-    if manifest["origin"] == "model2mlir_projection_slice":
+    if manifest["origin"] in {"model2mlir_projection_slice",
+                              "model2mlir_attention_qk_head"}:
         receipt["payload_origin"] = manifest["origin"]
     if issuer_manifest is not None:
         receipt["issuer_origin"] = ("linkable_model_projection_object" if
-                                    manifest["origin"] == "model2mlir_projection_slice" else
+                                    manifest["origin"] in {
+                                        "model2mlir_projection_slice",
+                                        "model2mlir_attention_qk_head"} else
                                     "linkable_source_object")
         receipt["issuer_object_manifest_sha256"] = _sha(issuer_manifest_path)
     if args.run_spike:
@@ -213,6 +216,8 @@ def main() -> None:
                      "radiance_source_target_mesh_reference" else
                      "model_projection" if manifest.get("origin") ==
                      "model2mlir_projection_slice" else
+                     "model_attention_qk" if manifest.get("origin") ==
+                     "model2mlir_attention_qk_head" else
                      "radiance_header" if program.output_format in {
                          "radiance_header_fp8", "radiance_header_fp6"} else
                      "nicolas_oracle" if program.output_format in {"fp8_e4m3", "fp4_e2m1", "fp6_e3m2"} else
