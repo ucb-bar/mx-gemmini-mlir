@@ -1969,6 +1969,12 @@ and performs the capture and Spike replay without running `make` or writing
 into the source checkout. The flag rejects any missing header instead of
 generating it. Outputs still go to the selected new `--out-dir`.
 
+A [read-only replay from compiler `7e92ed2`](evidence/radiance_mx_gemm_readonly_7e92ed2_82be2c7/README.md)
+used that flag against compatible Radiance `82be2c7`. It recaptured and
+requalified all 31 drivers on pinned Spike, and every frontend and numerical
+artifact digest matched the baseline. The source checkout's Git status was
+unchanged by the run.
+
 A third run used that command at compiler `66df445`. Its
 [reproduction receipt](evidence/radiance_mx_gemm_latest_e9ded36_ee22/one_command_66df445/reproduction.json)
 and per-driver receipts show the same captured MLIR, physical source files,
