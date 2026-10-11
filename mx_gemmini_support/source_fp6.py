@@ -78,6 +78,24 @@ def _lut_lines(words: tuple[int, ...]) -> tuple[tuple[int, ...], ...]:
     return tuple(lines)
 
 
+def _require_equivalent_lut_aliases(original: bytes, canonical: bytes,
+                                    lines: tuple[tuple[int, ...], ...],
+                                    *, axis_width: int, operand: str) -> None:
+    """Accept duplicate LUT indices only when every changed nibble decodes alike."""
+    if len(original) != len(canonical):
+        raise ValueError(f"source FP6 {operand} packed size changed")
+    for offset, (source_byte, canonical_byte) in enumerate(zip(original, canonical)):
+        if source_byte == canonical_byte:
+            continue
+        line = lines[offset // axis_width if operand == "activation" else
+                     offset % axis_width]
+        for shift in (0, 4):
+            source_index = (source_byte >> shift) & 0xf
+            canonical_index = (canonical_byte >> shift) & 0xf
+            if line[source_index] != line[canonical_index]:
+                raise ValueError("source FP6 indexed operand changes decoded code")
+
+
 def read_source_fp6_payload(kernel: SourceGemm) -> SourceFp6Payload:
     """Prove that the source's nibble indices and row LUTs round-trip exactly."""
     fullout_tiles = {128: 128, 256: 128, 512: 512, 1024: 512, 2048: 128}
@@ -125,8 +143,16 @@ def read_source_fp6_payload(kernel: SourceGemm) -> SourceFp6Payload:
     repacked = pack_fp6_indexed_contraction(
         a_codes, b_codes, activation_lut=lut_lines["A_lut"],
         weight_lut=lut_lines["B_lut"], granularity_shift=1)
-    if repacked.activation_bytes != bytes(a) or repacked.weight_bytes != bytes(b):
-        raise ValueError("source FP6 indexed operand bytes do not round-trip")
+    # Some earlier Nicolas LUT lines contain duplicate codes. A canonical
+    # encoder picks the first matching index, while the source preserves its
+    # original alias index. Keep the original bytes and require that every
+    # differing nibble decodes to exactly the same E3M2 code.
+    _require_equivalent_lut_aliases(bytes(a), repacked.activation_bytes,
+                                    lut_lines["A_lut"], axis_width=k,
+                                    operand="activation")
+    _require_equivalent_lut_aliases(bytes(b), repacked.weight_bytes,
+                                    lut_lines["B_lut"], axis_width=n // 2,
+                                    operand="weight")
 
     a_scales = _array(source, name="A_scales_row", ctype="uint8_t",
                       dimensions="[MATMUL_GK][MATMUL_M]", count=k // 32 * m,

@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.source_fp6 import _array, read_source_fp6_payload
+from mx_gemmini_support.source_fp6 import (_array,
+                                           _require_equivalent_lut_aliases,
+                                           read_source_fp6_payload)
 from mx_gemmini_support.source_gemm import read_source_gemm
 
 
@@ -44,6 +46,15 @@ def test_header_reader_accepts_only_declared_symbolic_or_literal_dimensions():
     with pytest.raises(ValueError, match="declaration"):
         _array(declaration.replace("[2][2]", "[1][4]"), name="A", ctype="uint8_t",
                dimensions=dimensions, count=4, maximum=255)
+
+
+def test_fp6_repeated_lut_codes_preserve_original_indices() -> None:
+    line = tuple([0, 0] + list(range(2, 16)))
+    _require_equivalent_lut_aliases(bytes([0x10]), bytes([0x00]), (line,),
+                                    axis_width=1, operand="activation")
+    with pytest.raises(ValueError, match="changes decoded code"):
+        _require_equivalent_lut_aliases(bytes([0x20]), bytes([0x00]), (line,),
+                                        axis_width=1, operand="weight")
 
 
 @pytest.mark.skipif(not DRIVER.is_file() or

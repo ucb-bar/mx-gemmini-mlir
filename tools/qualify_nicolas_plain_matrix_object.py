@@ -242,6 +242,18 @@ CASES = {
         ("A_in_hw", "A_lut", "A_scales_row", "C_hw", "C_lut",
          "scratch_output_scales", "B_in", "B_lut", "B_scales_col"),
         "FP6 128x128x512"),
+    "fp6_128x128x128": Case(
+        "fp6_128x128x128", "FP6", (128, 128, 128), (128, 128, 128),
+        "matmul_tiled_fp6_128x128.c", "matmul_data_mx_lut_hw.h",
+        "2a57f4f475ae1c63049bc3c5aed2b77f1f80a2a2fa81d9c569c0683828c00665",
+        "127e962daebcbd890b4d76c9f884453e88c37aa5e1d9034954e7bb1cdfd42751",
+        "MxE3M2OnlyGemminiRocketConfig",
+        ("activation", "activation_lut", "activation_scales", "output_bf16",
+         "output_lut", "scratch_output_scales", "weight", "weight_lut",
+         "weight_scales"),
+        ("A_in_hw", "A_lut", "A_scales_row", "C_hw", "C_lut",
+         "scratch_output_scales", "B_in", "B_lut", "B_scales_col"),
+        "FP6 128x128x128"),
     "fp6_128x128x512_requant": Case(
         "fp6_128x128x512_requant", "FP6", (128, 128, 512), (128, 128, 512),
         "matmul_tiled_fp6_128x128x512_requant.c", "matmul_fp6_128x128x512.h",
@@ -927,6 +939,30 @@ def _run_native_fp8_source(rtl_root: Path, riscv_root: Path,
             "source_golden_bf16_values_checked": 128 * 128}
 
 
+def _run_plain_fp6_source(rtl_root: Path, riscv_root: Path,
+                          out_dir: Path, source: Path) -> dict:
+    """Run Nicolas's original FP6 128³ source as an independent oracle."""
+    from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+    software = rtl_root / "software/gemmini-rocc-tests"
+    build = out_dir / "source_baseline"
+    elf = _compile_program(build, source, software,
+                           riscv_root / "bin/riscv64-unknown-elf-gcc", None)
+    so = out_dir / "run/libgemmini.so"
+    result = subprocess.run([str(riscv_root / "bin/spike"), f"--extlib={so}",
+                             "--extension=gemmini", str(elf)],
+                            cwd=build, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, check=False)
+    log = build / "spike.log"
+    log.write_text(result.stdout)
+    if (result.returncode or
+            "fp6 WS matmul test PASSED (no mismatches)." not in result.stdout):
+        raise ValueError("Nicolas plain FP6 128-cubed source failed on pinned Spike")
+    return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
+            "source_spike_exit_code": result.returncode,
+            "source_golden_bf16_values_checked": 128 * 128}
+
+
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     """Admit only a Nicolas test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
@@ -1078,14 +1114,22 @@ def capture_handoff(model2mlir: Path, mxq_root: Path, kernel: SourceGemm,
     if kernel.datatype == "FP6":
         fp6 = read_source_fp6_payload(kernel)
         policy = directory / "source_line0_policy.yaml"
+        # MXQuant's structural capture requires a one-to-one codebook. The
+        # source payload, bound after capture, retains every original LUT line
+        # and packed alias index. Fill only missing codes in the capture's
+        # line-zero witness when the source LUT has repeated values.
+        def capture_codebook(source_line: tuple[int, ...]) -> list[int]:
+            values = list(dict.fromkeys(source_line))
+            values.extend(code for code in range(64) if code not in values)
+            return values[:16]
         policy.write_text(yaml.safe_dump({
             "schema": "mx_gemmini.quantization_policy.v1",
             "default_format": "mxfp6", "module_overrides": {},
             "functional_overrides": {}, "output_chains": {},
             "fp6_codebooks": {"default": {
                 "status": "reviewed",
-                "activation": list(fp6.activation_lut_line0),
-                "weight": list(fp6.weight_lut_line0)}}}, sort_keys=False))
+                "activation": capture_codebook(fp6.activation_lut_line0),
+                "weight": capture_codebook(fp6.weight_lut_line0)}}}, sort_keys=False))
     result = m2m.convert(
         Matmul().eval(), example,
         quantization=ExternalQuantizationConfig("mx_gemmini", contract, policy),
@@ -1322,7 +1366,10 @@ def main(default_case: str | None = None) -> None:
         _run_native_fp8_source(rtl_root, args.riscv_root.resolve(),
                                args.out_dir, kernel.driver,
                                case.native_dram_chunks)
-        if case.native_dram else None)
+        if case.native_dram else
+        _run_plain_fp6_source(rtl_root, args.riscv_root.resolve(),
+                              args.out_dir, kernel.driver)
+        if case.key == "fp6_128x128x128" else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -1373,6 +1420,11 @@ def main(default_case: str | None = None) -> None:
         receipt["transfer_equivalence_sha256"] = _sha(
             args.out_dir / "transfer_equivalence.json")
         receipt["source_baseline"] = source_baseline
+    if case.key == "fp6_128x128x128":
+        receipt["source_baseline"] = source_baseline
+        receipt["fp6_capture_codebook_role"] = "unique_structural_witness_not_source_lut"
+        receipt["fp6_capture_policy_sha256"] = _sha(
+            args.out_dir / "source_line0_policy.yaml")
     if case.i_chunks > 1:
         receipt["i_chunks"] = case.i_chunks
         receipt["chunk_equivalence_sha256"] = _sha(
