@@ -1,0 +1,40 @@
+{
+  "compared_bf16_values": 512,
+  "elf_sha256": "533a1677631fdcb053770744be3138a51404cfe36f597ba3daae6a7dde65fc32",
+  "full_model_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+  "model2mlir_source_closure_sha256": "6eb6648cf2eebd72cd481dff084b0e154e034fbe50b7bce31935091b1a237e39",
+  "model_output_values": 256,
+  "mxq_revision": "b4af5430bac147f4a16126931cc0177367cc3982",
+  "object_sha256": "0266cd093b76cc0bdaaef1ff972c26400fe29670d26e7e62e98f8e01ba42bcd4",
+  "padded_shape_mnk": [
+    16,
+    32,
+    2048
+  ],
+  "padding_output_values": 256,
+  "pytorch_f32_vs_mx_bf16_max_absolute_error": 0.21039676666259766,
+  "pytorch_f32_vs_mx_bf16_mean_absolute_error": 0.044249460101127625,
+  "run_receipt_sha256": "f3a7202370dd1d271720f3bc822ab082671a0b883939593d045f02470435b751",
+  "run_status": "model_projection_matched_on_pinned_spike",
+  "schema": "mx_gemmini.model2mlir_projection_execution.v1",
+  "scope": "one model2MLIR matmul output stripe; other model operations uncompiled",
+  "site": {
+    "column_count": 32,
+    "column_start": 0,
+    "fqn": "lm.model.layers.0.self_attn.q_proj",
+    "golden_model_sha256": "538e83ffa93b33cfb5ad335a90a93318f12128a0202229e64a85300b0f2b3988",
+    "input_sha256": "88a090e1f56ae445fe53076a94881f8d630cda710ccfabbdf2a34a6753c9ccc4",
+    "region_id": "matmul_1",
+    "row_count": 8,
+    "row_start": 0,
+    "source_mlir_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+    "source_op": "matmul",
+    "source_shape_mnk": [
+      8,
+      2048,
+      2048
+    ],
+    "weight_sha256": "4dcdb06e88b817109746dd70bb8b6a90a6c4c8dd889c42c3fb2ddc4995e6c1d5"
+  },
+  "status": "full_k_projection_stripe_matched_on_spike"
+}

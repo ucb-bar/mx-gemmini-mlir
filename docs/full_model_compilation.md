@@ -75,3 +75,15 @@ python -m tools.plan_model2mlir_worklist \
 The existing six connected FP8/FP4/FP6 source chains validate the MX object
 lowerer for those graph families. They do not establish any of the complete
 model gates above.
+
+## First executed model-derived contraction
+
+The [TinyLlama projection archive](evidence/model2mlir_tinyllama_projection_a042643_266c593/README.md)
+now compiles a full-K, 32-column stripe of layer-0 `q_proj` from the captured
+model site. A live two-layer TinyLlama forward supplies actual f32 activation
+and weight tensors; MXQuant produces FP8 codes and E8M0 scales. The typed MX
+contraction lowers to a data-free RV64 object and a standalone ELF. Pinned
+Spike matches an independent hardware arithmetic reference on all 512 BF16
+outputs; 256 belong to the eight real token rows and 256 to required DIM16
+padding. The module remains only one stripe of one projection. The full
+TinyLlama, Qwen, Gemma, and SmolVLA compile gates above remain open.
