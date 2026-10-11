@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -24,6 +25,7 @@ NUMERIC_FIELDS = ("outputs_checked", "compared_bf16_outputs",
 MATRIX_FAMILIES = {"asymmetric_matrix", "other_tiled_matrix"}
 HEX256 = re.compile(r"[0-9a-f]{64}\Z")
 HEX160 = re.compile(r"[0-9a-f]{40}\Z")
+CHAIN_NAME = re.compile(r"matmul_tiled_(fp4|fp6|fp8)_(64x64|128x128)_chain\Z")
 
 
 def _sha(path: Path) -> str:
@@ -38,6 +40,131 @@ def _require_digest(value: object, label: str) -> None:
             HEX256.fullmatch(digest) for key, digest in value.items()):
         return
     raise ValueError(f"{label} is not a SHA-256 digest or digest map")
+
+
+def _archived_sha(directory: Path, name: str) -> str:
+    """Hash an archived artifact, including archives saved as gzip."""
+    plain, compressed = directory / name, directory / f"{name}.gz"
+    if plain.is_file():
+        return _sha(plain)
+    if compressed.is_file():
+        with gzip.open(compressed, "rb") as stream:
+            return hashlib.sha256(stream.read()).hexdigest()
+    raise ValueError(f"missing archived chain artifact: {plain}")
+
+
+def _full_chain_result(entry: dict) -> dict | None:
+    """Validate both outputs of a named connected matrix source program."""
+    match = CHAIN_NAME.fullmatch(entry["name"])
+    if entry["family"] != "other_tiled_matrix" or match is None:
+        return None
+    precision, shape = match.groups()
+    n = int(shape.split("x")[0])
+    expected_codes, expected_scales = n * n, n * n // 32
+    status = ("source_connected_chain_matched_on_pinned_spike"
+              if precision == "fp8" else
+              "source_and_compiler_matched_on_pinned_spike")
+    schema = (f"mx_gemmini.nicolas_connected_plain_chain_"
+              f"{'64x64' if n == 64 else '128'}.v1"
+              if precision == "fp8" else
+              f"mx_gemmini.nicolas_{precision}_connected_resident_spike.v1")
+    for ref in entry["evidence_references"]:
+        if ref["status"] != status or ref["schema"] != schema:
+            continue
+        path = ROOT / ref["path"]
+        if _sha(path) != ref["sha256"]:
+            raise ValueError(f"changed Nicolas chain receipt: {ref['path']}")
+        receipt = json.loads(path.read_text())
+        if (receipt.get("schema") != schema or
+                receipt.get("status") != status or
+                receipt.get(ref["field"]) != entry["source_sha256"] or
+                receipt.get("rtl_revision") !=
+                "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
+            raise ValueError(f"stale chain source binding in {ref['path']}")
+        for field in ("profile_sha256", "object_sha256",
+                      "frontend_mlir_sha256", "bound_mlir_sha256"):
+            _require_digest(receipt.get(field), f"{ref['path']} {field}")
+        revision = receipt.get("compiler_revision")
+        if not isinstance(revision, str) or not HEX160.fullmatch(revision):
+            raise ValueError(f"{ref['path']} has no pinned compiler revision")
+        code1 = f"compared_c1_{precision}_codes"
+        code2 = (f"compared_{precision}_codes" if precision == "fp8"
+                 else f"compared_c2_{precision}_codes")
+        scale2 = ("compared_e8m0_scales" if precision == "fp8"
+                  else "compared_c2_e8m0_scales")
+        metrics = {field: receipt.get(field) for field in (
+            code1, "compared_c1_e8m0_scales", code2, scale2)}
+        if metrics != {code1: expected_codes,
+                       "compared_c1_e8m0_scales": expected_scales,
+                       code2: expected_codes, scale2: expected_scales}:
+            raise ValueError(f"incomplete two-stage chain comparison in {ref['path']}")
+        if precision == "fp8":
+            if receipt.get("spike_exit_code") != 0:
+                raise ValueError(f"failed compiler Spike run in {ref['path']}")
+            objects = receipt["object_sha256"]
+            archived = {name: ((path.parent / name).is_file() or
+                               (path.parent / f"{name}.gz").is_file())
+                        for name in objects}
+            if any(archived.values()) and not all(archived.values()):
+                raise ValueError(f"partially archived chain objects in {ref['path']}")
+            if all(archived.values()):
+                for name in objects:
+                    if _archived_sha(path.parent, name) != objects[name]:
+                        raise ValueError(f"changed chain object {name} in {ref['path']}")
+            object_archive_verified = all(archived.values())
+            for field, name in (("elf_sha256", "mx_program.elf"),
+                                ("spike_log_sha256", "spike.log")):
+                _require_digest(receipt.get(field), f"{ref['path']} {field}")
+                if _archived_sha(path.parent, name) != receipt[field]:
+                    raise ValueError(f"changed chain {name} in {ref['path']}")
+            files = receipt.get("files_sha256", {})
+            for name in ("c1_codes_ref.bin", "c1_scales_ref.bin",
+                         "c2_codes_ref.bin", "c2_scales_ref.bin",
+                         "mx_issue.c", "physical_program.json"):
+                _require_digest(files.get(name), f"{ref['path']} {name}")
+                if _archived_sha(path.parent, name) != files[name]:
+                    raise ValueError(f"changed chain {name} in {ref['path']}")
+            baseline = receipt.get("source_baseline")
+            if baseline is not None and (
+                    baseline.get("source_spike_exit_code") != 0 or
+                    baseline.get("source_c1_codes_checked") != expected_codes or
+                    baseline.get("source_c2_codes_checked") != expected_codes or
+                    baseline.get("source_c1_scales_checked") != expected_scales or
+                    baseline.get("source_c2_scales_checked") != expected_scales):
+                raise ValueError(f"incomplete source chain baseline in {ref['path']}")
+            elf_sha = receipt["elf_sha256"]
+            log_sha = receipt["spike_log_sha256"]
+        else:
+            source = receipt.get("source_spike", {})
+            compiler = receipt.get("compiler_spike", {})
+            if (source.get("exit_code") != 0 or compiler.get("exit_code") != 0 or
+                    source.get("matched") is not True or
+                    compiler.get("matched") is not True or
+                    receipt.get("allocated_data_section_bytes") != 0):
+                raise ValueError(f"failed source or compiler chain in {ref['path']}")
+            for result, fields in ((source, (("elf_sha256", "source.elf"),
+                                            ("spike_log_sha256", "source_spike.log"))),
+                                   (compiler, (("elf_sha256", "compiled.elf"),
+                                               ("spike_log_sha256", "compiled_spike.log")))):
+                for field, name in fields:
+                    _require_digest(result.get(field), f"{ref['path']} {field}")
+                    if _archived_sha(path.parent, name) != result[field]:
+                        raise ValueError(f"changed chain {name} in {ref['path']}")
+            if _archived_sha(path.parent, "mx_issue.o") != receipt["object_sha256"]:
+                raise ValueError(f"changed chain object in {ref['path']}")
+            object_archive_verified = True
+            elf_sha = compiler["elf_sha256"]
+            log_sha = compiler["spike_log_sha256"]
+        return {"receipt": ref["path"], "receipt_sha256": ref["sha256"],
+                "receipt_schema": schema, "profile_sha256": receipt["profile_sha256"],
+                "compiler_revision": revision,
+                "frontend_mlir_sha256": receipt["frontend_mlir_sha256"],
+                "bound_mlir_sha256": receipt["bound_mlir_sha256"],
+                "object_sha256": receipt["object_sha256"],
+                "object_archive_verified": object_archive_verified,
+                "elf_sha256": elf_sha, "spike_log_sha256": log_sha,
+                "checked_output_metrics": metrics}
+    return None
 
 
 def _full_matrix_result(entry: dict) -> dict | None:
@@ -87,8 +214,11 @@ def build_report(inventory: dict) -> dict:
     rows = []
     for entry in inventory["entries"]:
         proof = _full_matrix_result(entry)
+        chain_proof = _full_chain_result(entry) if proof is None else None
         if proof is not None:
             status = "generated_object_selected_spike_result_matched"
+        elif chain_proof is not None:
+            status = "generated_connected_chain_spike_result_matched"
         elif entry["evidence_references"]:
             status = "separate_evidence_requires_scope_review"
         else:
@@ -96,8 +226,8 @@ def build_report(inventory: dict) -> dict:
         row = {"name": entry["name"], "family": entry["family"],
                "source_sha256": entry["source_sha256"], "status": status,
                "source_reference_count": len(entry["evidence_references"])}
-        if proof is not None:
-            row["selected_spike_result"] = proof
+        if proof is not None or chain_proof is not None:
+            row["selected_spike_result"] = proof or chain_proof
         else:
             row["other_receipt_statuses"] = sorted({
                 ref["status"] for ref in entry["evidence_references"]
@@ -105,9 +235,9 @@ def build_report(inventory: dict) -> dict:
         rows.append(row)
     counts = Counter(row["status"] for row in rows)
     return {
-        "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v1",
-        "scope": ("a matched generated-object result is a selected Spike execution "
-                  "path, not complete C control flow, RTL timing, or FPGA parity"),
+        "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v2",
+        "scope": ("matched generated matrix and connected-chain results cover selected "
+                  "Spike output paths, not complete C control flow, RTL timing, or FPGA parity"),
         "rtl_revision": inventory["rtl_revision"],
         "source_inventory_sha256": _sha(INVENTORY),
         "programs": len(rows),

@@ -20,8 +20,9 @@ with `python -m tools.audit_nicolas_mx_roster --rtl-root "$MX_RTL_ROOT"
 --out docs/evidence/nicolas_mx_source_inventory_266c593/index.json --check`.
 The [program-level regeneration audit](evidence/nicolas_mx_regeneration_audit_266c593/README.md)
 validates selected-path generated-object Spike receipts for 156 matrix/LUT
-names, while listing the six connected matrix chains, seven other specialized
-programs, and two debug programs separately. Its categories retain each
+names and selected-path generated-executable receipts for all six connected
+FP4/FP6/FP8 matrix chains. Seven other specialized programs and two debug
+programs remain separate. Its categories retain each
 receipt's actual scope rather than treating every source-hash match as a full
 program qualification.
 
@@ -108,8 +109,9 @@ add 40,960 packed bytes and 2,560 scales.
 [Five E3M2 DIM8/DIM32 mesh replays](evidence/nicolas_e3m2_lut_requant_public_5b6dfc0_266c593/README.md)
 add 20,480 packed bytes and 1,280 scales. These matrix/LUT numerical replay
 suites cover **156 of 171 named MX source programs** for their selected Spike
-execution paths. The separate source
-program qualifications below are outside that matrix/LUT count.
+execution paths. The six connected chains below bring the audited
+selected-output count to **162 of 171**. The seven other specialized programs
+have separate evidence with narrower scopes.
 The [earlier 11-case suite](evidence/nicolas_direct_matrix_suite_9f3a759_266c593/README.md)
 remains archived. The 169 source-hash references above include many weaker
 forms of evidence and are not a count of compiler-regenerated programs.
@@ -120,7 +122,7 @@ qualifications. A two-matmul PyTorch graph captured with pinned model2MLIR
 lowers to a data-free RV64 MX object. On Nicolas's pinned Spike, the original
 C source and the compiler-linked program each pass; the latter matches all
 4,096 C1 and 4,096 C2 FP8 codes plus 128 E8M0 scales at each stage. This is
-one named source program beyond the 156 matrix/LUT numerical replay count.
+one of the six connected programs beyond the 156 matrix/LUT replay count.
 
 | Source family | Compiler evidence | Coverage boundary |
 |---|---|---|

@@ -15,14 +15,15 @@ INVENTORY = ROOT / "docs/evidence/nicolas_mx_source_inventory_266c593/index.json
 AUDIT = ROOT / "docs/evidence/nicolas_mx_regeneration_audit_266c593/index.json"
 
 
-def test_report_revalidates_every_selected_matrix_receipt() -> None:
+def test_report_revalidates_matrix_and_connected_chain_receipts() -> None:
     inventory = json.loads(INVENTORY.read_text())
     report = json.loads(AUDIT.read_text())
     assert build_report(inventory) == report
     assert report["programs"] == len(report["entries"]) == 171
     assert report["status_counts"] == {
         "generated_object_selected_spike_result_matched": 156,
-        "separate_evidence_requires_scope_review": 13,
+        "generated_connected_chain_spike_result_matched": 6,
+        "separate_evidence_requires_scope_review": 7,
         "no_direct_source_receipt": 2,
     }
     rows = {row["name"]: row for row in report["entries"]}
@@ -31,12 +32,18 @@ def test_report_revalidates_every_selected_matrix_receipt() -> None:
                 "matmul_ws_mx_generic", "matmul_single_tile_test"}
     chains = {name for name, row in rows.items()
               if row["family"] == "other_tiled_matrix" and
-              row["status"] == "separate_evidence_requires_scope_review"}
+              row["status"] == "generated_connected_chain_spike_result_matched"}
     assert chains == {f"matmul_tiled_{precision}_{shape}_chain"
                       for precision in ("fp4", "fp6", "fp8")
                       for shape in ("64x64", "128x128")}
+    assert rows["matmul_tiled_fp8_128x128_chain"][
+        "selected_spike_result"]["object_archive_verified"] is False
+    assert all(rows[name]["selected_spike_result"]["object_archive_verified"]
+               for name in chains if name != "matmul_tiled_fp8_128x128_chain")
     for row in rows.values():
-        if row["status"] == "generated_object_selected_spike_result_matched":
+        if row["status"] in {
+                "generated_object_selected_spike_result_matched",
+                "generated_connected_chain_spike_result_matched"}:
             assert row["family"] in {"asymmetric_matrix", "other_tiled_matrix"}
             assert row["selected_spike_result"]["checked_output_metrics"]
         else:
@@ -49,4 +56,13 @@ def test_report_rejects_stale_source_binding() -> None:
                   "matmul_tiled_fp8_128x128")
     matrix["source_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="stale source binding"):
+        build_report(inventory)
+
+
+def test_report_rejects_stale_connected_chain_binding() -> None:
+    inventory = json.loads(INVENTORY.read_text())
+    chain = next(row for row in inventory["entries"] if row["name"] ==
+                 "matmul_tiled_fp6_64x64_chain")
+    chain["source_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="stale chain source binding"):
         build_report(inventory)

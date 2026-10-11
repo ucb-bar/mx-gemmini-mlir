@@ -153,24 +153,54 @@
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_64x64_chain",
-      "other_receipt_statuses": [
-        "source_and_compiler_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "12297a5b7ec0aa08fb7d4ca01bb1f7b8a02c691b5b26a8519a3e2e2a20e17b78",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 128,
+          "compared_c1_fp6_codes": 4096,
+          "compared_c2_e8m0_scales": 128,
+          "compared_c2_fp6_codes": 4096
+        },
+        "compiler_revision": "ef16c11d31554e4fd07209b71a2d19fc30ab9c1b",
+        "elf_sha256": "9365c80ee3992014550d78856cb5d3de5a7c0574d40e081df9fb3bd64cf44ed8",
+        "frontend_mlir_sha256": "4a370cba79f947edae338a8a191afb4612f017a9d57446b9fbc0b0ba8b75dec8",
+        "object_archive_verified": true,
+        "object_sha256": "5c658945fab0de605337e53f597bebdc50615d814809f9d575804ad77253be08",
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_fp6_connected_resident_64_266c593/chain/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp6_connected_resident_spike.v1",
+        "receipt_sha256": "1da3e60ad06bbc0f4302fe2c609f3128f1918107579e75d96dc82dd818078afe",
+        "spike_log_sha256": "4065624bc07d4fa27ddd7ece1e0ad3bc584726d6879dcb40c9cba28a3c6a7ab8"
+      },
       "source_reference_count": 2,
       "source_sha256": "fc9cb61cd311d36183027158970e1c247840704dc467e9c13522ef3883d869be",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp6_128x128_chain",
-      "other_receipt_statuses": [
-        "source_and_compiler_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "0e16a1a19a9e3d57543179fb93a7865cbfd832cc2a0b46741ad9a60dbd23c958",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 512,
+          "compared_c1_fp6_codes": 16384,
+          "compared_c2_e8m0_scales": 512,
+          "compared_c2_fp6_codes": 16384
+        },
+        "compiler_revision": "ef16c11d31554e4fd07209b71a2d19fc30ab9c1b",
+        "elf_sha256": "6172697c5bf204709d300e8d1cdc93ad6dbfd8b9c8451f223345de56b78f3c8c",
+        "frontend_mlir_sha256": "b59d787b7c0e5a9f4c55a1a3edaf28d1c1ab080a9d90bb270919b31e71f62d9d",
+        "object_archive_verified": true,
+        "object_sha256": "ace608dc8a196d2c56bfc9a20344614e5dac273c465a14d82bd91fc5b87d3ecb",
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_fp6_connected_resident_128_266c593/chain/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp6_connected_resident_spike.v1",
+        "receipt_sha256": "cc88786b48531833887e1639919e33b803cc01679df74845a705ccaed71b1e4b",
+        "spike_log_sha256": "4065624bc07d4fa27ddd7ece1e0ad3bc584726d6879dcb40c9cba28a3c6a7ab8"
+      },
       "source_reference_count": 2,
       "source_sha256": "236dd96dc3385c83755112e75453927a746d49a01b7407c4265f00e00ecab0a0",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
@@ -3040,28 +3070,66 @@
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_64x64_chain",
-      "other_receipt_statuses": [
-        "source_connected_chain_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "31916076b9dc0076456079581f6f634d9b1985c9169b8cb43e00ec4cb3b93dbc",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 128,
+          "compared_c1_fp8_codes": 4096,
+          "compared_e8m0_scales": 128,
+          "compared_fp8_codes": 4096
+        },
+        "compiler_revision": "52e6132f59c793fd46af606c8e0c30a4c43bf41b",
+        "elf_sha256": "b47bb943cbfd5d78b374878f1bfcb8fba6a37cc0e8282cb2b5f2561a50de066a",
+        "frontend_mlir_sha256": "4e022769011c6492404d83e32bcfce2264f35d116307d7cbe2dedd7eff30de4a",
+        "object_archive_verified": true,
+        "object_sha256": {
+          "mx_0.o": "2088be8f9b39123913a1289f5bc3ab01fe870e2c53b510ee821ab324df0a097e",
+          "mx_1.o": "36964eb145209e7fad2d7a014dcd0da3be904f0362a903e6181dc6518663cc19",
+          "mx_2.o": "cffc1630a47231bbdd187168a325645a8571af456aa229b2b0f9e6f1c1918497",
+          "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+          "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+        },
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_plain_fp8_chain64_public_52e6132_266c593/parity/reference/build/artifact_manifest.json",
+        "receipt_schema": "mx_gemmini.nicolas_connected_plain_chain_64x64.v1",
+        "receipt_sha256": "c21b12875192c4749ec4f2385cf6e169d89efdcbf76b29cc9f3ca3109b88af1c",
+        "spike_log_sha256": "31165a6d6ef052b28d4e95b992bf53b914966e21117ec229ccd67687af94931f"
+      },
       "source_reference_count": 3,
       "source_sha256": "54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp8_128x128_chain",
-      "other_receipt_statuses": [
-        "derived_source_connected_chain_matched_on_pinned_spike",
-        "source_connected_chain_matched_on_pinned_spike",
-        "source_derived_square_128_vpu_pair_matched_on_pinned_spike",
-        "source_prefix_connected_chain_matched_on_pinned_spike",
-        "source_resident_mm2_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "0ce12feb7509a74040139412f33941b06dfdf0061aa6dfb6eadfb672d4213316",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 512,
+          "compared_c1_fp8_codes": 16384,
+          "compared_e8m0_scales": 512,
+          "compared_fp8_codes": 16384
+        },
+        "compiler_revision": "8dd3d1afe602b0b0cf9b87a0f7a5828c7390d86d",
+        "elf_sha256": "30f333270739af19e79e8059b0b1ee705c3a79986a211763cbf51a71c26ab25b",
+        "frontend_mlir_sha256": "77eede897619cffbbf4f9b5336707ac56923734ed0a7bd2d62cdc2c18f8d7164",
+        "object_archive_verified": false,
+        "object_sha256": {
+          "mx_0.o": "d6cd7a16833769d3eea21a0736738cb59dac1c8d0aed2959f80334e745483d4b",
+          "mx_1.o": "304ae82b3085c927151ea3418d4a4e49acb01401f715044fa32d3101a325e85d",
+          "mx_2.o": "1cdf7e11c7175406705936e88ebc7fd071e971a1f6f2ca7f15b507645e18c26d",
+          "mx_3.o": "3e5006bfec053c22a4c56c194961cb81cfc60728b4325609b2ff69a2eea1b153",
+          "mx_4.o": "8af20f7b9d77cf16e10c991eeaed86c3e4f84d5f9c26db4eb7212dcf422791bf"
+        },
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_connected_plain_chain_128_266c593/artifact_manifest.json",
+        "receipt_schema": "mx_gemmini.nicolas_connected_plain_chain_128.v1",
+        "receipt_sha256": "ad9e33b59c9159596ec2a0a76a358f033683327ae4ce83aa3d13720b0b19bfa5",
+        "spike_log_sha256": "7e6c31a8a7130ac1df209d884ccd0aae4a33441b2c80598c62dd2a02c012cb57"
+      },
       "source_reference_count": 51,
       "source_sha256": "043b8140516ce726c389d6c9c26c131faac7ef00dcb24e6d5dbf2e00591db944",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
@@ -3288,24 +3356,54 @@
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp4_64x64_chain",
-      "other_receipt_statuses": [
-        "source_and_compiler_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "f8bf7f8f3bdcb0bd7a299d15e98bdb3c1739ff764c66c805b1f0f3054597b93e",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 128,
+          "compared_c1_fp4_codes": 4096,
+          "compared_c2_e8m0_scales": 128,
+          "compared_c2_fp4_codes": 4096
+        },
+        "compiler_revision": "59c67720bb62c3ed0e2373ef364f758ca2dce7ab",
+        "elf_sha256": "9e04aeb5387a031c6c806c1a7b081946ed8373453045a28ea4402ad1f956191d",
+        "frontend_mlir_sha256": "624823a91f75a35d099f6a1a87a2aec0a62598d9c53ce6c1e2b462c931bbf4a1",
+        "object_archive_verified": true,
+        "object_sha256": "51746b4d48182d2de5730dc9e8bf5758bc261e079bbf525af2ab932d3891f4c4",
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_fp4_connected_resident_266c593/chain/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
+        "receipt_sha256": "ee312cd5d7a5bab07166db027604a010b28db62af0e4056a96db12c0bae14e45",
+        "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+      },
       "source_reference_count": 2,
       "source_sha256": "83a9ba1742da993d263bfcae1f9da9d1640e8ee1bfb556dfa05d30e612324257",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
       "name": "matmul_tiled_fp4_128x128_chain",
-      "other_receipt_statuses": [
-        "source_and_compiler_matched_on_pinned_spike",
-        "two_site_frontend_handoff_only"
-      ],
+      "selected_spike_result": {
+        "bound_mlir_sha256": "29fb1d7264bf771e42b893140deec713c9b2336ae1503ec6cd982fd05267bfb6",
+        "checked_output_metrics": {
+          "compared_c1_e8m0_scales": 512,
+          "compared_c1_fp4_codes": 16384,
+          "compared_c2_e8m0_scales": 512,
+          "compared_c2_fp4_codes": 16384
+        },
+        "compiler_revision": "c0f84e96909653aee5fcdb986231fd95cd33d12c",
+        "elf_sha256": "e02c572abfc1c9ec149da0c2a233e9436fd5696c7c2cf304a25390118349c32e",
+        "frontend_mlir_sha256": "1e6a168d3882dce32d8edcf1ca2fdc52ec80fa7e5e999a4a4d4135d8bbace454",
+        "object_archive_verified": true,
+        "object_sha256": "44e65be3de75db00db1938d126fb8672d8f6c15a06a23be756179e996cd428b8",
+        "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+        "receipt": "docs/evidence/nicolas_fp4_connected_resident_128_266c593/chain/receipt.json",
+        "receipt_schema": "mx_gemmini.nicolas_fp4_connected_resident_spike.v1",
+        "receipt_sha256": "abb63c5ac7dedce1426bdc13c6ecbc7d9e4d87ffde11b2fe2b5672d499a19f6d",
+        "spike_log_sha256": "024cf60b45c5f69121013cf834b138920337a063a964e0589b07221d4541597f"
+      },
       "source_reference_count": 2,
       "source_sha256": "79d924969bc431427f3afecbc11b7895d1e6314cd7019d8b8743ea8281682219",
-      "status": "separate_evidence_requires_scope_review"
+      "status": "generated_connected_chain_spike_result_matched"
     },
     {
       "family": "other_tiled_matrix",
@@ -4107,12 +4205,13 @@
   ],
   "programs": 171,
   "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
-  "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v1",
-  "scope": "a matched generated-object result is a selected Spike execution path, not complete C control flow, RTL timing, or FPGA parity",
+  "schema": "mx_gemmini.nicolas_mx_regeneration_audit.v2",
+  "scope": "matched generated matrix and connected-chain results cover selected Spike output paths, not complete C control flow, RTL timing, or FPGA parity",
   "source_inventory_sha256": "7e2dde9deddeac9b04fd962183086e059b55cf0b3a1fe8a32b1ccb04130d5ac6",
   "status_counts": {
+    "generated_connected_chain_spike_result_matched": 6,
     "generated_object_selected_spike_result_matched": 156,
     "no_direct_source_receipt": 2,
-    "separate_evidence_requires_scope_review": 13
+    "separate_evidence_requires_scope_review": 7
   }
 }
