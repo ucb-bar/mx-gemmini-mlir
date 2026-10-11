@@ -654,9 +654,14 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower the bound source, including a pinned I-chunk schedule if selected."""
     from .chunked_i import lower_i_chunks, selected_i_chunks
+    from .native_dram import lower_native_dram, selected_native_dram
 
     chunks = selected_i_chunks(mlir_text, profile, manifest)
+    native_dram = selected_native_dram(mlir_text, profile, manifest)
+    if chunks is not None and native_dram:
+        raise ValueError("MX source selects incompatible physical schedules")
     base = _lower_bound_source_regular(mlir_text, profile, manifest,
                                        resources, mode=mode)
-    return base if chunks is None else lower_i_chunks(base, profile, manifest,
-                                                       chunks)
+    if chunks is not None:
+        return lower_i_chunks(base, profile, manifest, chunks)
+    return lower_native_dram(base, profile, manifest) if native_dram else base

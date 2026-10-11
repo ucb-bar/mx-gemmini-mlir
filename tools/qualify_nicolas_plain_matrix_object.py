@@ -19,6 +19,7 @@ import sys
 from mx_gemmini_support.bind_payload import bind_payload, select_bf16_output_layout
 from mx_gemmini_support.bind_profile import bind_handoff
 from mx_gemmini_support.chunked_i import bind_i_chunks
+from mx_gemmini_support.native_dram import bind_native_dram
 from mx_gemmini_support.source_gemm import SourceGemm
 from mx_gemmini_support.source_fp6 import read_source_fp6_payload
 from mx_gemmini_support.source_payload import (NICOLAS_SOURCE_HEADER_ORIGIN,
@@ -49,6 +50,7 @@ class Case:
     label: str
     quant_output: bool = False
     i_chunks: int = 1
+    native_dram: bool = False
 
 
 CASES = {
@@ -395,6 +397,18 @@ CASES[_chunk2d_key] = Case(
     ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
      "B_in", "B_scales_col"), "FP8 128 cubed chunked 2D scales", i_chunks=2)
 
+_native_key = "fp8_128x128x128_native_dram"
+CASES[_native_key] = Case(
+    _native_key, "FP8", (128, 128, 128), (128, 128, 128),
+    "matmul_tiled_fp8_128x128_dramloop.c", "matmul_fp8_128x128.h",
+    "53b5f60844725aa9e289a1c3833002fe777c2a3b41ea64a31b05c2237eb32277",
+    _CHUNK_HEADER_SHA256, "MxGemminiRocketConfig",
+    ("activation", "activation_scales", "output_bf16",
+     "scratch_output_scales", "weight", "weight_scales"),
+    ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+     "B_in", "B_scales_col"), "FP8 128 cubed native DRAM loop",
+    native_dram=True)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -499,6 +513,64 @@ def _audit_chunked_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
                                              if cmd[1] == 8]}
 
 
+def _audit_native_dram_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
+    """Match the native loop's source pointer, stride, and scale semantics."""
+    physical = json.loads((object_dir / "physical_program.json").read_text())
+    steps = physical["steps"]
+    if (not case.native_dram or physical["shape_mnk"] != [128, 128, 128] or
+            profile["geometry"]["mesh_columns"] != 16 or
+            physical["plan"].get("execution_transport") != "native_dram_loop" or
+            any(step["phase"] in {"move_activation", "move_weight", "compute",
+                                   "readout"} for step in steps)):
+        raise ValueError("compiler did not select Nicolas's native DRAM loop")
+    native = [step["command"] for step in steps
+              if step["phase"] == "native_dram_loop"]
+    if [command.get("funct") for command in native] != [9, 10, 11, 12, 13, 8, None]:
+        raise ValueError("compiler native DRAM loop command order differs")
+    expected = (
+        (0, (8 << 32) | (8 << 16) | 8),
+        ("activation", "weight"),
+        (0, "output_bf16"),
+        (128, 128),
+        (0, 128),
+        ((1 << 18) | (1 << 16), 0),
+    )
+    actual = tuple(tuple(command[register]["buffer"] if
+                         command[register]["buffer"] is not None else
+                         command[register]["immediate"]
+                         for register in ("rs1", "rs2")) for command in native[:-1])
+    if actual != expected:
+        raise ValueError("compiler native DRAM loop operands differ from source")
+    scale_commands = [step["command"] for step in steps
+                      if step["phase"] == "upload_scales" and
+                      step["command"].get("funct") == 27]
+    if (len(scale_commands) != 2 or
+            [(command["rs1"]["buffer"], command["rs1"]["byte_offset"],
+              command["rs1"]["or_bits"], command["rs2"]["immediate"])
+             for command in scale_commands] != [
+                ("activation_scales", 0, 128 << 40, (4 << 46) | 128),
+                ("weight_scales", 0, 128 << 40,
+                 (4 << 46) | (1 << 32) | 128)]):
+        raise ValueError("compiler scales differ from contiguous source arrays")
+    selectors = [step["command"] for step in steps
+                 if step["phase"] == "select_scales"]
+    if (len(selectors) != 1 or selectors[0].get("funct") != 26 or
+            selectors[0]["rs1"]["buffer"] != "scratch_output_scales" or
+            selectors[0]["rs1"]["or_bits"] !=
+            ((8 << 51) | (8 << 42) | (8 << 33))):
+        raise ValueError("compiler native loop scale selector differs")
+    return {"schema": "mx_gemmini.nicolas_fp8_native_dram_audit.v1",
+            "source_driver_sha256": case.source_sha256,
+            "profile_sha256": profile_sha256(profile),
+            "physical_program_sha256": _sha(object_dir / "physical_program.json"),
+            "native_command_functs": [command["funct"] for command in native[:-1]],
+            "native_pointer_buffers": ["activation", "weight", "output_bf16"],
+            "loop_bounds_ijk": [8, 8, 8],
+            "scale_bytes_per_side": 512,
+            "explicit_operand_dma_commands": 0,
+            "explicit_output_dma_commands": 0}
+
+
 def _run_alternate_fp8_source(rtl_root: Path, riscv_root: Path,
                               out_dir: Path, source: Path) -> dict:
     """Run the pinned handwritten program as an independent source oracle."""
@@ -547,6 +619,30 @@ def _run_chunked_fp8_source(rtl_root: Path, riscv_root: Path,
             "source_golden_bf16_values_checked": 128 * 128}
 
 
+def _run_native_fp8_source(rtl_root: Path, riscv_root: Path,
+                           out_dir: Path, source: Path) -> dict:
+    """Run Nicolas's pinned native DRAM-loop program on the same Spike."""
+    from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+    software = rtl_root / "software/gemmini-rocc-tests"
+    build = out_dir / "source_baseline"
+    elf = _compile_program(build, source, software,
+                           riscv_root / "bin/riscv64-unknown-elf-gcc", None)
+    so = out_dir / "run/libgemmini.so"
+    result = subprocess.run([str(riscv_root / "bin/spike"), f"--extlib={so}",
+                             "--extension=gemmini", str(elf)],
+                            cwd=build, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, check=False)
+    log = build / "spike.log"
+    log.write_text(result.stdout)
+    if (result.returncode or
+            "fp8 WS native-loop matmul test PASSED (no mismatches)." not in result.stdout):
+        raise ValueError("Nicolas native FP8 DRAM-loop source failed on pinned Spike")
+    return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
+            "source_spike_exit_code": result.returncode,
+            "source_golden_bf16_values_checked": 128 * 128}
+
+
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     """Admit only a Nicolas test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
@@ -584,7 +680,9 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
         raise ValueError("Nicolas chunked FP8 schedule changed")
     alternate_mvin = case.key == "fp8_32x32x32_alternate_mvin"
     required = (f'#include "include/{case.header_name}"', "gemmini_mx_load_scales",
+                "gemmini_loop_ws" if case.native_dram else
                 "gemmini_loop_ws_spad",
+                "C_hw" if case.native_dram else
                 "gemmini_mx_read_smem" if alternate_mvin else
                 "gemmini_extended_mvout")
     if not case.quant_output:
@@ -602,6 +700,10 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
             "uint32_t sp_addr = b_base + (j * tiles_K + k) * DIM;",
             "gemmini_mx_read_smem(&C_hw[0][0], SPAD_DEST * 16, MATMUL_M * MATMUL_N);")):
         raise ValueError("Nicolas alternate FP8 transfer source changed")
+    if case.native_dram and any(marker not in source for marker in (
+            "A_in, B_in, NULL, C_hw,", "MATMUL_K, MATMUL_N, 0, MATMUL_N,",
+            "1, 1, false);", "gemmini_mxquant_config_mvout")):
+        raise ValueError("Nicolas native DRAM-loop source changed")
     header_text = header.read_text()
     for axis, extent in zip(("M", "N", "K"), case.shape):
         if re.search(rf"^#define MATMUL_{axis}\s+{extent}$", header_text, re.M) is None:
@@ -837,6 +939,8 @@ def main(default_case: str | None = None) -> None:
         bound = select_bf16_output_layout(bound, profile, manifest)
     if case.i_chunks > 1:
         bound = bind_i_chunks(bound, profile, manifest, case.i_chunks)
+    if case.native_dram:
+        bound = bind_native_dram(bound, profile, manifest)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -856,6 +960,11 @@ def main(default_case: str | None = None) -> None:
         chunk_audit = _audit_chunked_fp8(object_dir, profile, case)
         (args.out_dir / "chunk_equivalence.json").write_text(
             json.dumps(chunk_audit, indent=2, sort_keys=True) + "\n")
+    native_audit = None
+    if case.native_dram:
+        native_audit = _audit_native_dram_fp8(object_dir, profile, case)
+        (args.out_dir / "native_dram_equivalence.json").write_text(
+            json.dumps(native_audit, indent=2, sort_keys=True) + "\n")
     mesh_dim = profile["geometry"]["mesh_columns"]
     if profile["geometry"]["mesh_rows"] != mesh_dim:
         raise ValueError("Nicolas source qualifier needs a square MX mesh")
@@ -866,7 +975,10 @@ def main(default_case: str | None = None) -> None:
         if case.key == "fp8_32x32x32_alternate_mvin" else
         _run_chunked_fp8_source(rtl_root, args.riscv_root.resolve(),
                                 args.out_dir, kernel.driver)
-        if case.i_chunks > 1 else None)
+        if case.i_chunks > 1 else
+        _run_native_fp8_source(rtl_root, args.riscv_root.resolve(),
+                               args.out_dir, kernel.driver)
+        if case.native_dram else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -921,6 +1033,11 @@ def main(default_case: str | None = None) -> None:
         receipt["i_chunks"] = case.i_chunks
         receipt["chunk_equivalence_sha256"] = _sha(
             args.out_dir / "chunk_equivalence.json")
+        receipt["source_baseline"] = source_baseline
+    if case.native_dram:
+        receipt["native_dram_loop"] = True
+        receipt["native_dram_equivalence_sha256"] = _sha(
+            args.out_dir / "native_dram_equivalence.json")
         receipt["source_baseline"] = source_baseline
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
