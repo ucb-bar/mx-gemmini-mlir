@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from .command_ir import Command, Fence
 from .nicolas_attention_shape import DenseAttentionShape
@@ -27,6 +28,43 @@ SP_O = 13056
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _source_defines(source: str) -> dict[str, str]:
+    """Read preprocessor constants that select the source kernel's semantics."""
+    result = {}
+    for match in re.finditer(r"^[ \t]*#define[ \t]+([A-Za-z_]\w*)"
+                             r"(?:[ \t]+([^\r\n]*))?$", source, re.MULTILINE):
+        name = match.group(1)
+        if name in result:
+            raise ValueError(f"flash source policy repeats {name}")
+        result[name] = (match.group(2) or "").split("//", 1)[0].split(
+            "/*", 1)[0].strip()
+    return result
+
+
+def _check_source_policy(source_wrapper: str, source_core: str,
+                         source_header: str, shape: DenseAttentionShape,
+                         block_k: int) -> None:
+    header = _source_defines(source_header)
+    expected = {"ATTN_SQ": str(shape.sq), "ATTN_SK": str(shape.sk),
+                "ATTN_D": str(shape.d), "ATTN_CAUSAL": "0",
+                "ATTN_HEADS": "1", "ATTN_SCALE_IN_Q": "0"}
+    guards = {name for name in header if name.startswith("INCLUDE_ATTN_VPU_")}
+    if (len(guards) != 1 or set(header) != set(expected) | guards or
+            any(header.get(name) != value for name, value in expected.items())):
+        raise ValueError("flash source header selects an unsupported policy")
+    if source_wrapper != source_core:
+        wrapper = _source_defines(source_wrapper)
+        allowed = {"BK": str(block_k)}
+        optional = {"ATTN_HEADER": f'"attn_vpu_mid.h"',
+                    "ATTN_EXPECT": f'"attn_flash_mid_expect.h"'}
+        if (wrapper.get("BK") != str(block_k) or
+                set(wrapper) - set(allowed) - set(optional) or
+                any(wrapper[name] != value for name, value in optional.items()
+                    if name in wrapper) or
+                source_wrapper.count('#include "attn_flash.c"') != 1):
+            raise ValueError("flash source wrapper selects an unsupported policy")
 
 
 def flash_buffer_abi(shape: DenseAttentionShape, block_k: int
@@ -79,6 +117,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             'gemmini_mx_load_scales_2d_gated' not in source_core or
             'gemmini_mxquant_config_mvout_managed' not in source_core):
         raise ValueError("pinned flash source or geometry differs")
+    _check_source_policy(source_wrapper, source_core, source_header,
+                         shape, block_k)
     _audit_frontend_edges(frontend, shape)
     shape.validate(profile)
     if (profile.get("source", {}).get("gemmini_revision") !=

@@ -20,6 +20,8 @@ from tools.emit_resident_pair_object import _compile_object, _file_sha, _load_ml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PINNED_CORE_SHA256 = "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0"
+PINNED_MID_WRAPPER_SHA256 = "5f46198f35539b261ccbc2c689ce56beb823ba7e6ec74d8ff60936418619089f"
 
 
 def _source_text(path: Path) -> str:
@@ -52,6 +54,11 @@ def main() -> None:
         raise ValueError("flash object binding has no selected source shape")
     shape, block_k = DenseAttentionShape(*dims[:3]), dims[3]
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k)
+    if (_file_sha(args.source_core) != PINNED_CORE_SHA256 or
+            _file_sha(args.source_wrapper) != (PINNED_MID_WRAPPER_SHA256
+                                                if block_k == 32 else
+                                                PINNED_CORE_SHA256)):
+        raise ValueError("flash object needs pinned Nicolas source core and wrapper")
     frontend = precursor_bytes.decode()
     core = _source_text(args.source_core)
     wrapper = _source_text(args.source_wrapper)

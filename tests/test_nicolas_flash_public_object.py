@@ -70,5 +70,5 @@ def test_public_flash_object_reproduces_archived_spike_issuer(
         rejected_command,
         cwd=ROOT, capture_output=True, text=True)
     assert rejected.returncode != 0
-    assert "typed flash source, frontend, graph, or binding differs" in rejected.stderr
+    assert "flash object needs pinned Nicolas source core and wrapper" in rejected.stderr
     assert not (tmp_path / "rejected").exists()

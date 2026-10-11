@@ -71,6 +71,16 @@ def test_default_flash_rejects_changed_scale_and_unselected_shape() -> None:
         flash_buffer_abi(FA_SHAPE, 32)
 
 
+def test_default_flash_rejects_fp4_or_causal_header() -> None:
+    frontend, header = _inputs()
+    for altered in (header + "\n#define ATTN_FP4 1\n",
+                    header.replace("#define ATTN_CAUSAL 0",
+                                   "#define ATTN_CAUSAL 1")):
+        with pytest.raises(ValueError, match="unsupported policy"):
+            render_flash_mid(frontend, CORE, CORE, altered, PROFILE,
+                             shape=FA_SHAPE, block_k=64)
+
+
 def test_archived_default_flash_matches_every_bf16_output_twice() -> None:
     receipt = json.loads((EVIDENCE / "receipt.json").read_text())
     manifest = json.loads((EVIDENCE / "object_manifest.json").read_text())

@@ -69,6 +69,22 @@ def test_flash_mid_requires_gated_weight_slice_before_managed_matmul() -> None:
                         frontend, CORE, WRAPPER, header, PROFILE)
 
 
+def test_flash_mid_rejects_unlowered_source_policies() -> None:
+    frontend, header = _inputs()
+    for altered_header in (
+            header.replace("#define ATTN_CAUSAL 0", "#define ATTN_CAUSAL 1"),
+            header + "\n#define ATTN_FP4 1\n",
+            header.replace("#define ATTN_SCALE_IN_Q 0",
+                           "#define ATTN_SCALE_IN_Q 1")):
+        with pytest.raises(ValueError, match="unsupported policy"):
+            render_flash_mid(frontend, CORE, WRAPPER, altered_header, PROFILE)
+    with pytest.raises(ValueError, match="unsupported policy"):
+        render_flash_mid(frontend, CORE,
+                         WRAPPER.replace("#define BK 32",
+                                         "#define BK 32\n#define ATTN_EXPSUM 1"),
+                         header, PROFILE)
+
+
 def test_archived_flash_mid_matches_every_bf16_output_twice() -> None:
     receipt = json.loads((EVIDENCE / "receipt.json").read_text())
     manifest = json.loads((EVIDENCE / "object_manifest.json").read_text())
