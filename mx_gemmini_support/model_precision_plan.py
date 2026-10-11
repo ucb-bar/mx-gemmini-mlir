@@ -99,13 +99,14 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         })
     for site in worklist["other_contraction_regions"]:
         stage = attention_stages.get(site["region_id"])
-        if stage:
+        shape = batched_shapes.get(site["region_id"])
+        if stage and shape:
             selected, preferred = "mxfp8", "mxfp8"
             status, reason = "requires_fp8_batched_lowering", None
         else:
             selected, preferred = "host", "host"
-            status, reason = "requires_host_lowering", None
-        shape = batched_shapes.get(site["region_id"])
+            status = "requires_host_lowering"
+            reason = "unsupported_batched_shape_or_abi" if stage else None
         sites.append({
             "region_id": site["region_id"], "fqn": site["fqn"],
             "source_op": site["source_op"], "role": stage or "unclassified",

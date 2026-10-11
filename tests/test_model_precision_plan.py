@@ -71,6 +71,19 @@ def test_precision_plan_rejects_profile_swap() -> None:
         build_model_precision_plan(worklist, VPU)
 
 
+def test_attention_region_without_legal_batched_abi_stays_on_host() -> None:
+    frontend = gzip.decompress((ARCHIVE / "tinyllama.mlir.gz").read_bytes()).decode()
+    worklist = build_model2mlir_worklist(frontend, VPU)
+    first = next(site["region_id"] for site in build_model_precision_plan(worklist, VPU)["sites"]
+                 if site["role"] == "qk")
+    worklist["rank3_batch_matmuls"] = [site for site in worklist["rank3_batch_matmuls"]
+                                       if site["region_id"] != first]
+    plan = build_model_precision_plan(worklist, VPU)
+    site = next(site for site in plan["sites"] if site["region_id"] == first)
+    assert site["selected_format"] == "host"
+    assert site["reason"] == "unsupported_batched_shape_or_abi"
+
+
 def test_current_small_llama_attention_and_padding_proposal() -> None:
     archive = ROOT / "docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593"
     graph = gzip.decompress((archive / "small_llama.model2mlir.mlir.gz").read_bytes()).decode()

@@ -44,22 +44,24 @@ def build_mx_worklist_from_merlin(mlir_text: str, profile: dict) -> dict:
                 group["fqns"].add(prov["fqn"])
             group["operations"].append(op["kind"])
         if op["kind"] == "linalg.generic" and prov.get("family") == "contraction" and prov.get("op") == "batch_matmul":
-            if prov.get("aten") != "aten.bmm.default" or not prov.get("region_id"):
-                raise ValueError("Merlin batch matmul has unsupported source provenance")
+            if not prov.get("region_id"):
+                raise ValueError("Merlin batch matmul has no source region identity")
+            if prov.get("aten") != "aten.bmm.default":
+                continue  # retain this region below as a host-owned candidate
             inputs, outputs, results = op["ins"], op["outs"], op["results"]
             if len(inputs) != 2 or len(outputs) != 1 or len(results) != 1:
-                raise ValueError("Merlin batch matmul has unsupported operand convention")
+                continue
             types = [*inputs, *outputs, *results]
             if any(len(t["shape"]) != 3 or t["dtype"] not in {"f32", "bf16"} for t in types):
-                raise ValueError("Merlin batch matmul needs static rank-three floating tensors")
+                continue
             if len({t["dtype"] for t in types}) != 1:
-                raise ValueError("Merlin batch matmul has mixed element types")
+                continue
             (batch, m, k), (rhs_batch, rhs_k, n), output, result = [t["shape"] for t in types]
             if (not all(type(dim) is int and dim > 0 for dim in
                         (batch, m, k, rhs_batch, rhs_k, n)) or
                     batch != rhs_batch or k != rhs_k or
                     output != [batch, m, n] or result != output):
-                raise ValueError("Merlin batch matmul has inconsistent static shapes")
+                continue
             batch_matmuls.append({
                 "fqn": prov.get("fqn"), "region_id": prov["region_id"],
                 "source_op": "batch_matmul", "shape_bmnk": [batch, m, n, k],
