@@ -1,0 +1,39 @@
+{
+  "bound_mlir_sha256": "605a2621648fd9b02b0a04e5118b95266506db070acbfff8db42131709581efe",
+  "case": "fp4_64x64x64_dram_mvout_spike",
+  "compiler_scale_loading": "source_header_2d_rocc",
+  "compiler_transport": "rocket_rocc",
+  "compute_waves": 1,
+  "mvout_byte_offsets_and_acc_rows": [
+    [
+      0,
+      2147483648
+    ],
+    [
+      64,
+      2147483664
+    ],
+    [
+      4096,
+      2147483680
+    ],
+    [
+      4160,
+      2147483696
+    ]
+  ],
+  "mvout_commands": 4,
+  "numerical_qualification": "unqualified",
+  "object_manifest_sha256": "d4ccb4eab052afb77617b7912326af9dd33a145548169ac625cc51a06e43ae67",
+  "object_sha256": "55b05ae01a3eb4f545bec6e6e986b231aead311714077ec43407a0b21ac11a43",
+  "physical_program_sha256": "7a4341cf81ffbfbae7803eff2f78e6ac9b97790738f2b88a4231250b5f2bd1ac",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_accumulator_command_audit.v1",
+  "source_bundle_manifest_sha256": "e52cb0c3abf6ada7b34c4380b929867ba97e963ebf70fe7b0cc34d21d36e24fd",
+  "source_driver_sha256": "c1729048ccab7836598b55bdb747d6c75489d792683abd300c10368627301155",
+  "source_handoff_sha256": "f6290679b49b00ebda195e02a627e0a5b0d8bb9296493a26ebfd272f5103203c",
+  "source_hardware_scale_loading": "constant_e8m0_0x7f_mmio",
+  "source_hardware_transport": "mx_mmio_gateway",
+  "status": "accumulator_compute_and_mvout_geometry_matched",
+  "store_stride_bytes": 256
+}

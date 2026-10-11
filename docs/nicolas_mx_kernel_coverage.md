@@ -64,6 +64,14 @@ The [three DRAM-mvout Spike fallback replays](evidence/nicolas_dram_mvout_spike_
 add three named programs and 24,576 BF16 comparisons. Each source's `SPIKE_SIM`
 path stores C at scratchpad row zero, and the generated object matches the
 entire golden. The hardware accumulator-to-DRAM branches remain unqualified.
+The [three accumulator command objects](evidence/nicolas_accumulator_readout_objects_266c593/README.md)
+now select an accumulator source on the typed BF16 readout and reproduce each
+source geometry's compute destination and MVOUT addresses in data-free RV64
+Rocket objects. They are command-generation evidence only: Nicolas's hardware
+C path uses an MMIO gateway and constant `0x7f` scale SRAM values, whereas
+these objects use RoCC and source-header scales. Stock Spike cannot execute
+the accumulator destination, so hardware numerical and timing parity are
+still open.
 The [three same-format LUT source programs](evidence/nicolas_symmetric_lut_public_4e30dcf_266c593/README.md)
 also pass through public data-free objects with their dedicated E2M3, E4M3,
 and E5M2 Rocket profiles, matching 12,288 BF16 values. Three more

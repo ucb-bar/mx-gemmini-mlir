@@ -1,0 +1,87 @@
+{
+  "bound_mlir_sha256": "b3be3609abf28cb7e4c1f72d4b1b28ee995964e453eacdcb338c7716bb730061",
+  "case": "fp8_128x128x256_dram_mvout_spike",
+  "compiler_scale_loading": "source_header_2d_rocc",
+  "compiler_transport": "rocket_rocc",
+  "compute_waves": 2,
+  "mvout_byte_offsets_and_acc_rows": [
+    [
+      0,
+      2147483648
+    ],
+    [
+      128,
+      2147483664
+    ],
+    [
+      4096,
+      2147483680
+    ],
+    [
+      4224,
+      2147483696
+    ],
+    [
+      8192,
+      2147483712
+    ],
+    [
+      8320,
+      2147483728
+    ],
+    [
+      12288,
+      2147483744
+    ],
+    [
+      12416,
+      2147483760
+    ],
+    [
+      16384,
+      2147483776
+    ],
+    [
+      16512,
+      2147483792
+    ],
+    [
+      20480,
+      2147483808
+    ],
+    [
+      20608,
+      2147483824
+    ],
+    [
+      24576,
+      2147483840
+    ],
+    [
+      24704,
+      2147483856
+    ],
+    [
+      28672,
+      2147483872
+    ],
+    [
+      28800,
+      2147483888
+    ]
+  ],
+  "mvout_commands": 16,
+  "numerical_qualification": "unqualified",
+  "object_manifest_sha256": "f2a4afbcdda4fb9cff36b1346bba7f449f402d6cbcfd6aad21ec2526722308db",
+  "object_sha256": "6b89572a30debf5f1b88e17f627acee03a4e1e38622d2f97b7c16b3d2cffe80b",
+  "physical_program_sha256": "fb59e12a36f4efa361bef19474c962b5d1fcd6dd535481a058e7d224c212f20a",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_accumulator_command_audit.v1",
+  "source_bundle_manifest_sha256": "fd93a0a2543804c9f71dbe32099eb773c6a966163d34fece3a299c2630d4ebf1",
+  "source_driver_sha256": "2d87a0a987c90f7855e69ae46e3429e490a6d4661a63f3d6d4d3043b777dd689",
+  "source_handoff_sha256": "ab49b4b632945083423c30a9aaf6f51b500588468d45721471eb92e196989648",
+  "source_hardware_scale_loading": "constant_e8m0_0x7f_mmio",
+  "source_hardware_transport": "mx_mmio_gateway",
+  "status": "accumulator_compute_and_mvout_geometry_matched",
+  "store_stride_bytes": 256
+}

@@ -1,0 +1,98 @@
+{
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "18cab61ecb94cd074f1bb45223128fabcff58d7729f3471206849d39dee4ec22",
+  "buffer_abi": [
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "activation",
+      "position": 0,
+      "role": "read"
+    },
+    {
+      "address_masks": [
+        1099511627775
+      ],
+      "alignment_bytes": 64,
+      "layout": "k_group_row_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "activation_scales",
+      "position": 1,
+      "role": "read"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16",
+      "maximum_byte_offset": 6144,
+      "minimum_bytes": 8192,
+      "name": "output_bf16",
+      "position": 2,
+      "role": "write"
+    },
+    {
+      "address_masks": [
+        8589934591
+      ],
+      "alignment_bytes": 64,
+      "layout": "e8m0_scale_storage",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 2048,
+      "name": "scratch_output_scales",
+      "position": 3,
+      "role": "scratch"
+    },
+    {
+      "address_masks": [],
+      "alignment_bytes": 64,
+      "layout": "row_major_codes",
+      "maximum_byte_offset": 3120,
+      "minimum_bytes": 4096,
+      "name": "weight",
+      "position": 4,
+      "role": "read"
+    },
+    {
+      "address_masks": [
+        1099511627775
+      ],
+      "alignment_bytes": 64,
+      "layout": "k_group_column_e8m0",
+      "maximum_byte_offset": 0,
+      "minimum_bytes": 128,
+      "name": "weight_scales",
+      "position": 5,
+      "role": "read"
+    }
+  ],
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "execution_scope": "hardware_accumulator_commands_only",
+  "hardware_numerical_qualification": "unqualified",
+  "issuer_c_sha256": "efc2c5e0123be19c2a09c0f1474c832555aaba4a1c654882155312ca8abd0541",
+  "issuer_h_sha256": "341aa938eaf7d7379a64431494fbedfe1ecdc1676f188a3a5e1329130d165aab",
+  "mode": "rtl_accumulator",
+  "object_emitter_sha256": "5085e94a55471e58aed8676f8c9a75be6a51c4f0aff7cfdbcc5cc94096ea954f",
+  "object_sha256": "d179e5bd407b1491df0197d013b7935a4a8562da3138eb7c63f9a305a18d2f7f",
+  "payload_manifest_sha256": "563c63beda1f8b51f3df1dc19c72c361393e68fdb09df29b0d66a39ff7ed45c3",
+  "physical_program_sha256": "189edbd51dfcd8530624540b05fe7d4df783a1f426bf19986e3f104d8f927f7d",
+  "profile_sha256": "bf54ac354c298cc71db23598f569fda73b9b2e46df5f7683bdac17a94fac0e3c",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.linkable_object.v1",
+  "shape_mnk": [
+    64,
+    64,
+    64
+  ],
+  "source_bundle_manifest_sha256": "4e30827e24e3e4ab96d81d7f1c8e1158aa83f1daca10b231da8a78a6539e566d",
+  "status": "rv64_rocc_issuer_object_built",
+  "stock_spike_supported": false,
+  "transport": "rocket_rocc",
+  "undefined_symbols": []
+}
