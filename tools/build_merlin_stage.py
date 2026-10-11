@@ -42,6 +42,33 @@ def _can_hash_first_output(stage: Path) -> bool:
     return np.load(golden, mmap_mode="r", allow_pickle=False).dtype == np.dtype("float32")
 
 
+def _raw_selected_regions(source: Path, profile: dict) -> set[str]:
+    from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
+    from mx_gemmini_support.model_precision_plan import build_model_precision_plan
+
+    worklist = build_mx_worklist_from_merlin(source.read_text(encoding="utf-8"), profile)
+    precision = build_model_precision_plan(worklist, profile)
+    regions = [site["region_id"] for site in precision["sites"]
+               if site["selected_format"] in {"mxfp4", "mxfp8"}]
+    if len(regions) != len(set(regions)):
+        raise ValueError("MX raw capture has duplicate selected source regions")
+    return set(regions)
+
+
+def _require_source_coverage(expected_regions: set[str], catalog: dict) -> None:
+    actual_regions = [binding["region"] for binding in catalog["bindings"]]
+    if len(actual_regions) != len(set(actual_regions)):
+        raise RuntimeError("MX linked catalog has duplicate source regions")
+    missing_regions = sorted(expected_regions - set(actual_regions))
+    extra_regions = sorted(set(actual_regions) - expected_regions)
+    if missing_regions or extra_regions or catalog["unbound_precision_proposals"]:
+        raise RuntimeError(
+            "MX stage build did not cover every raw selected operation: "
+            f"missing={missing_regions}, extra={extra_regions}, "
+            f"unbound={len(catalog['unbound_precision_proposals'])}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", type=Path, required=True)
@@ -88,6 +115,7 @@ def main() -> None:
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
     from mx_gemmini_support.target_profile import profile_sha256
 
+    expected_regions = _raw_selected_regions(source, profile)
     device = DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
@@ -104,6 +132,7 @@ def main() -> None:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     elf = Path(result["elf"])
     catalog = json.loads((work / "device_catalog/mx_catalog.json").read_text(encoding="utf-8"))
+    _require_source_coverage(expected_regions, catalog)
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
@@ -114,6 +143,8 @@ def main() -> None:
         "profile_sha256": profile_sha256(profile),
         "catalog_manifest": str(work / "device_catalog/mx_catalog.json"),
         "selected_operations": catalog["covered_contractions"],
+        "expected_selected_operations": len(expected_regions),
+        "raw_selected_source_coverage_complete": True,
         "unbound_precision_proposals": len(catalog["unbound_precision_proposals"]),
         "widened_bf16_contractions": widened_bf16,
         "unique_kernels": catalog["unique_kernels"],

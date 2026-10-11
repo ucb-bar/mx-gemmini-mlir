@@ -257,9 +257,11 @@ Exact source binding now inventories all four full-checkpoint sessions. The
 f32 catalog binds 199 sites in each TinyLlama stage, 253 in each Qwen stage,
 and 235 in each Gemma stage. SmolVLA originally bound 139 prefix-encode and
 116 flow-denoise sites; the other 72 prefix proposals were BF16 `addmm` matrix
-components. `MXBF16CatalogPreparation` now widens those exact zero-initialized
-BF16 matmuls to the catalog's f32 pointer ABI and narrows the matrix result
-before the original BF16 bias epilogue. The transformed SmolVLA prefix source
+components. `MXBF16CatalogPreparation` now handles both raw BF16 matmuls and
+Merlin's prepared BF16-input, f32-accumulator generic form. It widens only
+the exact zero-initialized selected matrix operands to the catalog's f32
+pointer ABI. The existing BF16 result narrowing and original bias epilogue
+stay in order. The transformed SmolVLA prefix source
 binds all 211 selected matmuls with no unbound precision proposals and 12
 unique kernels. The 211-site catalog compiled to a relocatable RV64 object
 with a 7,964,672-byte shared workspace. This is structural coverage, not BF16
@@ -305,7 +307,8 @@ ABI, memref shim, host lowering, and session orchestration remain shared.
 
 For a receipt-bound stage, `tools.build_merlin_stage` runs Merlin's actual
 whole-model build using the target catalog and writes `mx_stage_probe.json`.
-It rejects a changed capture `model.mlir`. With `--spike-extlib` it also runs
+It rejects a changed capture `model.mlir` and a linked catalog missing any
+source region selected from the raw capture. With `--spike-extlib` it also runs
 the linked ELF using the pinned Gemmini Spike extension and records the raw
 console and completion status. It enables the first-output SHA256 only for
 f32 results, as Merlin's current bare-metal digest does not support SmolVLA's
