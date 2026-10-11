@@ -327,7 +327,7 @@ def _check_binding(mlir_text: str, profile: dict, manifest: dict) -> tuple[
     return vector_ops, host_kind, tilewise_policy, memory_layout
 
 
-def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
+def _lower_bound_source_regular(mlir_text: str, profile: dict, manifest: dict,
                        resources: Mapping[str, bytes], *,
                        mode: str = "spike_serial") -> PhysicalProgram:
     """Lower a checked payload-bound contraction into ordered RoCC commands."""
@@ -647,3 +647,16 @@ def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
                            golden_origin=("target_mesh_reference" if manifest.get("origin") ==
                                           "radiance_source_target_mesh_reference" else
                                           "source_header"))
+
+
+def lower_bound_source(mlir_text: str, profile: dict, manifest: dict,
+                       resources: Mapping[str, bytes], *,
+                       mode: str = "spike_serial") -> PhysicalProgram:
+    """Lower the bound source, including a pinned I-chunk schedule if selected."""
+    from .chunked_i import lower_i_chunks, selected_i_chunks
+
+    chunks = selected_i_chunks(mlir_text, profile, manifest)
+    base = _lower_bound_source_regular(mlir_text, profile, manifest,
+                                       resources, mode=mode)
+    return base if chunks is None else lower_i_chunks(base, profile, manifest,
+                                                       chunks)

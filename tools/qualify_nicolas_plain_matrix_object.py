@@ -18,6 +18,7 @@ import sys
 
 from mx_gemmini_support.bind_payload import bind_payload, select_bf16_output_layout
 from mx_gemmini_support.bind_profile import bind_handoff
+from mx_gemmini_support.chunked_i import bind_i_chunks
 from mx_gemmini_support.source_gemm import SourceGemm
 from mx_gemmini_support.source_fp6 import read_source_fp6_payload
 from mx_gemmini_support.source_payload import (NICOLAS_SOURCE_HEADER_ORIGIN,
@@ -47,6 +48,7 @@ class Case:
     call_arguments: tuple[str, ...]
     label: str
     quant_output: bool = False
+    i_chunks: int = 1
 
 
 CASES = {
@@ -365,6 +367,23 @@ _register_standard_source(
     "252364c3b867cabb0dc555174cb90278bab2107d18ddcfbf00e46ca36f275e14",
     quant_output=True, profile_name="MxDim8AllGemminiRocketConfig")
 
+_CHUNK_HEADER_SHA256 = "16241671c4df2d4f738e77225063caac4895cdcba4d4495941e599d0db185bcd"
+for _chunks, _name, _sha256 in (
+        (2, "matmul_tiled_fp8_128x128_chunked.c",
+         "c2cd8affbbbd079a3553bcfc8bf46246114c8a2ff62e38f07994447cb512661e"),
+        (4, "matmul_tiled_fp8_128x128_chunked4.c",
+         "12bc6da5f5a54f87a4df95664a8259f6b0610675a92d0259121cbf13fe891275")):
+    _key = f"fp8_128x128x128_chunked{_chunks}"
+    CASES[_key] = Case(
+        _key, "FP8", (128, 128, 128), (128, 128, 128), _name,
+        "matmul_fp8_128x128.h", _sha256, _CHUNK_HEADER_SHA256,
+        "MxGemminiRocketConfig",
+        ("activation", "activation_scales", "output_bf16",
+         "scratch_output_scales", "weight", "weight_scales"),
+        ("A_in", "A_scales_row", "C_hw", "scratch_output_scales",
+         "B_in", "B_scales_col"), f"FP8 128 cubed chunked{_chunks}",
+        i_chunks=_chunks)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -412,6 +431,63 @@ def _audit_alternate_fp8_mvin(object_dir: Path, profile: dict,
             "object_sha256": _sha(object_dir / "mx_issue.o")}
 
 
+def _audit_chunked_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
+    """Check the source I-chunk loop, scale placement, and bank-toggle commands."""
+    if case.i_chunks not in {2, 4} or profile["geometry"]["mesh_columns"] != 16:
+        raise ValueError("chunked FP8 audit needs the pinned DIM16 source")
+    physical = json.loads((object_dir / "physical_program.json").read_text())
+    if (physical["shape_mnk"] != [128, 128, 128] or
+            physical["plan"]["i_chunks"] != case.i_chunks):
+        raise ValueError("compiler did not select the source I-chunk plan")
+    steps = physical["steps"]
+    chunks = case.i_chunks
+    chunk_m, chunk_i = 128 // chunks, 8 // chunks
+    scales = [(step["wave"], step["command"]["rs1"].get("buffer"),
+               step["command"]["rs1"].get("byte_offset"),
+               step["command"]["rs1"].get("or_bits"),
+               step["command"]["rs2"].get("immediate"))
+              for step in steps if step["phase"] == "upload_chunk_scales"
+              and step["command"].get("funct") == 27]
+    expected_scales = []
+    for c in range(chunks):
+        for buffer, offset, count, dest, selector in (
+                ("activation_scales", c * chunk_m, chunk_m,
+                 c * 4 * chunk_m, 0),
+                ("weight_scales", 0, 128, c * 4 * 128, 1)):
+            expected_scales.append((c, buffer, offset, 128 << 40,
+                                    (4 << 46) | (dest << 33) |
+                                    (selector << 32) | count))
+    commands = [(step["wave"], step["command"]["funct"],
+                 step["command"]["rs1"]["immediate"],
+                 step["command"]["rs2"]["immediate"])
+                for step in steps if step["phase"] == "compute_chunk"
+                and step["command"].get("funct") is not None]
+    expected_commands = []
+    for c in range(chunks):
+        expected_commands.extend(((c, 9, 0, (8 << 32) | (8 << 16) | chunk_i),
+                                  (c, 24, c * chunk_i * 8 * 16, 16384),
+                                  (c, 8, 0,
+                                   ((1024 + c * chunk_m * 128 * 2 // 16) << 32) |
+                                   0x200 | 0x138)))
+    selection = [step for step in steps if step["phase"] == "select_chunk_scales"]
+    if (scales != expected_scales or commands != expected_commands or
+            len(selection) != 1 or selection[0]["command"].get("funct") != 26 or
+            selection[0]["command"]["rs1"].get("or_bits") !=
+            ((8 * chunks << 51) | (8 << 42) | (chunk_i << 33)) or
+            sum(step["command"] == {} for step in steps
+                if step["phase"] == "compute_chunk") != 1):
+        raise ValueError("compiler I-chunk commands differ from Nicolas's source")
+    return {"schema": "mx_gemmini.nicolas_fp8_i_chunks_audit.v1",
+            "source_driver_sha256": case.source_sha256,
+            "profile_sha256": profile_sha256(profile),
+            "physical_program_sha256": _sha(object_dir / "physical_program.json"),
+            "source_chunk_count": chunks,
+            "compiler_chunk_count": len(commands) // 3,
+            "scale_uploads": len(scales),
+            "accumulator_bank_toggle_bits": [cmd[3] & 0x100 for cmd in commands
+                                             if cmd[1] == 8]}
+
+
 def _run_alternate_fp8_source(rtl_root: Path, riscv_root: Path,
                               out_dir: Path, source: Path) -> dict:
     """Run the pinned handwritten program as an independent source oracle."""
@@ -436,6 +512,30 @@ def _run_alternate_fp8_source(rtl_root: Path, riscv_root: Path,
             "source_golden_bf16_values_checked": 1024}
 
 
+def _run_chunked_fp8_source(rtl_root: Path, riscv_root: Path,
+                            out_dir: Path, source: Path) -> dict:
+    """Run the pinned chunked handwritten program as an independent oracle."""
+    from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
+
+    software = rtl_root / "software/gemmini-rocc-tests"
+    build = out_dir / "source_baseline"
+    elf = _compile_program(build, source, software,
+                           riscv_root / "bin/riscv64-unknown-elf-gcc", None)
+    so = out_dir / "run/libgemmini.so"
+    result = subprocess.run([str(riscv_root / "bin/spike"), f"--extlib={so}",
+                             "--extension=gemmini", str(elf)],
+                            cwd=build, text=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, check=False)
+    log = build / "spike.log"
+    log.write_text(result.stdout)
+    if (result.returncode or
+            "fp8 WS chunked matmul test PASSED (no mismatches)." not in result.stdout):
+        raise ValueError("Nicolas chunked FP8 source failed on pinned Spike")
+    return {"source_elf_sha256": _sha(elf), "source_spike_log_sha256": _sha(log),
+            "source_spike_exit_code": result.returncode,
+            "source_golden_bf16_values_checked": 128 * 128}
+
+
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     """Admit only a Nicolas test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
@@ -448,6 +548,22 @@ def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
     if _sha(driver) != case.source_sha256 or _sha(header) != case.header_sha256:
         raise ValueError(f"Nicolas {case.precision} driver/header differs from pinned source")
     source = driver.read_text()
+    if case.i_chunks == 4:
+        if source.strip() != ('// 4-chunk variant of matmul_tiled_fp8_128x128_chunked '
+                              '(32 rows per chunk; chunks alternate the 2 acc banks).\n'
+                              '#define NCHUNKS 4\n'
+                              '#include "matmul_tiled_fp8_128x128_chunked.c"'):
+            raise ValueError("Nicolas four-chunk wrapper changed")
+        core = driver.parent / "matmul_tiled_fp8_128x128_chunked.c"
+        if _sha(core) != CASES["fp8_128x128x128_chunked2"].source_sha256:
+            raise ValueError("Nicolas four-chunk include changed")
+        source = core.read_text()
+    if case.i_chunks and case.i_chunks != 1 and (
+            "#define NCHUNKS 2" not in source or
+            "0x38 | 0x100" not in source or
+            "NCHUNKS * tiles_K" not in source or
+            "gemmini_mx_load_scales_2d" not in source):
+        raise ValueError("Nicolas chunked FP8 schedule changed")
     alternate_mvin = case.key == "fp8_32x32x32_alternate_mvin"
     required = (f'#include "include/{case.header_name}"', "gemmini_mx_load_scales",
                 "gemmini_loop_ws_spad",
@@ -701,6 +817,8 @@ def main(default_case: str | None = None) -> None:
     bound = bind_payload(bound, profile, manifest)
     if not case.quant_output:
         bound = select_bf16_output_layout(bound, profile, manifest)
+    if case.i_chunks > 1:
+        bound = bind_i_chunks(bound, profile, manifest, case.i_chunks)
     mlir = args.out_dir / "payload_bound.mlir"
     mlir.write_text(bound)
     object_dir = args.out_dir / "object"
@@ -715,6 +833,11 @@ def main(default_case: str | None = None) -> None:
             object_dir, profile, case.source_sha256)
         (args.out_dir / "transfer_equivalence.json").write_text(
             json.dumps(transfer_audit, indent=2, sort_keys=True) + "\n")
+    chunk_audit = None
+    if case.i_chunks > 1:
+        chunk_audit = _audit_chunked_fp8(object_dir, profile, case)
+        (args.out_dir / "chunk_equivalence.json").write_text(
+            json.dumps(chunk_audit, indent=2, sort_keys=True) + "\n")
     mesh_dim = profile["geometry"]["mesh_columns"]
     if profile["geometry"]["mesh_rows"] != mesh_dim:
         raise ValueError("Nicolas source qualifier needs a square MX mesh")
@@ -722,7 +845,10 @@ def main(default_case: str | None = None) -> None:
                                         object_dir, args.out_dir, case, mesh_dim)
     source_baseline = (_run_alternate_fp8_source(
         rtl_root, args.riscv_root.resolve(), args.out_dir, kernel.driver)
-        if case.key == "fp8_32x32x32_alternate_mvin" else None)
+        if case.key == "fp8_32x32x32_alternate_mvin" else
+        _run_chunked_fp8_source(rtl_root, args.riscv_root.resolve(),
+                                args.out_dir, kernel.driver)
+        if case.i_chunks > 1 else None)
     m, n, _ = case.shape
     code_label = "packed-byte" if case.precision in {"FP4", "FP6"} else "code"
     code_count = m * n // 2 if case.precision in {"FP4", "FP6"} else m * n
@@ -772,6 +898,11 @@ def main(default_case: str | None = None) -> None:
     if transfer_audit is not None:
         receipt["transfer_equivalence_sha256"] = _sha(
             args.out_dir / "transfer_equivalence.json")
+        receipt["source_baseline"] = source_baseline
+    if case.i_chunks > 1:
+        receipt["i_chunks"] = case.i_chunks
+        receipt["chunk_equivalence_sha256"] = _sha(
+            args.out_dir / "chunk_equivalence.json")
         receipt["source_baseline"] = source_baseline
     (args.out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2,
                                                            sort_keys=True) + "\n")
