@@ -20,6 +20,7 @@ BUFFER_BYTES = (128, 256, 256, 4096, 8192, 8192, 2048, 64, 64, 8192)
 SHAPE = DenseAttentionShape(64, 128, 64)
 BK = 32
 FA_SHAPE = DenseAttentionShape(64, 256, 128)
+STREAM_SHAPE = DenseAttentionShape(64, 2048, 64)
 SQ, SK, D = SHAPE.sq, SHAPE.sk, SHAPE.d
 NB = SK // BK
 SP_Q, SP_V, SP_KT, SP_P, ST = 0, 256, 4096, 4608, 768
@@ -61,7 +62,7 @@ def _check_source_policy(source_wrapper: str, source_core: str,
     if source_wrapper != source_core:
         wrapper = _source_defines(source_wrapper)
         allowed = {"BK": str(block_k)}
-        suffix = "_mid_fp4" if fp4 else "_mid"
+        suffix = "_llama" if shape == STREAM_SHAPE else "_mid_fp4" if fp4 else "_mid"
         optional = {"ATTN_HEADER": f'"attn_vpu{suffix}.h"',
                     "ATTN_EXPECT": f'"attn_flash{suffix}_expect.h"'}
         if softmax_mode == "expsum":
@@ -78,10 +79,10 @@ def _check_source_policy(source_wrapper: str, source_core: str,
 def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
                      input_format: str = "fp8_e4m3"
                      ) -> tuple[tuple[str, ...], tuple[int, ...]]:
-    """Runtime byte buffers for the selected resident flash source shape."""
+    """Runtime byte buffers for the selected flash source shape."""
     if (shape, block_k, input_format) not in (
             (SHAPE, BK, "fp8_e4m3"), (FA_SHAPE, 64, "fp8_e4m3"),
-            (SHAPE, BK, "fp4_e2m1")):
+            (SHAPE, BK, "fp4_e2m1"), (STREAM_SHAPE, 256, "fp8_e4m3")):
         raise ValueError("flash compiler has no selected source shape")
     sq, sk, d = shape.sq, shape.sk, shape.d
     fp4 = input_format == "fp4_e2m1"
@@ -141,7 +142,20 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _check_source_policy(source_wrapper, source_core, source_header,
                          shape, block_k, input_format, softmax_mode)
     _audit_frontend_edges(frontend, shape)
-    shape.validate(profile)
+    streamed = (shape, block_k, input_format) == (STREAM_SHAPE, 256, "fp8_e4m3")
+    if streamed:
+        if (profile.get("transport") != "rocket_rocc" or
+                profile.get("geometry", {}).get("mesh_rows") != 16 or
+                profile.get("geometry", {}).get("mesh_columns") != 16 or
+                profile.get("resources", {}).get("scratchpad_banks") != 4 or
+                profile.get("resources", {}).get("scratchpad_bytes") != 262144 or
+                not profile.get("resources", {}).get("vpu") or
+                not profile.get("resources", {}).get("spad_requant") or
+                "#define K_BUFS   (ATTN_STREAM ? 2 : NB)" not in source_core or
+                "#define V_BUFS   (ATTN_STREAM ? (ATTN_V3 ? 3 : 2) : NB)" not in source_core):
+            raise ValueError("streamed flash needs Nicolas's four-bank Kx2/Vx3 source layout")
+    else:
+        shape.validate(profile)
     if (profile.get("source", {}).get("gemmini_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
         raise ValueError("flash needs Nicolas's managed-scale MX RTL")
@@ -152,10 +166,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     rows8 = lambda m, n: m * n // (16 * qt)
     rows16 = lambda m, n: m * n * 2 // 16
     SP_Q, SP_V, SP_KT = 0, rows8(SQ, D), 4096
-    SP_P = SP_KT + NB * rows8(D, BK)
-    ST = SP_V + NB * rows8(BK, D)
+    k_buffers, v_buffers = (2, 3) if streamed else (NB, NB)
+    SP_P = SP_KT + k_buffers * rows8(D, BK)
+    ST = SP_V + v_buffers * rows8(BK, D)
     SP_O = 3 * 4096 + rows16(SQ, BK) + rows16(SQ, D)
-    if (SP_V + NB * rows8(BK, D) + 8 * SQ > 4096 or
+    if (SP_V + v_buffers * rows8(BK, D) + 8 * SQ > 4096 or
             SP_P + 2 * rows8(SQ, BK) > 8192 or
             SP_O + rows16(SQ, D) > 16384):
         raise ValueError("flash source bank-split residency differs")
@@ -165,7 +180,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = ("mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
+    variant = ("llama_stream" if streamed else
+               "mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
                "mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
                else "mid" if folded else "fa")
     policy = {"schema": f"mx_gemmini.flash_{variant}_serial_policy.v1",
@@ -176,6 +192,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
               "score_rows": [_score(j) for j in range(NB)],
               "probability_rows": [_probability(j) for j in range(NB)],
               "output_rows": [_output_j(j) for j in range(NB)]}
+    if streamed:
+        policy["kv_stream_buffers"] = [k_buffers, v_buffers]
     if fp4:
         policy["input_format"] = input_format
     if softmax_mode == "expsum":
@@ -244,8 +262,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         qk = kind == "qk"
         m, n, k = SQ, BK if qk else D, D if qk else BK
         a = SP_Q if qk else _probability(j)
-        b_end = (SP_KT + (j + 1) * D * BK // (16 * qt) if qk else
-                 SP_V + (j + 1) * BK * D // (16 * qt))
+        b_end = (SP_KT + ((j % k_buffers) + 1) * D * BK // (16 * qt) if qk else
+                 SP_V + ((j % v_buffers) + 1) * BK * D // (16 * qt))
         c = _score(j) if qk else _output_j(j)
         return control("managed_matmul_spad", f"{kind}{j}:matmul",
                        f"m = {m} : i32, n = {n} : i32, k = {k} : i32, "
@@ -282,23 +300,31 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                f"matrix_rows = {SQ // qt} : i32, matrix_cols = {D} : i32, "
                "burst_cols = 64 : i32, spad_row = 0 : i32"),
     ])
-    for j in range(NB):
-        lines.append(memory("dma_matrix", buffers[4], f"operand:kt{j}",
+    def block_load(j: int) -> tuple[str, str]:
+        return (memory("dma_matrix", buffers[4], f"operand:kt{j}",
                             f"matrix_rows = {D} : i32, matrix_cols = {BK // qt} : i32, "
                             f"burst_cols = {min(BK // qt, 64)} : i32, "
-                            f"spad_row = {SP_KT + j * rows8(D, BK)} : i32, "
+                            f"spad_row = {SP_KT + (j % k_buffers) * rows8(D, BK)} : i32, "
                             f"source_stride_bytes = {SK // qt} : i32, "
-                            f"source_offset_bytes = {j * BK // qt} : i32"))
-        lines.append(memory("dma_matrix", buffers[5], f"operand:v{j}",
+                            f"source_offset_bytes = {j * BK // qt} : i32"),
+                memory("dma_matrix", buffers[5], f"operand:v{j}",
                             f"matrix_rows = {BK} : i32, matrix_cols = {D // qt} : i32, "
                             f"burst_cols = {min(D // qt, 64)} : i32, "
-                            f"spad_row = {SP_V + j * rows8(BK, D)} : i32, "
+                            f"spad_row = {SP_V + (j % v_buffers) * rows8(BK, D)} : i32, "
                             f"source_stride_bytes = {D // qt} : i32, "
                             f"source_offset_bytes = {j * BK * D // qt} : i32"))
+    if streamed:
+        lines.append(wait("operand:q_fence"))
+    else:
+        for j in range(NB):
+            lines.extend(block_load(j))
     if not fp4:
         lines.append(setup)
     n_mm = 0
     for j in range(NB):
+        if streamed:
+            lines.extend(block_load(j))
+            lines.append(wait(f"operand:kv{j}:fence"))
         s = _score(j)
         m = _maximum(j)
         lines.extend((gated("qk", j, n_mm & 1), managed("qk", j, n_mm & 1),
@@ -364,8 +390,9 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     report = verify_ir(mlir, profile)
     if (report["memory_phases"], report["flash_setups"], report["spad_matmuls"],
             report["vpu_commands"], report["spad_requants"]) != (
-                19, 1, 8, 31 if softmax_mode == "expsum" else
-                39 if folded else 43, 4):
+                35 if streamed else 19, 1, 16 if streamed else 8,
+                83 if streamed else 31 if softmax_mode == "expsum" else
+                39 if folded else 43, 8 if streamed else 4):
         raise ValueError(f"flash {variant} typed stage inventory differs: {report}")
     return mlir, binding
 

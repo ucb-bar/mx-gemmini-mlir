@@ -11,7 +11,7 @@ from pathlib import Path
 
 from mx_gemmini_support.command_ir import Command, emit_c
 from mx_gemmini_support.nicolas_attention_shape import DenseAttentionShape
-from mx_gemmini_support.nicolas_flash_mid import (flash_buffer_abi,
+from mx_gemmini_support.nicolas_flash_mid import (STREAM_SHAPE, flash_buffer_abi,
                                                   lower_flash_mid,
                                                   render_flash_mid)
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -25,6 +25,7 @@ PINNED_MID_WRAPPER_SHA256 = "5f46198f35539b261ccbc2c689ce56beb823ba7e6ec74d8ff60
 PINNED_MID_FP4_WRAPPER_SHA256 = "650ceb3c3b77cfd5b91521b879921debe9e35832fe1d1c5435ad09ee1fb6d6c0"
 PINNED_MID_EXPSUM_WRAPPER_SHA256 = "549b0440b05b149c84059985f3b20f55338da7af879d8272557f662cb263824d"
 PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256 = "fca0f83b3a81ecb5210bc69a08f2329bcb70447441b2e02b88e5388e7aa9218c"
+PINNED_LLAMA_WRAPPER_SHA256 = "1245d6c5d994687eda049ff4ddfa7577c0cf0e246b26767c4bb6ba6e641224f2"
 
 
 def _source_text(path: Path) -> str:
@@ -59,7 +60,9 @@ def main() -> None:
     input_format = binding["policy"].get("input_format", "fp8_e4m3")
     softmax_mode = binding["policy"].get("softmax_mode", "split")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format)
-    wrapper_sha256 = (PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256
+    wrapper_sha256 = (PINNED_LLAMA_WRAPPER_SHA256
+                      if shape == STREAM_SHAPE and block_k == 256
+                      else PINNED_MID_FP4_EXPSUM_WRAPPER_SHA256
                       if softmax_mode == "expsum" and input_format == "fp4_e2m1"
                       else PINNED_MID_EXPSUM_WRAPPER_SHA256 if softmax_mode == "expsum"
                       else PINNED_MID_FP4_WRAPPER_SHA256 if input_format == "fp4_e2m1"
@@ -81,7 +84,8 @@ def main() -> None:
         expected, frontend, core, wrapper, header, profile,
         shape=shape, block_k=block_k, input_format=input_format,
         softmax_mode=softmax_mode)
-    slug = ("flash_mid_fp4_expsum" if softmax_mode == "expsum" and input_format == "fp4_e2m1"
+    slug = ("flash_llama_stream" if shape == STREAM_SHAPE and block_k == 256 else
+            "flash_mid_fp4_expsum" if softmax_mode == "expsum" and input_format == "fp4_e2m1"
             else "flash_mid_expsum" if softmax_mode == "expsum" else
             "flash_mid_fp4" if input_format == "fp4_e2m1" else
             "flash_mid" if block_k == 32 else "flash_fa")
