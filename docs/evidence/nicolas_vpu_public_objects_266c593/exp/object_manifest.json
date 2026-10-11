@@ -1,0 +1,53 @@
+{
+  "abi_json_sha256": "3a363b19ff04206b99fd62910aa3dc47fb276938ec00f23b26f9923d8762a481",
+  "allocated_data_section_bytes": 0,
+  "bound_mlir_sha256": "512031f3a18deccc5755aeeb6d4e82731d8f3a213e31f393603c9dd1b98ff3b4",
+  "buffer_abi": [
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "src1",
+      "position": 0,
+      "role": "read",
+      "slot": "src1"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 0,
+      "name": "src2",
+      "position": 1,
+      "role": "unused",
+      "slot": "src2"
+    },
+    {
+      "alignment_bytes": 64,
+      "layout": "row_major_bf16_lanes8",
+      "minimum_bytes": 1024,
+      "name": "output",
+      "position": 2,
+      "role": "write",
+      "slot": "output"
+    }
+  ],
+  "command_count": 12,
+  "compiler_revision": "4fa78deda76edda974f46d745bb3c6f632ef5786",
+  "compiler_source_closure_sha256": "0c2c1c08186e50e90788407047b3f5ee646cf24aef664b1439ca4695192a8573",
+  "defined_symbol": "mx_issue",
+  "embedded_golden_bytes": 0,
+  "embedded_operand_bytes": 0,
+  "issuer_c_sha256": "500c83bb3b4147c18831c9981b874572b53db40f90b16dd8a7a1ba1e33ab007b",
+  "issuer_h_sha256": "3bab666e1d9ea8c04fea0eee519f2cda5fb847868a6ce02411043bbc1477862a",
+  "mlir_container_sha256": "512031f3a18deccc5755aeeb6d4e82731d8f3a213e31f393603c9dd1b98ff3b4",
+  "object_sha256": "a92f1416b40d8cd3d3431cf4e98e63a8dda696d5d4fc4f15df87abadd62317c7",
+  "physical_program_sha256": "6d6a26bed0704856d84a7689ddea887e7342c41448d6d6e8be5d3b6f03e80d6a",
+  "profile_sha256": "8674d57c7a133eae83baa14385d912a2c1c623fe02d2ea7f98826a09ed783487",
+  "riscv_gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.vpu_elementwise_linkable_object.v1",
+  "status": "rv64_rocc_vpu_elementwise_object_built",
+  "transport": "rocket_rocc",
+  "undefined_symbols": [],
+  "vpu_kind": "exp"
+}
