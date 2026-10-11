@@ -1975,6 +1975,12 @@ requalified all 31 drivers on pinned Spike, and every frontend and numerical
 artifact digest matched the baseline. The source checkout's Git status was
 unchanged by the run.
 
+A [fresh managed checkout of published compiler `2b55be0`](evidence/radiance_mx_gemm_fresh_2b55be0_82be2c7/README.md)
+rebuilt `mx-gemmini-opt` and repeated that full read-only replay. All 31
+driver outputs and the archived frontend, ELF, and Spike-log hashes matched.
+This closes the fresh-checkout reproduction check for the current MX GEMM
+source roster.
+
 A third run used that command at compiler `66df445`. Its
 [reproduction receipt](evidence/radiance_mx_gemm_latest_e9ded36_ee22/one_command_66df445/reproduction.json)
 and per-driver receipts show the same captured MLIR, physical source files,

@@ -1,0 +1,19 @@
+{
+  "compiler_revision": "2b55be0a26af24721b76a23b1396fbe6ef9f5cde",
+  "files_sha256": {
+    "frontend/index.json": "e5e55e777abd613bbf27670729632572e882c0e3d8f12fee9fbfd52e54b9dd16",
+    "headers.json": "24c9e954ea9c92bb24ab72aaa3d04a6d74e7f0ef2e508077cf92e1cb1e5f06c6",
+    "reproduction.json": "4b43642778bb41fb53a2e42ebd2ff12470e1093931a0efe444d02a9a7a0fecff",
+    "spike/index.json": "6c2270029a246bfb76c7f605e074212618e39fe73626e066f0b87fc3f5dd30b3"
+  },
+  "fresh_branch": "cx/mx-current-fresh-replay",
+  "fresh_task": "mx-current-fresh-replay",
+  "model2mlir_revision": "e9ded36eb85abf2d9097ac4dc11457c825853388",
+  "mx_opt_sha256": "77610bfe834403a876827e5632b1dec5ea2a1ebb53c72c56c04a2804442649c2",
+  "rtl_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.fresh_current_readonly_roster.v1",
+  "source_revision": "82be2c71e5a0ca5d764e08e1b2c6a0e638bff401",
+  "source_status_after_sha256": "6606b525634053775f38a0a8889e4320724f0b17a7e207171c4c2e47db26745d",
+  "source_status_before_sha256": "6606b525634053775f38a0a8889e4320724f0b17a7e207171c4c2e47db26745d",
+  "status": "fresh_checkout_all_31_source_goldens_reproduced_on_pinned_spike"
+}
