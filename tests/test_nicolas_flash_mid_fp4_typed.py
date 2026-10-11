@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -81,3 +82,36 @@ def test_fp4_flash_rejects_fp8_policy_and_profile() -> None:
     with pytest.raises(ValueError, match="compute tuple is absent"):
         render_flash_mid(frontend, CORE.read_text(), WRAPPER.read_text(),
                          header, profile, input_format="fp4_e2m1")
+
+
+def test_archived_fp4_flash_matches_all_source_output_words() -> None:
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    receipt = json.loads((ARCHIVE / "receipt.json").read_text())
+    obj = json.loads((ARCHIVE / "object/object_manifest.json").read_text())
+    dispatch = json.loads((ARCHIVE / "object/compile_manifest.json").read_text())
+    assert receipt["status"] == "typed_flash_mid_fp4_full_bf16_source_parity"
+    assert receipt["compared_bf16_words"] == 4096
+    assert receipt["source_runs"] == receipt["compiler_runs"] == 2
+    assert receipt["expected_output_hash"] == "f0caacc02eab4345"
+    assert receipt["object_sha256"] == obj["object_sha256"] == sha(
+        ARCHIVE / "object/mx_issue.o")
+    assert receipt["source_elf_sha256"] == sha(ARCHIVE / "flash_mid_fp4_source.elf")
+    assert receipt["generated_elf_sha256"] == sha(ARCHIVE / "flash_mid_fp4_generated.elf")
+    assert receipt["source_header_gzip_sha256"] == sha(
+        ARCHIVE / "attn_vpu_mid_fp4.h.gz")
+    assert obj["input_format"] == "fp4_e2m1"
+    assert obj["command_count"] == 154 and obj["fence_count"] == 21
+    assert obj["allocated_data_section_bytes"] == 0
+    assert obj["embedded_operand_bytes"] == obj["embedded_golden_bytes"] == 0
+    assert dispatch["lowering_family"] == "flash_program"
+    assert dispatch["verified_graph_counts"]["spad_requants"] == 4
+    outputs = []
+    for kind in ("source", "generated"):
+        for run in (1, 2):
+            log = (ARCHIVE / f"{kind}_spike_{run}.log").read_text()
+            line = next(line for line in log.splitlines()
+                        if line.startswith("O BF16 words "))
+            words = line.removeprefix("O BF16 words ")
+            assert len(words) == 4096 * 4
+            outputs.append(words)
+    assert len(set(outputs)) == 1
