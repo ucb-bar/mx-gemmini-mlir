@@ -8,12 +8,15 @@ import json
 from pathlib import Path
 
 from mx_gemmini_support.model2mlir_worklist import build_model2mlir_worklist
+from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
 from mx_gemmini_support.target_profile import load_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mlir", type=Path, required=True)
+    parser.add_argument("--reader", choices=("local", "merlin"), default="local",
+                        help="use Merlin's shared graph inventory for whole-model planning")
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
@@ -21,7 +24,8 @@ def main() -> None:
         parser.error(f"refusing to overwrite {args.out}")
     raw = args.mlir.read_bytes()
     text = (gzip.decompress(raw) if args.mlir.name.endswith(".mlir.gz") else raw).decode()
-    worklist = build_model2mlir_worklist(text, load_profile(args.profile))
+    reader = build_mx_worklist_from_merlin if args.reader == "merlin" else build_model2mlir_worklist
+    worklist = reader(text, load_profile(args.profile))
     args.out.write_text(json.dumps(worklist, indent=2, sort_keys=True) + "\n")
     print(args.out)
 

@@ -61,6 +61,7 @@ Produce one worklist with:
 ```sh
 python -m tools.plan_model2mlir_worklist \
   --mlir docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz \
+  --reader merlin \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
   --out /new/tinyllama-mx-worklist.json
 ```
@@ -155,9 +156,10 @@ target-neutral `linalg-on-tensors` structural reader, model and session
 orchestration, source-bound catalog binding, dense memref shim, host lowering,
 and link/runtime infrastructure. The MX package owns only MX profile legality,
 precision and E8M0 policy, packed physical layout, command generation, and
-target ABI glue. Its current `model2mlir_worklist` duplicates some generic
-source-graph parsing; whole-model integration should consume Merlin's existing
-structural inventory rather than make that MX parser a second graph frontend.
+target ABI glue. `--reader merlin` now projects Merlin's shared structural
+inventory into the MX worklist; on the four archived model graphs it produces
+identical MX precision plans. The older local reader remains for standalone
+kernel evidence, but it must not become a second whole-model graph frontend.
 The catalog builder belongs in this target package, but it must implement
 Merlin's generic `DeviceRouting.catalog_builder` interface.
 
