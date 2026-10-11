@@ -17,6 +17,7 @@ from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.dense_kernel import emit_dense_f32_kernel
 from mx_gemmini_support.dense_contraction import emit_dense_contraction
 from mx_gemmini_support.compact_runtime_issuer import emit_compact_runtime_issuer
+from mx_gemmini_support.scheduled_native_issuer import emit_scheduled_native_issuer
 from mx_gemmini_support.runtime_issuer import emit_runtime_issuer
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
@@ -122,12 +123,14 @@ def main() -> None:
                         help="derive the command schedule from profile and logical shape")
     parser.add_argument("--compact-issuer", action="store_true",
                         help="run the compact looped Rocket command issuer")
+    parser.add_argument("--native-scheduled-issuer", action="store_true",
+                        help="run the Merlin mk native DRAM-loop schedule")
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
-    if (args.shape_planned or args.compact_issuer) and not args.dense_adapter:
+    if (args.shape_planned or args.compact_issuer or args.native_scheduled_issuer) and not args.dense_adapter:
         parser.error("shape-planned or compact schedule requires --dense-adapter")
-    if args.shape_planned and args.compact_issuer:
+    if sum((args.shape_planned, args.compact_issuer, args.native_scheduled_issuer)) > 1:
         parser.error("choose one command issuer mode")
     rtl, riscv, out = (getattr(args, key).resolve()
                        for key in ("rtl_root", "riscv_root", "out_dir"))
@@ -172,7 +175,11 @@ def main() -> None:
             precision="FP4")
         if compact_issuer.plan != program.plan:
             raise ValueError("compact MX plan differs from the source-qualified projection")
-    issuer = (compact_issuer if compact_issuer is not None else
+    native = (emit_scheduled_native_issuer(
+        profile, qualified_issuer.shape_mnk, precision="FP4")
+        if args.native_scheduled_issuer else None)
+    issuer = (native.issuer if native is not None else
+              compact_issuer if compact_issuer is not None else
               generated.issuer if generated is not None else qualified_issuer)
     out.mkdir(parents=True)
     (out / "raw_a.bin").write_bytes(input_a.tobytes())
@@ -279,9 +286,15 @@ def main() -> None:
                           "dtypes": ["f32", "f32", "f32"]}
         receipt["relocatable_object_sha256"] = _sha(candidate)
         receipt["schedule_origin"] = (
+            "merlin_mk_native_dram_loop" if native is not None else
             "compact_loop_profile_and_source_plan_checked" if compact_issuer is not None else
             "shape_planned_source_parity_checked" if generated is not None else
             "payload_bound_source_qualified")
+        if native is not None:
+            receipt["schedule_digest"] = native.digest
+            receipt["instruction_set_digest"] = native.instruction_set_digest
+            receipt["native_chunks"] = list(native.chunks)
+            (out / "schedule.mk").write_text(native.text)
     (out / "runtime_f32_projection_spike.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, sort_keys=True))
     if not passed:

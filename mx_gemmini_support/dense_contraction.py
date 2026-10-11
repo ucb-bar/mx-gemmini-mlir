@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .dense_kernel import (DenseBatchKernel, DenseKernel, emit_dense_f32_batch_kernel,
                            emit_dense_f32_kernel)
 from .compact_runtime_issuer import emit_compact_runtime_issuer
 from .planned_runtime_issuer import PlannedRuntimeIssuer, emit_planned_runtime_issuer
 from .source_gemm import plan_mx_gemm
+from .scheduled_native_issuer import NativeSchedule, emit_scheduled_native_issuer
 
 
 MAX_UNROLLED_COMMANDS = 4_096
@@ -31,6 +32,9 @@ class DenseContraction:
     issuer: PlannedRuntimeIssuer
     kernel: DenseKernel
     issuer_mode: str
+    schedule_text: str | None = None
+    schedule_digest: str | None = None
+    instruction_set_digest: str | None = None
 
 
 @dataclass(frozen=True)
@@ -40,6 +44,9 @@ class DenseBatchContraction:
     issuer: PlannedRuntimeIssuer
     kernel: DenseBatchKernel
     issuer_mode: str
+    schedule_text: str | None = None
+    schedule_digest: str | None = None
+    instruction_set_digest: str | None = None
 
 
 def _round_up(value: int, group: int) -> int:
@@ -96,39 +103,68 @@ def plan_dense_shape(profile: dict, logical_shape_mnk: tuple[int, int, int], *,
     raise ValueError(f"MX profile has no serial dense tile: {failures[0] if failures else 'unknown'}")
 
 
+def _emit_dense_issuer(profile: dict, shape: DenseShapePlan, *, precision: str,
+                       issuer_symbol: str, schedule: str) -> tuple[
+                           DenseShapePlan, PlannedRuntimeIssuer, str, NativeSchedule | None]:
+    if schedule == "serial":
+        compact = shape.estimated_commands > MAX_UNROLLED_COMMANDS
+        issuer = (emit_compact_runtime_issuer if compact else emit_planned_runtime_issuer)(
+            profile, shape.padded_shape_mnk, shape.tile_mnk, precision=precision,
+            symbol=issuer_symbol)
+        return shape, issuer, "compact_loop" if compact else "unrolled", None
+    if schedule != "native":
+        raise ValueError("unknown MX dense schedule")
+    native = emit_scheduled_native_issuer(
+        profile, shape.padded_shape_mnk, precision=precision, symbol=issuer_symbol)
+    issuer = native.issuer
+    tm, tn, tk = issuer.tile_mnk
+    pm, pn, pk = shape.padded_shape_mnk
+    loops = (pm // tm) * (pn // tn) * (pk // tk)
+    shape = replace(shape, tile_mnk=issuer.tile_mnk,
+                    output_tiles=(pm // tm) * (pn // tn),
+                    k_waves=pk // tk,
+                    estimated_commands=6 + 8 * loops)
+    return shape, issuer, "merlin_mk_native_dram_loop", native
+
+
 def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int], *,
                            precision: str, symbol: str,
                            issuer_symbol: str,
-                           shared_workspace_symbol: str | None = None) -> DenseContraction:
+                           shared_workspace_symbol: str | None = None,
+                           schedule: str = "serial") -> DenseContraction:
     """Emit both halves of one source-independent dense MX catalog candidate."""
     shape = plan_dense_shape(profile, logical_shape_mnk, precision=precision)
-    compact = shape.estimated_commands > MAX_UNROLLED_COMMANDS
-    issuer = (emit_compact_runtime_issuer if compact else emit_planned_runtime_issuer)(
-        profile, shape.padded_shape_mnk, shape.tile_mnk, precision=precision,
-        symbol=issuer_symbol)
+    shape, issuer, mode, native = _emit_dense_issuer(
+        profile, shape, precision=precision, issuer_symbol=issuer_symbol,
+        schedule=schedule)
     kernel = emit_dense_f32_kernel(
         issuer, logical_shape_mnk, symbol=symbol, issuer_symbol=issuer_symbol,
         shared_workspace_symbol=shared_workspace_symbol)
-    return DenseContraction(shape, issuer, kernel, "compact_loop" if compact else "unrolled")
+    return DenseContraction(shape, issuer, kernel, mode,
+                            native.text if native else None,
+                            native.digest if native else None,
+                            native.instruction_set_digest if native else None)
 
 
 def emit_dense_batch_contraction(profile: dict,
                                  logical_shape_bmnk: tuple[int, int, int, int], *,
                                  precision: str, symbol: str,
                                  issuer_symbol: str,
-                                 shared_workspace_symbol: str | None = None) -> DenseBatchContraction:
-    """Emit a serial whole-batch entry over a shared per-slice MX workspace."""
+                                 shared_workspace_symbol: str | None = None,
+                                 schedule: str = "serial") -> DenseBatchContraction:
+    """Emit a whole-batch entry over a shared per-slice MX workspace."""
     if (len(logical_shape_bmnk) != 4 or
             any(type(value) is not int or value <= 0 for value in logical_shape_bmnk)):
         raise ValueError("MX batched contraction needs positive B,M,N,K")
     batch, m, n, k = logical_shape_bmnk
     shape = plan_dense_shape(profile, (m, n, k), precision=precision)
-    compact = shape.estimated_commands > MAX_UNROLLED_COMMANDS
-    issuer = (emit_compact_runtime_issuer if compact else emit_planned_runtime_issuer)(
-        profile, shape.padded_shape_mnk, shape.tile_mnk, precision=precision,
-        symbol=issuer_symbol)
+    shape, issuer, mode, native = _emit_dense_issuer(
+        profile, shape, precision=precision, issuer_symbol=issuer_symbol,
+        schedule=schedule)
     kernel = emit_dense_f32_batch_kernel(
         issuer, logical_shape_bmnk, symbol=symbol, issuer_symbol=issuer_symbol,
         shared_workspace_symbol=shared_workspace_symbol)
-    return DenseBatchContraction(shape, batch, issuer, kernel,
-                                 "compact_loop" if compact else "unrolled")
+    return DenseBatchContraction(shape, batch, issuer, kernel, mode,
+                                 native.text if native else None,
+                                 native.digest if native else None,
+                                 native.instruction_set_digest if native else None)

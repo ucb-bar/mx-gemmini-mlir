@@ -17,6 +17,7 @@ from typing import Callable
 from .dense_contraction import emit_dense_batch_contraction, emit_dense_contraction
 from .dense_kernel import emit_shared_workspace_definition
 from .merlin_catalog_plan import plan_merlin_catalog
+from .merlin_schedule_policy import build_policy_plan, selected_policy
 from .target_profile import load_profile, profile_sha256
 
 
@@ -37,7 +38,7 @@ def _run(command: list[str], *, label: str) -> None:
 
 def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          riscv_root: Path) -> tuple[Path, Path]:
-    """Compile all selected exact source sites into one serial RV64 catalog."""
+    """Compile selected source sites through checked MX native schedules."""
     plan = plan_merlin_catalog(prepared, profile)
     if not plan["kernels"]:
         raise ValueError("MX catalog has no bindable direct f32 contractions")
@@ -79,22 +80,34 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         issuer_symbol = entry["issuer_symbol"]
         shape = tuple(entry["shape"])
         precision = "FP4" if entry["precision"] == "mxfp4" else "FP8"
+        policy_text = build_policy_plan(symbol, schedule="native")
+        selected = selected_policy(policy_text, symbol=symbol)
+        policy_path = out_dir / f"{symbol}.schedule.mlir"
+        policy_path.write_text(policy_text, encoding="utf-8")
         if entry["rank"] == 2:
             generated = emit_dense_contraction(
                 profile, shape, precision=precision, symbol=symbol,
                 issuer_symbol=issuer_symbol,
-                shared_workspace_symbol=_WORKSPACE_SYMBOL)
+                shared_workspace_symbol=_WORKSPACE_SYMBOL,
+                schedule=selected)
             batch, m, n, k = 1, *shape
         elif entry["rank"] == 3:
             generated = emit_dense_batch_contraction(
                 profile, shape, precision=precision, symbol=symbol,
                 issuer_symbol=issuer_symbol,
-                shared_workspace_symbol=_WORKSPACE_SYMBOL)
+                shared_workspace_symbol=_WORKSPACE_SYMBOL,
+                schedule=selected)
             batch, m, n, k = shape
         else:
             raise ValueError("MX catalog has an unsupported source rank")
         compile_source(issuer_symbol, generated.issuer.source)
         compile_source(symbol, generated.kernel.source)
+        if generated.schedule_text is None or generated.schedule_digest is None:
+            raise ValueError("MX catalog kernel has no checked schedule IR")
+        schedule_path = out_dir / f"{issuer_symbol}.mk"
+        schedule_path.write_text(generated.schedule_text, encoding="utf-8")
+        if _sha(schedule_path) != generated.schedule_digest:
+            raise ValueError("MX schedule artifact differs from its canonical digest")
         max_workspace = max(max_workspace, generated.kernel.workspace_bytes)
         issuer_modes[symbol] = generated.issuer_mode
         kernel_records.append({
@@ -102,6 +115,13 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "dimensions": {"batch": batch, "m": m, "n": n, "k": k},
             "precision": entry["precision"],
             "issuer_mode": generated.issuer_mode,
+            "policy_ir": "merlin.schedule",
+            "policy_file": policy_path.name,
+            "policy_sha256": _sha(policy_path),
+            "schedule_ir": "merlin.mk",
+            "schedule_file": schedule_path.name,
+            "schedule_sha256": generated.schedule_digest,
+            "instruction_set_sha256": generated.instruction_set_digest,
             "workspace_bytes": generated.kernel.workspace_bytes,
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
