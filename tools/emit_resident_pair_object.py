@@ -107,7 +107,8 @@ def _buffer_abi(pair, buffers: dict[str, str], outputs: dict[str, str], *,
     return entries
 
 
-def _compile_object(directory: Path, riscv_root: Path) -> tuple[Path, int]:
+def _compile_object(directory: Path, riscv_root: Path,
+                    *, symbol: str = "mx_issue") -> tuple[Path, int]:
     cc = riscv_root / "bin/riscv64-unknown-elf-gcc"
     nm = riscv_root / "bin/riscv64-unknown-elf-nm"
     readelf = riscv_root / "bin/riscv64-unknown-elf-readelf"
@@ -127,7 +128,7 @@ def _compile_object(directory: Path, riscv_root: Path) -> tuple[Path, int]:
                                       text=True).splitlines()
     undefined = subprocess.check_output([str(nm), "-u", str(obj)],
                                         text=True).splitlines()
-    if len(defined) != 1 or defined[0].split()[-2:] != ["T", "mx_issue"] or undefined:
+    if len(defined) != 1 or defined[0].split()[-2:] != ["T", symbol] or undefined:
         raise ValueError("MX issuer object has unexpected symbols")
     sections = subprocess.check_output([str(readelf), "-SW", str(obj)], text=True)
     allocated_data_bytes = 0

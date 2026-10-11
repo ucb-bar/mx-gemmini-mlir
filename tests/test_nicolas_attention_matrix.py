@@ -6,6 +6,7 @@ import pytest
 
 from mx_gemmini_support.nicolas_attention_matrix import lower_dense_attention_matrix
 from mx_gemmini_support.target_profile import load_profile
+from tools.qualify_nicolas_attn_compute import _driver
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,3 +38,17 @@ def test_attention_matrix_rejects_other_stage_and_plain_profile() -> None:
         lower_dense_attention_matrix(vpu, "mlp")
     with pytest.raises(ValueError, match=r"MX\+VPU"):
         lower_dense_attention_matrix(plain, "qk")
+
+
+def test_compute_replay_removes_both_handwritten_matrix_calls() -> None:
+    middle = (ROOT / "docs/evidence/nicolas_attn_vpu_generated_middle_e9ded36_0344bcb/"
+              "attn_vpu_generated_middle.c").read_text()
+    driver = _driver(middle)
+    assert driver.count("mx_issue_qk(scale_sink);") == 1
+    assert driver.count("mx_issue_pv(scale_sink);") == 1
+    assert driver.count("mx_issue(p_scales);") == 1
+    assert "static void mm(" not in driver
+    assert "gemmini_vpu_" not in driver
+    assert "gemmini_spad_requant(" not in driver
+    with pytest.raises(ValueError, match="source seam differs"):
+        _driver(middle.replace("SP_V_ARG, SP_O, 1", "SP_V_ARG, SP_O, 0", 1))
