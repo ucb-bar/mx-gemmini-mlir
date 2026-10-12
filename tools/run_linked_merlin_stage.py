@@ -58,6 +58,7 @@ def main() -> None:
     if (build.get("schema") != "mx_gemmini.merlin_stage_probe.v1"
             or build.get("status") not in {
                 "linked_experimental_numeric_qualification_pending",
+                "linked_diagnostic_host_vpu_numeric_qualification_pending",
                 "spike_inference_incomplete"}):
         parser.error("build receipt is not a linked MX stage probe")
     if build.get("capture_model_sha256") != _sha(source):
@@ -71,7 +72,11 @@ def main() -> None:
     selected = build.get("selected_operations")
     if type(selected) is not int or selected < 0:
         parser.error("build receipt has no valid MX selection count")
-    route = "mx_gemmini_and_host" if selected else "host_only"
+    diagnostic_host_vpu = build.get("diagnostic_host_vpu") is True
+    if diagnostic_host_vpu and selected == 0:
+        parser.error("host-VPU diagnostic requires MX-routed contractions")
+    route = ("mx_gemmini_and_host_vpu_control" if diagnostic_host_vpu else
+             "mx_gemmini_and_host" if selected else "host_only")
     if build.get("execution_route", route) != route:
         parser.error("build receipt execution route conflicts with MX selection")
     extlib = None
@@ -114,6 +119,7 @@ def main() -> None:
         "profile_sha256": build["profile_sha256"],
         "build_hash": build["build_hash"],
         "execution_route": route,
+        "diagnostic_host_vpu": diagnostic_host_vpu,
         "selected_operations": selected,
         "elf_sha256": elf_sha,
         "elf_bytes": elf.stat().st_size,

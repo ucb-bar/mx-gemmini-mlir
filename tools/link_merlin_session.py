@@ -197,7 +197,8 @@ def link_session(
         if (receipt.get("schema") != "mx_gemmini.merlin_stage_probe.v1"
                 or receipt.get("profile_sha256") != expected_profile
                 or receipt.get("capture_model_sha256") != _sha(program.bundle / "model.mlir")
-                or not str(receipt.get("status", "")).startswith("linked_")):
+                or not str(receipt.get("status", "")).startswith("linked_")
+                or receipt.get("diagnostic_host_vpu") is True):
             raise ValueError(f"stage {program.name} build receipt differs from the session capture/profile")
         objects = _stage_objects(build)
         if len(objects) != (3 if receipt.get("selected_operations", 0) else 1):

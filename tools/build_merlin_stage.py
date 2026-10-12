@@ -102,6 +102,9 @@ def main() -> None:
     parser.add_argument("--arena-mb", type=int,
                         help="explicit Spike arena size; omitted uses Merlin's LLVM-site estimate")
     parser.add_argument("--output-dump-cap", type=int, default=1)
+    parser.add_argument("--diagnostic-host-vpu", action="store_true",
+                        help="keep current MX contraction routing but execute VPU-eligible "
+                             "operations on the host for a numerical control")
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
                         help="wall-clock limit per compiler/link command; 0 disables it")
@@ -154,13 +157,16 @@ def main() -> None:
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(source, profile)
+    if args.diagnostic_host_vpu and not expected_regions:
+        parser.error("--diagnostic-host-vpu requires selected MX contractions")
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
         prepared_transform=MXBF16CatalogPreparation(profile),
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root),
-        post_offload_transform=MXVPUPostOffload(profile),
+        post_offload_transform=(None if args.diagnostic_host_vpu
+                                else MXVPUPostOffload(profile)),
     ) if expected_regions else None)
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
@@ -187,9 +193,14 @@ def main() -> None:
     selected_vpu_regions = {row["region"] for row in vpu_selected}
     lowered_vpu_regions = {row["region"] for row in lowered_vpu}
     catalog_vpu_regions = set(catalog.get("vpu_softmax", {}).get("source_regions", ()))
-    if (len(lowered_vpu_regions) != len(lowered_vpu) or
-            selected_vpu_regions != lowered_vpu_regions or
-            selected_vpu_regions != catalog_vpu_regions):
+    softmax_coverage_invalid = (
+        len(lowered_vpu_regions) != len(lowered_vpu)
+        or (not args.diagnostic_host_vpu and
+            (selected_vpu_regions != lowered_vpu_regions or
+             selected_vpu_regions != catalog_vpu_regions))
+        or (args.diagnostic_host_vpu and bool(lowered_vpu_regions))
+    )
+    if softmax_coverage_invalid:
         raise RuntimeError("MX VPU softmax source selection, rewrite, and catalog disagree")
     # The inventory is taken before rewriting; reconcile its ownership with
     # the actual linked catalog so the final receipt cannot label a VPU call
@@ -246,13 +257,19 @@ def main() -> None:
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
+    status = ("linked_diagnostic_host_vpu_numeric_qualification_pending"
+              if args.diagnostic_host_vpu else
+              "linked_experimental_numeric_qualification_pending")
+    route = ("mx_gemmini_and_host_vpu_control" if args.diagnostic_host_vpu else
+             "mx_gemmini_and_host" if device is not None else "host_only")
     receipt = {
         "schema": "mx_gemmini.merlin_stage_probe.v1",
-        "status": "linked_experimental_numeric_qualification_pending",
+        "status": status,
         "capture_model_sha256": capture_sha,
         "profile_sha256": profile_sha256(profile),
         "catalog_manifest": str(catalog_path) if device is not None else None,
-        "execution_route": "mx_gemmini_and_host" if device is not None else "host_only",
+        "execution_route": route,
+        "diagnostic_host_vpu": args.diagnostic_host_vpu,
         "selected_operations": catalog["covered_contractions"],
         "expected_selected_operations": len(expected_regions),
         "raw_selected_source_coverage_complete": True,
