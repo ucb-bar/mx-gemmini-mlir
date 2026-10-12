@@ -64,6 +64,19 @@ def test_attention_uses_fp8_even_when_non_vpu_profile_supports_fp6() -> None:
                for s in plan["sites"] if s["role"] in {"qk", "pv"})
 
 
+def test_non_attention_batched_outer_product_uses_fp8_padding() -> None:
+    frontend = gzip.decompress((ARCHIVE / "tinyllama.mlir.gz").read_bytes()).decode()
+    worklist = build_model2mlir_worklist(frontend, VPU)
+    plan = build_model_precision_plan(worklist, VPU)
+    rotary = next(site for site in plan["sites"] if site["fqn"] == "lm.model.rotary_emb")
+    assert rotary["shape_bmnk"] == [1, 32, 8, 1]
+    assert rotary["role"] == "regular_batched_matmul"
+    assert rotary["selected_format"] == "mxfp8"
+    assert rotary["mx_padded_shape_bmnk"] == [1, 32, 32, 32]
+    assert rotary["required_operand_boundary"] == (
+        "quantize_batched_operands_to_mxfp8_with_e8m0_scales")
+
+
 def test_precision_plan_rejects_profile_swap() -> None:
     frontend = gzip.decompress((ARCHIVE / "tinyllama.mlir.gz").read_bytes()).decode()
     worklist = build_model2mlir_worklist(frontend, ALL)

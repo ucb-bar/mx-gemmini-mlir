@@ -34,4 +34,22 @@ def test_merlin_inventory_preserves_mx_precision_plan(model: str) -> None:
             for x in from_merlin["other_contraction_regions"]] == [
                 (x["region_id"], x["source_op"], x["fqn"])
                 for x in from_local["other_contraction_regions"]]
-    assert build_model_precision_plan(from_merlin, PROFILE) == build_model_precision_plan(from_local, PROFILE)
+    graph_plan = build_model_precision_plan(from_merlin, PROFILE)
+    local_plan = build_model_precision_plan(from_local, PROFILE)
+    if model != "smolvla":
+        assert graph_plan == local_plan
+    else:
+        # The older text worklist can route these source-compatible batched
+        # matmuls, but cannot identify their QK/PV operand policies without
+        # the structural SSA edges Merlin supplies.
+        assert len(from_merlin["attention_pairs"]) >= 2
+        assert graph_plan["selected_format_counts"] == local_plan["selected_format_counts"]
+        changed = [(new["region_id"], new["role"], old["role"])
+                   for new, old in zip(graph_plan["sites"], local_plan["sites"])
+                   if new != old]
+        assert changed == [
+            ("matmul_101", "qk", "regular_batched_matmul"),
+            ("matmul_102", "pv", "regular_batched_matmul"),
+            ("matmul_113", "qk", "regular_batched_matmul"),
+            ("matmul_114", "pv", "regular_batched_matmul"),
+        ]

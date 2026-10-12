@@ -11,6 +11,7 @@ from collections import Counter, OrderedDict
 import hashlib
 
 from .target_profile import profile_sha256
+from .merlin_attention_pairs import find_attention_pairs
 
 
 def build_mx_worklist_from_merlin(mlir_text: str, profile: dict) -> dict:
@@ -110,6 +111,7 @@ def build_mx_worklist_from_merlin(mlir_text: str, profile: dict) -> dict:
         "contraction_region_kinds": dict(sorted(Counter(kind for _, kind in groups).items())),
         "rank2_matmuls": matmuls,
         "rank3_batch_matmuls": batch_matmuls,
+        "attention_pairs": find_attention_pairs(inventory),
         "other_contraction_regions": [
             {"fqn": next(iter(group["fqns"]), None), "region_id": region,
              "source_op": kind,

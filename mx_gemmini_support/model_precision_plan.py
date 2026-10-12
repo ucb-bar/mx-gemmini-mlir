@@ -34,10 +34,10 @@ def _legal(profile: dict, fmt: str) -> bool:
 def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
     """Choose FP4 dense matmuls and FP8 QK/PV on the selected profile.
 
-    FP8 is the general MX baseline.  A linear projection remains a regular
-    matrix multiplication even when its parent is an attention module.  QK/PV
-    are identified only when a self-attention module has exactly two batched
-    contractions; any ambiguous group stays on the host for review.
+    FP8 is the general MX baseline for source-compatible batched matmuls.
+    A linear projection remains a regular matrix multiplication even when its
+    parent is an attention module. QK/PV receive their own operand policies
+    only after their relationship is established by SSA or module provenance.
     """
     if (worklist.get("schema") != "mx_gemmini.model2mlir_contraction_worklist.v1"
             or worklist.get("profile_sha256") != profile_sha256(profile)):
@@ -57,6 +57,15 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         region: stage for regions in attention.values() if len(regions) == 2
         for region, stage in zip(regions, ("qk", "pv"))
     }
+    # Merlin's SSA graph is authoritative when available. Functional models
+    # can omit module FQNs, so the module-name heuristic above is only a
+    # compatibility path for the standalone model2MLIR worklist.
+    for pair in worklist.get("attention_pairs", ()):
+        qk, pv = pair["qk_region_id"], pair["pv_region_id"]
+        if qk == pv or any(attention_stages.get(region, stage) != stage
+                           for region, stage in ((qk, "qk"), (pv, "pv"))):
+            raise ValueError("SSA attention pair conflicts with module provenance")
+        attention_stages[qk], attention_stages[pv] = "qk", "pv"
     batched_shapes = {site["region_id"]: site["shape_bmnk"]
                       for site in worklist["rank3_batch_matmuls"]}
     sites = []
@@ -100,7 +109,7 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
     for site in worklist["other_contraction_regions"]:
         stage = attention_stages.get(site["region_id"])
         shape = batched_shapes.get(site["region_id"])
-        if stage and shape:
+        if shape:
             selected, preferred = "mxfp8", "mxfp8"
             status, reason = "requires_fp8_batched_lowering", None
         else:
@@ -109,16 +118,18 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
             reason = "unsupported_batched_shape_or_abi" if stage else None
         sites.append({
             "region_id": site["region_id"], "fqn": site["fqn"],
-            "source_op": site["source_op"], "role": stage or "unclassified",
+            "source_op": site["source_op"],
+            "role": stage or "regular_batched_matmul" if shape else "unclassified",
             **({"shape_bmnk": shape,
                 "mx_padded_shape_bmnk": [shape[0]] +
                 [_round_up(value) for value in shape[1:]],
-                "output_crop_bmn": shape[:3]} if stage and shape else {}),
+                "output_crop_bmn": shape[:3]} if shape else {}),
             "preferred_format": preferred, "selected_format": selected,
             "required_operand_boundary": (
                 "quantize_q_and_k_to_mxfp8_with_e8m0_scales" if stage == "qk" else
                 "quantize_softmax_probabilities_and_v_to_mxfp8_with_e8m0_scales"
-                if stage == "pv" else None),
+                if stage == "pv" else
+                "quantize_batched_operands_to_mxfp8_with_e8m0_scales" if shape else None),
             "status": status, "reason": reason,
         })
     selected_counts = Counter(site["selected_format"] for site in sites)
