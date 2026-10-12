@@ -1,15 +1,118 @@
 {
-  "compiler_commit": "3f417f4",
+  "linked_decode_stages": {
+    "deepseek_qwen_decode": {
+      "build_hash": "83c4b7450884",
+      "capture_model_sha256": "00ff17354fde2eacc87a9a0ff6ebc53cbecc54ca2915e52ed8df7dadaa3c6334",
+      "compiler_commit": "3f417f4",
+      "elf_bytes": 7127992248,
+      "expected_mx_contractions": 254,
+      "raw_selected_source_coverage_complete": true,
+      "receipt_sha256": "b66aa6e129fd09cc6e544651b346871ff2110e848bea881d69bec638c0d03c57",
+      "selected_mx_contractions": 254,
+      "status": "linked_experimental_numeric_qualification_pending",
+      "vpu_lowered_regions": {
+        "add": 196,
+        "elementwise": 454,
+        "reduce": 57,
+        "softmax": 28,
+        "unary": 198
+      },
+      "vpu_residual_eligible": {
+        "add": 0,
+        "elementwise": 0,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      },
+      "vpu_softmax_host_regions": 0
+    },
+    "gemma2_decode": {
+      "status": "link_not_yet_completed"
+    },
+    "tinyllama_decode": {
+      "build_hash": "2f2e439b8b12",
+      "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+      "compiler_commit": "3f417f4",
+      "elf_bytes": 4415577008,
+      "expected_mx_contractions": 200,
+      "raw_selected_source_coverage_complete": true,
+      "receipt_sha256": "40145e6b029c2f87f4bb068e0343b866244f9c4efe1b14b7120a5a18556ff695",
+      "selected_mx_contractions": 200,
+      "status": "linked_experimental_numeric_qualification_pending",
+      "vpu_lowered_regions": {
+        "add": 88,
+        "elementwise": 358,
+        "reduce": 45,
+        "softmax": 22,
+        "unary": 156
+      },
+      "vpu_residual_eligible": {
+        "add": 0,
+        "elementwise": 0,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      },
+      "vpu_softmax_host_regions": 0
+    }
+  },
   "linked_first_stages": {
     "deepseek_qwen_prefill": {
-      "status": "link_in_progress"
+      "build_hash": "1411fd3425b9",
+      "capture_model_sha256": "d98737d6c812f467f7b6280d37291f868fae6b3cd66d6ad5d46e891e67b1cabb",
+      "compiler_commit": "3f417f4",
+      "elf_bytes": 7109692584,
+      "expected_mx_contractions": 254,
+      "raw_selected_source_coverage_complete": true,
+      "receipt_sha256": "dc3f7bbc12074b346f0888a86ac432fbf025d93531fa196094b4810efa602aad",
+      "selected_mx_contractions": 254,
+      "status": "linked_experimental_numeric_qualification_pending",
+      "vpu_lowered_regions": {
+        "add": 196,
+        "elementwise": 454,
+        "reduce": 57,
+        "softmax": 28,
+        "unary": 198
+      },
+      "vpu_residual_eligible": {
+        "add": 0,
+        "elementwise": 0,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      },
+      "vpu_softmax_host_regions": 0
     },
     "gemma2_prefill": {
-      "status": "link_in_progress"
+      "build_hash": "596db76bc562",
+      "capture_model_sha256": "f75f264f2dd13928175d01c2f3f339f2ec98f545de4ed75a7a28caca6a00eb01",
+      "compiler_commit": "3d09702",
+      "elf_bytes": 12818186776,
+      "expected_mx_contractions": 236,
+      "raw_selected_source_coverage_complete": true,
+      "receipt_sha256": "6587a6a7a0218faaa28ea5ce1eed8102023ed0441682aabadf88e5cd3a3c6b68",
+      "selected_mx_contractions": 236,
+      "status": "linked_experimental_numeric_qualification_pending",
+      "vpu_lowered_regions": {
+        "add": 104,
+        "elementwise": 686,
+        "reduce": 131,
+        "softmax": 26,
+        "unary": 289
+      },
+      "vpu_residual_eligible": {
+        "add": 0,
+        "elementwise": 0,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      },
+      "vpu_softmax_host_regions": 0
     },
     "smolvla_flow": {
       "build_hash": "951ddc6fc5e0",
       "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "compiler_commit": "3f417f4",
       "elf_bytes": 912406712,
       "expected_mx_contractions": 148,
       "raw_selected_source_coverage_complete": true,
@@ -35,6 +138,7 @@
     "smolvla_prefix": {
       "build_hash": "e576f4d82ffc",
       "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+      "compiler_commit": "3f417f4",
       "elf_bytes": 911558504,
       "expected_mx_contractions": 243,
       "raw_selected_source_coverage_complete": true,
@@ -60,6 +164,7 @@
     "tinyllama_prefill": {
       "build_hash": "205190f481cb",
       "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+      "compiler_commit": "3f417f4",
       "elf_bytes": 4401205152,
       "expected_mx_contractions": 200,
       "raw_selected_source_coverage_complete": true,
@@ -658,6 +763,20 @@
       ],
       "source_sha256": "3253af4ad0452ed625fe9e9f942c2db8b8ea973b53a126f41c39527b5be45588",
       "status": "spike_square_within_1pct"
+    },
+    {
+      "case": "vpu_tanh_spike",
+      "elf_sha256": "34779671de8cb8e1bccc0cb3401fe9aaba8d9385247b3f0b8046ac57da0c4658",
+      "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+      "numeric_line": "VPU TANH max_abs_ppm=10121 max_rel_ppm=10121",
+      "operation": "tanh",
+      "receipt_sha256": "7245e3bed01bb6d2d85fd0c28b88ca346b8d680696dc7239e2cfbfd83c88c420",
+      "shape": [
+        1,
+        128
+      ],
+      "source_sha256": "f19de8e80594f9e652b41c58a62790d421a4df5a3516669dc595e69cdfd48ffb",
+      "status": "spike_tanh_within_2pct_absolute_scaled"
     }
   ],
   "profile": "MxE4M3Fp4VpuGemminiRocketConfig",
@@ -666,6 +785,7 @@
   "source_only_decode_probes": {
     "deepseek_qwen_decode": {
       "capture_model_sha256": "00ff17354fde2eacc87a9a0ff6ebc53cbecc54ca2915e52ed8df7dadaa3c6334",
+      "compiler_commit": "3f417f4",
       "qualification": "rewrite_only_no_new_link_or_spike",
       "residual_eligible_after_rewrite": {
         "add": 0,
@@ -684,6 +804,7 @@
     },
     "gemma2_decode": {
       "capture_model_sha256": "ba25769f62085f60749dec88f1ebdac89b448843bb424dc60366c76cd5398f82",
+      "compiler_commit": "3f417f4",
       "qualification": "rewrite_only_no_new_link_or_spike",
       "residual_eligible_after_rewrite": {
         "add": 0,
@@ -691,6 +812,17 @@
         "reduce": 0,
         "softmax": 0,
         "unary": 0
+      },
+      "tanh_followup": {
+        "compiler_commit": "3d09702",
+        "residual_unary_eligible": 0,
+        "shape": [
+          1,
+          1,
+          256000
+        ],
+        "source_bound_rewritten_regions": 1,
+        "source_region": "tanh_0#tanh0"
       },
       "vpu_rewritten_regions": {
         "add": 209,
@@ -702,6 +834,7 @@
     },
     "tinyllama_decode": {
       "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+      "compiler_commit": "3f417f4",
       "qualification": "rewrite_only_no_new_link_or_spike",
       "residual_eligible_after_rewrite": {
         "add": 0,
