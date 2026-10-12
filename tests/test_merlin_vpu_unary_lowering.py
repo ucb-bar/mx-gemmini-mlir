@@ -1,4 +1,4 @@
-"""Captured rsqrt operations have exact source-bound VPU calls."""
+"""Captured unary operations have exact source-bound VPU calls."""
 
 from __future__ import annotations
 
@@ -36,6 +36,10 @@ def test_unary_kernel_and_ranked_shim() -> None:
                              operation="sigmoid", symbol="mx_sigmoid_probe_kernel")
     assert "case 4096:" in sigmoid.source
     assert sigmoid.source.count('.insn r 0x7b, 3, 33') == 8
+    tanh = emit_vpu_unary(VPU, shape=(1, 16), dtype="f32",
+                          operation="tanh", symbol="mx_tanh_probe_kernel")
+    assert "case 16:" in tanh.source
+    assert tanh.source.count('.insn r 0x7b, 3, 33') == 6
     square = emit_vpu_unary(VPU, shape=(1, 8, 2048), dtype="f32",
                             operation="square", symbol="mx_square_probe_kernel")
     assert "case 8192:" in square.source
@@ -55,7 +59,7 @@ def test_unary_kernel_and_ranked_shim() -> None:
 
 @pytest.mark.parametrize("model,expected", (
     ("tinyllama", 16), ("deepseek_r1_distill_qwen_1_5b", 9),
-    ("gemma2_2b", 22), ("smolvla", 44),
+    ("gemma2_2b", 23), ("smolvla", 44),
 ))
 def test_frozen_unary_sites_are_source_bound(model: str, expected: int) -> None:
     pytest.importorskip("merlin.frontends.linalg_mlir")
@@ -66,7 +70,7 @@ def test_frozen_unary_sites_are_source_bound(model: str, expected: int) -> None:
     assert selected_unary_sites(source, NO_VPU) == []
 
 
-@pytest.mark.parametrize("model,expected", (("tinyllama", 16), ("smolvla", 44)))
+@pytest.mark.parametrize("model,expected", (("tinyllama", 16), ("gemma2_2b", 23), ("smolvla", 44)))
 def test_frozen_unary_rewrites_to_external_calls(
         tmp_path: Path, model: str, expected: int) -> None:
     pytest.importorskip("merlin.frontends.linalg_mlir")
@@ -81,7 +85,7 @@ def test_frozen_unary_rewrites_to_external_calls(
     module = parse_mlir_file(output)
     calls = [op for op in module.walk() if op.name == "func.call" and
              any(f"mx_vpu_{operation}_" in str(getattr(op, "callee", ""))
-                 for operation in ("rsqrt", "sigmoid", "square", "neg", "gelu", "pow10000"))]
+                 for operation in ("rsqrt", "sigmoid", "tanh", "square", "neg", "gelu", "pow10000"))]
     assert len(calls) == expected
     receipt = json.loads((output.parent / "mx_vpu_unary_rewrite.json").read_text())
     assert len(receipt["regions"]) == expected

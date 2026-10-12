@@ -37,6 +37,22 @@ def _issue(profile: dict, *, elements: int, operation: str,
             vpu_command(profile, kind="rcp", src1_row=0x1000, src2_row=0,
                         dst_row=0x2000, rows=rows), Fence(),
         ))
+    elif operation == "tanh":
+        # tanh(x) = 2 / (1 + exp(-2*x)) - 1; round each VPU step to BF16.
+        commands.extend((
+            vpu_command(profile, kind="muls", src1_row=0, src2_row=0,
+                        dst_row=0x1000, rows=rows, immediate_bf16=0xc000),
+            vpu_command(profile, kind="exp", src1_row=0x1000, src2_row=0,
+                        dst_row=0x1000, rows=rows),
+            vpu_command(profile, kind="adds", src1_row=0x1000, src2_row=0,
+                        dst_row=0x1000, rows=rows, immediate_bf16=0x3f80),
+            vpu_command(profile, kind="rcp", src1_row=0x1000, src2_row=0,
+                        dst_row=0x1000, rows=rows),
+            vpu_command(profile, kind="muls", src1_row=0x1000, src2_row=0,
+                        dst_row=0x1000, rows=rows, immediate_bf16=0x4000),
+            vpu_command(profile, kind="adds", src1_row=0x1000, src2_row=0,
+                        dst_row=0x2000, rows=rows, immediate_bf16=0xbf80), Fence(),
+        ))
     elif operation == "gelu":
         # x / (1 + exp(-2*sqrt(2/pi)*(x + 0.044715*x^3))).
         # Every intermediate is BF16, as in the selected hardware VPU.
@@ -101,7 +117,7 @@ def emit_vpu_unary(profile: dict, *, shape: tuple[int, ...], dtype: str,
         raise ValueError("VPU unary needs the selected DIM16 Rocket MX VPU")
     if (not 1 <= len(shape) <= 4 or
             any(type(dim) is not int or dim <= 0 for dim in shape) or
-            dtype not in {"bf16", "f32"} or operation not in {"rsqrt", "sigmoid", "square", "neg", "gelu", "pow10000"} or
+            dtype not in {"bf16", "f32"} or operation not in {"rsqrt", "sigmoid", "tanh", "square", "neg", "gelu", "pow10000"} or
             not symbol.isidentifier() or not symbol.isascii()):
         raise ValueError("VPU unary needs a static tensor and supported operation")
     elements = prod(shape)

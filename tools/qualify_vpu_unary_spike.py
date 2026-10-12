@@ -41,6 +41,7 @@ def _driver(shape: tuple[int, ...], dtype: str, operation: str,
                   else "(float)((int)((index*17u)%127u)-63)/20.0f")
     oracle = (f"1.0f/__builtin_sqrtf({input_value})" if operation == "rsqrt"
               else f"1.0f/(1.0f+exp_approx(-({input_value})))" if operation == "sigmoid"
+              else f"2.0f/(1.0f+exp_ref(-2.0*({input_value})))-1.0f" if operation == "tanh"
               else f"({input_value})*({input_value})" if operation == "square"
               else f"exp_ref(9.210340371976184 * ({input_value}))" if operation == "pow10000"
               else (f"({input_value})/(1.0f+exp_approx(-1.595769166f*"
@@ -48,8 +49,8 @@ def _driver(shape: tuple[int, ...], dtype: str, operation: str,
                     f"({input_value})*({input_value}))))") if operation == "gelu"
               else f"-({input_value})")
     relative_limit_ppm = (50000 if operation == "pow10000" else
-                          20000 if operation == "gelu" else 10000)
-    denominator = ("(denominator>1.0f ? denominator : 1.0f)" if operation == "gelu"
+                          20000 if operation in {"gelu", "tanh"} else 10000)
+    denominator = ("(denominator>1.0f ? denominator : 1.0f)" if operation in {"gelu", "tanh"}
                    else "(denominator>0.000001f ? denominator : 0.000001f)")
     return f'''#include <stdint.h>
 #include <stdio.h>
@@ -98,7 +99,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shape", type=_shape, required=True)
     parser.add_argument("--dtype", choices=("bf16", "f32"), required=True)
-    parser.add_argument("--operation", choices=("rsqrt", "sigmoid", "square", "neg", "gelu", "pow10000"), default="rsqrt")
+    parser.add_argument("--operation", choices=("rsqrt", "sigmoid", "tanh", "square", "neg", "gelu", "pow10000"), default="rsqrt")
     for name in ("rtl-root", "riscv-root", "extlib", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
@@ -154,7 +155,7 @@ def main() -> None:
         "status": (f"spike_{args.operation}_within_5pct_relative_0p003_absolute"
                    if args.operation == "pow10000" else
                    f"spike_{args.operation}_within_2pct_absolute_scaled"
-                   if args.operation == "gelu" else
+                   if args.operation in {"gelu", "tanh"} else
                    f"spike_{args.operation}_within_1pct") if passed else "failed",
         "shape": list(args.shape), "dtype": args.dtype,
         "operation": args.operation,

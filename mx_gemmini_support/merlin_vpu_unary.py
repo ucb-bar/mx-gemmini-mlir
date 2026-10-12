@@ -38,6 +38,7 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
         source_region = prov.get("region_id")
         body_ops = op["body_ops"] if op["kind"] == "linalg.generic" else []
         operation = ("rsqrt" if body_ops == ["math.rsqrt"] else
+                     "tanh" if body_ops == ["math.tanh"] else
                      "sigmoid" if body_ops == _SIGMOID_PATTERN else
                      "pow10000" if (body_ops == _SQUARE_PATTERN and
                                     prov.get("aten") == "aten.pow.Scalar") else
@@ -57,6 +58,8 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
                     if operation == "rsqrt" else
                     {("sigmoid", "aten.sigmoid.default")}
                     if operation == "sigmoid" else
+                    {("tanh", "aten.tanh.default")}
+                    if operation == "tanh" else
                     {("pow", "aten.pow.Tensor_Scalar")}
                     if operation == "square" else
                     {("neg", "aten.neg.default")}
@@ -70,7 +73,7 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
         if (body.get("captures") or body.get("effects") or
                 any(item.get("effects") or item.get("regions") for item in operations)):
             continue
-        if operation in {"rsqrt", "neg"}:
+        if operation in {"rsqrt", "neg", "tanh"}:
             if (len(operations) != 1 or operations[0].get("operands") != ["arg:0"] or
                     body.get("yields") != ["op:0:0"]):
                 continue
@@ -234,6 +237,7 @@ class MXVPUUnaryPostOffload:
                         if step.name != "linalg.yield"]
             aten = getattr(op.attributes.get("prov.aten"), "data", None)
             operation = ("rsqrt" if body_ops == ["math.rsqrt"] else
+                         "tanh" if body_ops == ["math.tanh"] else
                          "sigmoid" if body_ops == _SIGMOID_PATTERN else
                          "pow10000" if (body_ops == _SQUARE_PATTERN and
                                         aten == "aten.pow.Scalar") else

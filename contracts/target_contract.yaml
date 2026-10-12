@@ -55,6 +55,7 @@ compute_units:
   - div
   - rsqrt
   - sigmoid
+  - tanh
   - square
   - neg
   - gelu
@@ -71,9 +72,9 @@ compute_units:
   - dtypes:
     - bf16
     family: elementwise_map
-    notes: Source-checked add, sub, mul, rcp-plus-mul div, rsqrt, sigmoid, square,
-      neg, tanh-GELU, and 10000-to-variable power with explicit BF16 rounding at f32
-      boundaries
+    notes: Source-checked add, sub, mul, rcp-plus-mul div, rsqrt, sigmoid, sigmoid-derived
+      tanh, square, neg, tanh-GELU, and 10000-to-variable power with explicit BF16
+      rounding at f32 boundaries
     ranks:
     - 1
     - 2
