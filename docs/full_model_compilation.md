@@ -1,5 +1,12 @@
 # Full model compilation through model2MLIR and MX Gemmini
 
+The [four linked MX+VPU sessions](evidence/four_vpu_session_links_20261012/README.md)
+now combine all captured stage graphs, host/device objects, state handoffs,
+and one verified checkpoint blob per model into standalone RV64 ELFs. Each
+device stage has exact MX contraction coverage and zero eligible VPU residuals.
+New full-session Spike completion and independent quantized-model numerical
+comparison remain open.
+
 The latest [source-bound MX+VPU arithmetic archive](evidence/mx_vpu_model_arithmetic_20261011/README.md)
 records linked first-stage matrix and VPU coverage on the four checkpoint
 captures, source-only decode coverage, and standalone Nicolas Spike arithmetic

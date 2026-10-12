@@ -1,0 +1,246 @@
+{
+  "merlin_shared_weights_commit": "2bc4d6284",
+  "mx_session_linker_commit": "1849ca8",
+  "profile": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.four_vpu_session_links.v1",
+  "sessions": {
+    "gemma": {
+      "arena_bytes": 15032385536,
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 293,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 294,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 12953373488,
+      "elf_sha256": "9f1083615daa7df477b8d4e696083e111460180d1344dde7a7febfa18adffa3f",
+      "link_receipt_sha256": "1a3bdb92d4db928b5ddb0f388deb0baba32de51f62065d3c8a8d54b031e46fdd",
+      "mem_bytes": 34359738368,
+      "programs": [
+        {
+          "capture_model_sha256": "f75f264f2dd13928175d01c2f3f339f2ec98f545de4ed75a7a28caca6a00eb01",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 236,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "ba25769f62085f60749dec88f1ebdac89b448843bb424dc60366c76cd5398f82",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 236,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 12816663552,
+      "shared_weight_sha256": "289be793cdbbc1efb12760addb7542fedf60d68c40ee7ab6bc8f5fd9419c79ac",
+      "shared_weight_stage": "prefill",
+      "stage_object_sha256": {
+        "decode": {
+          "device/device_catalog_shim.o": "2d0387fa0c82b63b5ca1429a84b4a3fda151c68bed2e84467afc35acaccf911a",
+          "device_catalog/mx_catalog.o": "1e014fa6645fdf95b9661cecc716df050ec7828aafaec38fa1b3a99d1ef4663f",
+          "model.o": "554a2897fc6156ec61a9b387fe177eb1e519eaea3419e72de071d9679a73eb36"
+        },
+        "prefill": {
+          "device/device_catalog_shim.o": "4a7107b9c2e38f1aa38d8745a576ca6a50e461d03052cecbbc8b71781b2aa4f9",
+          "device_catalog/mx_catalog.o": "c1e383766c511f430f99e3f04159ecf283712727d75c4694de76f0cfd311481d",
+          "model.o": "79a693b1b093e84ea0f727ed8cb0d5910d4379cc870f225dba878bf9c55bc112"
+        }
+      },
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "qwen": {
+      "arena_bytes": 9663676416,
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 343,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 344,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 7168224712,
+      "elf_sha256": "7cab44efa88340b683312de2e9edd0e2da00dc995ab085457125bf37d854e168",
+      "link_receipt_sha256": "08656236e6575fa09a187a93446cbb1eb03b7c8b15746bbcaf6bfa13911b7b08",
+      "mem_bytes": 23622320128,
+      "programs": [
+        {
+          "capture_model_sha256": "d98737d6c812f467f7b6280d37291f868fae6b3cd66d6ad5d46e891e67b1cabb",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 254,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "00ff17354fde2eacc87a9a0ff6ebc53cbecc54ca2915e52ed8df7dadaa3c6334",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 254,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 7108352000,
+      "shared_weight_sha256": "d02e3f498bbf90fe95cf5b670fb0b07c94ed9e708c808cb5aebed73f575cca18",
+      "shared_weight_stage": "prefill",
+      "stage_object_sha256": {
+        "decode": {
+          "device/device_catalog_shim.o": "e9e7bd12806c07f41783776d76aea2ede7d08ba9fe7e8b7e4ff37067baaa01ab",
+          "device_catalog/mx_catalog.o": "3f1e8962a8160d2567a21d213aa3a03da84e214ade8df40c78f6d8aa88d84077",
+          "model.o": "effe55abff7816607b4251bf097b870c8504eaa1c85bb9544633459b0e9b717e"
+        },
+        "prefill": {
+          "device/device_catalog_shim.o": "cab8db1f7abfdcbed8d101a802858370db09000a0acdecb5f340e18b915f4091",
+          "device_catalog/mx_catalog.o": "28f05ee923ab59e23d08adcf8923fc08c1ca8077c7fd15dfc4cb4c23287425be",
+          "model.o": "777b7c5f169c6696038f0117db7a1568b040b6f4d10c017ef1023a33d977b6cf"
+        }
+      },
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "smol": {
+      "arena_bytes": 8589934592,
+      "bindings": [
+        {
+          "name": "prefix_pad_masks",
+          "source_output": 0,
+          "source_program": "prefix_encode",
+          "target_input": 505,
+          "target_program": "flow_denoise"
+        },
+        {
+          "name": "prefix_kv_cache",
+          "source_output": 1,
+          "source_program": "prefix_encode",
+          "target_input": 506,
+          "target_program": "flow_denoise"
+        },
+        {
+          "name": "decoded_flow_state",
+          "source_output": 0,
+          "source_program": "flow_denoise",
+          "target_input": 0,
+          "target_program": "action_decode"
+        }
+      ],
+      "elf_bytes": 917470016,
+      "elf_sha256": "c3355a1dc524ef96401586864f4fbd8c9399bc16caedbe6f442eb244658d46d9",
+      "link_receipt_sha256": "f052790a94d8ba259676cfe092f6e6f3904312f7ce639d70a8988629a2fc6f93",
+      "mem_bytes": 16106127360,
+      "programs": [
+        {
+          "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+          "name": "prefix_encode",
+          "outputs": 2,
+          "selected_operations": 243,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+          "name": "flow_denoise",
+          "outputs": 3,
+          "selected_operations": 148,
+          "steps": 10
+        },
+        {
+          "capture_model_sha256": "c194700d5a9e19aa83456862f666a41559c83e51b992709bba598d681176224b",
+          "name": "action_decode",
+          "outputs": 1,
+          "selected_operations": 0,
+          "steps": 1
+        }
+      ],
+      "shared_weight_bytes": 906639456,
+      "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+      "shared_weight_stage": "prefix_encode",
+      "stage_object_sha256": {
+        "action_decode": {
+          "model.o": "f2a9b20e79e1303fdc78d63e2697b46a405579ac8f3f11a8ff457cb01b02db03"
+        },
+        "flow_denoise": {
+          "device/device_catalog_shim.o": "1f90024663a8eda8babd11e2879a6a0967140344893dd1c783e3ede9a3571ff2",
+          "device_catalog/mx_catalog.o": "39d404fb5dc6fb3cc7c7f11d8dd745d92ba7088f180edbb673beb87350edb882",
+          "model.o": "ae9879d88bab395d0389a92d9043075140984f07db2b00b8a37f627d4a673937"
+        },
+        "prefix_encode": {
+          "device/device_catalog_shim.o": "3b214e3c951ed827b603bb1ba4481bc5938b48a30d5380070bc6e90a7cfc509a",
+          "device_catalog/mx_catalog.o": "d93f023824343e978f5db5f2c4e37123bdb93668cb518f3dfa70312b2d97dce7",
+          "model.o": "ad4c35d5ca05adca9ad829dc65ddc1a00ff508680ce40ecdfa226d6b8cd9c49a"
+        }
+      },
+      "status": "linked_experimental_numeric_qualification_pending"
+    },
+    "tiny": {
+      "arena_bytes": 6442450944,
+      "bindings": [
+        {
+          "name": "kv_cache",
+          "source_output": 1,
+          "source_program": "prefill",
+          "target_input": 205,
+          "target_program": "decode"
+        },
+        {
+          "name": "position",
+          "source_output": 2,
+          "source_program": "prefill",
+          "target_input": 206,
+          "target_program": "decode"
+        }
+      ],
+      "elf_bytes": 4424776880,
+      "elf_sha256": "9980c3370e82b43c9bec91e1c1950ff3b635a24c2145ba51ccf22ccd250eea18",
+      "link_receipt_sha256": "ada849f8b2d6bd833b46cb18d6c316390aa1eb068e09895c17f74a7dfc648ae6",
+      "mem_bytes": 18253611008,
+      "programs": [
+        {
+          "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+          "name": "prefill",
+          "outputs": 3,
+          "selected_operations": 200,
+          "steps": 1
+        },
+        {
+          "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+          "name": "decode",
+          "outputs": 3,
+          "selected_operations": 200,
+          "steps": 32
+        }
+      ],
+      "shared_weight_bytes": 4400193536,
+      "shared_weight_sha256": "9be0ca271944ab7db0ee33c6652debf84fc3e0cc1924af1d4d0bb84906841dee",
+      "shared_weight_stage": "prefill",
+      "stage_object_sha256": {
+        "decode": {
+          "device/device_catalog_shim.o": "fcbce4b97016ceddd4b5fd3791e90d4ecdf3c502ff55c95a302eb86c384c530d",
+          "device_catalog/mx_catalog.o": "be496813e4b4bcbfc0c1adfdcdaa6866b19affaa5e6a2a09ea49190125f30139",
+          "model.o": "b4716aee29ba1241499b4bc116a874fef4d923fdc7314e3c8ebfa771315a6f7d"
+        },
+        "prefill": {
+          "device/device_catalog_shim.o": "a18c97769c9cfa847a9494912c748a3fbca965a417b831d3e7d20b59944e83b8",
+          "device_catalog/mx_catalog.o": "a2e4fb28487ffe0374f20c3d6e4e59d608276948c470dbcd20b36e73a10c01da",
+          "model.o": "368f84526a9673039c65892e983b8d208c9099372dd5ab36286f24f47133c1c5"
+        }
+      },
+      "status": "linked_experimental_numeric_qualification_pending"
+    }
+  }
+}
