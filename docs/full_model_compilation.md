@@ -305,7 +305,10 @@ same compiled graph.
 
 The counts prove compilation and dispatch ownership of the selected sites.
 They do not prove the FP4/FP8 output quality, and the VPU softmax sites are
-still executed by the host lane.
+still executed by the host lane. The [TinyLlama and SmolVLA coverage audit](evidence/tiny_smol_nicolas_coverage_20261011/README.md)
+also identifies 64 SmolVLA attention batch matmuls that remain on the host
+despite f32 source binding and padded FP8 schedule legality. The catalog's
+`coverage_complete` flag does not include those unselected sites.
 
 All four model families' bound prefill/prefix/flow subsets now compile as
 relocatable RV64 catalogs: TinyLlama 199 sites and seven kernels, Qwen 253
