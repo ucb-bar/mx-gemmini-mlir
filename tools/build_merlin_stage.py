@@ -142,9 +142,15 @@ def main() -> None:
     from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
     from mx_gemmini_support.merlin_vpu_inventory import audit_softmax_boundaries
+    from mx_gemmini_support.merlin_vpu_softmax import selected_softmax_sites
+    from mx_gemmini_support.merlin_vpu_add import MXVPUPostOffload, selected_add_sites
+    from mx_gemmini_support.merlin_vpu_elementwise import selected_elementwise_sites
+    from mx_gemmini_support.merlin_vpu_unary import selected_unary_sites
+    from mx_gemmini_support.merlin_vpu_reduce import selected_row_reduce_sites
     from mx_gemmini_support.target_profile import profile_sha256
 
     vpu_inventory = audit_softmax_boundaries(source.read_text(encoding="utf-8"), profile)
+    vpu_selected = selected_softmax_sites(source.read_text(encoding="utf-8"), profile)
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(source, profile)
@@ -154,6 +160,7 @@ def main() -> None:
         prepared_transform=MXBF16CatalogPreparation(profile),
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root),
+        post_offload_transform=MXVPUPostOffload(profile),
     ) if expected_regions else None)
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
@@ -174,6 +181,68 @@ def main() -> None:
     else:
         catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
         _require_source_coverage(expected_regions, catalog)
+    rewrite_path = work / "device_host_abi/mx_vpu_softmax_rewrite.json"
+    lowered_vpu = (json.loads(rewrite_path.read_text(encoding="utf-8"))["regions"]
+                   if rewrite_path.is_file() else [])
+    selected_vpu_regions = {row["region"] for row in vpu_selected}
+    lowered_vpu_regions = {row["region"] for row in lowered_vpu}
+    catalog_vpu_regions = set(catalog.get("vpu_softmax", {}).get("source_regions", ()))
+    if (len(lowered_vpu_regions) != len(lowered_vpu) or
+            selected_vpu_regions != lowered_vpu_regions or
+            selected_vpu_regions != catalog_vpu_regions):
+        raise RuntimeError("MX VPU softmax source selection, rewrite, and catalog disagree")
+    # The inventory is taken before rewriting; reconcile its ownership with
+    # the actual linked catalog so the final receipt cannot label a VPU call
+    # as host-owned merely because the direct profile matcher was narrower.
+    vpu_inventory["inventory_phase"] = "reconciled_after_link"
+    for row in vpu_inventory["regions"]:
+        if row["region"] in lowered_vpu_regions:
+            row["owner"] = "mx_gemmini_vpu"
+            row["reason"] = "source_bound_converted_vpu_row_softmax"
+    vpu_inventory["host_owned_regions"] = sum(
+        row["owner"] == "compiled_host" for row in vpu_inventory["regions"])
+    add_rewrite_path = work / "device_host_abi/mx_vpu_add_rewrite.json"
+    lowered_add = (json.loads(add_rewrite_path.read_text(encoding="utf-8"))["regions"]
+                   if add_rewrite_path.is_file() else [])
+    catalog_add_regions = set(catalog.get("vpu_add", {}).get("source_regions", ()))
+    if (len({row["region"] for row in lowered_add}) != len(lowered_add) or
+            not {row["region"] for row in lowered_add} <= catalog_add_regions):
+        raise RuntimeError("MX VPU add rewrite exceeds its source-bound catalog")
+    elementwise_rewrite_path = work / "device_host_abi/mx_vpu_elementwise_rewrite.json"
+    lowered_elementwise = (json.loads(elementwise_rewrite_path.read_text(encoding="utf-8"))["regions"]
+                           if elementwise_rewrite_path.is_file() else [])
+    catalog_elementwise_regions = set(catalog.get("vpu_elementwise", {}).get("source_regions", ()))
+    if (len({row["region"] for row in lowered_elementwise}) != len(lowered_elementwise) or
+            not {row["region"] for row in lowered_elementwise} <= catalog_elementwise_regions):
+        raise RuntimeError("MX VPU elementwise rewrite exceeds its source-bound catalog")
+    unary_rewrite_path = work / "device_host_abi/mx_vpu_unary_rewrite.json"
+    lowered_unary = (json.loads(unary_rewrite_path.read_text(encoding="utf-8"))["regions"]
+                     if unary_rewrite_path.is_file() else [])
+    catalog_unary_regions = set(catalog.get("vpu_unary", {}).get("source_regions", ()))
+    if (len({row["region"] for row in lowered_unary}) != len(lowered_unary) or
+            not {row["region"] for row in lowered_unary} <= catalog_unary_regions):
+        raise RuntimeError("MX VPU unary rewrite exceeds its source-bound catalog")
+    reduce_rewrite_path = work / "device_host_abi/mx_vpu_reduce_rewrite.json"
+    lowered_reduce = (json.loads(reduce_rewrite_path.read_text(encoding="utf-8"))["regions"]
+                      if reduce_rewrite_path.is_file() else [])
+    catalog_reduce_regions = set(catalog.get("vpu_reduce", {}).get("source_regions", ()))
+    if (len({row["region"] for row in lowered_reduce}) != len(lowered_reduce) or
+            not {row["region"] for row in lowered_reduce} <= catalog_reduce_regions):
+        raise RuntimeError("MX VPU reduction rewrite exceeds its source-bound catalog")
+    residual_eligible = {}
+    post_receipt = work / "device_host_abi/post_offload_transform.json"
+    if post_receipt.is_file():
+        selected_path = Path(json.loads(post_receipt.read_text())["selected_path"])
+        selected_text = selected_path.read_text()
+        residual_eligible = {
+            "softmax": len(selected_softmax_sites(selected_text, profile)),
+            "add": len(selected_add_sites(selected_text, profile)),
+            "elementwise": len(selected_elementwise_sites(selected_text, profile)),
+            "unary": len(selected_unary_sites(selected_text, profile)),
+            "reduce": len(selected_row_reduce_sites(selected_text, profile)),
+        }
+        if any(residual_eligible.values()):
+            raise RuntimeError(f"MX VPU eligible source sites remained on host: {residual_eligible}")
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
@@ -190,6 +259,14 @@ def main() -> None:
         "unbound_precision_proposals": len(catalog["unbound_precision_proposals"]),
         "widened_bf16_contractions": widened_bf16,
         "vpu_softmax_inventory": vpu_inventory,
+        "vpu_softmax_selected_regions": len(vpu_selected),
+        "vpu_softmax_lowered_regions": len(lowered_vpu),
+        "vpu_softmax_host_regions": vpu_inventory["host_owned_regions"],
+        "vpu_add_lowered_regions": len(lowered_add),
+        "vpu_elementwise_lowered_regions": len(lowered_elementwise),
+        "vpu_unary_lowered_regions": len(lowered_unary),
+        "vpu_reduce_lowered_regions": len(lowered_reduce),
+        "vpu_residual_eligible": residual_eligible,
         "unique_kernels": catalog["unique_kernels"],
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),

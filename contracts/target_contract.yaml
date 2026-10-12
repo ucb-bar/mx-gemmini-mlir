@@ -49,14 +49,45 @@ compute_units:
   name: vpu
   ops:
   - softmax
+  - add
+  - sub
+  - mul
+  - div
+  - rsqrt
+  - sigmoid
+  - square
+  - neg
+  - gelu
+  - pow10000
+  - rsum
+  - rmax
   semantic_capabilities:
   - dtypes:
     - bf16
     family: softmax
-    notes: Only source-checked BF16 row softmax is declared; other VPU ops require
-      per-op lowering
+    notes: Source-checked row softmax; f32 boundaries explicitly round to BF16
     ranks:
     - 2
+  - dtypes:
+    - bf16
+    family: elementwise_map
+    notes: Source-checked add, sub, mul, rcp-plus-mul div, rsqrt, sigmoid, square,
+      neg, tanh-GELU, and 10000-to-variable power with explicit BF16 rounding at f32
+      boundaries
+    ranks:
+    - 1
+    - 2
+    - 3
+    - 4
+  - dtypes:
+    - bf16
+    family: reduction
+    notes: Source-checked last-axis sum and max with identity init and explicit f32/BF16
+      boundaries
+    ranks:
+    - 2
+    - 3
+    - 4
 endpoint_kind: external_backend
 family: tensor_resident
 mx_direct_modes:

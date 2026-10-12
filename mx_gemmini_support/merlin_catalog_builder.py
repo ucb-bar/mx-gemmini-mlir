@@ -18,7 +18,16 @@ from .dense_contraction import emit_dense_batch_contraction, emit_dense_contract
 from .dense_kernel import emit_shared_workspace_definition
 from .merlin_catalog_plan import plan_merlin_catalog
 from .merlin_schedule_policy import build_policy_plan, selected_policy
+from .merlin_vpu_add import emit_memref_add_shim, selected_add_sites
+from .merlin_vpu_elementwise import selected_elementwise_sites
+from .merlin_vpu_softmax import emit_memref_softmax_shim, selected_softmax_sites
+from .merlin_vpu_unary import emit_memref_unary_shim, selected_unary_sites
+from .merlin_vpu_reduce import emit_memref_reduce_shim, selected_row_reduce_sites
 from .target_profile import load_profile, profile_sha256
+from .vpu_add_kernel import emit_vpu_add, emit_vpu_elementwise
+from .vpu_row_softmax import emit_vpu_row_softmax
+from .vpu_unary_kernel import emit_vpu_unary
+from .vpu_row_reduce import emit_vpu_row_reduce
 
 
 _WORKSPACE_SYMBOL = "mx_catalog_workspace"
@@ -126,6 +135,96 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
         })
+    softmax_sites = selected_softmax_sites(Path(prepared).read_text(), profile)
+    softmax_shapes = {tuple(site["shape"]): site for site in softmax_sites}
+    softmax_kernels = []
+    for shape, site in softmax_shapes.items():
+        generated = emit_vpu_row_softmax(
+            profile, logical_rows=site["logical_rows"],
+            row_width=site["row_width"], symbol=site["kernel_symbol"])
+        compile_source(site["kernel_symbol"], generated.source)
+        compile_source(site["symbol"], emit_memref_softmax_shim(shape))
+        softmax_kernels.append({
+            "shape": list(shape), "logical_rows": site["logical_rows"],
+            "row_width": site["row_width"],
+            "padded_width": generated.padded_width,
+            "rows_per_chunk": generated.rows_per_chunk,
+            "symbol": site["symbol"],
+            "kernel_symbol": site["kernel_symbol"],
+            "vpu_steps": list(generated.vpu_steps),
+        })
+    add_sites = selected_add_sites(Path(prepared).read_text(), profile)
+    add_shapes = {site["symbol"]: site for site in add_sites}
+    add_kernels = []
+    for site in add_shapes.values():
+        generated = emit_vpu_add(
+            profile, elements=site["elements"], row_width=site["row_width"],
+            dtype=site["dtype"], broadcast=site["broadcast"],
+            symbol=site["kernel_symbol"])
+        compile_source(site["kernel_symbol"], generated.source)
+        compile_source(site["symbol"], emit_memref_add_shim(site))
+        add_kernels.append({
+            "symbol": site["symbol"], "kernel_symbol": site["kernel_symbol"],
+            "shape": list(site["shape"]), "rhs_shape": list(site["rhs_shape"]),
+            "dtype": site["dtype"], "broadcast": site["broadcast"],
+            "elements_per_chunk": generated.elements_per_chunk,
+        })
+    elementwise_sites = selected_elementwise_sites(Path(prepared).read_text(), profile)
+    elementwise_shapes = {site["symbol"]: site for site in elementwise_sites}
+    elementwise_kernels = []
+    for site in elementwise_shapes.values():
+        generated = emit_vpu_elementwise(
+            profile, result_shape=site["shape"],
+            lhs_shape=site["lhs_shape"], lhs_axes=site["lhs_axes"],
+            rhs_shape=site["rhs_shape"],
+            dtype=site["dtype"], lhs_dtype=site["lhs_dtype"],
+            rhs_dtype=site["rhs_dtype"], operation=site["operation"],
+            symbol=site["kernel_symbol"], rhs_axes=site["rhs_axes"])
+        compile_source(site["kernel_symbol"], generated.source)
+        compile_source(site["symbol"], emit_memref_add_shim(site))
+        elementwise_kernels.append({
+            "symbol": site["symbol"], "kernel_symbol": site["kernel_symbol"],
+            "operation": site["operation"], "dtype": site["dtype"],
+            "lhs_dtype": site["lhs_dtype"], "rhs_dtype": site["rhs_dtype"],
+            "shape": list(site["shape"]),
+            "lhs_shape": list(site["lhs_shape"]),
+            "lhs_axes": list(site["lhs_axes"]),
+            "rhs_shape": list(site["rhs_shape"]),
+            "rhs_axes": list(site["rhs_axes"]),
+            "elements_per_chunk": generated.elements_per_chunk,
+        })
+    unary_sites = selected_unary_sites(Path(prepared).read_text(), profile)
+    unary_shapes = {site["symbol"]: site for site in unary_sites}
+    unary_kernels = []
+    for site in unary_shapes.values():
+        generated = emit_vpu_unary(
+            profile, shape=site["shape"], dtype=site["dtype"],
+            operation=site["operation"], symbol=site["kernel_symbol"])
+        compile_source(site["kernel_symbol"], generated.source)
+        compile_source(site["symbol"], emit_memref_unary_shim(site))
+        unary_kernels.append({
+            "symbol": site["symbol"], "kernel_symbol": site["kernel_symbol"],
+            "operation": site["operation"], "dtype": site["dtype"],
+            "shape": list(site["shape"]),
+            "elements_per_chunk": generated.elements_per_chunk,
+        })
+    reduce_sites = selected_row_reduce_sites(Path(prepared).read_text(), profile)
+    reduce_shapes = {site["symbol"]: site for site in reduce_sites}
+    reduce_kernels = []
+    for site in reduce_shapes.values():
+        generated = emit_vpu_row_reduce(
+            profile, logical_rows=site["logical_rows"],
+            row_width=site["row_width"], operation=site["operation"],
+            symbol=site["kernel_symbol"])
+        compile_source(site["kernel_symbol"], generated.source)
+        compile_source(site["symbol"], emit_memref_reduce_shim(site))
+        reduce_kernels.append({
+            "symbol": site["symbol"], "kernel_symbol": site["kernel_symbol"],
+            "operation": site["operation"], "shape": list(site["shape"]),
+            "output_shape": list(site["output_shape"]),
+            "padded_width": generated.padded_width,
+            "rows_per_chunk": generated.rows_per_chunk,
+        })
     compile_source("runtime_quant", _QUANTIZER)
     compile_source("shared_workspace", emit_shared_workspace_definition(
         max_workspace, symbol=_WORKSPACE_SYMBOL))
@@ -137,7 +236,27 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     rows = [line.split() for line in symbols.stdout.splitlines()]
     defined = [row[0] for row in rows if len(row) >= 2 and row[1].upper() == "T"]
     if (any(len(row) < 2 or row[1].upper() == "U" for row in rows) or
-            any(defined.count(entry["symbol"]) != 1 for entry in plan["kernels"])):
+            any(defined.count(entry["symbol"]) != 1 for entry in plan["kernels"]) or
+            any(defined.count(site[name]) != 1 for site in softmax_shapes.values()
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in softmax_shapes.values()) or
+            any(defined.count(site[name]) != 1 for site in add_shapes.values()
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in add_shapes.values()) or
+            any(defined.count(site[name]) != 1 for site in elementwise_shapes.values()
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in elementwise_shapes.values()) or
+            any(defined.count(site[name]) != 1 for site in unary_shapes.values()
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in unary_shapes.values()) or
+            any(defined.count(site[name]) != 1 for site in reduce_shapes.values()
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in reduce_shapes.values())):
         raise ValueError("MX catalog object has unresolved or duplicate kernel symbols")
     target_dtypes = sorted({tuple(entry["target_dtypes"]) for entry in plan["kernels"]})
     policy = {
@@ -174,6 +293,36 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "unique_kernels": len(kernel_records),
         "kernels": kernel_records,
         "bindings": plan["bindings"],
+        "vpu_softmax": {
+            "status": "source_bound_f32_to_bf16_vpu_to_f32",
+            "numeric_policy": "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities",
+            "source_regions": [site["region"] for site in softmax_sites],
+            "kernels": softmax_kernels,
+        },
+        "vpu_add": {
+            "status": "source_bound_bf16_or_explicit_f32_conversion",
+            "numeric_policy": "bf16_vpu_add_or_f32_to_bf16_rne_vpu_add_to_f32",
+            "source_regions": [site["region"] for site in add_sites],
+            "kernels": add_kernels,
+        },
+        "vpu_elementwise": {
+            "status": "source_bound_bf16_or_explicit_f32_conversion",
+            "numeric_policy": "f32_to_bf16_rne_vpu_to_f32_or_direct_bf16",
+            "source_regions": [site["region"] for site in elementwise_sites],
+            "kernels": elementwise_kernels,
+        },
+        "vpu_unary": {
+            "status": "source_bound_bf16_or_explicit_f32_conversion",
+            "numeric_policy": "f32_to_bf16_rne_vpu_unary_to_f32_or_direct_bf16",
+            "source_regions": [site["region"] for site in unary_sites],
+            "kernels": unary_kernels,
+        },
+        "vpu_reduce": {
+            "status": "source_bound_f32_to_bf16_reduce_to_f32",
+            "numeric_policy": "f32_to_bf16_rne_vpu_row_reduce_to_f32",
+            "source_regions": [site["region"] for site in reduce_sites],
+            "kernels": reduce_kernels,
+        },
         "compilation": {
             "object_sha256": _sha(object_path),
             "source_sha256": source_hashes,

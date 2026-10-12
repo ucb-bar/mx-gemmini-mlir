@@ -79,10 +79,16 @@ def contract_for_profile(profile: dict) -> dict:
             raise ValueError("MX VPU profile lacks the observed softmax primitives")
         units.append({
             "name": "vpu", "kind": "vector", "dtypes": ["bf16"],
-            "ops": ["softmax"], "exposure": "external_backend",
+            "ops": ["softmax", "add", "sub", "mul", "div", "rsqrt", "sigmoid", "square", "neg", "gelu", "pow10000", "rsum", "rmax"], "exposure": "external_backend",
             "semantic_capabilities": [{
                 "family": "softmax", "dtypes": ["bf16"], "ranks": [2],
-                "notes": "Only source-checked BF16 row softmax is declared; other VPU ops require per-op lowering",
+                "notes": "Source-checked row softmax; f32 boundaries explicitly round to BF16",
+            }, {
+                "family": "elementwise_map", "dtypes": ["bf16"], "ranks": [1, 2, 3, 4],
+                "notes": "Source-checked add, sub, mul, rcp-plus-mul div, rsqrt, sigmoid, square, neg, tanh-GELU, and 10000-to-variable power with explicit BF16 rounding at f32 boundaries",
+            }, {
+                "family": "reduction", "dtypes": ["bf16"], "ranks": [2, 3, 4],
+                "notes": "Source-checked last-axis sum and max with identity init and explicit f32/BF16 boundaries",
             }],
         })
     return {
