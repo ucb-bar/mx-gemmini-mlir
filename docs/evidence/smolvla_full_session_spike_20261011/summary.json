@@ -1,0 +1,19 @@
+{
+  "complete": true,
+  "exit_code": 0,
+  "expected_events": 45,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "link_receipt_sha256": "8e9e56685fc529e0fce6ffcfd28c7bbad0bca941dcc4a513806c21897e5e2cb6",
+  "log_sha256": "2df005c7fc842e5508a9bf1d14d411978c6897ffb1d948945be74c096ebc1672",
+  "numerical_reference_status": "pending_independent_quantized_reference",
+  "observed_events": 45,
+  "programs": [
+    "prefix_encode",
+    "flow_x10",
+    "action_decode"
+  ],
+  "schema": "mx_gemmini.merlin_session_spike_run.v1",
+  "softmax_placement": "host_f32_rank4",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending"
+}

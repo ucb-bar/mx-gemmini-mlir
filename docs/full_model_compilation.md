@@ -285,8 +285,10 @@ artifact, with policy, schedule, and instruction-set SHA-256s in the manifest.
 This replaces the serial command issuer in new
 full-model catalog builds. The [native schedule evidence](evidence/merlin_mk_native_model_sites_20261011/README.md)
 records three model-derived Spike goldens and the compiled 199-site TinyLlama
-catalog. Existing linked model ELFs still use the older serial catalogs and
-do not establish native whole-model execution or performance.
+catalog. A manually relinked full-checkpoint TinyLlama prefill using that
+catalog reached guest `DONE` on Spike and matched the serial catalog's
+32,000-logit digest exactly. This does not establish a full linked session,
+independent quantized-model parity, or meaningful performance improvement.
 
 The linked decode or flow stage catalogs place the selected contractions as
 follows. FP4 covers ordinary matrix work; FP8 covers the admitted attention
@@ -392,7 +394,12 @@ structurally complete run.
 
 The [four-session link archive](evidence/four_checkpoint_session_links_20261011/README.md)
 records full checkpoint ELF identities and memory layouts for TinyLlama,
-Qwen, Gemma, and SmolVLA. Their Spike runs remain separate execution gates.
+Qwen, Gemma, and SmolVLA. The [SmolVLA linked session](evidence/smolvla_full_session_spike_20261011/README.md)
+has since reached guest `DONE` on Nicolas's pinned Spike with all 45 expected
+protocol events (12 starts and 33 output/state digests) and process exit zero.
+Its numeric qualification and VPU softmax placement remain open. TinyLlama and
+Qwen linked session runs timed out
+after 17/132 and 9/132 events; Gemma's sized session run is still in progress.
 For example:
 
 ```sh
@@ -417,10 +424,10 @@ For a new single-stage build, `tools.build_merlin_stage` now asks Merlin to
 size the Spike arena from the final LLVM IR by default. Pass `--arena-mb`
 to override that estimate explicitly. The stage receipt records the selected
 arena size, allocation-site count, literal-byte sum, and dynamic-site count.
-The remaining full-model gates are completed linked session runs on Nicolas's
-Spike, VPU placement with an explicit BF16 conversion and softmax numerical
-policy, and comparison of every output and recurrent state against an
-independent quantized reference. The native f32 encoder and packed buffer
+The remaining full-model gates are completed linked TinyLlama, Qwen, and Gemma
+session runs on Nicolas's Spike, VPU placement with an explicit BF16 conversion
+and softmax numerical policy, and comparison of every output and recurrent state
+against an independent quantized reference. The native f32 encoder and packed buffer
 glue stay in this target package; Merlin's graph inventory, catalog ABI,
 memref shim, host lowering, and session orchestration remain shared.
 
