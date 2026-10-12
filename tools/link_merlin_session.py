@@ -21,8 +21,8 @@ def _sha(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def _run(argv: list[str | Path]) -> None:
-    subprocess.run([str(part) for part in argv], check=True)
+def _run(argv: list[str | Path], *, cwd: Path | None = None) -> None:
+    subprocess.run([str(part) for part in argv], check=True, cwd=cwd)
 
 
 def _stage_paths(values: list[str]) -> dict[str, Path]:
@@ -33,29 +33,6 @@ def _stage_paths(values: list[str]) -> dict[str, Path]:
             raise ValueError(f"invalid or duplicate --stage-build {value!r}; use name=directory")
         result[name] = Path(path).resolve(strict=True)
     return result
-
-
-def _shared_weight_build(programs: tuple, builds: dict[str, Path], generated: dict) -> str:
-    """Return the stage with the shared nonempty blob, checking exact order/bytes."""
-    by_name = {row["name"]: row for row in generated["programs"]}
-    selected_name = ""
-    selected_identity: tuple[int, str] | None = None
-    for program in programs:
-        name = program.name
-        path = builds[name] / "cgen/weights.bin"
-        if not path.is_file() or path.is_symlink():
-            raise ValueError(f"stage {name} lacks a plain generated weight blob")
-        identity = (path.stat().st_size, _sha(path))
-        generated_identity = (by_name[name]["weights_bytes"],
-                              by_name[name]["weights_sha256"])
-        if identity != generated_identity:
-            raise ValueError(f"stage {name} weight layout differs from Merlin's session ABI")
-        if identity[0]:
-            if selected_identity is None:
-                selected_name, selected_identity = name, identity
-            elif identity != selected_identity:
-                raise ValueError("session stages have different nonempty weight blobs")
-    return selected_name or programs[0].name
 
 
 def _defined(nm: Path, object_path: Path) -> set[str]:
@@ -240,17 +217,20 @@ def link_session(
     output.mkdir(parents=True)
     generated = session_bundle.generate(
         session_root, output / "generated", materialize_weights=False)
-    weight_name = _shared_weight_build(session.programs, builds, generated)
+    shared_weights = session_bundle.materialize_shared_weights(
+        session, generated, output / "shared_weights")
+    weight_name = shared_weights["program"]
     estimates = {program.name: estimate_llvm_malloc(
         builds[program.name] / "lower/model.ll") for program in session.programs}
     arena_bytes = max(recommended_arena_bytes(value) for value in estimates.values())
-    weight_bytes = (builds[weight_name] / "cgen/weights.bin").stat().st_size
+    weight_bytes = shared_weights["bytes"]
     layout = spike_session_layout(weights_bytes=weight_bytes, arena_bytes=arena_bytes)
     bin_dir = riscv_root / "bin"
-    cc, nm, objcopy = (bin_dir / name for name in (
-        "riscv64-unknown-elf-gcc", "riscv64-unknown-elf-nm", "riscv64-unknown-elf-objcopy"))
-    if not all(path.is_file() for path in (cc, nm, objcopy)):
-        raise ValueError("session link needs explicit RV64 gcc, nm, and objcopy")
+    cc, nm, objcopy, ld = (bin_dir / name for name in (
+        "riscv64-unknown-elf-gcc", "riscv64-unknown-elf-nm",
+        "riscv64-unknown-elf-objcopy", "riscv64-unknown-elf-ld"))
+    if not all(path.is_file() for path in (cc, nm, objcopy, ld)):
+        raise ValueError("session link needs explicit RV64 gcc, nm, objcopy, and ld")
     runtime_c = merlin_src.parent / "merlin/runtime/c"
     bare = merlin_src.parent / "merlin/runtime/baremetal/spike"
     flags = ["-O2", "-ffreestanding", "-fno-builtin", "-march=rv64gc",
@@ -284,7 +264,10 @@ def link_session(
           f"-DMERLIN_WEIGHTS_BASE_ADDR={hex(layout['weights_base'])}ULL",
           "-c", malloc_source, "-o", malloc_object])
     all_objects.append(malloc_object)
-    all_objects.append(builds[weight_name] / "weights_blob.o")
+    weight_object = output / "weights_blob.o"
+    _run([ld, "-r", "-b", "binary", "-o", weight_object, "weights.bin"],
+         cwd=Path(shared_weights["path"]).parent)
+    all_objects.append(weight_object)
     generated_root = output / "generated"
     for index, program in enumerate(session.programs):
         stage_dir = generated_root / f"stage_{index}_{program.name}"
@@ -320,7 +303,7 @@ def link_session(
         "profile_sha256": expected_profile,
         "shared_weight_stage": weight_name,
         "shared_weight_bytes": weight_bytes,
-        "shared_weight_sha256": _sha(builds[weight_name] / "cgen/weights.bin"),
+        "shared_weight_sha256": shared_weights["sha256"],
         "stage_object_sha256": source_objects,
         "arena_layout": layout,
         "static_malloc_estimates": {
