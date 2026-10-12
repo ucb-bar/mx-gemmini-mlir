@@ -7,6 +7,11 @@ device stage has exact MX contraction coverage and zero eligible VPU residuals.
 New full-session Spike completion and independent quantized-model numerical
 comparison remain open.
 
+The [new TinyLlama decode Spike run](evidence/tiny_vpu_decode_spike_20261012/README.md)
+completed one captured stage with all three output/state digests and zero
+memref rank mismatches. Its logits differ from unquantized PyTorch; an
+independent reference under the exact FP4/FP8 and BF16 policy is still needed.
+
 The latest [source-bound MX+VPU arithmetic archive](evidence/mx_vpu_model_arithmetic_20261011/README.md)
 records linked first-stage matrix and VPU coverage on the four checkpoint
 captures, source-only decode coverage, and standalone Nicolas Spike arithmetic

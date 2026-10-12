@@ -1,0 +1,63 @@
+{
+  "build_receipt_sha256": "40145e6b029c2f87f4bb068e0343b866244f9c4efe1b14b7120a5a18556ff695",
+  "elf_sha256": "27533d93bdb89047f4b64660cc0b6301b6c6b228156f696c7cde9f1c0cd25053",
+  "exit_code": 0,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "guest_cycles": 353093242583,
+  "guest_done": true,
+  "memref_rank_mismatches": 0,
+  "output_digests": [
+    {
+      "bytes": 128000,
+      "dtype": "f32",
+      "elements": 32000,
+      "index": 0,
+      "sha256": "8cf76e39fdf72eced994c5a7370e14041e560e35fe294aff469dc9a5bd7f980b",
+      "shape": [
+        1,
+        32000
+      ]
+    },
+    {
+      "bytes": 7208960,
+      "dtype": "f32",
+      "elements": 1802240,
+      "index": 1,
+      "sha256": "055e2d72caf2e9e3c05d5a6cf1fb2123be190cd53a7c660749d2817eccd0da40",
+      "shape": [
+        2,
+        22,
+        1,
+        4,
+        160,
+        64
+      ]
+    },
+    {
+      "bytes": 176,
+      "dtype": "i64",
+      "elements": 22,
+      "index": 2,
+      "sha256": "87b88f9dde4cedc01221243335345ea0a48eccc64c9cbb3ce4d3a638e1cc0aaf",
+      "shape": [
+        22
+      ]
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "run_receipt_sha256": "4f3ab22744c22c6c25a491a22a7d53f7fb3546047a339ba1905f4bb2061340e8",
+  "schema": "mx_gemmini.tiny_vpu_decode_execution.v1",
+  "selected_mx_contractions": 200,
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "stage_capture_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+  "status": "complete_numeric_qualification_pending",
+  "unquantized_pytorch_diagnostic": {
+    "argmax_reference": 29871,
+    "argmax_target": 27305,
+    "first_reference": -9.377923965454102,
+    "first_target": -3.6875,
+    "qualification": "diagnostic_only_no_independent_fp4_fp8_reference",
+    "reference_sha256": "85907c38688adcc48590f33b429cd9bfe2f1c11432178cf022a10d112e2bce96",
+    "top1_equal": false
+  }
+}
