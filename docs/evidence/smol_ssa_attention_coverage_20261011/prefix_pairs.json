@@ -1,0 +1,367 @@
+{
+  "pairs": [
+    {
+      "pv_region_id": "matmul_4",
+      "pv_shape_bmnk": [
+        12,
+        1024,
+        64,
+        1024
+      ],
+      "qk_region_id": "matmul_3",
+      "qk_shape_bmnk": [
+        12,
+        1024,
+        1024,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_0"
+    },
+    {
+      "pv_region_id": "matmul_102",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_101",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_12"
+    },
+    {
+      "pv_region_id": "matmul_111",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_110",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_13"
+    },
+    {
+      "pv_region_id": "matmul_120",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_119",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_14"
+    },
+    {
+      "pv_region_id": "matmul_129",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_128",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_15"
+    },
+    {
+      "pv_region_id": "matmul_138",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_137",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_16"
+    },
+    {
+      "pv_region_id": "matmul_147",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_146",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_17"
+    },
+    {
+      "pv_region_id": "matmul_156",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_155",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_18"
+    },
+    {
+      "pv_region_id": "matmul_165",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_164",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_19"
+    },
+    {
+      "pv_region_id": "matmul_174",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_173",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_20"
+    },
+    {
+      "pv_region_id": "matmul_183",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_182",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_21"
+    },
+    {
+      "pv_region_id": "matmul_192",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_191",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_22"
+    },
+    {
+      "pv_region_id": "matmul_201",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_200",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_23"
+    },
+    {
+      "pv_region_id": "matmul_210",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_209",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_24"
+    },
+    {
+      "pv_region_id": "matmul_219",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_218",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_25"
+    },
+    {
+      "pv_region_id": "matmul_228",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_227",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_26"
+    },
+    {
+      "pv_region_id": "matmul_237",
+      "pv_shape_bmnk": [
+        15,
+        113,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_236",
+      "qk_shape_bmnk": [
+        15,
+        113,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_27"
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.merlin_ssa_attention_audit.v1",
+  "selected_attention_regions": 56,
+  "selected_without_module_fqn": 32,
+  "source_mlir_sha256": "f7be4c59e48a4eb322ed0eb7eb50f3d41e275eee0b654098f19318b5353066a5",
+  "ssa_pair_count": 17
+}

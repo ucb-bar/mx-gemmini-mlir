@@ -1,0 +1,346 @@
+{
+  "pairs": [
+    {
+      "pv_region_id": "matmul_7",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_6",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_0"
+    },
+    {
+      "pv_region_id": "matmul_16",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_15",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_1"
+    },
+    {
+      "pv_region_id": "matmul_25",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_24",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_2"
+    },
+    {
+      "pv_region_id": "matmul_34",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_33",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_3"
+    },
+    {
+      "pv_region_id": "matmul_43",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_42",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_4"
+    },
+    {
+      "pv_region_id": "matmul_52",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_51",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_5"
+    },
+    {
+      "pv_region_id": "matmul_61",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_60",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_6"
+    },
+    {
+      "pv_region_id": "matmul_70",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_69",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_7"
+    },
+    {
+      "pv_region_id": "matmul_79",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_78",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_8"
+    },
+    {
+      "pv_region_id": "matmul_88",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_87",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_9"
+    },
+    {
+      "pv_region_id": "matmul_97",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_96",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_10"
+    },
+    {
+      "pv_region_id": "matmul_106",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_105",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_11"
+    },
+    {
+      "pv_region_id": "matmul_115",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_114",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_12"
+    },
+    {
+      "pv_region_id": "matmul_124",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_123",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_13"
+    },
+    {
+      "pv_region_id": "matmul_133",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        163
+      ],
+      "qk_region_id": "matmul_132",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        163,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_14"
+    },
+    {
+      "pv_region_id": "matmul_142",
+      "pv_shape_bmnk": [
+        15,
+        50,
+        64,
+        113
+      ],
+      "qk_region_id": "matmul_141",
+      "qk_shape_bmnk": [
+        15,
+        50,
+        113,
+        64
+      ],
+      "selected_formats": [
+        "mxfp8",
+        "mxfp8"
+      ],
+      "softmax_region_id": "softmax_15"
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.merlin_ssa_attention_audit.v1",
+  "selected_attention_regions": 32,
+  "selected_without_module_fqn": 32,
+  "source_mlir_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+  "ssa_pair_count": 16
+}
