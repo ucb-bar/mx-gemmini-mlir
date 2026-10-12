@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/evidence/nicolas_flash_llama_stream_source_baseline_e9ded36_0344bcb"
 ARCHIVE = ROOT / "docs/evidence/nicolas_flash_llama_vb_stream_typed_e9ded36_0344bcb"
 NPU = Path(os.getenv("NICOLAS_NPU_ROOT",
-                  "/scratch/agustin/tmp/npu-exploration-mx-source-20261009"))
+                  "/path/to/npu-exploration"))
 CORE = NPU / "baremetal/mxgemmini/src/attn_flash.c"
 WRAPPER = NPU / "baremetal/mxgemmini/src/attn_flash_llama_vb.c"
 PROFILE = load_profile(ROOT / ("profiles/gemmini-mx-cleanup-266c593/"

@@ -14,11 +14,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 NPU = Path(os.getenv("NICOLAS_NPU_ROOT",
-                  "/scratch/agustin/tmp/npu-exploration-mx-source-20261009"))
+                  "/path/to/npu-exploration"))
 RTL = Path(os.getenv("NICOLAS_MX_RTL_ROOT",
-                  "/scratch/agustin/tmp/gemmini-mx-cleanup-20261009"))
+                  "/path/to/gemmini-mx-rtl"))
 RISCV = Path(os.getenv("RISCV_ROOT",
-                  "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools"))
+                  "/path/to/riscv-tools"))
 PROFILE = ROOT / ("profiles/gemmini-mx-cleanup-266c593/"
                   "MxE4M3Fp4VpuGemminiRocketConfig.json")
 

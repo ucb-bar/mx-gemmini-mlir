@@ -38,9 +38,9 @@ def test_public_softmax_family_rejects_changed_graph() -> None:
 
 def test_public_softmax_object_matches_spike_issuer(tmp_path: Path) -> None:
     rtl = Path(os.environ.get("MX_GEMMINI_RTL_ROOT",
-                              "/scratch/agustin/tmp/gemmini-mx-cleanup-20261009"))
+                              "/path/to/gemmini-mx-rtl"))
     riscv = Path(os.environ.get("MX_GEMMINI_RISCV_ROOT",
-                                "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools"))
+                                "/path/to/riscv-tools"))
     if not rtl.is_dir() or not (riscv / "bin/riscv64-unknown-elf-gcc").is_file():
         pytest.skip("pinned MX RTL or RISC-V toolchain is not installed")
     abi = tmp_path / "abi.json"

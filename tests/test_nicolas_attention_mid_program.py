@@ -28,8 +28,8 @@ BASE_DRIVER = ROOT / "docs/evidence/nicolas_attn_vpu_typed_program_e9ded36_0344b
 ARCHIVE = ROOT / "docs/evidence/nicolas_attn_vpu_mid_typed_program_a042643_0344bcb"
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
                        "MxE4M3Fp4VpuGemminiRocketConfig.json")
-CORE = Path("/scratch/agustin/tmp/npu-exploration-mx-source-20261009/"
-            "baremetal/mxgemmini/src/attn_vpu.c")
+CORE = Path(os.getenv("NICOLAS_NPU_ROOT", "/path/to/npu-exploration")) / \
+    "baremetal/mxgemmini/src/attn_vpu.c"
 
 
 def _bound() -> tuple[str, str, dict]:

@@ -29,7 +29,7 @@ WRAPPER = ROOT / "tools/fixtures/nicolas_flash_mid_fp4.c"
 EXPSUM_ARCHIVE = ROOT / "docs/evidence/nicolas_flash_mid_fp4_expsum_typed_a042643_0344bcb"
 EXPSUM_WRAPPER = ROOT / "tools/fixtures/nicolas_flash_mid_fp4_expsum.c"
 CORE = Path(os.getenv("NICOLAS_NPU_ROOT",
-                  "/scratch/agustin/tmp/npu-exploration-mx-source-20261009")) / \
+                  "/path/to/npu-exploration")) / \
     "baremetal/mxgemmini/src/attn_flash.c"
 PROFILE = load_profile(ROOT / ("profiles/gemmini-mx-cleanup-266c593/"
                                "MxE4M3Fp4VpuGemminiRocketConfig.json"))

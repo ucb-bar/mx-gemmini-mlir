@@ -1,6 +1,7 @@
 """Keep the debug-only source evidence distinct from executed compiler results."""
 
 import json
+import os
 from pathlib import Path
 
 from tools.audit_nicolas_single_tile_debug import audit
@@ -8,7 +9,7 @@ from tools.audit_nicolas_single_tile_debug import audit
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/nicolas_single_tile_source_audit_266c593/index.json"
-RTL = Path("/scratch/agustin/tmp/gemmini-mx-cleanup-20261009")
+RTL = Path(os.getenv("NICOLAS_MX_RTL_ROOT", "/path/to/gemmini-mx-rtl"))
 
 
 def test_archived_single_tile_audit_has_no_numerical_oracle() -> None:

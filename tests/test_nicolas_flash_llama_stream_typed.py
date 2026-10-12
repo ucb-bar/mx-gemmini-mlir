@@ -25,11 +25,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/evidence/nicolas_flash_llama_stream_source_baseline_e9ded36_0344bcb"
 ARCHIVE = ROOT / "docs/evidence/nicolas_flash_llama_stream_typed_e9ded36_0344bcb"
 NPU = Path(os.getenv("NICOLAS_NPU_ROOT",
-                  "/scratch/agustin/tmp/npu-exploration-mx-source-20261009"))
+                  "/path/to/npu-exploration"))
 RTL = Path(os.getenv("NICOLAS_MX_RTL_ROOT",
-                  "/scratch/agustin/tmp/gemmini-mx-cleanup-20261009"))
+                  "/path/to/gemmini-mx-rtl"))
 RISCV = Path(os.getenv("RISCV_ROOT",
-                    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools"))
+                    "/path/to/riscv-tools"))
 CORE = NPU / "baremetal/mxgemmini/src/attn_flash.c"
 WRAPPER = NPU / "baremetal/mxgemmini/src/attn_flash_llama.c"
 PROFILE_PATH = ROOT / ("profiles/gemmini-mx-cleanup-266c593/"
