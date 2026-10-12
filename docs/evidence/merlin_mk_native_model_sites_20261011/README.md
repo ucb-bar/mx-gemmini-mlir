@@ -18,8 +18,17 @@ schedule; down issues 94 versus 802. A separate full TinyLlama prefill catalog c
 source bindings to seven `mk` scheduled RV64 kernels. Its estimated dynamic host RoCC issue count
 is 129,226, versus 29,218,058 for the serial catalog. These are **command counts**, not measured
 cycle counts or speedups: the native hardware loop performs transfers and compute internally, and
-runtime f32 quantization plus host graph operations still cost time. The full TinyLlama native
-catalog has not yet run as a linked model on Spike.
+runtime f32 quantization plus host graph operations still cost time.
+
+The [linked full-checkpoint TinyLlama native prefill](tiny_native_prefill_spike.log) reached guest
+`DONE` on Nicolas's pinned Spike with zero memref rank mismatches. Its 32,000 f32 logits have the
+same SHA-256 as the [serial MX prefill](../tiny_full_checkpoint_prefill_spike_20261011/README.md):
+`e829ba982b701c5c8e2b64af8d9279cd23a106ddfa84ca147d6c82a00f4b6459`.
+The native run reported 374,780,809,774 simulated cycles versus 374,944,319,266 for the serial
+run, a 0.044% reduction. This single stage result does not establish a meaningful speedup. The
+ELF was manually relinked with a 5 GiB arena; the detached launcher did not retain a process exit
+code. Its native catalog object is byte-identical to the final catalog with `schedule.plan` and
+`mk` artifacts.
 
 The same profile and schedule path also compiled the selected contraction catalogs for Qwen
 prefill (253 bindings, seven kernels), Gemma prefill (235, eight), SmolVLA prefix (211, twelve),

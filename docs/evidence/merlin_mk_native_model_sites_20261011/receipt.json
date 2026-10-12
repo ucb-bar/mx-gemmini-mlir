@@ -147,7 +147,7 @@
     "policy_ir": "merlin.schedule",
     "schedule_ir": "merlin.mk",
     "source_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
-    "status": "compiled_only_not_spike_executed",
+    "status": "guest_done_output_matches_serial_on_pinned_spike",
     "unique_kernels": 7
   },
   "native_catalogs": [
@@ -158,7 +158,7 @@
       "schedule_ir": "merlin.mk",
       "source_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
       "stage": "tinyllama_prefill",
-      "status": "compiled_only_not_spike_executed",
+      "status": "guest_done_output_matches_serial_on_pinned_spike",
       "unique_kernels": 7
     },
     {
@@ -203,6 +203,21 @@
     }
   ],
   "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "full_tiny_native_prefill_execution": {
+    "status": "guest_done_output_matches_serial_on_pinned_spike",
+    "source_stage": "full_checkpoint_tinyllama_eager_prefill",
+    "linked_elf_sha256": "9e7258ef59797f188ce1c0a39fe029c660fc2d025e842c7eaf12e7dcf9728044",
+    "catalog_object_sha256": "1c62d7c7483028eb8c87fef044a28f60478ede859b48e9cc367d59f35d3ce65c",
+    "spike_log_sha256": "ccf33d94ee7492e9e7bbdde675283fb6839bd31f7b2831705e0da96a8e559269",
+    "output_f32le_sha256": "e829ba982b701c5c8e2b64af8d9279cd23a106ddfa84ca147d6c82a00f4b6459",
+    "serial_output_f32le_sha256": "e829ba982b701c5c8e2b64af8d9279cd23a106ddfa84ca147d6c82a00f4b6459",
+    "output_elements": 32000,
+    "memref_rank_mismatches": 0,
+    "native_simulated_cycles": 374780809774,
+    "serial_simulated_cycles": 374944319266,
+    "manual_relink": true,
+    "note": "Standalone prefill only; output parity is against the serial MX build, not an independent quantized model reference. The detached launcher did not persist a process exit code."
+  },
   "row_tile_parity": {
     "compared_bf16_outputs": 32768,
     "log_sha256": "beb5ffd842cd1977e9de412a5aefc68d2ba58b541a9c84829d3d99f5e20bec35",

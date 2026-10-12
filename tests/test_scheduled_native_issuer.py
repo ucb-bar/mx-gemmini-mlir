@@ -113,11 +113,19 @@ def test_archived_native_model_sites_retain_spike_goldens():
     full = receipt["full_tiny_prefill_catalog"]
     assert full["matched_contractions"] == 199
     assert full["unique_kernels"] == 7
-    assert full["status"] == "compiled_only_not_spike_executed"
+    assert full["status"] == "guest_done_output_matches_serial_on_pinned_spike"
     assert len(full["kernels"]) == 7
     policy_path = archive / "tiny_prefill_policy.schedule.mlir"
     assert hashlib.sha256(policy_path.read_bytes()).hexdigest() == full["policy_artifact_sha256"]
     assert selected_policy(policy_path.read_text(), symbol="mx_dense_kernel_0") == "native"
+    execution = receipt["full_tiny_native_prefill_execution"]
+    log = (archive / "tiny_native_prefill_spike.log").read_bytes()
+    assert hashlib.sha256(log).hexdigest() == execution["spike_log_sha256"]
+    assert execution["catalog_object_sha256"] == full["object_sha256"]
+    assert execution["output_f32le_sha256"] == execution["serial_output_f32le_sha256"]
+    assert b"OUT_SHA256 f32le 32000 128000 " + execution["output_f32le_sha256"].encode() in log
+    assert b"METRIC memref_rank_mismatch 0\nDONE\n" in log
+    assert execution["native_simulated_cycles"] < execution["serial_simulated_cycles"]
     row = receipt["row_tile_parity"]
     assert row["status"] == "native_equals_serial_on_pinned_spike"
     assert row["compared_bf16_outputs"] == row["nonzero_outputs"] == 32768
