@@ -1,0 +1,61 @@
+{
+  "capture_model_sha256": "78d370529dc3b12ef1168e216d1640fee39d2f8372f14c659c2e9c18896a238a",
+  "identical_pre_vpu_artifacts": {
+    "device/device_catalog_shim.o": "fcbce4b97016ceddd4b5fd3791e90d4ecdf3c502ff55c95a302eb86c384c530d",
+    "device_catalog/mx_catalog.json": "ac4776d3de282a5232799898f2e8cd232874e44f445b6571793d145d314886d2",
+    "device_catalog/mx_catalog.o": "b66a402091aca66be57ec9f804f7590bd2656fdb2c1084cf6a873099dda1698a",
+    "model.prepared.mlir": "6e83e2adfb5bffd76d196fd0b4840c9da380bd1c7586088bdef8a7111bef955c"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "runs": {
+    "mx_host_vpu_control": {
+      "argmax_token": 26686,
+      "build_hash": "a323ba591e32",
+      "build_receipt_sha256": "f6c43187e1d430f7047b9ed3de0f7151967a4f3cf03ce87c84e1ef9f24570217",
+      "cycle_count": 52102927539,
+      "elf_sha256": "1ba8f6737a26cad091e9b6c0c8816b5ff6e9aef04cbfe65970401755b41e587e",
+      "execution_route": "mx_gemmini_and_host_vpu_control",
+      "first_logit": 1.6640625,
+      "output_sha256": [
+        "ca5335dfca4c02e45c8d4bc3cf4222576198cfabcdb61a2250bc99f2b5677c2f",
+        "6cc4f8e8273ac53289e6e68da3d34445f33dea51d0298e940e2e70cd4fdbc814",
+        "82048c2840aa68adf880545001fc75e169fa5366d33aec1ba28f05a58017c1c9"
+      ],
+      "run_receipt_sha256": "389e763a8e4f613b737d72c5d2564356ffa9b4847dca15546a9cadc9f8c2fe2f",
+      "selected_mx_contractions": 20,
+      "vpu_lowered_regions": {
+        "add": 0,
+        "elementwise": 0,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "mx_vpu_enabled": {
+      "argmax_token": 28954,
+      "build_hash": "b5d62e37f220",
+      "build_receipt_sha256": "7cb0469db2b33a58f6493cfa6005387c9399eee62f95423e5496839477fb898f",
+      "cycle_count": 52103714365,
+      "elf_sha256": "9e2fdfd5d745c142d3417d59b33b3230781e604ee2772ac127f03abf440c09af",
+      "execution_route": "mx_gemmini_and_host",
+      "first_logit": 0.59375,
+      "output_sha256": [
+        "0c2d4fc60679fab388d56d5e34775c0aab0a720986dbc15264d301cb741de4ff",
+        "4acda1be1e10020f3c8f3eedd316f3b951e18b8e6a0de747dbc795243480ff6c",
+        "82048c2840aa68adf880545001fc75e169fa5366d33aec1ba28f05a58017c1c9"
+      ],
+      "run_receipt_sha256": "02a624f6366814a7b2e30139c574e5aed5a5e29084153a4fd6f0b9ca9d1272de",
+      "selected_mx_contractions": 20,
+      "vpu_lowered_regions": {
+        "add": 8,
+        "elementwise": 36,
+        "reduce": 7,
+        "softmax": 2,
+        "unary": 16
+      }
+    }
+  },
+  "schema": "mx_gemmini.tiny_two_layer_vpu_isolation.v1",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "status": "vpu_effect_isolated_numeric_qualification_pending"
+}

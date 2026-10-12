@@ -1,0 +1,20 @@
+{
+  "baseline_logits_sha256": "033d1b535863deeb717914b629aa372c18a67022925a5fda7302d407d18bf603",
+  "baseline_top_token": 29871,
+  "capacity": 160,
+  "capture_inputs_sha256": "12de97d0f6d4c855cd8465bc2d5cb3c580f01e16997124cbc97bceaadc1e46b0",
+  "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+  "capture_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "fp4_linear_sites": 155,
+  "fp8_attention_calls": 44,
+  "fp8_rotary_bmm_calls": 1,
+  "layers": 22,
+  "model2mlir_revision": "d7c42d5d86c436404d96318de41438bb73a9f0bc",
+  "proxy_logits_sha256": "e990fc3adca81097ae034406aeb0bb8e035f5714615adaf1fb708109573ffc2d",
+  "proxy_max_abs_vs_unquantized": 8.622732162475586,
+  "proxy_mean_abs_vs_unquantized": 1.4643105268478394,
+  "proxy_top_token": 319,
+  "schema": "mx_gemmini.tinyllama_operand_fake_quant.v1",
+  "stage_kind": "decode",
+  "status": "diagnostic_not_mesh_oracle"
+}

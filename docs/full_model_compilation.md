@@ -11,6 +11,13 @@ The [new TinyLlama decode Spike run](evidence/tiny_vpu_decode_spike_20261012/REA
 completed one captured stage with all three output/state digests and zero
 memref rank mismatches. Its logits differ from unquantized PyTorch; an
 independent reference under the exact FP4/FP8 and BF16 policy is still needed.
+The [matched two-layer decode control](evidence/tiny_two_layer_vpu_isolation_20261012/README.md)
+holds all 20 MX contractions and their compiled objects fixed while enabling
+the VPU rewrite; both routes finish on Spike but produce different logits and
+KV state. The [full-checkpoint decode operand proxy](evidence/tiny_decode_operand_fake_quant_20261012/README.md)
+covers all 200 selected MX sites, including the padded rotary K=1 BMM. It
+shows substantial FP4/FP8 drift under PyTorch arithmetic, without providing
+an exact MX mesh or VPU numerical oracle.
 
 The latest [source-bound MX+VPU arithmetic archive](evidence/mx_vpu_model_arithmetic_20261011/README.md)
 records linked first-stage matrix and VPU coverage on the four checkpoint
