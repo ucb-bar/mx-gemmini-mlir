@@ -10,7 +10,7 @@ linking; the target package owns MX legality, code generation, and VPU source
 patterns. `vpu_residual_eligible` reparses the final prepared MLIR and rejects
 a stage if a selected VPU operation remains there.
 
-The latest linked first-stage builds are summarized in `index.json`. Counts
+The latest linked stage builds are summarized in `index.json`. Counts
 are distinct source regions, not dynamic invocations. MX counts are selected
 contractions; VPU counts are lowered source regions in the final Merlin build.
 Every row below has exact MX catalog coverage, zero host softmax regions, and
@@ -25,14 +25,17 @@ zero final-MLIR operations matched by the five VPU selectors.
 | SmolVLA flow | 148 | 16 | 60 | 352 | 107 | 33 |
 | TinyLlama decode | 200 | 22 | 88 | 358 | 156 | 45 |
 | DeepSeek Qwen decode | 254 | 28 | 196 | 454 | 198 | 57 |
+| Gemma 2 decode | 236 | 26 | 104 | 686 | 289 | 131 |
 
 The MLIR captures retain host operations without a qualified MX/VPU mapping,
 including indexing, casts, comparisons, selection, and trigonometry. The VPU
 extension does not provide a direct sin/cos/select operation. The source-only
 decode rewrite probes in `index.json` prove pattern coverage on those captured
-graphs. TinyLlama and Qwen decode also have newly linked ELFs. The Gemma
-decode probe has not yet completed a new VPU-enabled link. SmolVLA action
-decode has no MX/VPU candidate and uses Merlin's host route.
+graphs. All three language-model decode stages also have newly linked ELFs.
+SmolVLA action decode has no MX/VPU candidate and uses Merlin's host route;
+its earlier linked Spike run matched all 1,600 elements of the first captured
+result against unquantized PyTorch exactly. That is one isolated stage result,
+not the complete SmolVLA session.
 
 Nicolas's pinned MX Spike extension executed standalone generated VPU objects
 for softmax, broadcast and scalar binary arithmetic, mixed BF16/f32
@@ -44,8 +47,8 @@ the receipts. They do not qualify complete model outputs. In particular,
 rotary exponent range, with observed maximum relative error 3.1963% and
 maximum absolute error 0.002175. GELU observed maximum absolute error
 0.011774 under its 2% absolute-scaled criterion. Gemma's source-bound logits
-`tanh` now uses a VPU sigmoid sequence; its 128-element Spike case observed
-maximum absolute error 0.010121 under the 0.02 bound. These tolerances are not
+`tanh` now uses a VPU sigmoid sequence; its f32 and BF16 128-element Spike cases
+observed maximum absolute error 0.010121 under the 0.02 bound. These tolerances are not
 yet a model-level quantization acceptance policy.
 
 The current status remains `linked_experimental_numeric_qualification_pending`:
