@@ -1,5 +1,11 @@
 # Full model compilation through model2MLIR and MX Gemmini
 
+The latest [source-bound MX+VPU arithmetic archive](evidence/mx_vpu_model_arithmetic_20261011/README.md)
+records linked first-stage matrix and VPU coverage on the four checkpoint
+captures, source-only decode coverage, and standalone Nicolas Spike arithmetic
+results. Its final-MLIR gate rejects eligible VPU operations left on the host.
+Complete quantized model inference and performance qualification remain open.
+
 The [four-model precision proposals](evidence/model_precision_proposals_a042643_266c593/README.md)
 bind the current FP8/FP4 placement intent to each archived model2MLIR graph
 and the pinned MX+VPU profile. They are placement plans, not executable
