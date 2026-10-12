@@ -26,25 +26,25 @@ Use a Python environment with model2MLIR, MXQuant, xDSL, PyTorch, and
 Transformers. `M2M` must have the committed model2MLIR `a042643` source
 closure; `MXQ` is MXQuant `b4af543`; `RTL` is Nicolas RTL `266c593` with
 its pinned Spike extension. Set `RADIANCE` to the repository containing the
-pinned `lib/golden/mx_golden.cpp`. Place outputs in the managed task's `.tmp/`:
+pinned `lib/golden/mx_golden.cpp`. Set `OUT_ROOT` to a new writable directory:
 
 ```sh
+export OUT_ROOT=/path/to/new-output
 python -m tools.prepare_tinyllama_projection_inputs \
-  --model2mlir-root "$M2M" --out-dir "$TASK_DIR/.tmp/tinyllama-inputs"
+  --model2mlir-root "$M2M" --out-dir "$OUT_ROOT/tinyllama-inputs"
 python -m tools.qualify_model_projection \
   --full-model-mlir docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz \
   --site-region matmul_1 --row-count 8 --column-count 2048 --tile-k 128 \
-  --activation-npy "$TASK_DIR/.tmp/tinyllama-inputs/activation.npy" \
-  --weight-npy "$TASK_DIR/.tmp/tinyllama-inputs/weight.npy" \
+  --activation-npy "$OUT_ROOT/tinyllama-inputs/activation.npy" \
+  --weight-npy "$OUT_ROOT/tinyllama-inputs/weight.npy" \
   --model2mlir-root "$M2M" --mxq-root "$MXQ" \
   --reference-root "$RADIANCE" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
   --rtl-root "$RTL" --riscv-root "$RISCV" --mx-opt "$MX_OPT" \
-  --out-dir "$TASK_DIR/.tmp/tinyllama-qproj-full" --run-spike
+  --out-dir "$OUT_ROOT/tinyllama-qproj-full" --run-spike
 ```
 
-This result closes the executable lowering path for this one projection.
-Whole-model compilation still needs all other projections, attention,
-normalization, embeddings, control, KV-cache state, a host execution lane,
-and whole-program linking. It does not qualify a complete TinyLlama session
-or any pretrained checkpoint.
+This result covers one complete projection. The later
+[full-model compilation record](../../full_model_compilation.md) tracks other
+operators, KV-cache state, and session linking. This random-weight projection
+archive does not qualify a complete TinyLlama session or pretrained inference.

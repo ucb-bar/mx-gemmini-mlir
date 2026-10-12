@@ -35,22 +35,25 @@ Reproduce either size from a checkout with the pinned RTL submodules and RISC-V
 toolchain (choose `64` or `128` for `D`):
 
 ```bash
+export M2M=/path/to/model2MLIR
+export MXQ=/path/to/microscaling-quant
+export RTL=/path/to/gemmini-mx-rtl
+export RISCV=/path/to/riscv-tools
+export OUT_ROOT=/path/to/new-output
+
 D=64
 python -m tools.capture_nicolas_fp6_resident_chain \
   --matrix-dim "$D" \
-  --model2mlir-root /scratch/agustin/tmp/model2mlir-mx-upstream-e9ded-20261010 \
-  --mxq-root /scratch/agustin/tmp/microscaling-quant-20261009 \
-  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
+  --model2mlir-root "$M2M" --mxq-root "$MXQ" --rtl-root "$RTL" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
-  --mx-opt build/tools/mx-gemmini-opt --out-dir "/tmp/mx-fp6-capture-$D"
+  --mx-opt build/tools/mx-gemmini-opt --out-dir "$OUT_ROOT/fp6-capture-$D"
 
 python -m tools.qualify_nicolas_fp6_resident_chain \
   --matrix-dim "$D" \
-  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
-  --riscv-root /scratch/agustin/projects/chipyard/.conda-env/riscv-tools \
+  --rtl-root "$RTL" --riscv-root "$RISCV" \
   --mx-opt build/tools/mx-gemmini-opt \
-  --frontend-dir "/tmp/mx-fp6-capture-$D" \
-  --out-dir "/tmp/mx-fp6-chain-$D"
+  --frontend-dir "$OUT_ROOT/fp6-capture-$D" \
+  --out-dir "$OUT_ROOT/fp6-chain-$D"
 ```
 
 The qualifier writes capture receipts, typed MLIR, physical commands, an

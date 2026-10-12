@@ -130,15 +130,15 @@ The Radiance tree tracks the FP4 64×64×128 driver but generates its data heade
 on demand. The saved [header](evidence/mxgemm.data.fp4.m64n64k128_20261009.h)
 was produced from `gen_mxgemm_data.py` and `lib/golden/mx_golden` at the same
 source revision. Its SHA-256 is bound in the capture and execution receipts.
-To regenerate it without changing the active Radiance checkout:
+To regenerate it, use a checkout of Radiance kernels at the recorded revision:
 
 ```sh
-git -C /path/to/radiance-kernels worktree add --detach /tmp/radiance-fp4-data 94ba7ca8afe213b92fa2428689fa64800c8eeca9
-make -C /tmp/radiance-fp4-data/lib/golden mx_golden
-python /tmp/radiance-fp4-data/kernels/gemm_mxgemmini/gen_mxgemm_data.py fp4 64 64 128
+export RADIANCE_SOURCE=/path/to/radiance-kernels-at-94ba7ca
+make -C "$RADIANCE_SOURCE/lib/golden" mx_golden
+python "$RADIANCE_SOURCE/kernels/gemm_mxgemmini/gen_mxgemm_data.py" fp4 64 64 128
 ```
 
-Use that worktree as `--source-root` and its
+Use that checkout as `--source-root` and its
 `kernels/gemm_mxgemmini/mxgemm.fp4.m64n64k128.tm64tn64tk64.fullout.cpp`
 as `--driver` in the capture command above. The capture chooses
 `examples/fp4-policy.yaml`, so the model2MLIR matmul becomes an MXFP4 typed

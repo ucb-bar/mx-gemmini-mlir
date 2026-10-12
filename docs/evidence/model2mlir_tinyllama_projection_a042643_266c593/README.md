@@ -26,26 +26,27 @@ Reproduce with Python containing PyTorch, Transformers, MXQuant, xDSL, and
 model2MLIR. `M2M` must contain the committed model2MLIR `a042643` source
 closure; `MXQ` is MXQuant `b4af543`; `RTL` is Nicolas RTL `266c593` with
 its pinned Spike extension; `RADIANCE` contains the pinned host arithmetic
-model. Put temporary outputs in your managed task's `.tmp/`:
+model. Set `OUT_ROOT` to a new writable output directory:
 
 ```sh
+export OUT_ROOT=/path/to/new-output
 python -m tools.prepare_tinyllama_projection_inputs \
-  --model2mlir-root "$M2M" --out-dir "$TASK_DIR/.tmp/tinyllama-inputs"
+  --model2mlir-root "$M2M" --out-dir "$OUT_ROOT/tinyllama-inputs"
 python -m tools.qualify_model_projection \
   --full-model-mlir docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz \
   --site-region matmul_1 --row-count 8 --column-count 32 --tile-k 128 \
-  --activation-npy "$TASK_DIR/.tmp/tinyllama-inputs/activation.npy" \
-  --weight-npy "$TASK_DIR/.tmp/tinyllama-inputs/weight.npy" \
+  --activation-npy "$OUT_ROOT/tinyllama-inputs/activation.npy" \
+  --weight-npy "$OUT_ROOT/tinyllama-inputs/weight.npy" \
   --model2mlir-root "$M2M" --mxq-root "$MXQ" \
   --reference-root "$RADIANCE" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
   --rtl-root "$RTL" --riscv-root "$RISCV" --mx-opt "$MX_OPT" \
-  --out-dir "$TASK_DIR/.tmp/tinyllama-qproj-stripe" --run-spike
+  --out-dir "$OUT_ROOT/tinyllama-qproj-stripe" --run-spike
 ```
 
 This step establishes model2MLIR site selection, model operand capture,
 BF16-to-MX quantization, typed resource binding, physical lowering, object
-emission, linking, and complete stripe execution. The remaining 63 stripes of
-this one projection and every other operation in the model need whole-program
-placement, shared buffers, host operations, and session state before a
-full-model compile succeeds.
+emission, linking, and complete stripe execution. It covers one stripe of one
+projection. The later [full-model compilation record](../../full_model_compilation.md)
+tracks whole-program placement and session linking; this archive does not
+qualify a full model.

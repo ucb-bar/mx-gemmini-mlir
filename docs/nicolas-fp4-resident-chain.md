@@ -34,29 +34,31 @@ Reproduce the 128³ case from a checkout with the pinned toolchain and RTL
 submodules. Omit `--matrix-dim 128` to select the 64³ case:
 
 ```bash
+export M2M=/path/to/model2MLIR
+export MXQ=/path/to/microscaling-quant
+export RTL=/path/to/gemmini-mx-rtl
+export RISCV=/path/to/riscv-tools
+export OUT_ROOT=/path/to/new-output
+
 python -m tools.capture_nicolas_fp4_resident_chain \
   --matrix-dim 128 \
-  --model2mlir-root /scratch/agustin/tmp/model2mlir-mx-upstream-e9ded-20261010 \
-  --mxq-root /scratch/agustin/tmp/microscaling-quant-20261009 \
-  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
+  --model2mlir-root "$M2M" --mxq-root "$MXQ" --rtl-root "$RTL" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
-  --mx-opt build/tools/mx-gemmini-opt --out-dir /tmp/mx-fp4-capture
+  --mx-opt build/tools/mx-gemmini-opt --out-dir "$OUT_ROOT/fp4-capture"
 
 python -m tools.qualify_nicolas_fp4_resident_chain \
   --matrix-dim 128 \
-  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
-  --riscv-root /scratch/agustin/projects/chipyard/.conda-env/riscv-tools \
-  --mx-opt build/tools/mx-gemmini-opt --frontend-dir /tmp/mx-fp4-capture \
-  --out-dir /tmp/mx-fp4-chain
+  --rtl-root "$RTL" --riscv-root "$RISCV" \
+  --mx-opt build/tools/mx-gemmini-opt --frontend-dir "$OUT_ROOT/fp4-capture" \
+  --out-dir "$OUT_ROOT/fp4-chain"
 
 python -m tools.compile_object \
-  --mlir /tmp/mx-fp4-chain/connected.mlir \
+  --mlir "$OUT_ROOT/fp4-chain/connected.mlir" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxGemminiRocketConfig.json \
-  --rtl-root /scratch/agustin/tmp/gemmini-mx-cleanup-20261009 \
-  --riscv-root /scratch/agustin/projects/chipyard/.conda-env/riscv-tools \
+  --rtl-root "$RTL" --riscv-root "$RISCV" \
   --resources-dir docs/evidence/nicolas_fp4_connected_resident_128_266c593/object \
   --abi-json docs/evidence/nicolas_fp4_connected_resident_128_266c593/object/abi.json \
-  --mx-opt build/tools/mx-gemmini-opt --out-dir /tmp/mx-fp4-object
+  --mx-opt build/tools/mx-gemmini-opt --out-dir "$OUT_ROOT/fp4-object"
 ```
 
 The [64³ archive](evidence/nicolas_fp4_connected_resident_266c593/index.json)
