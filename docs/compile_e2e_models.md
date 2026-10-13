@@ -195,7 +195,7 @@ for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b smolvla; do
     --riscv-root "$RISCV_ROOT" --spike-extlib "$SPIKE_EXTLIB" \
     --out-dir "$ARTIFACT_ROOT/runs/$MODEL" \
     --timeout-s 172800 --progress-interval-s 60 \
-    --perf-config e4m3_vpu
+    --perf-config e4m3_vpu --perf-set mem.host_tracking=0
 done
 ```
 
@@ -209,21 +209,28 @@ Inspect `runs/<model>/mx_session_run.json` after the run. A structurally complet
 `status: complete_numeric_qualification_pending` and validates every
 program/step/output digest, zero memref rank mismatches, and guest `DONE`.
 `--perf-config e4m3_vpu` selects Nicolas's extension's functional plus timing
-mode and its VPU timing preset. The runner pins the mode and preset in the
-receipt and writes `gemmini_perf.txt` when the guest exits. `--perf-set` can
-override a timing parameter for a controlled sensitivity study; retain the
-same capture and executable when comparing parameter settings.
+mode and its VPU timing preset. `mem.host_tracking=0` skips CPU-store cache
+tracking to make large model runs practical; MX/VPU commands remain timed.
+Omit that override for the preset's fuller memory model after establishing a
+baseline. The runner pins the mode, preset, and overrides in the receipt and
+writes `gemmini_perf.txt` when the guest exits. Other `--perf-set` values can
+support controlled sensitivity studies. Retain the same capture and executable
+when comparing settings.
 
 `step_performance` records each compiled model step; `program_performance`
 groups them by stage; `total_performance` sums them across the whole session.
 The measured interval includes arena reset,
 state handoff, and model execution. It excludes ELF loading, result hashing,
 and console output. Compare compiler changes with the same capture, precision
-policy, timing preset, Spike binary, and extension. These are Nicolas's modeled
-cycles, so hardware latency claims still need RTL or FPGA calibration.
+policy, timing preset and overrides, Spike binary, and extension. These are
+Nicolas's modeled cycles; the fast setting excludes CPU-store cache effects,
+and hardware latency claims still need RTL or FPGA calibration.
 `incomplete` or a nonzero command result is a failed execution; process exit
 alone is insufficient. Full-model numerical correctness still requires an
 independent reference that implements the selected FP4/FP8 conversion and
 MX/VPU BF16 arithmetic and checks logits or actions plus recurrent state.
 The [current evidence](full_model_compilation.md) separates compiled links,
 individual Spike executions, and numerical qualification.
+The [paired MX+VPU attention timing check](evidence/attn_vpu_timing_20261012/README.md)
+provides a smaller, reproducible performance comparison against Nicolas's
+handwritten program.
