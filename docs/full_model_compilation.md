@@ -19,6 +19,11 @@ transform. It does not feed an entire captured model directly to
 `mx-gemmini-opt`. The C++ dialect remains the typed interface for target
 operations and source-bound kernel compilation; the catalog integrates
 executable target objects into a whole-program build.
+The linked full-model path converts selected FP32 operands to MX formats at
+runtime, including checkpoint weights used by the dense adapters. It does not
+yet use the static quantized-weight manifest from the separate
+[model2MLIR handoff](quantization_handoff.md), or establish that the selected
+FP4/FP8 policy preserves model quality.
 
 ## Linked checkpoint sessions
 

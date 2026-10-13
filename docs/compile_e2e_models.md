@@ -13,6 +13,14 @@ profile. The target selects FP4 for eligible ordinary matmuls and FP8 for
 eligible attention and rotary contractions. Capture the source model in FP32:
 the target applies this mixed-precision policy during compilation. The
 model2MLIR `fp8` capture option represents a different frontend policy.
+For these full sessions, the generated adapter rounds live FP32 operands to
+BF16, derives E8M0 scales, and packs FP4 or FP8 codes at each selected
+contraction call. The checkpoint weights are not stored as prepacked MX
+operands, and no calibration or model-level accuracy search has accepted this
+precision policy. The separate [model2MLIR quantization handoff](quantization_handoff.md)
+can capture static quantized weights and an exact site census, but its current
+MX dialect result is an operation plan, not the executable full-session path
+documented here.
 
 ## Prerequisites
 
