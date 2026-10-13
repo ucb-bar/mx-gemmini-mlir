@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 
 _BYTES = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
@@ -36,17 +38,45 @@ def _expected(session) -> list[tuple[str, int, int, int | None, int | None]]:
     return events
 
 
-def observe_session_output(log: str, session, *, exit_code: int) -> dict:
+def observe_session_output(
+    log: str, session, *, exit_code: int, require_perf: bool = False,
+) -> dict:
     """Accept only a correct prefix of the captured session's output/state ABI."""
     expected = _expected(session)
     seen = 0
     records = []
+    performance = []
+    active_step = None
+    step_has_output = False
+    total = None
     for raw in log.splitlines(keepends=True):
         if exit_code != 0 and not raw.endswith("\n"):
             break  # A timed-out Spike process may stop between HTIF characters.
         line = raw.rstrip("\n")
         parts = line.split()
-        if not parts or parts[0] not in {"SESSION_BEGIN", "SESSION_SHA"}:
+        if not parts or parts[0] not in {
+            "SESSION_BEGIN", "SESSION_SHA", "SESSION_PERF", "SESSION_TOTAL"
+        }:
+            continue
+        if parts[0] == "SESSION_PERF":
+            if (len(parts) != 5 or active_step is None or step_has_output
+                    or any(row["program"] == active_step[0] and
+                           row["step"] == active_step[1] for row in performance)):
+                raise ValueError("session performance record order differs from capture ABI")
+            values = [int(value) for value in parts[1:]]
+            if values[:2] != list(active_step) or min(values[2:]) <= 0:
+                raise ValueError("session performance record differs from capture ABI")
+            performance.append(dict(zip(
+                ("program", "step", "cycles", "instructions"), values, strict=True)))
+            continue
+        if parts[0] == "SESSION_TOTAL":
+            if len(parts) != 3 or total is not None or seen != len(expected):
+                raise ValueError("session total performance record is out of order")
+            total = {"cycles": int(parts[1]), "instructions": int(parts[2])}
+            if (len(performance) != sum(program.steps for program in session.programs)
+                    or any(total[key] != sum(row[key] for row in performance)
+                           for key in total)):
+                raise ValueError("session total performance differs from step records")
             continue
         if seen >= len(expected):
             raise ValueError("session emitted more result records than its capture ABI")
@@ -54,6 +84,8 @@ def observe_session_output(log: str, session, *, exit_code: int) -> dict:
         if parts[0] == "SESSION_BEGIN":
             if len(parts) != 3 or kind != "begin" or [int(x) for x in parts[1:]] != [program, step]:
                 raise ValueError("session program/step order differs from capture ABI")
+            active_step = (program, step)
+            step_has_output = False
         else:
             if (len(parts) != 6 or kind != "sha" or
                     [int(x) for x in parts[1:5]] != [program, step, output, bytes_expected]
@@ -61,6 +93,7 @@ def observe_session_output(log: str, session, *, exit_code: int) -> dict:
                 raise ValueError("session result digest differs from capture ABI")
             records.append({"program": program, "step": step, "output": output,
                             "bytes": bytes_expected, "sha256": parts[5]})
+            step_has_output = True
         seen += 1
     done = "DONE" in log.splitlines()
     metrics = [line for line in log.splitlines()
@@ -68,23 +101,71 @@ def observe_session_output(log: str, session, *, exit_code: int) -> dict:
     guest_failure = any(line.startswith(("FATAL:", "FATAL ", "FAIL session"))
                         or "*** FAILED" in line
                         for line in log.splitlines())
-    complete = not guest_failure and exit_code == 0 and done and seen == len(expected) and metrics == [
-        "METRIC memref_rank_mismatch 0"]
+    complete = (not guest_failure and exit_code == 0 and done
+                and seen == len(expected)
+                and metrics == ["METRIC memref_rank_mismatch 0"]
+                and (not require_perf or total is not None))
     if exit_code == 0 and not complete:
         raise ValueError("Spike exited successfully without a complete valid session")
     if done and not complete:
         raise ValueError("session printed DONE with incomplete or invalid result ABI")
+    programs = [{
+        "program": index,
+        "name": getattr(program, "name", str(index)),
+        "measured_steps": sum(row["program"] == index for row in performance),
+        "cycles": sum(row["cycles"] for row in performance if row["program"] == index),
+        "instructions": sum(row["instructions"] for row in performance
+                            if row["program"] == index),
+    } for index, program in enumerate(session.programs)]
     return {"complete": complete, "observed_events": seen,
-            "expected_events": len(expected), "output_digests": records}
+            "expected_events": len(expected), "output_digests": records,
+            "step_performance": performance, "program_performance": programs,
+            "total_performance": total}
+
+
+def session_progress(log: str, session, *, elapsed_wall_s: float) -> dict:
+    """Describe the last completed and active steps in a running Spike log."""
+    completed = 0
+    active = None
+    performance = []
+    for line in log.splitlines(keepends=True):
+        if not line.endswith("\n"):
+            continue
+        parts = line.split()
+        if len(parts) == 3 and parts[0] == "SESSION_BEGIN":
+            active = {"program": int(parts[1]), "step": int(parts[2])}
+        elif len(parts) == 5 and parts[0] == "SESSION_PERF":
+            performance.append(dict(zip(
+                ("program", "step", "cycles", "instructions"),
+                (int(value) for value in parts[1:]), strict=True)))
+        elif (len(parts) == 6 and parts[0] == "SESSION_SHA"
+              and _SHA.fullmatch(parts[5]) and active is not None):
+            program = session.programs[active["program"]]
+            if int(parts[3]) == len(program.outputs) - 1:
+                completed += 1
+                active = None
+    return {
+        "elapsed_wall_s": elapsed_wall_s,
+        "completed_steps": completed,
+        "total_steps": sum(program.steps for program in session.programs),
+        "active_step": active,
+        "step_performance": performance,
+        "modeled_cycles_so_far": sum(row["cycles"] for row in performance),
+    }
 
 
 def run_session(
     link_receipt: Path, out_dir: Path, *, session_root: Path,
     merlin_src: Path, riscv_root: Path, spike_extlib: Path | None,
-    timeout_s: int,
+    timeout_s: int, progress_interval_s: int = 60,
+    perf_config: str | None = None, perf_set: str | None = None,
 ) -> dict:
-    if timeout_s <= 0:
-        raise ValueError("Spike timeout must be positive")
+    if timeout_s <= 0 or progress_interval_s <= 0:
+        raise ValueError("Spike timeout and progress interval must be positive")
+    if perf_set and not perf_config:
+        raise ValueError("performance overrides require a model preset")
+    if perf_config and spike_extlib is None:
+        raise ValueError("Nicolas timing model requires a Spike extension")
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower.session_bundle import load
 
@@ -121,20 +202,69 @@ def run_session(
     if out_dir.exists():
         raise ValueError("session run output directory must not already exist")
     out_dir.mkdir(parents=True)
-    command = [str(spike), "--isa=rv64gc"]
+    isa = ("rv64gc_zicntr" if link.get("performance_schema")
+           == "spike_rdcycle_rdinstret_per_step.v1" else "rv64gc")
+    command = [str(spike), f"--isa={isa}"]
     if spike_extlib is not None:
         command.extend((f"--extlib={spike_extlib.resolve(strict=True)}", "--extension=gemmini"))
     command.extend((f"-m0x80000000:{hex(int(link['mem_bytes']))}", str(elf)))
     log_path = out_dir / "spike.log"
+    perf_path = out_dir / "gemmini_perf.txt"
+    environment = os.environ.copy()
+    for name in ("GEMMINI_MODE", "GEMMINI_PERF_CONFIG", "GEMMINI_PERF_SET",
+                 "GEMMINI_PERF_OUT"):
+        environment.pop(name, None)
+    environment["GEMMINI_MODE"] = "both" if perf_config else "func"
+    if perf_config:
+        environment["GEMMINI_PERF_CONFIG"] = perf_config
+        environment["GEMMINI_PERF_OUT"] = str(perf_path)
+    if perf_set:
+        environment["GEMMINI_PERF_SET"] = perf_set
+    started = time.monotonic()
     with log_path.open("wb") as stream:
+        process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
+                                   env=environment)
         try:
-            completed = subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT,
-                                       timeout=timeout_s, check=False)
-            exit_code = completed.returncode
-        except subprocess.TimeoutExpired:
-            exit_code = 124
+            while True:
+                remaining = timeout_s - (time.monotonic() - started)
+                if remaining <= 0:
+                    process.kill()
+                    process.wait()
+                    exit_code = 124
+                    break
+                try:
+                    exit_code = process.wait(timeout=min(progress_interval_s, remaining))
+                    break
+                except subprocess.TimeoutExpired:
+                    stream.flush()
+                    progress = session_progress(
+                        log_path.read_text(encoding="utf-8", errors="replace"), session,
+                        elapsed_wall_s=time.monotonic() - started)
+                    (out_dir / "progress.json").write_text(
+                        json.dumps(progress, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                    print(json.dumps({key: progress[key] for key in (
+                        "elapsed_wall_s", "completed_steps", "total_steps", "active_step")}),
+                        flush=True)
+        except BaseException:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            raise
     log = log_path.read_text(encoding="utf-8", errors="replace")
-    observation = observe_session_output(log, session, exit_code=exit_code)
+    elapsed_wall_s = time.monotonic() - started
+    (out_dir / "progress.json").write_text(json.dumps(session_progress(
+        log, session, elapsed_wall_s=elapsed_wall_s), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    observation = observe_session_output(
+        log, session, exit_code=exit_code,
+        require_perf=link.get("performance_schema") == "spike_rdcycle_rdinstret_per_step.v1")
+    timing_model_active = "gemmini: GEMMINI_MODE=both" in log
+    timing_report = perf_path.read_text(encoding="utf-8") if perf_path.is_file() else ""
+    if perf_config and not timing_model_active:
+        raise ValueError("selected Spike extension did not enable Nicolas's timing model")
+    if (perf_config and observation["complete"] and
+            f"gemmini perf [{perf_config}]" not in timing_report):
+        raise ValueError("complete session lacks the selected timing-model report")
     receipt = {
         "schema": "mx_gemmini.merlin_session_spike_run.v1",
         "status": ("complete_numeric_qualification_pending" if observation["complete"]
@@ -143,6 +273,13 @@ def run_session(
         "spike_sha256": _sha(spike),
         "extension_sha256": _sha(spike_extlib) if spike_extlib else None,
         "command": command, "exit_code": exit_code,
+        "performance_schema": link.get("performance_schema"),
+        "timing_mode": environment["GEMMINI_MODE"],
+        "timing_config": perf_config,
+        "timing_overrides": perf_set,
+        "timing_model_active": timing_model_active,
+        "timing_report_sha256": _sha(perf_path) if perf_path.is_file() else None,
+        "elapsed_wall_s": elapsed_wall_s,
         "log_sha256": _sha(log_path), **observation,
     }
     (out_dir / "mx_session_run.json").write_text(
@@ -159,6 +296,9 @@ def main() -> None:
     parser.add_argument("--spike-extlib", type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--timeout-s", type=int, default=3600)
+    parser.add_argument("--progress-interval-s", type=int, default=60)
+    parser.add_argument("--perf-config", choices=("mx_rocket", "e4m3_vpu", "firesim"))
+    parser.add_argument("--perf-set", help="comma-separated Nicolas model section.name=value overrides")
     args = parser.parse_args()
     receipt = run_session(
         args.link_receipt.resolve(strict=True), args.out_dir.absolute(),
@@ -166,7 +306,8 @@ def main() -> None:
         merlin_src=args.merlin_src.resolve(strict=True),
         riscv_root=args.riscv_root.resolve(strict=True),
         spike_extlib=args.spike_extlib.resolve(strict=True) if args.spike_extlib else None,
-        timeout_s=args.timeout_s)
+        timeout_s=args.timeout_s, progress_interval_s=args.progress_interval_s,
+        perf_config=args.perf_config, perf_set=args.perf_set)
     print(json.dumps(receipt, sort_keys=True))
 
 

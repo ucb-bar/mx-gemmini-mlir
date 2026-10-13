@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.run_linked_merlin_session import observe_session_output
+from tools.run_linked_merlin_session import observe_session_output, session_progress
 
 
 def _session():
@@ -63,3 +63,20 @@ def test_guest_arena_failure_is_not_hidden_by_spike_exit_zero() -> None:
                    "FAIL session output ABI"):
         with pytest.raises(ValueError, match="complete valid session"):
             observe_session_output(_log() + marker + "\n", _session(), exit_code=0)
+
+
+def test_per_step_cycles_and_instructions_cover_the_whole_session() -> None:
+    log = _log().replace("SESSION_SHA 0 0 0", "SESSION_PERF 0 0 100 90\nSESSION_SHA 0 0 0")
+    log = log.replace("SESSION_SHA 1 0 0", "SESSION_PERF 1 0 40 35\nSESSION_SHA 1 0 0")
+    log = log.replace("SESSION_SHA 1 1 0", "SESSION_PERF 1 1 50 45\nSESSION_SHA 1 1 0")
+    log = log.replace("METRIC memref", "SESSION_TOTAL 190 170\nMETRIC memref")
+    report = observe_session_output(log, _session(), exit_code=0, require_perf=True)
+    assert report["total_performance"] == {"cycles": 190, "instructions": 170}
+    assert len(report["step_performance"]) == 3
+    assert [row["cycles"] for row in report["program_performance"]] == [100, 90]
+    assert session_progress(log, _session(), elapsed_wall_s=2.5)["completed_steps"] == 3
+    with pytest.raises(ValueError, match="total performance differs"):
+        observe_session_output(log.replace("SESSION_TOTAL 190", "SESSION_TOTAL 191"),
+                               _session(), exit_code=0, require_perf=True)
+    with pytest.raises(ValueError, match="complete valid session"):
+        observe_session_output(_log(), _session(), exit_code=0, require_perf=True)

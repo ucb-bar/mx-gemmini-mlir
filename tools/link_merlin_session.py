@@ -114,6 +114,16 @@ void htif_exit(int);
 void merlin_arena_reset(void);
 unsigned long long merlin_memref_rank_mismatches(void);
 {declarations}
+static uint64_t read_cycle(void) {{
+  uint64_t value;
+  __asm__ volatile ("rdcycle %0" : "=r" (value));
+  return value;
+}}
+static uint64_t read_instret(void) {{
+  uint64_t value;
+  __asm__ volatile ("rdinstret %0" : "=r" (value));
+  return value;
+}}
 static const int OUTPUT_COUNTS[MERLIN_SESSION_N_PROGRAMS] = {{{counts}}};
 static void *output_pointer(int program, int output) {{
   switch (program) {{
@@ -144,6 +154,7 @@ int main(int hart) {{
   console_init();
   const void *weights = (const void *){hex(weights_base)}ULL;
   merlin_session_reset();
+  uint64_t total_cycles = 0, total_instructions = 0;
   for (int program = 0; program < MERLIN_SESSION_N_PROGRAMS; ++program) {{
     if (merlin_session_prepare_program(program) != 0) {{
       htif_puts("FAIL session binding\\n"); htif_exit(1); return 1;
@@ -152,10 +163,19 @@ int main(int hart) {{
     for (long step = 0; step < steps; ++step) {{
       htif_puts("SESSION_BEGIN "); htif_putd(program); htif_putc(' ');
       htif_putd(step); htif_putc('\\n');
+      uint64_t start_cycles = read_cycle();
+      uint64_t start_instructions = read_instret();
       merlin_arena_reset();
       if (merlin_session_run_step(program, weights, step, 0) != 0) {{
         htif_puts("FAIL session state\\n"); htif_exit(1); return 1;
       }}
+      uint64_t instructions = read_instret() - start_instructions;
+      uint64_t cycles = read_cycle() - start_cycles;
+      total_cycles += cycles;
+      total_instructions += instructions;
+      htif_puts("SESSION_PERF "); htif_putd(program); htif_putc(' ');
+      htif_putd(step); htif_putc(' '); htif_putd((long)cycles);
+      htif_putc(' '); htif_putd((long)instructions); htif_putc('\\n');
       for (int output = 0; output < OUTPUT_COUNTS[program]; ++output) {{
         void *value = output_pointer(program, output);
         size_t bytes = output_bytes(program, output);
@@ -166,6 +186,8 @@ int main(int hart) {{
       }}
     }}
   }}
+  htif_puts("SESSION_TOTAL "); htif_putd((long)total_cycles);
+  htif_putc(' '); htif_putd((long)total_instructions); htif_putc('\\n');
   htif_puts("METRIC memref_rank_mismatch ");
   htif_putd((long)merlin_memref_rank_mismatches()); htif_putc('\\n');
   htif_puts("DONE\\n"); htif_exit(0); return 0;
@@ -293,6 +315,7 @@ def link_session(
           "-T", bare / "model_link.ld", *all_objects, libm, "-o", elf])
     record = {
         "schema": "mx_gemmini.linked_merlin_session.v1",
+        "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
         "status": "linked_experimental_numeric_qualification_pending",
         "session_root": str(session_root),
         "programs": [{"name": program.name, "steps": program.steps,

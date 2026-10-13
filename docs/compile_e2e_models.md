@@ -193,13 +193,34 @@ for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b smolvla; do
     --link-receipt "$ARTIFACT_ROOT/links/$MODEL/mx_session_link.json" \
     --session-root "$SESSION" --merlin-src "$MERLIN_ROOT/src" \
     --riscv-root "$RISCV_ROOT" --spike-extlib "$SPIKE_EXTLIB" \
-    --out-dir "$ARTIFACT_ROOT/runs/$MODEL" --timeout-s 14400
+    --out-dir "$ARTIFACT_ROOT/runs/$MODEL" \
+    --timeout-s 172800 --progress-interval-s 60 \
+    --perf-config e4m3_vpu
 done
 ```
 
-Inspect `runs/<model>/mx_session_run.json`. A structurally complete run has
+While Spike runs, inspect `runs/<model>/progress.json` or watch the runner's
+periodic status lines. They report completed steps, total steps, the active
+program/step, and any completed step's Spike cycle and retired-instruction
+counts. `spike.log` contains the guest `SESSION_BEGIN`, `SESSION_PERF`, and
+`SESSION_SHA` records as they arrive.
+
+Inspect `runs/<model>/mx_session_run.json` after the run. A structurally complete run has
 `status: complete_numeric_qualification_pending` and validates every
 program/step/output digest, zero memref rank mismatches, and guest `DONE`.
+`--perf-config e4m3_vpu` selects Nicolas's extension's functional plus timing
+mode and its VPU timing preset. The runner pins the mode and preset in the
+receipt and writes `gemmini_perf.txt` when the guest exits. `--perf-set` can
+override a timing parameter for a controlled sensitivity study; retain the
+same capture and executable when comparing parameter settings.
+
+`step_performance` records each compiled model step; `program_performance`
+groups them by stage; `total_performance` sums them across the whole session.
+The measured interval includes arena reset,
+state handoff, and model execution. It excludes ELF loading, result hashing,
+and console output. Compare compiler changes with the same capture, precision
+policy, timing preset, Spike binary, and extension. These are Nicolas's modeled
+cycles, so hardware latency claims still need RTL or FPGA calibration.
 `incomplete` or a nonzero command result is a failed execution; process exit
 alone is insufficient. Full-model numerical correctness still requires an
 independent reference that implements the selected FP4/FP8 conversion and
