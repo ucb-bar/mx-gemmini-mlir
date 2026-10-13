@@ -67,8 +67,11 @@ reproduces the saved unquantized PyTorch decode output and exercises the
 selected FP4/FP8 operand policy, including the padded rotary K=1 BMM. That
 PyTorch proxy uses different matrix and VPU arithmetic from the hardware.
 
-The published VPU-enabled full-session evidence currently establishes
-compilation and linking. Complete Spike session receipts and an independent
+The [SmolVLA full-session timing run](evidence/smolvla_vpu_full_session_timing_20261013/README.md)
+completed all 12 steps and 45 expected events on Nicolas's MX+VPU Spike with
+the `e4m3_vpu` preset and `mem.host_tracking=0`. It provides a stage-level
+modeled cycle baseline, but its output digests are not an independent numerical
+oracle. Complete Spike session receipts for the other models and an independent
 full-graph reference under the exact FP4/FP8 conversion and MX/VPU BF16
 arithmetic are still needed to qualify numerical correctness. Model quality
 and performance relative to handwritten kernels require separate workload

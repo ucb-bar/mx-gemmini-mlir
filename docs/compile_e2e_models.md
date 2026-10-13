@@ -234,3 +234,5 @@ individual Spike executions, and numerical qualification.
 The [paired MX+VPU attention timing check](evidence/attn_vpu_timing_20261012/README.md)
 provides a smaller, reproducible performance comparison against Nicolas's
 handwritten program.
+The [completed SmolVLA session](evidence/smolvla_vpu_full_session_timing_20261013/README.md)
+provides a full-session stage breakdown with the faster timing override.
