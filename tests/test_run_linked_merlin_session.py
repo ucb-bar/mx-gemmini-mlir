@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 from types import SimpleNamespace
 
 import pytest
 
-from tools.run_linked_merlin_session import observe_session_output, session_progress
+from tools.run_linked_merlin_session import (
+    extract_output_dumps, observe_session_output, session_progress,
+)
 
 
 def _session():
@@ -80,3 +83,22 @@ def test_per_step_cycles_and_instructions_cover_the_whole_session() -> None:
                                _session(), exit_code=0, require_perf=True)
     with pytest.raises(ValueError, match="complete valid session"):
         observe_session_output(_log(), _session(), exit_code=0, require_perf=True)
+
+
+def test_selected_output_dump_is_bound_to_guest_digest(tmp_path) -> None:
+    value = bytes(range(12))
+    digest = hashlib.sha256(value).hexdigest()
+    record = {"program": 1, "step": 0, "output": 0,
+              "bytes": 12, "sha256": digest}
+    selected = [{"program": 1, "output": 0}]
+    session = SimpleNamespace(programs=(SimpleNamespace(steps=0),
+                                        SimpleNamespace(steps=1)))
+    line = f"SESSION_HEX 1 0 0 12 {value.hex()}\n"
+    result = extract_output_dumps(line, session, selected, [record], tmp_path)
+    assert result[0]["sha256"] == digest
+    assert (tmp_path / result[0]["path"]).read_bytes() == value
+    with pytest.raises(ValueError, match="guest digest"):
+        extract_output_dumps(line.replace(value.hex(), bytes(reversed(value)).hex()),
+                             session, selected, [record], tmp_path)
+    with pytest.raises(ValueError, match="lacks a selected output dump"):
+        extract_output_dumps("", session, selected, [record], tmp_path)

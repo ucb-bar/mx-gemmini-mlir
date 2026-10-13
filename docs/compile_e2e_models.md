@@ -244,3 +244,27 @@ provides a smaller, reproducible performance comparison against Nicolas's
 handwritten program.
 The [completed SmolVLA session](evidence/smolvla_vpu_full_session_timing_20261013/README.md)
 provides a full-session stage breakdown with the faster timing override.
+
+## 5. Inspect SmolVLA action values
+
+For a numerical diagnostic, link SmolVLA again in a fresh directory with
+`--dump-output flow_denoise:0 --dump-output action_decode:0`. Run that link in
+a fresh output directory with the same Spike command above. Each selected
+output is at most 16 KiB; the runner checks its raw bytes against the guest's
+`SESSION_SHA` before saving `output_dumps/*.bin`. Dumping occurs after the
+timed step, so the step counters retain the same measurement boundary.
+
+```sh
+"$CAPTURE_PY" -m tools.compare_smolvla_session \
+  --run-receipt "$ARTIFACT_ROOT/runs/smolvla_values/mx_session_run.json" \
+  --link-receipt "$ARTIFACT_ROOT/links/smolvla_values/mx_session_link.json" \
+  --session-root "$ARTIFACT_ROOT/captures/smolvla/smolvla_session" \
+  --out "$ARTIFACT_ROOT/runs/smolvla_values/fp32_comparison.json"
+```
+
+The comparison reports errors for each flow step and the final action against
+the capture's unquantized FP32 trajectory. It also checks that action decode
+preserves the last flow state. These errors expose drift; they are not an
+acceptance test for MX precision. A separate reference using exact MX operand,
+mesh, and VPU arithmetic is needed to distinguish intended quantization drift
+from a compiler numerical defect.

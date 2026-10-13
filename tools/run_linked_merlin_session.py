@@ -154,6 +154,56 @@ def session_progress(log: str, session, *, elapsed_wall_s: float) -> dict:
     }
 
 
+def extract_output_dumps(log: str, session, selected: list[dict],
+                         digests: list[dict], out_dir: Path) -> list[dict]:
+    """Save bounded guest values only when their bytes match the session digest."""
+    wanted = {(row["program"], row["output"]): row for row in selected}
+    expected = {
+        (row["program"], row["step"], row["output"]): row
+        for row in digests if (row["program"], row["output"]) in wanted
+    }
+    if len(expected) != sum(session.programs[program].steps
+                            for program, _output in wanted):
+        raise ValueError("selected output dumps differ from the session ABI")
+    values = {}
+    for line in log.splitlines():
+        if not line.startswith("SESSION_HEX "):
+            continue
+        parts = line.split()
+        if len(parts) != 6:
+            raise ValueError("malformed session output dump")
+        try:
+            program, step, output, byte_count = map(int, parts[1:5])
+        except ValueError as error:
+            raise ValueError("malformed session output dump") from error
+        key = (program, step, output)
+        if (key not in expected or key in values or
+                byte_count != expected[key]["bytes"] or byte_count > 16_384 or
+                len(parts[5]) != byte_count * 2):
+            raise ValueError("session output dump differs from its capture ABI")
+        try:
+            data = bytes.fromhex(parts[5])
+        except ValueError as error:
+            raise ValueError("malformed session output dump") from error
+        if hashlib.sha256(data).hexdigest() != expected[key]["sha256"]:
+            raise ValueError("session output dump differs from its guest digest")
+        values[key] = data
+    if set(values) != set(expected):
+        raise ValueError("complete session lacks a selected output dump")
+    if not values:
+        return []
+    dump_dir = out_dir / "output_dumps"
+    dump_dir.mkdir()
+    result = []
+    for (program, step, output), data in sorted(values.items()):
+        path = dump_dir / f"p{program}_s{step}_o{output}.bin"
+        path.write_bytes(data)
+        result.append({"program": program, "step": step, "output": output,
+                       "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
+                       "path": str(path.relative_to(out_dir))})
+    return result
+
+
 def run_session(
     link_receipt: Path, out_dir: Path, *, session_root: Path,
     merlin_src: Path, riscv_root: Path, spike_extlib: Path | None,
@@ -258,6 +308,9 @@ def run_session(
     observation = observe_session_output(
         log, session, exit_code=exit_code,
         require_perf=link.get("performance_schema") == "spike_rdcycle_rdinstret_per_step.v1")
+    output_dumps = (extract_output_dumps(
+        log, session, link.get("dump_outputs", []), observation["output_digests"], out_dir)
+        if observation["complete"] else [])
     timing_model_active = "gemmini: GEMMINI_MODE=both" in log
     timing_report = perf_path.read_text(encoding="utf-8") if perf_path.is_file() else ""
     if perf_config and not timing_model_active:
@@ -281,6 +334,7 @@ def run_session(
         "timing_report_sha256": _sha(perf_path) if perf_path.is_file() else None,
         "elapsed_wall_s": elapsed_wall_s,
         "log_sha256": _sha(log_path), **observation,
+        "output_dumps": output_dumps,
     }
     (out_dir / "mx_session_run.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")

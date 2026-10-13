@@ -86,7 +86,8 @@ def _namespace_stage(
     return result, renamed_symbols
 
 
-def _session_main(output_counts: list[int], *, weights_base: int) -> str:
+def _session_main(output_counts: list[int], *, weights_base: int,
+                  dump_outputs: tuple[tuple[int, int], ...] = ()) -> str:
     declarations = "\n".join(
         f"void *merlin_stage_{index}_output(int);\n"
         f"size_t merlin_stage_{index}_output_bytes(int);"
@@ -101,6 +102,9 @@ def _session_main(output_counts: list[int], *, weights_base: int) -> str:
         for index in range(len(output_counts))
     )
     counts = ", ".join(str(value) for value in output_counts)
+    dump_condition = " || ".join(
+        f"(program == {program} && output == {output})"
+        for program, output in dump_outputs) or "0"
     return f'''/* MX target's Spike entry; state scheduling is Merlin-generated. */
 #include <stddef.h>
 #include <stdint.h>
@@ -149,6 +153,18 @@ static void report(int program, long step, int output, const void *value, size_t
   }}
   htif_putc('\\n');
 }}
+static void dump_output(int program, long step, int output,
+                        const void *value, size_t bytes) {{
+  static const char hex[] = "0123456789abcdef";
+  const uint8_t *data = (const uint8_t *)value;
+  htif_puts("SESSION_HEX "); htif_putd(program); htif_putc(' ');
+  htif_putd(step); htif_putc(' '); htif_putd(output); htif_putc(' ');
+  htif_putd((long)bytes); htif_putc(' ');
+  for (size_t i = 0; i < bytes; ++i) {{
+    htif_putc(hex[data[i] >> 4]); htif_putc(hex[data[i] & 15]);
+  }}
+  htif_putc('\\n');
+}}
 int main(int hart) {{
   if (hart != 0) for (;;) ;
   console_init();
@@ -183,6 +199,7 @@ int main(int hart) {{
           htif_puts("FAIL session output ABI\\n"); htif_exit(1); return 1;
         }}
         report(program, step, output, value, bytes);
+        if ({dump_condition}) dump_output(program, step, output, value, bytes);
       }}
     }}
   }}
@@ -198,6 +215,7 @@ int main(int hart) {{
 def link_session(
     session_root: Path, builds: dict[str, Path], output: Path, *,
     profile: Path, merlin_src: Path, riscv_root: Path,
+    dump_outputs: tuple[str, ...] = (),
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -210,6 +228,28 @@ def link_session(
     names = set(session.program_names)
     if set(builds) != names:
         raise ValueError(f"stage builds must be exactly {sorted(names)}")
+    selected_dumps = []
+    seen_dumps = set()
+    output_sizes = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
+    for request in dump_outputs:
+        name, separator, raw_index = request.partition(":")
+        if not separator or name not in names or not raw_index.isdecimal():
+            raise ValueError(f"invalid --dump-output {request!r}; use program:output-index")
+        program_index = session.program_names.index(name)
+        program = session.programs[program_index]
+        output_index = int(raw_index)
+        if output_index >= len(program.outputs) or (program_index, output_index) in seen_dumps:
+            raise ValueError(f"unknown or duplicate --dump-output {request!r}")
+        shape, dtype = program.outputs[output_index]
+        byte_count = output_sizes[dtype]
+        for dimension in shape:
+            byte_count *= dimension
+        if byte_count > 16_384:
+            raise ValueError(f"dump output {request!r} exceeds the 16 KiB console limit")
+        seen_dumps.add((program_index, output_index))
+        selected_dumps.append({"program": program_index, "name": name,
+                               "output": output_index, "bytes": byte_count})
+    selected_dumps.sort(key=lambda row: (row["program"], row["output"]))
     expected_profile = profile_sha256(load_profile(profile))
     receipts = {}
     source_objects = {}
@@ -304,7 +344,9 @@ def link_session(
     main_source = output / "session_main.c"
     main_source.write_text(
         _session_main([len(program.outputs) for program in session.programs],
-                      weights_base=layout["weights_base"]),
+                      weights_base=layout["weights_base"],
+                      dump_outputs=tuple((row["program"], row["output"])
+                                         for row in selected_dumps)),
         encoding="utf-8")
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
     elf = output / "session.elf"
@@ -316,6 +358,7 @@ def link_session(
     record = {
         "schema": "mx_gemmini.linked_merlin_session.v1",
         "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+        "dump_outputs": selected_dumps,
         "status": "linked_experimental_numeric_qualification_pending",
         "session_root": str(session_root),
         "programs": [{"name": program.name, "steps": program.steps,
@@ -352,12 +395,15 @@ def main() -> None:
     parser.add_argument("--profile", required=True, type=Path)
     parser.add_argument("--merlin-src", required=True, type=Path)
     parser.add_argument("--riscv-root", required=True, type=Path)
+    parser.add_argument("--dump-output", action="append", default=[],
+                        help="program:output-index; record at most 16 KiB per selected result")
     args = parser.parse_args()
     record = link_session(
         args.session_root.resolve(strict=True), _stage_paths(args.stage_build),
         args.workdir.absolute(), profile=args.profile.resolve(strict=True),
         merlin_src=args.merlin_src.resolve(strict=True),
-        riscv_root=args.riscv_root.resolve(strict=True))
+        riscv_root=args.riscv_root.resolve(strict=True),
+        dump_outputs=tuple(args.dump_output))
     print(json.dumps(record, sort_keys=True))
 
 
