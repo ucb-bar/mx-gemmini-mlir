@@ -32,8 +32,8 @@ def diagnose(stage: Path, model2mlir_root: Path, out_dir: Path, *,
              stage_kind: str = "prefill",
              precision_overrides: Path | None = None,
              profile_path: Path | None = None) -> dict:
-    if layers <= 0 or capacity <= 0 or expected_fp4 <= 0 or expected_fp8 <= 0:
-        raise ValueError("TinyLlama diagnostic requires positive model and site counts")
+    if layers <= 0 or capacity <= 0 or expected_fp4 < 0 or expected_fp8 <= 0:
+        raise ValueError("TinyLlama diagnostic requires valid model and site counts")
     if stage_kind not in {"prefill", "decode"}:
         raise ValueError("TinyLlama diagnostic needs prefill or decode stage kind")
     if expected_fp8_bmm < 0:

@@ -87,8 +87,8 @@ inputs, output/state comparisons, schedules, and measurements. The selected
 The [pretrained TinyLlama precision sweep](evidence/tinyllama_precision_sweep_20261013/README.md)
 finds substantial logit drift under the default FP4 dense operand policy on
 one captured input. Promoting only the 22 MLP down projections to FP8 improves
-its operand-level cosine from 0.498 to 0.671, while promoting all MLP sites
-does less well. No tested policy preserves the reference top token. These
+its operand-level cosine from 0.498 to 0.671; promoting all 155 dense sites
+raises it to 0.922. No tested policy preserves the reference top token. These
 PyTorch proxy results do not qualify MX arithmetic or model quality.
 
 ## Other configurations and kernel-level coverage

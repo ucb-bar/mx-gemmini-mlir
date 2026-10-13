@@ -47,6 +47,8 @@ def test_precision_comparison_checks_shared_capture_and_array_digests(tmp_path) 
     assert report["runs"][0]["mae"] == 0
     assert report["runs"][1]["fp8_linear_sites"] == 22
     assert report["runs"][1]["max_abs"] == 0.5
+    assert report["runs"][0]["reference_top_rank"] == 1
+    assert report["runs"][1]["top10_overlap"] == 10
     receipt_path = promoted / "result.json"
     receipt = json.loads(receipt_path.read_text())
     receipt["capture_inputs_sha256"] = "changed"

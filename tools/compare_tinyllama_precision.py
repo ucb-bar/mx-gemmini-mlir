@@ -58,6 +58,9 @@ def compare(runs: dict[str, Path]) -> dict:
         actual = proxy.astype(np.float64)
         expected = baseline.astype(np.float64)
         difference = actual - expected
+        reference_top = reference["baseline_top_token"]
+        reference_top10 = set(np.argsort(expected.reshape(-1), kind="stable")[-10:])
+        proxy_top10 = set(np.argsort(actual.reshape(-1), kind="stable")[-10:])
         rows.append({
             "name": name,
             "result_sha256": receipt["result_sha256"],
@@ -66,6 +69,9 @@ def compare(runs: dict[str, Path]) -> dict:
             "fp8_linear_sites": receipt["fp8_linear_sites"],
             "top_token": receipt["proxy_top_token"],
             "top_token_matches_reference": receipt["proxy_top_token"] == reference["baseline_top_token"],
+            "reference_top_rank": int(np.count_nonzero(
+                actual > actual.reshape(-1)[reference_top]) + 1),
+            "top10_overlap": len(reference_top10 & proxy_top10),
             "mae": float(np.mean(np.abs(difference))),
             "rmse": float(np.sqrt(np.mean(difference * difference))),
             "max_abs": float(np.max(np.abs(difference))),

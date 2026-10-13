@@ -354,7 +354,8 @@ For TinyLlama, `tools.diagnose_tinyllama_operand_quant` accepts the same
 remaining dense sites and keep `--expected-fp8` and
 `--expected-fp8-bmm` for the unchanged attention and rotary sites. Its
 pretrained PyTorch run is a faster operand-level sensitivity check before
-building a large stage ELF; it does not model MX mesh or VPU arithmetic.
+building a large stage ELF; `--expected-fp4 0` permits an all-FP8 dense
+control. The diagnostic does not model MX mesh or VPU arithmetic.
 
 Compare output and state against a reference before accepting a policy.
 An FP8 promotion increases operand precision; it does not by itself prove

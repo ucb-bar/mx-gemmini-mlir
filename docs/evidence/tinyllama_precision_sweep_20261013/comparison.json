@@ -22,9 +22,26 @@
       "max_abs": 12.122259616851807,
       "name": "fp4_control",
       "precision_overrides_sha256": null,
+      "reference_top_rank": 40,
       "result_sha256": "af42377f5a70113f15bab1296ff66051d53e169a5d99b5d333da6e0c92136f33",
       "rmse": 2.7644059327214716,
+      "top10_overlap": 1,
       "top_token": 800,
+      "top_token_matches_reference": false
+    },
+    {
+      "cosine": 0.9223841012168305,
+      "fp4_linear_sites": 0,
+      "fp8_linear_sites": 155,
+      "mae": 0.7513993652110658,
+      "max_abs": 3.94258451461792,
+      "name": "fp8_all",
+      "precision_overrides_sha256": "4d3200610f4d032ed15281c94e850d5294becbed469425e63460d06e288675d9",
+      "reference_top_rank": 2,
+      "result_sha256": "4de3b590f8765e4a89fb83bb827285500a498a6f39dd8688385bf63bde05d98f",
+      "rmse": 0.979108746469889,
+      "top10_overlap": 9,
+      "top_token": 362,
       "top_token_matches_reference": false
     },
     {
@@ -35,8 +52,10 @@
       "max_abs": 9.433196067810059,
       "name": "fp8_down",
       "precision_overrides_sha256": "c8e1e179fda1290d494aafdcdb1950031ddea1ec73cdb3442011edc63915ae1e",
+      "reference_top_rank": 943,
       "result_sha256": "0db43e5f083ea2a5a67f05020953da031e76fdc065f3160677918e90c199b282",
       "rmse": 1.9800311378446243,
+      "top10_overlap": 3,
       "top_token": 5481,
       "top_token_matches_reference": false
     },
@@ -48,8 +67,10 @@
       "max_abs": 11.06541109085083,
       "name": "fp8_mlp",
       "precision_overrides_sha256": "5faa7b320280e8f125a0e0201a6a97cee704431dae60619e1e91749f9d56abf0",
+      "reference_top_rank": 26,
       "result_sha256": "a3d590f139f11a7750e0b6854c803d64697242a51e63900afbc5b338209c13b1",
       "rmse": 2.4443210533018815,
+      "top10_overlap": 2,
       "top_token": 29889,
       "top_token_matches_reference": false
     }
