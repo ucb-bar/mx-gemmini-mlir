@@ -63,8 +63,10 @@ def _narrow_tensor(value, narrow_type):
 class MXBF16CatalogPreparation:
     """Prepare exact profile-selected BF16 matmuls for the f32 MX catalog ABI."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *,
+                 precision_overrides: dict[str, str] | None = None):
         self.profile = profile
+        self.precision_overrides = precision_overrides
 
     def __call__(self, source_path: Path, workdir: Path) -> Path:
         from merlin.frontends.linalg_mlir import parse_mlir_file
@@ -115,7 +117,8 @@ class MXBF16CatalogPreparation:
             worklist["other_contraction_regions"] = [
                 site for site in worklist["other_contraction_regions"]
                 if site["region_id"] not in widened]
-        proposal = build_model_precision_plan(worklist, self.profile)
+        proposal = build_model_precision_plan(
+            worklist, self.profile, precision_overrides=self.precision_overrides)
         selected = {site["region_id"]: site for site in proposal["sites"]
                     if site.get("element_type") == "bf16"
                     and site.get("selected_format") in {"mxfp4", "mxfp8"}}
@@ -190,5 +193,6 @@ class MXBF16CatalogPreparation:
             "profile_sha256": profile_sha256(self.profile),
             "selected_sha256": hashlib.sha256(prepared.read_bytes()).hexdigest(),
             "widened_operations": len(records), "records": records,
+            "precision_overrides": self.precision_overrides or {},
         }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return prepared

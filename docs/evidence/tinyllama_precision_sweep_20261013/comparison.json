@@ -1,0 +1,58 @@
+{
+  "identity": {
+    "baseline_logits_sha256": "9f67bb9337850fe9eb610756c3c7d952c2a59d2261f34908a3097d3f37a00b41",
+    "capacity": 160,
+    "capture_inputs_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+    "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+    "capture_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+    "fp8_attention_calls": 44,
+    "fp8_rotary_bmm_calls": 1,
+    "layers": 22,
+    "stage_kind": "prefill"
+  },
+  "numeric_status": "operand_proxy_only_not_mesh_oracle",
+  "reference_kind": "captured_unquantized_pytorch",
+  "reference_top_token": 279,
+  "runs": [
+    {
+      "cosine": 0.4977544308850506,
+      "fp4_linear_sites": 155,
+      "fp8_linear_sites": 0,
+      "mae": 2.1666593951709654,
+      "max_abs": 12.122259616851807,
+      "name": "fp4_control",
+      "precision_overrides_sha256": null,
+      "result_sha256": "af42377f5a70113f15bab1296ff66051d53e169a5d99b5d333da6e0c92136f33",
+      "rmse": 2.7644059327214716,
+      "top_token": 800,
+      "top_token_matches_reference": false
+    },
+    {
+      "cosine": 0.6713844378193845,
+      "fp4_linear_sites": 133,
+      "fp8_linear_sites": 22,
+      "mae": 1.5783428581025947,
+      "max_abs": 9.433196067810059,
+      "name": "fp8_down",
+      "precision_overrides_sha256": "c8e1e179fda1290d494aafdcdb1950031ddea1ec73cdb3442011edc63915ae1e",
+      "result_sha256": "0db43e5f083ea2a5a67f05020953da031e76fdc065f3160677918e90c199b282",
+      "rmse": 1.9800311378446243,
+      "top_token": 5481,
+      "top_token_matches_reference": false
+    },
+    {
+      "cosine": 0.5162207346859362,
+      "fp4_linear_sites": 89,
+      "fp8_linear_sites": 66,
+      "mae": 1.9498034038307523,
+      "max_abs": 11.06541109085083,
+      "name": "fp8_mlp",
+      "precision_overrides_sha256": "5faa7b320280e8f125a0e0201a6a97cee704431dae60619e1e91749f9d56abf0",
+      "result_sha256": "a3d590f139f11a7750e0b6854c803d64697242a51e63900afbc5b338209c13b1",
+      "rmse": 2.4443210533018815,
+      "top_token": 29889,
+      "top_token_matches_reference": false
+    }
+  ],
+  "schema": "mx_gemmini.tinyllama_precision_comparison.v1"
+}

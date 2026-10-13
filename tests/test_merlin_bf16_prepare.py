@@ -71,6 +71,23 @@ def test_selected_bf16_source_binds_existing_f32_catalog(tmp_path, monkeypatch) 
         "tensor<2x32xf32>", "tensor<32x32xf32>", "tensor<2x32xf32>"]
 
 
+def test_source_bound_precision_override_reaches_prepared_catalog(tmp_path, monkeypatch) -> None:
+    pytest.importorskip("merlin.system.offload")
+    monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
+    source = tmp_path / "source.mlir"
+    source.write_text(SOURCE, encoding="utf-8")
+    overrides = {"matmul_0": "mxfp8"}
+    prepared = MXBF16CatalogPreparation(
+        PROFILE, precision_overrides=overrides)(source, tmp_path / "prepared")
+    receipt = json.loads((prepared.parent / "mx_bf16_catalog.json").read_text())
+    assert receipt["records"][0]["selected_format"] == "mxfp8"
+    plan = plan_merlin_catalog(prepared, PROFILE, precision_overrides=overrides)
+    assert plan["selected_operations"] == 1
+    assert plan["bindings"][0]["target_dtypes"] == [
+        "f8E4M3FN", "f8E4M3FN", "bf16"]
+    assert plan["kernels"][0]["precision"] == "mxfp8"
+
+
 def test_nonzero_bf16_init_refuses_widening(tmp_path, monkeypatch) -> None:
     pytest.importorskip("merlin.system.offload")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))

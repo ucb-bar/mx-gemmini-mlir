@@ -51,12 +51,27 @@ def _can_hash_first_output(stage: Path) -> bool:
         np.dtype("float32"), np.dtype("int64"), np.dtype("bool")}
 
 
-def _raw_selected_regions(source: Path, profile: dict) -> set[str]:
+def _load_precision_overrides(path: Path, source_sha: str,
+                              profile_sha: str) -> dict[str, str]:
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("MX precision overrides need a regular JSON file")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(data, dict) or data.get("schema") != "mx_gemmini.precision_overrides.v1"
+            or data.get("source_mlir_sha256") != source_sha
+            or data.get("profile_sha256") != profile_sha
+            or not isinstance(data.get("regions"), dict)):
+        raise ValueError("MX precision overrides differ from the captured source or profile")
+    return data["regions"]
+
+
+def _raw_selected_regions(source: Path, profile: dict, *,
+                          precision_overrides: dict[str, str] | None = None) -> set[str]:
     from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
     from mx_gemmini_support.model_precision_plan import build_model_precision_plan
 
     worklist = build_mx_worklist_from_merlin(source.read_text(encoding="utf-8"), profile)
-    precision = build_model_precision_plan(worklist, profile)
+    precision = build_model_precision_plan(
+        worklist, profile, precision_overrides=precision_overrides)
     regions = [site["region_id"] for site in precision["sites"]
                if site["selected_format"] in {"mxfp4", "mxfp8"}]
     if len(regions) != len(set(regions)):
@@ -115,6 +130,8 @@ def main() -> None:
                              "operations on the host for a numerical control")
     parser.add_argument("--cache-checkpoint-weights", action="store_true",
                         help="pack source-proven checkpoint RHS values once per compiled stage")
+    parser.add_argument("--precision-overrides", type=Path,
+                        help="receipt-bound FP8 overrides for sensitive FP4 source regions")
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
                         help="wall-clock limit per compiler/link command; 0 disables it")
@@ -142,6 +159,14 @@ def main() -> None:
     from mx_gemmini_support.target_profile import load_profile
 
     profile = load_profile(profile_path, rtl_root=args.rtl_root)
+    profile_sha = profile_sha256(profile)
+    if args.precision_overrides is not None and args.precision_overrides.is_symlink():
+        parser.error("--precision-overrides must be a regular file")
+    override_path = (args.precision_overrides.resolve(strict=True)
+                     if args.precision_overrides is not None else None)
+    overrides = (_load_precision_overrides(override_path, capture_sha, profile_sha)
+                 if override_path is not None else None)
+    override_sha = _sha(override_path) if override_path is not None else None
     os.environ["MERLIN_TARGET_PATH"] = str(ROOT)
     os.environ["MERLIN_COMPILER_PYTHON"] = sys.executable
     os.environ["MERLIN_MLIR_INSTALL"] = str(llvm_root)
@@ -166,7 +191,8 @@ def main() -> None:
     vpu_selected = selected_softmax_sites(source.read_text(encoding="utf-8"), profile)
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
-    expected_regions = _raw_selected_regions(source, profile)
+    expected_regions = _raw_selected_regions(
+        source, profile, precision_overrides=overrides)
     if args.cache_checkpoint_weights and not expected_regions:
         parser.error("checkpoint weight caching requires selected MX contractions")
     weights_path = stage / "weights.safetensors"
@@ -179,10 +205,12 @@ def main() -> None:
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
-        prepared_transform=MXBF16CatalogPreparation(profile),
+        prepared_transform=MXBF16CatalogPreparation(
+            profile, precision_overrides=overrides),
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root,
-            cached_weight_stage=stage if args.cache_checkpoint_weights else None),
+            cached_weight_stage=stage if args.cache_checkpoint_weights else None,
+            precision_overrides=overrides),
         post_offload_transform=(None if args.diagnostic_host_vpu
                                 else MXVPUPostOffload(profile)),
     ) if expected_regions else None)
@@ -197,6 +225,8 @@ def main() -> None:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     if weights_sha is not None and _sha(weights_path) != weights_sha:
         raise RuntimeError("captured checkpoint changed during MX stage compilation")
+    if override_sha is not None and _sha(override_path) != override_sha:
+        raise RuntimeError("MX precision overrides changed during stage compilation")
     elf = Path(result["elf"])
     catalog_path = work / "device_catalog/mx_catalog.json"
     if device is None:
@@ -207,6 +237,12 @@ def main() -> None:
     else:
         catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
         _require_source_coverage(expected_regions, catalog)
+        if catalog.get("precision_overrides", {}) != (overrides or {}):
+            raise RuntimeError("MX catalog lost the selected precision overrides")
+        for binding in catalog["bindings"]:
+            if (binding["region"] in (overrides or {}) and
+                    binding["target_dtypes"][:2] != ["f8E4M3FN", "f8E4M3FN"]):
+                raise RuntimeError("MX catalog override did not bind FP8 operands")
     rewrite_path = work / "device_host_abi/mx_vpu_softmax_rewrite.json"
     lowered_vpu = (json.loads(rewrite_path.read_text(encoding="utf-8"))["regions"]
                    if rewrite_path.is_file() else [])
@@ -287,6 +323,8 @@ def main() -> None:
         "status": status,
         "capture_model_sha256": capture_sha,
         "profile_sha256": profile_sha256(profile),
+        "precision_overrides_sha256": override_sha,
+        "precision_overrides": overrides or {},
         "catalog_manifest": str(catalog_path) if device is not None else None,
         "execution_route": route,
         "diagnostic_host_vpu": args.diagnostic_host_vpu,

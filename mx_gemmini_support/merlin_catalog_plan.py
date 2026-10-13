@@ -27,7 +27,8 @@ _TARGET_DTYPES = {
 def plan_merlin_catalog(prepared: Path, profile: dict, *,
                         device: str = "mx_gemmini",
                         checkpoint_manifest: dict | None = None,
-                        cache_immutable_weights: bool = False) -> dict:
+                        cache_immutable_weights: bool = False,
+                        precision_overrides: dict[str, str] | None = None) -> dict:
     """Bind every selected direct matrix contraction to exact prepared MLIR.
 
     The caller must select the same OOT target package on MERLIN_TARGET_PATH.
@@ -45,7 +46,9 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
     raw = prepared.read_bytes()
     text = raw.decode("utf-8")
     worklist = build_mx_worklist_from_merlin(text, profile)
-    proposal = build_model_precision_plan(worklist, profile)
+    proposal = (build_model_precision_plan(
+        worklist, profile, precision_overrides=precision_overrides)
+        if precision_overrides else build_model_precision_plan(worklist, profile))
     selected = {site["region_id"]: site for site in proposal["sites"]
                 if site["selected_format"] in _TARGET_DTYPES}
     if len(selected) != sum(
@@ -127,7 +130,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         })
     counts = Counter(kernel["precision"] for kernel in kernels.values())
     cached = sum(kernel["cache_immutable_weight"] for kernel in kernels.values())
-    return {
+    result = {
         "schema": "mx_gemmini.merlin_catalog_plan.v1",
         "status": ("no_direct_f32_catalog_candidates" if not bindings else
                    "exact_source_plan_partial_precision_coverage" if unbound else
@@ -146,3 +149,6 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         "kernels": list(kernels.values()),
         "bindings": bindings,
     }
+    if precision_overrides:
+        result["precision_overrides"] = dict(sorted(precision_overrides.items()))
+    return result

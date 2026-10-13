@@ -1,0 +1,29 @@
+{
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "regions": {
+    "matmul_108": "mxfp8",
+    "matmul_117": "mxfp8",
+    "matmul_126": "mxfp8",
+    "matmul_135": "mxfp8",
+    "matmul_144": "mxfp8",
+    "matmul_153": "mxfp8",
+    "matmul_162": "mxfp8",
+    "matmul_171": "mxfp8",
+    "matmul_18": "mxfp8",
+    "matmul_180": "mxfp8",
+    "matmul_189": "mxfp8",
+    "matmul_198": "mxfp8",
+    "matmul_27": "mxfp8",
+    "matmul_36": "mxfp8",
+    "matmul_45": "mxfp8",
+    "matmul_54": "mxfp8",
+    "matmul_63": "mxfp8",
+    "matmul_72": "mxfp8",
+    "matmul_81": "mxfp8",
+    "matmul_9": "mxfp8",
+    "matmul_90": "mxfp8",
+    "matmul_99": "mxfp8"
+  },
+  "schema": "mx_gemmini.precision_overrides.v1",
+  "source_mlir_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031"
+}

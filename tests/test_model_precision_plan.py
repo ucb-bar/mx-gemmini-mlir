@@ -132,6 +132,33 @@ def test_current_small_llama_attention_and_padding_proposal() -> None:
                    for site in incomplete_plan["sites"])
 
 
+def test_source_bound_fp8_override_keeps_dense_site_on_mx() -> None:
+    archive = ROOT / "docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593"
+    graph = gzip.decompress((archive / "small_llama.model2mlir.mlir.gz").read_bytes()).decode()
+    worklist = build_model2mlir_worklist(graph, VPU)
+    baseline = build_model_precision_plan(worklist, VPU)
+    dense = next(site for site in baseline["sites"]
+                 if site["selected_format"] == "mxfp4")
+    region = dense["region_id"]
+    adjusted = build_model_precision_plan(
+        worklist, VPU, precision_overrides={region: "mxfp8"})
+    changed = next(site for site in adjusted["sites"] if site["region_id"] == region)
+    assert changed["selected_format"] == "mxfp8"
+    assert changed["reason"] == "precision_override"
+    assert adjusted["selected_format_counts"]["mxfp4"] == baseline["selected_format_counts"]["mxfp4"] - 1
+    assert adjusted["selected_format_counts"]["mxfp8"] == baseline["selected_format_counts"]["mxfp8"] + 1
+    with pytest.raises(ValueError, match="unknown source regions"):
+        build_model_precision_plan(worklist, VPU,
+                                   precision_overrides={"missing": "mxfp8"})
+    attention = next(site for site in baseline["sites"] if site["role"] == "qk")
+    with pytest.raises(ValueError, match="not an FP4 dense site"):
+        build_model_precision_plan(worklist, VPU,
+                                   precision_overrides={attention["region_id"]: "mxfp8"})
+    with pytest.raises(ValueError, match="map source regions"):
+        build_model_precision_plan(worklist, VPU,
+                                   precision_overrides={region: "host"})
+
+
 def test_unqualified_mesh_does_not_inherit_dim16_padding_selection() -> None:
     archive = ROOT / "docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593"
     graph = gzip.decompress((archive / "small_llama.model2mlir.mlir.gz").read_bytes()).decode()

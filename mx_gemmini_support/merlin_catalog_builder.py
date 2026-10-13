@@ -48,11 +48,13 @@ def _run(command: list[str], *, label: str) -> None:
 def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          riscv_root: Path,
                          checkpoint_manifest: dict | None = None,
-                         cache_immutable_weights: bool = False) -> tuple[Path, Path]:
+                         cache_immutable_weights: bool = False,
+                         precision_overrides: dict[str, str] | None = None) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     plan = plan_merlin_catalog(
         prepared, profile, checkpoint_manifest=checkpoint_manifest,
-        cache_immutable_weights=cache_immutable_weights)
+        cache_immutable_weights=cache_immutable_weights,
+        precision_overrides=precision_overrides)
     if not plan["kernels"]:
         raise ValueError("MX catalog has no bindable direct f32 contractions")
     out_dir = Path(out_dir)
@@ -311,6 +313,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "cached_checkpoint_kernels": plan["cached_checkpoint_kernels"],
         "kernels": kernel_records,
         "bindings": plan["bindings"],
+        "precision_overrides": plan.get("precision_overrides", {}),
         "vpu_softmax": {
             "status": "source_bound_f32_to_bf16_vpu_to_f32",
             "numeric_policy": "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities",
@@ -357,7 +360,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
 def make_merlin_catalog_builder(*, profile_path: Path,
                                 riscv_root: Path,
-                                cached_weight_stage: Path | None = None) -> Callable[[Path, Path], tuple[Path, Path]]:
+                                cached_weight_stage: Path | None = None,
+                                precision_overrides: dict[str, str] | None = None) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
     riscv_root = Path(riscv_root).resolve(strict=True)
@@ -374,6 +378,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     riscv_root=riscv_root,
                                     checkpoint_manifest=(json.loads(manifest_path.read_text())
                                                          if manifest_path else None),
-                                    cache_immutable_weights=manifest_path is not None)
+                                    cache_immutable_weights=manifest_path is not None,
+                                    precision_overrides=precision_overrides)
 
     return build

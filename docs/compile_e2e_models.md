@@ -320,3 +320,47 @@ alongside `--dense-adapter --time-dense`. Its receipt records both calls in
 `dense_cycles_by_call`; the first call packs the RHS, and the second reuses
 the packed bytes. The stage option above uses the same adapter mode at each
 source-proven checkpoint site.
+
+## 7. Test a source-bound FP8 promotion
+
+The default FP4 dense policy is a starting point, not a model-quality result.
+For a numerical experiment, a stage can promote selected FP4 dense source
+regions to FP8 while keeping those contractions on MX Gemmini. Generate one
+JSON file per captured stage with `tools.make_precision_overrides`. It binds
+the exact source and profile digests and accepts only current FP4 dense source
+regions. Get region IDs from the stage audit or catalog:
+
+```sh
+"$CAPTURE_PY" -m tools.make_precision_overrides \
+  --stage "$SESSION/stages/prefill" --profile "$MX_PROFILE" \
+  --promote-region matmul_0 \
+  --out "$ARTIFACT_ROOT/tiny_prefill_fp8_overrides.json"
+"$CAPTURE_PY" -m tools.build_merlin_stage \
+  --stage "$SESSION/stages/prefill" \
+  --workdir "$ARTIFACT_ROOT/builds/tiny_prefill_fp8" \
+  --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
+  --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT" \
+  --precision-overrides "$ARTIFACT_ROOT/tiny_prefill_fp8_overrides.json"
+```
+
+Link and run the rebuilt stage with the same session inputs and Spike
+settings. The build refuses changed source/profile digests, unknown regions,
+FP8 attention sites, and any override that would move an MX site to the host.
+The chosen map and its file digest appear in `mx_stage_probe.json` and the
+catalog. Rebuild every affected stage when comparing a recurrent session.
+
+For TinyLlama, `tools.diagnose_tinyllama_operand_quant` accepts the same
+`--precision-overrides` and `--profile` pair. Set `--expected-fp4` to the
+remaining dense sites and keep `--expected-fp8` and
+`--expected-fp8-bmm` for the unchanged attention and rotary sites. Its
+pretrained PyTorch run is a faster operand-level sensitivity check before
+building a large stage ELF; it does not model MX mesh or VPU arithmetic.
+
+Compare output and state against a reference before accepting a policy.
+An FP8 promotion increases operand precision; it does not by itself prove
+model quality or fix a mesh, VPU, or host numerical defect. The
+[two-layer diagnostic](evidence/tiny_two_layer_whole_stage_spike_20261011/README.md)
+shows why this control is useful: early projections were close to the operand
+proxy, but error grew through the MLP and the final random-weight logits.
+The [pretrained TinyLlama sensitivity record](evidence/tinyllama_precision_sweep_20261013/README.md)
+compares the default FP4 dense policy with two capture-bound FP8 promotions.

@@ -5,15 +5,46 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import hashlib
+import json
 
 from mx_gemmini_support.target_profile import load_profile
 from tools.build_merlin_stage import (
     _can_hash_first_output,
+    _load_precision_overrides,
     _observe_spike_evidence,
     _raw_selected_regions,
     _require_source_coverage,
 )
+from tools.make_precision_overrides import make_manifest
 from test_merlin_bf16_prepare import ROOT, SOURCE
+
+
+def test_precision_override_file_is_bound_to_source_and_profile(tmp_path) -> None:
+    path = tmp_path / "overrides.json"
+    data = {"schema": "mx_gemmini.precision_overrides.v1",
+            "source_mlir_sha256": "a" * 64, "profile_sha256": "b" * 64,
+            "regions": {"matmul_0": "mxfp8"}}
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert _load_precision_overrides(path, "a" * 64, "b" * 64) == data["regions"]
+    with pytest.raises(ValueError, match="captured source or profile"):
+        _load_precision_overrides(path, "c" * 64, "b" * 64)
+    with pytest.raises(ValueError, match="captured source or profile"):
+        _load_precision_overrides(path, "a" * 64, "c" * 64)
+
+
+def test_precision_manifest_generator_accepts_only_fp4_dense_sites(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
+    profile = load_profile(
+        ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json")
+    source = tmp_path / "model.mlir"
+    source.write_text(SOURCE, encoding="utf-8")
+    manifest = make_manifest(source, profile, ["matmul_0"])
+    assert manifest["regions"] == {"matmul_0": "mxfp8"}
+    assert manifest["source_mlir_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    with pytest.raises(ValueError, match="distinct"):
+        make_manifest(source, profile, ["matmul_0", "matmul_0"])
+    with pytest.raises(ValueError, match="unknown source regions"):
+        make_manifest(source, profile, ["missing"])
 
 
 def test_first_output_digest_matches_merlin_supported_dtype(tmp_path) -> None:

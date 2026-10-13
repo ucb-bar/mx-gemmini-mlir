@@ -31,7 +31,8 @@ def _legal(profile: dict, fmt: str) -> bool:
     return True
 
 
-def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
+def build_model_precision_plan(worklist: dict, profile: dict, *,
+                               precision_overrides: dict[str, str] | None = None) -> dict:
     """Choose FP4 dense matmuls and FP8 QK/PV on the selected profile.
 
     FP8 is the general MX baseline for source-compatible batched matmuls.
@@ -46,6 +47,11 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         raise ValueError("selected profile lacks the required FP8 baseline")
     if profile["resources"]["scale_block_elements"] != 32:
         raise ValueError("model precision proposal needs 32-element MX scale blocks")
+    overrides = {} if precision_overrides is None else precision_overrides
+    if not isinstance(overrides, dict) or any(
+            not isinstance(region, str) or fmt != "mxfp8"
+            for region, fmt in overrides.items()):
+        raise ValueError("MX precision overrides must map source regions to mxfp8")
 
     attention = defaultdict(list)
     for site in worklist["other_contraction_regions"]:
@@ -69,6 +75,7 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
     batched_shapes = {site["region_id"]: site["shape_bmnk"]
                       for site in worklist["rank3_batch_matmuls"]}
     sites = []
+    applied_overrides = set()
     for site in worklist["rank2_matmuls"]:
         shape = site["shape_mnk"]
         ordinary = site["source_op"] in {"matmul", "addmm"}
@@ -80,6 +87,12 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
                    preferred_legal)
         selected = (preferred if (aligned or can_pad) and preferred_legal else
                     "mxfp8" if aligned else "host")
+        override = overrides.get(site["region_id"])
+        if override is not None:
+            if not ordinary or selected != "mxfp4":
+                raise ValueError(f"MX precision override is not an FP4 dense site: {site['region_id']}")
+            selected = override
+            applied_overrides.add(site["region_id"])
         padded = [_round_up(value) for value in shape]
         needs_padding = selected != "host" and not aligned
         sites.append({
@@ -90,7 +103,7 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
             "mx_padded_shape_mnk": padded,
             "output_crop_mn": shape[:2],
             "post_padding_candidate_format": (
-                preferred if preferred_legal else "host"),
+                selected if preferred_legal else "host"),
             "status": ("requires_bf16_cast_padding_and_executable_lowering"
                        if needs_padding and site["element_type"] == "bf16" else
                        "requires_padding_quantization_and_executable_lowering"
@@ -101,10 +114,12 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
                        else "requires_shape_or_host_lowering"),
             "element_type": site["element_type"],
             "excluded_addmm_bias_epilogue": site["source_op"] == "addmm",
-            "reason": ("N_or_K_requires_zero_padding" if needs_padding else
+            "reason": ("precision_override" if override is not None else
+                       "N_or_K_requires_zero_padding" if needs_padding else
                        None if selected == preferred else
                        "profile_lacks_preferred_mode" if aligned else
                        "K_or_N_is_not_32_aligned"),
+            **({"precision_override": override} if override is not None else {}),
         })
     for site in worklist["other_contraction_regions"]:
         stage = attention_stages.get(site["region_id"])
@@ -132,8 +147,14 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
                 "quantize_batched_operands_to_mxfp8_with_e8m0_scales" if shape else None),
             "status": status, "reason": reason,
         })
+    unknown = set(overrides) - {site["region_id"] for site in sites}
+    if unknown:
+        raise ValueError(f"MX precision overrides name unknown source regions: {sorted(unknown)}")
+    invalid = set(overrides) - applied_overrides
+    if invalid:
+        raise ValueError(f"MX precision override is not an FP4 dense site: {sorted(invalid)}")
     selected_counts = Counter(site["selected_format"] for site in sites)
-    return {
+    result = {
         "schema": "mx_gemmini.model2mlir_precision_proposal.v1",
         "status": "proposal_only_no_whole_model_executable",
         "source_mlir_sha256": worklist["source_mlir_sha256"],
@@ -148,3 +169,6 @@ def build_model_precision_plan(worklist: dict, profile: dict) -> dict:
         "selected_format_counts": dict(sorted(selected_counts.items())),
         "sites": sites,
     }
+    if overrides:
+        result["precision_overrides"] = dict(sorted(overrides.items()))
+    return result
