@@ -231,9 +231,9 @@ class MXVPUAddPostOffload:
 
 
 class MXVPUPostOffload:
-    """Apply independent source-bound VPU region rewrites in order."""
+    """Apply source-bound VPU rewrites and optional fixed-RHS pruning."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *, fixed_weight_catalog: Path | None = None):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
@@ -244,10 +244,18 @@ class MXVPUPostOffload:
         self.elementwise = MXVPUElementwisePostOffload(profile)
         self.unary = MXVPUUnaryPostOffload(profile)
         self.reduce = MXVPUReducePostOffload(profile)
+        if fixed_weight_catalog is not None:
+            from .merlin_fixed_weight import MXFixedWeightPostOffload
+
+            self.fixed_weight = MXFixedWeightPostOffload(fixed_weight_catalog)
+        else:
+            self.fixed_weight = None
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         after_softmax = self.softmax(prepared, sidecar, workdir)
         after_add = self.add(after_softmax, sidecar, workdir)
         after_elementwise = self.elementwise(after_add, sidecar, workdir)
         after_unary = self.unary(after_elementwise, sidecar, workdir)
-        return self.reduce(after_unary, sidecar, workdir)
+        after_reduce = self.reduce(after_unary, sidecar, workdir)
+        return (self.fixed_weight(after_reduce, sidecar, workdir)
+                if self.fixed_weight is not None else after_reduce)

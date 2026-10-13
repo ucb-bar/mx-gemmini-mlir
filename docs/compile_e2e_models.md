@@ -306,6 +306,11 @@ operation table. The
 [exact quantizer lookup run](evidence/smolvla_flow_fast_quant_spike_20261013/README.md)
 shows 3,291,395,119 cycles for the same prepacked stage, down from
 6,659,754,454, with all output hashes and MX/VPU command counts unchanged.
+The [fixed-RHS host rewrite](evidence/smolvla_flow_fixed_rhs_20261013/README.md)
+removes the now-unused checkpoint transpose and cast paths. It reduces the
+same stage to 2,112,653,481 cycles with the output hashes and command counts
+still unchanged. The rewrite checks source region, ordinal, tensor type, and
+parameter provenance against the captured catalog before changing each call.
 Use an uninstrumented build for performance comparisons.
 
 The small-LLaMA archived projection has a reproducible paired Spike check:

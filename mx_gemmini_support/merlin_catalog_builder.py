@@ -203,8 +203,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "prepacked_checkpoint_weight": entry["prepacked_checkpoint_weight"],
             **fixed_records.get(symbol, {}),
             **({"checkpoint_parameter_arg": entry["checkpoint_parameter_arg"],
-                "checkpoint_parameter_name": entry["checkpoint_parameter_name"]}
-               if entry["cache_immutable_weight"] else {}),
+                "checkpoint_parameter_name": entry["checkpoint_parameter_name"],
+                "checkpoint_parameter_transforms": entry["checkpoint_parameter_transforms"],
+                "checkpoint_parameter_shape": entry["checkpoint_parameter_shape"]}
+               if (entry["cache_immutable_weight"] or
+                   entry["prepacked_checkpoint_weight"]) else {}),
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
         })

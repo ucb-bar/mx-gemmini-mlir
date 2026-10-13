@@ -229,7 +229,11 @@ def main() -> None:
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
             precision_overrides=overrides),
         post_offload_transform=(None if args.diagnostic_host_vpu
-                                else MXVPUPostOffload(profile)),
+                                else MXVPUPostOffload(
+                                    profile,
+                                    fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
+                                                          if args.prepack_checkpoint_weights
+                                                          else None))),
     ) if expected_regions else None)
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
