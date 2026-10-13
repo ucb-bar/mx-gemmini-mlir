@@ -84,6 +84,13 @@ inputs, output/state comparisons, schedules, and measurements. The selected
 [Merlin target contract](../contracts/target_contract.yaml) therefore remains
 `structural_unqualified` with `phase0_admitted: false`.
 
+The [pretrained TinyLlama precision sweep](evidence/tinyllama_precision_sweep_20261013/README.md)
+finds substantial logit drift under the default FP4 dense operand policy on
+one captured input. Promoting only the 22 MLP down projections to FP8 improves
+its operand-level cosine from 0.498 to 0.671, while promoting all MLP sites
+does less well. No tested policy preserves the reference top token. These
+PyTorch proxy results do not qualify MX arithmetic or model quality.
+
 ## Other configurations and kernel-level coverage
 
 The [profile guide](current_mx_profiles.md) describes independent MX
@@ -94,3 +101,10 @@ The [source-kernel coverage map](nicolas_application_kernel_coverage.md)
 and [physical compiler record](compiled_mx_pipeline.md) contain the
 source-bound FP4, FP6, FP8, VPU, and resident-kernel results. Kernel-level
 comparisons do not substitute for a whole-model numerical check.
+For the 64×256×128 dense attention source, an
+[equal-work Spike replay](evidence/attn_vpu_equal_work_20261013/README.md)
+matches Nicolas's output hashes, 1,079 commands, 32 fences, and all reported
+MX traffic counts. The compiler takes 43,523 modeled cycles versus 43,641
+for the handwritten source. The earlier 17.6% gap came from repeated scale
+setup and second-pass diagnostic readouts in the compiler wrapper. This
+kernel result does not measure full-model speed.

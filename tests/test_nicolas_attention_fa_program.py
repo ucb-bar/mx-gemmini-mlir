@@ -23,6 +23,7 @@ from tools.qualify_nicolas_dense_attention import replace_source_kernel
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/evidence/nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb"
 ARCHIVE = ROOT / "docs/evidence/nicolas_attn_vpu_fa_typed_program_a042643_0344bcb"
+EQUAL_WORK = ROOT / "docs/evidence/attn_vpu_equal_work_20261013"
 PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
                        "MxE4M3Fp4VpuGemminiRocketConfig.json")
 CORE = Path(os.getenv("NICOLAS_NPU_ROOT", "/path/to/npu-exploration")) / \
@@ -61,6 +62,23 @@ def test_fa_typed_graph_and_source_shape_lowering() -> None:
     assert sum(isinstance(item, Command) for item in typed) == 702
 
 
+def test_fa_phased_typed_programs_match_checked_source_stream() -> None:
+    vector = (ARCHIVE / "attention.vector_bound.mlir").read_text()
+    binding = json.loads((ARCHIVE / "vector_binding.json").read_text())
+    for phase, count in (("setup", 3), ("check", 699), ("timed", 376)):
+        program = render_dense_attention_program(vector, PROFILE, binding,
+                                                 phase=phase)
+        assert classify(program, PROFILE)[0] == "attention_program"
+        commands = lower_dense_attention_typed_program(
+            program, vector, PROFILE, binding)
+        assert commands == lower_dense_attention_program(
+            vector, PROFILE, binding, phase=phase)
+        assert len(commands) == count
+    with pytest.raises(ValueError, match="selected issue phase"):
+        render_dense_attention_program(vector, PROFILE, binding,
+                                       phase="unknown")
+
+
 def test_fa_frontend_scale_is_bound_to_source() -> None:
     if not CORE.is_file():
         pytest.skip("pinned Nicolas source checkout is unavailable")
@@ -76,6 +94,12 @@ def test_fa_frontend_scale_is_bound_to_source() -> None:
     assert driver.startswith("#define ATTN_HOST_SOFTMAX 0\n#define ATTN_ACC_ROWS 16\n")
     assert driver.count("mx_issue(Q_SCALES, KT_SCALES, V_SCALES") == 1
     assert "gemmini_loop_ws_spad(" not in driver
+    phased = replace_source_kernel(CORE.read_text(), variant="fa",
+                                   phased=True)
+    assert phased.count("mx_issue_setup(Q_SCALES, KT_SCALES, V_SCALES") == 1
+    assert phased.count("mx_issue_check(Q_SCALES, KT_SCALES, V_SCALES") == 1
+    assert phased.count("mx_issue_timed(Q_SCALES, KT_SCALES, V_SCALES") == 1
+    assert "gemmini_mx_load_scales(" not in phased
 
 
 def test_native_verifier_accepts_fa_shape(tmp_path: Path) -> None:
@@ -121,3 +145,39 @@ def test_fa_spike_archive_matches_source_and_object_manifest() -> None:
     assert "check S vs mesh golden: 0/4096 4-element words differ" in log
     assert "check hashes vs Spike: match (0 of 4 differ)" in log
     assert "attn_vpu PASSED" in log
+
+
+def test_equal_work_archive_matches_source_traffic_and_output() -> None:
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    receipt = json.loads((EQUAL_WORK / "receipt.json").read_text())
+    manifests = {phase: json.loads(
+        (EQUAL_WORK / "object" / phase / "object_manifest.json").read_text())
+        for phase in ("setup", "check", "timed")}
+    assert receipt["status"] == "equal_work_typed_attention_matches_source_on_spike"
+    assert receipt["source_modeled_cycles"] == 43641
+    assert receipt["compiler_modeled_cycles"] == 43523
+    assert receipt["command_count"] == 1078
+    assert receipt["fence_count"] == 0
+    assert receipt["equal_work_counters"] == {
+        "commands": 1079, "fences": 32, "load_bytes": 147456,
+        "store_puts": 7168, "scale_bytes": 2304}
+    assert receipt["stage_hashes"] == json.loads(
+        (SOURCE / "receipt.json").read_text())["source_stage_hashes"]
+    assert {phase: manifest["command_count"] for phase, manifest in
+            manifests.items()} == {"setup": 3, "check": 699, "timed": 376}
+    for phase, manifest in manifests.items():
+        obj = EQUAL_WORK / "object" / phase / "mx_issue.o"
+        assert receipt["object_sha256"][phase] == sha(obj)
+        assert manifest["defined_symbol"] == f"mx_issue_{phase}"
+        assert manifest["allocated_data_section_bytes"] == 0
+    source_report = (EQUAL_WORK / "source_perf.txt").read_text()
+    compiler_report = (EQUAL_WORK / "spike_1_perf.txt").read_text()
+    for item in ("1079 commands", "32 fences", "147456 bytes in 9216 Gets",
+                 "7168 Puts", "scales: 2304 bytes"):
+        assert item in source_report and item in compiler_report
+    for name in ("source_spike.log", "spike_1.log", "spike_2.log"):
+        log = (EQUAL_WORK / name).read_text()
+        assert "check hashes vs Spike: match (0 of 4 differ)" in log
+        assert "attn_vpu PASSED" in log
+    assert (EQUAL_WORK / "spike_1.log").read_bytes() == \
+        (EQUAL_WORK / "spike_2.log").read_bytes()

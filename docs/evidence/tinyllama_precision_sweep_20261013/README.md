@@ -40,6 +40,14 @@ against the default operand proxy. Promoting all MLP sites gives a smaller
 improvement, so a broad FP8 rule is not justified by this input. None of the
 tested policies selects the reference top token.
 
+The full captured prefill graph also compiled to a source-bound MX catalog
+with the down-projection manifest: all 200 contractions remained on MX,
+with 133 FP4 and 67 FP8 bindings, eight distinct kernels, and eight shared
+issuers. The relocatable RV64 object is 501,000 bytes with SHA-256
+`4f842b7fbc8584ef2ec15ff14be24850c3da1afe24cda3d93ba70de7fe124d0d`.
+This checks compiler coverage and object emission for the selected policy;
+the promoted whole-stage ELF has not yet been linked or run on Spike.
+
 The diagnostic uses model2MLIR's captured model and the MX operand
 fake-quantization kernel, followed by PyTorch matrix arithmetic. It does
 not model Gemmini MX mesh accumulation or VPU arithmetic and is not a

@@ -84,9 +84,15 @@ def classify(mlir_text: str, profile: dict) -> tuple[str, dict]:
     if attention_schema is not None:
         schema = getattr(attention_schema, "data", None)
         if schema == "mx_gemmini.nicolas_dense_attention_program.v1":
+            phase_attr = module.attributes.get("mx.attention_phase")
+            phase = getattr(phase_attr, "data", None) if phase_attr is not None else "whole"
+            expected = {"whole": ((0, 0, 7, 1), 10, 2),
+                        "setup": ((0, 0, 0, 0), 3, 0),
+                        "check": ((0, 0, 7, 1), 7, 2),
+                        "timed": ((0, 0, 7, 1), 4, 2)}
             if (not source and not runtime and sequence_schema is None and
-                    counts == (0, 0, 7, 1) and report["memory_phases"] == 10 and
-                    report["spad_matmuls"] == 2):
+                    phase in expected and
+                    (counts, report["memory_phases"], report["spad_matmuls"]) == expected[phase]):
                 return "attention_program", report
         elif schema == "mx_gemmini.nicolas_flash_attention_program.v1":
             if (not source and not runtime and sequence_schema is None and
@@ -195,6 +201,8 @@ def main() -> None:
     parser.add_argument("--issue-schedule", choices=(
         "program_order_with_dependency_fences", "pipelined"),
         default="program_order_with_dependency_fences")
+    parser.add_argument("--symbol", default="mx_issue",
+                        help="exported issuer symbol for phased dense attention objects")
     args = parser.parse_args()
     for name in ("mlir", "profile", "rtl_root", "riscv_root", "out_dir"):
         setattr(args, name, getattr(args, name).resolve())
@@ -209,6 +217,8 @@ def main() -> None:
         raise ValueError("MX object input must be .mlir or .mlir.gz")
     mlir_text = mlir_bytes.decode()
     family, report = classify(mlir_text, profile)
+    if args.symbol != "mx_issue" and family != "attention_program":
+        raise ValueError("custom MX issuer symbols require typed dense attention")
     asymmetric_inputs = (args.recipe_json, args.source_driver, args.source_header)
     flash_inputs = (args.source_core, args.source_wrapper, args.source_header)
     if family != "asymmetric_source" and (args.recipe_json or args.source_driver):
@@ -247,7 +257,8 @@ def main() -> None:
                 args.binding_json is None or args.precursor_mlir is None):
             raise ValueError("dense attention program needs --binding-json and --precursor-mlir only")
         extra = ["--binding-json", str(args.binding_json.resolve()),
-                 "--precursor-mlir", str(args.precursor_mlir.resolve())]
+                 "--precursor-mlir", str(args.precursor_mlir.resolve()),
+                 "--symbol", args.symbol]
     elif family == "flash_program":
         if (args.bundle or args.resources_dir or args.abi_json or
                 args.binding_json is None or args.precursor_mlir is None or
@@ -299,6 +310,7 @@ def main() -> None:
             built.get("bound_mlir_sha256") != hashlib.sha256(mlir_bytes).hexdigest() or
             built.get("object_sha256") != _sha(args.out_dir / "mx_issue.o") or
             built.get("profile_sha256") != profile_sha256(profile) or
+            built.get("defined_symbol") != args.symbol or
             built.get("allocated_data_section_bytes") != 0 or
             built.get("embedded_operand_bytes") != 0 or
             built.get("embedded_golden_bytes") != 0):

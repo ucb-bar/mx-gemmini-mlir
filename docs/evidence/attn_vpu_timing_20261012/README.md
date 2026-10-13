@@ -15,10 +15,25 @@ and `libgemmini.so` SHA-256
 
 The compiled program takes 7,668 more modeled cycles (17.6%). Its report also
 shows more store traffic (12,288 versus 7,168 Puts) and scale traffic (4,608
-versus 2,304 bytes). These differences identify useful scheduling work; they
-do not by themselves establish a single cause. The [source log](source_spike.log),
+versus 2,304 bytes). The [source log](source_spike.log),
 [source model report](source_perf.txt), [compiled log](compiled_spike.log),
 and [compiled model report](compiled_perf.txt) contain the complete outputs.
+
+The two wrappers do different work in their timed second pass. Nicolas's
+source loads Q/K/V scales once before both passes and reads score,
+probability, and probability codes only in the checking first pass. The
+compiler object currently reloads the scales and reads all three diagnostic
+buffers in both passes. This explains the direction of the scale and store
+traffic difference: the extra second-pass readouts account for 5,120 Puts
+and 323 commands, while the repeated scale setup adds three commands and
+2,304 scale bytes. Together they account for all 326 extra commands in the
+compiled report. The 17.6% figure is therefore a measured difference
+between these two complete programs, not an isolated matrix/VPU scheduler
+gap. An equal-work pair is needed before attributing the remaining cycles to
+command order or dataflow. The [equal-work replay](../attn_vpu_equal_work_20261013/README.md)
+uses the same model, source data, and checks with three typed issue phases.
+It matches the source's command, fence, and traffic counts and measures
+43,523 compiler cycles versus 43,641 handwritten cycles.
 
 Run either checked-in ELF with the pinned extension and the same environment:
 

@@ -23,8 +23,10 @@ SCHEMA = "mx_gemmini.nicolas_dense_attention_program.v1"
 
 
 def render_dense_attention_program(vector_mlir: str, profile: dict,
-                                   binding: dict) -> str:
+                                   binding: dict, *, phase: str = "whole") -> str:
     """Wrap the checked vector middle in ordered typed MX memory/matmul ops."""
+    if phase not in {"whole", "setup", "check", "timed"}:
+        raise ValueError("dense attention needs a selected issue phase")
     vector = lower_dense_attention_vector(vector_mlir, profile, binding)
     if len(vector) != 8:
         raise ValueError("dense attention needs the checked vector middle")
@@ -58,6 +60,7 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
     lines = [
         "builtin.module attributes {",
         f'  mx.attention_program_schema = "{SCHEMA}",',
+        *([f'  mx.attention_phase = "{phase}",'] if phase != "whole" else []),
         f'  mx.source_sha256 = "{source}",',
         f'  mx.source_mlir_sha256 = "{binding["frontend_mlir_sha256"]}",',
         f'  mx.profile_sha256 = "{digest}",',
@@ -66,6 +69,8 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
         f'  prov.quantization_manifest_sha256 = "{binding["manifest_sha256"]}"',
         "} {",
         f"  func.func @mx_issue({args}) {{",
+    ]
+    setup = [
         memory("load_scales", "Q_SCALES",
                f'payload_bytes = {buffer_bytes["Q_SCALES"]} : i32, '
                'scale_target = "activation"',
@@ -78,46 +83,63 @@ def render_dense_attention_program(vector_mlir: str, profile: dict,
                f"row_bytes = {shape.d} : i32, rows = {shape.sk // 32} : i32, "
                f"pitch_bytes = {shape.d} : i32, destination_byte = 4096 : i32, "
                "selector = 1 : i32", "scales:v"),
-        ('    "mx_gemmini.wait"() {site_id = "scales:fence", '
-         f'profile_sha256 = "{digest}", '
-         f'contract_sha256 = "{binding["contract_sha256"]}", '
-         f'policy_sha256 = "{binding["policy_sha256"]}", '
-         f'manifest_sha256 = "{binding["manifest_sha256"]}"'
-         '} : () -> ()'),
-        memory("dma_matrix", "Q_IN",
-               f"matrix_rows = {shape.sq} : i32, matrix_cols = {shape.d} : i32, "
-               "burst_cols = 16 : i32, spad_row = 0 : i32", "operand:q"),
-        memory("dma_matrix", "KT_IN",
-               f"matrix_rows = {shape.d} : i32, matrix_cols = {shape.sk} : i32, "
-               f"burst_cols = 16 : i32, spad_row = {shape.kt_row} : i32", "operand:kt"),
-        memory("dma_matrix", "V_IN",
-               f"matrix_rows = {shape.sk} : i32, matrix_cols = {shape.d} : i32, "
-               f"burst_cols = 16 : i32, spad_row = {shape.v_row} : i32", "operand:v"),
-        matmul("matmul_0", m=shape.sq, n=shape.sk, k=shape.d,
-               a=0, b_end=shape.score_row, c=shape.score_row, half=0),
-        memory("spad_mvout_linear", "S_hw",
-               f"total_bytes = {buffer_bytes['S_hw']} : i32, tile_cols = 16 : i32, "
-               f"spad_row = {shape.score_row} : i32", "score:readout"),
-        *vector_ops,
-        matmul("matmul_1", m=shape.sq, n=shape.d, k=shape.sk,
-               a=shape.probability_row, b_end=shape.output_row,
-               c=shape.output_row, half=1),
-        memory("spad_mvout_linear", "O_hw",
-               f"total_bytes = {buffer_bytes['O_hw']} : i32, tile_cols = 16 : i32, "
-               f"spad_row = {shape.output_row} : i32", "output:readout"),
-        memory("spad_mvout_linear", "P_hw",
-               f"total_bytes = {buffer_bytes['P_hw']} : i32, tile_cols = 16 : i32, "
-               f"spad_row = {shape.score_row} : i32", "probability:readout"),
-        memory("spad_mvout_linear", "p_codes_hw",
-               f"total_bytes = {buffer_bytes['p_codes_hw']} : i32, "
-               f"tile_cols = 16 : i32, spad_row = {shape.probability_row} : i32",
-               "probability_codes:readout"),
-        "    func.return", "  }", "}", "",
     ]
+    if phase in {"whole", "setup"}:
+        lines.extend(setup)
+    if phase == "whole":
+        lines.append(
+            '    "mx_gemmini.wait"() {site_id = "scales:fence", '
+            f'profile_sha256 = "{digest}", '
+            f'contract_sha256 = "{binding["contract_sha256"]}", '
+            f'policy_sha256 = "{binding["policy_sha256"]}", '
+            f'manifest_sha256 = "{binding["manifest_sha256"]}"'
+            '} : () -> ()')
+    if phase in {"whole", "check", "timed"}:
+        lines.extend([
+            memory("dma_matrix", "Q_IN",
+                   f"matrix_rows = {shape.sq} : i32, matrix_cols = {shape.d} : i32, "
+                   "burst_cols = 16 : i32, spad_row = 0 : i32", "operand:q"),
+            memory("dma_matrix", "KT_IN",
+                   f"matrix_rows = {shape.d} : i32, matrix_cols = {shape.sk} : i32, "
+                   f"burst_cols = 16 : i32, spad_row = {shape.kt_row} : i32", "operand:kt"),
+            memory("dma_matrix", "V_IN",
+                   f"matrix_rows = {shape.sk} : i32, matrix_cols = {shape.d} : i32, "
+                   f"burst_cols = 16 : i32, spad_row = {shape.v_row} : i32", "operand:v"),
+            matmul("matmul_0", m=shape.sq, n=shape.sk, k=shape.d,
+                   a=0, b_end=shape.score_row, c=shape.score_row, half=0),
+        ])
+    if phase in {"whole", "check"}:
+        lines.append(
+            memory("spad_mvout_linear", "S_hw",
+                   f"total_bytes = {buffer_bytes['S_hw']} : i32, tile_cols = 16 : i32, "
+                   f"spad_row = {shape.score_row} : i32", "score:readout"))
+    if phase in {"whole", "check", "timed"}:
+        lines.extend([
+            *vector_ops,
+            matmul("matmul_1", m=shape.sq, n=shape.d, k=shape.sk,
+                   a=shape.probability_row, b_end=shape.output_row,
+                   c=shape.output_row, half=1),
+            memory("spad_mvout_linear", "O_hw",
+                   f"total_bytes = {buffer_bytes['O_hw']} : i32, tile_cols = 16 : i32, "
+                   f"spad_row = {shape.output_row} : i32", "output:readout"),
+        ])
+    if phase in {"whole", "check"}:
+        lines.extend([
+            memory("spad_mvout_linear", "P_hw",
+                   f"total_bytes = {buffer_bytes['P_hw']} : i32, tile_cols = 16 : i32, "
+                   f"spad_row = {shape.score_row} : i32", "probability:readout"),
+            memory("spad_mvout_linear", "p_codes_hw",
+                   f"total_bytes = {buffer_bytes['p_codes_hw']} : i32, "
+                   f"tile_cols = 16 : i32, spad_row = {shape.probability_row} : i32",
+                   "probability_codes:readout"),
+        ])
+    lines.extend(("    func.return", "  }", "}", ""))
     result = "\n".join(lines)
     report = verify_ir(result, profile)
+    expected = {"whole": (10, 2, 7, 1), "setup": (3, 0, 0, 0),
+                "check": (7, 2, 7, 1), "timed": (4, 2, 7, 1)}
     if (report["memory_phases"], report["spad_matmuls"],
-            report["vpu_commands"], report["spad_requants"]) != (10, 2, 7, 1):
+            report["vpu_commands"], report["spad_requants"]) != expected[phase]:
         raise ValueError("dense attention typed stage inventory differs")
     return result
 
@@ -131,15 +153,21 @@ def lower_dense_attention_typed_program(mlir_text: str, vector_mlir: str,
     from xdsl.dialects.func import Func, FuncOp, ReturnOp
     from xdsl.parser import Parser
 
-    expected = render_dense_attention_program(vector_mlir, profile, binding)
-    report = verify_ir(mlir_text, profile)
-    if (report["memory_phases"], report["spad_matmuls"],
-            report["vpu_commands"], report["spad_requants"]) != (10, 2, 7, 1):
-        raise ValueError("typed attention stage inventory differs")
     context = Context(allow_unregistered=True)
     context.load_dialect(Builtin)
     context.load_dialect(Func)
     actual_module = Parser(context, mlir_text).parse_module()
+    program_phase = _text_attr(actual_module, "mx.attention_phase") or "whole"
+    if program_phase not in {"whole", "setup", "check", "timed"}:
+        raise ValueError("typed attention has an unsupported issue phase")
+    expected = render_dense_attention_program(vector_mlir, profile, binding,
+                                              phase=program_phase)
+    report = verify_ir(mlir_text, profile)
+    inventory = {"whole": (10, 2, 7, 1), "setup": (3, 0, 0, 0),
+                 "check": (7, 2, 7, 1), "timed": (4, 2, 7, 1)}
+    if (report["memory_phases"], report["spad_matmuls"],
+            report["vpu_commands"], report["spad_requants"]) != inventory[program_phase]:
+        raise ValueError("typed attention stage inventory differs")
     expected_module = Parser(context, expected).parse_module()
     def attributes(op) -> dict[str, str]:
         return {name: str(value) for name, value in op.attributes.items()
@@ -178,24 +206,24 @@ def lower_dense_attention_typed_program(mlir_text: str, vector_mlir: str,
         buffer = (ATTENTION_BUFFERS[actual_args.index(op.operands[0])]
                   if op.operands else None)
         if name == "mx_gemmini.load_scales":
-            phase = lower_scale_load(
+            memory_phase = lower_scale_load(
                 profile, buffer=buffer, payload_bytes=_int_attr(op, "payload_bytes"),
                 operand=_text_attr(op, "scale_target"))
-            commands.extend(phase.commands)
+            commands.extend(memory_phase.commands)
         elif name == "mx_gemmini.scale_dma":
-            phase = lower_strided_scale_dma(
+            memory_phase = lower_strided_scale_dma(
                 profile, buffer=buffer, row_bytes=_int_attr(op, "row_bytes"),
                 rows=_int_attr(op, "rows"), pitch_bytes=_int_attr(op, "pitch_bytes"),
                 destination_byte=_int_attr(op, "destination_byte"),
                 selector=_int_attr(op, "selector"))
-            commands.extend(phase.commands)
+            commands.extend(memory_phase.commands)
         elif name == "mx_gemmini.dma_matrix":
-            phase = lower_matrix_mvin(
+            memory_phase = lower_matrix_mvin(
                 profile, buffer=buffer, matrix_rows=_int_attr(op, "matrix_rows"),
                 matrix_cols=_int_attr(op, "matrix_cols"),
                 burst_cols=_int_attr(op, "burst_cols"),
                 spad_row=_int_attr(op, "spad_row"))
-            commands.extend(phase.commands)
+            commands.extend(memory_phase.commands)
         elif name == "mx_gemmini.wait":
             commands.append(Fence())
         elif name == "mx_gemmini.matmul_spad":
@@ -209,14 +237,15 @@ def lower_dense_attention_typed_program(mlir_text: str, vector_mlir: str,
         elif name in ("mx_gemmini.vpu_execute", "mx_gemmini.spad_requant"):
             commands.append(next(vector))
         elif name == "mx_gemmini.spad_mvout_linear":
-            phase = lower_linear_spad_mvout(
+            memory_phase = lower_linear_spad_mvout(
                 profile, buffer=buffer, total_bytes=_int_attr(op, "total_bytes"),
                 tile_cols=_int_attr(op, "tile_cols"),
                 spad_row=_int_attr(op, "spad_row"))
-            commands.extend(phase.commands)
+            commands.extend(memory_phase.commands)
         else:
             raise ValueError(f"typed attention has no lowering for {name}")
     result = tuple(commands)
-    if result != lower_dense_attention_program(vector_mlir, profile, binding):
+    if result != lower_dense_attention_program(vector_mlir, profile, binding,
+                                               phase=program_phase):
         raise ValueError("typed attention physical stream differs from source-bound program")
     return result

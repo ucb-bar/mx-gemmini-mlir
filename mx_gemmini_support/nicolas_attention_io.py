@@ -87,22 +87,31 @@ def lower_dense_attention_readout(
 
 
 def lower_dense_attention_program(mlir_text: str, profile: dict,
-                                  binding: dict) -> tuple[Command | Fence, ...]:
+                                  binding: dict, *,
+                                  phase: str = "whole") -> tuple[Command | Fence, ...]:
     """Assemble the source-bound matrix/I/O packets around typed VPU commands."""
     from .nicolas_attention_matrix import lower_dense_attention_matrix
     from .nicolas_attention_vector import lower_dense_attention_vector
 
     vector = lower_dense_attention_vector(mlir_text, profile, binding)
     shape = DenseAttentionShape.from_plan(binding["plan"])
+    if phase not in {"whole", "setup", "check", "timed"}:
+        raise ValueError("dense attention needs a selected issue phase")
+    if phase == "setup":
+        return lower_dense_attention_scales(profile, shape)
     program = (
-        *lower_dense_attention_scales(profile, shape), Fence(),
+        *((*lower_dense_attention_scales(profile, shape), Fence())
+          if phase == "whole" else ()),
         *lower_dense_attention_operands(profile, shape),
         *lower_dense_attention_matrix(profile, "qk", shape=shape),
-        *lower_dense_attention_readout(profile, "score", shape),
+        *(lower_dense_attention_readout(profile, "score", shape)
+          if phase in {"whole", "check"} else ()),
         *vector,
         *lower_dense_attention_matrix(profile, "pv", shape=shape),
         *lower_dense_attention_readout(profile, "output", shape),
-        *lower_dense_attention_readout(profile, "probability", shape),
-        *lower_dense_attention_readout(profile, "probability_codes", shape),
+        *(lower_dense_attention_readout(profile, "probability", shape)
+          if phase in {"whole", "check"} else ()),
+        *(lower_dense_attention_readout(profile, "probability_codes", shape)
+          if phase in {"whole", "check"} else ()),
     )
     return program

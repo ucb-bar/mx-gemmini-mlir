@@ -26,6 +26,7 @@ def main() -> None:
     for name in ("mlir", "precursor-mlir", "binding-json", "profile",
                  "rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--symbol", default="mx_issue")
     args = parser.parse_args()
     for name in ("mlir", "precursor_mlir", "binding_json", "profile",
                  "rtl_root", "riscv_root", "out_dir"):
@@ -44,12 +45,12 @@ def main() -> None:
     args.out_dir.mkdir(parents=True)
     issuer = args.out_dir / "mx_issue.c"
     issuer.write_text(emit_c(list(commands), transport="rocket_rocc",
-                             buffers=ATTENTION_BUFFERS))
+                             buffers=ATTENTION_BUFFERS, symbol=args.symbol))
     header = args.out_dir / "mx_issue.h"
     header.write_text(
         "#ifndef MX_ISSUE_H\n#define MX_ISSUE_H\n\n"
         "/* Buffer order and sizes are in object_manifest.json. */\n"
-        "void mx_issue(" + ", ".join(f"const void *{name}"
+        f"void {args.symbol}(" + ", ".join(f"const void *{name}"
                                      for name in ATTENTION_BUFFERS) +
         ");\n\n#endif\n")
     physical = args.out_dir / "physical_program.json"
@@ -63,7 +64,8 @@ def main() -> None:
         "commands": [asdict(item) if isinstance(item, Command) else
                      {"kind": "fence"} for item in commands],
     }, indent=2, sort_keys=True) + "\n")
-    obj, data_bytes = _compile_object(args.out_dir, args.riscv_root)
+    obj, data_bytes = _compile_object(args.out_dir, args.riscv_root,
+                                      symbol=args.symbol)
     outputs = {"scale_sink", "S_hw", "p_scales", "O_hw", "P_hw", "p_codes_hw"}
     manifest = {
         "schema": "mx_gemmini.attention_program_linkable_object.v1",
@@ -95,7 +97,7 @@ def main() -> None:
             sorted((ROOT / "tools").glob("*.py"))),
         "rtl_revision": _git_revision(args.rtl_root),
         "riscv_gcc_sha256": _file_sha(args.riscv_root / "bin/riscv64-unknown-elf-gcc"),
-        "defined_symbol": "mx_issue", "undefined_symbols": [],
+        "defined_symbol": args.symbol, "undefined_symbols": [],
     }
     (args.out_dir / "object_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
