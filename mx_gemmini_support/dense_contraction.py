@@ -132,6 +132,7 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
                            issuer_symbol: str,
                            shared_workspace_symbol: str | None = None,
                            cache_immutable_weight: bool = False,
+                           prepacked_weight_symbols: tuple[str, str] | None = None,
                            schedule: str = "serial") -> DenseContraction:
     """Emit both halves of one source-independent dense MX catalog candidate."""
     shape = plan_dense_shape(profile, logical_shape_mnk, precision=precision)
@@ -141,7 +142,8 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
     kernel = emit_dense_f32_kernel(
         issuer, logical_shape_mnk, symbol=symbol, issuer_symbol=issuer_symbol,
         shared_workspace_symbol=shared_workspace_symbol,
-        cache_immutable_weight=cache_immutable_weight)
+        cache_immutable_weight=cache_immutable_weight,
+        prepacked_weight_symbols=prepacked_weight_symbols)
     return DenseContraction(shape, issuer, kernel, mode,
                             native.text if native else None,
                             native.digest if native else None,

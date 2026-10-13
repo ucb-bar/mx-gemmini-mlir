@@ -28,6 +28,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                         device: str = "mx_gemmini",
                         checkpoint_manifest: dict | None = None,
                         cache_immutable_weights: bool = False,
+                        prepack_immutable_weights: bool = False,
                         precision_overrides: dict[str, str] | None = None) -> dict:
     """Bind every selected direct matrix contraction to exact prepared MLIR.
 
@@ -39,8 +40,11 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
     from merlin.system.offload import catalog_source_contractions
 
     prepared = Path(prepared)
-    if cache_immutable_weights and not isinstance(checkpoint_manifest, dict):
-        raise ValueError("MX checkpoint cache needs a captured parameter manifest")
+    if cache_immutable_weights and prepack_immutable_weights:
+        raise ValueError("MX checkpoint weights need one preparation mode")
+    if (cache_immutable_weights or prepack_immutable_weights) and not isinstance(
+            checkpoint_manifest, dict):
+        raise ValueError("MX fixed weight preparation needs a captured parameter manifest")
     if prepared.is_symlink() or not prepared.is_file():
         raise ValueError("MX catalog plan needs a regular prepared MLIR file")
     raw = prepared.read_bytes()
@@ -96,8 +100,10 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         base = (rank, dimensions, site["selected_format"])
         cached_arg = None
         cached_name = None
-        if cache_immutable_weights and rank == 2:
-            arg, _transforms, source_shape = source_parameter_arg(op.operands[1])
+        fixed_transforms = ()
+        fixed_shape = None
+        if (cache_immutable_weights or prepack_immutable_weights) and rank == 2:
+            arg, transforms, source_shape = source_parameter_arg(op.operands[1])
             parameter = checkpoint_manifest.get(str(arg)) if arg is not None else None
             if (isinstance(parameter, dict) and parameter.get("kind") == "param"
                     and parameter.get("shape") == list(source_shape or ())
@@ -106,6 +112,8 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                     and parameter["weight"]):
                 cached_arg = arg
                 cached_name = parameter["weight"]
+                fixed_transforms = transforms
+                fixed_shape = source_shape
         key = base + ((region,) if cached_arg is not None else ())
         kernel = kernels.get(key)
         if kernel is None:
@@ -116,11 +124,14 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                 "rank": rank, "shape": list(dimensions),
                 "precision": site["selected_format"],
                 "target_dtypes": _TARGET_DTYPES[site["selected_format"]],
-                "cache_immutable_weight": cached_arg is not None,
+                "cache_immutable_weight": cached_arg is not None and cache_immutable_weights,
+                "prepacked_checkpoint_weight": cached_arg is not None and prepack_immutable_weights,
             }
             if cached_arg is not None:
                 kernel["checkpoint_parameter_arg"] = cached_arg
                 kernel["checkpoint_parameter_name"] = cached_name
+                kernel["checkpoint_parameter_transforms"] = list(fixed_transforms)
+                kernel["checkpoint_parameter_shape"] = list(fixed_shape)
             kernels[key] = kernel
         bindings.append({
             "region": region, "symbol": kernel["symbol"],
@@ -130,6 +141,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         })
     counts = Counter(kernel["precision"] for kernel in kernels.values())
     cached = sum(kernel["cache_immutable_weight"] for kernel in kernels.values())
+    prepacked = sum(kernel["prepacked_checkpoint_weight"] for kernel in kernels.values())
     result = {
         "schema": "mx_gemmini.merlin_catalog_plan.v1",
         "status": ("no_direct_f32_catalog_candidates" if not bindings else
@@ -145,6 +157,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         "unique_kernels": len(kernels),
         "unique_issuers": len(issuers),
         "cached_checkpoint_kernels": cached,
+        "prepacked_checkpoint_kernels": prepacked,
         "unique_kernel_precision_counts": dict(sorted(counts.items())),
         "kernels": list(kernels.values()),
         "bindings": bindings,

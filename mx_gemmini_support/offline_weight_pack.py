@@ -16,6 +16,7 @@ import numpy as np
 
 
 _SOURCE = Path(__file__).with_name("runtime_quant.c")
+_LUT = Path(__file__).with_name("runtime_quant_lut.h")
 
 
 def pack_weight(values: np.ndarray, *, precision: str,
@@ -38,7 +39,7 @@ def pack_weight(values: np.ndarray, *, precision: str,
     padded[:values.shape[0], :values.shape[1]] = values
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
-    digest = hashlib.sha256(_SOURCE.read_bytes()).hexdigest()[:16]
+    digest = hashlib.sha256(_SOURCE.read_bytes() + _LUT.read_bytes()).hexdigest()[:16]
     library = workdir / f"runtime_quant_{digest}.so"
     if not library.exists():
         result = subprocess.run(

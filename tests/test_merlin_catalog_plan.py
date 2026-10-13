@@ -85,3 +85,11 @@ def test_checkpoint_cache_splits_fixed_sites_but_shares_issuer(tmp_path, monkeyp
     cache_rows = [row for row in cached["kernels"] if row["cache_immutable_weight"]]
     assert {row["checkpoint_parameter_arg"] for row in cache_rows} == {2, 3}
     assert len({row["issuer_symbol"] for row in cache_rows}) == 1
+
+    prepacked = plan_merlin_catalog(source, PROFILE, checkpoint_manifest=manifest,
+                                    prepack_immutable_weights=True)
+    assert prepacked["prepacked_checkpoint_kernels"] == 2
+    assert prepacked["cached_checkpoint_kernels"] == 0
+    assert {row["checkpoint_parameter_arg"] for row in prepacked["kernels"]
+            if row["prepacked_checkpoint_weight"]} == {2, 3}
+    assert all(not row["cache_immutable_weight"] for row in prepacked["kernels"])

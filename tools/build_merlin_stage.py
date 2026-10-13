@@ -130,6 +130,10 @@ def main() -> None:
                              "operations on the host for a numerical control")
     parser.add_argument("--cache-checkpoint-weights", action="store_true",
                         help="pack source-proven checkpoint RHS values once per compiled stage")
+    parser.add_argument("--prepack-checkpoint-weights", action="store_true",
+                        help="embed source-proven packed checkpoint RHS values at build time")
+    parser.add_argument("--op-profile", action="store_true",
+                        help="instrument Merlin's prepared top-level operations for a diagnostic Spike build")
     parser.add_argument("--precision-overrides", type=Path,
                         help="receipt-bound FP8 overrides for sensitive FP4 source regions")
     parser.add_argument("--compile-timeout-s", type=int,
@@ -139,6 +143,8 @@ def main() -> None:
                         help="run the built ELF on Spike with this pinned Gemmini extension")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.cache_checkpoint_weights and args.prepack_checkpoint_weights:
+        parser.error("choose one checkpoint weight preparation mode")
     stage = args.stage.resolve(strict=True)
     work = args.workdir.absolute()
     if work.exists():
@@ -156,7 +162,7 @@ def main() -> None:
     merlin_src = args.merlin_src.resolve(strict=True)
     if not (merlin_src / "merlin/runtime/backends/spike_model.py").is_file():
         parser.error("--merlin-src must be Merlin's src directory")
-    from mx_gemmini_support.target_profile import load_profile
+    from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
     profile = load_profile(profile_path, rtl_root=args.rtl_root)
     profile_sha = profile_sha256(profile)
@@ -185,7 +191,6 @@ def main() -> None:
     from mx_gemmini_support.merlin_vpu_elementwise import selected_elementwise_sites
     from mx_gemmini_support.merlin_vpu_unary import selected_unary_sites
     from mx_gemmini_support.merlin_vpu_reduce import selected_row_reduce_sites
-    from mx_gemmini_support.target_profile import profile_sha256
 
     vpu_inventory = audit_softmax_boundaries(source.read_text(encoding="utf-8"), profile)
     vpu_selected = selected_softmax_sites(source.read_text(encoding="utf-8"), profile)
@@ -193,13 +198,24 @@ def main() -> None:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(
         source, profile, precision_overrides=overrides)
-    if args.cache_checkpoint_weights and not expected_regions:
-        parser.error("checkpoint weight caching requires selected MX contractions")
+    fixed_weights = args.cache_checkpoint_weights or args.prepack_checkpoint_weights
+    if fixed_weights and not expected_regions:
+        parser.error("checkpoint weight preparation requires selected MX contractions")
     weights_path = stage / "weights.safetensors"
-    if args.cache_checkpoint_weights and (weights_path.is_symlink()
-                                          or not weights_path.is_file()):
-        parser.error("checkpoint weight caching requires a regular captured weights file")
-    weights_sha = _sha(weights_path) if args.cache_checkpoint_weights else None
+    if fixed_weights and (weights_path.is_symlink() or not weights_path.is_file()):
+        parser.error("checkpoint weight preparation requires a regular captured weights file")
+    weights_sha = _sha(weights_path) if fixed_weights else None
+    if fixed_weights:
+        capture_artifacts = json.loads((stage / "capture_receipt.json").read_text(
+            encoding="utf-8"))["artifacts"]
+        for name in ("weights.safetensors", "weights.safetensors.manifest.json"):
+            artifact = stage / name
+            record = capture_artifacts.get(name) or {}
+            if (artifact.is_symlink() or not artifact.is_file()
+                    or record.get("bytes") != artifact.stat().st_size
+                    or record.get("sha256") != (_sha(artifact) if name.endswith(".json")
+                                                else weights_sha)):
+                parser.error(f"checkpoint artifact differs from capture receipt: {name}")
     if args.diagnostic_host_vpu and not expected_regions:
         parser.error("--diagnostic-host-vpu requires selected MX contractions")
     device = (DeviceRouting(
@@ -210,6 +226,7 @@ def main() -> None:
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root,
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
+            prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
             precision_overrides=overrides),
         post_offload_transform=(None if args.diagnostic_host_vpu
                                 else MXVPUPostOffload(profile)),
@@ -219,8 +236,16 @@ def main() -> None:
         auto_arena=args.arena_mb is None, backend="scalar", device=device,
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
-        output_all_sha256=True,
+        output_all_sha256=True, op_profile=args.op_profile,
     )
+    profile_table_path = work / "op_profile_table.json"
+    profile_op_count = None
+    if args.op_profile:
+        if not profile_table_path.is_file() or profile_table_path.is_symlink():
+            raise RuntimeError("Merlin did not emit the requested operation profile table")
+        profile_op_count = len(json.loads(profile_table_path.read_text(encoding="utf-8")))
+        if profile_op_count > 8192:
+            raise RuntimeError("operation profile exceeds the linked 8192-op counter table")
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     if weights_sha is not None and _sha(weights_path) != weights_sha:
@@ -345,6 +370,12 @@ def main() -> None:
         "unique_kernels": catalog["unique_kernels"],
         "cache_checkpoint_weights": args.cache_checkpoint_weights,
         "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
+        "prepack_checkpoint_weights": args.prepack_checkpoint_weights,
+        "prepacked_checkpoint_kernels": catalog.get("prepacked_checkpoint_kernels", 0),
+        "op_profile": args.op_profile,
+        "op_profile_table": str(profile_table_path) if args.op_profile else None,
+        "op_profile_table_sha256": _sha(profile_table_path) if args.op_profile else None,
+        "op_profile_operations": profile_op_count,
         "checkpoint_weights_sha256": weights_sha,
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),

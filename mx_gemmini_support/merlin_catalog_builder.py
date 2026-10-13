@@ -14,10 +14,12 @@ from pathlib import Path
 import subprocess
 from typing import Callable
 
-from .dense_contraction import emit_dense_batch_contraction, emit_dense_contraction
+from .dense_contraction import (emit_dense_batch_contraction, emit_dense_contraction,
+                                plan_dense_shape)
 from .dense_kernel import emit_shared_workspace_definition
 from .merlin_catalog_plan import plan_merlin_catalog
 from .merlin_schedule_policy import build_policy_plan, selected_policy
+from .offline_weight_pack import pack_weight
 from .merlin_vpu_add import emit_memref_add_shim, selected_add_sites
 from .merlin_vpu_elementwise import selected_elementwise_sites
 from .merlin_vpu_softmax import emit_memref_softmax_shim, selected_softmax_sites
@@ -33,10 +35,12 @@ from .vpu_row_reduce import emit_vpu_row_reduce
 _WORKSPACE_SYMBOL = "mx_catalog_workspace"
 _SUPPORT = Path(__file__).resolve().parent
 _QUANTIZER = _SUPPORT / "runtime_quant.c"
+_QUANTIZER_LUT = _SUPPORT / "runtime_quant_lut.h"
 
 
 def _sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def _run(command: list[str], *, label: str) -> None:
@@ -48,13 +52,20 @@ def _run(command: list[str], *, label: str) -> None:
 def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          riscv_root: Path,
                          checkpoint_manifest: dict | None = None,
+                         checkpoint_weights_path: Path | None = None,
                          cache_immutable_weights: bool = False,
+                         prepack_immutable_weights: bool = False,
                          precision_overrides: dict[str, str] | None = None) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     plan = plan_merlin_catalog(
         prepared, profile, checkpoint_manifest=checkpoint_manifest,
         cache_immutable_weights=cache_immutable_weights,
+        prepack_immutable_weights=prepack_immutable_weights,
         precision_overrides=precision_overrides)
+    if prepack_immutable_weights and (checkpoint_weights_path is None or
+                                      not Path(checkpoint_weights_path).is_file() or
+                                      Path(checkpoint_weights_path).is_symlink()):
+        raise ValueError("MX build-time packing needs regular captured checkpoint weights")
     if not plan["kernels"]:
         raise ValueError("MX catalog has no bindable direct f32 contractions")
     out_dir = Path(out_dir)
@@ -91,11 +102,52 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     max_workspace = 0
     issuer_modes = {}
     issuer_sources = {}
+    fixed_data: list[tuple[str, Path]] = []
+    fixed_records: dict[str, dict] = {}
+    checkpoint = None
+    if prepack_immutable_weights:
+        import torch
+        from safetensors import safe_open
+
+        checkpoint = safe_open(str(checkpoint_weights_path), framework="pt", device="cpu")
     for entry in plan["kernels"]:
         symbol = entry["symbol"]
         issuer_symbol = entry["issuer_symbol"]
         shape = tuple(entry["shape"])
         precision = "FP4" if entry["precision"] == "mxfp4" else "FP8"
+        fixed_symbols = None
+        if entry["prepacked_checkpoint_weight"]:
+            assert checkpoint is not None
+            parameter_name = entry["checkpoint_parameter_name"]
+            if parameter_name not in checkpoint.keys():
+                raise ValueError(f"MX checkpoint is missing {parameter_name}")
+            tensor = checkpoint.get_tensor(parameter_name)
+            if list(tensor.shape) != entry["checkpoint_parameter_shape"]:
+                raise ValueError(f"MX checkpoint changed shape for {parameter_name}")
+            values = tensor.to(dtype=torch.float32).numpy()
+            for transform in reversed(entry["checkpoint_parameter_transforms"]):
+                if transform == "linalg.transpose":
+                    values = values.T
+                elif transform != "linalg.generic":
+                    raise ValueError("MX checkpoint has an unqualified RHS transform")
+            if entry["rank"] != 2 or values.shape != (shape[2], shape[1]):
+                raise ValueError("MX checkpoint RHS differs from its selected contraction")
+            padded = plan_dense_shape(profile, shape, precision=precision).padded_shape_mnk
+            codes, scales = pack_weight(
+                values, precision=precision, padded_shape=(padded[2], padded[1]),
+                workdir=out_dir)
+            fixed_symbols = (f"{symbol}_fixed_codes", f"{symbol}_fixed_scales")
+            fixed_records[symbol] = {
+                "checkpoint_parameter_name": parameter_name,
+                "codes_sha256": hashlib.sha256(codes).hexdigest(),
+                "scales_sha256": hashlib.sha256(scales).hexdigest(),
+                "codes_bytes": len(codes), "scales_bytes": len(scales),
+            }
+            for suffix, payload, fixed_symbol in zip(
+                    ("codes", "scales"), (codes, scales), fixed_symbols, strict=True):
+                path = out_dir / f"{symbol}_{suffix}.bin"
+                path.write_bytes(payload)
+                fixed_data.append((fixed_symbol, path))
         policy_text = build_policy_plan(symbol, schedule="native")
         selected = selected_policy(policy_text, symbol=symbol)
         policy_path = out_dir / f"{symbol}.schedule.mlir"
@@ -106,6 +158,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 issuer_symbol=issuer_symbol,
                 shared_workspace_symbol=_WORKSPACE_SYMBOL,
                 cache_immutable_weight=entry["cache_immutable_weight"],
+                prepacked_weight_symbols=fixed_symbols,
                 schedule=selected)
             batch, m, n, k = 1, *shape
         elif entry["rank"] == 3:
@@ -147,6 +200,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "workspace_bytes": generated.kernel.workspace_bytes,
             "persistent_weight_bytes": getattr(generated.kernel, "persistent_bytes", 0),
             "cache_immutable_weight": entry["cache_immutable_weight"],
+            "prepacked_checkpoint_weight": entry["prepacked_checkpoint_weight"],
+            **fixed_records.get(symbol, {}),
             **({"checkpoint_parameter_arg": entry["checkpoint_parameter_arg"],
                 "checkpoint_parameter_name": entry["checkpoint_parameter_name"]}
                if entry["cache_immutable_weight"] else {}),
@@ -244,8 +299,22 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "rows_per_chunk": generated.rows_per_chunk,
         })
     compile_source("runtime_quant", _QUANTIZER)
+    source_hashes["runtime_quant_lut"] = _sha(_QUANTIZER_LUT)
     compile_source("shared_workspace", emit_shared_workspace_definition(
         max_workspace, symbol=_WORKSPACE_SYMBOL))
+    if fixed_data:
+        lines = [".section .rodata", ".balign 64"]
+        for fixed_symbol, path in fixed_data:
+            escaped = str(path.resolve()).replace("\\", "\\\\").replace('"', '\\"')
+            lines.extend((f".global {fixed_symbol}", f"{fixed_symbol}:",
+                          f'  .incbin "{escaped}"', ".balign 64"))
+        assembly = out_dir / "checkpoint_weights.S"
+        assembly.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        obj = out_dir / "checkpoint_weights.o"
+        _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(assembly),
+              "-o", str(obj)], label="prepacked checkpoint assembly")
+        objects.append(obj)
+        source_hashes["checkpoint_weights"] = _sha(assembly)
     object_path = out_dir / "mx_catalog.o"
     _run([str(ld), "-r", "-o", str(object_path), *(str(obj) for obj in objects)],
          label="relocatable catalog link")
@@ -311,6 +380,9 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "unique_kernels": len(kernel_records),
         "unique_issuers": len(issuer_sources),
         "cached_checkpoint_kernels": plan["cached_checkpoint_kernels"],
+        "prepacked_checkpoint_kernels": plan["prepacked_checkpoint_kernels"],
+        "checkpoint_weights_sha256": (_sha(Path(checkpoint_weights_path))
+                                      if prepack_immutable_weights else None),
         "kernels": kernel_records,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
@@ -361,13 +433,18 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 def make_merlin_catalog_builder(*, profile_path: Path,
                                 riscv_root: Path,
                                 cached_weight_stage: Path | None = None,
+                                prepacked_weight_stage: Path | None = None,
                                 precision_overrides: dict[str, str] | None = None) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
     riscv_root = Path(riscv_root).resolve(strict=True)
-    manifest_path = (Path(cached_weight_stage).resolve(strict=True) /
+    if cached_weight_stage is not None and prepacked_weight_stage is not None:
+        raise ValueError("MX checkpoint weights need one preparation mode")
+    selected_stage = (cached_weight_stage if cached_weight_stage is not None
+                      else prepacked_weight_stage)
+    manifest_path = (Path(selected_stage).resolve(strict=True) /
                      "weights.safetensors.manifest.json"
-                     if cached_weight_stage is not None else None)
+                     if selected_stage is not None else None)
     if manifest_path is not None and (manifest_path.is_symlink()
                                       or not manifest_path.is_file()):
         raise ValueError("MX checkpoint cache needs a captured weights manifest")
@@ -378,7 +455,11 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     riscv_root=riscv_root,
                                     checkpoint_manifest=(json.loads(manifest_path.read_text())
                                                          if manifest_path else None),
-                                    cache_immutable_weights=manifest_path is not None,
+                                    checkpoint_weights_path=(manifest_path.with_name(
+                                        "weights.safetensors") if prepacked_weight_stage is not None
+                                                             else None),
+                                    cache_immutable_weights=cached_weight_stage is not None,
+                                    prepack_immutable_weights=prepacked_weight_stage is not None,
                                     precision_overrides=precision_overrides)
 
     return build

@@ -15,8 +15,9 @@ the target applies this mixed-precision policy during compilation. The
 model2MLIR `fp8` capture option represents a different frontend policy.
 For these full sessions, the generated adapter rounds live FP32 operands to
 BF16, derives E8M0 scales, and packs FP4 or FP8 codes at each selected
-contraction call. The checkpoint weights are not stored as prepacked MX
-operands, and no calibration or model-level accuracy search has accepted this
+contraction call by default. Source-proven checkpoint RHS operands can instead
+be packed at build time with `--prepack-checkpoint-weights`; dynamic operands
+remain live. No calibration or model-level accuracy search has accepted this
 precision policy. The separate [model2MLIR quantization handoff](quantization_handoff.md)
 can capture static quantized weights and an exact site census, but its current
 MX dialect result is an operation plan, not the executable full-session path
@@ -284,13 +285,28 @@ captured checkpoint manifest:
 `checkpoint_parameter_candidate` means the RHS traces through a transpose
 and an exact BF16-to-F32 cast to one stored parameter. The audit checks the
 capture and catalog bindings; it does not assume that dynamic attention
-operands can be prepacked. The current catalog still packs weights at each
-call. For a session bound to one checkpoint, `tools.build_merlin_stage` also
-accepts `--cache-checkpoint-weights`. It gives each proven parameter site a
-separate serial cache, packs that weight on its first call, and reuses the MX
-bytes on later calls. Dynamic FP8 sites keep live packing. The catalog receipt
-records the parameter identity and persistent bytes. This option needs a
-whole-stage Spike comparison before it can replace the default build path.
+operands can be prepacked. For a session bound to one checkpoint,
+`tools.build_merlin_stage` accepts `--prepack-checkpoint-weights`. It verifies
+the checkpoint and manifest against the capture receipt, packs each proven
+parameter using the live adapter's C quantizer, and embeds its MX codes and
+scales in the ELF. Dynamic RHS operands keep live packing. The alternative
+`--cache-checkpoint-weights` packs a proven parameter on its first call and
+reuses the bytes for later calls. The two options are mutually exclusive.
+
+The [paired SmolVLA flow Spike run](evidence/smolvla_flow_prepack_spike_20261013/README.md)
+shows identical declared output digests and MX command counts for live,
+first-call cached, and build-time prepacked builds. Prepacking 116 checkpoint
+sites reduced one flow step from 41.11 billion to 6.66 billion modeled cycles
+under the same timing preset. To inspect remaining costs, build a diagnostic
+stage with `--op-profile`, run that ELF on Spike, then summarize it with
+`tools.report_stage_profile --build BUILD --spike-log LOG --out REPORT.json`.
+The [SmolVLA flow profile](evidence/smolvla_flow_op_profile_20261013/README.md)
+maps MX timing back to source matmul regions and includes its guest log and
+operation table. The
+[exact quantizer lookup run](evidence/smolvla_flow_fast_quant_spike_20261013/README.md)
+shows 3,291,395,119 cycles for the same prepacked stage, down from
+6,659,754,454, with all output hashes and MX/VPU command counts unchanged.
+Use an uninstrumented build for performance comparisons.
 
 The small-LLaMA archived projection has a reproducible paired Spike check:
 

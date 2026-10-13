@@ -73,6 +73,33 @@ static uint8_t element_code(float normalized, uint32_t format) {
                    (negative << 7));
 }
 
+#if !defined(MX_QUANT_LUT_GENERATOR) && !defined(MX_QUANT_REFERENCE)
+#include "runtime_quant_lut.h"
+
+/* Power-of-two scaling preserves a rounded BF16 mantissa. The scale exponent
+ * and that mantissa therefore select the same code as the reference search. */
+static uint8_t fast_element_code(float rounded, int scale_exponent,
+                                 uint32_t format) {
+  uint32_t bits = bits_of_float(rounded);
+  uint32_t sign = bits >> 31;
+  uint32_t biased_exponent = (bits >> 23) & 255u;
+  if (biased_exponent == 0u)
+    return format == MX_RUNTIME_FP8 ? (uint8_t)(sign << 7) : 0u;
+  int delta = scale_exponent + 127 - (int)biased_exponent;
+  if (delta < 0)
+    return element_code(rounded / power_of_two(scale_exponent), format);
+  if (delta >= 16)
+    return format == MX_RUNTIME_FP8 ? (uint8_t)(sign << 7) : 0u;
+  uint32_t mantissa = (bits >> 16) & 127u;
+  uint8_t code = (format == MX_RUNTIME_FP4
+                  ? mx_fp4_code_lut[delta][mantissa]
+                  : mx_fp8_code_lut[delta][mantissa]);
+  if (format == MX_RUNTIME_FP4)
+    return code ? (uint8_t)(code | (sign << 3)) : 0u;
+  return (uint8_t)(code | (sign << 7));
+}
+#endif
+
 static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
                           uint32_t axis, uint32_t major, uint32_t group,
                           uint32_t format, uint8_t *codes, uint8_t *scales) {
@@ -93,11 +120,17 @@ static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
   if (exponent > 127) exponent = 127;
   uint32_t group_major = axis == 1 ? rows : cols;
   scales[(size_t)group * group_major + major] = (uint8_t)(exponent + 127);
+#if defined(MX_QUANT_LUT_GENERATOR) || defined(MX_QUANT_REFERENCE)
   float scale = power_of_two(exponent);
+#endif
   for (uint32_t offset = 0; offset < 32; ++offset) {
     uint32_t row = axis == 1 ? major : group * 32u + offset;
     uint32_t col = axis == 1 ? group * 32u + offset : major;
+#if defined(MX_QUANT_LUT_GENERATOR) || defined(MX_QUANT_REFERENCE)
     uint8_t code = element_code(values[offset] / scale, format);
+#else
+    uint8_t code = fast_element_code(values[offset], exponent, format);
+#endif
     if (format == MX_RUNTIME_FP8) {
       codes[(size_t)row * cols + col] = code;
     } else if (axis == 1) {
