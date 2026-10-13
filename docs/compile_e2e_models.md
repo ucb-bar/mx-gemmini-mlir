@@ -268,3 +268,45 @@ preserves the last flow state. These errors expose drift; they are not an
 acceptance test for MX precision. A separate reference using exact MX operand,
 mesh, and VPU arithmetic is needed to distinguish intended quantization drift
 from a compiler numerical defect.
+
+## 6. Inspect fixed weights and profile conversion
+
+For a compiled stage, inspect the RHS of each live MX call against the
+captured checkpoint manifest:
+
+```sh
+"$CAPTURE_PY" -m tools.audit_immutable_weights \
+  --build "$ARTIFACT_ROOT/builds/smolvla/flow_denoise" \
+  --stage "$ARTIFACT_ROOT/captures/smolvla/smolvla_session/stages/flow_denoise" \
+  --out "$ARTIFACT_ROOT/audits/smolvla_flow_weights.json"
+```
+
+`checkpoint_parameter_candidate` means the RHS traces through a transpose
+and an exact BF16-to-F32 cast to one stored parameter. The audit checks the
+capture and catalog bindings; it does not assume that dynamic attention
+operands can be prepacked. The current catalog still packs weights at each
+call. A fixed-weight implementation must also bind generated MX bytes to the
+same checkpoint and preserve the live path for dynamic operands.
+
+The small-LLaMA archived projection has a reproducible paired Spike check:
+
+```sh
+for MODE in runtime prepacked; do
+  EXTRA=
+  if [ "$MODE" = prepacked ]; then EXTRA=--prepacked-weight; fi
+  "$CAPTURE_PY" -m tools.qualify_runtime_f32_projection_spike \
+    --site g --dense-adapter --time-dense --native-scheduled-issuer $EXTRA \
+    --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
+    --riscv-root "$RISCV_ROOT" \
+    --out-dir "$ARTIFACT_ROOT/projection-$MODE"
+done
+```
+
+The prepacked run uses the same C MXQuant implementation at build time,
+checks its bytes against the archived bundle, and links them as fixed data.
+Both runs verify every logical BF16 output and use the same native command
+schedule. Compare `dense_cycles` in their receipts with matching Spike and
+profile hashes. `--phase-cycles` without `--dense-adapter` reports padding,
+activation packing, weight packing, issue, and widening for the same
+projection. These short kernel measurements do not predict full-model speedup
+until checkpoint binding and graph scheduling are integrated.

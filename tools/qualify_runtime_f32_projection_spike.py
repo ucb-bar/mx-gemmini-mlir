@@ -11,11 +11,13 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.dense_kernel import emit_dense_f32_kernel
 from mx_gemmini_support.dense_contraction import emit_dense_contraction
+from mx_gemmini_support.offline_weight_pack import pack_weight
 from mx_gemmini_support.compact_runtime_issuer import emit_compact_runtime_issuer
 from mx_gemmini_support.scheduled_native_issuer import emit_scheduled_native_issuer
 from mx_gemmini_support.runtime_issuer import emit_runtime_issuer
@@ -92,16 +94,27 @@ int main(void) {{
 
 
 def _dense_driver(site: str, *, m: int, n: int, logical_m: int,
-                  logical_n: int) -> str:
+                  logical_n: int, time_dense: bool = False) -> str:
+    clock = '''static uint64_t cycles(void) {
+  uint64_t value;
+  __asm__ volatile("rdcycle %0" : "=r"(value));
+  return value;
+}
+''' if time_dense else ""
+    before = "  uint64_t before = cycles();\n" if time_dense else ""
+    after = "  uint64_t elapsed = cycles() - before;\n" if time_dense else ""
+    report = ('  printf("DENSE_CYCLES %llu\\n", (unsigned long long)elapsed);\n'
+              if time_dense else "")
     return f'''#include <stdint.h>
 #include <stdio.h>
 extern const float raw_a[], raw_b[];
 extern const uint16_t golden_bf16[];
 void mx_dense_projection(const float *, const float *, float *);
 static float output[{logical_m} * {logical_n}] __attribute__((aligned(64)));
+{clock}
 int main(void) {{
-  mx_dense_projection(raw_a, raw_b, output);
-  unsigned mismatches = 0;
+{before}  mx_dense_projection(raw_a, raw_b, output);
+{after}  unsigned mismatches = 0;
   for (unsigned row = 0; row < {logical_m}; ++row)
     for (unsigned col = 0; col < {logical_n}; ++col) {{
       union {{ float value; uint32_t bits; }} word;
@@ -109,7 +122,76 @@ int main(void) {{
       mismatches += word.bits != ((uint32_t)golden_bf16[row * {n} + col] << 16);
     }}
   printf("dense f32 MX {site}: %u output mismatches\\n", mismatches);
+{report}
   return mismatches != 0;
+}}
+'''
+
+
+def _phase_driver(site: str, *, m: int, n: int, k: int,
+                  logical_m: int, logical_n: int, logical_k: int) -> str:
+    """Measure live conversion and issue with the same archived operand bytes."""
+    return f'''#include <stdint.h>
+#include <stdio.h>
+#include "runtime_quant.h"
+extern const float raw_a[], raw_b[];
+extern const uint8_t expected_a[], expected_as[], expected_b[], expected_bs[];
+extern const uint16_t golden_bf16[];
+void mx_issue_encoded(const void *, const void *, const void *, const void *, const void *, const void *);
+static float padded_a[{m} * {k}] __attribute__((aligned(64)));
+static float padded_b[{k} * {n}] __attribute__((aligned(64)));
+static uint8_t a_codes[{m} * {k} / 2] __attribute__((aligned(64)));
+static uint8_t a_scales[{m} * {k} / 32] __attribute__((aligned(64)));
+static uint8_t b_codes[{k} * {n} / 2] __attribute__((aligned(64)));
+static uint8_t b_scales[{k} * {n} / 32] __attribute__((aligned(64)));
+static uint8_t scratch[2048] __attribute__((aligned(64)));
+static uint16_t output[{m} * {n}] __attribute__((aligned(64)));
+static float widened[{m} * {n}] __attribute__((aligned(64)));
+static uint64_t cycles(void) {{
+  uint64_t value;
+  __asm__ volatile("rdcycle %0" : "=r"(value));
+  return value;
+}}
+int main(void) {{
+  uint64_t c0 = cycles();
+  for (unsigned row = 0; row < {logical_m}; ++row)
+    for (unsigned col = 0; col < {logical_k}; ++col)
+      padded_a[row * {k} + col] = raw_a[row * {logical_k} + col];
+  for (unsigned row = 0; row < {logical_k}; ++row)
+    for (unsigned col = 0; col < {logical_n}; ++col)
+      padded_b[row * {n} + col] = raw_b[row * {logical_n} + col];
+  uint64_t c1 = cycles();
+  if (mx_pack_activation_f32(padded_a, {m}, {k}, MX_RUNTIME_FP4,
+                             a_codes, a_scales)) return 2;
+  uint64_t c2 = cycles();
+  if (mx_pack_weight_f32(padded_b, {k}, {n}, MX_RUNTIME_FP4,
+                         b_codes, b_scales)) return 3;
+  uint64_t c3 = cycles();
+  unsigned pack_errors = 0;
+  for (unsigned i = 0; i < sizeof a_codes; ++i) pack_errors += a_codes[i] != expected_a[i];
+  for (unsigned i = 0; i < sizeof a_scales; ++i) pack_errors += a_scales[i] != expected_as[i];
+  for (unsigned i = 0; i < sizeof b_codes; ++i) pack_errors += b_codes[i] != expected_b[i];
+  for (unsigned i = 0; i < sizeof b_scales; ++i) pack_errors += b_scales[i] != expected_bs[i];
+  if (pack_errors) return 4;
+  uint64_t c4 = cycles();
+  mx_issue_encoded(a_codes, a_scales, b_codes, b_scales, output, scratch);
+  uint64_t c5 = cycles();
+  if (mx_widen_bf16_f32(output, {m} * {n}, widened)) return 5;
+  uint64_t c6 = cycles();
+  unsigned output_errors = 0;
+  for (unsigned i = 0; i < {m} * {n}; ++i) {{
+    output_errors += output[i] != golden_bf16[i];
+    union {{ float f; uint32_t u; }} word;
+    word.f = widened[i];
+    output_errors += word.u != ((uint32_t)output[i] << 16);
+  }}
+  printf("live f32 MX {site}: %u pack mismatches, %u BF16/f32 mismatches\\n",
+         pack_errors, output_errors);
+  printf("PROFILE_CYCLES padding=%llu activation_pack=%llu weight_pack=%llu issue=%llu widen=%llu\\n",
+         (unsigned long long)(c1-c0), (unsigned long long)(c2-c1),
+         (unsigned long long)(c3-c2), (unsigned long long)(c5-c4),
+         (unsigned long long)(c6-c5));
+  return output_errors != 0;
 }}
 '''
 
@@ -125,11 +207,24 @@ def main() -> None:
                         help="run the compact looped Rocket command issuer")
     parser.add_argument("--native-scheduled-issuer", action="store_true",
                         help="run the Merlin mk native DRAM-loop schedule")
+    parser.add_argument("--phase-cycles", action="store_true",
+                        help="measure padding, MXQuant packing, issue, and widening on Spike")
+    parser.add_argument("--time-dense", action="store_true",
+                        help="measure the full checked dense adapter on Spike")
+    parser.add_argument("--prepacked-weight", action="store_true",
+                        help="bind the archived immutable MX weight bytes to the dense adapter")
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
-    if (args.shape_planned or args.compact_issuer or args.native_scheduled_issuer) and not args.dense_adapter:
-        parser.error("shape-planned or compact schedule requires --dense-adapter")
+    if (args.shape_planned or args.compact_issuer or args.native_scheduled_issuer) and not (
+            args.dense_adapter or args.phase_cycles):
+        parser.error("selected schedule requires --dense-adapter or --phase-cycles")
+    if args.phase_cycles and args.dense_adapter:
+        parser.error("phase timing profiles the direct conversion path, not the opaque dense adapter")
+    if args.prepacked_weight and not args.dense_adapter:
+        parser.error("prepacked weight requires the dense adapter")
+    if args.time_dense and not args.dense_adapter:
+        parser.error("dense timing requires --dense-adapter")
     if sum((args.shape_planned, args.compact_issuer, args.native_scheduled_issuer)) > 1:
         parser.error("choose one command issuer mode")
     rtl, riscv, out = (getattr(args, key).resolve()
@@ -184,6 +279,14 @@ def main() -> None:
     out.mkdir(parents=True)
     (out / "raw_a.bin").write_bytes(input_a.tobytes())
     (out / "raw_b.bin").write_bytes(input_b.tobytes())
+    if args.prepacked_weight:
+        packed_codes, packed_scales = pack_weight(
+            input_b, precision="FP4", padded_shape=(k, n), workdir=out)
+        if (packed_codes != (archive / "bundle/weight.bin").read_bytes()
+                or packed_scales != (archive / "bundle/weight_scales.bin").read_bytes()):
+            raise ValueError("offline MX weight bytes differ from the source-qualified bundle")
+        (out / "prepacked_weight.bin").write_bytes(packed_codes)
+        (out / "prepacked_weight_scales.bin").write_bytes(packed_scales)
     assembly = {
         "raw_a": out / "raw_a.bin", "raw_b": out / "raw_b.bin",
         "expected_a": archive / "bundle/activation.bin",
@@ -195,20 +298,27 @@ def main() -> None:
     if args.dense_adapter:
         assembly = {name: path for name, path in assembly.items()
                     if name in {"raw_a", "raw_b", "golden_bf16"}}
+        if args.prepacked_weight:
+            assembly.update(prepacked_weight=out / "prepacked_weight.bin",
+                            prepacked_weight_scales=out / "prepacked_weight_scales.bin")
     (out / "mx_data.S").write_text(_assembly_data(assembly))
     (out / "mx_issue.c").write_text(issuer.source)
     dense_kernel = None
     if args.dense_adapter:
-        dense_kernel = (generated.kernel if generated is not None else
-                        emit_dense_f32_kernel(
+        dense_kernel = (generated.kernel if generated is not None and not args.prepacked_weight
+                        else emit_dense_f32_kernel(
                             issuer, (logical_m, logical_n, logical_k),
-                            symbol="mx_dense_projection"))
+                            symbol="mx_dense_projection",
+                            prepacked_weight_symbols=(
+                                "prepacked_weight", "prepacked_weight_scales")
+                            if args.prepacked_weight else None))
         (out / "mx_dense.c").write_text(dense_kernel.source)
         driver = _dense_driver(site, m=m, n=n, logical_m=logical_m,
-                               logical_n=logical_n)
+                               logical_n=logical_n, time_dense=args.time_dense)
     else:
-        driver = _driver(site, m=m, n=n, k=k, logical_m=logical_m,
-                         logical_n=logical_n, logical_k=logical_k)
+        driver = (_phase_driver if args.phase_cycles else _driver)(
+            site, m=m, n=n, k=k, logical_m=logical_m,
+            logical_n=logical_n, logical_k=logical_k)
     (out / "mx_driver.c").write_text(driver)
     bench = software / "riscv-tests/benchmarks/common"
     cc = riscv / "bin/riscv64-unknown-elf-gcc"
@@ -235,7 +345,8 @@ def main() -> None:
         ld = riscv / "bin/riscv64-unknown-elf-ld"
         nm = riscv / "bin/riscv64-unknown-elf-nm"
         _run([str(ld), "-r", "-o", str(candidate),
-              *(str(objects[index]) for index in (0, 3, 4))],
+              *(str(objects[index]) for index in
+                ((0, 2, 3, 4) if args.prepacked_weight else (0, 3, 4)))],
              out=out, log="combine_dense.log")
         symbols = subprocess.run([str(nm), "--format=posix", "--extern-only",
                                   str(candidate)], capture_output=True, text=True, check=True)
@@ -255,9 +366,19 @@ def main() -> None:
           "-shared", "-o", str(so), "-std=c++17", "-I", str(riscv / "include"),
           "-fPIC", "-O3", *(str(source) for source in extension_sources)],
          out=out, log="extension_build.log")
-    run = subprocess.run([str(riscv / "bin/spike"), f"--extlib={so}",
+    environment = None
+    spike_args = [str(riscv / "bin/spike")]
+    if args.phase_cycles or args.time_dense:
+        import os
+        environment = os.environ.copy()
+        environment.update(GEMMINI_MODE="both", GEMMINI_PERF_CONFIG="e4m3_vpu",
+                           GEMMINI_PERF_SET="mem.host_tracking=0",
+                           GEMMINI_PERF_OUT=str(out / "gemmini_perf.txt"))
+        spike_args.append("--isa=rv64gc_zicntr")
+    run = subprocess.run([*spike_args, f"--extlib={so}",
                           "--extension=gemmini", str(elf)], cwd=out, text=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                         env=environment)
     (out / "spike.log").write_text(run.stdout)
     expected = (f"dense f32 MX {site}: 0 output mismatches" if args.dense_adapter else
                 f"live f32 MX {site}: 0 pack mismatches, 0 BF16/f32 mismatches")
@@ -284,6 +405,13 @@ def main() -> None:
         receipt["abi"] = {"symbol": dense_kernel.symbol,
                           "argument_order": ["lhs", "rhs", "out"],
                           "dtypes": ["f32", "f32", "f32"]}
+        if args.prepacked_weight:
+            receipt["prepacked_weight"] = {
+                "scope": "archived fixed RHS; no runtime weight conversion",
+                "codes_sha256": _sha(out / "prepacked_weight.bin"),
+                "scales_sha256": _sha(out / "prepacked_weight_scales.bin"),
+                "source_weight_sha256": _sha(out / "raw_b.bin"),
+            }
         receipt["relocatable_object_sha256"] = _sha(candidate)
         receipt["schedule_origin"] = (
             "merlin_mk_native_dram_loop" if native is not None else
@@ -295,6 +423,28 @@ def main() -> None:
             receipt["instruction_set_digest"] = native.instruction_set_digest
             receipt["native_chunks"] = list(native.chunks)
             (out / "schedule.mk").write_text(native.text)
+    if args.phase_cycles:
+        match = re.search(
+            r"^PROFILE_CYCLES padding=(\d+) activation_pack=(\d+) "
+            r"weight_pack=(\d+) issue=(\d+) widen=(\d+)$",
+            run.stdout, re.MULTILINE)
+        if not match:
+            raise RuntimeError("Spike did not report phase cycles")
+        receipt["phase_cycles"] = dict(zip(
+            ("padding", "activation_pack", "weight_pack", "issue", "widen"),
+            (int(value) for value in match.groups()), strict=True))
+        receipt["phase_cycle_scope"] = "one archived model-derived FP4 projection; rdcycle on e4m3_vpu"
+        receipt["schedule_origin"] = (
+            "merlin_mk_native_dram_loop" if native else
+            "compact_loop_profile_and_source_plan_checked" if compact_issuer else
+            "shape_planned_source_parity_checked" if generated else
+            "payload_bound_source_qualified")
+    if args.time_dense:
+        match = re.search(r"^DENSE_CYCLES (\d+)$", run.stdout, re.MULTILINE)
+        if not match:
+            raise RuntimeError("Spike did not report dense adapter cycles")
+        receipt["dense_cycles"] = int(match.group(1))
+        receipt["dense_cycle_scope"] = "one archived model-derived FP4 projection; rdcycle on e4m3_vpu"
     (out / "runtime_f32_projection_spike.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, sort_keys=True))
     if not passed:

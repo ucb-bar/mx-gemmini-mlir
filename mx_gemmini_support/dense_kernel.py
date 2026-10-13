@@ -49,7 +49,8 @@ def emit_shared_workspace_definition(size: int, *, symbol: str) -> str:
 def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           logical_shape_mnk: tuple[int, int, int], *,
                           symbol: str, issuer_symbol: str = "mx_issue_encoded",
-                          shared_workspace_symbol: str | None = None) -> DenseKernel:
+                          shared_workspace_symbol: str | None = None,
+                          prepacked_weight_symbols: tuple[str, str] | None = None) -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
     The issuer must have been checked against its profile. A payload-bound
@@ -61,6 +62,11 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
     if shared_workspace_symbol is not None and not _identifier(shared_workspace_symbol):
         raise ValueError("MX dense adapter needs a safe shared workspace symbol")
+    if prepacked_weight_symbols is not None and (
+            len(prepacked_weight_symbols) != 2 or
+            any(not _identifier(name) for name in prepacked_weight_symbols) or
+            len(set(prepacked_weight_symbols)) != 2):
+        raise ValueError("MX prepacked weight needs two distinct safe symbols")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -90,9 +96,11 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     buffers = []
     if padded_a:
         buffers.append(("padded_a", "float", m * k * 4, m * k))
-    if padded_b:
+    if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
+        if prepacked_weight_symbols is not None and name in {"weight", "weight_scales"}:
+            continue
         dtype = "uint16_t" if name == "output_bf16" else "uint8_t"
         count = size // 2 if name == "output_bf16" else size
         buffers.append((name, dtype, size, count))
@@ -125,9 +133,24 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
   for (uint32_t row = 0; row < {lk}u; ++row)
     for (uint32_t col = 0; col < {ln}u; ++col)
       padded_b[(size_t)row * {n}u + col] = rhs[(size_t)row * {ln}u + col];
-""" if padded_b else "")
+""" if padded_b and prepacked_weight_symbols is None else "")
     a_source = "padded_a" if padded_a else "lhs"
     b_source = "padded_b" if padded_b else "rhs"
+    if prepacked_weight_symbols is None:
+        pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+                             activation, activation_scales) ||
+      mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
+                         weight, weight_scales)) __builtin_trap();
+""")
+        weight_codes, weight_scale = "weight", "weight_scales"
+        external_weight = ""
+    else:
+        weight_codes, weight_scale = prepacked_weight_symbols
+        external_weight = (f"extern const uint8_t {weight_codes}[];\n"
+                           f"extern const uint8_t {weight_scale}[];\n")
+        pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+                             activation, activation_scales)) __builtin_trap();
+""")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
     for (uint32_t col = 0; col < {ln}u; ++col) {{
       union {{ uint32_t bits; float value; }} word;
@@ -142,14 +165,10 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
 
 void {issuer_symbol}(const void *, const void *, const void *, const void *,
                      const void *, const void *);
-{''.join(declarations)}
+{external_weight}{''.join(declarations)}
 void {symbol}(const float *lhs, const float *rhs, float *out) {{
   if (!lhs || !rhs || !out) __builtin_trap();
-{local_buffers}{a_prepare}{b_prepare}  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
-                             activation, activation_scales) ||
-      mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
-                         weight, weight_scales)) __builtin_trap();
-  {issuer_symbol}(activation, activation_scales, weight, weight_scales,
+{local_buffers}{a_prepare}{b_prepare}{pack}  {issuer_symbol}(activation, activation_scales, {weight_codes}, {weight_scale},
                   output_bf16, scratch_output_scales);
 {copy_output}}}
 """

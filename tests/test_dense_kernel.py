@@ -12,6 +12,7 @@ import pytest
 from mx_gemmini_support.dense_kernel import (emit_dense_f32_batch_kernel,
                                              emit_dense_f32_kernel,
                                              emit_shared_workspace_definition)
+from mx_gemmini_support.offline_weight_pack import pack_weight
 from mx_gemmini_support.physical_program import lower_bound_source
 from mx_gemmini_support.runtime_issuer import RuntimeIssuer, emit_runtime_issuer
 from mx_gemmini_support.planned_runtime_issuer import emit_planned_runtime_issuer
@@ -96,6 +97,29 @@ def test_dense_wrapper_refuses_changed_extent_or_shape() -> None:
     changed = replace(issuer, buffer_bytes={**issuer.buffer_bytes, "activation": 1})
     with pytest.raises(ValueError, match="extents"):
         emit_dense_f32_kernel(changed, (8, 344, 128), symbol="entry")
+
+
+@pytest.mark.parametrize("site,padded", [("g", (128, 352)), ("dn", (352, 128))])
+def test_fixed_weight_pack_matches_model_archive(tmp_path, site, padded) -> None:
+    np = pytest.importorskip("numpy")
+    values = np.load(ARCHIVE / "inputs" / f"{site}.weight.npy", allow_pickle=False)
+    codes, scales = pack_weight(values, precision="FP4", padded_shape=padded,
+                                workdir=tmp_path)
+    bundle = ARCHIVE / site / "bundle"
+    assert codes == (bundle / "weight.bin").read_bytes()
+    assert scales == (bundle / "weight_scales.bin").read_bytes()
+    issuer = _issuer(site)
+    regular = emit_dense_f32_kernel(issuer, (8, 344, 128) if site == "g"
+                                    else (8, 128, 344), symbol="regular")
+    fixed = emit_dense_f32_kernel(
+        issuer, (8, 344, 128) if site == "g" else (8, 128, 344),
+        symbol="fixed", prepacked_weight_symbols=("fixed_codes", "fixed_scales"))
+    assert fixed.workspace_bytes < regular.workspace_bytes
+    assert "mx_pack_weight_f32" not in fixed.source
+    assert "extern const uint8_t fixed_codes[]" in fixed.source
+    with pytest.raises(ValueError, match="two distinct"):
+        emit_dense_f32_kernel(issuer, (8, 344, 128), symbol="bad",
+                              prepacked_weight_symbols=("same", "same"))
 
 
 def test_batched_dense_wrapper_advances_disjoint_slices(tmp_path) -> None:
