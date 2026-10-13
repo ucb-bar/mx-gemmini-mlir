@@ -22,6 +22,8 @@ On the archived small-LLaMA `g` projection, the same RV64 Spike extension,
 |---|---:|---:|
 | Live FP4 weight packing | 16,717,728 | 0 / 2,752 |
 | Build-time FP4 weight packing | 1,269,283 | 0 / 2,752 |
+| Fixed-weight cache, first call | 16,717,735 | 0 / 2,752 |
+| Fixed-weight cache, second call | 1,266,389 | 0 / 2,752 |
 
 The generated fixed codes and scales match the archived MX bundle byte for
 byte. The two programs have the same issuer SHA256
@@ -32,6 +34,13 @@ The live adapter spent 15,092,341 cycles packing the RHS and 1,230,204
 packing the activation in a separate phase measurement. These are guest
 `rdcycle` measurements for one small projection, not a whole-model speedup
 claim or a calibrated FPGA latency.
+
+An opt-in catalog build for the archived 19-site small-LLaMA source bound two
+checkpoint parameter sites to separate cache entries while sharing six issuer
+schedules across eight catalog kernels. A model-derived SmolVLA flow catalog
+also compiled all 148 selected contractions with 116 fixed-weight cache
+entries and 14 shared issuers. The complete TinyLlama and SmolVLA sessions
+have not yet been rebuilt or timed with that cache option.
 
 Reproduce the paired run with the commands in
 [the model compilation guide](../../compile_e2e_models.md#6-inspect-fixed-weights-and-profile-conversion).

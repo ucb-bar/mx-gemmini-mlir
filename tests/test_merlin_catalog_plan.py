@@ -62,3 +62,26 @@ def test_catalog_plan_reports_precision_proposals_outside_f32_source_abi(
         "element_type": "bf16", "selected_format": "mxfp8",
         "reason": "no zero-initialized direct f32 catalog contraction at this source region",
     }]
+
+
+def test_checkpoint_cache_splits_fixed_sites_but_shares_issuer(tmp_path, monkeypatch) -> None:
+    pytest.importorskip("merlin.system.offload")
+    monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
+    source = tmp_path / "small_llama.mlir"
+    source.write_bytes(gzip.decompress((ARCHIVE / "small_llama.model2mlir.mlir.gz").read_bytes()))
+    baseline = plan_merlin_catalog(source, PROFILE)
+    manifest = {
+        "2": {"kind": "param", "dtype": "float32", "shape": [128, 128], "weight": "q.weight"},
+        "3": {"kind": "param", "dtype": "float32", "shape": [128, 128], "weight": "k.weight"},
+        "4": {"kind": "input", "dtype": "float32", "shape": [128, 128], "weight": "not_constant"},
+    }
+    cached = plan_merlin_catalog(source, PROFILE, checkpoint_manifest=manifest,
+                                 cache_immutable_weights=True)
+    assert cached["cached_checkpoint_kernels"] == 2
+    assert cached["unique_kernels"] == baseline["unique_kernels"] + 2
+    assert cached["unique_issuers"] == baseline["unique_kernels"]
+    by_region = {row["region"]: row for row in cached["bindings"]}
+    assert by_region["matmul_0"]["symbol"] != by_region["matmul_1"]["symbol"]
+    cache_rows = [row for row in cached["kernels"] if row["cache_immutable_weight"]]
+    assert {row["checkpoint_parameter_arg"] for row in cache_rows} == {2, 3}
+    assert len({row["issuer_symbol"] for row in cache_rows}) == 1

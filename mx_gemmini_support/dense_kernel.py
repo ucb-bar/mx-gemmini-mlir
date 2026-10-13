@@ -21,6 +21,7 @@ class DenseKernel:
     logical_shape_mnk: tuple[int, int, int]
     padded_shape_mnk: tuple[int, int, int]
     workspace_bytes: int
+    persistent_bytes: int = 0
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           logical_shape_mnk: tuple[int, int, int], *,
                           symbol: str, issuer_symbol: str = "mx_issue_encoded",
                           shared_workspace_symbol: str | None = None,
-                          prepacked_weight_symbols: tuple[str, str] | None = None) -> DenseKernel:
+                          prepacked_weight_symbols: tuple[str, str] | None = None,
+                          cache_immutable_weight: bool = False) -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
     The issuer must have been checked against its profile. A payload-bound
@@ -67,6 +69,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
             any(not _identifier(name) for name in prepacked_weight_symbols) or
             len(set(prepacked_weight_symbols)) != 2):
         raise ValueError("MX prepacked weight needs two distinct safe symbols")
+    if cache_immutable_weight and prepacked_weight_symbols is not None:
+        raise ValueError("MX fixed weight must be either cached or prepacked")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -99,7 +103,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
-        if prepacked_weight_symbols is not None and name in {"weight", "weight_scales"}:
+        if (prepacked_weight_symbols is not None or cache_immutable_weight) and name in {
+                "weight", "weight_scales"}:
             continue
         dtype = "uint16_t" if name == "output_bf16" else "uint8_t"
         count = size // 2 if name == "output_bf16" else size
@@ -137,13 +142,33 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     a_source = "padded_a" if padded_a else "lhs"
     b_source = "padded_b" if padded_b else "rhs"
     if prepacked_weight_symbols is None:
-        pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+        if cache_immutable_weight:
+            weight_codes = f"{symbol}_weight_cache"
+            weight_scale = f"{symbol}_weight_scale_cache"
+            external_weight = (f"static uint8_t {weight_codes}[{expected['weight']}] "
+                               "__attribute__((aligned(64)));\n"
+                               f"static uint8_t {weight_scale}[{expected['weight_scales']}] "
+                               "__attribute__((aligned(64)));\n"
+                               f"static unsigned char {symbol}_weight_ready;\n")
+            init = (b_prepare + f"""  if (mx_pack_weight_f32({b_source}, {k}u, {n}u,
+                         MX_RUNTIME_{issuer.precision}, {weight_codes},
+                         {weight_scale})) __builtin_trap();
+  {symbol}_weight_ready = 1;
+""")
+            b_prepare = ""
+            pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+                             activation, activation_scales)) __builtin_trap();
+  if (!{symbol}_weight_ready) {{
+{init}  }}
+""")
+        else:
+            pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales) ||
       mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
                          weight, weight_scales)) __builtin_trap();
 """)
-        weight_codes, weight_scale = "weight", "weight_scales"
-        external_weight = ""
+            weight_codes, weight_scale = "weight", "weight_scales"
+            external_weight = ""
     else:
         weight_codes, weight_scale = prepacked_weight_symbols
         external_weight = (f"extern const uint8_t {weight_codes}[];\n"
@@ -172,7 +197,10 @@ void {symbol}(const float *lhs, const float *rhs, float *out) {{
                   output_bf16, scratch_output_scales);
 {copy_output}}}
 """
-    return DenseKernel(source, symbol, logical_shape_mnk, issuer.shape_mnk, workspace)
+    persistent = (expected["weight"] + expected["weight_scales"] + 1
+                  if cache_immutable_weight else 0)
+    return DenseKernel(source, symbol, logical_shape_mnk, issuer.shape_mnk,
+                       workspace, persistent)
 
 
 def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,

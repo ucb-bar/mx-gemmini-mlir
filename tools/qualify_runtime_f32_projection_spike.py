@@ -94,17 +94,20 @@ int main(void) {{
 
 
 def _dense_driver(site: str, *, m: int, n: int, logical_m: int,
-                  logical_n: int, time_dense: bool = False) -> str:
+                  logical_n: int, time_dense: bool = False,
+                  repeats: int = 1) -> str:
     clock = '''static uint64_t cycles(void) {
   uint64_t value;
   __asm__ volatile("rdcycle %0" : "=r"(value));
   return value;
 }
 ''' if time_dense else ""
-    before = "  uint64_t before = cycles();\n" if time_dense else ""
-    after = "  uint64_t elapsed = cycles() - before;\n" if time_dense else ""
-    report = ('  printf("DENSE_CYCLES %llu\\n", (unsigned long long)elapsed);\n'
-              if time_dense else "")
+    before = "    uint64_t before = cycles();\n" if time_dense else ""
+    after = "    elapsed[iteration] = cycles() - before;\n" if time_dense else ""
+    array = f"  uint64_t elapsed[{repeats}];\n" if time_dense else ""
+    report = (f'''  for (unsigned iteration = 0; iteration < {repeats}; ++iteration)
+    printf("DENSE_CYCLES %u %llu\\n", iteration, (unsigned long long)elapsed[iteration]);
+''' if time_dense else "")
     return f'''#include <stdint.h>
 #include <stdio.h>
 extern const float raw_a[], raw_b[];
@@ -113,14 +116,16 @@ void mx_dense_projection(const float *, const float *, float *);
 static float output[{logical_m} * {logical_n}] __attribute__((aligned(64)));
 {clock}
 int main(void) {{
-{before}  mx_dense_projection(raw_a, raw_b, output);
-{after}  unsigned mismatches = 0;
-  for (unsigned row = 0; row < {logical_m}; ++row)
-    for (unsigned col = 0; col < {logical_n}; ++col) {{
-      union {{ float value; uint32_t bits; }} word;
-      word.value = output[row * {logical_n} + col];
-      mismatches += word.bits != ((uint32_t)golden_bf16[row * {n} + col] << 16);
-    }}
+{array}  unsigned mismatches = 0;
+  for (unsigned iteration = 0; iteration < {repeats}; ++iteration) {{
+{before}    mx_dense_projection(raw_a, raw_b, output);
+{after}    for (unsigned row = 0; row < {logical_m}; ++row)
+      for (unsigned col = 0; col < {logical_n}; ++col) {{
+        union {{ float value; uint32_t bits; }} word;
+        word.value = output[row * {logical_n} + col];
+        mismatches += word.bits != ((uint32_t)golden_bf16[row * {n} + col] << 16);
+      }}
+  }}
   printf("dense f32 MX {site}: %u output mismatches\\n", mismatches);
 {report}
   return mismatches != 0;
@@ -213,6 +218,10 @@ def main() -> None:
                         help="measure the full checked dense adapter on Spike")
     parser.add_argument("--prepacked-weight", action="store_true",
                         help="bind the archived immutable MX weight bytes to the dense adapter")
+    parser.add_argument("--cached-weight", action="store_true",
+                        help="pack the archived immutable RHS once per dense entry")
+    parser.add_argument("--dense-repeats", type=int, default=1,
+                        help="repeat the checked dense call to measure an immutable weight cache")
     for name in ("rtl-root", "riscv-root", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
@@ -223,8 +232,12 @@ def main() -> None:
         parser.error("phase timing profiles the direct conversion path, not the opaque dense adapter")
     if args.prepacked_weight and not args.dense_adapter:
         parser.error("prepacked weight requires the dense adapter")
+    if args.cached_weight and (not args.dense_adapter or args.prepacked_weight):
+        parser.error("cached weight requires one dense adapter without a prepacked weight")
     if args.time_dense and not args.dense_adapter:
         parser.error("dense timing requires --dense-adapter")
+    if not 1 <= args.dense_repeats <= 4 or (args.dense_repeats != 1 and not args.time_dense):
+        parser.error("dense repeats must be 1..4 and require --time-dense above 1")
     if sum((args.shape_planned, args.compact_issuer, args.native_scheduled_issuer)) > 1:
         parser.error("choose one command issuer mode")
     rtl, riscv, out = (getattr(args, key).resolve()
@@ -305,16 +318,19 @@ def main() -> None:
     (out / "mx_issue.c").write_text(issuer.source)
     dense_kernel = None
     if args.dense_adapter:
-        dense_kernel = (generated.kernel if generated is not None and not args.prepacked_weight
+        dense_kernel = (generated.kernel if generated is not None and not (
+                            args.prepacked_weight or args.cached_weight)
                         else emit_dense_f32_kernel(
                             issuer, (logical_m, logical_n, logical_k),
                             symbol="mx_dense_projection",
                             prepacked_weight_symbols=(
                                 "prepacked_weight", "prepacked_weight_scales")
-                            if args.prepacked_weight else None))
+                            if args.prepacked_weight else None,
+                            cache_immutable_weight=args.cached_weight))
         (out / "mx_dense.c").write_text(dense_kernel.source)
         driver = _dense_driver(site, m=m, n=n, logical_m=logical_m,
-                               logical_n=logical_n, time_dense=args.time_dense)
+                               logical_n=logical_n, time_dense=args.time_dense,
+                               repeats=args.dense_repeats)
     else:
         driver = (_phase_driver if args.phase_cycles else _driver)(
             site, m=m, n=n, k=k, logical_m=logical_m,
@@ -391,7 +407,8 @@ def main() -> None:
         "scope": "one model2MLIR small-LLaMA MLP projection, runtime f32 padding and MX quantization",
         "site": site, "logical_shape_mnk": [logical_m, logical_n, logical_k],
         "padded_shape_mnk": [m, n, k],
-        "compared_bf16_outputs": (logical_m * logical_n if args.dense_adapter else m * n),
+        "compared_bf16_outputs": (logical_m * logical_n * args.dense_repeats
+                                  if args.dense_adapter else m * n),
         "profile_sha256": issuer.profile_sha256,
         "payload_manifest_sha256": qualified_issuer.payload_manifest_sha256,
         "issuer_sha256": _sha(out / "mx_issue.c"),
@@ -402,6 +419,12 @@ def main() -> None:
     if dense_kernel is not None:
         receipt["dense_adapter_sha256"] = _sha(out / "mx_dense.c")
         receipt["static_workspace_bytes"] = dense_kernel.workspace_bytes
+        if args.cached_weight:
+            receipt["cached_weight"] = {
+                "scope": "archived fixed RHS; one serial cache per dense entry",
+                "persistent_bytes": dense_kernel.persistent_bytes,
+                "source_weight_sha256": _sha(out / "raw_b.bin"),
+            }
         receipt["abi"] = {"symbol": dense_kernel.symbol,
                           "argument_order": ["lhs", "rhs", "out"],
                           "dtypes": ["f32", "f32", "f32"]}
@@ -440,10 +463,13 @@ def main() -> None:
             "shape_planned_source_parity_checked" if generated else
             "payload_bound_source_qualified")
     if args.time_dense:
-        match = re.search(r"^DENSE_CYCLES (\d+)$", run.stdout, re.MULTILINE)
-        if not match:
+        pairs = [(int(index), int(cycles)) for index, cycles in re.findall(
+            r"^DENSE_CYCLES (\d+) (\d+)$", run.stdout, re.MULTILINE)]
+        if [index for index, _ in pairs] != list(range(args.dense_repeats)):
             raise RuntimeError("Spike did not report dense adapter cycles")
-        receipt["dense_cycles"] = int(match.group(1))
+        receipt["dense_cycles"] = pairs[0][1]
+        if args.dense_repeats != 1:
+            receipt["dense_cycles_by_call"] = [cycles for _, cycles in pairs]
         receipt["dense_cycle_scope"] = "one archived model-derived FP4 projection; rdcycle on e4m3_vpu"
     (out / "runtime_f32_projection_spike.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, sort_keys=True))

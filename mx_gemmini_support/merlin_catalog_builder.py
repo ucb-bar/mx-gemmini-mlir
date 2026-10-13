@@ -46,9 +46,13 @@ def _run(command: list[str], *, label: str) -> None:
 
 
 def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
-                         riscv_root: Path) -> tuple[Path, Path]:
+                         riscv_root: Path,
+                         checkpoint_manifest: dict | None = None,
+                         cache_immutable_weights: bool = False) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
-    plan = plan_merlin_catalog(prepared, profile)
+    plan = plan_merlin_catalog(
+        prepared, profile, checkpoint_manifest=checkpoint_manifest,
+        cache_immutable_weights=cache_immutable_weights)
     if not plan["kernels"]:
         raise ValueError("MX catalog has no bindable direct f32 contractions")
     out_dir = Path(out_dir)
@@ -84,6 +88,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     kernel_records = []
     max_workspace = 0
     issuer_modes = {}
+    issuer_sources = {}
     for entry in plan["kernels"]:
         symbol = entry["symbol"]
         issuer_symbol = entry["issuer_symbol"]
@@ -98,6 +103,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 profile, shape, precision=precision, symbol=symbol,
                 issuer_symbol=issuer_symbol,
                 shared_workspace_symbol=_WORKSPACE_SYMBOL,
+                cache_immutable_weight=entry["cache_immutable_weight"],
                 schedule=selected)
             batch, m, n, k = 1, *shape
         elif entry["rank"] == 3:
@@ -109,7 +115,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             batch, m, n, k = shape
         else:
             raise ValueError("MX catalog has an unsupported source rank")
-        compile_source(issuer_symbol, generated.issuer.source)
+        previous_issuer = issuer_sources.get(issuer_symbol)
+        if previous_issuer is None:
+            compile_source(issuer_symbol, generated.issuer.source)
+            issuer_sources[issuer_symbol] = generated.issuer.source
+        elif previous_issuer != generated.issuer.source:
+            raise ValueError("MX shared issuer differs across cached source sites")
         compile_source(symbol, generated.kernel.source)
         if generated.schedule_text is None or generated.schedule_digest is None:
             raise ValueError("MX catalog kernel has no checked schedule IR")
@@ -132,6 +143,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "schedule_sha256": generated.schedule_digest,
             "instruction_set_sha256": generated.instruction_set_digest,
             "workspace_bytes": generated.kernel.workspace_bytes,
+            "persistent_weight_bytes": getattr(generated.kernel, "persistent_bytes", 0),
+            "cache_immutable_weight": entry["cache_immutable_weight"],
+            **({"checkpoint_parameter_arg": entry["checkpoint_parameter_arg"],
+                "checkpoint_parameter_name": entry["checkpoint_parameter_name"]}
+               if entry["cache_immutable_weight"] else {}),
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
         })
@@ -291,6 +307,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "precision_proposals": plan["precision_proposals"],
         "unbound_precision_proposals": plan["unbound_precision_proposals"],
         "unique_kernels": len(kernel_records),
+        "unique_issuers": len(issuer_sources),
+        "cached_checkpoint_kernels": plan["cached_checkpoint_kernels"],
         "kernels": kernel_records,
         "bindings": plan["bindings"],
         "vpu_softmax": {
@@ -338,14 +356,24 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
 
 def make_merlin_catalog_builder(*, profile_path: Path,
-                                riscv_root: Path) -> Callable[[Path, Path], tuple[Path, Path]]:
+                                riscv_root: Path,
+                                cached_weight_stage: Path | None = None) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
     riscv_root = Path(riscv_root).resolve(strict=True)
+    manifest_path = (Path(cached_weight_stage).resolve(strict=True) /
+                     "weights.safetensors.manifest.json"
+                     if cached_weight_stage is not None else None)
+    if manifest_path is not None and (manifest_path.is_symlink()
+                                      or not manifest_path.is_file()):
+        raise ValueError("MX checkpoint cache needs a captured weights manifest")
 
     def build(prepared: Path, work: Path) -> tuple[Path, Path]:
         return build_merlin_catalog(prepared, work,
                                     profile=load_profile(profile_path),
-                                    riscv_root=riscv_root)
+                                    riscv_root=riscv_root,
+                                    checkpoint_manifest=(json.loads(manifest_path.read_text())
+                                                         if manifest_path else None),
+                                    cache_immutable_weights=manifest_path is not None)
 
     return build

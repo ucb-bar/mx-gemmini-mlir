@@ -285,8 +285,12 @@ captured checkpoint manifest:
 and an exact BF16-to-F32 cast to one stored parameter. The audit checks the
 capture and catalog bindings; it does not assume that dynamic attention
 operands can be prepacked. The current catalog still packs weights at each
-call. A fixed-weight implementation must also bind generated MX bytes to the
-same checkpoint and preserve the live path for dynamic operands.
+call. For a session bound to one checkpoint, `tools.build_merlin_stage` also
+accepts `--cache-checkpoint-weights`. It gives each proven parameter site a
+separate serial cache, packs that weight on its first call, and reuses the MX
+bytes on later calls. Dynamic FP8 sites keep live packing. The catalog receipt
+records the parameter identity and persistent bytes. This option needs a
+whole-stage Spike comparison before it can replace the default build path.
 
 The small-LLaMA archived projection has a reproducible paired Spike check:
 
@@ -310,3 +314,9 @@ profile hashes. `--phase-cycles` without `--dense-adapter` reports padding,
 activation packing, weight packing, issue, and widening for the same
 projection. These short kernel measurements do not predict full-model speedup
 until checkpoint binding and graph scheduling are integrated.
+
+For a repeated-call diagnostic, use `--cached-weight --dense-repeats 2`
+alongside `--dense-adapter --time-dense`. Its receipt records both calls in
+`dense_cycles_by_call`; the first call packs the RHS, and the second reuses
+the packed bytes. The stage option above uses the same adapter mode at each
+source-proven checkpoint site.

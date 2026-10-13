@@ -20,6 +20,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _sha(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _capture_model(stage: Path) -> Path:
     source = stage / "model.mlir"
     receipt = stage / "capture_receipt.json"
@@ -105,6 +113,8 @@ def main() -> None:
     parser.add_argument("--diagnostic-host-vpu", action="store_true",
                         help="keep current MX contraction routing but execute VPU-eligible "
                              "operations on the host for a numerical control")
+    parser.add_argument("--cache-checkpoint-weights", action="store_true",
+                        help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
                         help="wall-clock limit per compiler/link command; 0 disables it")
@@ -157,6 +167,13 @@ def main() -> None:
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(source, profile)
+    if args.cache_checkpoint_weights and not expected_regions:
+        parser.error("checkpoint weight caching requires selected MX contractions")
+    weights_path = stage / "weights.safetensors"
+    if args.cache_checkpoint_weights and (weights_path.is_symlink()
+                                          or not weights_path.is_file()):
+        parser.error("checkpoint weight caching requires a regular captured weights file")
+    weights_sha = _sha(weights_path) if args.cache_checkpoint_weights else None
     if args.diagnostic_host_vpu and not expected_regions:
         parser.error("--diagnostic-host-vpu requires selected MX contractions")
     device = (DeviceRouting(
@@ -164,7 +181,8 @@ def main() -> None:
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
         prepared_transform=MXBF16CatalogPreparation(profile),
         catalog_builder=make_merlin_catalog_builder(
-            profile_path=profile_path, riscv_root=riscv_root),
+            profile_path=profile_path, riscv_root=riscv_root,
+            cached_weight_stage=stage if args.cache_checkpoint_weights else None),
         post_offload_transform=(None if args.diagnostic_host_vpu
                                 else MXVPUPostOffload(profile)),
     ) if expected_regions else None)
@@ -177,6 +195,8 @@ def main() -> None:
     )
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
+    if weights_sha is not None and _sha(weights_path) != weights_sha:
+        raise RuntimeError("captured checkpoint changed during MX stage compilation")
     elf = Path(result["elf"])
     catalog_path = work / "device_catalog/mx_catalog.json"
     if device is None:
@@ -285,6 +305,9 @@ def main() -> None:
         "vpu_reduce_lowered_regions": len(lowered_reduce),
         "vpu_residual_eligible": residual_eligible,
         "unique_kernels": catalog["unique_kernels"],
+        "cache_checkpoint_weights": args.cache_checkpoint_weights,
+        "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
+        "checkpoint_weights_sha256": weights_sha,
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),
         "mem_bytes": result["mem_bytes"],

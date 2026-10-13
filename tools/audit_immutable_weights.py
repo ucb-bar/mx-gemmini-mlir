@@ -14,34 +14,11 @@ import hashlib
 import json
 from pathlib import Path
 
+from mx_gemmini_support.weight_provenance import source_parameter_arg
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _source_arg(value) -> tuple[int | None, tuple[str, ...]]:
-    """Follow only layout changes and exact BF16-to-F32 element casts."""
-    from xdsl.ir import BlockArgument
-
-    path = []
-    while not isinstance(value, BlockArgument):
-        op = value.owner
-        name = str(op.name)
-        if name == "linalg.transpose":
-            value = op.operands[0]
-        elif name == "linalg.generic":
-            body = list(op.body.blocks[0].ops)
-            if (len(op.inputs) != 1 or len(body) != 2
-                    or str(body[0].name) != "arith.extf"
-                    or str(body[1].name) != "linalg.yield"
-                    or body[0].operands[0] != op.body.blocks[0].args[0]
-                    or body[1].operands[0] != body[0].results[0]):
-                return None, tuple(path + ["dynamic:" + name])
-            value = op.inputs[0]
-        else:
-            return None, tuple(path + ["dynamic:" + name])
-        path.append(name)
-    return value.index, tuple(path)
 
 
 def build_inventory(build: Path, stage: Path) -> dict:
@@ -106,13 +83,14 @@ def build_inventory(build: Path, stage: Path) -> dict:
                     != source_binding["source_operation_ordinal"]
                     or route["tensor_types"] != source_binding["tensor_types"]):
                 raise ValueError("MX live call source identity changed")
-        arg, transform = _source_arg(call.operands[1])
+        arg, transform, source_shape = source_parameter_arg(call.operands[1])
         parameter = weights.get(str(arg)) if arg is not None else None
         shape = (list(call.operands[1].type.get_shape())
                  if hasattr(call.operands[1].type, "get_shape") else [])
         if arg is not None and (not isinstance(parameter, dict)
                                 or parameter.get("kind") != "param"
-                                or not isinstance(parameter.get("shape"), list)):
+                                or parameter.get("dtype") not in {"float32", "bfloat16"}
+                                or parameter.get("shape") != list(source_shape or ())):
             raise ValueError(f"MX RHS source argument {arg} is not a captured parameter")
         rows.append({
             "region": region, "callee": symbol,
