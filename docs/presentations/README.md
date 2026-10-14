@@ -65,6 +65,14 @@ non-VPU configuration. Nicolas's `npu-exploration` kernels provide source
 checks and performance reference programs, while RTL defines hardware
 capabilities. See [profile inventory](../current_mx_profiles.md).
 
+Here a hardware mode is a legal *tuple*: activation format, weight format,
+direct or LUT projection for each operand, and the PE mode number. The number
+does not identify a precision on its own. This selected MX+VPU profile has
+exactly two matrix tuples: PE 0 is direct FP4 E2M1 × FP4 E2M1, and PE 8 is
+direct FP8 E4M3 × FP8 E4M3. VPU opcodes are separate from these matrix
+tuples. The 81 projected profiles comprise 41 Gemmini fragments and 40
+Chipyard wrappers, not 81 independently performance-qualified systems.
+
 The JSON box is a shortened excerpt of the selected
 [`MxE4M3Fp4VpuGemminiRocketConfig` profile](../../profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json).
 For this file, `profile_sha256(profile)` is

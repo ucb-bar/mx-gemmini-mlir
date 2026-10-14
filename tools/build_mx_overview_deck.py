@@ -272,10 +272,11 @@ def configurations(slide, total: int = 3) -> None:
              4.78, 0.30, size=14.1, bold=True, color=NAVY)
     add_text(slide,
              "• TinyLlama: 155 FP4 / 45 FP8 MX sites per stage.\n"
-             "• FP4 binds PE 0; 256 KiB SPAD caps tiles.\n"
-             "• VPU/requant legal; FP6 rejects in this profile.\n"
+             "• PE 0 = direct FP4 × FP4; PE 8 = direct FP8 × FP8.\n"
+             "• 256 KiB SPAD caps tiles; VPU/requant legal.\n"
+             "• FP6 has no legal mode in this profile.\n"
              "• load_profile(profile, rtl_root=rtl) rejects drift.",
-             7.38, 4.42, 4.78, 1.62, size=11.6, color=INK)
+             7.38, 4.42, 4.78, 1.62, size=11.0, color=INK)
     add_text(slide,
              "npu-exploration supplies source kernels for per-mode Spike checks; "
              "the RTL profile alone is structural, not a performance claim.",
