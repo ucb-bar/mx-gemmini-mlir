@@ -212,6 +212,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_tinyllama_full_source_vpu_20261014/full_receipt.json \
   --radiance-comparison \
     docs/evidence/radiance_kernel_comparison_20261014/receipt.json \
+  --equal-work-attention \
+    docs/evidence/attn_vpu_equal_work_20261013/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

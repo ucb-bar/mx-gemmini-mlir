@@ -22,6 +22,19 @@ and [re-stream archive](../radiance_restream_1df2c5f/index.json) contain the
 checked output and command receipts. The [legal-profile roster](../radiance_mx_vpu_legal_roster_266c593/index.json)
 also checks 18 FP8/FP4 BF16 drivers and six requant drivers, twice each.
 
+The source-to-command mapping is visible in those archives. Radiance's FP8
+and FP4 read-once drivers set `TILE_M=256`, `TILE_N=64`, `TILE_K=64`; their
+compiled `physical_program.json.gz` plans use the same 256×64×64 tile and
+read each K-wave's weight tile once. The re-stream driver sets `TILE_M=64`
+and loops over four M blocks; its compiled plan uses four 64×64×64 output
+tiles and reads the same 128 KiB weight matrix four times. These are checked
+tile and traffic properties, not evidence that the Muon launch, overlap, or
+total runtime matches Radiance.
+The archived physical programs have 576 weight-move steps for FP8 read-once,
+880 for FP4 read-once, and 2,304 for FP8 re-stream. The last count is
+exactly four times the equal-shape FP8 read-once count. A step is a physical
+program entry; it is not a complete kernel invocation or a cycle.
+
 Other Radiance MX kernel families have narrower compiler controls:
 
 | Family | Existing compiler evidence | Remaining whole-kernel gap |
@@ -29,6 +42,11 @@ Other Radiance MX kernel families have narrower compiler controls:
 | Batched GEMV projections | [Four FP8/FP4 source shapes](../radiance_batched_gemv_552a16b/index.json), all BF16 outputs and one-read weight traffic checked on Spike | Source launch and Muon integration are separate. |
 | TinyLlama GQA flash attention | [All 16 source P/V cutpoints](../radiance_gqa_pv_roster_80f84ca/index.json) pass the MX output checks on Spike; the [final recurrence](../radiance_gqa_final_recurrence_80f84ca/index.json) reconstructs source output on the corrected functional model | Compiler still needs Muon softmax, online accumulation, finalization, and mixed-engine handoff. |
 | Full `model_chain` programs | Captured TinyLlama and SmolVLA graphs have MX+VPU compiler sessions | Radiance's existing connected programs use scalar Muon stages; there is no independently stitched MX+VPU full-model source run. |
+
+The GQA cutpoint control uses the archived corrected functional model and
+source-produced P tiles. The source generator's `O_gold` differs from the
+executed source output at 31,852 of 32,768 BF16 positions; the 65,536-value
+PV check is therefore **not** a whole-attention correctness claim.
 
 These are **compiler-on-Spike output and command comparisons**. The original
 Radiance drivers use Muon to issue MX work on the combined SoC; no paired

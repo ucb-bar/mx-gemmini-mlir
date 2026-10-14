@@ -63,6 +63,13 @@
   "radiance_vpu_profile_roster_runs": 2,
   "rows": [
     {
+      "compiler_move_weight_steps": 576,
+      "compiler_output_tiles": 1,
+      "compiler_physical_tile_mnk": [
+        256,
+        64,
+        64
+      ],
       "compiler_spike_bf16_values_matching_source_golden": 16384,
       "compiler_weight_bytes": 131072,
       "compiler_weight_tile_reads": 32,
@@ -77,6 +84,13 @@
       "source_sha256": "d1cca6d8b12d875a5cffa73ade73976ebaaa9e4db1323b9d385f23dc8fb11384"
     },
     {
+      "compiler_move_weight_steps": 880,
+      "compiler_output_tiles": 1,
+      "compiler_physical_tile_mnk": [
+        256,
+        64,
+        64
+      ],
       "compiler_spike_bf16_values_matching_source_golden": 16384,
       "compiler_weight_bytes": 180224,
       "compiler_weight_tile_reads": 88,
@@ -91,6 +105,13 @@
       "source_sha256": "4e38f4f040ade76bc0c1584fe3374d719152087b0c9d21fd56ed2c06585b0678"
     },
     {
+      "compiler_move_weight_steps": 2304,
+      "compiler_output_tiles": 4,
+      "compiler_physical_tile_mnk": [
+        64,
+        64,
+        64
+      ],
       "compiler_spike_bf16_values_matching_source_golden": 16384,
       "compiler_weight_bytes": 524288,
       "compiler_weight_tile_reads": 128,

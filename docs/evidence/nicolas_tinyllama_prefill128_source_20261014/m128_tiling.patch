@@ -1,0 +1,149 @@
+--- a/baremetal/mxgemmini/src/llama_model.c
++++ b/baremetal/mxgemmini/src/llama_model.c
+@@ -92,0 +93 @@
++#define A_MTILE      (LLAMA_M > 64 ? 64 : LLAMA_M)
+@@ -100 +101 @@
+-#define A_P1_COST(nc) (ROWS8(LLAMA_M, LLAMA_D) + ROWS8(LLAMA_D, (nc)) + ROWS16(LLAMA_M, (nc)))
++#define A_P1_COST(nc) (ROWS8(A_MTILE, LLAMA_D) + ROWS8(LLAMA_D, (nc)) + ROWS16(A_MTILE, (nc)))
+@@ -103 +104 @@
+-                       SCALE_ROWS(LLAMA_D, LLAMA_M) <= LLAMA_SCALE_ROWS_MAX)
++                       SCALE_ROWS(LLAMA_D, A_MTILE) <= LLAMA_SCALE_ROWS_MAX)
+@@ -107 +108 @@
+-#define A_PROJ_C      ROWS8(LLAMA_M, LLAMA_D)
++#define A_PROJ_C      ROWS8(A_MTILE, LLAMA_D)
+@@ -166 +167 @@
+-#define L_SPAD_C  ROWS8(LLAMA_M, LLAMA_D)
++#define L_SPAD_C  ROWS8(A_MTILE, LLAMA_D)
+@@ -169,0 +171,2 @@
++LLAMA_REQUIRE(a_mtile_divides_m, LLAMA_M % A_MTILE == 0);
++LLAMA_REQUIRE(a_smallest_proj_fits, A_P1FITS(16));
+@@ -231,0 +235 @@
++static uint8_t  a_act_scales_tile[LLAMA_GD * A_MTILE];
+@@ -349 +352,0 @@
+-  gemmini_flush(0);
+@@ -352,0 +356 @@
++  gemmini_flush(0);
+@@ -413,6 +416,0 @@
+-    t0 = read_cycles();
+-    mvin_A(xn_codes, LLAMA_M, LLAMA_D, A_SPAD_XN);
+-    gemmini_mx_load_scales((uint64_t) xn_scales, sizeof(xn_scales), 0);
+-    gemmini_fence();
+-    t_mesh += read_cycles() - t0;
+-
+@@ -423,0 +422,6 @@
++#if LLAMA_M <= 64
++    t0 = read_cycles();
++    mvin_A(xn_codes, LLAMA_M, LLAMA_D, A_SPAD_XN);
++    gemmini_mx_load_scales((uint64_t) xn_scales, sizeof(xn_scales), 0);
++    gemmini_fence();
++    t_mesh += read_cycles() - t0;
+@@ -443,0 +448,36 @@
++#else
++    // The activation scale window holds at most 64 rows of a D=2048 input.
++    // Keep one row tile resident while issuing Q, K, and V projections.
++    for (int r0 = 0; r0 < LLAMA_M; r0 += A_MTILE) {
++      for (int g = 0; g < LLAMA_GD; g++)
++        memcpy(a_act_scales_tile + (size_t) g * A_MTILE,
++               xn_scales + (size_t) g * LLAMA_M + r0, A_MTILE);
++      t0 = read_cycles();
++      mvin_A(xn_codes + (size_t) r0 * LLAMA_D, A_MTILE, LLAMA_D, A_SPAD_XN);
++      gemmini_mx_load_scales((uint64_t) a_act_scales_tile, sizeof(a_act_scales_tile), 0);
++      gemmini_fence();
++      t_mesh += read_cycles() - t0;
++      for (int s = 0; s < 3; s++) {
++        const int nc = wid[s] < A_PROJ_N ? wid[s] : A_PROJ_N;
++        for (int c = 0; c < wid[s] / nc; c++) {
++          for (int g = 0; g < LLAMA_GD; g++)
++            memcpy(a_proj_scales_chunk + (size_t) g * nc,
++                   ws[s] + (size_t) g * wid[s] + (size_t) c * nc, nc);
++          t0 = read_cycles();
++          gemmini_mx_load_scales((uint64_t) a_proj_scales_chunk, LLAMA_GD * nc, 1);
++          gemmini_fence();
++          mvin_B(wc[s], LLAMA_D, wid[s], c * nc, nc,
++                 SPAD_ROWS - ROWS8(LLAMA_D, nc));
++          mesh_matmul(A_MTILE, LLAMA_D, nc, A_SPAD_XN, SPAD_ROWS, A_PROJ_C,
++                      OUT_BF16, (uint64_t) scale_sink, 0, 0);
++          t_mesh += read_cycles() - t0;
++          mvout_bf16(chunk16, A_PROJ_C, A_MTILE, nc);
++          for (int m = 0; m < A_MTILE; m++)
++            memcpy(&dstp[s][(size_t) (r0 + m) * wid[s] + c * nc],
++                   &chunk16[(size_t) m * nc], nc * sizeof(uint16_t));
++        }
++      }
++    }
++    for (int s = 0; s < 3; s++)
++      STAGE(mesh_d, mx_count_diff_u16(dstp[s], goldp[s], LLAMA_M * wid[s]));
++#endif
+@@ -669,6 +709,10 @@
+-    t0 = read_cycles();
+-    mvin_A(xn_codes, LLAMA_M, LLAMA_D, L_SPAD_XF);
+-    gemmini_mx_load_scales((uint64_t) xn_scales, sizeof(xn_scales), 0);
+-    gemmini_fence();
+-    t_mesh += read_cycles() - t0;
+-    for (int c = 0; c < L_CHUNKS; c++) {
++    for (int r0 = 0; r0 < LLAMA_M; r0 += A_MTILE) {
++      for (int g = 0; g < LLAMA_GD; g++)
++        memcpy(a_act_scales_tile + (size_t) g * A_MTILE,
++               xn_scales + (size_t) g * LLAMA_M + r0, A_MTILE);
++      t0 = read_cycles();
++      mvin_A(xn_codes + (size_t) r0 * LLAMA_D, A_MTILE, LLAMA_D, L_SPAD_XF);
++      gemmini_mx_load_scales((uint64_t) a_act_scales_tile, sizeof(a_act_scales_tile), 0);
++      gemmini_fence();
++      t_mesh += read_cycles() - t0;
++      for (int c = 0; c < L_CHUNKS; c++) {
+@@ -683 +727 @@
+-      mesh_matmul(LLAMA_M, LLAMA_D, L_CHUNK, L_SPAD_XF, SPAD_ROWS, L_SPAD_C,
++      mesh_matmul(A_MTILE, LLAMA_D, L_CHUNK, L_SPAD_XF, SPAD_ROWS, L_SPAD_C,
+@@ -686,3 +730,3 @@
+-      mvout_bf16(chunk16, L_SPAD_C, LLAMA_M, L_CHUNK);
+-      for (int m = 0; m < LLAMA_M; m++)
+-        memcpy(&logits_hw[(size_t) m * LLAMA_V + (size_t) c * L_CHUNK],
++      mvout_bf16(chunk16, L_SPAD_C, A_MTILE, L_CHUNK);
++      for (int m = 0; m < A_MTILE; m++)
++        memcpy(&logits_hw[(size_t) (r0 + m) * LLAMA_V + (size_t) c * L_CHUNK],
+@@ -689,0 +734 @@
++      }
+@@ -730,0 +776,9 @@
++#ifdef LLAMA_DUMP_LAST_LOGITS
++    // Diagnostic output after the timed host section: the compiler prefill
++    // returns this same final-position vocabulary row.
++    printf("last_logits_bf16 ");
++    for (int v = 0; v < LLAMA_V; v++)
++      printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
++    printf("\n");
++#endif
++
+@@ -739,0 +794,7 @@
++#endif
++#if defined(LLAMA_STAGE_TIMING) && defined(LLAMA_DUMP_LAST_LOGITS)
++    printf("last_logits_bf16 ");
++    for (int v = 0; v < LLAMA_V; v++)
++      printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
++    printf("\n");
++#endif
+@@ -747 +808,7 @@
+-  printf("cycles mesh %d, host %d\n", (int) t_mesh, (int) t_host);
++  printf("cycles64 mesh 0x%08x%08x host 0x%08x%08x\n",
++         (unsigned) (t_mesh >> 32), (unsigned) t_mesh,
++         (unsigned) (t_host >> 32), (unsigned) t_host);
++#ifdef LLAMA_STAGE_TIMING
++  printf("llama MODEL benchmark finished (%d layer(s)%s).\n",
++         LLAMA_NL, LLAMA_HAS_HEAD ? " + lm_head" : "");
++#else
+@@ -749,7 +815,0 @@
+-#endif
+-#if defined(LLAMA_STAGE_TIMING) && defined(LLAMA_DUMP_LAST_LOGITS)
+-    printf("last_logits_bf16 ");
+-    for (int v = 0; v < LLAMA_V; v++)
+-      printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
+-    printf("\n");
+-#endif
+@@ -764,0 +825 @@
++#endif
+@@ -766,4 +826,0 @@
+-#ifdef LLAMA_STAGE_TIMING
+-  printf("llama MODEL benchmark finished (%d layer(s)%s).\n",
+-         LLAMA_NL, LLAMA_HAS_HEAD ? " + lm_head" : "");
+-#else
+@@ -775 +831,0 @@
+-#endif

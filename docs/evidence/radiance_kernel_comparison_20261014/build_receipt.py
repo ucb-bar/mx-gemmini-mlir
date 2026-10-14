@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 
@@ -20,6 +22,18 @@ def digest(path: Path) -> str:
 def load(relative: str) -> tuple[dict, str]:
     path = EVIDENCE / relative
     return json.loads(path.read_text()), digest(path)
+
+
+def physical_plan(relative: str, expected_hash: str) -> dict:
+    raw = gzip.decompress((EVIDENCE / relative).read_bytes())
+    assert hashlib.sha256(raw).hexdigest() == expected_hash, relative
+    program = json.loads(raw)
+    phases = Counter(step["phase"] for step in program["steps"])
+    return {
+        "compiler_physical_tile_mnk": program["plan"]["tile"],
+        "compiler_move_weight_steps": phases["move_weight"],
+        "compiler_output_tiles": len(program["plan"].get("output_tiles", [])) or 1,
+    }
 
 
 def main() -> None:
@@ -52,6 +66,12 @@ def main() -> None:
         assert digest(source) == entry["driver_sha256"], source
         assert entry["compared_bf16_outputs"] == 16384
         assert entry["weight_bytes_covered_once"] > 0
+        plan = physical_plan(
+            f"radiance_ws_read_once_1a7bc9c/{entry['directory']}/physical_program.json.gz",
+            entry["physical_program_sha256"])
+        assert plan["compiler_physical_tile_mnk"] == [256, 64, 64]
+        assert plan["compiler_output_tiles"] == 1
+        assert plan["compiler_move_weight_steps"] > 0
         rows.append({
             "source": f"kernels/{entry['directory']}/kernel.cpp",
             "source_sha256": entry["driver_sha256"],
@@ -62,6 +82,7 @@ def main() -> None:
             "compiler_weight_tile_reads": entry["weight_tile_reads"],
             "compiler_weight_bytes": entry["weight_bytes_covered_once"],
             "radiance_source_schedule": "read_once_weight_stationary",
+            **plan,
         })
 
     source = source_root / "kernels/gemm_mxgemmini_ws_restream/kernel.cpp"
@@ -70,6 +91,14 @@ def main() -> None:
     assert restream["m_tiles"] == 4
     assert restream["weight_bytes_transferred"] == 4 * rows[0]["compiler_weight_bytes"]
     assert restream["weight_tile_reads"] == 4 * rows[0]["compiler_weight_tile_reads"]
+    restream_plan = physical_plan(
+        "radiance_restream_1df2c5f/physical_program.json.gz",
+        restream["physical_program_sha256"])
+    assert restream_plan == {
+        "compiler_physical_tile_mnk": [64, 64, 64],
+        "compiler_move_weight_steps": 4 * rows[0]["compiler_move_weight_steps"],
+        "compiler_output_tiles": 4,
+    }
     rows.append({
         "source": "kernels/gemm_mxgemmini_ws_restream/kernel.cpp",
         "source_sha256": restream["driver_sha256"],
@@ -80,6 +109,7 @@ def main() -> None:
         "compiler_weight_tile_reads": restream["weight_tile_reads"],
         "compiler_weight_bytes": restream["weight_bytes_transferred"],
         "radiance_source_schedule": "four_pass_weight_restream",
+        **restream_plan,
     })
     gemv_rows = []
     for entry in gemv["rows"]:

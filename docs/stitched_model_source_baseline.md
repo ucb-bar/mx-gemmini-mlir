@@ -33,6 +33,15 @@ The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/RE
 already compares one fused MX+VPU source shape with compiler-issued commands.
 It does not establish a whole-model stitched baseline for the captured shapes.
 
+The separate [Radiance kernel comparison](evidence/radiance_kernel_comparison_20261014/README.md)
+checks the compiler against current FP8/FP4 GEMM, batched GEMV, and GQA MX
+source controls. The read-once GEMMs match all BF16 source outputs and the
+source's one-read weight traffic; the four-pass FP8 control transfers four
+times as many weight bytes. Radiance's source kernels launch MX through
+Muon, so their cycles cannot be compared with the standalone Rocket Spike
+model cycles. Its existing connected `model_chain` programs use scalar Muon
+stages and do not supply a full MX+VPU model baseline.
+
 An [independent first-two-layer TinyLlama source
 control](evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md) now
 uses Nicolas's full-model MX schedule with his VPU residual-add pattern. It

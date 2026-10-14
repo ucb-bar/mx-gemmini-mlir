@@ -306,9 +306,10 @@ def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
-            radiance: dict | None, prefill128: dict | None) -> None:
+            radiance: dict | None, prefill128: dict | None,
+            equal_work: dict | None) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "What the Spike comparisons measure", size=27,
+    set_text(shapes[0], "MX results: Spike and Radiance", size=27,
              bold=True)
     frame = shapes[1]
     table = frame.table
@@ -361,7 +362,11 @@ def results(slide, smol_comparison: dict | None,
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
         layer_row,
-        ("Dense attention 64×256×128 · fused source", "43,523", "43,641", "−0.27%"),
+        ("Dense attention 64×256×128 · fused source",
+         f"{equal_work['compiler_modeled_cycles']:,}" if equal_work else "43,523",
+         f"{equal_work['source_modeled_cycles']:,}" if equal_work else "43,641",
+         f"{(equal_work['compiler_modeled_cycles'] / equal_work['source_modeled_cycles'] - 1) * 100:+.2f}%"
+         if equal_work else "−0.27%"),
     )
     for row_index, row in enumerate(values):
         for col_index, text in enumerate(row):
@@ -403,18 +408,18 @@ def results(slide, smol_comparison: dict | None,
     if tiny_comparison and smol_comparison and prefill128:
         agreement = prefill128["comparisons"]["source_vs_compiler"]
         footer_text = (
-            "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
-            "SmolVLA 33/33 and TinyLlama 99/99.\n"
-            "† Prefill: 200 weights and 128 IDs match; cosine "
+            "* Issuer swap: host/VPU fixed; modeled cycles. Output hashes "
+            "equal for SmolVLA 33/33 and TinyLlama 99/99.\n"
+            "† All-FP8 prefill: 200 weights and 128 IDs match; cosine "
             f"{agreement['cosine']:.3f}, top tokens "
             f"{agreement['a_argmax']}/{agreement['b_argmax']}. "
-            "Source 128 keys; compiler 160 slots; no speedup ratio."
+            "Host/VPU differ; source 128 keys, compiler 160 slots; no ratio."
         )
     elif tiny_comparison and smol_comparison and full_vpu:
         agreement = full_vpu["comparisons"]["source_vpu_vs_compiler"]
         footer_text = (
-            "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
-            "SmolVLA 33/33 and TinyLlama 99/99.\n"
+            "* Issuer swap: host/VPU fixed; modeled cycles. Output hashes "
+            "equal for SmolVLA 33/33 and TinyLlama 99/99.\n"
             "† Full prefill: 200 weights and 64 IDs match; cosine "
             f"{agreement['cosine']:.3f}, token {agreement['a_argmax']}. "
             "VPU adds: 44 source calls, 88 compiler regions; host math differs."
@@ -486,6 +491,7 @@ def main() -> None:
     parser.add_argument("--tiny-full-vpu", type=Path)
     parser.add_argument("--radiance-comparison", type=Path)
     parser.add_argument("--tiny-prefill128", type=Path)
+    parser.add_argument("--equal-work-attention", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -507,6 +513,24 @@ def main() -> None:
                 if args.radiance_comparison else None)
     prefill128 = (json.loads(args.tiny_prefill128.read_text())
                   if args.tiny_prefill128 else None)
+    equal_work = (json.loads(args.equal_work_attention.read_text())
+                  if args.equal_work_attention else None)
+    if equal_work is not None:
+        evidence_dir = args.equal_work_attention.parent
+        if (equal_work.get("schema") !=
+                "mx_gemmini.nicolas_dense_attention_shape_qualification.v2"
+                or equal_work.get("status") !=
+                "equal_work_typed_attention_matches_source_on_spike"
+                or equal_work.get("shape_sq_sk_d") != [64, 256, 128]
+                or equal_work.get("spike_reproduced_runs") != 2
+                or any(type(equal_work.get(key)) is not int or equal_work[key] <= 0
+                       for key in ("source_modeled_cycles",
+                                   "compiler_modeled_cycles"))
+                or hashlib.sha256((evidence_dir / "source_spike.log").read_bytes()).hexdigest()
+                != equal_work.get("source_spike_log_sha256")
+                or hashlib.sha256((evidence_dir / "spike_1.log").read_bytes()).hexdigest()
+                != equal_work.get("spike_log_sha256")):
+            parser.error("dense attention needs completed equal-work Spike evidence")
     if prefill128 is not None:
         pair = prefill128.get("comparisons", {}).get("source_vs_compiler", {})
         cycles = prefill128.get("stage_cycles", {})
@@ -531,6 +555,12 @@ def main() -> None:
                        != 16384 for r in rows)
                 or [r.get("compiler_weight_bytes") for r in rows]
                 != [131072, 180224, 524288]
+                or [r.get("compiler_physical_tile_mnk") for r in rows]
+                != [[256, 64, 64], [256, 64, 64], [64, 64, 64]]
+                or [r.get("compiler_output_tiles") for r in rows]
+                != [1, 1, 4]
+                or [r.get("compiler_move_weight_steps") for r in rows]
+                != [576, 880, 2304]
                 or [r.get("compiler_spike_bf16_values_matching_source_golden")
                     for r in radiance.get("batched_gemv_rows", [])]
                 != [4096, 8192, 16384, 16384]
@@ -663,7 +693,8 @@ def main() -> None:
     architecture(prs.slides[0])
     configurations(prs.slides[1])
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
-            layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128)
+            layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
+            equal_work)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 
