@@ -1,0 +1,40 @@
+{
+  "artifact_sha256": {
+    "derived_replay_receipt.json": "348f08b83e09961581411dda9b83c2a717b912c04c80f2a8d69ad4b60695d84d",
+    "fp32_step9.bin": "5f969809a70a9e90a62a7eaee23f19dd14ad136937e653bd2278438c4731849c",
+    "full_link.json": "656df822df638fefa5fd214cd4427ff757eab92278c58272c27ebc27ad529785",
+    "full_run.json": "c18ca380b0c52179ae5987170a20bfb1af2507bbfcd3fbb93011f6bbf74e469e",
+    "full_step9.bin": "0a1c4de386f8487a0633adee41b53166d19f5395ef26947bee64bc5a2a1e1395",
+    "gemmini_perf_report.txt": "cf0391ecd82ceb30ed2f07697060ae69e2d90d60cff374a617967f098100fee7",
+    "isolated_step9.bin": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+    "link.json": "eaea2b2d602b9eb65e12f96afc2bb02465a3009b13d34803f6f960b3ccfe43bd",
+    "run.json": "08f00a4a07edbcdc87a21bfadeb328f15317be101bd224f2c8edf8cd7e9f6a8e",
+    "spike.log.gz": "b3790a58fbad29e228d30231cb96243db4cd5564d0f8ccb8d88443f577100480"
+  },
+  "cycle_ratio_valid": false,
+  "metrics": {
+    "full_vs_fp32": {
+      "cosine": 0.054453522863493295,
+      "mae": 0.3102640029304894,
+      "max_abs": 3.8452941179275513,
+      "normalized_rmse": 1.725878124331419,
+      "rmse": 0.574951545706809
+    },
+    "isolated_vs_fp32": {
+      "cosine": 0.9071164189448588,
+      "mae": 0.11516738714766689,
+      "max_abs": 0.5236787796020508,
+      "normalized_rmse": 0.43670538796358316,
+      "rmse": 0.14548213705728522
+    }
+  },
+  "reference_step": 9,
+  "schema": "mx_gemmini.smolvla_reference_step_replay_result.v1",
+  "scope": "one flow step at captured FP32 state input; no prefix or action stage",
+  "timestep_diagnostic": {
+    "final_abs_difference": 0.004882737994194031,
+    "final_compiled": -0.0048828125,
+    "final_reference": -7.450580596923828e-08,
+    "matched_steps": 10
+  }
+}

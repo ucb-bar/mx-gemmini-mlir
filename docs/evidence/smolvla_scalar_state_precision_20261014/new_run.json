@@ -1,0 +1,89 @@
+{
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_dense_timed_cached_checked_g_20261013/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x1c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_fp32_step9_scalar_f32_20261014/link/session.elf"
+  ],
+  "complete": true,
+  "elapsed_wall_s": 174.96650750600384,
+  "exit_code": 0,
+  "expected_events": 4,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "link_receipt_sha256": "58cc10daba68112a6f6605fb394eccade26bdd2f4ed592b7e44e9fa96c69ad20",
+  "log_sha256": "666d0792b61761f00d9f40e01f7106f4d35fc524eb27d6bb8c0cdb94b4018c53",
+  "observed_events": 4,
+  "output_digests": [
+    {
+      "bytes": 6400,
+      "output": 0,
+      "program": 0,
+      "sha256": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+      "step": 0
+    },
+    {
+      "bytes": 2314240,
+      "output": 1,
+      "program": 0,
+      "sha256": "c5e217c65642ff83f5746f596066d43d467187581e13dbd432cf2e660c38e41a",
+      "step": 0
+    },
+    {
+      "bytes": 4,
+      "output": 2,
+      "program": 0,
+      "sha256": "f047b8771a5f8a6dcd8c6491bbb8f918dda0a403298b9b0f287a8b998207e34f",
+      "step": 0
+    }
+  ],
+  "output_dumps": [
+    {
+      "bytes": 6400,
+      "output": 0,
+      "path": "output_dumps/p0_s0_o0.bin",
+      "program": 0,
+      "sha256": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+      "step": 0
+    },
+    {
+      "bytes": 4,
+      "output": 2,
+      "path": "output_dumps/p0_s0_o2.bin",
+      "program": 0,
+      "sha256": "f047b8771a5f8a6dcd8c6491bbb8f918dda0a403298b9b0f287a8b998207e34f",
+      "step": 0
+    }
+  ],
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "program_performance": [
+    {
+      "cycles": 11468377814,
+      "instructions": 11447337784,
+      "measured_steps": 1,
+      "name": "flow_denoise",
+      "program": 0
+    }
+  ],
+  "schema": "mx_gemmini.merlin_session_spike_run.v1",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending",
+  "step_performance": [
+    {
+      "cycles": 11468377814,
+      "instructions": 11447337784,
+      "program": 0,
+      "step": 0
+    }
+  ],
+  "timing_config": "e4m3_vpu",
+  "timing_mode": "both",
+  "timing_model_active": true,
+  "timing_overrides": "mem.host_tracking=0",
+  "timing_report_sha256": "fe1a6b9dd320b860caa98ee8b8e3e977e78090e631581c5c538a3c067e0e2594",
+  "total_performance": {
+    "cycles": 11468377814,
+    "instructions": 11447337784
+  }
+}

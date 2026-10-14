@@ -1,0 +1,14 @@
+{
+  "artifact_sha256": {
+    "new_catalog.json": "013129be99caf1131abd3280a3c5734f60b574d2f2c31b68ef009174b5f29652",
+    "new_link.json": "58cc10daba68112a6f6605fb394eccade26bdd2f4ed592b7e44e9fa96c69ad20",
+    "new_perf.txt": "fe1a6b9dd320b860caa98ee8b8e3e977e78090e631581c5c538a3c067e0e2594",
+    "new_run.json": "fd197b5e67c1c03fd3cdee79d917ea74ee61d5212581a8d2e722bf2bff7cec41",
+    "new_spike.log.gz": "e55fb4079e3596182dc37733a726fd5fe59502d9a5c87d70a8b36d718ba4b24a",
+    "new_step9.bin": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+    "new_timestep.bin": "f047b8771a5f8a6dcd8c6491bbb8f918dda0a403298b9b0f287a8b998207e34f",
+    "old_catalog.json": "f4eab2b49df7c4e578f0f635ae90355e92060a3a910b95ba169ff218ad2293d7"
+  },
+  "schema": "mx_gemmini.smolvla_scalar_state_precision.v1",
+  "scope": "one isolated flow step on captured FP32 state and prefix cache"
+}

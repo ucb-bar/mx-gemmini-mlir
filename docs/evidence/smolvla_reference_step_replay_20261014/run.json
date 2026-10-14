@@ -1,0 +1,81 @@
+{
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_dense_timed_cached_checked_g_20261013/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x1c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_fp32_step9_replay_20261014/link/session.elf"
+  ],
+  "complete": true,
+  "elapsed_wall_s": 371.18704317099764,
+  "exit_code": 0,
+  "expected_events": 4,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "link_receipt_sha256": "eaea2b2d602b9eb65e12f96afc2bb02465a3009b13d34803f6f960b3ccfe43bd",
+  "log_sha256": "fde3fbd22f36c307c05844f9884fa6efaae288148fa63c8a1daa25415281edea",
+  "observed_events": 4,
+  "output_digests": [
+    {
+      "bytes": 6400,
+      "output": 0,
+      "program": 0,
+      "sha256": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+      "step": 0
+    },
+    {
+      "bytes": 2314240,
+      "output": 1,
+      "program": 0,
+      "sha256": "c5e217c65642ff83f5746f596066d43d467187581e13dbd432cf2e660c38e41a",
+      "step": 0
+    },
+    {
+      "bytes": 4,
+      "output": 2,
+      "program": 0,
+      "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "step": 0
+    }
+  ],
+  "output_dumps": [
+    {
+      "bytes": 6400,
+      "output": 0,
+      "path": "output_dumps/p0_s0_o0.bin",
+      "program": 0,
+      "sha256": "e13a6dd1582669ed977de1bfd54d7c9e55f45951c46270e414e286afd4f0f784",
+      "step": 0
+    }
+  ],
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "program_performance": [
+    {
+      "cycles": 41133937106,
+      "instructions": 41112900539,
+      "measured_steps": 1,
+      "name": "flow_denoise",
+      "program": 0
+    }
+  ],
+  "schema": "mx_gemmini.merlin_session_spike_run.v1",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending",
+  "step_performance": [
+    {
+      "cycles": 41133937106,
+      "instructions": 41112900539,
+      "program": 0,
+      "step": 0
+    }
+  ],
+  "timing_config": "e4m3_vpu",
+  "timing_mode": "both",
+  "timing_model_active": true,
+  "timing_overrides": "mem.host_tracking=0",
+  "timing_report_sha256": "cf0391ecd82ceb30ed2f07697060ae69e2d90d60cff374a617967f098100fee7",
+  "total_performance": {
+    "cycles": 41133937106,
+    "instructions": 41112900539
+  }
+}

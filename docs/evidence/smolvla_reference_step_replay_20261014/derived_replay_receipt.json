@@ -1,0 +1,16 @@
+{
+  "derived_inputs_sha256": "81b12faa9a61629780ff9137ebecbadcad6f6bc342ebbb49630865fb740893c2",
+  "flow_input_sha256": "c0ea3f254477549d83599c6034e458b9b79d8da21b3ffe554abd053a82c443b5",
+  "initial_cache_bf16_sha256": "c5e217c65642ff83f5746f596066d43d467187581e13dbd432cf2e660c38e41a",
+  "initial_cache_sha256": "79361e6788f156ba8a81168f97a6c0ae077e41b07a037c3057d5b96fdd878963",
+  "model_mlir_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+  "reference_output_sha256": "5f969809a70a9e90a62a7eaee23f19dd14ad136937e653bd2278438c4731849c",
+  "reference_step": 9,
+  "schema": "mx_gemmini.smolvla_reference_step_replay.v1",
+  "session_contract_sha256": "d1b345feaf3c0810e19b287f5294ff84bd4d9794e10eaf365b2afc00c0454982",
+  "source_child_contract_sha256": "fde1036d0f8e73531f4d136b18ce953107c9ce629f7823fd0bedf10e70908034",
+  "source_inputs_sha256": "4ddbc494f37c31c4bba97f7158f73e90d8491ab40b20fc1536626e3319a57075",
+  "source_quality_sha256": "d61259c6e424d41767efded955832af1e58b0ed5358b7803854d8d4b0435ac3b",
+  "source_session_contract_sha256": "1ce9c8c732c3d48ec27dd5a362461cf4fe8695c71e9ff08d43585f57668cf33b",
+  "timestep_input": 0.09999992698431015
+}

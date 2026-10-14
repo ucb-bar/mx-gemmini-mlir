@@ -137,6 +137,20 @@ has different stage objects and takes 613,171,131,189 modeled cycles; that
 cycle count is excluded from the issuer-swap row. These values show drift on
 the fixed synthetic capture, not a task-quality verdict.
 
+The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
+uses the exact full-run compiler flow object with captured FP32 state and
+prefix cache. Its output has 0.907 cosine to the FP32 reference, compared
+with 0.054 for step 9 in the full compiled session. This resets both the
+prefix cache and previous flow state, so their contributions are not yet
+separated. The isolated run has a different cold-start timing boundary and
+no valid cycle ratio. All ten full-run timestep hashes follow BF16-rounded
+VPU addition despite an f32 ABI; that is a measured precision difference,
+not a quantified explanation of the entire action error.
+The [scalar-state control](../evidence/smolvla_scalar_state_precision_20261014/README.md)
+removes only the one-element FP32 VPU route. Its isolated Spike output
+matches the old flow output byte for byte, while its timestep matches the
+captured FP32 update exactly. A corrected full session remains pending.
+
 Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
@@ -281,6 +295,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
   --smol-action-values \
     docs/evidence/smolvla_full_action_values_20261014/receipt.json \
+  --smol-reference-step \
+    docs/evidence/smolvla_reference_step_replay_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
@@ -292,11 +308,10 @@ Its optional `--tiny-prefill128` row requires the archived source and compiler
 Spike logs, their hashes, and the verified modeled cycle counters. A preview
 receipt or an incomplete run cannot replace the measured row.
 
-After the full output-value archives finish, add
+When the full TinyLlama output-value archive finishes, add
 `--tiny-full-logits docs/evidence/tinyllama_full_logits_20261014/receipt.json`
-and/or
-`--smol-action-values docs/evidence/smolvla_full_action_values_20261014/receipt.json`.
-The results callout then reports drift from the captured FP32 outputs on
-fixed synthetic inputs. The generator checks archive hashes and binds each
-receipt to the timed full-session run; these metrics are diagnostics rather
-than generation or robotics task-success thresholds.
+to the command. The results callout reports drift from captured FP32 outputs
+on fixed synthetic inputs and the isolated SmolVLA step result. The generator
+checks archive hashes and binds each full-session receipt to its timed run;
+these metrics are diagnostics rather than generation or robotics task-success
+thresholds.

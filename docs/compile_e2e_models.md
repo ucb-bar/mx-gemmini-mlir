@@ -321,6 +321,17 @@ earlier timed compiler run. Cosine to the captured FP32 trajectory drops from
 0.997 at flow step 0 to 0.054 at the final action; final normalized RMSE is
 1.726. The tapped executable has different stage objects, so its cycle count
 is not the optimized full-session cycle result.
+The [isolated step-9 control](evidence/smolvla_reference_step_replay_20261014/README.md)
+reuses the full-run compiled flow object on the captured FP32 state and
+prefix cache. Its cosine to the FP32 step-9 output is 0.907, versus 0.054
+in the full compiled session. This resets both prefix and previous flow
+errors, so the contributions are not separately measured. All ten timestep
+output hashes match BF16-rounded VPU addition despite the f32 ABI; the
+selected MX lowering now leaves one-element f32 arithmetic on the host.
+The [corrected one-step Spike replay](evidence/smolvla_scalar_state_precision_20261014/README.md)
+confirms the source FP32 timestep exactly and preserves the 0.907-cosine
+flow output byte for byte. A revised *full* session is still needed for a
+new final-action quality or performance claim.
 
 ### Inspect full TinyLlama logits
 

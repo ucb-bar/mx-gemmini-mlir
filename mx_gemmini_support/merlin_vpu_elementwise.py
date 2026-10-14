@@ -127,6 +127,11 @@ def selected_elementwise_sites(mlir_text: str, profile: dict) -> list[dict]:
                 op["indexing_maps"][2] !=
                 _map(shape, shape, tuple(range(len(shape))))):
             continue
+        if dtype == "f32" and prod(shape) == 1:
+            # The VPU rounds f32 inputs and results through BF16. Scalar
+            # state updates, including SmolVLA's timestep, need the source
+            # f32 value and gain nothing from a one-element VPU launch.
+            continue
         if source_op == "add" and len(shape) != 1:
             # The add catalog owns exact tensors and last-axis vector biases.
             # Other source-verified broadcasts, including attention masks,

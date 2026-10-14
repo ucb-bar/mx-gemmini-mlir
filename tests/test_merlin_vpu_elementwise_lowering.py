@@ -67,7 +67,7 @@ def test_rotary_broadcast_and_subtraction_emit_vpu_programs() -> None:
     ("tinyllama", 31, 26, 0, 0, 5, 5),
     ("deepseek_r1_distill_qwen_1_5b", 18, 15, 0, 0, 3, 3),
     ("gemma2_2b", 53, 34, 0, 9, 10, 0),
-    ("smolvla", 273, 131, 29, 53, 60, 5),
+    ("smolvla", 271, 129, 29, 53, 60, 5),
 ))
 def test_frozen_elementwise_sites_are_source_bound(
         model: str, expected: int, mul: int, sub: int, add: int, div: int,
@@ -81,10 +81,11 @@ def test_frozen_elementwise_sites_are_source_bound(
                                      ("add", add), ("div", div)) if count}
     assert sum(site["swap"] for site in sites) == swaps
     assert len({site["region"] for site in sites}) == expected
+    assert all(site["dtype"] != "f32" or site["elements"] != 1 for site in sites)
     assert selected_elementwise_sites(source, NO_VPU) == []
 
 
-@pytest.mark.parametrize("model,expected", (("tinyllama", 31), ("smolvla", 273),
+@pytest.mark.parametrize("model,expected", (("tinyllama", 31), ("smolvla", 271),
                                             ("gemma2_2b", 53)))
 def test_frozen_elementwise_rewrites_to_external_calls(
         tmp_path: Path, model: str, expected: int) -> None:

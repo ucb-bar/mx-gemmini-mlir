@@ -318,6 +318,7 @@ def results(slide, smol_comparison: dict | None,
             radiance: dict | None, prefill128: dict | None,
             equal_work: dict | None, tiny_logits: dict | None,
             smol_actions: dict | None, prefill_precision: dict | None,
+            smol_reference_step: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: full-model Spike" if tiny_logits or smol_actions
@@ -402,10 +403,15 @@ def results(slide, smol_comparison: dict | None,
         callout = (
             "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
             f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
-            f"top token {decode['top_token_matches']}/32.\n"
-            "SmolVLA flow 0 → final action cosine "
-            f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
-            f"final normalized RMSE {action['normalized_rmse']:.3f}."
+            f"top token {decode['top_token_matches']}/32.\n" +
+            ("SmolVLA step 9 vs FP32: full "
+             f"{action['cosine']:.3f}; replay on FP32 cache/state "
+             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f} "
+             "(prefix + history reset)."
+             if smol_reference_step else
+             "SmolVLA flow 0 → final action cosine "
+             f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+             f"final normalized RMSE {action['normalized_rmse']:.3f}.")
         )
     elif tiny_logits:
         prefill = tiny_logits["prefill_metrics"]
@@ -429,10 +435,15 @@ def results(slide, smol_comparison: dict | None,
         callout = (
             "TinyLlama prefill vs FP32: mixed FP4/FP8 cosine "
             f"{mixed['cosine']:.3f}, all-FP8 {fp8['cosine']:.3f}. "
-            "33-step logits pending.\n"
-            "SmolVLA flow 0 → final action vs FP32: cosine "
-            f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
-            f"final normalized RMSE {action['normalized_rmse']:.3f}."
+            "33-step logits pending.\n" +
+            ("SmolVLA step 9 vs FP32: full "
+             f"{action['cosine']:.3f}; replay on FP32 cache/state "
+             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f} "
+             "(prefix + history reset)."
+             if smol_reference_step else
+             "SmolVLA flow 0 → final action vs FP32: cosine "
+             f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+             f"final normalized RMSE {action['normalized_rmse']:.3f}.")
         )
     elif smol_actions:
         action = smol_actions["final_action_metrics"]
@@ -440,9 +451,13 @@ def results(slide, smol_comparison: dict | None,
         callout = (
             "SmolVLA flow 0 → final action vs captured FP32: cosine "
             f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
-            f"final normalized RMSE {action['normalized_rmse']:.3f}.\n"
-            "Full-session output hashes match the timed compiler run; "
-            "these values do not establish task success."
+            f"final normalized RMSE {action['normalized_rmse']:.3f}.\n" +
+            ("Step 9 on FP32 state/cache: cosine "
+             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f}; "
+             "prefix and earlier flow errors removed."
+             if smol_reference_step else
+             "Full-session output hashes match the timed compiler run; "
+             "these values do not establish task success.")
         )
     elif prefill_precision:
         mixed = prefill_precision["metrics"]["mixed_fp4_fp8_spike"]
@@ -635,6 +650,7 @@ def main() -> None:
     parser.add_argument("--equal-work-attention", type=Path)
     parser.add_argument("--tiny-full-logits", type=Path)
     parser.add_argument("--smol-action-values", type=Path)
+    parser.add_argument("--smol-reference-step", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
@@ -663,6 +679,8 @@ def main() -> None:
                    if args.tiny_full_logits else None)
     smol_actions = (json.loads(args.smol_action_values.read_text())
                     if args.smol_action_values else None)
+    smol_reference_step = (json.loads(args.smol_reference_step.read_text())
+                           if args.smol_reference_step else None)
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     if prefill_precision is not None:
@@ -743,6 +761,27 @@ def main() -> None:
                 or not math.isfinite(action["normalized_rmse"])
                 or action["normalized_rmse"] < 0):
             parser.error("SmolVLA actions do not match the selected full run")
+    if smol_reference_step is not None:
+        artifacts = smol_reference_step.get("artifact_sha256") or {}
+        metrics = smol_reference_step.get("metrics") or {}
+        isolated = metrics.get("isolated_vs_fp32") or {}
+        full = metrics.get("full_vs_fp32") or {}
+        if (smol_actions is None
+                or smol_reference_step.get("schema") !=
+                "mx_gemmini.smolvla_reference_step_replay_result.v1"
+                or smol_reference_step.get("reference_step") != 9
+                or smol_reference_step.get("cycle_ratio_valid") is not False
+                or not artifacts
+                or any(file_sha256(args.smol_reference_step.parent / path) != digest
+                       for path, digest in artifacts.items())
+                or smol_reference_step.get("timestep_diagnostic", {}).get("matched_steps") != 10
+                or any(not isinstance(row.get("cosine"), (int, float))
+                       or not math.isfinite(row["cosine"])
+                       or not -1 <= row["cosine"] <= 1
+                       for row in (isolated, full))
+                or full.get("cosine") !=
+                smol_actions["final_action_metrics"]["cosine"]):
+            parser.error("SmolVLA isolated replay needs the verified full action archive")
     if equal_work is not None:
         evidence_dir = args.equal_work_attention.parent
         if (equal_work.get("schema") !=
@@ -953,7 +992,8 @@ def main() -> None:
     configurations(prs.slides[1], total)
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
-            equal_work, tiny_logits, smol_actions, prefill_precision, total)
+            equal_work, tiny_logits, smol_actions, prefill_precision,
+            smol_reference_step, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)
