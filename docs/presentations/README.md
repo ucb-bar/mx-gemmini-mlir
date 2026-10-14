@@ -39,8 +39,9 @@ The five named transformations/checks on the slide have distinct jobs:
 | `physical_program` | Orders DMA, MX, VPU, wait, and readback commands before C/assembly emission. |
 
 The mapping to the reference kernels is explicit: Radiance FP4/FP8 GEMMs
-correspond to `resource` + `contract` + readout; its vector postprocessing
-corresponds to `vpu_execute`, `spad_requant`, and `wait`. The slide shows a
+correspond to `resource` + `contract` + readout. Compiler-side vector work
+can use `vpu_execute`, `spad_requant`, and `wait`; Radiance's mixed flash
+attention source instead runs softmax on Muon SIMT. The slide shows a
 representative path, while each source kernel's selected precision and tile
 shape still come from its captured workload and target profile.
 
@@ -85,6 +86,22 @@ regenerate the stage catalogs and inspect their precision choices.
 
 ## Slide 3: measured scope
 
+The rows answer different questions. They must not be read as one
+whole-model compiler-versus-handwritten speedup:
+
+| Row | Changed work | What the result tests |
+| --- | --- | --- |
+| Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
+| TinyLlama independent prefill | Complete source program versus compiled prefill, with different host and VPU work | Functional agreement and a diagnostic raw cycle gap for one prompt |
+| Dense attention | One matched 64×256×128 fused kernel | Kernel-level code and modeled timing at that shape |
+
+The requested full-model performance comparison needs an independently
+stitched MX+VPU program for each captured session, matching inputs, weights,
+precision, shapes, outputs, and Spike settings. Neither full-session
+issuer swap supplies that program. The independent prefill is only one
+64-token, all-FP8 stage; the captured full sessions use mixed FP4/FP8.
+Its raw cycle counts do not supply a full-model speedup.
+
 Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
@@ -96,7 +113,9 @@ against the compiled 64-token, 22-layer TinyLlama stage. Both use the modeled
 `e4m3_vpu` clock, the same 200 FP32 checkpoint tensors, and identical input
 tokens. Their logits have 0.9816 cosine and the same top token. The source
 uses 44 VPU residual-add calls while the compiler lowers 88 add regions and
-uses different host math, so the slide prints raw counts with **NO RATIO**.
+uses different host math. The compiled attention has 65 allocated key slots
+where the source computes 64 valid keys. The slide therefore prints raw
+counts with **NO RATIO**.
 The last row compares one fused source attention kernel at the same
 64×256×128 shape. None of these rows compares a fused source implementation
 of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
@@ -119,6 +138,18 @@ records 83,547,564,353 compiler cycles and 83,544,602,795 Nicolas issuer
 cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
+
+The slide also names the separate [Radiance MX kernel
+control](../evidence/radiance_kernel_comparison_20261014/README.md). Its
+source-bound compiler commands match all 16,384 BF16 outputs of each FP8
+256×64×2048 and FP4 256×64×5632 read-once GEMM, with exactly 128 KiB and
+176 KiB of weight reads. The equal-shape Radiance FP8 four-pass re-stream
+control reads 512 KiB. These validate output and weight traffic; the original
+Radiance kernels issue MX commands through Muon and have no paired cycles on
+Nicolas's Rocket Spike model. Radiance's published flash-attention cycles
+include Muon SIMT work and are not compared to the MX+VPU Spike cycles. The
+separate source-produced GQA PV control matches 65,536 BF16 values on Spike;
+it does not compile the whole mixed Muon+MX kernel.
 
 The [independent full-depth VPU source
 control](../evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
@@ -179,6 +210,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/tinyllama_full_safe_vpu_20261014/receipt.json \
   --tiny-full-vpu \
     docs/evidence/nicolas_tinyllama_full_source_vpu_20261014/full_receipt.json \
+  --radiance-comparison \
+    docs/evidence/radiance_kernel_comparison_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

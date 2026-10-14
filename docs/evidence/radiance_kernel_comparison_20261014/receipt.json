@@ -1,0 +1,110 @@
+{
+  "batched_gemv_rows": [
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 4096,
+      "precision": "fp8",
+      "shape_mnk": [
+        32,
+        128,
+        2048
+      ],
+      "source": "kernels/gemv_batched_fp8_m32/kernel.cpp",
+      "source_sha256": "393ad997812814bfffdc4f8981a1c53dfa6378c790b644bd279f1fd34ec65361"
+    },
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 8192,
+      "precision": "fp8",
+      "shape_mnk": [
+        64,
+        128,
+        2048
+      ],
+      "source": "kernels/gemv_batched_fp8_m64/kernel.cpp",
+      "source_sha256": "b7cc19524f6a45fbe5c9100fcdf5aace85a25d08c3edec2fd6dd41841e8db56c"
+    },
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 16384,
+      "precision": "fp8",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "source": "kernels/gemv_batched_fp8_m128/kernel.cpp",
+      "source_sha256": "6ea00c259362570a03a36c83a897e3c08c02f468371c10264befaac6340ad51c"
+    },
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 16384,
+      "precision": "fp4",
+      "shape_mnk": [
+        128,
+        128,
+        2048
+      ],
+      "source": "kernels/gemv_batched_fp4_m128/kernel.cpp",
+      "source_sha256": "a96cc0ce5e77570b80d6b309b5b0a1928ee4462375254b2b8da853cc551e6049"
+    }
+  ],
+  "compiler_execution": "standalone Rocket RoCC on Nicolas Spike",
+  "cycle_ratio_valid": false,
+  "evidence": {
+    "batched_gemv_index_sha256": "c0003bed4e5aef60fd08943beedb037978684a4f842de7fb6620f72eeec8ce2f",
+    "gqa_pv_index_sha256": "9085e18cc5ecfa8d50e1b6660dc0582f9c0bc32c198dfa4a1d4dea2735dfa2bf",
+    "legal_roster_index_sha256": "cdd398002b523aaa5ce770a744748839459dd31ef4051edc76f1f1b0c8ccdeef",
+    "read_once_index_sha256": "8308796c2172d22d3bcd3a127d3f6a2860cef0d58646e250641d18d84313d3f1",
+    "restream_index_sha256": "456091feb8c55a6c36ec7595214b15a116a317299b91d73db5e488d8be7aa9da"
+  },
+  "gqa_compiler_spike_pv_bf16_values_matched": 65536,
+  "gqa_source_sha256": "fd6b7d62322a97b1ded81390400b76eb714a62149b665f2d7ad034401cbc1a0f",
+  "paired_source_compiler_cycles": false,
+  "profile": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "radiance_revision": "b6b9bf44af6d7ba88626b5d17b8b527390aec082",
+  "radiance_vpu_profile_roster_cases_per_run": 24,
+  "radiance_vpu_profile_roster_runs": 2,
+  "rows": [
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 16384,
+      "compiler_weight_bytes": 131072,
+      "compiler_weight_tile_reads": 32,
+      "precision": "fp8",
+      "radiance_source_schedule": "read_once_weight_stationary",
+      "shape_mnk": [
+        256,
+        64,
+        2048
+      ],
+      "source": "kernels/gemm_mxgemmini_ws/kernel.cpp",
+      "source_sha256": "d1cca6d8b12d875a5cffa73ade73976ebaaa9e4db1323b9d385f23dc8fb11384"
+    },
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 16384,
+      "compiler_weight_bytes": 180224,
+      "compiler_weight_tile_reads": 88,
+      "precision": "fp4",
+      "radiance_source_schedule": "read_once_weight_stationary",
+      "shape_mnk": [
+        256,
+        64,
+        5632
+      ],
+      "source": "kernels/gemm_mxgemmini_ws_downproj_fp4/kernel.cpp",
+      "source_sha256": "4e38f4f040ade76bc0c1584fe3374d719152087b0c9d21fd56ed2c06585b0678"
+    },
+    {
+      "compiler_spike_bf16_values_matching_source_golden": 16384,
+      "compiler_weight_bytes": 524288,
+      "compiler_weight_tile_reads": 128,
+      "precision": "fp8",
+      "radiance_source_schedule": "four_pass_weight_restream",
+      "shape_mnk": [
+        256,
+        64,
+        2048
+      ],
+      "source": "kernels/gemm_mxgemmini_ws_restream/kernel.cpp",
+      "source_sha256": "02a902eff587326a883c77313bf670d1a5fafdc72f4e3aac66f76717a4836a05"
+    }
+  ],
+  "schema": "mx_gemmini.radiance_kernel_comparison.v1",
+  "source_execution": "Radiance Muon plus MX gateway"
+}

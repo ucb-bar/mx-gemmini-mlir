@@ -184,9 +184,10 @@ def architecture(slide) -> None:
              '%out = "mx_gemmini.readout_bf16"(%acc)',
              1.15, 2.24, 5.20, 1.42, size=11.1)
     add_text(slide,
-             "resource → packed codes + E8M0 scales → mvin; contract → MX "
-             "compute. Radiance softmax uses vpu_execute; readout_bf16 / "
-             "spad_requant / wait finish the tile.",
+             "resource binds packed codes + E8M0 scales; contract emits MX "
+             "compute. Compiler softmax can use vpu_execute; Radiance's fused "
+             "source uses Muon SIMT. readout_bf16 / spad_requant / wait "
+             "finish the tile.",
              1.15, 3.76, 5.17, 0.75, size=10.6, color=INK)
     add_text(slide, "Compiled attention object → binary", 6.98, 1.82,
              5.2, 0.34, size=17.5, bold=True, color=NAVY)
@@ -304,7 +305,8 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
-            safe_vpu: dict | None, full_vpu: dict | None) -> None:
+            safe_vpu: dict | None, full_vpu: dict | None,
+            radiance: dict | None, prefill128: dict | None) -> None:
     shapes = slide.shapes
     set_text(shapes[0], "What the Spike comparisons measure", size=27,
              bold=True)
@@ -326,6 +328,10 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 128-token prefill · independent",
+         f"{prefill128['stage_cycles']['compiler']:,}†",
+         f"{prefill128['stage_cycles']['source']:,}†", "NO RATIO")
+        if prefill128 else
         ("TinyLlama 64-token prefill · independent",
          f"{full_vpu['compiler_stage_cycles']:,}†",
          f"{full_vpu['source_stage_cycles']:,}†", "NO RATIO")
@@ -370,6 +376,11 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     callout = (
+        "Radiance GEMMs: compiler matches 16,384 BF16 each; FP8/FP4 "
+        "read-once B = 128/176 KiB versus 512 KiB FP8 re-stream.\n"
+        "Radiance GQA: compiled MX PV matches 65,536 source-produced BF16 "
+        "values. Muon source cycles remain unpaired."
+        if radiance else
         "Full sessions: same host/VPU program; only the MX issuer changes. "
         "Near parity is expected.\n"
         "† Independent prefill: different host/VPU work, no speedup ratio. "
@@ -389,7 +400,17 @@ def results(slide, smol_comparison: dict | None,
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    if tiny_comparison and smol_comparison and full_vpu:
+    if tiny_comparison and smol_comparison and prefill128:
+        agreement = prefill128["comparisons"]["source_vs_compiler"]
+        footer_text = (
+            "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
+            "SmolVLA 33/33 and TinyLlama 99/99.\n"
+            "† Prefill: 200 weights and 128 IDs match; cosine "
+            f"{agreement['cosine']:.3f}, top tokens "
+            f"{agreement['a_argmax']}/{agreement['b_argmax']}. "
+            "Source 128 keys; compiler 160 slots; no speedup ratio."
+        )
+    elif tiny_comparison and smol_comparison and full_vpu:
         agreement = full_vpu["comparisons"]["source_vpu_vs_compiler"]
         footer_text = (
             "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
@@ -463,6 +484,8 @@ def main() -> None:
     parser.add_argument("--tiny-full-source", type=Path)
     parser.add_argument("--tiny-full-safe-vpu", type=Path)
     parser.add_argument("--tiny-full-vpu", type=Path)
+    parser.add_argument("--radiance-comparison", type=Path)
+    parser.add_argument("--tiny-prefill128", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -480,6 +503,54 @@ def main() -> None:
                 if args.tiny_full_safe_vpu else None)
     full_vpu = (json.loads(args.tiny_full_vpu.read_text())
                 if args.tiny_full_vpu else None)
+    radiance = (json.loads(args.radiance_comparison.read_text())
+                if args.radiance_comparison else None)
+    prefill128 = (json.loads(args.tiny_prefill128.read_text())
+                  if args.tiny_prefill128 else None)
+    if prefill128 is not None:
+        pair = prefill128.get("comparisons", {}).get("source_vs_compiler", {})
+        cycles = prefill128.get("stage_cycles", {})
+        if (prefill128.get("schema") != "mx_gemmini.tinyllama_prefill128_source.v1"
+                or prefill128.get("cycle_ratio_valid") is not False
+                or prefill128.get("checkpoint_fp32_tensors_matched") != 200
+                or prefill128.get("source_attention_valid_keys") != 128
+                or prefill128.get("compiler_attention_key_slots") != 160
+                or prefill128.get("perf_config") != "e4m3_vpu"
+                or any(type(cycles.get(key)) is not int or cycles[key] <= 0
+                       for key in ("source", "compiler"))
+                or not 0 <= pair.get("cosine", -1) <= 1):
+            parser.error("128-token prefill needs completed independent evidence")
+    if radiance is not None:
+        rows = radiance.get("rows") or []
+        if (radiance.get("schema") != "mx_gemmini.radiance_kernel_comparison.v1"
+                or radiance.get("paired_source_compiler_cycles") is not False
+                or radiance.get("cycle_ratio_valid") is not False
+                or len(rows) != 3
+                or [r.get("precision") for r in rows] != ["fp8", "fp4", "fp8"]
+                or any(r.get("compiler_spike_bf16_values_matching_source_golden")
+                       != 16384 for r in rows)
+                or [r.get("compiler_weight_bytes") for r in rows]
+                != [131072, 180224, 524288]
+                or [r.get("compiler_spike_bf16_values_matching_source_golden")
+                    for r in radiance.get("batched_gemv_rows", [])]
+                != [4096, 8192, 16384, 16384]
+                or radiance.get("gqa_compiler_spike_pv_bf16_values_matched")
+                != 65536
+                or any(hashlib.sha256(
+                    (args.radiance_comparison.parent.parent / path).read_bytes()
+                ).hexdigest() != radiance["evidence"][key]
+                       for path, key in (
+                           ("radiance_ws_read_once_1a7bc9c/index.json",
+                            "read_once_index_sha256"),
+                           ("radiance_restream_1df2c5f/index.json",
+                            "restream_index_sha256"),
+                           ("radiance_mx_vpu_legal_roster_266c593/index.json",
+                            "legal_roster_index_sha256"),
+                           ("radiance_batched_gemv_552a16b/index.json",
+                            "batched_gemv_index_sha256"),
+                           ("radiance_gqa_pv_roster_80f84ca/index.json",
+                            "gqa_pv_index_sha256")))):
+            parser.error("Radiance comparison needs source-bound command evidence")
     if full_vpu is not None:
         pair = (full_vpu.get("comparisons") or {}).get("source_vpu_vs_compiler") or {}
         if (full_vpu.get("schema") !=
@@ -592,7 +663,7 @@ def main() -> None:
     architecture(prs.slides[0])
     configurations(prs.slides[1])
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
-            layer_probe, full_source, safe_vpu, full_vpu)
+            layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 
