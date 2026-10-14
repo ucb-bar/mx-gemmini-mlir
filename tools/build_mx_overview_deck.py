@@ -10,6 +10,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
 
@@ -40,6 +41,11 @@ CODE_TOKEN = re.compile(
     r'geometry|legal_compute|resources|mesh_rows|mesh_columns|'
     r'scratchpad_bytes|vpu|spad_requant)\b'
 )
+
+
+def file_sha256(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def code_color(token: str, following: str):
@@ -185,10 +191,10 @@ def architecture(slide, total: int = 3) -> None:
              '%out = "mx_gemmini.readout_bf16"(%acc)',
              1.15, 2.24, 5.20, 1.42, size=11.1)
     add_text(slide,
-             "resource binds packed codes + E8M0 scales; contract emits MX "
-             "compute. Compiler softmax can use vpu_execute; Radiance's fused "
-             "source uses Muon SIMT. readout_bf16 / spad_requant / wait "
-             "finish the tile.",
+             "resource supplies packed A/B codes + E8M0 scales. contract "
+             "computes C[m,n] = Σk A[m,k]×B[k,n] in the selected PE mode; "
+             "readout_bf16 returns BF16. VPU can do softmax; Radiance "
+             "uses Muon SIMT.",
              1.15, 3.76, 5.17, 0.75, size=10.6, color=INK)
     add_text(slide, "Compiled attention object → binary", 6.98, 1.82,
              5.2, 0.34, size=17.5, bold=True, color=NAVY)
@@ -309,9 +315,12 @@ def results(slide, smol_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
             radiance: dict | None, prefill128: dict | None,
-            equal_work: dict | None, total: int = 3) -> None:
+            equal_work: dict | None, tiny_logits: dict | None,
+            smol_actions: dict | None, total: int = 3) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "MX results: Spike and Radiance", size=27,
+    title = ("MX results: full-model Spike"
+             if tiny_logits or smol_actions else "MX results: Spike and Radiance")
+    set_text(shapes[0], title, size=27,
              bold=True)
     frame = shapes[1]
     table = frame.table
@@ -382,26 +391,59 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
-    callout = (
-        "Radiance GEMMs: compiler matches 16,384 BF16 each; FP8/FP4 "
-        "read-once B = 128/176 KiB versus 512 KiB FP8 re-stream.\n"
-        "Radiance GQA: compiled MX PV matches 65,536 source-produced BF16 "
-        "values. Muon source cycles remain unpaired."
-        if radiance else
-        "Full sessions: same host/VPU program; only the MX issuer changes. "
-        "Near parity is expected.\n"
-        "† Independent prefill: different host/VPU work, no speedup ratio. "
-        "Fused attention: one kernel."
-        if full_source else
-        "Issuer-swap rows change only the MX command issuer; host and VPU "
-        "code is the same.\n"
-        "† The layer uses the same tokens and weights but different timed work "
-        "and tensor formats. Its cycle ratio is invalid."
-        if layer_probe else
-        "Issuer-swap rows change only the MX command issuer; host and VPU "
-        "code is the same.\n"
-        "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
-        "as complete models.")
+    if tiny_logits and smol_actions:
+        prefill = tiny_logits["prefill_metrics"]
+        decode = tiny_logits["decode_summary"]
+        action = smol_actions["final_action_metrics"]
+        callout = (
+            "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
+            f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
+            f"top token {decode['top_token_matches']}/32.\n"
+            "SmolVLA final action cosine "
+            f"{action['cosine']:.3f}, normalized RMSE "
+            f"{action['normalized_rmse']:.3f}. No quality threshold is claimed."
+        )
+    elif tiny_logits:
+        prefill = tiny_logits["prefill_metrics"]
+        decode = tiny_logits["decode_summary"]
+        callout = (
+            "TinyLlama logits vs captured FP32 on fixed synthetic inputs: "
+            f"prefill cosine {prefill['cosine']:.3f}; decode mean "
+            f"{decode['cosine_mean']:.3f}, top token "
+            f"{decode['top_token_matches']}/32.\n"
+            "Full-session output hashes match the timed compiler run; "
+            "these values do not establish generation quality."
+        )
+    elif smol_actions:
+        action = smol_actions["final_action_metrics"]
+        callout = (
+            "SmolVLA final action vs captured FP32 on fixed synthetic inputs: "
+            f"cosine {action['cosine']:.3f}, normalized RMSE "
+            f"{action['normalized_rmse']:.3f}.\n"
+            "Full-session output hashes match the timed compiler run; "
+            "these values do not establish task success."
+        )
+    else:
+        callout = (
+            "Radiance GEMMs: compiler matches 16,384 BF16 each; FP8/FP4 "
+            "read-once B = 128/176 KiB versus 512 KiB FP8 re-stream.\n"
+            "Radiance GQA: compiled MX PV matches 65,536 source-produced BF16 "
+            "values. Muon source cycles remain unpaired."
+            if radiance else
+            "Full sessions: same host/VPU program; only the MX issuer changes. "
+            "Near parity is expected.\n"
+            "† Independent prefill: different host/VPU work, no speedup ratio. "
+            "Fused attention: one kernel."
+            if full_source else
+            "Issuer-swap rows change only the MX command issuer; host and VPU "
+            "code is the same.\n"
+            "† The layer uses the same tokens and weights but different timed work "
+            "and tensor formats. Its cycle ratio is invalid."
+            if layer_probe else
+            "Issuer-swap rows change only the MX command issuer; host and VPU "
+            "code is the same.\n"
+            "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
+            "as complete models.")
     set_text(add_shape, callout,
              size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
@@ -560,6 +602,8 @@ def main() -> None:
     parser.add_argument("--radiance-comparison", type=Path)
     parser.add_argument("--tiny-prefill128", type=Path)
     parser.add_argument("--equal-work-attention", type=Path)
+    parser.add_argument("--tiny-full-logits", type=Path)
+    parser.add_argument("--smol-action-values", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -583,6 +627,55 @@ def main() -> None:
                   if args.tiny_prefill128 else None)
     equal_work = (json.loads(args.equal_work_attention.read_text())
                   if args.equal_work_attention else None)
+    tiny_logits = (json.loads(args.tiny_full_logits.read_text())
+                   if args.tiny_full_logits else None)
+    smol_actions = (json.loads(args.smol_action_values.read_text())
+                    if args.smol_action_values else None)
+    for name, receipt, source, schema in (
+            ("TinyLlama logits", tiny_logits, args.tiny_full_logits,
+             "mx_gemmini.tinyllama_full_logits.v1"),
+            ("SmolVLA actions", smol_actions, args.smol_action_values,
+             "mx_gemmini.smolvla_full_action_values.v1")):
+        if receipt is None:
+            continue
+        artifacts = receipt.get("artifact_sha256") or {}
+        if (receipt.get("schema") != schema
+                or receipt.get("numerical_qualification") != "not_established"
+                or receipt.get("output_digests_match_fast_compiler") is not True
+                or not artifacts
+                or any(file_sha256(source.parent / path)
+                       != digest for path, digest in artifacts.items())):
+            parser.error(f"{name} needs a verified output-value archive")
+    if tiny_logits is not None:
+        prefill = tiny_logits.get("prefill_metrics") or {}
+        decode = tiny_logits.get("decode_summary") or {}
+        if (tiny_run is None or tiny_comparison is None
+                or tiny_logits.get("fast_run_sha256") !=
+                file_sha256(args.tiny_full_run)
+                or tiny_logits.get("fast_compiler_cycles") !=
+                tiny_run["total_performance"]["cycles"]
+                or decode.get("steps") != 32
+                or type(decode.get("top_token_matches")) is not int
+                or not 0 <= decode["top_token_matches"] <= 32
+                or any(not isinstance(value, (int, float))
+                       or not math.isfinite(value) or not -1 <= value <= 1
+                       for value in (prefill.get("cosine"),
+                                     decode.get("cosine_mean")))):
+            parser.error("TinyLlama logits do not match the selected full run")
+    if smol_actions is not None:
+        action = smol_actions.get("final_action_metrics") or {}
+        if (smol_comparison is None
+                or smol_actions.get("fast_run_sha256") !=
+                smol_comparison.get("reference_run_sha256")
+                or smol_actions.get("fast_compiler_cycles") !=
+                smol_comparison.get("reference_cycles")
+                or not isinstance(action.get("cosine"), (int, float))
+                or not math.isfinite(action["cosine"])
+                or not -1 <= action["cosine"] <= 1
+                or not isinstance(action.get("normalized_rmse"), (int, float))
+                or not math.isfinite(action["normalized_rmse"])
+                or action["normalized_rmse"] < 0):
+            parser.error("SmolVLA actions do not match the selected full run")
     if equal_work is not None:
         evidence_dir = args.equal_work_attention.parent
         if (equal_work.get("schema") !=
@@ -793,7 +886,7 @@ def main() -> None:
     configurations(prs.slides[1], total)
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
-            equal_work, total)
+            equal_work, tiny_logits, smol_actions, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)

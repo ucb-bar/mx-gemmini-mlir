@@ -20,6 +20,7 @@ Slide 1 quotes an abbreviated form of the FP4 payload in
 [`payload_bound.mlir`](../evidence/nicolas_direct_sixteen_28936e2_266c593/fp4_64x64x64_nonrequant_dim32/payload_bound.mlir).
 Its four `mx_gemmini.resource` operands contain packed activation/weight
 codes and E8M0 scales. `mx_gemmini.contract` fixes the FP4 direct PE tuple;
+it requests the matrix reduction `C[m,n] = Σk A[m,k]×B[k,n]` in that mode.
 `mx_gemmini.readout_bf16` requests the result. The physical lowering produces
 `mvin`, MX compute, VPU, and `mvout` commands as needed by the selected
 kernel. The right code box quotes the first `mvin` from the generated
@@ -254,3 +255,12 @@ receipts only when the complete 33-step run and equal-output comparator succeed.
 Its optional `--tiny-prefill128` row requires the archived source and compiler
 Spike logs, their hashes, and the verified modeled cycle counters. A preview
 receipt or an incomplete run cannot replace the measured row.
+
+After the full output-value archives finish, add
+`--tiny-full-logits docs/evidence/tinyllama_full_logits_20261014/receipt.json`
+and/or
+`--smol-action-values docs/evidence/smolvla_full_action_values_20261014/receipt.json`.
+The results callout then reports drift from the captured FP32 outputs on
+fixed synthetic inputs. The generator checks archive hashes and binds each
+receipt to the timed full-session run; these metrics are diagnostics rather
+than generation or robotics task-success thresholds.
