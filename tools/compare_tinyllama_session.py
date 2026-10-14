@@ -116,6 +116,8 @@ def compare_session(run_receipt: Path, link_receipt: Path,
         "decode_summary": {
             "cosine_min": min(cosines),
             "cosine_mean": float(np.mean(cosines)),
+            "normalized_rmse_mean": float(np.mean(
+                [row["normalized_rmse"] for row in decode_metrics])),
             "top_token_matches": sum(row["top_token_equal"] for row in decode_metrics),
             "steps": 32,
         },
