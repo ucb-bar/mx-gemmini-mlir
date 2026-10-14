@@ -287,7 +287,7 @@ def results(slide, smol_comparison: dict | None,
          f"{smol_native:,}" if smol_native else "running",
          delta(smol_compiler, smol_native)),
         ("TinyLlama · full 33-step session",
-         f"{tiny_compiler:,}*" if tiny_compiler else "prefill trap",
+         f"{tiny_compiler:,}*" if tiny_compiler else "running",
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
         ("SmolVLA flow · one step", "2,112,653,481", "2,112,919,925", "−0.0126%"),
@@ -314,7 +314,7 @@ def results(slide, smol_comparison: dict | None,
     footer.height = Inches(0.66)
     tiny_status = ("TinyLlama full run completed; independent accuracy remains open."
                    if tiny_run else
-                   "TinyLlama optimized prefill trapped before output; no model cycle total.")
+                   "TinyLlama corrected full Spike runs are in progress; no model cycle total.")
     smol_status = ("Full SmolVLA issuer-swap outputs match."
                    if smol_comparison else
                    "Full SmolVLA issuer-swap parity awaits its source run.")

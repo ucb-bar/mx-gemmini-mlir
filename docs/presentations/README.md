@@ -91,8 +91,9 @@ matrix-issuer cycles over all 12 steps. All 33 output digests match. This
 experiment changes MX matrix issuers while holding the host graph and VPU
 objects fixed. A whole-model handwritten fused MX+VPU baseline on the same
 captured SmolVLA graph has not been measured, so the slide does not estimate
-its cycles. TinyLlama's optimized full session still exits during prefill;
-the slide marks its missing cycle total rather than extrapolating one.
+its cycles. An earlier TinyLlama session linked its scratch arena over static
+program data and exited during prefill. Corrected paired 33-step Spike runs
+are underway; the slide marks their missing cycle total until they complete.
 
 ## Regenerate
 
