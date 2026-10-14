@@ -42,9 +42,8 @@ timed full stage takes 366,920,372 functional Spike cycles versus 455,307,913
 for the compiler's residual-add control; their final logits have 0.9958
 cosine and the same top token for this input. The source diagnostic checks
 pass, and its timed output is bit identical to the diagnostic output. This is
-two layers,
-not the 22-layer or 33-step TinyLlama model, and has no accepted model-level
-quality or speedup claim.
+two layers, not the 22-layer or 33-step TinyLlama model. It carries no
+model-level quality or speedup claim.
 Those two counts use the extension's default `func` mode; the full-depth
 performance experiment runs both programs with Nicolas's `e4m3_vpu` timing
 model enabled.
