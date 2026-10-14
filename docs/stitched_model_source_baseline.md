@@ -16,7 +16,7 @@ captured sessions:
 | TinyLlama prefill: 128 tokens, 22 layers, 155 FP4 and 45 FP8 MX bindings per stage | [`llama_layer_e2e.c`][npu-layer] uses a 64-token chunk after a 2048-token cache; [`llama_mlp_e2e_fp4.c`][npu-mlp] covers an FP4 MLP only | Preserve the captured prompt, checkpoint weights, mixed precision, 128-token causal mask, and full layer stack in one stage ABI. |
 | TinyLlama decode: one query token repeated for 32 steps, 155 FP4 and 45 FP8 MX bindings | The same layer source plans work in multiples of 16 tokens; [`llama_model.c`][npu-model] uses FP8 mesh work with scalar host stages | Add a padded one-token MX+VPU path and stateful KV handoff with the captured numeric policy. |
 | SmolVLA prefix: 243 selected MX bindings | No SmolVLA whole-model source program in the pinned MX application roster | Match the encoder, mask and cache outputs, and FP4/FP8 policy at the stage ABI. |
-| SmolVLA flow: 15 heads, 50 queries, 163 keys, Boolean key mask, 148 selected MX bindings | [`attn_vpu_fa.c`][npu-attn] fixes dense 64×256×128 attention | Pad and mask the model-derived heads, preserve the 50×163 logical work, and stitch attention with the remaining flow operators. |
+| SmolVLA flow: 15 heads, 50 queries, 163 keys, head width 64, Boolean key mask, 148 selected MX bindings | [`attn_vpu_fa.c`][npu-attn] fixes dense 64×256×128 attention; [`attn_flash.c`][npu-flash] has a VPU additive causal mask | Pad each head to 64 queries and 192 keys, load the model's arbitrary Boolean mask as BF16 additive values before row maximum, suppress padded rows/keys, and stitch attention with the remaining flow operators. |
 
 A source baseline is comparable on slide 3 when it uses the **same captured
 inputs, checkpoint and profile**, runs the same 33 TinyLlama or 12 SmolVLA
@@ -28,6 +28,15 @@ receipt must name those replacements while preserving the other checks.
 If a fused source implementation deliberately changes
 rounding, its output error and model quality need separate qualification; a
 cycle total alone is not an equal-output result.
+
+The SmolVLA mask is an arbitrary `1×1×50×163` Boolean tensor in the captured
+flow MLIR. Its softmax selects each score or a large negative fill before
+row reduction. Nicolas's flash source currently applies a causal mask only
+to the last key block through `VPU_ADD`; that mechanism suggests a model
+adaptation, but the existing source kernel does not yet implement the
+captured mask. The padded 64×192×64 MX/VPU kernel must validate all 15
+heads against the captured 50×163 logical outputs before it is a cycle
+control for the flow stage.
 
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.
@@ -83,3 +92,4 @@ cycle values are therefore not a paired speedup or a stitched model result.
 [npu-mlp]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/llama_mlp_e2e_fp4.c
 [npu-model]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/llama_model.c
 [npu-attn]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/attn_vpu_fa.c
+[npu-flash]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/attn_flash.c

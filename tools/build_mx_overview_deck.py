@@ -363,7 +363,7 @@ def results(slide, smol_comparison: dict | None,
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
         layer_row,
-        ("Dense attention 64×256×128 · fused source",
+        ("Nicolas dense attention · 64×256×128",
          f"{equal_work['compiler_modeled_cycles']:,}" if equal_work else "43,523",
          f"{equal_work['source_modeled_cycles']:,}" if equal_work else "43,641",
          f"{(equal_work['compiler_modeled_cycles'] / equal_work['source_modeled_cycles'] - 1) * 100:+.2f}%"
