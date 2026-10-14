@@ -304,7 +304,7 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
-            safe_vpu: dict | None) -> None:
+            safe_vpu: dict | None, full_vpu: dict | None) -> None:
     shapes = slide.shapes
     set_text(shapes[0], "What the Spike comparisons measure", size=27,
              bold=True)
@@ -326,6 +326,10 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 64-token prefill · independent",
+         f"{full_vpu['compiler_stage_cycles']:,}†",
+         f"{full_vpu['source_stage_cycles']:,}†", "NO RATIO")
+        if full_vpu else
         ("TinyLlama 64 tokens · functional Spike",
          f"{safe_vpu['stage_cycles']:,}†",
          f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
@@ -333,7 +337,7 @@ def results(slide, smol_comparison: dict | None,
         ("TinyLlama 64 tokens · source vs compiler",
          f"{full_source['compiler_stage_cycles']:,}†",
          f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
-        if full_source else
+        if full_vpu or full_source else
         ("TinyLlama cached layer · unpaired",
          f"{layer_probe['compiler_runs']['fp8_prepacked']['cycles']:,}†",
          f"{layer_probe['source_layer']['cycles']:,}†", "NO RATIO")
@@ -385,7 +389,16 @@ def results(slide, smol_comparison: dict | None,
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    if tiny_comparison and smol_comparison and full_source and safe_vpu:
+    if tiny_comparison and smol_comparison and full_vpu:
+        agreement = full_vpu["comparisons"]["source_vpu_vs_compiler"]
+        footer_text = (
+            "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
+            "SmolVLA 33/33 and TinyLlama 99/99.\n"
+            "† Full prefill: 200 weights and 64 IDs match; cosine "
+            f"{agreement['cosine']:.3f}, token {agreement['a_argmax']}. "
+            "VPU adds: 44 source calls, 88 compiler regions; host math differs."
+        )
+    elif tiny_comparison and smol_comparison and full_source and safe_vpu:
         footer_text = (
             "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
             "SmolVLA 33/33 and TinyLlama 99/99.\n"
@@ -449,6 +462,7 @@ def main() -> None:
     parser.add_argument("--tiny-layer-probe", type=Path)
     parser.add_argument("--tiny-full-source", type=Path)
     parser.add_argument("--tiny-full-safe-vpu", type=Path)
+    parser.add_argument("--tiny-full-vpu", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -464,6 +478,24 @@ def main() -> None:
                    if args.tiny_full_source else None)
     safe_vpu = (json.loads(args.tiny_full_safe_vpu.read_text())
                 if args.tiny_full_safe_vpu else None)
+    full_vpu = (json.loads(args.tiny_full_vpu.read_text())
+                if args.tiny_full_vpu else None)
+    if full_vpu is not None:
+        pair = (full_vpu.get("comparisons") or {}).get("source_vpu_vs_compiler") or {}
+        if (full_vpu.get("schema") !=
+                "mx_gemmini.nicolas_tinyllama_full_vpu_residual_spike.v1"
+                or full_vpu.get("cycle_ratio_valid") is not False
+                or full_vpu.get("source_timing_mode") != "both"
+                or full_vpu.get("compiler_timing_mode") != "both"
+                or full_vpu.get("compiler_counter_csr") != "cycle"
+                or full_vpu.get("perf_config") != "e4m3_vpu"
+                or full_vpu.get("exact_fp32_checkpoint_tensors_matched") != 200
+                or full_vpu.get("source_vpu_matches_scalar_bits") is not True
+                or full_vpu.get("source_stage_cycles", 0) <= 0
+                or full_vpu.get("compiler_stage_cycles", 0) <= 0
+                or not 0 <= pair.get("cosine", -1) <= 1
+                or pair.get("a_argmax") != pair.get("b_argmax")):
+            parser.error("independent full prefill needs matched modeled evidence")
     if safe_vpu is not None and full_source is None:
         parser.error("safe-VPU comparison also needs the independent source receipt")
     if full_source is not None:
@@ -560,7 +592,7 @@ def main() -> None:
     architecture(prs.slides[0])
     configurations(prs.slides[1])
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
-            layer_probe, full_source, safe_vpu)
+            layer_probe, full_source, safe_vpu, full_vpu)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

@@ -39,14 +39,27 @@ uses Nicolas's full-model MX schedule with his VPU residual-add pattern. It
 runs the final norm and head as well. All 20 source and model2MLIR FP32
 checkpoint tensors and all 64 input token IDs match exactly. The source's
 timed full stage takes 366,920,372 functional Spike cycles versus 455,307,913
-for the compiler's residual-add control; their final logits have 0.9958 cosine and
-the same top token for this input. The source diagnostic checks pass and its
-timed output is bit identical to the diagnostic output. This is two layers,
+for the compiler's residual-add control; their final logits have 0.9958
+cosine and the same top token for this input. The source diagnostic checks
+pass, and its timed output is bit identical to the diagnostic output. This is
+two layers,
 not the 22-layer or 33-step TinyLlama model, and has no accepted model-level
 quality or speedup claim.
 Those two counts use the extension's default `func` mode; the full-depth
 performance experiment runs both programs with Nicolas's `e4m3_vpu` timing
 model enabled.
+
+The [independent full-depth TinyLlama prefill
+control](evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
+now runs all 22 layers and the head on 64 captured tokens. The source
+and compiler captures have identical token IDs and all 200 FP32 checkpoint
+tensors. With `GEMMINI_MODE=both` and the `e4m3_vpu` model, the source
+reports **4,328,997,732** stage cycles and the compiler **5,072,967,821**.
+Their final-logit cosine is **0.9816** and both select token **1230**. The
+source VPU variant is bit-identical to its earlier scalar-host source result.
+This is a one-pass prefill diagnostic: the source calls the VPU for 44
+residual adds, while the compiler lowers 88 add regions and uses different
+host math. The raw cycle difference is not a full 33-step model speedup.
 
 The [captured TinyLlama layer-5 source run](evidence/nicolas_tinyllama_layer5_captured128_20261014/README.md)
 uses the captured token IDs and byte-identical layer weights. The

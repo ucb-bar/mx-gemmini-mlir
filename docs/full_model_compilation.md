@@ -96,8 +96,15 @@ predict token 1230 for this captured input. The control takes 4,473,524,179
 complete stage cycles in Spike's default functional mode. These counts are
 separate from Nicolas's `e4m3_vpu` modeled-cycle session results. Source and
 compiler cycle counters cover different work, so neither compiler run yields
-a speedup ratio against the source. These
-are one-pass prefill diagnostics, not the 33-step TinyLlama session above.
+a speedup ratio against the source. These are one-pass prefill diagnostics,
+not the 33-step TinyLlama session above.
+The [matched 22-layer independent source/VPU
+control](evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
+now measures a separate 64-token prefill under the `e4m3_vpu` timing model:
+4,328,997,732 source and 5,072,967,821 compiler cycles. All 200 checkpoint
+tensors and 64 input IDs match exactly; final logits have 0.9816 cosine and
+the same top token. The host/VPU work differs, so these are raw diagnostic
+counts rather than an equal-work speedup ratio.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 trace most of the observed logit drift to the softmax route and two
 attention-shaped elementwise additions on that captured input. Residual-add,

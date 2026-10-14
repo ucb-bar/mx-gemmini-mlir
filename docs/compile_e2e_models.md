@@ -261,9 +261,17 @@ different boundaries and use different host/VPU work, so no cycle ratio is
 reported. These counters use Spike's default functional mode; Nicolas's
 `e4m3_vpu` timing model is disabled. This is still a numerical diagnostic,
 not a general accuracy qualification.
-For a stage-only source timing comparison, pass
-`--spike-isa rv64gc_zicntr` to `tools.build_merlin_stage` so the compiler
-run uses the same counter-enabled Spike ISA as Nicolas's `read_cycles` run.
+The [matched 22-layer source/VPU prefill
+control](evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
+uses `GEMMINI_MODE=both` with `e4m3_vpu`: 4,328,997,732 source versus
+5,072,967,821 compiler modeled stage cycles on the same 64 input IDs and
+200 FP32 checkpoint tensors. Its final logits have 0.9816 cosine and the
+same top token. Source and compiler host/VPU work differ, so this remains
+a diagnostic count pair with no calibrated speedup ratio. To reproduce this
+modeled comparison, use `--isa=rv64gc_zicntr` at Spike run time and a Merlin
+stage harness that reads the `cycle` CSR through `rdcycle`. The earlier
+`mcycle` harness bypasses Nicolas's timing-model override even when
+`GEMMINI_MODE=both` is set.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
 elementwise-only routes each change the final token and reduce logit cosine

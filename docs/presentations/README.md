@@ -91,10 +91,12 @@ only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
-The third row shows a 64-token, 22-layer TinyLlama source run beside the
-compiler run as **unpaired**: the source times selected MX and scalar-host
-sections, while the compiler times a complete stage with VPU offload. Their
-final logits also differ substantially.
+The third row compares an **independently written full prefill program**
+against the compiled 64-token, 22-layer TinyLlama stage. Both use the modeled
+`e4m3_vpu` clock, the same 200 FP32 checkpoint tensors, and identical input
+tokens. Their logits have 0.9816 cosine and the same top token. The source
+uses 44 VPU residual-add calls while the compiler lowers 88 add regions and
+uses different host math, so the slide prints raw counts with **NO RATIO**.
 The last row compares one fused source attention kernel at the same
 64×256×128 shape. None of these rows compares a fused source implementation
 of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
@@ -118,17 +120,16 @@ cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
 
-An [independent full TinyLlama source run](../evidence/nicolas_tinyllama_full_source_20261014/README.md)
-passes all 22 layers and the head on Spike. It reports 4,456,723,475 cycles
-in selected MX and scalar-host windows. The [full-depth compiler
-control](../evidence/tinyllama_full_safe_vpu_20261014/README.md) reports
-4,473,524,179 full-stage cycles with MX contractions and selected VPU
-postprocessing. Their logits have cosine 0.977 and the same next token on
-this input. The slide gives the raw counts with **NO RATIO** because the
-timed work and host/VPU operation mix differ. Those raw counters use Spike's
-default `func` mode; the full-session issuer-swap and dense-attention rows
-instead use Nicolas's `e4m3_vpu` modeled timing. The slide labels this
-distinction explicitly.
+The [independent full-depth VPU source
+control](../evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
+reports **4,328,997,732** modeled source cycles and **5,072,967,821**
+modeled compiler cycles. Its source logits are bit-identical to the earlier
+scalar-source run; the compiled logits have 0.9816 cosine to source and the
+same top token. The compiler harness reads the extension's modeled `cycle`
+CSR. Older [source](../evidence/nicolas_tinyllama_full_source_20261014/README.md)
+and [compiler](../evidence/tinyllama_full_safe_vpu_20261014/README.md)
+64-token controls used default `func` mode and are separate numerical
+diagnostics, not the slide's modeled row.
 
 An [independent two-layer TinyLlama source smoke
 test](../evidence/nicolas_tinyllama_two_layer_source_20261014/README.md)
@@ -137,8 +138,8 @@ timers report 6.20 million mesh cycles and 347.48 million scalar host cycles.
 It uses 64 tokens, two FP8 layers, and host scalar operations, so those
 counters are not a cycle baseline for the compiler's captured full session.
 
-A whole-model handwritten fused MX+VPU baseline on the same captured graphs
-has not been measured, so the slide does not estimate its cycles. For example,
+A handwritten fused MX+VPU baseline for the complete captured 33-step
+TinyLlama or 12-step SmolVLA session has not been measured. For example,
 Nicolas's `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;
 the captured SmolVLA flow contains 15 heads of 50 queries against 163 keys,
 with a boolean key mask. A matched fused replacement must preserve that
@@ -176,6 +177,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_tinyllama_full_source_20261014/receipt.json \
   --tiny-full-safe-vpu \
     docs/evidence/tinyllama_full_safe_vpu_20261014/receipt.json \
+  --tiny-full-vpu \
+    docs/evidence/nicolas_tinyllama_full_source_vpu_20261014/full_receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
