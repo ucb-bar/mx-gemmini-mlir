@@ -129,15 +129,28 @@ completed [33-step logit archive](../evidence/tinyllama_full_logits_20261014/REA
 confirms all 99 output hashes. Mean decode cosine to captured FP32 is −0.324
 with 0/32 top-token matches. The slide presents these values separately
 from issuer-swap cycle comparisons.
+Promoting the first 11 layers' 77 dense sites to FP8 in a separate
+runtime-packed [Spike prefill](../evidence/tinyllama_prefill_precision_20261014/first11_spike_receipt.json)
+gives cosine −0.440. Its 90,552,028,722 cycles cannot be compared directly
+with the prepacked mixed full-session stage.
 
-The [full SmolVLA action archive](../evidence/smolvla_full_action_values_20261014/README.md)
+The [original SmolVLA action archive](../evidence/smolvla_full_action_values_20261014/README.md)
 checks the final action and all ten flow outputs against the captured
 unquantized FP32 trajectory. Its flow-step cosine falls from 0.997 at step 0
 to 0.054 at step 9/final action; final normalized RMSE is 1.726. All 33
 output digests match the earlier timed compiler run. The output-tap binary
 has different stage objects and takes 613,171,131,189 modeled cycles; that
-cycle count is excluded from the issuer-swap row. These values show drift on
-the fixed synthetic capture, not a task-quality verdict.
+cycle count is excluded from the issuer-swap row.
+
+The [corrected full SmolVLA archive](../evidence/smolvla_scalar_full_action_20261014/receipt.json)
+keeps the same checkpoint, profile, prefix stage, and action stage while
+updating the flow stage's scalar timestep through FP32. Its ten timestep
+outputs match the FP32 recurrence exactly. The final action cosine is
+**0.058** versus **0.054** for the original route; normalized RMSE is
+**1.830**. The corrected output-tap run takes 316,515,603,374 modeled
+cycles. The tap programs and scalar route differ from the fast issuer-swap
+row, so this is a numerical diagnostic, not a full-model speedup. Correcting
+the timestep alone does not remove the accumulated action drift.
 
 The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
 uses the exact full-run compiler flow object with captured FP32 state and
@@ -151,7 +164,8 @@ not a quantified explanation of the entire action error.
 The [scalar-state control](../evidence/smolvla_scalar_state_precision_20261014/README.md)
 removes only the one-element FP32 VPU route. Its isolated Spike output
 matches the old flow output byte for byte, while its timestep matches the
-captured FP32 update exactly. A corrected full session remains pending.
+captured FP32 update exactly. The completed corrected full session confirms
+that the timestep remains exact through all ten recurrent steps.
 The [prefix-cache control](../evidence/smolvla_prefix_factor_20261014/README.md)
 holds compiled step-8 flow state and timestep fixed while replacing only
 the prefix cache with the captured FP32 value. Step-9 cosine to FP32 moves
@@ -309,6 +323,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/smolvla_reference_step_replay_20261014/receipt.json \
   --smol-prefix-factor \
     docs/evidence/smolvla_prefix_factor_20261014/receipt.json \
+  --smol-corrected-action \
+    docs/evidence/smolvla_scalar_full_action_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
@@ -320,10 +336,8 @@ Its optional `--tiny-prefill128` row requires the archived source and compiler
 Spike logs, their hashes, and the verified modeled cycle counters. A preview
 receipt or an incomplete run cannot replace the measured row.
 
-When the full TinyLlama output-value archive finishes, add
-`--tiny-full-logits docs/evidence/tinyllama_full_logits_20261014/receipt.json`
-to the command. The results callout reports drift from captured FP32 outputs
-on fixed synthetic inputs and the isolated SmolVLA step result. The generator
-checks archive hashes and binds each full-session receipt to its timed run;
-these metrics are diagnostics rather than generation or robotics task-success
-thresholds.
+The results callout reports TinyLlama logit drift and the corrected
+SmolVLA final-action drift from captured FP32 outputs on fixed synthetic
+inputs. The generator checks archive hashes and binds each full-session
+receipt to its timed run. These metrics are diagnostics rather than
+generation or robotics task-success thresholds.

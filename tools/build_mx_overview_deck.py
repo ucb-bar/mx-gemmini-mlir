@@ -320,6 +320,7 @@ def results(slide, smol_comparison: dict | None,
             smol_actions: dict | None, prefill_precision: dict | None,
             smol_reference_step: dict | None,
             smol_prefix_factor: dict | None,
+            smol_corrected: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: full-model Spike" if tiny_logits or smol_actions
@@ -397,7 +398,15 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     step_comparison = None
-    if smol_reference_step:
+    if smol_corrected:
+        corrected = smol_corrected["final_action_metrics"]["cosine"]
+        prior = smol_actions["final_action_metrics"]["cosine"]
+        step_comparison = (
+            "SmolVLA corrected final action cosine "
+            f"{corrected:.3f} vs FP32; prior scalar route {prior:.3f}. "
+            "Drift remains."
+        )
+    elif smol_reference_step:
         full_cosine = smol_reference_step["metrics"]["full_vs_fp32"]["cosine"]
         reset_cosine = smol_reference_step["metrics"]["isolated_vs_fp32"]["cosine"]
         if smol_prefix_factor:
@@ -659,6 +668,7 @@ def main() -> None:
     parser.add_argument("--smol-action-values", type=Path)
     parser.add_argument("--smol-reference-step", type=Path)
     parser.add_argument("--smol-prefix-factor", type=Path)
+    parser.add_argument("--smol-corrected-action", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
@@ -691,6 +701,11 @@ def main() -> None:
                            if args.smol_reference_step else None)
     smol_prefix_factor = (json.loads(args.smol_prefix_factor.read_text())
                           if args.smol_prefix_factor else None)
+    smol_corrected_receipt = (json.loads(args.smol_corrected_action.read_text())
+                              if args.smol_corrected_action else None)
+    smol_corrected = (json.loads((args.smol_corrected_action.parent /
+                                  "fp32_comparison.json").read_text())
+                      if args.smol_corrected_action else None)
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     if prefill_precision is not None:
@@ -825,6 +840,28 @@ def main() -> None:
                 or abs(values["full_vs_fp32"]["cosine"] -
                        smol_actions["final_action_metrics"]["cosine"]) > 1e-9):
             parser.error("SmolVLA prefix control needs its verified full action archive")
+    if smol_corrected is not None:
+        folder = args.smol_corrected_action.parent
+        artifacts = smol_corrected_receipt.get("artifact_sha256") or {}
+        flow = smol_corrected.get("flow_step_metrics") or []
+        final = smol_corrected.get("final_action_metrics") or {}
+        if (smol_actions is None
+                or smol_corrected_receipt.get("schema") !=
+                "mx_gemmini.smolvla_scalar_full_action.v1"
+                or smol_corrected_receipt.get("cycle_ratio_valid") is not False
+                or not artifacts
+                or any(file_sha256(folder / name) != digest
+                       for name, digest in artifacts.items())
+                or smol_corrected.get("run_receipt_sha256") !=
+                file_sha256(folder / "run.json")
+                or smol_corrected.get("link_receipt_sha256") !=
+                file_sha256(folder / "link.json")
+                or len(flow) != 10 or final != flow[-1]
+                or smol_corrected.get("final_action_matches_flow_bytes") is not True
+                or not isinstance(final.get("cosine"), (int, float))
+                or not math.isfinite(final["cosine"])
+                or not -1 <= final["cosine"] <= 1):
+            parser.error("SmolVLA corrected action needs its verified full archive")
     if equal_work is not None:
         evidence_dir = args.equal_work_attention.parent
         if (equal_work.get("schema") !=
@@ -1036,7 +1073,7 @@ def main() -> None:
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
             equal_work, tiny_logits, smol_actions, prefill_precision,
-            smol_reference_step, smol_prefix_factor, total)
+            smol_reference_step, smol_prefix_factor, smol_corrected, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)

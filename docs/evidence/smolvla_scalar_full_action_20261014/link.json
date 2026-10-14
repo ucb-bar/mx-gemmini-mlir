@@ -1,0 +1,120 @@
+{
+  "arena_layout": {
+    "arena_base": 9663676416,
+    "arena_bytes": 8589934592,
+    "mem_bytes": 16106127360,
+    "static_end": 2181367056,
+    "weights_base": 8589934592
+  },
+  "bindings": [
+    {
+      "name": "prefix_pad_masks",
+      "source_output": 0,
+      "source_program": "prefix_encode",
+      "target_input": 505,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "prefix_kv_cache",
+      "source_output": 1,
+      "source_program": "prefix_encode",
+      "target_input": 506,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "decoded_flow_state",
+      "source_output": 0,
+      "source_program": "flow_denoise",
+      "target_input": 0,
+      "target_program": "action_decode"
+    }
+  ],
+  "dump_limit_bytes": 16384,
+  "dump_outputs": [
+    {
+      "bytes": 6400,
+      "name": "flow_denoise",
+      "output": 0,
+      "program": 1
+    },
+    {
+      "bytes": 4,
+      "name": "flow_denoise",
+      "output": 2,
+      "program": 1
+    },
+    {
+      "bytes": 6400,
+      "name": "action_decode",
+      "output": 0,
+      "program": 2
+    }
+  ],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/smol_scalar_full_link_v2_20261014/session.elf",
+  "elf_bytes": 917473520,
+  "elf_sha256": "7aca4bed894c45944f78cee3dd11ebeb597a773eba5791d9298f8b6b22d8b819",
+  "mem_bytes": 16106127360,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+      "name": "prefix_encode",
+      "outputs": 2,
+      "selected_operations": 243,
+      "steps": 1
+    },
+    {
+      "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "name": "flow_denoise",
+      "outputs": 3,
+      "selected_operations": 148,
+      "steps": 10
+    },
+    {
+      "capture_model_sha256": "c194700d5a9e19aa83456862f666a41559c83e51b992709bba598d681176224b",
+      "name": "action_decode",
+      "outputs": 1,
+      "selected_operations": 0,
+      "steps": 1
+    }
+  ],
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/captures_xdsl065/smolvla/smolvla_session",
+  "shared_weight_bytes": 906639456,
+  "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+  "shared_weight_stage": "prefix_encode",
+  "stage_object_sha256": {
+    "action_decode": {
+      "model.o": "f2a9b20e79e1303fdc78d63e2697b46a405579ac8f3f11a8ff457cb01b02db03"
+    },
+    "flow_denoise": {
+      "device/device_catalog_shim.o": "1f90024663a8eda8babd11e2879a6a0967140344893dd1c783e3ede9a3571ff2",
+      "device_catalog/mx_catalog.o": "a6578e83566d94337e8320f4c785ac9df502a6f56666ed95ce5ab72b87dd5969",
+      "model.o": "dbf6c2bb94b22bd695c919af78295d3164a8911be683bbe6dba1c336e08832bd"
+    },
+    "prefix_encode": {
+      "device/device_catalog_shim.o": "3b214e3c951ed827b603bb1ba4481bc5938b48a30d5380070bc6e90a7cfc509a",
+      "device_catalog/mx_catalog.o": "d93f023824343e978f5db5f2c4e37123bdb93668cb518f3dfa70312b2d97dce7",
+      "model.o": "ad4c35d5ca05adca9ad829dc65ddc1a00ff508680ce40ecdfa226d6b8cd9c49a"
+    }
+  },
+  "static_malloc_estimates": {
+    "action_decode": {
+      "callsites": 0,
+      "dynamic_sites": 0,
+      "literal_bytes": 0
+    },
+    "flow_denoise": {
+      "callsites": 1367,
+      "dynamic_sites": 0,
+      "literal_bytes": 576205618
+    },
+    "prefix_encode": {
+      "callsites": 2387,
+      "dynamic_sites": 1,
+      "literal_bytes": 5771344991
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}
