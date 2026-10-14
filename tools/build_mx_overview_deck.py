@@ -277,13 +277,14 @@ def configurations(slide, total: int = 3) -> None:
     add_text(slide, "Compiler consequences", 7.38, 4.06,
              4.78, 0.30, size=14.1, bold=True, color=NAVY)
     add_text(slide,
-             "• TinyLlama: 155 FP4 / 45 FP8 MX sites per stage.\n"
-             "• PE 0 = direct FP4 × FP4; PE 8 = direct FP8 × FP8.\n"
+             "• MX+VPU: direct FP4 PE 0 and FP8 PE 8; no LUT.\n"
+             "• FP6 E3M2 LUT × FP4 direct → PE 3; VPU off.\n"
+             "• LUT PE 9: both; 10: activation; 11: weight.\n"
+             "• PE 0–8 can also use LUT; mode alone is insufficient.\n"
+             "• TinyLlama: 155 FP4 / 45 FP8 sites per stage.\n"
              "• 256 KiB SPAD caps tiles; VPU/requant legal.\n"
-             "• Selected profile: no operand LUT or FP6.\n"
-             "• FP6×FP4 profile: E3M2 LUT × FP4 direct → PE 3; VPU off.\n"
              "• load_profile(profile, rtl_root=rtl) rejects drift.",
-             7.38, 4.42, 4.78, 1.62, size=11.0, color=INK)
+             7.38, 4.42, 4.78, 1.89, size=10.3, color=INK)
     add_text(slide,
              "npu-exploration supplies source kernels for per-mode Spike checks; "
              "the RTL profile alone is structural, not a performance claim.",
