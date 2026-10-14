@@ -306,7 +306,7 @@ def results(slide, smol_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "Spike results by measurement scope", size=27,
+    set_text(shapes[0], "What the Spike comparisons measure", size=27,
              bold=True)
     frame = shapes[1]
     table = frame.table
@@ -366,10 +366,10 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     callout = (
-        "Issuer-swap rows change only the MX command issuer; host and VPU "
-        "code is the same.\n"
-        "† 64-token row uses functional Spike counters and different host/VPU "
-        "work. No modeled speedup ratio."
+        "Full sessions: same host/VPU program; only the MX issuer changes. "
+        "Near parity is expected.\n"
+        "† Independent prefill: different host/VPU work, no speedup ratio. "
+        "Fused attention: one kernel."
         if full_source else
         "Issuer-swap rows change only the MX command issuer; host and VPU "
         "code is the same.\n"
