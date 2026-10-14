@@ -44,6 +44,13 @@ All 15 heads of the first 113-key call pass at padded 64×128×64, with
 flow steps, plus the rest of the model, still need a stitched source run
 before this becomes a full-model cycle control.
 
+The [matched compiler/source head comparison](evidence/smolvla_attention_cutpoint_20261014/README.md#matched-typed-compiler-comparison)
+now checks all 4,096 BF16 outputs for head 0 of both first-call shapes in
+one alternating Spike guest. The compiler's fenced command stream takes
+18,398 versus Nicolas's 16,717 pipelined cycles at 113 keys, and 27,171
+versus 22,057 cycles at 163 keys. This identifies a real scheduling gap on
+captured SmolVLA operands. It does not time a whole attention call or model.
+
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.
 It does not establish a whole-model stitched baseline for the captured shapes.

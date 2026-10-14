@@ -111,6 +111,43 @@ python -B run_all_heads.py --cutpoint cutpoint113.npz \
 These are **attention heads in one flow step**. They are not matched compiler
 cutpoints, a full SmolVLA run, or a stitched-model cycle ratio.
 
+## Matched typed compiler comparison
+
+The [two paired Spike receipts](compiled_pair/receipt.json) use the captured
+first head of each shape. [`build_frontend.py`](build_frontend.py) feeds its
+actual padded Q/K/V and additive mask to model2MLIR. The MX lowerer binds
+that graph to a checked mask DMA, an `mx_gemmini.vpu_execute` mask add before
+each row maximum, FP8 QK/PV contractions, requantization, and BF16 readout.
+It emits a data-free RV64 RoCC object. The same ELF alternates Nicolas's
+pipelined source and the compiler's fenced schedule after accelerator
+flushes; every pass matches **all 4,096 BF16 output values**.
+
+| Captured head | Source pipelined cycles, two passes | Compiler fenced cycles, two passes | Compiler cost |
+| --- | ---: | ---: | ---: |
+| 113 keys, padded to 128 | 16,717 / 16,717 | 18,398 / 18,398 | +10.1% |
+| 163 keys, padded to 192 | 22,057 / 22,057 | 27,171 / 27,171 | +23.2% |
+
+These are matched **head-level** outputs and timings. The compiler still
+fences between stages while Nicolas overlaps the key blocks. The difference
+measures that scheduling gap for head 0 of each first attention call; it is
+not a 15-head call, a denoising step, or a whole-model cycle ratio. The
+earlier 64×256×128 dense attention result in the presentation uses a
+different source shape and schedule.
+
+The archived [verifier](verify_compiled_pair.py) checks the source operands,
+frontends, issued objects, repeated Spike results, and exact output check:
+
+```sh
+python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py
+```
+
+To rebuild the pair, use `python -m tools.qualify_smol_attention_cutpoint`
+with `--npu-root`, `--profile`, `--rtl-root`, `--riscv-root`, `--rocc-root`,
+`--riscv-env`, `--spike-extension`, `--mx-opt`, `--scratch-dir`, and
+`--archive-dir`. The last two paths must be new task-local directories.
+`build_frontend.py --model2mlir ... --keys 113|163 --out ...` regenerates
+the two archived frontends from the captured checkpoint operands.
+
 ## Flow-stage attention roster
 
 The [projected flow catalog](flow_attention_catalog.json) records the 32

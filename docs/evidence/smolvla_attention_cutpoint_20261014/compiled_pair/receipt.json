@@ -1,0 +1,84 @@
+{
+  "artifact_sha256": {
+    "keys113/attention.mx.mlir": "e8e2fb81755cf1b2dc07e7edabf2157ecda150fa4cc1354707cb39dc8690e78c",
+    "keys113/binding.json": "0478e29bd4fc5b6921663fc5a2607920778a64f2d028e3ac2f829142a01b436d",
+    "keys113/mx_issue.c": "deddccc84195ca05d7da23976295409380710566f644e310bb744032de4d5764",
+    "keys113/mx_issue.o": "8a2442321339290c37d2515bdfdcb599e523f641c8194e428330b040f91efc96",
+    "keys113/spike.log.gz": "00062b609e27bfec9a07b1b861120dc463aecbd8d49ea1a22fe021d9cbb7f180",
+    "keys163/attention.mx.mlir": "518ed963bde30281884a0fe5bca965fc25926f553eefc9c8716de7357c7b63a6",
+    "keys163/binding.json": "7f2bf3c68e5859056c6437c916aa34d3ef7c1b6af61a8ff4738058f94167002e",
+    "keys163/mx_issue.c": "87839ad9521d3b50be13ee05225b91b2f3279f936042a12823b4613cab07e668",
+    "keys163/mx_issue.o": "35df7c5b471a58f932d7c255aa96457d1bb97e62687e0a0efdbbbdc1fda48624",
+    "keys163/spike.log.gz": "a23f3341fce170a91c94030a055a373a816b3ff5d108ccbea0b99cb388b5dfec"
+  },
+  "driver_sha256": "78596b275681abe53d65b7e2a170e7b1faaac2f854ec09574fcac44957700023",
+  "is_stitched_stage_or_full_model": false,
+  "original_source_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "patched_source_sha256": "21dd12d942cc27b27a609d3e6b95503705c8fbd018232b0320a6da9e89ac88ee",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rows": [
+    {
+      "command_count": 167,
+      "compiler_fenced_cycles": [
+        18398,
+        18398
+      ],
+      "compiler_over_source_fraction": 0.10055631991386016,
+      "cutpoint_sha256": "19fcd4c7ec2e39870632ad0b97074b240029afd77c78b98bf8c148eae338f356",
+      "elf_sha256": "7ebd15cff3452236c73c2f6dfc50021fbe62125ce9282b2689f798aaab0274d0",
+      "expected_output_hash": "e20c7751ba0113cb",
+      "fence_count": 11,
+      "header_sha256": "978a3dd21db328657827d0b7e84b749759de272773b3c6c6258bb31643444214",
+      "issuer_object_sha256": "8a2442321339290c37d2515bdfdcb599e523f641c8194e428330b040f91efc96",
+      "issuer_source_sha256": "deddccc84195ca05d7da23976295409380710566f644e310bb744032de4d5764",
+      "logical_keys": 113,
+      "model2mlir_frontend_sha256": "31000e284353e46c71ece78ec6d68d063616b0e1c1c62f68aaf5b7a6d544a903",
+      "physical_shape": [
+        64,
+        128,
+        64
+      ],
+      "same_output": true,
+      "source_pipelined_cycles": [
+        16717,
+        16717
+      ],
+      "typed_mlir_sha256": "e8e2fb81755cf1b2dc07e7edabf2157ecda150fa4cc1354707cb39dc8690e78c"
+    },
+    {
+      "command_count": 232,
+      "compiler_fenced_cycles": [
+        27171,
+        27171
+      ],
+      "compiler_over_source_fraction": 0.23185383325021536,
+      "cutpoint_sha256": "6b5b713660c819aa8f69a5174464b46258491bc81a86a8b4073b6c56cc9f122a",
+      "elf_sha256": "ed3ed9c87fb5d0c47a453a5a626dd83caad9265d770b5da9c4f281f3997007ec",
+      "expected_output_hash": "437d801250f000dd",
+      "fence_count": 16,
+      "header_sha256": "d5908341d0d5d1660c10bc1369d2bd2a2bf248c41f6a5aa1ff131600adead5a1",
+      "issuer_object_sha256": "35df7c5b471a58f932d7c255aa96457d1bb97e62687e0a0efdbbbdc1fda48624",
+      "issuer_source_sha256": "87839ad9521d3b50be13ee05225b91b2f3279f936042a12823b4613cab07e668",
+      "logical_keys": 163,
+      "model2mlir_frontend_sha256": "0a842f600885b2cb087ce82ade49d368467cc917c19b87fd9ed98dcc300be905",
+      "physical_shape": [
+        64,
+        192,
+        64
+      ],
+      "same_output": true,
+      "source_pipelined_cycles": [
+        22057,
+        22057
+      ],
+      "typed_mlir_sha256": "518ed963bde30281884a0fe5bca965fc25926f553eefc9c8716de7357c7b63a6"
+    }
+  ],
+  "schema": "mx_gemmini.smolvla_masked_attention_paired.v1",
+  "scope": "first 15-head call of each key shape; head 0 only",
+  "source_patch_sha256": "332713aa09a75c4b70d46898697560242badf440866ed70ccaa81aa8bc521d52",
+  "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "spike_mode": "GEMMINI_MODE=both; no performance override",
+  "timing_boundary": "same guest, source and compiler alternate after flushes"
+}

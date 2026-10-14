@@ -316,7 +316,8 @@ def results(slide, smol_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
             radiance: dict | None, prefill128: dict | None,
-            equal_work: dict | None, tiny_logits: dict | None,
+            equal_work: dict | None, smol_attention_pair: dict | None,
+            tiny_logits: dict | None,
             smol_actions: dict | None, prefill_precision: dict | None,
             first11_prepacked: dict | None,
             smol_reference_step: dict | None,
@@ -369,6 +370,25 @@ def results(slide, smol_comparison: dict | None,
         if layer_probe else
         ("SmolVLA flow 1 step · issuer swap", "2,112,653,481",
          "2,112,919,925", "−0.0126%"))
+    if smol_attention_pair:
+        short, long = smol_attention_pair["rows"]
+        attention_row = (
+            "SmolVLA attention head · 113 / 163 keys‡",
+            f"{short['compiler_fenced_cycles'][0]:,} / "
+            f"{long['compiler_fenced_cycles'][0]:,}",
+            f"{short['source_pipelined_cycles'][0]:,} / "
+            f"{long['source_pipelined_cycles'][0]:,}",
+            f"{short['compiler_over_source_fraction'] * 100:+.1f}% / "
+            f"{long['compiler_over_source_fraction'] * 100:+.1f}%",
+        )
+    else:
+        attention_row = (
+            "Nicolas dense attention · 64×256×128",
+            f"{equal_work['compiler_modeled_cycles']:,}" if equal_work else "43,523",
+            f"{equal_work['source_modeled_cycles']:,}" if equal_work else "43,641",
+            f"{(equal_work['compiler_modeled_cycles'] / equal_work['source_modeled_cycles'] - 1) * 100:+.2f}%"
+            if equal_work else "−0.27%",
+        )
     values = (
         ("Workload / compared code", "Compiler cycles", "Control/source cycles", "Compiler Δ"),
         ("SmolVLA full 12 steps · issuer swap",
@@ -380,11 +400,7 @@ def results(slide, smol_comparison: dict | None,
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
         layer_row,
-        ("Nicolas dense attention · 64×256×128",
-         f"{equal_work['compiler_modeled_cycles']:,}" if equal_work else "43,523",
-         f"{equal_work['source_modeled_cycles']:,}" if equal_work else "43,641",
-         f"{(equal_work['compiler_modeled_cycles'] / equal_work['source_modeled_cycles'] - 1) * 100:+.2f}%"
-         if equal_work else "−0.27%"),
+        attention_row,
     )
     for row_index, row in enumerate(values):
         for col_index, text in enumerate(row):
@@ -532,8 +548,9 @@ def results(slide, smol_comparison: dict | None,
     set_text(add_shape, callout,
              size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
-    footer.top = Inches(6.04 if show_first11 else 5.91)
-    footer.height = Inches(0.66)
+    footer.top = Inches(6.00 if smol_attention_pair else
+                        6.04 if show_first11 else 5.91)
+    footer.height = Inches(0.75 if smol_attention_pair else 0.66)
     if tiny_comparison and smol_comparison and prefill128:
         agreement = prefill128["comparisons"]["source_vs_compiler"]
         footer_text = (
@@ -599,10 +616,16 @@ def results(slide, smol_comparison: dict | None,
             "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention "
             f"output hashes match. {smol_status}"
         )
+    if smol_attention_pair:
+        footer_text += (
+            "\n‡ Captured first-call head 0: all 4,096 BF16 values match per "
+            "shape; source pipelined, compiler fenced. No whole-model ratio."
+        )
     set_text(
         footer,
         footer_text,
-        size=9.6, color=GREY, align=PP_ALIGN.LEFT,
+        size=9.1 if smol_attention_pair else 9.6,
+        color=GREY, align=PP_ALIGN.LEFT,
     )
     page_number(slide, 3, total)
 
@@ -687,6 +710,7 @@ def main() -> None:
     parser.add_argument("--radiance-comparison", type=Path)
     parser.add_argument("--tiny-prefill128", type=Path)
     parser.add_argument("--equal-work-attention", type=Path)
+    parser.add_argument("--smol-attention-pair", type=Path)
     parser.add_argument("--tiny-full-logits", type=Path)
     parser.add_argument("--smol-action-values", type=Path)
     parser.add_argument("--smol-reference-step", type=Path)
@@ -717,6 +741,8 @@ def main() -> None:
                   if args.tiny_prefill128 else None)
     equal_work = (json.loads(args.equal_work_attention.read_text())
                   if args.equal_work_attention else None)
+    smol_attention_pair = (json.loads(args.smol_attention_pair.read_text())
+                           if args.smol_attention_pair else None)
     tiny_logits = (json.loads(args.tiny_full_logits.read_text())
                    if args.tiny_full_logits else None)
     smol_actions = (json.loads(args.smol_action_values.read_text())
@@ -776,6 +802,25 @@ def main() -> None:
                 or type(first11_prepacked.get("runtime_control_cycles")) is not int
                 or observed["cycles"] >= first11_prepacked["runtime_control_cycles"]):
             parser.error("first11 prepacked control needs its verified Spike archive")
+    if smol_attention_pair is not None:
+        rows = smol_attention_pair.get("rows") or []
+        artifacts = smol_attention_pair.get("artifact_sha256") or {}
+        if (smol_attention_pair.get("schema") !=
+                "mx_gemmini.smolvla_masked_attention_paired.v1"
+                or smol_attention_pair.get("is_stitched_stage_or_full_model") is not False
+                or prefill_precision is None
+                or smol_attention_pair.get("profile_sha256") !=
+                prefill_precision["profile_sha256"]
+                or [row.get("logical_keys") for row in rows] != [113, 163]
+                or not artifacts
+                or any(file_sha256(args.smol_attention_pair.parent / name)
+                       != digest for name, digest in artifacts.items())
+                or any(row.get("same_output") is not True or
+                       len(row.get("source_pipelined_cycles", [])) != 2 or
+                       len(row.get("compiler_fenced_cycles", [])) != 2 or
+                       row["compiler_over_source_fraction"] < 0
+                       for row in rows)):
+            parser.error("SmolVLA attention row needs its verified paired archive")
     for name, receipt, source, schema in (
             ("TinyLlama logits", tiny_logits, args.tiny_full_logits,
              "mx_gemmini.tinyllama_full_logits.v1"),
@@ -1118,7 +1163,8 @@ def main() -> None:
     configurations(prs.slides[1], total)
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
-            equal_work, tiny_logits, smol_actions, prefill_precision,
+            equal_work, smol_attention_pair, tiny_logits, smol_actions,
+            prefill_precision,
             first11_prepacked,
             smol_reference_step, smol_prefix_factor, smol_corrected, total)
     if radiance is not None:

@@ -21,6 +21,8 @@ SHAPE = DenseAttentionShape(64, 128, 64)
 BK = 32
 FA_SHAPE = DenseAttentionShape(64, 256, 128)
 STREAM_SHAPE = DenseAttentionShape(64, 2048, 64)
+SMOL_SHAPES = (DenseAttentionShape(64, 128, 64),
+               DenseAttentionShape(64, 192, 64))
 SQ, SK, D = SHAPE.sq, SHAPE.sk, SHAPE.d
 NB = SK // BK
 SP_Q, SP_V, SP_KT, SP_P, ST = 0, 256, 4096, 4608, 768
@@ -47,7 +49,7 @@ def _source_defines(source: str) -> dict[str, str]:
 def _check_source_policy(source_wrapper: str, source_core: str,
                          source_header: str, shape: DenseAttentionShape,
                          block_k: int, input_format: str,
-                         softmax_mode: str, causal: bool,
+                         softmax_mode: str, causal: bool, arbitrary_mask: bool,
                          block_first: int, block_last: int,
                          v3: bool) -> None:
     header = _source_defines(source_header)
@@ -57,7 +59,10 @@ def _check_source_policy(source_wrapper: str, source_core: str,
                 "ATTN_HEADS": "1", "ATTN_SCALE_IN_Q": "0"}
     if fp4:
         expected["ATTN_FP4"] = "1"
-    guards = {name for name in header if name.startswith("INCLUDE_ATTN_VPU_")}
+    if arbitrary_mask:
+        expected.update(ATTN_ARBITRARY_MASK="1", ATTN_VALID_Q="50")
+    guards = {name for name in header if name.startswith("INCLUDE_ATTN_VPU_") or
+              (arbitrary_mask and name == "SMOL_ATTENTION_HEAD0_H")}
     if (len(guards) != 1 or set(header) != set(expected) | guards or
             any(header.get(name) != value for name, value in expected.items())):
         raise ValueError("flash source header selects an unsupported policy")
@@ -87,13 +92,21 @@ def _check_source_policy(source_wrapper: str, source_core: str,
 
 
 def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
-                     input_format: str = "fp8_e4m3", *, causal: bool = False
+                     input_format: str = "fp8_e4m3", *, causal: bool = False,
+                     arbitrary_mask: bool = False
                      ) -> tuple[tuple[str, ...], tuple[int, ...]]:
     """Runtime byte buffers for the selected flash source shape."""
     if (shape, block_k, input_format) not in (
             (SHAPE, BK, "fp8_e4m3"), (FA_SHAPE, 64, "fp8_e4m3"),
             (SHAPE, BK, "fp4_e2m1"), (STREAM_SHAPE, 256, "fp8_e4m3")):
-        raise ValueError("flash compiler has no selected source shape")
+        if not (arbitrary_mask and shape in SMOL_SHAPES and block_k == 64
+                and input_format == "fp8_e4m3"):
+            raise ValueError("flash compiler has no selected source shape")
+    if arbitrary_mask and (shape not in SMOL_SHAPES or block_k != 64 or
+                           input_format != "fp8_e4m3"):
+        raise ValueError("arbitrary mask needs a selected SmolVLA FP8 shape")
+    if causal and arbitrary_mask:
+        raise ValueError("flash masks cannot be both causal and arbitrary")
     if causal and (shape, block_k, input_format) != (STREAM_SHAPE, 256, "fp8_e4m3"):
         raise ValueError("causal flash needs selected streamed source shape")
     sq, sk, d = shape.sq, shape.sk, shape.d
@@ -106,9 +119,9 @@ def flash_buffer_abi(shape: DenseAttentionShape, block_k: int,
     lengths = (sq * d // 32, d * sk // 32, sk * d // 32,
                sq * d // qt, d * sk // qt, sk * d // qt, 2048,
                sq * block_k // 32, sq * block_k // 32, sq * d * 2)
-    if causal:
+    if causal or arbitrary_mask:
         names += ("MASK_BF16",)
-        lengths += (sq * sq * 2,)
+        lengths += (sq * (sk if arbitrary_mask else sq) * 2,)
     return names, lengths
 
 
@@ -137,12 +150,14 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                      input_format: str = "fp8_e4m3",
                      softmax_mode: str = "split", causal: bool = False,
+                     arbitrary_mask: bool = False,
                      block_first: int | None = None, block_last: int | None = None,
                      v3: bool = True
                      ) -> tuple[str, dict]:
     """Render a source-bound, fenced QK/softmax/requant/PV program."""
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
-                                             causal=causal)
+                                             causal=causal,
+                                             arbitrary_mask=arbitrary_mask)
     block_first = block_k if block_first is None else block_first
     block_last = block_k if block_last is None else block_last
     variable_blocks = block_first != block_k or block_last != block_k
@@ -176,8 +191,15 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         raise ValueError("pinned flash source or geometry differs")
     _check_source_policy(source_wrapper, source_core, source_header,
                          shape, block_k, input_format, softmax_mode, causal,
+                         arbitrary_mask,
                          block_first, block_last, v3)
-    _audit_frontend_edges(frontend, shape, causal=causal)
+    _audit_frontend_edges(frontend, shape, causal=causal or arbitrary_mask)
+    if arbitrary_mask and (
+            "gemmini_vpu_binary(VPU_ADD, S, S, SP_MASK + ROWS16(SQ, BOFF(j)), rows);"
+            not in source_core or
+            "MASK_BLOCK_BF16" not in source_header or
+            softmax_mode != "split"):
+        raise ValueError("arbitrary-mask source schedule differs")
     streamed = (shape, block_k, input_format) == (STREAM_SHAPE, 256, "fp8_e4m3")
     if streamed:
         if (profile.get("transport") != "rocket_rocc" or
@@ -196,6 +218,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
             raise ValueError("causal flash source mask schedule differs")
     else:
         shape.validate(profile)
+    if arbitrary_mask and profile.get("resources", {}).get("scratchpad_banks") != 4:
+        raise ValueError("arbitrary mask needs four scratchpad banks")
     if (profile.get("source", {}).get("gemmini_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
         raise ValueError("flash needs Nicolas's managed-scale MX RTL")
@@ -212,11 +236,16 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     SP_P = SP_KT + k_buffers * rows8(D, BK)
     ST = SP_V + v_buffers * rows8(BK, D)
     SP_O = 3 * 4096 + rows16(SQ, BK) + rows16(SQ, D)
-    SP_MASK = (2 + (NB & 1)) * 4096 + rows16(SQ, BK) + rows16(SQ, D)
+    SP_MASK = (SP_O + rows16(SQ, D) if arbitrary_mask and NB & 1 else
+               (2 + (NB & 1)) * 4096 + rows16(SQ, BK) + rows16(SQ, D))
     if (SP_V + v_buffers * rows8(BK, D) + 8 * SQ > 4096 or
             SP_P + 2 * rows8(SQ, BK) > 8192 or
             SP_O + rows16(SQ, D) > 16384 or
-            (causal and SP_MASK + rows16(SQ, SQ) > 3 * 4096)):
+            (causal and SP_MASK + rows16(SQ, SQ) > 3 * 4096) or
+            (arbitrary_mask and (
+                SP_MASK + rows16(SQ, SK) > 4 * 4096 or
+                SP_MASK // 4096 !=
+                (SP_MASK + rows16(SQ, SK) - 1) // 4096))):
         raise ValueError("flash source bank-split residency differs")
     _score = lambda j: (2 + (j & 1)) * 4096
     _probability = lambda j: SP_P + (j & 1) * rows8(SQ, BK)
@@ -224,7 +253,8 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     _maximum = lambda j: ST + (j & 1) * SQ
     _alpha = lambda j: ST + (7 if j % 3 == 2 else 3 + j % 3) * SQ
     folded = D == 64
-    variant = ("llama_causal_stream" if causal else
+    variant = ("smolvla_arbitrary" if arbitrary_mask else
+               "llama_causal_stream" if causal else
                "llama_vb_stream" if variable_blocks else
                "llama_wide_stream" if streamed and not v3 else
                "llama_stream" if streamed else
@@ -252,6 +282,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         policy["causal"] = True
         policy["mask_spad_row"] = SP_MASK
         policy["mask_key_start"] = SK - SQ
+    if arbitrary_mask:
+        policy["arbitrary_mask"] = True
+        policy["mask_spad_row"] = SP_MASK
+        policy["valid_query_rows"] = 50
     if fp4:
         policy["input_format"] = input_format
     if softmax_mode == "expsum":
@@ -359,9 +393,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                f"matrix_rows = {SQ // qt} : i32, matrix_cols = {D} : i32, "
                "burst_cols = 64 : i32, spad_row = 0 : i32"),
     ])
-    if causal:
-        lines.append(memory("dma_matrix", "MASK_BF16", "operand:causal_mask",
-                            f"matrix_rows = {SQ * SQ * 2 // 16} : i32, "
+    if causal or arbitrary_mask:
+        lines.append(memory("dma_matrix", "MASK_BF16",
+                            "operand:arbitrary_mask" if arbitrary_mask else
+                            "operand:causal_mask",
+                            f"matrix_rows = {SQ * (SK if arbitrary_mask else SQ) * 2 // 16} : i32, "
                             f"matrix_cols = 16 : i32, burst_cols = 16 : i32, "
                             f"spad_row = {SP_MASK} : i32"))
     def block_load(j: int) -> tuple[str, str]:
@@ -403,6 +439,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                 row = s + r * (BK // 8) + (BK - SQ) // 8
                 lines.append(vpu(f"softmax{j}:mask{r}", "add", row,
                                  SP_MASK + r * (SQ // 8), row, SQ // 8))
+        if arbitrary_mask:
+            lines.append(vpu(f"softmax{j}:mask", "add", s,
+                             SP_MASK + rows16(SQ, key_offsets[j]), s,
+                             score_rows))
         if j == 0:
             lines.append(vpu("softmax0:rmax", "rmax", s, 0, m,
                              score_rows, score_rlen))
@@ -459,8 +499,9 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     report = verify_ir(mlir, profile)
     if (report["memory_phases"], report["flash_setups"], report["spad_matmuls"],
             report["vpu_commands"], report["spad_requants"]) != (
-                36 if causal else 4 * NB + 3, 1, 2 * NB,
-                147 if causal else 11 * NB - 5 if streamed else
+                4 * NB + 3 + int(causal or arbitrary_mask), 1, 2 * NB,
+                147 if causal else 12 * NB - 5 if arbitrary_mask else
+                11 * NB - 5 if streamed else
                 31 if softmax_mode == "expsum" else 39 if folded else 43, NB):
         raise ValueError(f"flash {variant} typed stage inventory differs: {report}")
     return mlir, binding
@@ -471,6 +512,7 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     shape: DenseAttentionShape = SHAPE, block_k: int = BK,
                     input_format: str = "fp8_e4m3",
                     softmax_mode: str = "split", causal: bool = False,
+                    arbitrary_mask: bool = False,
                     block_first: int | None = None, block_last: int | None = None,
                     v3: bool = True
                     ) -> tuple[Command | Fence, ...]:
@@ -479,10 +521,12 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                                    source_header, profile, shape=shape,
                                    block_k=block_k, input_format=input_format,
                                    softmax_mode=softmax_mode, causal=causal,
+                                   arbitrary_mask=arbitrary_mask,
                                    block_first=block_first, block_last=block_last,
                                    v3=v3)
     if mlir_text != expected:
         raise ValueError("flash typed graph or source binding differs")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
-                                             causal=causal)
+                                             causal=causal,
+                                             arbitrary_mask=arbitrary_mask)
     return lower_flash_commands(mlir_text, profile, buffers, buffer_bytes)

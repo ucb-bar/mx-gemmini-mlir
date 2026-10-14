@@ -111,7 +111,12 @@ whole-model compiler-versus-handwritten speedup:
 | --- | --- | --- |
 | Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
 | TinyLlama independent prefill | Complete source program versus compiled prefill, with different host and VPU work | Functional agreement and a diagnostic raw cycle gap for one prompt |
-| Dense attention | One matched 64×256×128 fused kernel | Kernel-level code and modeled timing at that shape |
+| Captured SmolVLA attention | One first-call head at each of 113 and 163 keys; 4,096 BF16 values each | Pipelined source versus fenced compiler scheduling on actual model operands |
+
+The earlier [64×256×128 dense-attention result](../evidence/attn_vpu_equal_work_20261013/README.md)
+remains a separate kernel control. The slide now shows captured SmolVLA
+attention heads because their mask and key lengths reveal the current
+scheduling gap.
 
 The requested full-model performance comparison needs an independently
 stitched MX+VPU program for each captured session, matching inputs, weights,
@@ -316,6 +321,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/radiance_kernel_comparison_20261014/receipt.json \
   --equal-work-attention \
     docs/evidence/attn_vpu_equal_work_20261013/receipt.json \
+  --smol-attention-pair \
+    docs/evidence/smolvla_attention_cutpoint_20261014/compiled_pair/receipt.json \
   --tiny-prefill128 \
     docs/evidence/nicolas_tinyllama_prefill128_source_20261014/receipt.json \
   --tiny-prefill-precision \
