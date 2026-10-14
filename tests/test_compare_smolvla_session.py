@@ -36,6 +36,13 @@ def test_flow_and_action_comparison_checks_every_dump(tmp_path) -> None:
         dumps.append({"program": program, "step": step, "output": 0,
                       "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
                       "path": relative})
+    timestep = np.float32(0.6).tobytes()
+    relative = "output_dumps/p1_s3_o2.bin"
+    (tmp_path / relative).write_bytes(timestep)
+    dumps.append({"program": 1, "step": 3, "output": 2,
+                  "bytes": len(timestep),
+                  "sha256": hashlib.sha256(timestep).hexdigest(),
+                  "path": relative})
     run_path = tmp_path / "run.json"
     run_path.write_text(json.dumps({
         "status": "complete_numeric_qualification_pending",

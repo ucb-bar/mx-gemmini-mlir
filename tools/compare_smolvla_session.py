@@ -58,10 +58,11 @@ def compare_session(run_receipt: Path, link_receipt: Path, session_root: Path) -
     selected = {(row["program"], row["step"], row["output"]): row
                 for row in run.get("output_dumps", [])}
     required = {(1, step, 0) for step in range(10)} | {(2, 0, 0)}
-    if set(selected) != required:
+    if not required.issubset(selected):
         raise ValueError("SmolVLA comparison needs all flow and final action dumps")
     values = {}
-    for key, row in selected.items():
+    for key in required:
+        row = selected[key]
         relative = Path(row["path"])
         if relative.is_absolute() or ".." in relative.parts:
             raise ValueError("output dump path escapes the run directory")
