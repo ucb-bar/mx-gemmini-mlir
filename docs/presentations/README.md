@@ -127,6 +127,11 @@ source baseline needs those shapes and precision choices to match before its
 cycle count can stand beside the model result.
 The [matched source baseline requirements](../stitched_model_source_baseline.md)
 record the remaining model and kernel interfaces.
+The [cached TinyLlama layer probe](../evidence/tinyllama_cached_layer_compiler_20261014/README.md)
+now runs a real 64-query layer from PyTorch through model2MLIR and the MX
+compiler. It exposes per-operation packing and intermediate conversion costs,
+but its stage cycle window differs from Nicolas's timed source kernel.
+Those two numbers are kept off the slide's paired table.
 
 ## Regenerate
 

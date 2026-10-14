@@ -1,0 +1,67 @@
+{
+  "capture_model_sha256": "a0209d58c1876f939e284a94f1a28c9ad6d59a42f144ff8d63f753a6815710ab",
+  "compiler_runs": {
+    "fp8_cached": {
+      "argmax_matching_rows": 59,
+      "build_hash": "086e4546f095",
+      "build_receipt_sha256": "6f45e8c19119180beeda84231f074213e2066fba9f75d27f408d23ceb05f66d0",
+      "completed": true,
+      "cycles": 3539927144,
+      "output_sha256": "383a27dac9c4d7ccffeee65e5bf566e916da302b06cf4a3a7bf34a3c2f0c49f8",
+      "prepacked_weights": false,
+      "run_receipt_sha256": "371545b8e861d0683996a76f14d84bbc1678edbdc2196f1f8e4a9e2f4e465c40"
+    },
+    "fp8_prepacked": {
+      "argmax_matching_rows": 59,
+      "build_hash": "fe9e2b04dd0f",
+      "build_receipt_sha256": "afc8f662b8bed215b2543bc9c8b656d6525191e4dcd930d53d64a5ede5f82360",
+      "completed": true,
+      "cycles": 268345341,
+      "output_sha256": "383a27dac9c4d7ccffeee65e5bf566e916da302b06cf4a3a7bf34a3c2f0c49f8",
+      "prepacked_weights": true,
+      "rel_fro_vs_pytorch": 0.0759930155434809,
+      "run_receipt_sha256": "c9d325d4d5a16c45d306862210ed9ba2e534f470650bc3a802d993f81566e752"
+    },
+    "mixed_fp4_fp8_cached": {
+      "argmax_matching_rows": 44,
+      "build_hash": "95727aa10579",
+      "build_receipt_sha256": "63e975d8f2e2bb107a9473e6125e8b6a8d52404ba0a4a064e62b34237e979aed",
+      "completed": true,
+      "cycles": 3669741534,
+      "output_sha256": "7db786eba9e40e03b761082432f54dd75de90ba3044e16d1e18883423cc12036",
+      "prepacked_weights": false,
+      "run_receipt_sha256": "fe772ba06e39da0aa9b8a37c0a9b1df75e92ead083e680406f48748a75c29e46"
+    }
+  },
+  "model2mlir_commit": "338d08c",
+  "mx_profile": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "profile": {
+    "attribution_coverage": 0.998630184867266,
+    "by_owner": {
+      "host": 6439869,
+      "mx": 154759889,
+      "vpu": 106792209
+    },
+    "instrumented_cycles": 268359570,
+    "profile_sha256": "934c7612d5b6697ee4d6957424c637ec5c21d81800e107e162f6fc96ac1f1e8d"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.tinyllama_cached_layer_probe.v1",
+  "scope": "layer_5_64_cached_64_query_tokens",
+  "selected_mx_contractions": 9,
+  "selected_vpu_source_regions": {
+    "add": 4,
+    "elementwise": 16,
+    "reduce": 2,
+    "softmax": 1,
+    "unary": 7
+  },
+  "source_layer": {
+    "cycles": 582204,
+    "rel_fro_vs_pytorch": 0.071011,
+    "source_evidence": "../nicolas_tinyllama_layer5_captured128_20261014/receipt.json"
+  },
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "timing_comparison_valid": false,
+  "timing_reason": "Compiler METRIC cycles covers an entire standalone stage, including input and output conversion, while Nicolas times from first kernel command to h_out with prepacked operands. Precision is FP8 for both after overrides but boundary representation and numeric output still differ."
+}

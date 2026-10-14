@@ -1,0 +1,10 @@
+{
+  "compiler_argmax_vs_golden": 59,
+  "compiler_to_m2m_golden_rel_fro": 0.0759930155434809,
+  "compiler_to_source_fp64_ref_rel_fro": 0.07594489220323257,
+  "compiler_to_source_model_rel_fro": 0.07599302241575902,
+  "m2m_golden_to_source_model_rel_fro": 5.35334726419983e-07,
+  "output_sha256": "383a27dac9c4d7ccffeee65e5bf566e916da302b06cf4a3a7bf34a3c2f0c49f8",
+  "source_ref_argmax_vs_golden": 64,
+  "source_ref_to_source_model_rel_fro": 0.0015558575896290976
+}

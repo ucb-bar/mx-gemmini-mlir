@@ -34,10 +34,13 @@ already compares one fused MX+VPU source shape with compiler-issued commands.
 It does not establish a whole-model stitched baseline for the captured shapes.
 
 The [captured TinyLlama layer-5 source run](evidence/nicolas_tinyllama_layer5_captured128_20261014/README.md)
-now uses the captured token IDs and byte-identical layer weights. It reports
-582,204 Spike `rdcycle` counts for a 64-token FP8 source section. The
-compiler's captured layer has 128-token FP4 projections, so this is a source
-qualification, not a paired speedup or a stitched model result.
+uses the captured token IDs and byte-identical layer weights. The
+[compiler section probe](evidence/tinyllama_cached_layer_compiler_20261014/README.md)
+now captures the same 64 cached plus 64 query tokens from PyTorch and
+compiles all nine layer contractions with FP8. Both sections run on the
+same Spike extension, but their inputs, intermediate representations,
+numeric outputs, and timed work boundaries still differ. Their reported
+cycle values are therefore not a paired speedup or a stitched model result.
 
 [npu-source]: https://github.com/ucb-bar/npu-exploration/tree/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src
 [npu-layer]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/llama_layer_e2e.c
