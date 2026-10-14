@@ -23,13 +23,19 @@ defines mode IDs 0–11. Modes 0–8 choose the pair of significand widths
 | 3 bits | 3 | 4 | 5 |
 | 4 bits | 6 | 7 | 8 |
 
-Modes 9–11 are LUT-enabled four-product variants: 9 for 4×4, 10 for
-4×(2 or 3), and 11 for (2 or 3)×4. The mode ID is only one part of a legal
-compute tuple. Modes 0–8 may also consume a LUT-projected operand; for
-example, FP6 E3M2 × FP6 E3M2 can use mode 4 with LUTs on both sides.
-Modes 9–11 specifically add the four-product path when a 4-bit-significand
-operand is LUT-projected. Different exponent formats can share a width and
-mode. The selected `MxE4M3Fp4VpuGemminiRocketConfig` exposes two matrix tuples:
+Modes 9–11 select the four-product path when the 4-bit-significand operand
+is LUT-projected:
+
+| Mode | Significand widths (activation × weight) | Required LUT projection |
+| ---: | --- | --- |
+| 9 | 4×4 | Both operands |
+| 10 | 4×(2 or 3) | Activation |
+| 11 | (2 or 3)×4 | Weight |
+
+The mode ID is only one part of a legal compute tuple. Modes 0–8 may also
+consume a LUT-projected operand; for example, FP6 E3M2 × FP6 E3M2 can use
+mode 4 with LUTs on both sides. Different exponent formats can share a width
+and mode. The selected `MxE4M3Fp4VpuGemminiRocketConfig` exposes two matrix tuples:
 direct FP4 E2M1 × FP4 E2M1 (mode 0) and direct FP8 E4M3 × FP8 E4M3
 (mode 8). Its VPU opcodes are a separate command family.
 

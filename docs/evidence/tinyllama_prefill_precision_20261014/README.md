@@ -15,6 +15,7 @@ model MX mesh accumulation or VPU arithmetic.
 | Same mixed policy | Operand proxy | 0.498 | 800 | 40 |
 | Promote final LM head only to FP8 | Operand proxy | 0.535 | 983 | 42 |
 | Promote first 11 layers' 77 dense sites | Operand proxy | 0.805 | **279** | **1** |
+| Promote first 11 layers' 77 dense sites | Spike, runtime RHS packing | **−0.440** | 24262 | 31430 |
 | Promote last 11 layers and head's 78 dense sites | Operand proxy | 0.663 | 631 | 46 |
 | All 200 contractions FP8 | Operand proxy | 0.922 | 362 | 2 |
 | All 200 contractions FP8 | Spike | **0.943** | 362 | 3 |
@@ -23,14 +24,23 @@ The FP32 top token is 279. Head-only promotion does little; promoting all
 ordinary dense sites greatly improves the logit cosine. Promoting only the
 first 11 layers selects the FP32 top token in the operand proxy despite a
 lower cosine than the all-FP8 control. The disjoint half-model recipes and
-arrays are pinned by the [half-sweep receipt](half_sweep_receipt.json). They
-need a Spike run before a compiler policy can be judged. The capture's MX
+arrays are pinned by the [half-sweep receipt](half_sweep_receipt.json). The
+last-11-plus-head recipe still needs a Spike run. The capture's MX
 worklist maps their 77 and 78 source regions to layers 0–10 and layers
 11–21 plus `lm.lm_head`, respectively. The negative mixed Spike cosine
 also differs sharply from the mixed operand proxy. FP4 mesh
 arithmetic, VPU rounding, or their interaction may account for that gap;
-these measurements alone do not isolate the cause. Neither Spike policy
-selects the FP32 top token. They establish no model-quality threshold.
+these measurements alone do not isolate the cause. None of the three Spike
+policies selects the FP32 top token. They establish no model-quality threshold.
+
+The [first-11-layer Spike archive](first11_spike_receipt.json) verifies all
+32,000 logits, the 77 FP8 promotions, and 122 FP8 / 78 FP4 bound matrix
+sites. Its cosine is −0.440 to captured FP32, contradicting the operand
+proxy's top-token prediction. This stage packed checkpoint weights at
+runtime and reported 90,552,028,722 modeled cycles. The optimized mixed
+control uses build-time prepacking, so this count is not a matched
+performance comparison with either reference. A prepacked first-11-layer run is needed
+before attributing the numerical difference solely to the precision recipe.
 
 The [receipt](receipt.json) records full precision, capture, and artifact
 hashes. The mixed prefill bytes match the first output digest of the
@@ -41,6 +51,7 @@ can be recomputed without the original temporary build folders:
 ```sh
 python3 -B docs/evidence/tinyllama_prefill_precision_20261014/verify.py
 python3 -B docs/evidence/tinyllama_prefill_precision_20261014/verify_half.py
+python3 -B docs/evidence/tinyllama_prefill_precision_20261014/archive_first11_spike.py --verify
 ```
 
 This is a **prefill diagnostic**, not a 33-step logit comparison or an

@@ -1,0 +1,1685 @@
+{
+  "bindings": [
+    {
+      "region": "matmul_1",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_2",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_3",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_6",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_7",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_8",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_9",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_10",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_11",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_12",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_15",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_16",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_17",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_18",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_19",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_20",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_21",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_24",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_25",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_26",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_27",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_28",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_29",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_30",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_33",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_34",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_35",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_36",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_37",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_38",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_39",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_42",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_43",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_44",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_45",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_46",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_47",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_48",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_51",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_52",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_53",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_54",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_55",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_56",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_57",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_60",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_61",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_62",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_63",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_64",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_65",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_66",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_69",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_70",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_71",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_72",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_73",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_74",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_75",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_78",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_79",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_80",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_81",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_82",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_83",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_84",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_87",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_88",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_89",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_90",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_91",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_92",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_93",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_96",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_97",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_98",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_99",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_100",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_101",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_102",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_105",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_106",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_107",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_108",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_109",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_110",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_111",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_114",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_115",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_116",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_117",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_118",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_119",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_120",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_123",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_124",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_125",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_126",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_127",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_128",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_129",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_132",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_133",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_134",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_135",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_136",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_137",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_138",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_141",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_142",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_143",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_144",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_145",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_146",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_147",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_150",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_151",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_152",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_153",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_154",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_155",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_156",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_159",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_160",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_161",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_162",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_163",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_164",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_165",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_168",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_169",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_170",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_171",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_172",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_173",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_174",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_177",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_178",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_179",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_180",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_181",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_182",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_183",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_186",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_187",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_188",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_189",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_190",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_191",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_192",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_195",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_196",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_197",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_198",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_199",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_0",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_4",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_5",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_13",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_14",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_22",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_23",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_31",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_32",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_40",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_41",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_49",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_50",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_58",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_59",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_67",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_68",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_76",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_77",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_85",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_86",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_94",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_95",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_103",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_104",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_112",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_113",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_121",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_122",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_130",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_131",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_139",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_140",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_148",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_149",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_157",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_158",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_166",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_167",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_175",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_176",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_184",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_185",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_193",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    },
+    {
+      "region": "matmul_194",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    }
+  ],
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "precision_overrides": {
+    "matmul_1": "mxfp8",
+    "matmul_10": "mxfp8",
+    "matmul_11": "mxfp8",
+    "matmul_12": "mxfp8",
+    "matmul_15": "mxfp8",
+    "matmul_16": "mxfp8",
+    "matmul_17": "mxfp8",
+    "matmul_18": "mxfp8",
+    "matmul_19": "mxfp8",
+    "matmul_2": "mxfp8",
+    "matmul_20": "mxfp8",
+    "matmul_21": "mxfp8",
+    "matmul_24": "mxfp8",
+    "matmul_25": "mxfp8",
+    "matmul_26": "mxfp8",
+    "matmul_27": "mxfp8",
+    "matmul_28": "mxfp8",
+    "matmul_29": "mxfp8",
+    "matmul_3": "mxfp8",
+    "matmul_30": "mxfp8",
+    "matmul_33": "mxfp8",
+    "matmul_34": "mxfp8",
+    "matmul_35": "mxfp8",
+    "matmul_36": "mxfp8",
+    "matmul_37": "mxfp8",
+    "matmul_38": "mxfp8",
+    "matmul_39": "mxfp8",
+    "matmul_42": "mxfp8",
+    "matmul_43": "mxfp8",
+    "matmul_44": "mxfp8",
+    "matmul_45": "mxfp8",
+    "matmul_46": "mxfp8",
+    "matmul_47": "mxfp8",
+    "matmul_48": "mxfp8",
+    "matmul_51": "mxfp8",
+    "matmul_52": "mxfp8",
+    "matmul_53": "mxfp8",
+    "matmul_54": "mxfp8",
+    "matmul_55": "mxfp8",
+    "matmul_56": "mxfp8",
+    "matmul_57": "mxfp8",
+    "matmul_6": "mxfp8",
+    "matmul_60": "mxfp8",
+    "matmul_61": "mxfp8",
+    "matmul_62": "mxfp8",
+    "matmul_63": "mxfp8",
+    "matmul_64": "mxfp8",
+    "matmul_65": "mxfp8",
+    "matmul_66": "mxfp8",
+    "matmul_69": "mxfp8",
+    "matmul_7": "mxfp8",
+    "matmul_70": "mxfp8",
+    "matmul_71": "mxfp8",
+    "matmul_72": "mxfp8",
+    "matmul_73": "mxfp8",
+    "matmul_74": "mxfp8",
+    "matmul_75": "mxfp8",
+    "matmul_78": "mxfp8",
+    "matmul_79": "mxfp8",
+    "matmul_8": "mxfp8",
+    "matmul_80": "mxfp8",
+    "matmul_81": "mxfp8",
+    "matmul_82": "mxfp8",
+    "matmul_83": "mxfp8",
+    "matmul_84": "mxfp8",
+    "matmul_87": "mxfp8",
+    "matmul_88": "mxfp8",
+    "matmul_89": "mxfp8",
+    "matmul_9": "mxfp8",
+    "matmul_90": "mxfp8",
+    "matmul_91": "mxfp8",
+    "matmul_92": "mxfp8",
+    "matmul_93": "mxfp8",
+    "matmul_96": "mxfp8",
+    "matmul_97": "mxfp8",
+    "matmul_98": "mxfp8",
+    "matmul_99": "mxfp8"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d"
+}
