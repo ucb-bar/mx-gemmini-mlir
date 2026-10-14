@@ -17,7 +17,9 @@ printf '%s  %s\n' \
   004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0 \
   "$OUT_DIR/attn_flash_smol.c" | sha256sum --check --status
 patch -s "$OUT_DIR/attn_flash_smol.c" "$HERE/attn_flash_smol.patch"
-cp "$HERE/driver.c" "$HERE/smol_head0.h" "$HERE/smol_expect.h" "$OUT_DIR/"
+cp "$HERE/driver.c" "$OUT_DIR/"
+cp "${SOURCE_OPERAND_HEADER:-$HERE/smol_head0.h}" "$OUT_DIR/smol_head0.h"
+cp "${SOURCE_EXPECT_HEADER:-$HERE/smol_expect.h}" "$OUT_DIR/smol_expect.h"
 
 "$RISCV_CC" -DPREALLOCATE=1 -DMULTITHREAD=1 -mcmodel=medany -std=gnu99 \
   -O2 -ffast-math -fno-common -fno-builtin-printf \

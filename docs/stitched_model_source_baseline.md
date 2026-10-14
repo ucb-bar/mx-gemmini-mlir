@@ -35,12 +35,12 @@ now archives actual Q/K/V operands, mask, and softmax probabilities from the
 first denoising step. Recomputed masked softmax matches the captured
 probabilities below `2e-9` RMSE. The unmodified flash source applies a
 causal mask only to its last key block. A small source patch now applies
-SmolVLA's Boolean mask through `VPU_ADD` on **every** block. Head 0 of the
-first flow step passes Spike at padded 64×192×64, with 22,447 pipelined
-modeled cycles and 3.4425% relative output error versus its captured FP32
-attention result. The other 14 heads, other flow steps, and the rest of the
-model still need a stitched source run before this becomes a full-model
-cycle control.
+SmolVLA's Boolean mask through `VPU_ADD` on **every** block. All 15 heads
+of the first flow step pass separately on Spike at padded 64×192×64, with
+22,447 pipelined modeled cycles per separately timed head and 2.977–6.356%
+relative output error versus each captured FP32 attention result. Other
+flow steps and the rest of the model still need a stitched source run before
+this becomes a full-model cycle control.
 
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.

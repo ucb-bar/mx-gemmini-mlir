@@ -53,6 +53,23 @@ def main() -> None:
     assert re.search(r"PERF serial\s+33961 cycles", log)
     assert re.search(r"PERF pipelined\s+22447 cycles", log)
     assert re.search(r"accuracy O head 0 \(50 rows\): rel_fro 34425 ppm", log)
+    all_heads = json.loads((ROOT / "source_all_heads.json").read_text())
+    rows = all_heads["rows"]
+    assert [row["head"] for row in rows] == list(range(15))
+    assert all_heads["cutpoint_sha256"] == digest
+    assert all_heads["sum_of_separately_timed_head_cycles"] == 336705
+    for row in rows:
+        head_log = ROOT / "source_all_heads" / f"head_{row['head']:02d}.log"
+        assert hashlib.sha256(head_log.read_bytes()).hexdigest() == row["source_log_sha256"]
+        content = head_log.read_text()
+        assert "attn_flash PASSED" in content
+        assert (f"check O hash: serial {row['output_hash']}, pipelined "
+                f"{row['output_hash']} (equal)") in content
+        assert re.search(rf"PERF serial\s+{row['serial_cycles']} cycles", content)
+        assert re.search(rf"PERF pipelined\s+{row['pipelined_cycles']} cycles", content)
+        assert (f"rel_fro {row['relative_frobenius_error_ppm_vs_captured_fp32']} ppm"
+                in content)
+        assert row["pipelined_cycles"] == 22447
     result = {
         "cutpoint_sha256": digest,
         "heads": 15,
@@ -65,6 +82,11 @@ def main() -> None:
         "attention_output_shape": list((p @ v).shape),
         "source_first_head_pipelined_cycles": receipt["pipelined_cycles"],
         "source_first_head_relative_error_ppm": receipt["relative_frobenius_error_ppm_vs_captured_fp32"],
+        "source_verified_heads": len(rows),
+        "source_head_error_ppm_range": [
+            min(row["relative_frobenius_error_ppm_vs_captured_fp32"] for row in rows),
+            max(row["relative_frobenius_error_ppm_vs_captured_fp32"] for row in rows),
+        ],
     }
     print(json.dumps(result, indent=2, sort_keys=True))
 

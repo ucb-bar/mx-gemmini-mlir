@@ -1,0 +1,145 @@
+{
+  "scope": "first SmolVLA flow step, all 15 attention heads run separately",
+  "cutpoint_sha256": "6b5b713660c819aa8f69a5174464b46258491bc81a86a8b4073b6c56cc9f122a",
+  "source_revision": "npu-exploration@0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "rows": [
+    {
+      "head": 0,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 34425,
+      "output_hash": "437d801250f000dd",
+      "generated_header_sha256": "d5908341d0d5d1660c10bc1369d2bd2a2bf248c41f6a5aa1ff131600adead5a1",
+      "source_log_sha256": "2ed43685cecd8565890828c7a8e16f1729f7ef9b61f9e36322c279d889b0852f"
+    },
+    {
+      "head": 1,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 38191,
+      "output_hash": "5be7cdec82dad7af",
+      "generated_header_sha256": "b23c92b7f8fedc427e11d84bbc9f06d75c9f608b5476fe80f8ed3c2463ca82a0",
+      "source_log_sha256": "f3eab4716282effcf15b4e7d11d973b9e1128c8cc6a7a5dca6e16d8d50bf0727"
+    },
+    {
+      "head": 2,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 37520,
+      "output_hash": "f7fd6d50511f2484",
+      "generated_header_sha256": "c8fef4c5d4ba85761762e0311392b2984e1229d6d641af561e16399805f28788",
+      "source_log_sha256": "0242b9e630f979fa1811dd7253803834eacb9394ecc8d3ce04fcb2295ec2fa53"
+    },
+    {
+      "head": 3,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 54404,
+      "output_hash": "11f5fc78136fd9d8",
+      "generated_header_sha256": "ede6dc61d96bbc0d74ce0bcef45553bec0d6077b5a455df470c8cd28f280f116",
+      "source_log_sha256": "771d95553b3c974e6bf04aa5b881d7921c9129f1bb17268160dfd90959652911"
+    },
+    {
+      "head": 4,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 39940,
+      "output_hash": "2a06b7db6f57849c",
+      "generated_header_sha256": "a0dbf08dc076e24c39786ce81ca735a09bcb51ac28f2e9fcb6d94394f637547e",
+      "source_log_sha256": "1a76fc5099ce414d39aea0e6820d35c38f08d1bce7cd7e71996949672227f21d"
+    },
+    {
+      "head": 5,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 57926,
+      "output_hash": "c4479fa87edf6c6e",
+      "generated_header_sha256": "167832fa3df2583871e536eadf624e4e9bdbc3b31435b717c45a2a8b90a0bfd1",
+      "source_log_sha256": "45a99bf90003e90f73731116cbbcf137e9a87e4fd58f2d0b1d94979248cc3f6f"
+    },
+    {
+      "head": 6,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 45251,
+      "output_hash": "8354f1e6c08f22ce",
+      "generated_header_sha256": "3b5447d3126ab442220dce17128d1ea295567b9bd4056a2267967c0459d4babf",
+      "source_log_sha256": "b0e656ab6693657ddab92538825456a449d2cf8b6ae042fa75608ef924a03fa4"
+    },
+    {
+      "head": 7,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 33124,
+      "output_hash": "70bf8f9acc466638",
+      "generated_header_sha256": "50d1f683bccf25e00a5fb36b2fb15563bf5643844cdddc53fb6085b7e21cf73c",
+      "source_log_sha256": "8bab9706d62b1fe42027bdb727593b6ece8291b3ec288ad38ef256db8b97e0b9"
+    },
+    {
+      "head": 8,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 63557,
+      "output_hash": "a8faea47880c7da4",
+      "generated_header_sha256": "233333018399ec7e6c45aa01bf27f69d65681fffed0dae65bc70413f34892b04",
+      "source_log_sha256": "13d1826324d1482f70df46e500a77313258ba57dc250333b950834d93a9655ca"
+    },
+    {
+      "head": 9,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 37177,
+      "output_hash": "7ba0431575616e76",
+      "generated_header_sha256": "e9f22420914bd5c9ca0fbcc5a9154e317af219d6118646632053305632fce55f",
+      "source_log_sha256": "ac3c3b2defca7f50f8712d8eb461a401c6323ecd3a103e78c5f3451559573ef5"
+    },
+    {
+      "head": 10,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 29770,
+      "output_hash": "14530c37965a53bc",
+      "generated_header_sha256": "23dc651df7b77d7e5a8959bfcfd1cc3096e902b23fbae897998dc4312cbb3a56",
+      "source_log_sha256": "8039644e82b9e26ba6a95e4684da96cf808234ae8133904a51d29499bfd9deea"
+    },
+    {
+      "head": 11,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 31395,
+      "output_hash": "ccf6cd65bf963a01",
+      "generated_header_sha256": "be8315a1e1f2e925ddd57f49ccbcb5c403f1950c456182567e2bf66681546540",
+      "source_log_sha256": "deee53b4e91129bf1fbcdd6a2891dd2b1d06fdf744ec266d33f35b037d644c05"
+    },
+    {
+      "head": 12,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 52986,
+      "output_hash": "40fd506a2f61638d",
+      "generated_header_sha256": "a6cfab6c546709c0b86531ec5004c2a491411d07209e333e40cf9250bf1b1ea6",
+      "source_log_sha256": "d01921916416be5843e1dec931b0cdfa6357c800b22d99cf26597870a59b5302"
+    },
+    {
+      "head": 13,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 43689,
+      "output_hash": "bc4bdf17d0fa873c",
+      "generated_header_sha256": "7aa8ee834a7b2c8b9a8d1b563f03c66d37638f7e67e2a481a242905aa007f049",
+      "source_log_sha256": "3d059c985b0d3ebfb8e66630bbe633b6f5ca40ef49a3553e79fefeca36f7529f"
+    },
+    {
+      "head": 14,
+      "serial_cycles": 33961,
+      "pipelined_cycles": 22447,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 50097,
+      "output_hash": "efe390d1363446bb",
+      "generated_header_sha256": "e10d473cc4463087f98b91f89ba1042e92885e99f599af660e08ffc8beabbd1f",
+      "source_log_sha256": "16b4028721cc975384464188da6bbc46062a810b15a835704b24cefeb77452f3"
+    }
+  ],
+  "sum_of_separately_timed_head_cycles": 336705,
+  "is_stitched_attention_or_full_model": false
+}

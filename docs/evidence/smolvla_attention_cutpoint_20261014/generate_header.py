@@ -1,4 +1,4 @@
-"""Generate Nicolas-style MX operands and a block-major mask for SmolVLA head 0."""
+"""Generate Nicolas-style MX operands and a block-major SmolVLA mask."""
 
 from __future__ import annotations
 
@@ -23,18 +23,22 @@ def main() -> None:
                         help="Directory containing the pinned gen_matmul_llama.py")
     parser.add_argument("--cutpoint", type=Path,
                         default=Path(__file__).with_name("cutpoint.npz"))
+    parser.add_argument("--head-index", type=int, default=0,
+                        help="Attention head from the captured 15-head flow step")
     parser.add_argument("--out", type=Path,
                         default=Path(__file__).with_name("smol_head0.h"))
     args = parser.parse_args()
+    if not 0 <= args.head_index < 15:
+        parser.error("--head-index must be in 0..14")
 
     sys.path.insert(0, str(args.rocc_tools.resolve()))
     import gen_matmul_llama as generator
 
     with np.load(args.cutpoint, allow_pickle=False) as arrays:
-        q = arrays["q"][0]
-        kt = arrays["kt"][0]
-        v = arrays["v"][0]
-        p = arrays["p"][0]
+        q = arrays["q"][args.head_index]
+        kt = arrays["kt"][args.head_index]
+        v = arrays["v"][args.head_index]
+        p = arrays["p"][args.head_index]
         captured_mask = arrays["mask"][0, 0]
     assert q.shape == (50, 64) and kt.shape == (64, 163)
     assert v.shape == (163, 64) and captured_mask.shape == (50, 163)
@@ -86,7 +90,8 @@ def main() -> None:
     ]
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("\n".join(parts) + "\n")
-    print(f"wrote {args.out}; valid mask fraction {captured_mask.mean():.6f}")
+    print(f"wrote {args.out}; head {args.head_index}; "
+          f"valid mask fraction {captured_mask.mean():.6f}")
 
 
 if __name__ == "__main__":

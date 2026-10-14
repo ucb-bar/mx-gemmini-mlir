@@ -74,5 +74,20 @@ rebuild and run the archived header, set `NPU_ROOT` to pinned
 `OUT_DIR`, then run `bash run_source.sh`. Set `RISCV_ENV` separately if the
 ROCC checkout's `riscv-tests/env` directory is incomplete.
 
-This is **one attention head in one flow step**. It is not a matched compiler
-cutpoint, a full SmolVLA run, or a stitched-model cycle ratio.
+The [all-head receipt](source_all_heads.json) and
+[15 source logs](source_all_heads/) extend the same check to every captured
+head in that first flow step. All 15 serial/pipelined output hashes agree
+and all pass the source checker. Each separately timed pipelined run takes
+22,447 modeled cycles with this fixed shape and schedule. Relative error
+versus each head's captured FP32 output ranges from **2.977% to 6.356%**.
+The 336,705-cycle sum is a diagnostic sum of 15 standalone passes, not a
+stitched attention-stage timing. This regenerates them using the same
+environment variables as `run_source.sh`; `ROCC_TOOLS` can name a separate
+quantizer-tools checkout:
+
+```sh
+python -B run_all_heads.py --out-dir "$OUT_DIR"
+```
+
+These are **attention heads in one flow step**. They are not matched compiler
+cutpoints, a full SmolVLA run, or a stitched-model cycle ratio.
