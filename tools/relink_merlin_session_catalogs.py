@@ -1,8 +1,8 @@
-"""Relink an MX session with replacement matrix catalogs and shared weights.
+"""Relink an MX session with replacement catalogs or bounded output dumps.
 
 The original host, shim, VPU, state adapters, and weight blob remain the same.
-Only the specified catalog objects change. This avoids materializing another
-multi-gigabyte weight blob for an equal-input Spike comparison.
+The selected catalog objects or session entry change without materializing
+another multi-gigabyte weight blob.
 """
 
 from __future__ import annotations
@@ -12,8 +12,12 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
-from .link_merlin_session import _symbol_address
+from .link_merlin_session import (
+    DEFAULT_DUMP_LIMIT_BYTES, _selected_output_dumps, _session_main,
+    _symbol_address,
+)
 
 
 def sha(path: Path) -> str:
@@ -33,11 +37,14 @@ def named_paths(values: list[str], *, label: str) -> dict[str, Path]:
 
 def relink(base_link: Path, builds: dict[str, Path],
            replacements: dict[str, Path], output: Path, *,
-           merlin_src: Path, riscv_root: Path) -> dict:
+           merlin_src: Path, riscv_root: Path,
+           dump_outputs: tuple[str, ...] = (),
+           dump_limit_bytes: int = DEFAULT_DUMP_LIMIT_BYTES) -> dict:
     base = json.loads(base_link.read_text())
     programs = [row["name"] for row in base["programs"]]
     if (base.get("schema") != "mx_gemmini.linked_merlin_session.v1"
-            or set(builds) != set(programs) or not replacements
+            or set(builds) != set(programs)
+            or not (replacements or dump_outputs)
             or not set(replacements) <= set(programs)):
         raise ValueError("base session, stage builds, and replacements do not agree")
     base_dir = base_link.parent
@@ -51,6 +58,19 @@ def relink(base_link: Path, builds: dict[str, Path],
                     row["capture_model_sha256"] for row in base["programs"]
                     if row["name"] == name)):
             raise ValueError(f"stage {name} differs from the base session")
+        for relative, expected in base["stage_object_sha256"][name].items():
+            if sha(build / relative) != expected:
+                raise ValueError(f"stage {name} object {relative} differs from base")
+
+    selected_dumps = None
+    if dump_outputs:
+        sys.path.insert(0, str(merlin_src))
+        from merlin.llvmlower import session_bundle
+        session = session_bundle.load(Path(base["session_root"]))
+        if session.program_names != tuple(programs):
+            raise ValueError("base session programs differ from capture")
+        selected_dumps = _selected_output_dumps(
+            session, dump_outputs, dump_limit_bytes)
 
     if output.exists():
         raise ValueError("output directory must not already exist")
@@ -132,7 +152,26 @@ def relink(base_link: Path, builds: dict[str, Path],
         objects.append(base_dir / f"adapter_{index}.o")
         if index:
             objects.append(base_dir / f"call_{index}.o")
-    objects.extend([base_dir / "session.o", base_dir / "session_main.o"])
+    objects.append(base_dir / "session.o")
+    if selected_dumps is None:
+        objects.append(base_dir / "session_main.o")
+    else:
+        generated = (base_dir / "session.o").resolve().parent / "generated"
+        if not (generated / "merlin_session.h").is_file():
+            raise ValueError("base session lacks its generated ABI header")
+        source = output / "session_main.c"
+        source.write_text(_session_main(
+            [len(program.outputs) for program in session.programs],
+            weights_base=base["arena_layout"]["weights_base"],
+            dump_outputs=tuple((row["program"], row["output"])
+                               for row in selected_dumps)))
+        main_object = output / "session_main.o"
+        flags = ["-O2", "-ffreestanding", "-fno-builtin", "-march=rv64gc",
+                 "-mabi=lp64d", "-mcmodel=medany"]
+        bare = merlin_src.parent / "merlin/runtime/baremetal/spike"
+        subprocess.run([str(cc), *flags, "-I", str(generated), "-I", str(bare),
+                        "-c", str(source), "-o", str(main_object)], check=True)
+        objects.append(main_object)
     if any(not path.is_file() for path in objects):
         raise ValueError("base session objects are incomplete")
     bare = merlin_src.parent / "merlin/runtime/baremetal/spike"
@@ -155,6 +194,9 @@ def relink(base_link: Path, builds: dict[str, Path],
     record["elf_bytes"] = elf.stat().st_size
     record["elf_sha256"] = sha(elf)
     record["catalog_replacements"] = changed
+    if selected_dumps is not None:
+        record["dump_outputs"] = selected_dumps
+        record["dump_limit_bytes"] = dump_limit_bytes
     record["relinked_from_sha256"] = sha(base_link)
     (output / "mx_session_link.json").write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n")
@@ -165,7 +207,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-link", type=Path, required=True)
     parser.add_argument("--stage-build", action="append", required=True)
-    parser.add_argument("--replacement", action="append", required=True)
+    parser.add_argument("--replacement", action="append", default=[])
+    parser.add_argument("--dump-output", action="append", default=[])
+    parser.add_argument("--dump-limit-bytes", type=int,
+                        default=DEFAULT_DUMP_LIMIT_BYTES)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--merlin-src", type=Path, required=True)
     parser.add_argument("--riscv-root", type=Path, required=True)
@@ -174,9 +219,12 @@ def main() -> None:
                     named_paths(args.stage_build, label="stage build"),
                     named_paths(args.replacement, label="replacement"),
                     args.out.absolute(), merlin_src=args.merlin_src.resolve(strict=True),
-                    riscv_root=args.riscv_root.resolve(strict=True))
+                    riscv_root=args.riscv_root.resolve(strict=True),
+                    dump_outputs=tuple(args.dump_output),
+                    dump_limit_bytes=args.dump_limit_bytes)
     print(json.dumps({"elf_sha256": record["elf_sha256"],
-                      "replaced": sorted(record["catalog_replacements"])}))
+                      "replaced": sorted(record["catalog_replacements"]),
+                      "dump_outputs": record["dump_outputs"]}))
 
 
 if __name__ == "__main__":

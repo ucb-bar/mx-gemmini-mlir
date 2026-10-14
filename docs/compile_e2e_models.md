@@ -311,6 +311,47 @@ acceptance test for MX precision. A separate reference using exact MX operand,
 mesh, and VPU arithmetic is needed to distinguish intended quantization drift
 from a compiler numerical defect.
 
+### Inspect full TinyLlama logits
+
+TinyLlama's output 0 is 128,000 bytes per step. The session linker keeps its
+16 KiB default console limit, so select an explicit bounded limit to inspect
+one prefill and all 32 decode outputs. This relink reuses the existing stage
+objects and weight blob; it writes one new ELF without regenerating the
+multi-gigabyte checkpoint data.
+
+```sh
+"$CAPTURE_PY" -m tools.relink_merlin_session_catalogs \
+  --base-link "$ARTIFACT_ROOT/links/tiny_llama/mx_session_link.json" \
+  --stage-build "prefill=$ARTIFACT_ROOT/builds/tiny_llama/prefill" \
+  --stage-build "decode=$ARTIFACT_ROOT/builds/tiny_llama/decode" \
+  --dump-output prefill:0 --dump-output decode:0 \
+  --dump-limit-bytes 128000 \
+  --out "$ARTIFACT_ROOT/links/tiny_llama_logits" \
+  --merlin-src "$MERLIN_ROOT/src" --riscv-root "$RISCV_ROOT"
+"$CAPTURE_PY" -m tools.run_linked_merlin_session \
+  --link-receipt "$ARTIFACT_ROOT/links/tiny_llama_logits/mx_session_link.json" \
+  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
+  --merlin-src "$MERLIN_ROOT/src" --riscv-root "$RISCV_ROOT" \
+  --spike-extlib "$SPIKE_EXTLIB" \
+  --out-dir "$ARTIFACT_ROOT/runs/tiny_llama_logits" \
+  --timeout-s 172800 --progress-interval-s 60 \
+  --perf-config e4m3_vpu --perf-set mem.host_tracking=0
+"$CAPTURE_PY" -m tools.compare_tinyllama_session \
+  --run-receipt "$ARTIFACT_ROOT/runs/tiny_llama_logits/mx_session_run.json" \
+  --link-receipt "$ARTIFACT_ROOT/links/tiny_llama_logits/mx_session_link.json" \
+  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
+  --fast-run-receipt "$ARTIFACT_ROOT/runs/tiny_llama/mx_session_run.json" \
+  --fast-link-receipt "$ARTIFACT_ROOT/links/tiny_llama/mx_session_link.json" \
+  --out "$ARTIFACT_ROOT/runs/tiny_llama_logits/fp32_comparison.json"
+```
+
+The selected dumps total 4,224,000 raw bytes, below the linker's 8 MiB
+session cap. The runner checks each dump against its guest output hash. The
+comparator then requires all 99 output hashes to match the earlier full run
+before reporting per-step FP32 logit cosine, normalized RMSE, and top-token
+agreement. The captured token stream is synthetic and fixed across runs;
+these measurements are numerical diagnostics, not generation-quality results.
+
 ## 6. Inspect fixed weights and profile conversion
 
 For a compiled stage, inspect the RHS of each live MX call against the

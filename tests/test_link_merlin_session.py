@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from tools.link_merlin_session import _session_main
+from types import SimpleNamespace
+
+import pytest
+
+from tools.link_merlin_session import _selected_output_dumps, _session_main
 
 
 def test_bare_metal_session_reclaims_temporary_allocations_per_step() -> None:
@@ -21,3 +25,22 @@ def test_selected_output_is_dumped_after_digest_and_timing() -> None:
     assert source.index("report(program, step, output") < source.index(
         "if ((program == 1 && output == 0)) dump_output")
     assert "SESSION_HEX " in source
+
+
+def test_large_logits_dump_requires_explicit_bounded_limit() -> None:
+    session = SimpleNamespace(
+        program_names=("prefill", "decode"),
+        programs=(SimpleNamespace(steps=1, outputs=(([1, 32000], "f32"),)),
+                  SimpleNamespace(steps=32, outputs=(([1, 32000], "f32"),))),
+    )
+    requests = ("prefill:0", "decode:0")
+    with pytest.raises(ValueError, match="console byte limit"):
+        _selected_output_dumps(session, requests, 16_384)
+    selected = _selected_output_dumps(session, requests, 128_000)
+    assert [row["bytes"] for row in selected] == [128_000, 128_000]
+    with pytest.raises(ValueError, match="8 MiB"):
+        _selected_output_dumps(SimpleNamespace(
+            program_names=("prefill", "decode"),
+            programs=(session.programs[0],
+                      SimpleNamespace(steps=65, outputs=session.programs[1].outputs)),
+        ), requests, 128_000)

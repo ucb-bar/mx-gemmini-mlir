@@ -115,3 +115,18 @@ def test_selected_output_dump_is_bound_to_guest_digest(tmp_path) -> None:
                              session, selected, [record], tmp_path)
     with pytest.raises(ValueError, match="lacks a selected output dump"):
         extract_output_dumps("", session, selected, [record], tmp_path)
+
+
+def test_large_logits_dump_requires_matching_link_limit(tmp_path) -> None:
+    value = bytes(range(256)) * 500
+    record = {"program": 0, "step": 0, "output": 0,
+              "bytes": len(value), "sha256": hashlib.sha256(value).hexdigest()}
+    session = SimpleNamespace(programs=(SimpleNamespace(steps=1),))
+    selected = [{"program": 0, "output": 0}]
+    line = f"SESSION_HEX 0 0 0 {len(value)} {value.hex()}\n"
+    with pytest.raises(ValueError, match="capture ABI"):
+        extract_output_dumps(line, session, selected, [record], tmp_path)
+    result = extract_output_dumps(line, session, selected, [record], tmp_path,
+                                  byte_limit=len(value))
+    assert result[0]["bytes"] == len(value)
+    assert (tmp_path / result[0]["path"]).read_bytes() == value

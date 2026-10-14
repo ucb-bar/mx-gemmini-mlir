@@ -16,6 +16,45 @@ import subprocess
 import sys
 
 
+DEFAULT_DUMP_LIMIT_BYTES = 16_384
+MAX_DUMP_LIMIT_BYTES = 262_144
+MAX_SESSION_DUMP_BYTES = 8 << 20
+
+
+def _selected_output_dumps(session, requests: tuple[str, ...],
+                           byte_limit: int) -> list[dict]:
+    if not DEFAULT_DUMP_LIMIT_BYTES <= byte_limit <= MAX_DUMP_LIMIT_BYTES:
+        raise ValueError("output dump byte limit must be 16 KiB to 256 KiB")
+    names = set(session.program_names)
+    selected = []
+    seen = set()
+    total_bytes = 0
+    output_sizes = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2,
+                    "f16": 2, "i32": 4}
+    for request in requests:
+        name, separator, raw_index = request.partition(":")
+        if not separator or name not in names or not raw_index.isdecimal():
+            raise ValueError(f"invalid --dump-output {request!r}; use program:output-index")
+        program_index = session.program_names.index(name)
+        program = session.programs[program_index]
+        output_index = int(raw_index)
+        if output_index >= len(program.outputs) or (program_index, output_index) in seen:
+            raise ValueError(f"unknown or duplicate --dump-output {request!r}")
+        shape, dtype = program.outputs[output_index]
+        byte_count = output_sizes[dtype]
+        for dimension in shape:
+            byte_count *= dimension
+        if byte_count > byte_limit:
+            raise ValueError(f"dump output {request!r} exceeds the console byte limit")
+        total_bytes += byte_count * program.steps
+        if total_bytes > MAX_SESSION_DUMP_BYTES:
+            raise ValueError("selected output dumps exceed 8 MiB per session")
+        seen.add((program_index, output_index))
+        selected.append({"program": program_index, "name": name,
+                         "output": output_index, "bytes": byte_count})
+    return sorted(selected, key=lambda row: (row["program"], row["output"]))
+
+
 def _sha(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
@@ -234,6 +273,7 @@ def link_session(
     session_root: Path, builds: dict[str, Path], output: Path, *,
     profile: Path, merlin_src: Path, riscv_root: Path,
     dump_outputs: tuple[str, ...] = (),
+    dump_limit_bytes: int = DEFAULT_DUMP_LIMIT_BYTES,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -246,28 +286,8 @@ def link_session(
     names = set(session.program_names)
     if set(builds) != names:
         raise ValueError(f"stage builds must be exactly {sorted(names)}")
-    selected_dumps = []
-    seen_dumps = set()
-    output_sizes = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
-    for request in dump_outputs:
-        name, separator, raw_index = request.partition(":")
-        if not separator or name not in names or not raw_index.isdecimal():
-            raise ValueError(f"invalid --dump-output {request!r}; use program:output-index")
-        program_index = session.program_names.index(name)
-        program = session.programs[program_index]
-        output_index = int(raw_index)
-        if output_index >= len(program.outputs) or (program_index, output_index) in seen_dumps:
-            raise ValueError(f"unknown or duplicate --dump-output {request!r}")
-        shape, dtype = program.outputs[output_index]
-        byte_count = output_sizes[dtype]
-        for dimension in shape:
-            byte_count *= dimension
-        if byte_count > 16_384:
-            raise ValueError(f"dump output {request!r} exceeds the 16 KiB console limit")
-        seen_dumps.add((program_index, output_index))
-        selected_dumps.append({"program": program_index, "name": name,
-                               "output": output_index, "bytes": byte_count})
-    selected_dumps.sort(key=lambda row: (row["program"], row["output"]))
+    selected_dumps = _selected_output_dumps(session, dump_outputs,
+                                             dump_limit_bytes)
     expected_profile = profile_sha256(load_profile(profile))
     receipts = {}
     source_objects = {}
@@ -388,6 +408,7 @@ def link_session(
         "schema": "mx_gemmini.linked_merlin_session.v1",
         "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
         "dump_outputs": selected_dumps,
+        "dump_limit_bytes": dump_limit_bytes,
         "status": "linked_experimental_numeric_qualification_pending",
         "session_root": str(session_root),
         "programs": [{"name": program.name, "steps": program.steps,
@@ -425,14 +446,18 @@ def main() -> None:
     parser.add_argument("--merlin-src", required=True, type=Path)
     parser.add_argument("--riscv-root", required=True, type=Path)
     parser.add_argument("--dump-output", action="append", default=[],
-                        help="program:output-index; record at most 16 KiB per selected result")
+                        help="program:output-index; record selected result bytes")
+    parser.add_argument("--dump-limit-bytes", type=int,
+                        default=DEFAULT_DUMP_LIMIT_BYTES,
+                        help="per-output console limit (16–256 KiB; 8 MiB total)")
     args = parser.parse_args()
     record = link_session(
         args.session_root.resolve(strict=True), _stage_paths(args.stage_build),
         args.workdir.absolute(), profile=args.profile.resolve(strict=True),
         merlin_src=args.merlin_src.resolve(strict=True),
         riscv_root=args.riscv_root.resolve(strict=True),
-        dump_outputs=tuple(args.dump_output))
+        dump_outputs=tuple(args.dump_output),
+        dump_limit_bytes=args.dump_limit_bytes)
     print(json.dumps(record, sort_keys=True))
 
 

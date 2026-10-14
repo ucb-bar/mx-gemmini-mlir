@@ -12,7 +12,9 @@ import subprocess
 import sys
 import time
 
-from .link_merlin_session import _symbol_address
+from .link_merlin_session import (
+    DEFAULT_DUMP_LIMIT_BYTES, MAX_DUMP_LIMIT_BYTES, _symbol_address,
+)
 
 
 _BYTES = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
@@ -176,8 +178,11 @@ def session_progress(log: str, session, *, elapsed_wall_s: float) -> dict:
 
 
 def extract_output_dumps(log: str, session, selected: list[dict],
-                         digests: list[dict], out_dir: Path) -> list[dict]:
+                         digests: list[dict], out_dir: Path,
+                         byte_limit: int = DEFAULT_DUMP_LIMIT_BYTES) -> list[dict]:
     """Save bounded guest values only when their bytes match the session digest."""
+    if not DEFAULT_DUMP_LIMIT_BYTES <= byte_limit <= MAX_DUMP_LIMIT_BYTES:
+        raise ValueError("invalid linked output dump byte limit")
     wanted = {(row["program"], row["output"]): row for row in selected}
     expected = {
         (row["program"], row["step"], row["output"]): row
@@ -199,7 +204,7 @@ def extract_output_dumps(log: str, session, selected: list[dict],
             raise ValueError("malformed session output dump") from error
         key = (program, step, output)
         if (key not in expected or key in values or
-                byte_count != expected[key]["bytes"] or byte_count > 16_384 or
+                byte_count != expected[key]["bytes"] or byte_count > byte_limit or
                 len(parts[5]) != byte_count * 2):
             raise ValueError("session output dump differs from its capture ABI")
         try:
@@ -330,7 +335,8 @@ def run_session(
         log, session, exit_code=exit_code,
         require_perf=link.get("performance_schema") == "spike_rdcycle_rdinstret_per_step.v1")
     output_dumps = (extract_output_dumps(
-        log, session, link.get("dump_outputs", []), observation["output_digests"], out_dir)
+        log, session, link.get("dump_outputs", []), observation["output_digests"],
+        out_dir, link.get("dump_limit_bytes", DEFAULT_DUMP_LIMIT_BYTES))
         if observation["complete"] else [])
     timing_model_active = "gemmini: GEMMINI_MODE=both" in log
     timing_report = perf_path.read_text(encoding="utf-8") if perf_path.is_file() else ""
