@@ -6,7 +6,8 @@ and MX compiler selected 200 MX contractions. The target bound every selected
 contraction to FP8, prepacked checkpoint weights, and offloaded residual add,
 unary, and reduction regions to the VPU. Softmax and other elementwise work
 remained on the compiled host. Spike finished the stage in **4,473,524,179
-cycles**. This run does not include autoregressive decoding.
+functional-mode cycles**. Nicolas's `e4m3_vpu` timing model was not active.
+This run does not include autoregressive decoding.
 
 The final 32,000 logits have cosine **0.9594** to the captured PyTorch FP32
 row and **0.9767** to the [independently generated FP8 source

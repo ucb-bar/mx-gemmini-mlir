@@ -125,7 +125,10 @@ control](../evidence/tinyllama_full_safe_vpu_20261014/README.md) reports
 4,473,524,179 full-stage cycles with MX contractions and selected VPU
 postprocessing. Their logits have cosine 0.977 and the same next token on
 this input. The slide gives the raw counts with **NO RATIO** because the
-timed work and host/VPU operation mix differ.
+timed work and host/VPU operation mix differ. Those raw counters use Spike's
+default `func` mode; the full-session issuer-swap and dense-attention rows
+instead use Nicolas's `e4m3_vpu` modeled timing. The slide labels this
+distinction explicitly.
 
 An [independent two-layer TinyLlama source smoke
 test](../evidence/nicolas_tinyllama_two_layer_source_20261014/README.md)

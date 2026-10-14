@@ -258,8 +258,9 @@ contractions and offloads residual add, unary, and reduction operations; its
 logits have 0.977 cosine to the source and the same next token for this input.
 The source's selected timers and the compiler's full-stage timer have
 different boundaries and use different host/VPU work, so no cycle ratio is
-reported. This is still a numerical diagnostic, not a general accuracy
-qualification.
+reported. These counters use Spike's default functional mode; Nicolas's
+`e4m3_vpu` timing model is disabled. This is still a numerical diagnostic,
+not a general accuracy qualification.
 For a stage-only source timing comparison, pass
 `--spike-isa rv64gc_zicntr` to `tools.build_merlin_stage` so the compiler
 run uses the same counter-enabled Spike ISA as Nicolas's `read_cycles` run.

@@ -93,8 +93,10 @@ control](evidence/tinyllama_full_safe_vpu_20261014/README.md) that retains
 MX matrix contractions and VPU residual add, unary, and reduction operations
 has cosine 0.9767 to the source and 0.9594 to the PyTorch row. All three
 predict token 1230 for this captured input. The control takes 4,473,524,179
-complete stage cycles. Source and compiler cycle counters cover different
-work, so neither compiler run yields a speedup ratio against the source. These
+complete stage cycles in Spike's default functional mode. These counts are
+separate from Nicolas's `e4m3_vpu` modeled-cycle session results. Source and
+compiler cycle counters cover different work, so neither compiler run yields
+a speedup ratio against the source. These
 are one-pass prefill diagnostics, not the 33-step TinyLlama session above.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 trace most of the observed logit drift to the softmax route and two

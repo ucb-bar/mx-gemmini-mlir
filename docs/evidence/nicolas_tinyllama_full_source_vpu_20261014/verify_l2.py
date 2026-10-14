@@ -58,6 +58,8 @@ def main() -> None:
     assert receipt["source_internal_checks_passed"] is True
     assert receipt["source_spike_isa"] == "rv64gc_zicntr"
     assert receipt["compiler_spike_isa"] == "rv64gc"
+    assert receipt["source_timing_mode"] == receipt["compiler_timing_mode"] == "func"
+    assert receipt["nicolas_timing_model_active"] is False
     assert receipt["input_ids_npz_sha256"] == (
         source_receipt["input_ids_npz_sha256"])
     assert receipt["input_ids_npz_sha256"] == (

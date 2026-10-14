@@ -326,7 +326,7 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
-        ("TinyLlama 64 tokens · independent runs",
+        ("TinyLlama 64 tokens · functional Spike",
          f"{safe_vpu['stage_cycles']:,}†",
          f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
         if full_source and safe_vpu else
@@ -368,8 +368,8 @@ def results(slide, smol_comparison: dict | None,
     callout = (
         "Issuer-swap rows change only the MX command issuer; host and VPU "
         "code is the same.\n"
-        "† Source and compiler time different work and use different host/VPU "
-        "operations. No speedup ratio."
+        "† 64-token row uses functional Spike counters and different host/VPU "
+        "work. No modeled speedup ratio."
         if full_source else
         "Issuer-swap rows change only the MX command issuer; host and VPU "
         "code is the same.\n"
@@ -387,11 +387,12 @@ def results(slide, smol_comparison: dict | None,
     footer.height = Inches(0.66)
     if tiny_comparison and smol_comparison and full_source and safe_vpu:
         footer_text = (
-            "* Issuer-swap hashes match: SmolVLA 33/33; TinyLlama 99/99. "
-            "This is not an independent accuracy check.\n"
-            f"† Independent source vs selected-VPU compiler logits cosine "
-            f"{safe_vpu['comparisons']['compiler_vs_source_quant']['cosine']:.3f}; "
-            "same token, different timed work. No full-model speedup claim."
+            "* Issuer-swap rows use modeled e4m3_vpu cycles; hashes match "
+            "SmolVLA 33/33 and TinyLlama 99/99.\n"
+            f"† 64-token row uses functional rdcycle (timing model off); "
+            f"source/compiler logits cosine "
+            f"{safe_vpu['comparisons']['compiler_vs_source_quant']['cosine']:.3f}. "
+            "Dense attention uses modeled cycles."
         )
     elif tiny_comparison and smol_comparison and full_source:
         footer_text = (

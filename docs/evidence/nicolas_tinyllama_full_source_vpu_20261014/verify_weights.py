@@ -1,4 +1,4 @@
-"""Match all two-layer source checkpoint tensors to model2MLIR's capture."""
+"""Match source checkpoint tensors to model2MLIR's capture."""
 
 from __future__ import annotations
 
@@ -36,11 +36,15 @@ def file_hash(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-capture", type=Path, required=True,
-                        help="Nicolas capture directory containing layer0/1 and model.npz")
+                        help="Nicolas capture directory containing layer NPZs and model.npz")
     parser.add_argument("--compiler-stage", type=Path, required=True,
-                        help="model2MLIR two-layer prefill stage")
+                        help="model2MLIR prefill stage with the selected layer count")
+    parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--receipt", type=Path, default=HERE / "l2_receipt.json")
     args = parser.parse_args()
-    receipt = json.loads((HERE / "l2_receipt.json").read_text())
+    if args.layers <= 0:
+        parser.error("layer count must be positive")
+    receipt = json.loads(args.receipt.read_text())
     for name, expected in receipt["source_capture_npz_sha256"].items():
         assert file_hash(args.source_capture / name) == expected, name
     weights = args.compiler_stage / "weights.safetensors"
@@ -49,7 +53,7 @@ def main() -> None:
     assert file_hash(inputs) == receipt["input_ids_npz_sha256"]
     count = 0
     with safe_open(weights, framework="np") as tensors:
-        for layer in range(2):
+        for layer in range(args.layers):
             with np.load(args.source_capture / f"layer{layer}.npz") as source:
                 for source_name, suffix in LAYER_WEIGHTS.items():
                     captured = source[source_name]
@@ -74,7 +78,7 @@ def main() -> None:
                 assert np.array_equal(source["meta_token_ids"],
                                       input_data["in0"].reshape(-1))
     assert count == receipt["exact_fp32_checkpoint_tensors_matched"]
-    print(f"verified {count} exact FP32 checkpoint tensors and all 64 token IDs")
+    print(f"verified {count} exact FP32 checkpoint tensors and all input token IDs")
 
 
 if __name__ == "__main__":

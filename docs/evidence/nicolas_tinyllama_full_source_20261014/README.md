@@ -8,14 +8,17 @@ run is one prefill forward pass; it does not include autoregressive decoding.
 The source program passed its generated bit-exact checks for every mesh section,
 host section, and boundary between them on the pinned MX Spike extension.
 
-| Source `read_cycles` window | Cycles |
+| Source `read_cycles` window, functional Spike | Cycles |
 | --- | ---: |
 | MX mesh sections | 69,364,062 |
 | Scalar host sections | 4,387,359,413 |
 | Sum of selected sections | 4,456,723,475 |
 
 The compiler's independent 64-token, 22-layer, all-FP8 run reported
-5,369,620,807 **stage** cycles. This is a raw counter, not a paired speedup:
+5,369,620,807 **functional Spike stage** cycles. These runs used the extension's
+default `func` mode, so they are not Nicolas `e4m3_vpu` modeled cycles and
+cannot be compared with the modeled session rows in the slide deck. This is
+a raw counter, not a paired speedup:
 the source times selected sections, uses scalar host normalization, RoPE,
 softmax, SiLU, and residual operations, while the compiler times its full
 stage and offloads selected operations to the VPU. In addition, their final

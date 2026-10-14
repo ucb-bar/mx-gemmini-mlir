@@ -23,10 +23,12 @@
   "compiler_add_spike_log_sha256": "695294768668d92a2a1273bf591013d99260e8628fe627a52b967260a6cfd871",
   "compiler_checkpoint_weights_sha256": "80fe322204686a87941a7b6d2bf41bd76ac63a256253275e97f29e3156a8d683",
   "compiler_spike_isa": "rv64gc",
+  "compiler_timing_mode": "func",
   "cycle_ratio_reasons": [
     "two-layer diagnostic is not a full model",
     "output logits are close but not bit identical",
-    "source and compiler Spike ISA strings differ by zicntr"
+    "source and compiler Spike ISA strings differ by zicntr",
+    "default functional mode does not activate the Nicolas timing model"
   ],
   "cycle_ratio_valid": false,
   "diagnostic_elf_sha256": "9d561b85244f5bdf75ab7d7f1ec99bd13a5d46f68bb1bef3dc5ce6b073a2d536",
@@ -34,6 +36,7 @@
   "diagnostic_spike_log_sha256": "9f3dd709927dc5e01a66b258f7baab7c22f730f18e0ab4ee081887fde1f52f0e",
   "exact_fp32_checkpoint_tensors_matched": 20,
   "input_ids_npz_sha256": "f162393ec59b1ac6afb43459c1c6c848ba4aa85950a27ec2e88b1917b7d6ba2d",
+  "nicolas_timing_model_active": false,
   "pytorch_logits_sha256": "6cc6bd27fbcbbdc00c8ba948cf3f89d9007700c1b1e3026476e173157ad28eec",
   "rtl_commit": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
   "schema": "mx_gemmini.nicolas_tinyllama_l2_vpu_residual_spike.v1",
@@ -50,6 +53,7 @@
   "source_last_logits_hex_sha256": "fd18cf3e324db07b7a82a32fb792bfe9471c3430eed1d1474ba0ca81af954b90",
   "source_spike_isa": "rv64gc_zicntr",
   "source_stage_timer_scope": "from residual stream setup through full head readback; validation excluded",
+  "source_timing_mode": "func",
   "spike_extlib_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
   "stage_cycles": 366920372,
   "timed_elf_sha256": "24bd99f78bd6cd2d1573a44ed90cd729bdd91bd371d08514c28aa8e05800e547",

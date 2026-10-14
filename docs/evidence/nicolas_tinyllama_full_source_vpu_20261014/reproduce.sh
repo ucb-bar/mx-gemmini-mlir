@@ -23,7 +23,10 @@ CPATH="$RISCV_ROOT/include/riscv" make -j1 -B -C \
   EXTRA_llama_model_m64='-DLLAMA_VPU_RESIDUAL -DLLAMA_STAGE_TIMING -DLLAMA_DUMP_LAST_LOGITS' \
   "$OUT/spike/llama_model_m64" > "$WORK_DIR/build_vpu.log" 2>&1
 
-"$RISCV_ROOT/bin/spike" --isa=rv64gc_zicntr \
+GEMMINI_MODE=both GEMMINI_PERF_CONFIG=e4m3_vpu \
+  GEMMINI_PERF_SET=mem.host_tracking=0 \
+  GEMMINI_PERF_OUT="$WORK_DIR/gemmini_perf_vpu.txt" \
+  "$RISCV_ROOT/bin/spike" --isa=rv64gc_zicntr \
   --extlib="$SPIKE_EXTLIB" --extension=gemmini \
   -m0x80000000:0x2c0000000 "$OUT/spike/llama_model_m64" \
   > "$WORK_DIR/spike_vpu.log" 2>&1
