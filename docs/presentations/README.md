@@ -148,9 +148,12 @@ updating the flow stage's scalar timestep through FP32. Its ten timestep
 outputs match the FP32 recurrence exactly. The final action cosine is
 **0.058** versus **0.054** for the original route; normalized RMSE is
 **1.830**. The corrected output-tap run takes 316,515,603,374 modeled
-cycles. The tap programs and scalar route differ from the fast issuer-swap
-row, so this is a numerical diagnostic, not a full-model speedup. Correcting
-the timestep alone does not remove the accumulated action drift.
+cycles. Both output-tap runs use the same program roster and taps, and the
+prefix and action step cycles are unchanged. Replacing the one-element VPU
+path lowers each flow step from about 41.13 billion to 11.47 billion
+modeled cycles. The output values differ, so that is not an equal-output
+speedup; the fast issuer-swap row also has a different timing boundary.
+Correcting the timestep alone does not remove the accumulated action drift.
 
 The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
 uses the exact full-run compiler flow object with captured FP32 state and

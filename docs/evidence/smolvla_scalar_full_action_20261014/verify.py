@@ -108,11 +108,24 @@ def verify() -> dict:
     if (old_run["output_digests"] == run["output_digests"]
             or report["final_action_metrics"] != report["flow_step_metrics"][-1]):
         raise ValueError("corrected run did not change outputs as expected")
+    old_steps = {(row["program"], row["step"]): row["cycles"]
+                 for row in old_run["step_performance"]}
+    new_steps = {(row["program"], row["step"]): row["cycles"]
+                 for row in run["step_performance"]}
+    required = {(0, 0), (2, 0)} | {(1, step) for step in range(10)}
+    if (set(old_steps) != required or set(new_steps) != required
+            or any(abs(old_steps[key] - new_steps[key]) > 1
+                   for key in ((0, 0), (2, 0)))
+            or any(new_steps[1, step] >= old_steps[1, step]
+                   for step in range(10))):
+        raise ValueError("matched output-tap stage timing differs unexpectedly")
     return {"old_final_cosine": json.loads((PRIOR / "fp32_comparison.json").read_text())
             ["final_action_metrics"]["cosine"],
             "new_final_cosine": report["final_action_metrics"]["cosine"],
             "new_final_normalized_rmse": report["final_action_metrics"]["normalized_rmse"],
-            "new_cycles": run["total_performance"]["cycles"]}
+            "new_cycles": run["total_performance"]["cycles"],
+            "old_flow_step0_cycles": old_steps[1, 0],
+            "new_flow_step0_cycles": new_steps[1, 0]}
 
 
 if __name__ == "__main__":

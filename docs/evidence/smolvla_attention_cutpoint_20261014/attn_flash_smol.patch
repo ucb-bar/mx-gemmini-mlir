@@ -1,0 +1,34 @@
+--- a/attn_flash.c
++++ b/attn_flash.c
+@@ -62,0 +63,6 @@
++#ifndef ATTN_ARBITRARY_MASK
++#define ATTN_ARBITRARY_MASK 0  // 1: block-major BF16 mask for every key block
++#endif
++#ifndef ATTN_VALID_Q
++#define ATTN_VALID_Q ATTN_SQ
++#endif
+@@ -248,0 +255,2 @@
++typedef char arbitrary_mask_fits[(!ATTN_ARBITRARY_MASK ||
++  (SP_MASK / BANK_ROWS == (SP_MASK + ROWS16(SQ, SK) - 1) / BANK_ROWS)) ? 1 : -1];
+@@ -317,0 +326,3 @@
++#if ATTN_ARBITRARY_MASK
++  gemmini_vpu_binary(VPU_ADD, S, S, SP_MASK + ROWS16(SQ, BOFF(j)), rows);
++#endif
+@@ -424,0 +436,3 @@
++#if ATTN_ARBITRARY_MASK
++  mvin_tiles((const uint8_t *)MASK_BLOCK_BF16, DIM, ROWS16(SQ, SK), DIM, SP_MASK);
++#endif
+@@ -514 +528,2 @@
+-  printf("mask: %s\n", ATTN_CAUSAL ? "causal (each head's queries are the last keys)" : "none (every key precedes every query)");
++  printf("mask: %s\n", ATTN_ARBITRARY_MASK ? "arbitrary Boolean mask, block-major BF16" :
++         ATTN_CAUSAL ? "causal (each head's queries are the last keys)" : "none (every key precedes every query)");
+@@ -544 +559 @@
+-  for (int h = 0; h < ATTN_HEADS; h++) {   // accuracy over each packed head's first 16 rows (fp64 attention reference)
++  for (int h = 0; h < ATTN_HEADS; h++) {   // accuracy over the valid rows of each packed head
+@@ -547 +562 @@
+-    for (int i = r0; i < r0 + 16 * D; i++) {
++    for (int i = r0; i < r0 + ATTN_VALID_Q * D; i++) {
+@@ -552 +567,2 @@
+-    printf("accuracy O head %d (16 rows): rel_fro %d ppm vs fp64 attention\n", h, (int)(sqrtf(num / den) * 1e6f));
++    printf("accuracy O head %d (%d rows): rel_fro %d ppm vs fp32 attention\n",
++           h, ATTN_VALID_Q, (int)(sqrtf(num / den) * 1e6f));
