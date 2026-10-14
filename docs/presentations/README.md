@@ -320,6 +320,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_tinyllama_prefill128_source_20261014/receipt.json \
   --tiny-prefill-precision \
     docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
+  --tiny-first11-prepacked \
+    docs/evidence/tinyllama_prefill_precision_20261014/first11_prepacked_spike_receipt.json \
   --tiny-full-logits \
     docs/evidence/tinyllama_full_logits_20261014/receipt.json \
   --smol-action-values \

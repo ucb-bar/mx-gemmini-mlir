@@ -318,6 +318,7 @@ def results(slide, smol_comparison: dict | None,
             radiance: dict | None, prefill128: dict | None,
             equal_work: dict | None, tiny_logits: dict | None,
             smol_actions: dict | None, prefill_precision: dict | None,
+            first11_prepacked: dict | None,
             smol_reference_step: dict | None,
             smol_prefix_factor: dict | None,
             smol_corrected: dict | None,
@@ -392,8 +393,11 @@ def results(slide, smol_comparison: dict | None,
                      bold=row_index in (1, 2, 3) and col_index == 0,
                      align=PP_ALIGN.LEFT if col_index == 0 else PP_ALIGN.CENTER,
                      size=11.2 if row_index == 0 else 12.4)
-    add_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.94),
-                                       Inches(5.10), Inches(11.46), Inches(0.61))
+    show_first11 = bool(tiny_logits and smol_actions and prefill_precision
+                        and first11_prepacked)
+    add_shape = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.94), Inches(5.10),
+        Inches(11.46), Inches(0.78 if show_first11 else 0.61))
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
@@ -427,15 +431,34 @@ def results(slide, smol_comparison: dict | None,
         decode = tiny_logits["decode_summary"]
         action = smol_actions["final_action_metrics"]
         first_flow = smol_actions["flow_step_metrics"][0]
-        callout = (
-            "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
-            f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
-            f"top matches {decode['top_token_matches']}/32.\n" +
-            (step_comparison if step_comparison else
-             "SmolVLA flow 0 → final action cosine "
-             f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
-             f"final normalized RMSE {action['normalized_rmse']:.3f}.")
-        )
+        if show_first11:
+            fp8 = prefill_precision["metrics"]["all_fp8_spike"]
+            observed = first11_prepacked["observed"]
+            callout = (
+                "TinyLlama logits vs FP32: prefill mixed "
+                f"{prefill['cosine']:.3f}, all-FP8 {fp8['cosine']:.3f}; "
+                f"decode mean {decode['cosine_mean']:.3f}, "
+                f"{decode['top_token_matches']}/32 top matches.\n"
+                "First11 FP8: prepacked and runtime logits equal; "
+                f"{observed['cycles'] / 1e9:.2f}B vs "
+                f"{first11_prepacked['runtime_control_cycles'] / 1e9:.2f}B "
+                "cycles; cosine "
+                f"{observed['vs_captured_fp32']['cosine']:.3f}.\n" +
+                (step_comparison if step_comparison else
+                 "SmolVLA flow 0 → final action cosine "
+                 f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+                 f"final normalized RMSE {action['normalized_rmse']:.3f}.")
+            )
+        else:
+            callout = (
+                "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
+                f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
+                f"top matches {decode['top_token_matches']}/32.\n" +
+                (step_comparison if step_comparison else
+                 "SmolVLA flow 0 → final action cosine "
+                 f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+                 f"final normalized RMSE {action['normalized_rmse']:.3f}.")
+            )
     elif tiny_logits:
         prefill = tiny_logits["prefill_metrics"]
         decode = tiny_logits["decode_summary"]
@@ -509,7 +532,7 @@ def results(slide, smol_comparison: dict | None,
     set_text(add_shape, callout,
              size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
-    footer.top = Inches(5.91)
+    footer.top = Inches(6.04 if show_first11 else 5.91)
     footer.height = Inches(0.66)
     if tiny_comparison and smol_comparison and prefill128:
         agreement = prefill128["comparisons"]["source_vs_compiler"]
@@ -670,6 +693,7 @@ def main() -> None:
     parser.add_argument("--smol-prefix-factor", type=Path)
     parser.add_argument("--smol-corrected-action", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
+    parser.add_argument("--tiny-first11-prepacked", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -708,6 +732,8 @@ def main() -> None:
                       if args.smol_corrected_action else None)
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
+    first11_prepacked = (json.loads(args.tiny_first11_prepacked.read_text())
+                         if args.tiny_first11_prepacked else None)
     if prefill_precision is not None:
         values = prefill_precision.get("metrics") or {}
         mixed = values.get("mixed_fp4_fp8_spike") or {}
@@ -730,6 +756,26 @@ def main() -> None:
                        or not -1 <= row["cosine"] <= 1
                        for row in (mixed, fp8))):
             parser.error("TinyLlama prefill precision needs the verified archive")
+    if first11_prepacked is not None:
+        artifacts = first11_prepacked.get("artifact_sha256") or {}
+        observed = first11_prepacked.get("observed") or {}
+        same = observed.get("vs_runtime_packed_first11") or {}
+        if (prefill_precision is None
+                or first11_prepacked.get("schema") !=
+                "mx_gemmini.tinyllama_first11_prepacked_spike.v1"
+                or first11_prepacked.get("capture_model_sha256") !=
+                prefill_precision["capture_model_sha256"]
+                or first11_prepacked.get("profile_sha256") !=
+                prefill_precision["profile_sha256"]
+                or not artifacts
+                or any(file_sha256(args.tiny_first11_prepacked.parent / name)
+                       != digest for name, digest in artifacts.items())
+                or same.get("rmse") != 0.0
+                or same.get("top_token_equal") is not True
+                or type(observed.get("cycles")) is not int
+                or type(first11_prepacked.get("runtime_control_cycles")) is not int
+                or observed["cycles"] >= first11_prepacked["runtime_control_cycles"]):
+            parser.error("first11 prepacked control needs its verified Spike archive")
     for name, receipt, source, schema in (
             ("TinyLlama logits", tiny_logits, args.tiny_full_logits,
              "mx_gemmini.tinyllama_full_logits.v1"),
@@ -1073,6 +1119,7 @@ def main() -> None:
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
             equal_work, tiny_logits, smol_actions, prefill_precision,
+            first11_prepacked,
             smol_reference_step, smol_prefix_factor, smol_corrected, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
