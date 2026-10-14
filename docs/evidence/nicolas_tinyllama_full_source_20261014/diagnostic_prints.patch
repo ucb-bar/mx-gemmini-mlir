@@ -1,0 +1,17 @@
+--- a/baremetal/mxgemmini/src/llama_model.c
++++ b/baremetal/mxgemmini/src/llama_model.c
+@@ -677,0 +678,9 @@
++#ifdef LLAMA_DUMP_LAST_LOGITS
++    // Diagnostic output after the timed host section: the compiler prefill
++    // returns this same final-position vocabulary row.
++    printf("last_logits_bf16 ");
++    for (int v = 0; v < LLAMA_V; v++)
++      printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
++    printf("\n");
++#endif
++
+@@ -694 +703,3 @@
+-  printf("cycles mesh %d, host %d\n", (int) t_mesh, (int) t_host);
++  printf("cycles64 mesh 0x%08x%08x host 0x%08x%08x\n",
++         (unsigned) (t_mesh >> 32), (unsigned) t_mesh,
++         (unsigned) (t_host >> 32), (unsigned) t_host);

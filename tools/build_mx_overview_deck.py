@@ -303,7 +303,7 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 
 def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None,
-            layer_probe: dict | None) -> None:
+            layer_probe: dict | None, full_source: dict | None) -> None:
     shapes = slide.shapes
     set_text(shapes[0], "Spike results by measurement scope", size=27,
              bold=True)
@@ -325,6 +325,10 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 64 tokens · source vs compiler",
+         f"{full_source['compiler_stage_cycles']:,}†",
+         f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
+        if full_source else
         ("TinyLlama cached layer · unpaired",
          f"{layer_probe['compiler_runs']['fp8_prepacked']['cycles']:,}†",
          f"{layer_probe['source_layer']['cycles']:,}†", "NO RATIO")
@@ -332,7 +336,7 @@ def results(slide, smol_comparison: dict | None,
         ("SmolVLA flow 1 step · issuer swap", "2,112,653,481",
          "2,112,919,925", "−0.0126%"))
     values = (
-        ("Workload / compared code", "Compiler cycles", "Nicolas path cycles", "Compiler Δ"),
+        ("Workload / compared code", "Compiler cycles", "Control/source cycles", "Compiler Δ"),
         ("SmolVLA full 12 steps · issuer swap",
          f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
@@ -357,13 +361,18 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     callout = (
-        "Full-model rows swap MX issuers inside one Merlin host/VPU program; "
-        "small cycle gaps are expected.\n"
+        "Issuer-swap rows change only the MX command issuer; host and VPU "
+        "code is the same.\n"
+        "† Source and compiler time different work; their logits do not yet "
+        "match. No speedup ratio."
+        if full_source else
+        "Issuer-swap rows change only the MX command issuer; host and VPU "
+        "code is the same.\n"
         "† The layer uses the same tokens and weights but different timed work "
         "and tensor formats. Its cycle ratio is invalid."
         if layer_probe else
-        "Full-model rows swap MX issuers inside the same Merlin host/VPU "
-        "program; small cycle gaps are expected.\n"
+        "Issuer-swap rows change only the MX command issuer; host and VPU "
+        "code is the same.\n"
         "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
         "as complete models.")
     set_text(add_shape, callout,
@@ -371,7 +380,15 @@ def results(slide, smol_comparison: dict | None,
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    if tiny_comparison and smol_comparison and layer_probe:
+    if tiny_comparison and smol_comparison and full_source:
+        footer_text = (
+            "* Issuer-swap hashes match: SmolVLA 33/33; TinyLlama 99/99. "
+            "This is not an independent accuracy check.\n"
+            f"† Independent source vs compiler logits cosine "
+            f"{full_source['compiler_source_logit_cosine']:.3f}. Dense "
+            "attention is one fused kernel. Spike cycles are not FPGA latency."
+        )
+    elif tiny_comparison and smol_comparison and layer_probe:
         compiler_error = layer_probe["compiler_runs"]["fp8_prepacked"]["rel_fro_vs_pytorch"]
         source_error = layer_probe["source_layer"]["rel_fro_vs_pytorch"]
         footer_text = (
@@ -416,6 +433,7 @@ def main() -> None:
     parser.add_argument("--tiny-full-run", type=Path)
     parser.add_argument("--tiny-full-comparison", type=Path)
     parser.add_argument("--tiny-layer-probe", type=Path)
+    parser.add_argument("--tiny-full-source", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -427,6 +445,31 @@ def main() -> None:
                        if args.tiny_full_comparison else None)
     layer_probe = (json.loads(args.tiny_layer_probe.read_text())
                    if args.tiny_layer_probe else None)
+    full_source = (json.loads(args.tiny_full_source.read_text())
+                   if args.tiny_full_source else None)
+    if full_source is not None:
+        source_output = json.loads(
+            args.tiny_full_source.with_name("output_comparison.json").read_text())
+        cycles = full_source.get("cycles") or {}
+        if (full_source.get("schema") !=
+                "mx_gemmini.independent_tinyllama_m64_source_spike.v1"
+                or full_source.get("cycle_ratio_valid") is not False
+                or full_source.get("source_internal_bit_exact_checks_passed") is not True
+                or type(cycles.get("selected_sum")) is not int
+                or cycles["selected_sum"] <= 0
+                or cycles.get("mx_mesh", 0) + cycles.get("scalar_host", 0) !=
+                cycles["selected_sum"]
+                or type(full_source.get("compiler_stage_cycles")) is not int
+                or full_source["compiler_stage_cycles"] <= 0
+                or not 0 <= full_source.get("compiler_source_logit_cosine", -1) <= 1
+                or full_source.get("source_output_matches_prior_cycle_print_run") is not True
+                or source_output.get("source_output_matches_generator_exact") is not True
+                or source_output.get("compiler_cycles") !=
+                full_source["compiler_stage_cycles"]
+                or (source_output.get("comparisons") or {}).get(
+                    "compiler_vs_source_quant", {}).get("cosine") !=
+                full_source["compiler_source_logit_cosine"]):
+            parser.error("full source needs completed unpaired evidence")
     if layer_probe is not None:
         source = layer_probe.get("source_layer") or {}
         compiled = (layer_probe.get("compiler_runs") or {}).get("fp8_prepacked") or {}
@@ -482,7 +525,7 @@ def main() -> None:
     architecture(prs.slides[0])
     configurations(prs.slides[1])
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
-            layer_probe)
+            layer_probe, full_source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

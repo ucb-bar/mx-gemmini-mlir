@@ -1,0 +1,28 @@
+{
+  "compiler_source_logit_cosine": 0.6720158275601398,
+  "compiler_spike_log_sha256": "99b22791252ecc226da227982c83da21e7d47865bea47826abe1f16a2f82e34e",
+  "compiler_stage_cycles": 5369620807,
+  "cycle_ratio_reasons": [
+    "different_timing_windows",
+    "source_scalar_host_vs_compiler_vpu",
+    "compiler_full_logits_not_numerically_equivalent"
+  ],
+  "cycle_ratio_valid": false,
+  "cycles": {
+    "mx_mesh": 69364062,
+    "scalar_host": 4387359413,
+    "selected_sum": 4456723475
+  },
+  "input_ids_npz_sha256": "f162393ec59b1ac6afb43459c1c6c848ba4aa85950a27ec2e88b1917b7d6ba2d",
+  "pytorch_last_logits_npy_sha256": "c8b5703f387d94b9bab0f00c62ce7e85ea42333cc8e60792b0b5c2da9b074763",
+  "rtl_commit": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.independent_tinyllama_m64_source_spike.v1",
+  "source_blob_sha256": "58ab38185ab8d5e58d56096e1f36d036f25dc85571b3e1782c7e5964479d03c1",
+  "source_commit": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "source_internal_bit_exact_checks_passed": true,
+  "source_last_logits_hex_sha256": "bc3e30b1c414c5eae83eb95f27872612eaa11ae8934a7b5ef592b0ac214054d5",
+  "source_output_matches_prior_cycle_print_run": true,
+  "source_spike_log_sha256": "bb66f7cea25eedadef6b367ddb3378a51c78c0c59ab4c03096f72668c6cae81d",
+  "spike_extlib_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "timing_scope": "selected_read_cycles_windows_excludes_checks_and_setup"
+}

@@ -124,10 +124,15 @@ def main() -> None:
     parser.add_argument("--riscv-root", type=Path, required=True)
     parser.add_argument("--arena-mb", type=int,
                         help="explicit Spike arena size; omitted uses Merlin's LLVM-site estimate")
+    parser.add_argument("--spike-arena-base", type=lambda value: int(value, 0),
+                        help="absolute Spike arena base for models with large linked static data")
     parser.add_argument("--output-dump-cap", type=int, default=1)
     parser.add_argument("--diagnostic-host-vpu", action="store_true",
                         help="keep current MX contraction routing but execute VPU-eligible "
                              "operations on the host for a numerical control")
+    parser.add_argument("--diagnostic-vpu-classes",
+                        help="comma-separated VPU classes to enable in a numerical control: "
+                             "softmax,add,elementwise,unary,reduce")
     parser.add_argument("--cache-checkpoint-weights", action="store_true",
                         help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--prepack-checkpoint-weights", action="store_true",
@@ -143,6 +148,19 @@ def main() -> None:
                         help="run the built ELF on Spike with this pinned Gemmini extension")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    all_vpu_classes = frozenset(("softmax", "add", "elementwise", "unary", "reduce"))
+    if args.diagnostic_host_vpu and args.diagnostic_vpu_classes is not None:
+        parser.error("choose one VPU diagnostic mode")
+    if args.diagnostic_host_vpu:
+        enabled_vpu_classes = frozenset()
+    elif args.diagnostic_vpu_classes is not None:
+        enabled_vpu_classes = frozenset(args.diagnostic_vpu_classes.split(","))
+        if not enabled_vpu_classes or not enabled_vpu_classes <= all_vpu_classes:
+            parser.error("diagnostic VPU classes must be a nonempty subset of "
+                         "softmax,add,elementwise,unary,reduce")
+    else:
+        enabled_vpu_classes = all_vpu_classes
+    diagnostic_vpu = enabled_vpu_classes != all_vpu_classes
     if args.cache_checkpoint_weights and args.prepack_checkpoint_weights:
         parser.error("choose one checkpoint weight preparation mode")
     stage = args.stage.resolve(strict=True)
@@ -216,8 +234,8 @@ def main() -> None:
                     or record.get("sha256") != (_sha(artifact) if name.endswith(".json")
                                                 else weights_sha)):
                 parser.error(f"checkpoint artifact differs from capture receipt: {name}")
-    if args.diagnostic_host_vpu and not expected_regions:
-        parser.error("--diagnostic-host-vpu requires selected MX contractions")
+    if diagnostic_vpu and not expected_regions:
+        parser.error("VPU diagnostics require selected MX contractions")
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
@@ -228,16 +246,17 @@ def main() -> None:
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
             precision_overrides=overrides),
-        post_offload_transform=(None if args.diagnostic_host_vpu
-                                else MXVPUPostOffload(
-                                    profile,
-                                    fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
-                                                          if args.prepack_checkpoint_weights
-                                                          else None))),
+        post_offload_transform=MXVPUPostOffload(
+            profile,
+            enabled_classes=enabled_vpu_classes,
+            fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
+                                  if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
         auto_arena=args.arena_mb is None, backend="scalar", device=device,
+        spike_arena_base=(args.spike_arena_base if args.spike_arena_base is not None
+                          else spike_model.ARENA_BASE),
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
         output_all_sha256=True, op_profile=args.op_profile,
@@ -280,10 +299,10 @@ def main() -> None:
     catalog_vpu_regions = set(catalog.get("vpu_softmax", {}).get("source_regions", ()))
     softmax_coverage_invalid = (
         len(lowered_vpu_regions) != len(lowered_vpu)
-        or (not args.diagnostic_host_vpu and
+        or ("softmax" in enabled_vpu_classes and
             (selected_vpu_regions != lowered_vpu_regions or
              selected_vpu_regions != catalog_vpu_regions))
-        or (args.diagnostic_host_vpu and bool(lowered_vpu_regions))
+        or ("softmax" not in enabled_vpu_classes and bool(lowered_vpu_regions))
     )
     if softmax_coverage_invalid:
         raise RuntimeError("MX VPU softmax source selection, rewrite, and catalog disagree")
@@ -337,15 +356,19 @@ def main() -> None:
             "unary": len(selected_unary_sites(selected_text, profile)),
             "reduce": len(selected_row_reduce_sites(selected_text, profile)),
         }
-        if any(residual_eligible.values()):
+        if any(count for name, count in residual_eligible.items()
+               if name in enabled_vpu_classes):
             raise RuntimeError(f"MX VPU eligible source sites remained on host: {residual_eligible}")
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
     status = ("linked_diagnostic_host_vpu_numeric_qualification_pending"
               if args.diagnostic_host_vpu else
+              "linked_diagnostic_partial_vpu_numeric_qualification_pending"
+              if diagnostic_vpu else
               "linked_experimental_numeric_qualification_pending")
     route = ("mx_gemmini_and_host_vpu_control" if args.diagnostic_host_vpu else
+             "mx_gemmini_and_partial_vpu_control" if diagnostic_vpu else
              "mx_gemmini_and_host" if device is not None else "host_only")
     receipt = {
         "schema": "mx_gemmini.merlin_stage_probe.v1",
@@ -357,6 +380,7 @@ def main() -> None:
         "catalog_manifest": str(catalog_path) if device is not None else None,
         "execution_route": route,
         "diagnostic_host_vpu": args.diagnostic_host_vpu,
+        "enabled_vpu_classes": sorted(enabled_vpu_classes),
         "selected_operations": catalog["covered_contractions"],
         "expected_selected_operations": len(expected_regions),
         "raw_selected_source_coverage_complete": True,
@@ -387,6 +411,7 @@ def main() -> None:
         "build_hash": result.get("build_hash"),
         "mem_bytes": result["mem_bytes"],
         "arena_mb": result["arena_bytes"] // (1024 * 1024),
+        "spike_arena_base": result["arena_base"],
         "arena_estimate": result["arena_estimate"],
         "arena_selection": "llvm_site_estimate" if args.arena_mb is None else "explicit",
         "compile_timeout_s": args.compile_timeout_s,

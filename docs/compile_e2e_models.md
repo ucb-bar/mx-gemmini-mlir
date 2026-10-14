@@ -157,6 +157,14 @@ final host MLIR. `action_decode` has no selected MX/VPU work and uses Merlin's
 compiled host path. `--diagnostic-host-vpu` is a numerical control and must
 not be used for a production session link.
 
+A large stage-only Spike image can place linked static data above the
+historical `0xc0000000` activation arena. Merlin now rejects that overlap
+before returning an ELF. For a standalone stage run, pass an MiB-aligned
+`--spike-arena-base` above the reported `_stack_top` (for example,
+`0xd0000000` for the measured 64-token TinyLlama FP8 build), together with
+an `--arena-mb` large enough for the stage. The full-session linker has its
+own linked-boundary relocation check.
+
 ## 3. Link each complete session
 
 ```sh
@@ -242,6 +250,18 @@ and hardware latency claims still need RTL or FPGA calibration.
 alone is insufficient. Full-model numerical correctness still requires an
 independent reference that implements the selected FP4/FP8 conversion and
 MX/VPU BF16 arithmetic and checks logits or actions plus recurrent state.
+An [independent 64-token, 22-layer TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)
+passes its generated checks on Spike, but its final logits have only 0.672
+cosine similarity to the current all-FP8 compiler run. Its selected source
+timers and the compiler's stage timer have different boundaries, so those
+cycle counts are reported without a speedup ratio. Treat the compiled model
+as a numerical diagnostic until this gap is resolved.
+The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
+hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
+elementwise-only routes each change the final token and reduce logit cosine
+to about 0.91; add, unary, and reduction routes retain about 0.99 cosine
+on this input. These are diagnostic settings, not an accepted numerical
+policy for other inputs or full sessions.
 The [current evidence](full_model_compilation.md) separates compiled links,
 individual Spike executions, and numerical qualification.
 The [paired MX+VPU attention timing check](evidence/attn_vpu_timing_20261012/README.md)

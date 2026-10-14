@@ -84,6 +84,19 @@ inputs, output/state comparisons, schedules, and measurements. The selected
 [Merlin target contract](../contracts/target_contract.yaml) therefore remains
 `structural_unqualified` with `phase0_admitted: false`.
 
+An [independent 64-token TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)
+executes all 22 decoder layers and the head on Spike. Its generated stage
+checks pass, and its logits have cosine 0.9835 to the captured PyTorch output.
+The all-FP8 compiler run on the same checkpoint and tokens has cosine 0.6720
+to the source logits. Source and compiler cycle counters cover different work,
+so they are recorded without a speedup ratio. This is a one-pass prefill
+diagnostic, not the 33-step TinyLlama session above.
+The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
+trace most of the observed logit drift to the softmax and elementwise
+postprocessing routes on that captured input. Add, unary, and reduction
+routes preserve the reference token in isolation and together. This is a
+numerical diagnostic, not a qualification of full-model accuracy.
+
 The [pretrained TinyLlama precision sweep](evidence/tinyllama_precision_sweep_20261013/README.md)
 finds substantial logit drift under the default FP4 dense operand policy on
 one captured input. Promoting only the 22 MLP down projections to FP8 improves

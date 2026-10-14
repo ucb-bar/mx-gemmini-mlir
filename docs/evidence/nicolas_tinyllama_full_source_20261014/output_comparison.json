@@ -1,0 +1,29 @@
+{
+  "comparisons": {
+    "compiler_vs_pytorch": {
+      "a_argmax": 1230,
+      "b_argmax": 1230,
+      "cosine": 0.7010893744678726,
+      "rmse": 2.1821534217532483
+    },
+    "compiler_vs_source_quant": {
+      "a_argmax": 1230,
+      "b_argmax": 1230,
+      "cosine": 0.6720158275601398,
+      "rmse": 2.2675343450636882
+    },
+    "source_quant_vs_pytorch": {
+      "a_argmax": 1230,
+      "b_argmax": 1230,
+      "cosine": 0.9835242357796106,
+      "rmse": 0.39657661137371175
+    }
+  },
+  "compiler_cycles": 5369620807,
+  "compiler_log_sha256": "99b22791252ecc226da227982c83da21e7d47865bea47826abe1f16a2f82e34e",
+  "schema": "mx_gemmini.independent_tiny_m64_diagnostic.v1",
+  "source_cycle_print_is_truncated_to_32bit": true,
+  "source_last_logits_sha256": "55e1fd9861f68c4c5a9c05895486d475320dcbd19ccea2842e2d945c63d2eaf1",
+  "source_log_sha256": "eb711c4d347e60c5fbef0632549aef31fb24618242705c70b52e669f6e5589b4",
+  "source_output_matches_generator_exact": true
+}

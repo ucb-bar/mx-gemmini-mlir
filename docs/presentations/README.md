@@ -91,8 +91,10 @@ only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
-The third row shows the cached TinyLlama layer as **unpaired**: its compiler
-stage and Nicolas source kernel have different input formats and timed work.
+The third row shows a 64-token, 22-layer TinyLlama source run beside the
+compiler run as **unpaired**: the source times selected MX and scalar-host
+sections, while the compiler times a complete stage with VPU offload. Their
+final logits also differ substantially.
 The last row compares one fused source attention kernel at the same
 64×256×128 shape. None of these rows compares a fused source implementation
 of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
@@ -115,6 +117,12 @@ records 83,547,564,353 compiler cycles and 83,544,602,795 Nicolas issuer
 cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
+
+An [independent full TinyLlama source run](../evidence/nicolas_tinyllama_full_source_20261014/README.md)
+passes all 22 layers and the head on Spike. It reports 4,456,723,475 cycles
+in selected MX and scalar-host windows versus 5,369,620,807 compiler stage
+cycles. Their logits have cosine similarity 0.672; the slide therefore gives
+the raw counts with **NO RATIO**.
 
 An [independent two-layer TinyLlama source smoke
 test](../evidence/nicolas_tinyllama_two_layer_source_20261014/README.md)
@@ -140,8 +148,8 @@ The [cached TinyLlama layer probe](../evidence/tinyllama_cached_layer_compiler_2
 now runs a real 64-query layer from PyTorch through model2MLIR and the MX
 compiler. It exposes per-operation packing and intermediate conversion costs,
 but its stage cycle window differs from Nicolas's timed source kernel.
-The slide prints both raw counters with **NO RATIO** and an explicit timing
-warning. Its generator verifies the source receipt and compiler output metrics.
+The cached-layer measurements remain in that evidence directory; the slide
+now uses the full source run because it covers all decoder layers and the head.
 
 ## Regenerate
 
@@ -158,6 +166,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/comparison.json \
   --tiny-layer-probe \
     docs/evidence/tinyllama_cached_layer_compiler_20261014/summary.json \
+  --tiny-full-source \
+    docs/evidence/nicolas_tinyllama_full_source_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
