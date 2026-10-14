@@ -7,6 +7,7 @@ native PowerPoint objects; the university seal is the template's master image.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -228,9 +229,9 @@ def configurations(slide) -> None:
     add_text(slide, "Compiler consequences", 7.38, 4.06,
              4.78, 0.30, size=14.1, bold=True, color=NAVY)
     add_text(slide,
-             "• FP4 selects PE 0; 256 KiB SPAD bounds tiling.\n"
-             "• vpu_execute / spad_requant become legal.\n"
-             "• FP6 contracts reject here; use its LUT profile.\n"
+             "• TinyLlama: 155 FP4 / 45 FP8 MX sites per stage.\n"
+             "• FP4 binds PE 0; 256 KiB SPAD caps tiles.\n"
+             "• VPU/requant legal; FP6 rejects in this profile.\n"
              "• load_profile(profile, rtl_root=rtl) rejects drift.",
              7.38, 4.42, 4.78, 1.62, size=11.6, color=INK)
     add_text(slide,
@@ -270,7 +271,8 @@ def results(slide, smol_comparison: dict | None,
     table.rows[0].height = Inches(0.60)
     for row in list(table.rows)[1:]:
         row.height = Inches(0.63)
-    smol_compiler = 72_066_544_354
+    smol_compiler = (smol_comparison["reference_cycles"]
+                     if smol_comparison else None)
     smol_native = (smol_comparison["candidate_cycles"]
                    if smol_comparison else None)
     tiny_compiler = (tiny_run["total_performance"]["cycles"]
@@ -283,7 +285,8 @@ def results(slide, smol_comparison: dict | None,
 
     values = (
         ("Workload / scope", "Compiler cycles", "Native source cycles", "Compiler Δ"),
-        ("SmolVLA · full 12-step session", f"{smol_compiler:,}*",
+        ("SmolVLA · full 12-step session",
+         f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
          delta(smol_compiler, smol_native)),
         ("TinyLlama · full 33-step session",
@@ -306,16 +309,16 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     set_text(add_shape,
-             "Native source swaps only MX matrix issuers; host graph and VPU stay fixed. "
-             "A matched full fused handwritten MX+VPU baseline is still missing.",
+             "Full-model source variants replace two MX issuer catalogs; host graph and VPU "
+             "stay fixed. A matched fused handwritten whole-model baseline is unmeasured.",
              size=11.5, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    tiny_status = ("TinyLlama full run completed; independent accuracy remains open."
-                   if tiny_run else
+    tiny_status = ("TinyLlama: 33 steps and 99 output hashes match; independent accuracy remains open."
+                   if tiny_comparison else
                    "TinyLlama corrected full Spike runs are in progress; no model cycle total.")
-    smol_status = ("Full SmolVLA issuer-swap outputs match."
+    smol_status = ("Full SmolVLA issuer-swap outputs match (33/33)."
                    if smol_comparison else
                    "Full SmolVLA issuer-swap parity awaits its source run.")
     set_text(
@@ -337,6 +340,8 @@ def main() -> None:
     parser.add_argument("--tiny-full-run", type=Path)
     parser.add_argument("--tiny-full-comparison", type=Path)
     args = parser.parse_args()
+    if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
+        parser.error("TinyLlama needs both the full run and equal-output comparison")
     smol_comparison = (json.loads(args.smol_full_comparison.read_text())
                        if args.smol_full_comparison else None)
     tiny_run = (json.loads(args.tiny_full_run.read_text())
@@ -346,9 +351,10 @@ def main() -> None:
     if tiny_run is not None and (
             tiny_run.get("complete") is not True or tiny_run.get("exit_code") != 0
             or len(tiny_run.get("step_performance", [])) != 33
+            or len(tiny_run.get("output_digests", [])) != 99
             or not isinstance((tiny_run.get("total_performance") or {}).get("cycles"), int)):
         parser.error("TinyLlama full run is incomplete")
-    for comparison, expected in ((smol_comparison, 72_066_544_354),
+    for comparison, expected in ((smol_comparison, None),
                                  (tiny_comparison,
                                   tiny_run["total_performance"]["cycles"]
                                   if tiny_run else None)):
@@ -356,10 +362,16 @@ def main() -> None:
             continue
         if (comparison.get("schema") != "mx_gemmini.equal_input_session_cycles.v1"
                 or comparison.get("output_digest_parity") is not True
-                or comparison.get("reference_cycles") != expected
+                or not isinstance(comparison.get("reference_cycles"), int)
+                or comparison["reference_cycles"] <= 0
+                or (expected is not None and comparison["reference_cycles"] != expected)
                 or not isinstance(comparison.get("candidate_cycles"), int)
                 or comparison["candidate_cycles"] <= 0):
             parser.error("full-session comparison lacks equal-output timing evidence")
+    if tiny_comparison is not None and (
+            tiny_comparison.get("reference_run_sha256") !=
+            hashlib.sha256(args.tiny_full_run.read_bytes()).hexdigest()):
+        parser.error("TinyLlama comparison is not bound to the selected run")
     prs = Presentation(args.template)
     keep_slides(prs)
     style_master(prs)

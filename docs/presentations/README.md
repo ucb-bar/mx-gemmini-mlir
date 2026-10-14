@@ -75,6 +75,13 @@ legal row and fails binding. The profile's 256 KiB scratchpad and 16×16
 mesh also constrain the later tile plan. Profile binding checks the pinned
 RTL hashes when invoked with `--rtl-root`.
 
+The captured TinyLlama prefill and decode stage catalogs each have 200 MX
+`bindings`: 155 FP4 and 45 FP8, counted from each binding's
+`target_dtypes`. The prepacked catalog has 158 distinct `kernels` because
+some bindings share an issuer; kernel count is not operation count. The
+[full-model compilation guide](../compile_e2e_models.md) describes how to
+regenerate the stage catalogs and inspect their precision choices.
+
 ## Slide 3: measured scope
 
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
