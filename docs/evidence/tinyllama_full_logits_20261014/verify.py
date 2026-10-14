@@ -44,7 +44,8 @@ def verify() -> None:
     assert tap["status"] == fast["status"] == "complete_numeric_qualification_pending"
     assert tap["complete"] is fast["complete"] is True
     assert tap["exit_code"] == fast["exit_code"] == 0
-    assert tap["expected_events"] == tap["observed_events"] == 99
+    assert (tap["expected_events"] == tap["observed_events"] ==
+            fast["expected_events"] == fast["observed_events"] == 4 * 33)
     assert tap["timing_mode"] == fast["timing_mode"] == "both"
     assert tap["timing_config"] == fast["timing_config"] == "e4m3_vpu"
     assert tap["timing_overrides"] == fast["timing_overrides"] == "mem.host_tracking=0"

@@ -378,6 +378,11 @@ comparator then requires all 99 output hashes to match the earlier full run
 before reporting per-step FP32 logit cosine, normalized RMSE, and top-token
 agreement. The captured token stream is synthetic and fixed across runs;
 these measurements are numerical diagnostics, not generation-quality results.
+The [completed full-logit archive](evidence/tinyllama_full_logits_20261014/README.md)
+checks all 99 output hashes against the earlier timed run. Against captured
+unquantized FP32, prefill cosine is −0.313 and mean decode cosine is −0.324;
+none of the 32 decode steps selects the FP32 top token. The fixed synthetic
+input and unqualified mixed FP4/FP8 arithmetic limit the interpretation.
 
 ## 6. Inspect fixed weights and profile conversion
 

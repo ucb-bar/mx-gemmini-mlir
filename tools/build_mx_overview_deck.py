@@ -421,7 +421,7 @@ def results(slide, smol_comparison: dict | None,
         callout = (
             "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
             f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
-            f"top token {decode['top_token_matches']}/32.\n" +
+            f"top matches {decode['top_token_matches']}/32.\n" +
             (step_comparison if step_comparison else
              "SmolVLA flow 0 → final action cosine "
              f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
@@ -436,7 +436,7 @@ def results(slide, smol_comparison: dict | None,
         callout = (
             "TinyLlama logits vs captured FP32 on fixed synthetic inputs: "
             f"prefill cosine {prefill['cosine']:.3f}; decode mean "
-            f"{decode['cosine_mean']:.3f}, top token "
+            f"{decode['cosine_mean']:.3f}, top matches "
             f"{decode['top_token_matches']}/32.\n"
             f"{control}output hashes match the timed run; "
             "no generation-quality claim."

@@ -1,0 +1,352 @@
+{
+  "decode_reference_sha256": "38d2af32bf3f6e47de07a257cab846e8f582091312d206af307cd116dc5f7585",
+  "decode_step_metrics": [
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.2460332086048968,
+      "normalized_rmse": 1.1941680660993088,
+      "reference_top_rank_in_actual": 17982,
+      "reference_top_token": 29871,
+      "rmse": 2.916322307126834,
+      "step": 0,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.1764031167957918,
+      "normalized_rmse": 1.1194591896519197,
+      "reference_top_rank_in_actual": 18108,
+      "reference_top_token": 29871,
+      "rmse": 3.468192120166644,
+      "step": 1,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.30107783233957724,
+      "normalized_rmse": 1.2083919150030888,
+      "reference_top_rank_in_actual": 5662,
+      "reference_top_token": 29982,
+      "rmse": 3.2288215609771935,
+      "step": 2,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 2456,
+      "cosine": -0.04055182718898389,
+      "normalized_rmse": 1.2418244255227862,
+      "reference_top_rank_in_actual": 144,
+      "reference_top_token": 5391,
+      "rmse": 2.6943728743709983,
+      "step": 3,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 9424,
+      "cosine": -0.48109272655087487,
+      "normalized_rmse": 1.2798925159230468,
+      "reference_top_rank_in_actual": 30885,
+      "reference_top_token": 29908,
+      "rmse": 3.8133069514511986,
+      "step": 4,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 18153,
+      "cosine": -0.6578271836447459,
+      "normalized_rmse": 1.5177770846285368,
+      "reference_top_rank_in_actual": 31418,
+      "reference_top_token": 29871,
+      "rmse": 4.734531439696599,
+      "step": 5,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.24809550301666566,
+      "normalized_rmse": 1.4984720376381693,
+      "reference_top_rank_in_actual": 9454,
+      "reference_top_token": 327,
+      "rmse": 3.0759387861437015,
+      "step": 6,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 11214,
+      "cosine": -0.47855638295069114,
+      "normalized_rmse": 1.5434867038944418,
+      "reference_top_rank_in_actual": 27470,
+      "reference_top_token": 529,
+      "rmse": 3.715270533390088,
+      "step": 7,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.26983907825376835,
+      "normalized_rmse": 1.2430959688089132,
+      "reference_top_rank_in_actual": 20510,
+      "reference_top_token": 29875,
+      "rmse": 2.784554077943985,
+      "step": 8,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.2776722267502516,
+      "normalized_rmse": 1.265481680038989,
+      "reference_top_rank_in_actual": 19946,
+      "reference_top_token": 29871,
+      "rmse": 2.848031198312902,
+      "step": 9,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 1313,
+      "cosine": -0.30999309305819944,
+      "normalized_rmse": 1.1379044483433585,
+      "reference_top_rank_in_actual": 17332,
+      "reference_top_token": 29871,
+      "rmse": 4.085211035435355,
+      "step": 10,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 24450,
+      "cosine": -0.3056096773347494,
+      "normalized_rmse": 1.2299197245973559,
+      "reference_top_rank_in_actual": 15874,
+      "reference_top_token": 287,
+      "rmse": 3.09095565294689,
+      "step": 11,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.3669581341527348,
+      "normalized_rmse": 1.2372869143290812,
+      "reference_top_rank_in_actual": 18542,
+      "reference_top_token": 29889,
+      "rmse": 3.1715173303612176,
+      "step": 12,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.43278718513647957,
+      "normalized_rmse": 1.4760329826556955,
+      "reference_top_rank_in_actual": 31212,
+      "reference_top_token": 29889,
+      "rmse": 3.247426945501375,
+      "step": 13,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 6428,
+      "cosine": -0.31492181151230675,
+      "normalized_rmse": 1.271906776260367,
+      "reference_top_rank_in_actual": 25651,
+      "reference_top_token": 29889,
+      "rmse": 2.9293673230237434,
+      "step": 14,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 6428,
+      "cosine": -0.3419413544018754,
+      "normalized_rmse": 1.3434614037108612,
+      "reference_top_rank_in_actual": 23018,
+      "reference_top_token": 29871,
+      "rmse": 2.877320712911002,
+      "step": 15,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.3350541223933173,
+      "normalized_rmse": 1.273649199860482,
+      "reference_top_rank_in_actual": 25493,
+      "reference_top_token": 29871,
+      "rmse": 3.131572961484431,
+      "step": 16,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 11214,
+      "cosine": -0.2887143453471919,
+      "normalized_rmse": 1.252595210983077,
+      "reference_top_rank_in_actual": 502,
+      "reference_top_token": 29873,
+      "rmse": 3.00237569256185,
+      "step": 17,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 2456,
+      "cosine": -0.29777888656243995,
+      "normalized_rmse": 1.3754839125662466,
+      "reference_top_rank_in_actual": 13864,
+      "reference_top_token": 29873,
+      "rmse": 2.7587539467649993,
+      "step": 18,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 1313,
+      "cosine": -0.2845741988667133,
+      "normalized_rmse": 1.197943662708849,
+      "reference_top_rank_in_actual": 19570,
+      "reference_top_token": 29871,
+      "rmse": 3.107440892554189,
+      "step": 19,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.12273771397723536,
+      "normalized_rmse": 1.1534414912932562,
+      "reference_top_rank_in_actual": 16746,
+      "reference_top_token": 29871,
+      "rmse": 2.726576007507404,
+      "step": 20,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.3214966830721201,
+      "normalized_rmse": 1.1894419158482066,
+      "reference_top_rank_in_actual": 24130,
+      "reference_top_token": 29871,
+      "rmse": 3.548320949300556,
+      "step": 21,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.3055210365862189,
+      "normalized_rmse": 1.2397328213091652,
+      "reference_top_rank_in_actual": 20398,
+      "reference_top_token": 29871,
+      "rmse": 2.938088306021413,
+      "step": 22,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.3369826005959672,
+      "normalized_rmse": 1.2551465871219942,
+      "reference_top_rank_in_actual": 26959,
+      "reference_top_token": 29871,
+      "rmse": 3.1404292762843444,
+      "step": 23,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5485,
+      "cosine": -0.2618571607953392,
+      "normalized_rmse": 1.4133350087135488,
+      "reference_top_rank_in_actual": 29332,
+      "reference_top_token": 29871,
+      "rmse": 3.2818335529091596,
+      "step": 24,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 18153,
+      "cosine": -0.46323761691346255,
+      "normalized_rmse": 1.4428644774846688,
+      "reference_top_rank_in_actual": 30308,
+      "reference_top_token": 29871,
+      "rmse": 3.3024711229373267,
+      "step": 25,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.33553690239120343,
+      "normalized_rmse": 1.441154914322155,
+      "reference_top_rank_in_actual": 13171,
+      "reference_top_token": 362,
+      "rmse": 2.768286194059583,
+      "step": 26,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.3548085070687118,
+      "normalized_rmse": 1.2283609323920064,
+      "reference_top_rank_in_actual": 23913,
+      "reference_top_token": 29871,
+      "rmse": 3.395648023464824,
+      "step": 27,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 6428,
+      "cosine": -0.3153514394439864,
+      "normalized_rmse": 1.2109033898953694,
+      "reference_top_rank_in_actual": 23896,
+      "reference_top_token": 29871,
+      "rmse": 3.2873555723657852,
+      "step": 28,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 203,
+      "cosine": -0.37929346242357614,
+      "normalized_rmse": 1.325868921160489,
+      "reference_top_rank_in_actual": 29980,
+      "reference_top_token": 29871,
+      "rmse": 3.146183065358433,
+      "step": 29,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 5817,
+      "cosine": -0.3192364864466983,
+      "normalized_rmse": 1.1888252494404261,
+      "reference_top_rank_in_actual": 6865,
+      "reference_top_token": 29978,
+      "rmse": 3.583234101828245,
+      "step": 30,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 11214,
+      "cosine": -0.38975711296091137,
+      "normalized_rmse": 1.5202723140046042,
+      "reference_top_rank_in_actual": 14313,
+      "reference_top_token": 4395,
+      "rmse": 3.286184444602205,
+      "step": 31,
+      "top_token_equal": false
+    }
+  ],
+  "decode_summary": {
+    "cosine_mean": -0.32379058179805265,
+    "cosine_min": -0.6578271836447459,
+    "normalized_rmse_mean": 1.297424432694077,
+    "steps": 32,
+    "top_token_matches": 0
+  },
+  "dumped_run_cycles": 83547479772,
+  "fast_compiler_cycles": 83547564353,
+  "fast_link_receipt_sha256": "ffc56579dde50c4cdcddada78d55098cb2254b5b5d41119e6433acff311cf8fb",
+  "fast_run_receipt_sha256": "490984bf6eaf053430d9edd147000e34820daff4af4f8004f85e8b9938c1a919",
+  "link_receipt_sha256": "c510477ea3bbf38f02d6edaf1ec925da9c02b6f6bf41d0da7dfd22a50dd077ff",
+  "numerical_qualification": "not_established",
+  "output_digests_match_fast_compiler": true,
+  "prefill_metrics": {
+    "actual_top_token": 5817,
+    "cosine": -0.31324465553177055,
+    "normalized_rmse": 1.2552759345019477,
+    "reference_top_rank_in_actual": 21944,
+    "reference_top_token": 279,
+    "rmse": 3.072814105819408,
+    "top_token_equal": false
+  },
+  "prefill_reference_sha256": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0",
+  "reference_kind": "captured_unquantized_fp32",
+  "run_receipt_sha256": "5e842ed0c67b4cea85558e174c838c2046f5886d26e2b627d99b98c5fb00cfa8",
+  "schema": "mx_gemmini.tinyllama_session_fp32_comparison.v1"
+}

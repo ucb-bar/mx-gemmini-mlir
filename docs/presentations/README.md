@@ -125,8 +125,10 @@ adds a separate numerical diagnostic on the captured FP32 input: the mixed
 FP4/FP8 compiler prefill has logit cosine −0.313, while an all-FP8 compiler
 prefill has cosine 0.943. Neither selects the FP32 top token. The mixed
 prefill bytes match the completed full-session compiler output hash; the
-33-step logit archive is still running. The slide presents these values
-separately from issuer-swap cycle comparisons.
+completed [33-step logit archive](../evidence/tinyllama_full_logits_20261014/README.md)
+confirms all 99 output hashes. Mean decode cosine to captured FP32 is −0.324
+with 0/32 top-token matches. The slide presents these values separately
+from issuer-swap cycle comparisons.
 
 The [full SmolVLA action archive](../evidence/smolvla_full_action_values_20261014/README.md)
 checks the final action and all ten flow outputs against the captured
@@ -299,6 +301,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_tinyllama_prefill128_source_20261014/receipt.json \
   --tiny-prefill-precision \
     docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
+  --tiny-full-logits \
+    docs/evidence/tinyllama_full_logits_20261014/receipt.json \
   --smol-action-values \
     docs/evidence/smolvla_full_action_values_20261014/receipt.json \
   --smol-reference-step \
