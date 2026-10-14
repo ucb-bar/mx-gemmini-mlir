@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -92,6 +93,69 @@ def _symbol_address(nm: Path, elf: Path, symbol: str) -> int:
     if len(addresses) != 1:
         raise ValueError(f"linked session lacks one {symbol} symbol")
     return addresses[0]
+
+
+def _catalog_linker_script(output: Path, catalogs: list[Path]) -> Path:
+    """Keep each large prepacked catalog's code and constants in PC-relative reach.
+
+    Two TinyLlama stage catalogs hold more than 2 GiB of packed constants.
+    Placing all text before all rodata makes the second stage's references and
+    the common stack exceed RISC-V medany's signed 32-bit PC-relative range.
+    Place the small common image and stack first, then each catalog's text,
+    constants, and workspace together. The shared checkpoint blob still uses
+    Merlin's separate absolute-address weights section.
+    """
+    names = [path.name for path in catalogs]
+    if (len(names) != len(set(names)) or
+            any(not re.fullmatch(r"[A-Za-z0-9_.-]+", name) for name in names)):
+        raise ValueError("catalog link objects need distinct simple basenames")
+    excluded = " ".join(f"*{name}" for name in names)
+    groups = []
+    for index, name in enumerate(names):
+        pattern = f"*{name}"
+        groups.extend((
+            f"  .mx_catalog_{index}_text : {{ {pattern}(.text .text.*) }}",
+            f"  .mx_catalog_{index}_rodata : {{ {pattern}(.rodata .rodata.* "
+            ".srodata .srodata.*) }",
+            f"  .mx_catalog_{index}_data : {{ {pattern}(.data .data.* "
+            ".sdata .sdata.*) }",
+            f"  .mx_catalog_{index}_bss (NOLOAD) : {{ {pattern}(.bss .bss.* "
+            ".sbss .sbss.*) }",
+        ))
+    group_text = "\n".join(groups)
+    source = f'''/* MX multi-stage layout; common code, then nearby catalog islands. */
+OUTPUT_ARCH("riscv")
+ENTRY(_start)
+MERLIN_WEIGHTS_BASE = DEFINED(MERLIN_WEIGHTS_BASE) ? MERLIN_WEIGHTS_BASE : 0x200000000;
+MERLIN_STACK_BYTES = DEFINED(MERLIN_STACK_BYTES) ? MERLIN_STACK_BYTES : 0x40000;
+SECTIONS {{
+  . = 0x80000000;
+  .text : {{ *(.text.init) *(EXCLUDE_FILE({excluded}) .text*) }}
+  . = ALIGN(0x1000);
+  .htif : {{ *(.htif) }}
+  . = ALIGN(8);
+  .rodata : {{ *(EXCLUDE_FILE(*weights_blob.o {excluded}) .rodata*)
+               *(EXCLUDE_FILE(*weights_blob.o {excluded}) .srodata*) }}
+  . = ALIGN(8);
+  .data : {{ *(EXCLUDE_FILE(*weights_blob.o {excluded}) .data*)
+             *(EXCLUDE_FILE({excluded}) .sdata*) }}
+  . = ALIGN(8);
+  _bss_start = .;
+  .bss : {{ *(EXCLUDE_FILE({excluded}) .bss*)
+            *(EXCLUDE_FILE({excluded}) .sbss*) *(COMMON) }}
+  _bss_end = .;
+  . = ALIGN(16);
+  . += MERLIN_STACK_BYTES;
+  _stack_top = .;
+{group_text}
+  _merlin_static_end = .;
+  . = MERLIN_WEIGHTS_BASE;
+  .weights : {{ *weights_blob.o(.data .data.* .rodata .rodata.*) }}
+}}
+'''
+    script = output / "mx_session_link.ld"
+    script.write_text(source, encoding="utf-8")
+    return script
 
 
 def _stage_objects(build: Path) -> list[Path]:
@@ -343,6 +407,7 @@ def link_session(
         return object_path
 
     all_objects: list[Path] = []
+    catalog_objects: list[Path] = []
     previous: set[str] = set()
     for index, program in enumerate(session.programs):
         stage_objects = _stage_objects(builds[program.name])
@@ -354,6 +419,8 @@ def link_session(
             symbols = set().union(*(_defined(nm, path) for path in stage_objects))
         previous.update(symbols)
         all_objects.extend(stage_objects)
+        if len(stage_objects) == 3:
+            catalog_objects.append(stage_objects[-1])
     first = builds[session.programs[0].name]
     all_objects.extend(first / f"{name}.o" for name in (
         "model_call", "merlin_model", "mlir_rt", "crt", "console", "libc_min"))
@@ -383,6 +450,9 @@ def link_session(
         encoding="utf-8")
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
     elf = output / "session.elf"
+    linker_script = (_catalog_linker_script(output, catalog_objects)
+                     if catalog_objects else bare / "model_link.ld")
+    static_end_symbol = "_merlin_static_end" if catalog_objects else "_stack_top"
     libm = riscv_root / "riscv64-unknown-elf/lib/libm.a"
     for attempt in range(3):
         _run([cc, *flags,
@@ -393,8 +463,8 @@ def link_session(
         _run([cc, *flags, "-nostdlib", "-nostartfiles",
               f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
               "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
-              "-T", bare / "model_link.ld", *all_objects, libm, "-o", elf])
-        static_end = _symbol_address(nm, elf, "_stack_top")
+              "-T", linker_script, *all_objects, libm, "-o", elf])
+        static_end = _symbol_address(nm, elf, static_end_symbol)
         checked = spike_session_layout(weights_bytes=weight_bytes,
                                        arena_bytes=arena_bytes,
                                        static_end=static_end)
@@ -423,6 +493,7 @@ def link_session(
         "shared_weight_sha256": shared_weights["sha256"],
         "stage_object_sha256": source_objects,
         "arena_layout": layout,
+        "static_end_symbol": static_end_symbol,
         "static_malloc_estimates": {
             name: {"callsites": value.callsites, "literal_bytes": value.literal_bytes,
                    "dynamic_sites": value.dynamic_sites}

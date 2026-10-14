@@ -264,7 +264,10 @@ def run_session(
         nm = riscv_root / "bin/riscv64-unknown-elf-nm"
         if not nm.is_file():
             raise ValueError("Spike session needs RV64 nm to verify the linked static extent")
-        measured_static_end = _symbol_address(nm, elf, "_stack_top")
+        static_end_symbol = link.get("static_end_symbol", "_stack_top")
+        if static_end_symbol not in {"_stack_top", "_merlin_static_end"}:
+            raise ValueError("unknown linked session static extent symbol")
+        measured_static_end = _symbol_address(nm, elf, static_end_symbol)
         weight_bytes = link.get("shared_weight_bytes")
         validate_linked_layout(layout, mem_bytes=int(link["mem_bytes"]),
                                weight_bytes=(int(weight_bytes) if weight_bytes is not None

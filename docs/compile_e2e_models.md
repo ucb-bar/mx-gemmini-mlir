@@ -196,10 +196,13 @@ the stage roster, source and profile hashes, object hashes, shared checkpoint
 weights, and persistent-state bindings. The receipt status
 `linked_experimental_numeric_qualification_pending` means compilation and
 linking succeeded; it is not a numerical acceptance result.
-The linker also measures the ELF's `_stack_top` and places the Spike scratch
-arena above the linked program and below the fixed weight blob when space
-allows. It relinks if the initial arena address overlaps static data; the
-runner measures the ELF boundary again before execution.
+For large prepacked sessions, the linker places each MX catalog's code and
+constants together so RISC-V PC-relative references stay in range. It records
+`_merlin_static_end` after those catalogs; sessions without catalogs use
+`_stack_top`. The Spike scratch arena sits above the measured static extent
+and below the fixed weight blob when space allows. The linker relocates the
+arena and relinks if needed; the runner measures the recorded ELF symbol again
+before execution.
 
 ## 4. Run on Spike and inspect the receipt
 
