@@ -139,11 +139,23 @@ passes again match all 4,096 BF16 values. The
 | 113 keys | 16,717 / 16,717 | 17,669 / 17,669 | +5.7% |
 | 163 keys | 22,057 / 22,057 | 24,241 / 24,241 | +9.9% |
 
-These are matched **head-level** outputs and timings. The queued program
-does not implement Nicolas's cross-block QK/PV issue order; the remaining
-gap is for head 0 of each first attention call. This is not a 15-head call,
-a denoising step, an FPGA timing claim, or a whole-model cycle ratio. The
-earlier 64×256×128 dense attention result uses a different source shape.
+The [cross-block pipeline plan](attention_pipeline.schedule.mlir) also moves
+QK and softmax stages ahead of PV, as in Nicolas's source. In a fresh Spike
+guest the compiler issues first and matches the expected output hash; the
+source runs afterward and confirms every BF16 value. The same guest then
+alternates two warm source/compiler passes. The
+[pipeline receipt](compiled_pair_pipeline/receipt.json) measures:
+
+| Captured head | Source pipelined cycles | Compiler pipelined cycles | Compiler change |
+| --- | ---: | ---: | ---: |
+| 113 keys | 16,717 / 16,717 | 16,033 / 16,033 | −4.1% |
+| 163 keys | 22,057 / 22,057 | 21,382 / 21,382 | −3.1% |
+
+The compiler uses unrolled direct RoCC issue while the C source uses a
+dynamic matrix-stage dispatcher; it also retains a different scale-load
+placement. These are matched **head-level** outputs and timings, not a
+15-head call, a denoising step, an FPGA timing claim, or a whole-model cycle
+ratio. The earlier 64×256×128 dense attention result uses a different shape.
 
 The archived [verifier](verify_compiled_pair.py) checks the source operands,
 frontends, issued objects, repeated Spike results, and exact output check:
@@ -152,6 +164,8 @@ frontends, issued objects, repeated Spike results, and exact output check:
 python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py
 python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py \
   --archive compiled_pair_queued
+python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py \
+  --archive compiled_pair_pipeline
 ```
 
 To rebuild the pair, use `python -m tools.qualify_smol_attention_cutpoint`
@@ -164,6 +178,8 @@ For the queued variant, add `--schedule-plan`
 `docs/evidence/smolvla_attention_cutpoint_20261014/attention_queue.schedule.mlir`
 and set `PYTHONPATH` to the Merlin `src/` directory. The plan is parsed and
 bound to `@mx_issue`; an altered policy or graph fails before command emission.
+Use `attention_pipeline.schedule.mlir` instead to reproduce the cross-block
+pipeline and its compiler-first check.
 
 ## Flow-stage attention roster
 

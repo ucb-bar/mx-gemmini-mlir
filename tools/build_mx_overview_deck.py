@@ -373,9 +373,8 @@ def results(slide, smol_comparison: dict | None,
          "2,112,919,925", "−0.0126%"))
     if smol_attention_pair:
         short, long = smol_attention_pair["rows"]
-        cycle_field = ("compiler_queued_cycles" if
-                       smol_attention_pair.get("compiler_schedule") == "queued"
-                       else "compiler_fenced_cycles")
+        schedule = smol_attention_pair.get("compiler_schedule", "fenced")
+        cycle_field = f"compiler_{schedule}_cycles"
         attention_row = (
             "SmolVLA attention head · 113 / 163 keys‡",
             f"{short[cycle_field][0]:,} / {long[cycle_field][0]:,}",
@@ -809,18 +808,25 @@ def main() -> None:
     if smol_attention_pair is not None:
         rows = smol_attention_pair.get("rows") or []
         artifacts = smol_attention_pair.get("artifact_sha256") or {}
-        queued = smol_attention_pair.get("compiler_schedule") == "queued"
-        cycle_field = "compiler_queued_cycles" if queued else "compiler_fenced_cycles"
-        expected_schema = ("mx_gemmini.smolvla_masked_attention_paired_queued.v1"
-                           if queued else "mx_gemmini.smolvla_masked_attention_paired.v1")
+        schedule = smol_attention_pair.get("compiler_schedule", "fenced")
+        overlapped = schedule in {"queued", "pipelined"}
+        cycle_field = f"compiler_{schedule}_cycles"
+        expected_schema = (f"mx_gemmini.smolvla_masked_attention_paired_{schedule}.v1"
+                           if overlapped else "mx_gemmini.smolvla_masked_attention_paired.v1")
         if (smol_attention_pair.get("schema") != expected_schema
                 or smol_attention_pair.get("is_stitched_stage_or_full_model") is not False
                 or prefill_precision is None
                 or smol_attention_pair.get("profile_sha256") !=
                 prefill_precision["profile_sha256"]
-                or (queued and smol_attention_pair.get("schedule_plan_sha256") !=
+                or schedule not in {"fenced", "queued", "pipelined"}
+                or (overlapped and smol_attention_pair.get("schedule_plan_sha256") !=
                     file_sha256(args.smol_attention_pair.parent.parent /
-                                "attention_queue.schedule.mlir"))
+                                ("attention_queue.schedule.mlir" if schedule == "queued"
+                                 else "attention_pipeline.schedule.mlir")))
+                or (schedule == "pipelined" and
+                    smol_attention_pair.get("driver_sha256") !=
+                    file_sha256(Path(__file__).resolve().parents[1] /
+                                "tools/fixtures/smol_attention_compiler_first_driver.c"))
                 or [row.get("logical_keys") for row in rows] != [113, 163]
                 or not artifacts
                 or any(file_sha256(args.smol_attention_pair.parent / name)
@@ -828,7 +834,7 @@ def main() -> None:
                 or any(row.get("same_output") is not True or
                        len(row.get("source_pipelined_cycles", [])) != 2 or
                        len(row.get(cycle_field, [])) != 2 or
-                       row["compiler_over_source_fraction"] < 0
+                       not -1 < row.get("compiler_over_source_fraction", -2) < 1
                        for row in rows)):
             parser.error("SmolVLA attention row needs its verified paired archive")
     for name, receipt, source, schema in (

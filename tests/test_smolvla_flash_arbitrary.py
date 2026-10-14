@@ -1,6 +1,7 @@
 """The captured SmolVLA mask remains connected to both flash shapes."""
 
 from pathlib import Path
+import re
 
 import pytest
 
@@ -74,10 +75,16 @@ def test_mask_cannot_disappear_from_frontend_or_source() -> None:
 @pytest.mark.parametrize("keys,physical,commands", [
     (113, 128, 167), (163, 192, 232),
 ])
-def test_merlin_plan_selects_queued_head_without_waits(
-        keys: int, physical: int, commands: int) -> None:
+@pytest.mark.parametrize("policy,filename,policy_name", [
+    ("queued", "attention_queue.schedule.mlir", "mx_queued_commands"),
+    ("pipelined", "attention_pipeline.schedule.mlir",
+     "mx_flash_cross_block_pipeline"),
+])
+def test_merlin_plan_selects_overlapped_head_without_waits(
+        keys: int, physical: int, commands: int,
+        policy: str, filename: str, policy_name: str) -> None:
     pytest.importorskip("merlin")
-    plan = (DATA / "attention_queue.schedule.mlir").read_text()
+    plan = (DATA / filename).read_text()
     frontend = (DATA / f"attention{keys}.model2mlir.mlir").read_text()
     header = (DATA / ("smol_head113.h" if keys == 113 else "smol_head0.h")).read_text()
     shape = DenseAttentionShape(64, physical, 64)
@@ -89,7 +96,15 @@ def test_merlin_plan_selects_queued_head_without_waits(
     assert len(lower_flash_mid(graph, frontend, SOURCE, SOURCE, header,
                                PROFILE, shape=shape, block_k=64,
                                arbitrary_mask=True, schedule_plan=plan)) == commands
+    if policy == "pipelined":
+        sites = re.findall(r'site_id = "([^"]+)"', graph)
+        assert sites.index("qk1:matmul") < sites.index("softmax0:rmax")
+        assert sites.index("softmax1:rmax") < sites.index("pv0:matmul")
+        if keys == 163:
+            assert sites.index("qk2:matmul") < sites.index("softmax1:rmax")
+            assert sites.index("softmax2:rmax") < sites.index("pv1:matmul")
+            assert sites.index("pv2:matmul") < sites.index("output1:mul")
     with pytest.raises(ValueError, match="unsupported policy"):
         render_flash_mid(frontend, SOURCE, SOURCE, header, PROFILE,
                          shape=shape, block_k=64, arbitrary_mask=True,
-                         schedule_plan=plan.replace("mx_queued_commands", "invented"))
+                         schedule_plan=plan.replace(policy_name, "invented"))

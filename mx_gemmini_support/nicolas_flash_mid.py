@@ -1,4 +1,4 @@
-"""Serial functional schedule for Nicolas's four-block FP8 flash attention."""
+"""Source-bound flash attention graphs with checked schedule policies."""
 
 from __future__ import annotations
 
@@ -31,6 +31,84 @@ SP_O = 13056
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _pipeline_smol_lines(lines: list[str], blocks: int, gated, managed) -> list[str]:
+    """Schedule resident QK/PV stages with two-block QK lookahead.
+
+    The preamble and final readout stay in place. Every middle operation must
+    belong to one recognized stage; a new operation therefore refuses this
+    schedule until its dependence and placement are reviewed.
+    """
+    def site(line: str) -> str | None:
+        found = re.search(r'site_id = "([^"]+)"', line)
+        return found.group(1) if found else None
+
+    first = next(i for i, line in enumerate(lines)
+                 if site(line) == "qk0:scales")
+    final = next(i for i, line in enumerate(lines)
+                 if site(line) == "final:rcp")
+    if first >= final:
+        raise ValueError("pipeline flash has no ordered stage interval")
+    stages = {kind: {j: [] for j in range(blocks)}
+              for kind in ("softmax", "probability", "output")}
+    matrix_sites = []
+    for line in lines[first:final]:
+        name = site(line)
+        if name is None:
+            raise ValueError("pipeline flash has an unclassified operation")
+        found = re.fullmatch(r"(qk|pv|softmax|probability|output)(\d+):(.+)", name)
+        if found is None or int(found.group(2)) >= blocks:
+            raise ValueError("pipeline flash has an unknown stage")
+        kind, j, action = found.group(1), int(found.group(2)), found.group(3)
+        if kind in {"qk", "pv"}:
+            if action not in {"scales", "matmul", "fence"}:
+                raise ValueError("pipeline flash matrix stage differs")
+            matrix_sites.append(name)
+        else:
+            stages[kind][j].append(line)
+    expected_matrix = {f"{kind}{j}:{action}"
+                       for kind in ("qk", "pv") for j in range(blocks)
+                       for action in ("scales", "matmul", "fence")}
+    if (len(matrix_sites) != len(expected_matrix) or
+            set(matrix_sites) != expected_matrix or any(
+            not stages[kind][j] for kind in ("softmax", "probability")
+            for j in range(blocks)) or any(
+                bool(stages["output"][j]) != (j > 0)
+                for j in range(blocks))):
+        raise ValueError("pipeline flash stage inventory differs")
+
+    matrix_order = [("qk", 0), ("qk", 1)]
+    for j in range(blocks):
+        if j + 2 < blocks:
+            matrix_order.append(("qk", j + 2))
+        matrix_order.append(("pv", j))
+    halves = {key: n & 1 for n, key in enumerate(matrix_order)}
+    if len(halves) != 2 * blocks:
+        raise ValueError("pipeline flash repeats a matrix stage")
+
+    def matrix(kind: str, j: int) -> list[str]:
+        half = halves[kind, j]
+        return [gated(kind, j, half), managed(kind, j, half)]
+
+    ordered = list(lines[:first])
+    ordered.extend(matrix("qk", 0))
+    ordered.extend(matrix("qk", 1))
+    ordered.extend(stages["softmax"][0])
+    ordered.extend(stages["probability"][0])
+    for j in range(blocks):
+        if j + 2 < blocks:
+            ordered.extend(matrix("qk", j + 2))
+        if j + 1 < blocks:
+            ordered.extend(stages["softmax"][j + 1])
+        ordered.extend(matrix("pv", j))
+        if j > 1:
+            ordered.extend(stages["output"][j - 1])
+        if j + 1 < blocks:
+            ordered.extend(stages["probability"][j + 1])
+    ordered.extend(stages["output"][blocks - 1])
+    ordered.extend(lines[final:])
+    return ordered
 
 
 def _source_defines(source: str) -> dict[str, str]:
@@ -160,11 +238,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     if schedule_plan is not None:
         from .merlin_schedule_policy import selected_policy
         schedule = selected_policy(schedule_plan, symbol="mx_issue")
-        if schedule not in {"serial", "queued"}:
+        if schedule not in {"serial", "queued", "pipelined"}:
             raise ValueError("flash schedule plan selects an unsupported policy")
-    queued = schedule == "queued"
+    queued = schedule in {"queued", "pipelined"}
     if queued and not arbitrary_mask:
-        raise ValueError("queued flash schedule needs a selected masked head")
+        raise ValueError("overlapped flash schedule needs a selected masked head")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
                                              causal=causal,
                                              arbitrary_mask=arbitrary_mask)
@@ -235,7 +313,7 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         raise ValueError("flash needs Nicolas's managed-scale MX RTL")
     if queued and profile_sha256(profile) != (
             "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d"):
-        raise ValueError("queued flash needs the qualified MX+VPU profile")
+        raise ValueError("overlapped flash needs the qualified MX+VPU profile")
     SQ, SK, D, BK = shape.sq, shape.sk, shape.d, block_k
     fp4 = input_format == "fp4_e2m1"
     qt = 2 if fp4 else 1
@@ -276,7 +354,9 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                else "mid" if folded else "fa")
     policy = {"schema": f"mx_gemmini.flash_{variant}_{schedule}_policy.v1",
               "shape_sq_sk_d_bk": [SQ, SK, D, BK],
-              "block_order": ["QK", "softmax", "requant", "PV", "update"],
+              "block_order": (["QK+2", "softmax+1", "PV", "update-1", "requant+1"]
+                              if schedule == "pipelined" else
+                              ["QK", "softmax", "requant", "PV", "update"]),
               "fenced": not queued, "fold_q_scale_shift": 3 if folded else 0,
               "spad_q_v_kt_p_st_o": [SP_Q, SP_V, SP_KT, SP_P, ST, SP_O],
               "score_rows": [_score(j) for j in range(NB)],
@@ -510,8 +590,11 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                          f"total_bytes = {SQ * D * 2} : i32, "
                          f"tile_cols = 16 : i32, spad_row = {SP_O} : i32"),
                   "    func.return", "  }", "}", ""))
+    if schedule == "pipelined":
+        lines = _pipeline_smol_lines(lines, NB, gated, managed)
     if queued:
-        expected_waits = 11 if NB == 2 else 16
+        expected_waits = (11 if NB == 2 else 16) - (
+            2 * NB if schedule == "pipelined" else 0)
         if sum(line.lstrip().startswith('"mx_gemmini.wait"')
                for line in lines) != expected_waits:
             raise ValueError("queued flash wait inventory differs")
@@ -539,7 +622,7 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     block_first: int | None = None, block_last: int | None = None,
                     v3: bool = True
                     ) -> tuple[Command | Fence, ...]:
-    """Require the exact source-bound serial graph before issuing commands."""
+    """Require the exact source-bound scheduled graph before issuing commands."""
     expected, _ = render_flash_mid(frontend, source_core, source_wrapper,
                                    source_header, profile, shape=shape,
                                    block_k=block_k, input_format=input_format,

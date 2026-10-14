@@ -19,24 +19,32 @@ def sha(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--archive", choices=("compiled_pair", "compiled_pair_queued"),
+    parser.add_argument("--archive", choices=("compiled_pair", "compiled_pair_queued",
+                                              "compiled_pair_pipeline"),
                         default="compiled_pair")
     args = parser.parse_args()
     archive = HERE / args.archive
     receipt = json.loads((archive / "receipt.json").read_text())
-    queued = args.archive == "compiled_pair_queued"
+    schedule = {"compiled_pair": "fenced", "compiled_pair_queued": "queued",
+                "compiled_pair_pipeline": "pipelined"}[args.archive]
+    overlapped = schedule != "fenced"
     assert receipt["schema"] == (
-        "mx_gemmini.smolvla_masked_attention_paired_queued.v1" if queued else
+        f"mx_gemmini.smolvla_masked_attention_paired_{schedule}.v1" if overlapped else
         "mx_gemmini.smolvla_masked_attention_paired.v1")
-    assert receipt.get("compiler_schedule", "fenced") == ("queued" if queued else "fenced")
-    if queued:
+    assert receipt.get("compiler_schedule", "fenced") == schedule
+    if overlapped:
         assert receipt["schedule_plan_sha256"] == sha(
-            HERE / "attention_queue.schedule.mlir")
+            HERE / ("attention_queue.schedule.mlir" if schedule == "queued" else
+                    "attention_pipeline.schedule.mlir"))
     assert receipt["scope"] == "first 15-head call of each key shape; head 0 only"
     assert receipt["is_stitched_stage_or_full_model"] is False
     assert receipt["spike_mode"] == "GEMMINI_MODE=both; no performance override"
     assert receipt["source_revision"] == "0344bcba70b899039ccd0ac0801ca5605d46d3eb"
     assert receipt["source_patch_sha256"] == sha(HERE / "attn_flash_smol.patch")
+    assert receipt["driver_sha256"] == sha(
+        HERE.parents[2] / "tools/fixtures" /
+        ("smol_attention_compiler_first_driver.c" if schedule == "pipelined" else
+         "smol_attention_paired_driver.c"))
     for name, digest in receipt["artifact_sha256"].items():
         assert sha(archive / name) == digest, name
     assert [row["logical_keys"] for row in receipt["rows"]] == [113, 163]
@@ -59,11 +67,14 @@ def main() -> None:
         assert row["expected_output_hash"] == reference["rows"][0]["output_hash"]
         assert row["same_output"] is True
         assert row["command_count"] == (167 if keys == 113 else 232)
-        assert row["fence_count"] == ((0 if queued else 11) if keys == 113 else
-                                      (0 if queued else 16))
+        assert row["fence_count"] == ((0 if overlapped else 11) if keys == 113 else
+                                      (0 if overlapped else 16))
         log = gzip.decompress((folder / "spike.log.gz").read_bytes()).decode()
         assert "attn_flash PASSED" in log
         assert "paired full BF16 output match 4096 values" in log
+        if schedule == "pipelined":
+            assert f"compiler first fresh guest hash {row['expected_output_hash']}" in log
+            assert "compiler first full BF16 output match 4096 values" in log
         assert f"check O hash vs Spike: match ({row['expected_output_hash']})" in log
         matches = re.findall(
             r"^paired (pipeline|compiler) ([0-3]) cycles (\d+) hash ([0-9a-f]{16})$",
@@ -76,8 +87,7 @@ def main() -> None:
         source = [int(matches[i][2]) for i in (0, 2)]
         compiler = [int(matches[i][2]) for i in (1, 3)]
         assert source == row["source_pipelined_cycles"]
-        assert compiler == row["compiler_queued_cycles" if queued else
-                               "compiler_fenced_cycles"]
+        assert compiler == row[f"compiler_{schedule}_cycles"]
         assert abs((sum(compiler) / sum(source) - 1) -
                    row["compiler_over_source_fraction"]) < 1e-12
     print(f"SmolVLA masked attention {receipt.get('compiler_schedule', 'fenced')} "

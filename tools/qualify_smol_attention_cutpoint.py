@@ -3,7 +3,7 @@
 Both programs run in one Spike guest, alternate after accelerator flushes,
 and check the complete BF16 output after every pass. The source uses its
 pipelined schedule. The typed compiler uses a fenced serial graph by default,
-or a queued graph selected by a checked Merlin schedule plan.
+or queued and cross-block graphs selected by checked Merlin schedule plans.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ from tools.emit_resident_pair_object import _compile_object
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/smolvla_attention_cutpoint_20261014"
 DRIVER = ROOT / "tools/fixtures/smol_attention_paired_driver.c"
+DRIVER_PIPELINE = ROOT / "tools/fixtures/smol_attention_compiler_first_driver.c"
 RAW_CORE_SHA256 = "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0"
 PATCHED_CORE_SHA256 = "21dd12d942cc27b27a609d3e6b95503705c8fbd018232b0320a6da9e89ac88ee"
 NPU_REVISION = "0344bcba70b899039ccd0ac0801ca5605d46d3eb"
@@ -48,7 +49,8 @@ def run(command: list[str], *, cwd: Path, log: Path,
         raise RuntimeError(f"command failed ({result.returncode}); see {log}")
 
 
-def paired_rows(log: str, expected_hash: str) -> tuple[list[int], list[int]]:
+def paired_rows(log: str, expected_hash: str, *, compiler_first: bool
+                ) -> tuple[list[int], list[int]]:
     rows = re.findall(
         r"^paired (pipeline|compiler) ([0-3]) cycles (\d+) hash ([0-9a-f]{16})$",
         log, re.M)
@@ -58,7 +60,10 @@ def paired_rows(log: str, expected_hash: str) -> tuple[list[int], list[int]]:
             any(digest != expected_hash for _, _, _, digest in rows) or
             "attn_flash PASSED" not in log or
             "check O hash vs Spike: match" not in log or
-            "paired full BF16 output match 4096 values" not in log):
+            "paired full BF16 output match 4096 values" not in log or
+            (compiler_first and (
+                f"compiler first fresh guest hash {expected_hash}" not in log or
+                "compiler first full BF16 output match 4096 values" not in log))):
         raise ValueError("paired source and compiler hashes or pass order differ")
     return ([int(row[2]) for row in rows[::2]],
             [int(row[2]) for row in rows[1::2]])
@@ -66,7 +71,7 @@ def paired_rows(log: str, expected_hash: str) -> tuple[list[int], list[int]]:
 
 def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
                  raw_core: Path, scratch: Path,
-                 schedule_plan: str | None) -> dict:
+                 schedule_plan: str | None, schedule: str) -> dict:
     case = scratch / f"keys{keys}"
     case.mkdir()
     front = EVIDENCE / f"attention{keys}.model2mlir.mlir"
@@ -100,7 +105,7 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
         shape=shape, block_k=64, arbitrary_mask=True,
         schedule_plan=schedule_plan)
     expected_commands = ((167 if keys == 113 else 232)
-                         if schedule_plan is not None else
+                         if schedule != "fenced" else
                          (178 if keys == 113 else 248))
     if len(commands) != expected_commands:
         raise ValueError("typed arbitrary-mask command roster differs")
@@ -127,9 +132,10 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
     for folder in (case, args.rocc_root,
                    args.rocc_root / "riscv-tests", args.riscv_env, bench):
         command.append(f"-I{folder}")
+    driver = DRIVER_PIPELINE if schedule == "pipelined" else DRIVER
     command += ["-DID_STRING=", "-DPRINT_TILE=0", "-nostdlib",
                 "-nostartfiles", "-static", "-T", str(bench / "test.ld"),
-                "-DBAREMETAL=1", "-DSPIKE_SIM", str(DRIVER), str(obj),
+                "-DBAREMETAL=1", "-DSPIKE_SIM", str(driver), str(obj),
                 str(bench / "crt.S"), str(bench / "syscalls.c"),
                 "-lm", "-lgcc", "-o", str(elf)]
     run(command, cwd=case, log=case / "link.log")
@@ -142,7 +148,8 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
          "-m0x80000000:0x40000000", str(elf)], cwd=case,
         log=case / "spike.log", env=spike_env)
     source_cycles, compiler_cycles = paired_rows(
-        (case / "spike.log").read_text(), row["output_hash"])
+        (case / "spike.log").read_text(), row["output_hash"],
+        compiler_first=schedule == "pipelined")
     source_mean = sum(source_cycles) / len(source_cycles)
     compiler_mean = sum(compiler_cycles) / len(compiler_cycles)
     result = {
@@ -164,8 +171,7 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
                                             for command in commands),
         "same_output": True,
     }
-    result["compiler_queued_cycles" if schedule_plan is not None else
-           "compiler_fenced_cycles"] = compiler_cycles
+    result[f"compiler_{schedule}_cycles"] = compiler_cycles
     return result
 
 
@@ -191,14 +197,16 @@ def main() -> None:
         raise ValueError("Nicolas source revision differs")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     schedule_plan = args.schedule_plan.read_text() if args.schedule_plan else None
+    schedule = "fenced"
     if schedule_plan is not None:
         from mx_gemmini_support.merlin_schedule_policy import selected_policy
-        if selected_policy(schedule_plan, symbol="mx_issue") != "queued":
-            raise ValueError("queued comparison needs a checked Merlin schedule plan")
+        schedule = selected_policy(schedule_plan, symbol="mx_issue")
+        if schedule not in {"queued", "pipelined"}:
+            raise ValueError("overlapped comparison needs a checked Merlin schedule plan")
     args.scratch_dir.mkdir(parents=True)
     rows = [qualify_case(keys, args=args, profile=profile,
                          raw_core=raw_core, scratch=args.scratch_dir,
-                         schedule_plan=schedule_plan)
+                         schedule_plan=schedule_plan, schedule=schedule)
             for keys in (113, 163)]
     args.archive_dir.mkdir(parents=True)
     artifacts = {}
@@ -214,7 +222,7 @@ def main() -> None:
         (target / "spike.log.gz").write_bytes(compressed)
         artifacts[f"keys{keys}/spike.log.gz"] = sha(target / "spike.log.gz")
     receipt = {
-        "schema": ("mx_gemmini.smolvla_masked_attention_paired_queued.v1"
+        "schema": (f"mx_gemmini.smolvla_masked_attention_paired_{schedule}.v1"
                    if schedule_plan is not None else
                    "mx_gemmini.smolvla_masked_attention_paired.v1"),
         "scope": "first 15-head call of each key shape; head 0 only",
@@ -224,11 +232,11 @@ def main() -> None:
         "original_source_sha256": sha(raw_core),
         "source_patch_sha256": sha(EVIDENCE / "attn_flash_smol.patch"),
         "patched_source_sha256": PATCHED_CORE_SHA256,
-        "driver_sha256": sha(DRIVER),
+        "driver_sha256": sha(DRIVER_PIPELINE if schedule == "pipelined" else DRIVER),
         "spike_extension_sha256": sha(args.spike_extension),
         "spike_mode": "GEMMINI_MODE=both; no performance override",
         "timing_boundary": "same guest, source and compiler alternate after flushes",
-        "compiler_schedule": "queued" if schedule_plan is not None else "fenced",
+        "compiler_schedule": schedule,
         "artifact_sha256": artifacts,
         "rows": rows,
     }

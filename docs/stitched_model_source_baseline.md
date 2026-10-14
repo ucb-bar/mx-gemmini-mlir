@@ -54,6 +54,11 @@ With a Merlin `schedule.plan` selecting queued MX commands, those head costs
 fall to 17,669 and 24,241 cycles while retaining exact BF16 outputs. The
 remaining gaps versus source are +5.7% and +9.9%; the queued policy has not
 been applied to the full SmolVLA session.
+A second Merlin plan reproduces the source's cross-block QK/PV order. The
+compiler-first run and both paired passes match all 4,096 BF16 outputs per
+head; warm compiler/source cycles are 16,033/16,717 and 21,382/22,057.
+Those −4.1%/−3.1% changes are local to the two first-call heads and are not
+a stitched-model speedup.
 
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.
