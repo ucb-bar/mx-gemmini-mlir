@@ -165,12 +165,12 @@ def style_master(prs: Presentation) -> None:
     by_name["PAGE"].text = ""
 
 
-def page_number(slide, number: int) -> None:
-    add_text(slide, f"{number:02d} / 03", 11.45, 6.88, 1.35, 0.28,
+def page_number(slide, number: int, total: int = 3) -> None:
+    add_text(slide, f"{number:02d} / {total:02d}", 11.45, 6.88, 1.35, 0.28,
              size=10, color=GREY, align=PP_ALIGN.RIGHT)
 
 
-def architecture(slide) -> None:
+def architecture(slide, total: int = 3) -> None:
     set_text(slide.shapes[0], "MX dialect: typed IR to RV64", size=27,
              bold=True)
     clear_content(slide)
@@ -225,10 +225,10 @@ def architecture(slide) -> None:
              "mx-gemmini-opt verifies typed IR. The standalone command path bypasses LLVM; "
              "the generic full-model host currently uses Merlin → LLVM → RV64.",
              0.96, 6.38, 11.45, 0.36, size=10.2, color=GREY)
-    page_number(slide, 1)
+    page_number(slide, 1, total)
 
 
-def configurations(slide) -> None:
+def configurations(slide, total: int = 3) -> None:
     set_text(slide.shapes[0], "One JSON profile changes legal MLIR", size=27,
              bold=True)
     clear_content(slide)
@@ -280,7 +280,7 @@ def configurations(slide) -> None:
              "npu-exploration supplies source kernels for per-mode Spike checks; "
              "the RTL profile alone is structural, not a performance claim.",
              0.96, 6.50, 11.45, 0.25, size=10.2, color=GREY)
-    page_number(slide, 2)
+    page_number(slide, 2, total)
 
 
 def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
@@ -308,7 +308,7 @@ def results(slide, smol_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
             radiance: dict | None, prefill128: dict | None,
-            equal_work: dict | None) -> None:
+            equal_work: dict | None, total: int = 3) -> None:
     shapes = slide.shapes
     set_text(shapes[0], "MX results: Spike and Radiance", size=27,
              bold=True)
@@ -476,7 +476,73 @@ def results(slide, smol_comparison: dict | None,
         footer_text,
         size=9.6, color=GREY, align=PP_ALIGN.LEFT,
     )
-    page_number(slide, 3)
+    page_number(slide, 3, total)
+
+
+def radiance_results(slide, radiance: dict) -> None:
+    add_text(slide, "Radiance MX: output and schedule",
+             2.75, 0.48, 7.84, 0.55, size=25.4, bold=True,
+             color=INK, align=PP_ALIGN.CENTER)
+    rows = radiance["rows"]
+    gemv = radiance["batched_gemv_rows"]
+    def shape(row: dict) -> str:
+        return "×".join(map(str, row["shape_mnk"]))
+
+    def traffic(row: dict) -> str:
+        return (f"{row['compiler_weight_bytes'] // 1024} KiB · "
+                f"{row['compiler_weight_tile_reads']} reads")
+
+    entries = [
+        ("FP8 GEMM · read once", shape(rows[0]),
+         f"{rows[0]['compiler_spike_bf16_values_matching_source_golden']:,} BF16; "
+         "one 256×64 tile", traffic(rows[0])),
+        ("FP4 down-projection · read once", shape(rows[1]),
+         f"{rows[1]['compiler_spike_bf16_values_matching_source_golden']:,} BF16; "
+         "one 256×64 tile", traffic(rows[1])),
+        ("FP8 GEMM · four-pass re-stream", shape(rows[2]),
+         f"{rows[2]['compiler_spike_bf16_values_matching_source_golden']:,} BF16; "
+         "four 64×64 tiles", traffic(rows[2])),
+        ("Batched GEMV · FP8/FP4", "4 source shapes",
+         f"{sum(r['compiler_spike_bf16_values_matching_source_golden'] for r in gemv):,} "
+         "BF16 across four controls", "one-read controls"),
+        ("GQA attention · MX PV only", "16 cutpoints",
+         f"{radiance['gqa_compiler_spike_pv_bf16_values_matched']:,} BF16 "
+         "PV outputs with source P tiles", "whole kernel open"),
+    ]
+    table_shape = slide.shapes.add_table(
+        len(entries) + 1, 4, Inches(0.94), Inches(1.67),
+        Inches(11.46), Inches(3.24))
+    table = table_shape.table
+    for column, width in enumerate((3.1, 1.65, 4.1, 2.61)):
+        table.columns[column].width = Inches(width)
+    for index in range(len(entries) + 1):
+        table.rows[index].height = Inches(0.54)
+    for row_index, entry in enumerate(
+            [("Radiance source kernel", "Shape M×N×K",
+              "Compiler check on Nicolas Spike", "B traffic / limit"), *entries]):
+        for col_index, value in enumerate(entry):
+            set_cell(table.cell(row_index, col_index), value,
+                     heading=row_index == 0,
+                     bold=row_index > 0 and col_index == 0,
+                     align=PP_ALIGN.LEFT if col_index in (0, 2) else PP_ALIGN.CENTER,
+                     size=10.5 if row_index == 0 else 10.9)
+    add_code(slide,
+             'Radiance: TILE_M=256, TILE_N=64, TILE_K=64, FP8 read once\n'
+             f"Compiler: tile=[{','.join(map(str, rows[0]['compiler_physical_tile_mnk']))}], "
+             f"weight_reads={rows[0]['compiler_weight_tile_reads']}",
+             0.94, 5.03, 5.6, 0.75, size=9.5)
+    add_code(slide,
+             'Radiance: four 64-row passes, B re-streamed each pass\n'
+             f"Compiler: {rows[2]['compiler_output_tiles']} output tiles, "
+             f"weight_reads={rows[2]['compiler_weight_tile_reads']}",
+             6.73, 5.03, 5.67, 0.75, size=9.5)
+    add_text(slide,
+             "We supplied Radiance's packed data and tile sizes. The compiler "
+             "matched output and weight traffic; it did not discover the "
+             "schedule on its own. Radiance runs on Muon+MX, this check on "
+             "Rocket+MX+VPU Spike, so there is no cycle ratio. GQA PV is one stage.",
+             0.94, 6.02, 11.46, 0.62, size=10.2, color=GREY)
+    page_number(slide, 4, 4)
 
 
 def main() -> None:
@@ -578,6 +644,14 @@ def main() -> None:
                        != 16384 for r in rows)
                 or [r.get("compiler_weight_bytes") for r in rows]
                 != [131072, 180224, 524288]
+                or [r.get("compiler_weight_tile_reads") for r in rows]
+                != [32, 88, 128]
+                or [r.get("shape_mnk") for r in rows]
+                != [[256, 64, 2048], [256, 64, 5632], [256, 64, 2048]]
+                or [r.get("radiance_source_schedule") for r in rows]
+                != ["read_once_weight_stationary",
+                    "read_once_weight_stationary",
+                    "four_pass_weight_restream"]
                 or [r.get("compiler_physical_tile_mnk") for r in rows]
                 != [[256, 64, 64], [256, 64, 64], [64, 64, 64]]
                 or [r.get("compiler_output_tiles") for r in rows]
@@ -713,11 +787,15 @@ def main() -> None:
     prs = Presentation(args.template)
     keep_slides(prs)
     style_master(prs)
-    architecture(prs.slides[0])
-    configurations(prs.slides[1])
+    total = 4 if radiance is not None else 3
+    architecture(prs.slides[0], total)
+    configurations(prs.slides[1], total)
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
-            equal_work)
+            equal_work, total)
+    if radiance is not None:
+        radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
+                         radiance)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

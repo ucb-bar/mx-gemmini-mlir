@@ -22,6 +22,14 @@ and [re-stream archive](../radiance_restream_1df2c5f/index.json) contain the
 checked output and command receipts. The [legal-profile roster](../radiance_mx_vpu_legal_roster_266c593/index.json)
 also checks 18 FP8/FP4 BF16 drivers and six requant drivers, twice each.
 
+These are source-shaped controls. The [FP8 payload-bound
+MLIR](../radiance_ws_read_once_1a7bc9c/gemm_mxgemmini_ws/payload_bound.mlir)
+records `payload_origin = "radiance_source_header_specialization"`: packed
+codes and scales are bound from the source header specialization, and the
+tile policy is chosen to match the Radiance schedule. The checks establish
+lowering and traffic for these shapes and payloads. They do not establish
+automatic schedule discovery from an arbitrary model graph.
+
 The source-to-command mapping is visible in those archives. Radiance's FP8
 and FP4 read-once drivers set `TILE_M=256`, `TILE_N=64`, `TILE_K=64`; their
 compiled `physical_program.json.gz` plans use the same 256×64×64 tile and

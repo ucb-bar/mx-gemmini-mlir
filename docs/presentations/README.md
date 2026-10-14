@@ -1,6 +1,6 @@
 # MX Gemmini dialect overview slides
 
-[Editable PowerPoint deck](mx_gemmini_dialect_overview.pptx) contains three
+[Editable PowerPoint deck](mx_gemmini_dialect_overview.pptx) contains four
 slides based on the supplied Lab Pastel PowerPoint template. The diagrams,
 text, callout, and results table are PowerPoint objects. The university seal
 is the template's master image. The MLIR, C, and JSON examples use editable
@@ -189,6 +189,28 @@ but its stage cycle window differs from Nicolas's timed source kernel.
 The cached-layer measurements remain in that evidence directory; the slide
 now uses the full source run because it covers all decoder layers and the head.
 
+## Slide 4: Radiance kernel comparison
+
+The fourth slide gives the Radiance controls their own table. It checks
+compiler BF16 outputs against the source goldens and compares physical tiles
+and weight reads with the pinned Radiance kernels. For the 256×64×2048 FP8
+case, the compiler uses one 256×64 output tile and reads 128 KiB of weights
+once. The Radiance four-pass control uses four 64×64 tiles and reads 512 KiB.
+The FP4 256×64×5632 down-projection reads 176 KiB. The slide also identifies
+four batched GEMV controls and the narrower GQA PV cutpoint. Radiance source
+uses a Muon+MX system; these compiler controls use Nicolas's standalone
+Rocket+MX+VPU Spike model. The output and schedule checks do not establish
+a cross-system cycle ratio.
+
+These are source-shaped controls. The [FP8 payload-bound
+MLIR](../evidence/radiance_ws_read_once_1a7bc9c/gemm_mxgemmini_ws/payload_bound.mlir)
+records `payload_origin = "radiance_source_header_specialization"`: packed
+codes and scales are bound from a Radiance header specialization, and the
+tile policy is selected to match the source schedule. The comparison proves
+that those inputs lower to matching outputs and physical traffic. It does
+not establish automatic schedule discovery for arbitrary model operators or
+complete mixed Muon+MX kernel compilation.
+
 ## Regenerate
 
 Install `python-pptx`, then run:
@@ -217,10 +239,10 @@ python tools/build_mx_overview_deck.py \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
-The script keeps only the template's architecture, process, and results
-layouts, edits their native objects, and adds source-specific labels and
-figures. The generator accepts the full TinyLlama run/comparison receipts only
-when the complete 33-step run and equal-output comparator succeed.
+The script keeps the template's architecture, process, and results layouts,
+adds a Radiance results slide with native PowerPoint objects, and labels
+each comparison. The generator accepts the full TinyLlama run/comparison
+receipts only when the complete 33-step run and equal-output comparator succeed.
 Its optional `--tiny-prefill128` row requires the archived source and compiler
 Spike logs, their hashes, and the verified modeled cycle counters. A preview
 receipt or an incomplete run cannot replace the measured row.
