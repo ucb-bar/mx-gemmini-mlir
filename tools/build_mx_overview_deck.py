@@ -252,7 +252,7 @@ def configurations(slide, total: int = 3) -> None:
              '   "weight_format":"fp8_e4m3","pe_mode":8}\n'
              ' ],\n'
              ' "resources": {"scratchpad_bytes":262144,\n'
-             '               "vpu":true,"spad_requant":true}\n'
+             '               "vpu":true,"lut":false}\n'
              '}',
              1.15, 2.22, 5.57, 2.81, size=10.45)
     add_text(slide,
@@ -280,7 +280,7 @@ def configurations(slide, total: int = 3) -> None:
              "• TinyLlama: 155 FP4 / 45 FP8 MX sites per stage.\n"
              "• PE 0 = direct FP4 × FP4; PE 8 = direct FP8 × FP8.\n"
              "• 256 KiB SPAD caps tiles; VPU/requant legal.\n"
-             "• FP6 has no legal mode in this profile.\n"
+             "• No operand LUT or FP6 mode in this profile.\n"
              "• load_profile(profile, rtl_root=rtl) rejects drift.",
              7.38, 4.42, 4.78, 1.62, size=11.0, color=INK)
     add_text(slide,

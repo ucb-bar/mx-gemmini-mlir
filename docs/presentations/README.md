@@ -61,7 +61,8 @@ profiles carry geometry, memory, queue, scale/LUT, legal PE tuple, and VPU
 capabilities. They are structural descriptions; a legal tuple still needs
 numerical and timing qualification on its selected target. The selected
 `MxE4M3Fp4VpuGemminiRocketConfig` has direct E4M3 and FP4 modes, two
-8-lane BF16 VPUs, and `SPAD_REQUANT`. FP6 is available in a separate
+8-lane BF16 VPUs, and `SPAD_REQUANT`. Its operand LUT is absent (`lut: false`);
+FP6 is available in a separate
 non-VPU configuration. Nicolas's `npu-exploration` kernels provide source
 checks and performance reference programs, while RTL defines hardware
 capabilities. See [profile inventory](../current_mx_profiles.md).
