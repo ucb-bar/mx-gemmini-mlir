@@ -315,6 +315,12 @@ preserves the last flow state. These errors expose drift; they are not an
 acceptance test for MX precision. A separate reference using exact MX operand,
 mesh, and VPU arithmetic is needed to distinguish intended quantization drift
 from a compiler numerical defect.
+The [completed 12-step action-value archive](evidence/smolvla_full_action_values_20261014/README.md)
+verifies every saved flow/action dump and matches all 33 output digests to the
+earlier timed compiler run. Cosine to the captured FP32 trajectory drops from
+0.997 at flow step 0 to 0.054 at the final action; final normalized RMSE is
+1.726. The tapped executable has different stage objects, so its cycle count
+is not the optimized full-session cycle result.
 
 ### Inspect full TinyLlama logits
 

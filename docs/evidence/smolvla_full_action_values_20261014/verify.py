@@ -107,6 +107,7 @@ def verify() -> None:
         for key, value in observed.items():
             assert abs(stored[key] - value) < 1e-10, (step, key)
     assert report["final_action_metrics"] == report["flow_step_metrics"][-1]
+    assert receipt["flow_step_metrics"] == report["flow_step_metrics"]
     assert receipt["final_action_metrics"] == report["final_action_metrics"]
     print("verified full SmolVLA output parity and FP32 action-value diagnostic")
 

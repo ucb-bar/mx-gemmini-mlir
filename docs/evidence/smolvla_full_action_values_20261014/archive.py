@@ -78,6 +78,7 @@ def main() -> None:
         "tap_cycles": tap["total_performance"]["cycles"],
         "fast_run_sha256": sha(fast_path),
         "fast_link_sha256": sha(fast_link_path),
+        "flow_step_metrics": report["flow_step_metrics"],
         "final_action_metrics": report["final_action_metrics"],
         "artifact_sha256": {name: sha(HERE / name) for name in artifact_names},
     }

@@ -87,6 +87,14 @@ legal row and fails binding. The profile's 256 KiB scratchpad and 16×16
 mesh also constrain the later tile plan. Profile binding checks the pinned
 RTL hashes when invoked with `--rtl-root`.
 
+Switching to the
+[`MxAsymFp6Fp4GemminiRocketConfig` profile](../../profiles/gemmini-mx-cleanup-266c593/MxAsymFp6Fp4GemminiRocketConfig.json)
+changes the legal matrix row to FP6 E3M2 with an activation LUT times direct
+FP4 E2M1 at PE mode 3. That profile has a LUT and no VPU. This demonstrates
+why the compiler checks the full tuple rather than interpreting `pe_mode`
+alone: modes 0–8 can also use LUT-projected operands; modes 9–11 add the
+four-product LUT path. The two examples are separate SoC configurations.
+
 The captured TinyLlama prefill and decode stage catalogs each have 200 MX
 `bindings`: 155 FP4 and 45 FP8, counted from each binding's
 `target_dtypes`. The prepacked catalog has 158 distinct `kernels` because
@@ -119,6 +127,15 @@ prefill has cosine 0.943. Neither selects the FP32 top token. The mixed
 prefill bytes match the completed full-session compiler output hash; the
 33-step logit archive is still running. The slide presents these values
 separately from issuer-swap cycle comparisons.
+
+The [full SmolVLA action archive](../evidence/smolvla_full_action_values_20261014/README.md)
+checks the final action and all ten flow outputs against the captured
+unquantized FP32 trajectory. Its flow-step cosine falls from 0.997 at step 0
+to 0.054 at step 9/final action; final normalized RMSE is 1.726. All 33
+output digests match the earlier timed compiler run. The output-tap binary
+has different stage objects and takes 613,171,131,189 modeled cycles; that
+cycle count is excluded from the issuer-swap row. These values show drift on
+the fixed synthetic capture, not a task-quality verdict.
 
 Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
@@ -262,6 +279,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_tinyllama_prefill128_source_20261014/receipt.json \
   --tiny-prefill-precision \
     docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
+  --smol-action-values \
+    docs/evidence/smolvla_full_action_values_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

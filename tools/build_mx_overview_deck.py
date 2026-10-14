@@ -280,7 +280,8 @@ def configurations(slide, total: int = 3) -> None:
              "• TinyLlama: 155 FP4 / 45 FP8 MX sites per stage.\n"
              "• PE 0 = direct FP4 × FP4; PE 8 = direct FP8 × FP8.\n"
              "• 256 KiB SPAD caps tiles; VPU/requant legal.\n"
-             "• No operand LUT or FP6 mode in this profile.\n"
+             "• Selected profile: no operand LUT or FP6.\n"
+             "• FP6×FP4 profile: E3M2 LUT × FP4 direct → PE 3; VPU off.\n"
              "• load_profile(profile, rtl_root=rtl) rejects drift.",
              7.38, 4.42, 4.78, 1.62, size=11.0, color=INK)
     add_text(slide,
@@ -397,13 +398,14 @@ def results(slide, smol_comparison: dict | None,
         prefill = tiny_logits["prefill_metrics"]
         decode = tiny_logits["decode_summary"]
         action = smol_actions["final_action_metrics"]
+        first_flow = smol_actions["flow_step_metrics"][0]
         callout = (
             "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
             f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
             f"top token {decode['top_token_matches']}/32.\n"
-            "SmolVLA final action cosine "
-            f"{action['cosine']:.3f}, normalized RMSE "
-            f"{action['normalized_rmse']:.3f}. No quality threshold is claimed."
+            "SmolVLA flow 0 → final action cosine "
+            f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+            f"final normalized RMSE {action['normalized_rmse']:.3f}."
         )
     elif tiny_logits:
         prefill = tiny_logits["prefill_metrics"]
@@ -423,19 +425,22 @@ def results(slide, smol_comparison: dict | None,
         mixed = prefill_precision["metrics"]["mixed_fp4_fp8_spike"]
         fp8 = prefill_precision["metrics"]["all_fp8_spike"]
         action = smol_actions["final_action_metrics"]
+        first_flow = smol_actions["flow_step_metrics"][0]
         callout = (
             "TinyLlama prefill vs FP32: mixed FP4/FP8 cosine "
             f"{mixed['cosine']:.3f}, all-FP8 {fp8['cosine']:.3f}. "
             "33-step logits pending.\n"
-            f"SmolVLA final action vs FP32: cosine {action['cosine']:.3f}, "
-            f"normalized RMSE {action['normalized_rmse']:.3f}. No quality threshold."
+            "SmolVLA flow 0 → final action vs FP32: cosine "
+            f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+            f"final normalized RMSE {action['normalized_rmse']:.3f}."
         )
     elif smol_actions:
         action = smol_actions["final_action_metrics"]
+        first_flow = smol_actions["flow_step_metrics"][0]
         callout = (
-            "SmolVLA final action vs captured FP32 on fixed synthetic inputs: "
-            f"cosine {action['cosine']:.3f}, normalized RMSE "
-            f"{action['normalized_rmse']:.3f}.\n"
+            "SmolVLA flow 0 → final action vs captured FP32: cosine "
+            f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
+            f"final normalized RMSE {action['normalized_rmse']:.3f}.\n"
             "Full-session output hashes match the timed compiler run; "
             "these values do not establish task success."
         )
@@ -715,11 +720,22 @@ def main() -> None:
             parser.error("TinyLlama logits do not match the selected full run")
     if smol_actions is not None:
         action = smol_actions.get("final_action_metrics") or {}
+        flow = smol_actions.get("flow_step_metrics") or []
         if (smol_comparison is None
                 or smol_actions.get("fast_run_sha256") !=
                 smol_comparison.get("reference_run_sha256")
                 or smol_actions.get("fast_compiler_cycles") !=
                 smol_comparison.get("reference_cycles")
+                or len(flow) != 10
+                or [row.get("step") for row in flow] != list(range(10))
+                or flow[-1] != action
+                or any(not isinstance(row.get("cosine"), (int, float))
+                       or not math.isfinite(row["cosine"])
+                       or not -1 <= row["cosine"] <= 1
+                       or not isinstance(row.get("normalized_rmse"), (int, float))
+                       or not math.isfinite(row["normalized_rmse"])
+                       or row["normalized_rmse"] < 0
+                       for row in flow)
                 or not isinstance(action.get("cosine"), (int, float))
                 or not math.isfinite(action["cosine"])
                 or not -1 <= action["cosine"] <= 1
