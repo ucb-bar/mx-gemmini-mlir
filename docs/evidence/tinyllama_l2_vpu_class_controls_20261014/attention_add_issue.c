@@ -1,0 +1,307 @@
+#include <stdint.h>
+#include <stdint.h>
+
+_Static_assert(sizeof(uintptr_t) == 8, "MX Rocket commands require RV64");
+
+static void mx_model_elementwise_issue_8192(const void *lhs, const void *rhs, const void *result) {
+  __asm__ volatile (".insn r 0x7b, 3, 7, x0, %0, %1" : : "r"(UINT64_C(0x0000000000000000)), "r"(UINT64_C(0x0000000000000000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 0, x0, %0, %1" : : "r"(UINT64_C(0x0000000000100101)), "r"(UINT64_C(0x0000000000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 0, x0, %0, %1" : : "r"(UINT64_C(0x0000000000000002)), "r"(UINT64_C(0x0000000000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(0))), "r"(UINT64_C(0x0010001000000000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(256))), "r"(UINT64_C(0x0010001000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(512))), "r"(UINT64_C(0x0010001000000020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(768))), "r"(UINT64_C(0x0010001000000030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1024))), "r"(UINT64_C(0x0010001000000040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1280))), "r"(UINT64_C(0x0010001000000050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1536))), "r"(UINT64_C(0x0010001000000060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1792))), "r"(UINT64_C(0x0010001000000070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2048))), "r"(UINT64_C(0x0010001000000080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2304))), "r"(UINT64_C(0x0010001000000090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2560))), "r"(UINT64_C(0x00100010000000a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2816))), "r"(UINT64_C(0x00100010000000b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3072))), "r"(UINT64_C(0x00100010000000c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3328))), "r"(UINT64_C(0x00100010000000d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3584))), "r"(UINT64_C(0x00100010000000e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3840))), "r"(UINT64_C(0x00100010000000f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(4096))), "r"(UINT64_C(0x0010001000000100)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(4352))), "r"(UINT64_C(0x0010001000000110)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(4608))), "r"(UINT64_C(0x0010001000000120)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(4864))), "r"(UINT64_C(0x0010001000000130)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(5120))), "r"(UINT64_C(0x0010001000000140)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(5376))), "r"(UINT64_C(0x0010001000000150)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(5632))), "r"(UINT64_C(0x0010001000000160)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(5888))), "r"(UINT64_C(0x0010001000000170)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(6144))), "r"(UINT64_C(0x0010001000000180)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(6400))), "r"(UINT64_C(0x0010001000000190)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(6656))), "r"(UINT64_C(0x00100010000001a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(6912))), "r"(UINT64_C(0x00100010000001b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(7168))), "r"(UINT64_C(0x00100010000001c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(7424))), "r"(UINT64_C(0x00100010000001d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(7680))), "r"(UINT64_C(0x00100010000001e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(7936))), "r"(UINT64_C(0x00100010000001f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(8192))), "r"(UINT64_C(0x0010001000000200)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(8448))), "r"(UINT64_C(0x0010001000000210)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(8704))), "r"(UINT64_C(0x0010001000000220)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(8960))), "r"(UINT64_C(0x0010001000000230)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(9216))), "r"(UINT64_C(0x0010001000000240)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(9472))), "r"(UINT64_C(0x0010001000000250)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(9728))), "r"(UINT64_C(0x0010001000000260)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(9984))), "r"(UINT64_C(0x0010001000000270)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(10240))), "r"(UINT64_C(0x0010001000000280)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(10496))), "r"(UINT64_C(0x0010001000000290)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(10752))), "r"(UINT64_C(0x00100010000002a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(11008))), "r"(UINT64_C(0x00100010000002b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(11264))), "r"(UINT64_C(0x00100010000002c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(11520))), "r"(UINT64_C(0x00100010000002d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(11776))), "r"(UINT64_C(0x00100010000002e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(12032))), "r"(UINT64_C(0x00100010000002f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(12288))), "r"(UINT64_C(0x0010001000000300)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(12544))), "r"(UINT64_C(0x0010001000000310)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(12800))), "r"(UINT64_C(0x0010001000000320)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(13056))), "r"(UINT64_C(0x0010001000000330)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(13312))), "r"(UINT64_C(0x0010001000000340)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(13568))), "r"(UINT64_C(0x0010001000000350)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(13824))), "r"(UINT64_C(0x0010001000000360)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(14080))), "r"(UINT64_C(0x0010001000000370)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(14336))), "r"(UINT64_C(0x0010001000000380)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(14592))), "r"(UINT64_C(0x0010001000000390)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(14848))), "r"(UINT64_C(0x00100010000003a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(15104))), "r"(UINT64_C(0x00100010000003b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(15360))), "r"(UINT64_C(0x00100010000003c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(15616))), "r"(UINT64_C(0x00100010000003d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(15872))), "r"(UINT64_C(0x00100010000003e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(16128))), "r"(UINT64_C(0x00100010000003f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(0))), "r"(UINT64_C(0x0010001000001000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(256))), "r"(UINT64_C(0x0010001000001010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(512))), "r"(UINT64_C(0x0010001000001020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(768))), "r"(UINT64_C(0x0010001000001030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1024))), "r"(UINT64_C(0x0010001000001040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1280))), "r"(UINT64_C(0x0010001000001050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1536))), "r"(UINT64_C(0x0010001000001060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1792))), "r"(UINT64_C(0x0010001000001070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2048))), "r"(UINT64_C(0x0010001000001080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2304))), "r"(UINT64_C(0x0010001000001090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2560))), "r"(UINT64_C(0x00100010000010a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2816))), "r"(UINT64_C(0x00100010000010b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3072))), "r"(UINT64_C(0x00100010000010c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3328))), "r"(UINT64_C(0x00100010000010d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3584))), "r"(UINT64_C(0x00100010000010e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3840))), "r"(UINT64_C(0x00100010000010f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(4096))), "r"(UINT64_C(0x0010001000001100)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(4352))), "r"(UINT64_C(0x0010001000001110)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(4608))), "r"(UINT64_C(0x0010001000001120)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(4864))), "r"(UINT64_C(0x0010001000001130)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(5120))), "r"(UINT64_C(0x0010001000001140)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(5376))), "r"(UINT64_C(0x0010001000001150)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(5632))), "r"(UINT64_C(0x0010001000001160)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(5888))), "r"(UINT64_C(0x0010001000001170)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(6144))), "r"(UINT64_C(0x0010001000001180)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(6400))), "r"(UINT64_C(0x0010001000001190)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(6656))), "r"(UINT64_C(0x00100010000011a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(6912))), "r"(UINT64_C(0x00100010000011b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(7168))), "r"(UINT64_C(0x00100010000011c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(7424))), "r"(UINT64_C(0x00100010000011d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(7680))), "r"(UINT64_C(0x00100010000011e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(7936))), "r"(UINT64_C(0x00100010000011f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(8192))), "r"(UINT64_C(0x0010001000001200)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(8448))), "r"(UINT64_C(0x0010001000001210)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(8704))), "r"(UINT64_C(0x0010001000001220)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(8960))), "r"(UINT64_C(0x0010001000001230)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(9216))), "r"(UINT64_C(0x0010001000001240)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(9472))), "r"(UINT64_C(0x0010001000001250)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(9728))), "r"(UINT64_C(0x0010001000001260)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(9984))), "r"(UINT64_C(0x0010001000001270)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(10240))), "r"(UINT64_C(0x0010001000001280)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(10496))), "r"(UINT64_C(0x0010001000001290)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(10752))), "r"(UINT64_C(0x00100010000012a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(11008))), "r"(UINT64_C(0x00100010000012b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(11264))), "r"(UINT64_C(0x00100010000012c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(11520))), "r"(UINT64_C(0x00100010000012d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(11776))), "r"(UINT64_C(0x00100010000012e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(12032))), "r"(UINT64_C(0x00100010000012f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(12288))), "r"(UINT64_C(0x0010001000001300)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(12544))), "r"(UINT64_C(0x0010001000001310)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(12800))), "r"(UINT64_C(0x0010001000001320)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(13056))), "r"(UINT64_C(0x0010001000001330)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(13312))), "r"(UINT64_C(0x0010001000001340)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(13568))), "r"(UINT64_C(0x0010001000001350)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(13824))), "r"(UINT64_C(0x0010001000001360)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(14080))), "r"(UINT64_C(0x0010001000001370)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(14336))), "r"(UINT64_C(0x0010001000001380)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(14592))), "r"(UINT64_C(0x0010001000001390)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(14848))), "r"(UINT64_C(0x00100010000013a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(15104))), "r"(UINT64_C(0x00100010000013b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(15360))), "r"(UINT64_C(0x00100010000013c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(15616))), "r"(UINT64_C(0x00100010000013d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(15872))), "r"(UINT64_C(0x00100010000013e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(16128))), "r"(UINT64_C(0x00100010000013f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 33, x0, %0, %1" : : "r"(UINT64_C(0x0010020004000000)), "r"(UINT64_C(0x0000000000000020)) : "memory");
+  __asm__ volatile ("fence" ::: "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(0))), "r"(UINT64_C(0x0010001000002000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(256))), "r"(UINT64_C(0x0010001000002010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(512))), "r"(UINT64_C(0x0010001000002020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(768))), "r"(UINT64_C(0x0010001000002030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1024))), "r"(UINT64_C(0x0010001000002040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1280))), "r"(UINT64_C(0x0010001000002050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1536))), "r"(UINT64_C(0x0010001000002060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1792))), "r"(UINT64_C(0x0010001000002070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2048))), "r"(UINT64_C(0x0010001000002080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2304))), "r"(UINT64_C(0x0010001000002090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2560))), "r"(UINT64_C(0x00100010000020a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2816))), "r"(UINT64_C(0x00100010000020b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3072))), "r"(UINT64_C(0x00100010000020c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3328))), "r"(UINT64_C(0x00100010000020d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3584))), "r"(UINT64_C(0x00100010000020e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3840))), "r"(UINT64_C(0x00100010000020f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(4096))), "r"(UINT64_C(0x0010001000002100)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(4352))), "r"(UINT64_C(0x0010001000002110)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(4608))), "r"(UINT64_C(0x0010001000002120)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(4864))), "r"(UINT64_C(0x0010001000002130)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(5120))), "r"(UINT64_C(0x0010001000002140)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(5376))), "r"(UINT64_C(0x0010001000002150)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(5632))), "r"(UINT64_C(0x0010001000002160)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(5888))), "r"(UINT64_C(0x0010001000002170)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(6144))), "r"(UINT64_C(0x0010001000002180)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(6400))), "r"(UINT64_C(0x0010001000002190)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(6656))), "r"(UINT64_C(0x00100010000021a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(6912))), "r"(UINT64_C(0x00100010000021b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(7168))), "r"(UINT64_C(0x00100010000021c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(7424))), "r"(UINT64_C(0x00100010000021d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(7680))), "r"(UINT64_C(0x00100010000021e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(7936))), "r"(UINT64_C(0x00100010000021f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(8192))), "r"(UINT64_C(0x0010001000002200)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(8448))), "r"(UINT64_C(0x0010001000002210)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(8704))), "r"(UINT64_C(0x0010001000002220)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(8960))), "r"(UINT64_C(0x0010001000002230)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(9216))), "r"(UINT64_C(0x0010001000002240)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(9472))), "r"(UINT64_C(0x0010001000002250)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(9728))), "r"(UINT64_C(0x0010001000002260)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(9984))), "r"(UINT64_C(0x0010001000002270)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(10240))), "r"(UINT64_C(0x0010001000002280)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(10496))), "r"(UINT64_C(0x0010001000002290)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(10752))), "r"(UINT64_C(0x00100010000022a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(11008))), "r"(UINT64_C(0x00100010000022b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(11264))), "r"(UINT64_C(0x00100010000022c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(11520))), "r"(UINT64_C(0x00100010000022d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(11776))), "r"(UINT64_C(0x00100010000022e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(12032))), "r"(UINT64_C(0x00100010000022f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(12288))), "r"(UINT64_C(0x0010001000002300)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(12544))), "r"(UINT64_C(0x0010001000002310)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(12800))), "r"(UINT64_C(0x0010001000002320)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(13056))), "r"(UINT64_C(0x0010001000002330)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(13312))), "r"(UINT64_C(0x0010001000002340)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(13568))), "r"(UINT64_C(0x0010001000002350)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(13824))), "r"(UINT64_C(0x0010001000002360)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(14080))), "r"(UINT64_C(0x0010001000002370)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(14336))), "r"(UINT64_C(0x0010001000002380)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(14592))), "r"(UINT64_C(0x0010001000002390)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(14848))), "r"(UINT64_C(0x00100010000023a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(15104))), "r"(UINT64_C(0x00100010000023b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(15360))), "r"(UINT64_C(0x00100010000023c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(15616))), "r"(UINT64_C(0x00100010000023d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(15872))), "r"(UINT64_C(0x00100010000023e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(16128))), "r"(UINT64_C(0x00100010000023f0)) : "memory");
+  __asm__ volatile ("fence" ::: "memory");
+}
+
+#include <stdint.h>
+
+_Static_assert(sizeof(uintptr_t) == 8, "MX Rocket commands require RV64");
+
+static void mx_model_elementwise_issue_2048(const void *lhs, const void *rhs, const void *result) {
+  __asm__ volatile (".insn r 0x7b, 3, 7, x0, %0, %1" : : "r"(UINT64_C(0x0000000000000000)), "r"(UINT64_C(0x0000000000000000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 0, x0, %0, %1" : : "r"(UINT64_C(0x0000000000100101)), "r"(UINT64_C(0x0000000000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 0, x0, %0, %1" : : "r"(UINT64_C(0x0000000000000002)), "r"(UINT64_C(0x0000000000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(0))), "r"(UINT64_C(0x0010001000000000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(256))), "r"(UINT64_C(0x0010001000000010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(512))), "r"(UINT64_C(0x0010001000000020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(768))), "r"(UINT64_C(0x0010001000000030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1024))), "r"(UINT64_C(0x0010001000000040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1280))), "r"(UINT64_C(0x0010001000000050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1536))), "r"(UINT64_C(0x0010001000000060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(1792))), "r"(UINT64_C(0x0010001000000070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2048))), "r"(UINT64_C(0x0010001000000080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2304))), "r"(UINT64_C(0x0010001000000090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2560))), "r"(UINT64_C(0x00100010000000a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(2816))), "r"(UINT64_C(0x00100010000000b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3072))), "r"(UINT64_C(0x00100010000000c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3328))), "r"(UINT64_C(0x00100010000000d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3584))), "r"(UINT64_C(0x00100010000000e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)lhs + UINT64_C(3840))), "r"(UINT64_C(0x00100010000000f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(0))), "r"(UINT64_C(0x0010001000001000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(256))), "r"(UINT64_C(0x0010001000001010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(512))), "r"(UINT64_C(0x0010001000001020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(768))), "r"(UINT64_C(0x0010001000001030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1024))), "r"(UINT64_C(0x0010001000001040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1280))), "r"(UINT64_C(0x0010001000001050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1536))), "r"(UINT64_C(0x0010001000001060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(1792))), "r"(UINT64_C(0x0010001000001070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2048))), "r"(UINT64_C(0x0010001000001080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2304))), "r"(UINT64_C(0x0010001000001090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2560))), "r"(UINT64_C(0x00100010000010a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(2816))), "r"(UINT64_C(0x00100010000010b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3072))), "r"(UINT64_C(0x00100010000010c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3328))), "r"(UINT64_C(0x00100010000010d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3584))), "r"(UINT64_C(0x00100010000010e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 2, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)rhs + UINT64_C(3840))), "r"(UINT64_C(0x00100010000010f0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 33, x0, %0, %1" : : "r"(UINT64_C(0x0004020004000000)), "r"(UINT64_C(0x0000000000000020)) : "memory");
+  __asm__ volatile ("fence" ::: "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(0))), "r"(UINT64_C(0x0010001000002000)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(256))), "r"(UINT64_C(0x0010001000002010)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(512))), "r"(UINT64_C(0x0010001000002020)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(768))), "r"(UINT64_C(0x0010001000002030)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1024))), "r"(UINT64_C(0x0010001000002040)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1280))), "r"(UINT64_C(0x0010001000002050)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1536))), "r"(UINT64_C(0x0010001000002060)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(1792))), "r"(UINT64_C(0x0010001000002070)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2048))), "r"(UINT64_C(0x0010001000002080)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2304))), "r"(UINT64_C(0x0010001000002090)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2560))), "r"(UINT64_C(0x00100010000020a0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(2816))), "r"(UINT64_C(0x00100010000020b0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3072))), "r"(UINT64_C(0x00100010000020c0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3328))), "r"(UINT64_C(0x00100010000020d0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3584))), "r"(UINT64_C(0x00100010000020e0)) : "memory");
+  __asm__ volatile (".insn r 0x7b, 3, 3, x0, %0, %1" : : "r"(((uint64_t)(uintptr_t)result + UINT64_C(3840))), "r"(UINT64_C(0x00100010000020f0)) : "memory");
+  __asm__ volatile ("fence" ::: "memory");
+}
+
+static uint16_t mx_model_elementwise_a[8192] __attribute__((aligned(64)));
+static uint16_t mx_model_elementwise_b[8192] __attribute__((aligned(64)));
+static uint16_t mx_model_elementwise_c[8192] __attribute__((aligned(64)));
+static uint16_t mx_model_elementwise_narrow(float value) {
+  union {float f; uint32_t u;} word;
+  word.f = value;
+  if ((word.u & 0x7f800000u) == 0x7f800000u &&
+      (word.u & 0x007fffffu)) __builtin_trap();
+  word.u += 0x7fffu + ((word.u >> 16) & 1u);
+  return (uint16_t)(word.u >> 16);
+}
+static float mx_model_elementwise_widen(uint16_t value) {
+  union {float f; uint32_t u;} word;
+  word.u = (uint32_t)value << 16;
+  return word.f;
+}
+void mx_model_elementwise(const float *lhs, const float *rhs, float *out) {
+  if (!lhs || !rhs || !out) __builtin_trap();
+  for (uint32_t base = 0; base < 133120; base += 8192) {
+    uint32_t count = 133120 - base;
+    if (count > 8192) count = 8192;
+    for (uint32_t index = 0; index < (count + 7u) / 8u * 8u; ++index) {
+      if (index >= count) {
+        mx_model_elementwise_a[index] = mx_model_elementwise_b[index] = 0;
+        continue;
+      }
+      uint32_t word = mx_model_elementwise_narrow(lhs[(base + index)]);
+      mx_model_elementwise_a[index] = (uint16_t)word;
+      mx_model_elementwise_b[index] = mx_model_elementwise_narrow(rhs[(((base + index) / 65u % 64u) * 65u) + (((base + index) % 65u) * 1u)]);
+    }
+    const void *a = mx_model_elementwise_a, *b = mx_model_elementwise_b, *c = mx_model_elementwise_c;
+    switch (count) {
+    case 8192: mx_model_elementwise_issue_8192(a, b, c); break;
+    case 2048: mx_model_elementwise_issue_2048(a, b, c); break;
+      default: __builtin_trap();
+    }
+    for (uint32_t index = 0; index < count; ++index)
+      out[base + index] = mx_model_elementwise_widen(mx_model_elementwise_c[index]);
+  }
+}

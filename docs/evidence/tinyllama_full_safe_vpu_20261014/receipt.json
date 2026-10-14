@@ -1,0 +1,43 @@
+{
+  "capture_model_sha256": "0f63f1c7315412d0583bfb77a6f2a1eb93123b7c17dbc0f416685f3ebce5afc1",
+  "checkpoint_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "comparisons": {
+    "compiler_vs_pytorch": {
+      "a_argmax": 1230,
+      "b_argmax": 1230,
+      "cosine": 0.9594468388862344,
+      "rmse": 0.6322675230435765
+    },
+    "compiler_vs_source_quant": {
+      "a_argmax": 1230,
+      "b_argmax": 1230,
+      "cosine": 0.9766807381924121,
+      "rmse": 0.47836073137643287
+    }
+  },
+  "cycle_ratio_valid": false,
+  "elf_sha256": "e7e42b071f18210cc3ac896631e5223f0daf3aeaead524d9bb2444565f7b9768",
+  "enabled_vpu_classes": [
+    "add",
+    "reduce",
+    "unary"
+  ],
+  "logits_sha256": "11cebb82dbc7b38e73fb366b9dcd823e20c1a036cca0ce8a3a42d1978122faa2",
+  "model_scope": "64-token prefill; 22 checkpoint decoder layers, final norm and head",
+  "precision_overrides_sha256": "a0834d48d77896238c68a47ef65a94058a199c6ad0ae9f807c4a58c92b80cf10",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "reference_logits_sha256": "c8b5703f387d94b9bab0f00c62ce7e85ea42333cc8e60792b0b5c2da9b074763",
+  "schema": "mx_gemmini.tinyllama_full_safe_vpu_spike.v1",
+  "selected_mx_operations": 200,
+  "source_evidence_receipt_sha256": "3ab60bbd6a075456011a3ea1b43a9bc6efaa041d62b9cb2fe28976fb1a0f2f59",
+  "source_log_sha256": "bb66f7cea25eedadef6b367ddb3378a51c78c0c59ab4c03096f72668c6cae81d",
+  "spike_extlib_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "spike_log_sha256": "5781e67cf5a5fc8513ade712fee2dcecd3ec96f40e7f415c53b49481ea172079",
+  "stage_cycles": 4473524179,
+  "stage_probe_sha256": "74332bed73452230b9ae17a332a578722ee9583255b1e732a578400dcade7ded",
+  "timing_scope": "complete compiled stage",
+  "vpu_add_regions": 88,
+  "vpu_reduce_regions": 45,
+  "vpu_softmax_host_regions": 22,
+  "vpu_unary_regions": 156
+}

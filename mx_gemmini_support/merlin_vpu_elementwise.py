@@ -176,8 +176,19 @@ def selected_elementwise_sites(mlir_text: str, profile: dict) -> list[dict]:
 class MXVPUElementwisePostOffload:
     """Replace verified binary generics with destination-passing VPU calls."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *, enabled_operations: frozenset[str] | None = None,
+                 enabled_regions: frozenset[str] | None = None):
         self.profile = profile
+        valid = frozenset(("mul", "add", "sub", "div"))
+        self.enabled_operations = (valid if enabled_operations is None
+                                   else frozenset(enabled_operations))
+        if not self.enabled_operations or not self.enabled_operations <= valid:
+            raise ValueError("MX VPU elementwise operations must be a nonempty subset "
+                             "of mul,add,sub,div")
+        self.enabled_regions = (None if enabled_regions is None
+                                else frozenset(enabled_regions))
+        if self.enabled_regions is not None and not self.enabled_regions:
+            raise ValueError("MX VPU elementwise regions must be nonempty")
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from xdsl.dialects import func, tensor
@@ -189,7 +200,17 @@ class MXVPUElementwisePostOffload:
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
-        sites = selected_elementwise_sites(source, self.profile)
+        all_sites = selected_elementwise_sites(source, self.profile)
+        if (self.enabled_regions is not None and
+                not self.enabled_regions <= {site["region"] for site in all_sites}):
+            raise ValueError("MX VPU elementwise diagnostic names unknown source regions")
+        sites = [site for site in all_sites
+                 if site["operation"] in self.enabled_operations and
+                 (self.enabled_regions is None or
+                  site["region"] in self.enabled_regions)]
+        if (self.enabled_regions is not None and
+                {site["region"] for site in sites} != self.enabled_regions):
+            raise ValueError("MX VPU elementwise regions conflict with the operation filter")
         if not sites:
             return prepared
         module = parse_mlir_file(prepared)
@@ -272,6 +293,9 @@ class MXVPUElementwisePostOffload:
             "sidecar_sha256": hashlib.sha256(Path(sidecar).read_bytes()).hexdigest(),
             "profile_sha256": profile_sha256(self.profile),
             "numeric_policy": "f32_to_bf16_rne_vpu_to_f32_or_direct_bf16",
+            "enabled_operations": sorted(self.enabled_operations),
+            "enabled_regions": (sorted(self.enabled_regions)
+                                if self.enabled_regions is not None else None),
             "regions": records,
         }
         (workdir / "mx_vpu_elementwise_rewrite.json").write_text(

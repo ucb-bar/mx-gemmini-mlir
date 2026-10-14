@@ -24,6 +24,13 @@ and source logits is 0.6720. The source logits have cosine 0.9835 to the
 captured PyTorch reference; compiler logits have cosine 0.7011. Matching
 argmax for this one synthetic input does not establish model accuracy.
 
+A later [full-depth selected-VPU compiler
+control](../tinyllama_full_safe_vpu_20261014/README.md) keeps the same MX
+contractions, checkpoint, and FP8 policy but leaves softmax and elementwise
+work on the compiled host. It has 0.9767 cosine to these source logits and
+the same argmax, 1230. Its 4,473,524,179 stage cycles still cannot be divided
+by the source's selected-window cycles to claim a speedup.
+
 The [receipt](receipt.json) pins the source/RTL commits, input, generated
 data, Spike extension, log hashes, 64-bit cycle counters, and comparison
 scope. [Output comparison](output_comparison.json) records the complete-logit
@@ -37,6 +44,12 @@ and `LLAMA_DUMP_LAST_LOGITS` enabled. The patch only prints 64-bit cycle
 counters and the final BF16 logits; the generated model data is the
 source generator's output for 22 layers plus the head. The data and ELF are
 large and are regenerated locally rather than stored in Git.
+The compiler's [all-FP8 override map](all_fp8_overrides.json) is archived and
+bound to the captured model by the receipt.
+The output comparison was first computed from a run whose source cycle line
+printed 32-bit integers. The archived source log repeats the same outputs and
+checks with the 64-bit diagnostic print patch; use its counters in the receipt
+for timing.
 
 Run `python verify.py` in this directory to recheck the archived complete
 logits, output hashes, and raw cycle counters. It requires NumPy and does not

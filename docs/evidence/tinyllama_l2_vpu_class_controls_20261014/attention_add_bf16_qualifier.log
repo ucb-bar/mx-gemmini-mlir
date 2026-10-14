@@ -1,0 +1,3 @@
+VPU ADD PASS mismatches=0
+Gemmini extension configured with:
+    dim = 16

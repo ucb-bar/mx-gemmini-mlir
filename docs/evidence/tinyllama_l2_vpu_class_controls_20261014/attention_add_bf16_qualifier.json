@@ -1,0 +1,48 @@
+{
+  "driver_sha256": "0e8fdea4eddf42cf364345c2415ad8684d5e2ac2cf2141a198ac8edc18732e7c",
+  "dtype": "f32",
+  "elements_per_chunk": 8192,
+  "elf_sha256": "d6e1ab3ed084a0e04f462d0a68eb470e23321952bfb287c3afd9506d8cd7c301",
+  "extlib_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "include_negative_infinity": true,
+  "lhs_axes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "lhs_dtype": "f32",
+  "lhs_shape": [
+    1,
+    32,
+    64,
+    65
+  ],
+  "numeric_line": "VPU ADD PASS mismatches=0",
+  "operation": "add",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rhs_axes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "rhs_dtype": "f32",
+  "rhs_shape": [
+    1,
+    1,
+    64,
+    65
+  ],
+  "schema": "mx_gemmini.vpu_elementwise_spike.v1",
+  "shape": [
+    1,
+    32,
+    64,
+    65
+  ],
+  "source_sha256": "59c9ad8a29c4ffe01050b2a891dee04b2a7ec46a797f99314091e59d650f7a49",
+  "spike_exit_code": 0,
+  "spike_log_sha256": "96991858b9c93aa3cdecf2625a4ba42d647433dbc1abec022cca2fcb4f66b311",
+  "status": "spike_bit_exact_bf16_elementwise"
+}

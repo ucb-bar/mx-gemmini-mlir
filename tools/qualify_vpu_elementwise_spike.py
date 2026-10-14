@@ -45,7 +45,7 @@ def _driver(shape: tuple[int, ...], lhs_shape: tuple[int, ...],
             lhs_axes: tuple[int, ...], rhs_shape: tuple[int, ...],
             rhs_axes: tuple[int, ...], dtype: str, lhs_dtype: str,
             rhs_dtype: str, operation: str,
-            symbol: str) -> str:
+            symbol: str, *, include_negative_infinity: bool = False) -> str:
     scalar = "float" if dtype == "f32" else "uint16_t"
     lhs_scalar = "float" if lhs_dtype == "f32" else "uint16_t"
     rhs_scalar = "float" if rhs_dtype == "f32" else "uint16_t"
@@ -61,6 +61,8 @@ def _driver(shape: tuple[int, ...], lhs_shape: tuple[int, ...],
                       else "((int)((index*17u)%257u)-128)/64.0f")
     rhs_test_value = ("0.5f + (float)((index*11u)%197u)/64.0f" if operation == "div"
                       else "((int)((index*11u)%197u)-98)/64.0f")
+    if include_negative_infinity:
+        rhs_test_value = f"(index % 17u == 0u ? -__builtin_inff() : {rhs_test_value})"
     numeric_check = (f'''float expected={lhs_value} / {rhs_value};
     float delta=__builtin_fabsf({"out[index]" if dtype == "f32" else "widen(out[index])"}-expected);
     unsigned relative_ppm=(unsigned)(delta/expected*1000000.0f);
@@ -155,9 +157,15 @@ def main() -> None:
     parser.add_argument("--lhs-dtype", choices=("bf16", "f32"))
     parser.add_argument("--rhs-dtype", choices=("bf16", "f32"))
     parser.add_argument("--operation", choices=("mul", "sub", "add", "div"), required=True)
+    parser.add_argument("--include-negative-infinity", action="store_true",
+                        help="include masked-attention-like negative-infinity RHS values")
     for name in ("rtl-root", "riscv-root", "extlib", "out-dir"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     args = parser.parse_args()
+    if args.include_negative_infinity and args.operation != "add":
+        parser.error("negative-infinity fixture is only defined for addition")
+    for name in ("rtl_root", "riscv_root", "extlib"):
+        setattr(args, name, getattr(args, name).resolve(strict=True))
     out = args.out_dir.absolute()
     if out.exists():
         parser.error("output directory already exists")
@@ -184,7 +192,8 @@ def main() -> None:
     driver.write_text(_driver(args.shape, lhs_shape, lhs_axes,
                               args.rhs_shape, rhs_axes, args.dtype,
                               lhs_dtype, rhs_dtype,
-                              args.operation, symbol))
+                              args.operation, symbol,
+                              include_negative_infinity=args.include_negative_infinity))
     software = args.rtl_root / "software/gemmini-rocc-tests"
     bench = software / "riscv-tests/benchmarks/common"
     if not bench.is_dir() or not (bench / "test.ld").is_file():
@@ -196,7 +205,7 @@ def main() -> None:
              "-fno-tree-loop-distribute-patterns", "-march=rv64gc",
              "-Wa,-march=rv64gc", "-I", str(software / "riscv-tests"),
              "-I", str(software / "riscv-tests/env"), "-I", str(software),
-             "-I", str(bench)]
+             "-I", str(bench), "-I", str(args.riscv_root / "include/riscv")]
     objects = []
     for index, path in enumerate((source, driver, *sorted(bench.glob("*.c")),
                                   *sorted(bench.glob("*.S")))):
@@ -230,6 +239,7 @@ def main() -> None:
         "rhs_axes": list(rhs_axes),
         "dtype": args.dtype, "lhs_dtype": lhs_dtype,
         "rhs_dtype": rhs_dtype, "operation": args.operation,
+        "include_negative_infinity": args.include_negative_infinity,
         "elements_per_chunk": kernel.elements_per_chunk,
         "profile_sha256": profile_sha256(profile),
         "source_sha256": sha(source), "elf_sha256": sha(elf),

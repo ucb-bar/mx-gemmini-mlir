@@ -120,9 +120,12 @@ graph and VPU objects fixed.
 
 An [independent full TinyLlama source run](../evidence/nicolas_tinyllama_full_source_20261014/README.md)
 passes all 22 layers and the head on Spike. It reports 4,456,723,475 cycles
-in selected MX and scalar-host windows versus 5,369,620,807 compiler stage
-cycles. Their logits have cosine similarity 0.672; the slide therefore gives
-the raw counts with **NO RATIO**.
+in selected MX and scalar-host windows. The [full-depth compiler
+control](../evidence/tinyllama_full_safe_vpu_20261014/README.md) reports
+4,473,524,179 full-stage cycles with MX contractions and selected VPU
+postprocessing. Their logits have cosine 0.977 and the same next token on
+this input. The slide gives the raw counts with **NO RATIO** because the
+timed work and host/VPU operation mix differ.
 
 An [independent two-layer TinyLlama source smoke
 test](../evidence/nicolas_tinyllama_two_layer_source_20261014/README.md)
@@ -168,6 +171,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/tinyllama_cached_layer_compiler_20261014/summary.json \
   --tiny-full-source \
     docs/evidence/nicolas_tinyllama_full_source_20261014/receipt.json \
+  --tiny-full-safe-vpu \
+    docs/evidence/tinyllama_full_safe_vpu_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

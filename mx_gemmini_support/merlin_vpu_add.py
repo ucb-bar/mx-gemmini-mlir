@@ -234,7 +234,9 @@ class MXVPUPostOffload:
     """Apply source-bound VPU rewrites and optional fixed-RHS pruning."""
 
     def __init__(self, profile: dict, *, fixed_weight_catalog: Path | None = None,
-                 enabled_classes: frozenset[str] | None = None):
+                 enabled_classes: frozenset[str] | None = None,
+                 enabled_elementwise_operations: frozenset[str] | None = None,
+                 enabled_elementwise_regions: frozenset[str] | None = None):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
@@ -242,7 +244,9 @@ class MXVPUPostOffload:
 
         self.softmax = MXVPUSoftmaxPostOffload(profile)
         self.add = MXVPUAddPostOffload(profile)
-        self.elementwise = MXVPUElementwisePostOffload(profile)
+        self.elementwise = MXVPUElementwisePostOffload(
+            profile, enabled_operations=enabled_elementwise_operations,
+            enabled_regions=enabled_elementwise_regions)
         self.unary = MXVPUUnaryPostOffload(profile)
         self.reduce = MXVPUReducePostOffload(profile)
         valid = frozenset(("softmax", "add", "elementwise", "unary", "reduce"))

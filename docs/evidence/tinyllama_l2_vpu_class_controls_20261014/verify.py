@@ -44,6 +44,8 @@ def main() -> None:
     ref_file = HERE / "pytorch_last_logits.npy"
     assert digest(ref_file.read_bytes()) == summary["golden_npy_sha256"]
     assert digest((HERE / "inputs.npz").read_bytes()) == summary["input_ids_npz_sha256"]
+    assert digest((HERE / "all_fp8_overrides.json").read_bytes()) == (
+        summary["common_build"]["precision_overrides_sha256"])
     reference = np.load(ref_file, allow_pickle=False).astype(np.float64).reshape(-1)
     assert reference.size == 32000
     assert int(np.argmax(reference)) == summary["pytorch_argmax"]
@@ -60,6 +62,14 @@ def main() -> None:
         assert abs(cosine - expected["cosine_to_pytorch"]) < 1e-9
         assert int(np.argmax(values)) == expected["argmax"]
         assert cycles == expected["cycles"]
+    qualifier = json.loads((HERE / "attention_add_bf16_qualifier.json").read_text())
+    assert digest((HERE / "attention_add_bf16_qualifier.log").read_bytes()) == (
+        qualifier["spike_log_sha256"])
+    assert digest((HERE / "attention_add_issue.c").read_bytes()) == (
+        qualifier["source_sha256"])
+    assert digest((HERE / "attention_add_driver.c").read_bytes()) == (
+        qualifier["driver_sha256"])
+    assert qualifier["numeric_line"] == "VPU ADD PASS mismatches=0"
     print(f"verified {len(summary['results'])} VPU class controls")
 
 

@@ -133,6 +133,12 @@ def main() -> None:
     parser.add_argument("--diagnostic-vpu-classes",
                         help="comma-separated VPU classes to enable in a numerical control: "
                              "softmax,add,elementwise,unary,reduce")
+    parser.add_argument("--diagnostic-elementwise-ops",
+                        help="comma-separated elementwise operations to enable within "
+                             "a VPU class control: mul,add,sub,div")
+    parser.add_argument("--diagnostic-elementwise-regions",
+                        help="comma-separated exact source regions to enable within "
+                             "the elementwise VPU class")
     parser.add_argument("--cache-checkpoint-weights", action="store_true",
                         help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--prepack-checkpoint-weights", action="store_true",
@@ -160,7 +166,31 @@ def main() -> None:
                          "softmax,add,elementwise,unary,reduce")
     else:
         enabled_vpu_classes = all_vpu_classes
-    diagnostic_vpu = enabled_vpu_classes != all_vpu_classes
+    enabled_elementwise_operations = None
+    if args.diagnostic_elementwise_ops is not None:
+        valid_elementwise = frozenset(("mul", "add", "sub", "div"))
+        enabled_elementwise_operations = frozenset(
+            args.diagnostic_elementwise_ops.split(","))
+        if (args.diagnostic_vpu_classes is None or
+                "elementwise" not in enabled_vpu_classes or
+                not enabled_elementwise_operations or
+                not enabled_elementwise_operations <= valid_elementwise):
+            parser.error("diagnostic elementwise operations require the "
+                         "elementwise VPU class and a nonempty subset of "
+                         "mul,add,sub,div")
+    enabled_elementwise_regions = None
+    if args.diagnostic_elementwise_regions is not None:
+        enabled_elementwise_regions = frozenset(
+            args.diagnostic_elementwise_regions.split(","))
+        if (args.diagnostic_vpu_classes is None or
+                "elementwise" not in enabled_vpu_classes or
+                not enabled_elementwise_regions or
+                "" in enabled_elementwise_regions):
+            parser.error("diagnostic elementwise regions require the "
+                         "elementwise VPU class and nonempty source regions")
+    diagnostic_vpu = (enabled_vpu_classes != all_vpu_classes or
+                      enabled_elementwise_operations is not None or
+                      enabled_elementwise_regions is not None)
     if args.cache_checkpoint_weights and args.prepack_checkpoint_weights:
         parser.error("choose one checkpoint weight preparation mode")
     stage = args.stage.resolve(strict=True)
@@ -249,6 +279,8 @@ def main() -> None:
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
+            enabled_elementwise_operations=enabled_elementwise_operations,
+            enabled_elementwise_regions=enabled_elementwise_regions,
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -352,7 +384,12 @@ def main() -> None:
         residual_eligible = {
             "softmax": len(selected_softmax_sites(selected_text, profile)),
             "add": len(selected_add_sites(selected_text, profile)),
-            "elementwise": len(selected_elementwise_sites(selected_text, profile)),
+            "elementwise": sum(
+                (enabled_elementwise_operations is None or
+                 site["operation"] in enabled_elementwise_operations) and
+                (enabled_elementwise_regions is None or
+                 site["region"] in enabled_elementwise_regions)
+                for site in selected_elementwise_sites(selected_text, profile)),
             "unary": len(selected_unary_sites(selected_text, profile)),
             "reduce": len(selected_row_reduce_sites(selected_text, profile)),
         }
@@ -381,6 +418,12 @@ def main() -> None:
         "execution_route": route,
         "diagnostic_host_vpu": args.diagnostic_host_vpu,
         "enabled_vpu_classes": sorted(enabled_vpu_classes),
+        "enabled_vpu_elementwise_operations": (
+            sorted(enabled_elementwise_operations)
+            if enabled_elementwise_operations is not None else None),
+        "enabled_vpu_elementwise_regions": (
+            sorted(enabled_elementwise_regions)
+            if enabled_elementwise_regions is not None else None),
         "selected_operations": catalog["covered_contractions"],
         "expected_selected_operations": len(expected_regions),
         "raw_selected_source_coverage_complete": True,

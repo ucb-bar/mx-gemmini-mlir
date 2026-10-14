@@ -38,6 +38,8 @@ def main() -> None:
     assert digest(source) == receipt["source_spike_log_sha256"]
     assert digest(compiler) == receipt["compiler_spike_log_sha256"]
     assert digest(reference_file.read_bytes()) == receipt["pytorch_last_logits_npy_sha256"]
+    assert digest((HERE / "all_fp8_overrides.json").read_bytes()) == (
+        receipt["compiler_precision_overrides_sha256"])
 
     source_text = source.decode()
     compiler_text = compiler.decode()

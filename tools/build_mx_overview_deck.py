@@ -303,7 +303,8 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 
 def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None,
-            layer_probe: dict | None, full_source: dict | None) -> None:
+            layer_probe: dict | None, full_source: dict | None,
+            safe_vpu: dict | None) -> None:
     shapes = slide.shapes
     set_text(shapes[0], "Spike results by measurement scope", size=27,
              bold=True)
@@ -325,6 +326,10 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 64 tokens · independent runs",
+         f"{safe_vpu['stage_cycles']:,}†",
+         f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
+        if full_source and safe_vpu else
         ("TinyLlama 64 tokens · source vs compiler",
          f"{full_source['compiler_stage_cycles']:,}†",
          f"{full_source['cycles']['selected_sum']:,}†", "NO RATIO")
@@ -363,8 +368,8 @@ def results(slide, smol_comparison: dict | None,
     callout = (
         "Issuer-swap rows change only the MX command issuer; host and VPU "
         "code is the same.\n"
-        "† Source and compiler time different work; their logits do not yet "
-        "match. No speedup ratio."
+        "† Source and compiler time different work and use different host/VPU "
+        "operations. No speedup ratio."
         if full_source else
         "Issuer-swap rows change only the MX command issuer; host and VPU "
         "code is the same.\n"
@@ -380,7 +385,15 @@ def results(slide, smol_comparison: dict | None,
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    if tiny_comparison and smol_comparison and full_source:
+    if tiny_comparison and smol_comparison and full_source and safe_vpu:
+        footer_text = (
+            "* Issuer-swap hashes match: SmolVLA 33/33; TinyLlama 99/99. "
+            "This is not an independent accuracy check.\n"
+            f"† Independent source vs selected-VPU compiler logits cosine "
+            f"{safe_vpu['comparisons']['compiler_vs_source_quant']['cosine']:.3f}; "
+            "same token, different timed work. No full-model speedup claim."
+        )
+    elif tiny_comparison and smol_comparison and full_source:
         footer_text = (
             "* Issuer-swap hashes match: SmolVLA 33/33; TinyLlama 99/99. "
             "This is not an independent accuracy check.\n"
@@ -434,6 +447,7 @@ def main() -> None:
     parser.add_argument("--tiny-full-comparison", type=Path)
     parser.add_argument("--tiny-layer-probe", type=Path)
     parser.add_argument("--tiny-full-source", type=Path)
+    parser.add_argument("--tiny-full-safe-vpu", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -447,6 +461,10 @@ def main() -> None:
                    if args.tiny_layer_probe else None)
     full_source = (json.loads(args.tiny_full_source.read_text())
                    if args.tiny_full_source else None)
+    safe_vpu = (json.loads(args.tiny_full_safe_vpu.read_text())
+                if args.tiny_full_safe_vpu else None)
+    if safe_vpu is not None and full_source is None:
+        parser.error("safe-VPU comparison also needs the independent source receipt")
     if full_source is not None:
         source_output = json.loads(
             args.tiny_full_source.with_name("output_comparison.json").read_text())
@@ -470,6 +488,22 @@ def main() -> None:
                     "compiler_vs_source_quant", {}).get("cosine") !=
                 full_source["compiler_source_logit_cosine"]):
             parser.error("full source needs completed unpaired evidence")
+    if safe_vpu is not None:
+        if (safe_vpu.get("schema") !=
+                "mx_gemmini.tinyllama_full_safe_vpu_spike.v1"
+                or safe_vpu.get("cycle_ratio_valid") is not False
+                or safe_vpu.get("stage_cycles", 0) <= 0
+                or safe_vpu.get("source_evidence_receipt_sha256") !=
+                hashlib.sha256(args.tiny_full_source.read_bytes()).hexdigest()
+                or safe_vpu.get("spike_extlib_sha256") !=
+                full_source.get("spike_extlib_sha256")
+                or any(safe_vpu.get(f"{key}_sha256") !=
+                       full_source.get(f"compiler_{key}_sha256")
+                       for key in ("capture_model", "checkpoint_weights",
+                                   "precision_overrides", "profile"))
+                or not 0 <= (safe_vpu.get("comparisons", {}).get(
+                    "compiler_vs_source_quant", {}).get("cosine", -1)) <= 1):
+            parser.error("safe-VPU result needs matched input and target evidence")
     if layer_probe is not None:
         source = layer_probe.get("source_layer") or {}
         compiled = (layer_probe.get("compiler_runs") or {}).get("fp8_prepacked") or {}
@@ -525,7 +559,7 @@ def main() -> None:
     architecture(prs.slides[0])
     configurations(prs.slides[1])
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
-            layer_probe, full_source)
+            layer_probe, full_source, safe_vpu)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

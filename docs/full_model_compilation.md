@@ -87,14 +87,20 @@ inputs, output/state comparisons, schedules, and measurements. The selected
 An [independent 64-token TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)
 executes all 22 decoder layers and the head on Spike. Its generated stage
 checks pass, and its logits have cosine 0.9835 to the captured PyTorch output.
-The all-FP8 compiler run on the same checkpoint and tokens has cosine 0.6720
-to the source logits. Source and compiler cycle counters cover different work,
-so they are recorded without a speedup ratio. This is a one-pass prefill
-diagnostic, not the 33-step TinyLlama session above.
+The initial all-FP8 compiler run, which offloaded all five VPU postprocessing
+classes, has cosine 0.6720 to the source logits. A [full-depth compiler
+control](evidence/tinyllama_full_safe_vpu_20261014/README.md) that retains
+MX matrix contractions and VPU residual add, unary, and reduction operations
+has cosine 0.9767 to the source and 0.9594 to the PyTorch row. All three
+predict token 1230 for this captured input. The control takes 4,473,524,179
+complete stage cycles. Source and compiler cycle counters cover different
+work, so neither compiler run yields a speedup ratio against the source. These
+are one-pass prefill diagnostics, not the 33-step TinyLlama session above.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
-trace most of the observed logit drift to the softmax and elementwise
-postprocessing routes on that captured input. Add, unary, and reduction
-routes preserve the reference token in isolation and together. This is a
+trace most of the observed logit drift to the softmax route and two
+attention-shaped elementwise additions on that captured input. Residual-add,
+unary, and reduction routes preserve the reference token in isolation and
+together. This is a
 numerical diagnostic, not a qualification of full-model accuracy.
 
 The [pretrained TinyLlama precision sweep](evidence/tinyllama_precision_sweep_20261013/README.md)

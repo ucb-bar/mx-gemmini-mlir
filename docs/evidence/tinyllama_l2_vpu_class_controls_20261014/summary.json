@@ -109,6 +109,166 @@
         "unary": 0
       }
     },
+    "elementwise_add": {
+      "argmax": 1926,
+      "cosine_to_pytorch": 0.9149132128095162,
+      "cycles": 433205874,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "add"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "0b33e7625a2b069c5a73c8250b413954195940b8b3423b0bb1637110edd12d37"
+      },
+      "spike_log_sha256": "1dea4d0ef1a262d3a13381727aeb37f36673d0f4880915c6450cc8c2c8cca02c",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 7,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "elementwise_attention_add": {
+      "argmax": 1926,
+      "cosine_to_pytorch": 0.9154600976629568,
+      "cycles": 433182968,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "add"
+      ],
+      "enabled_vpu_elementwise_regions": [
+        "add_12#add0",
+        "add_5#add0"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "1739f6f0d97cb3f9135d3fca4b7e165b9d0ba65106f303bcada9ddc91a9fc136"
+      },
+      "spike_log_sha256": "b8a71d0b6442b2acbbee8594e1cc6d60713e37363847141dd6c7746b01a677cf",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 2,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "elementwise_attention_add_l0": {
+      "argmax": 5056,
+      "cosine_to_pytorch": 0.9869354675268095,
+      "cycles": 433524962,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "add"
+      ],
+      "enabled_vpu_elementwise_regions": [
+        "add_5#add0"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "e49a620201d53ce2f058792645d98411e55965487e949d5616621c76fc847862"
+      },
+      "spike_log_sha256": "86292562eda1ab738d0a44a42dcf30d29141df8bdc7b2d6f13ff22e9a846bed8",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 1,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "elementwise_attention_add_l1": {
+      "argmax": 5056,
+      "cosine_to_pytorch": 0.9611772014024133,
+      "cycles": 432606919,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "add"
+      ],
+      "enabled_vpu_elementwise_regions": [
+        "add_12#add0"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "fc3469f003e0a03c5ffed8a837883c763f9263e29f7b07acbd383392855b0703"
+      },
+      "spike_log_sha256": "3c864614cf4c25467d8b72e22a1f1510b3fcdc9773bfcf9edca824fb265474ac",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 1,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "elementwise_div": {
+      "argmax": 5056,
+      "cosine_to_pytorch": 0.9915303370684313,
+      "cycles": 436342869,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "div"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "bd9e26875af0e42a9444cc6b0c3b67178a2da5a1bba81c04a23d91187831b88f"
+      },
+      "spike_log_sha256": "945944da1b046e49abc913f7dbaa4aac97e78249f54710b49b31c68fcc8f7f9a",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 5,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
+    "elementwise_mul": {
+      "argmax": 5056,
+      "cosine_to_pytorch": 0.9920833809624453,
+      "cycles": 544293328,
+      "enabled_vpu_classes": [
+        "elementwise"
+      ],
+      "enabled_vpu_elementwise_operations": [
+        "mul"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "c7e6bdd547fd83a9199d25a5fcf7f92e0be8d6792ba37cdab5b6cab35640f8dc"
+      },
+      "spike_log_sha256": "adef2a590964da42e5d81c021db05dca1e67aabffb4b11ac9ac4ba2948c75e5e",
+      "vpu_regions": {
+        "add": 0,
+        "elementwise": 26,
+        "reduce": 0,
+        "softmax": 0,
+        "unary": 0
+      }
+    },
     "host": {
       "argmax": 5056,
       "cosine_to_pytorch": 0.9911078785758562,
@@ -191,6 +351,70 @@
         "add": 0,
         "elementwise": 0,
         "reduce": 0,
+        "softmax": 0,
+        "unary": 16
+      }
+    },
+    "without_attention_add_and_softmax": {
+      "argmax": 5056,
+      "cosine_to_pytorch": 0.9915016910107807,
+      "cycles": 534655868,
+      "enabled_vpu_classes": [
+        "add",
+        "elementwise",
+        "reduce",
+        "unary"
+      ],
+      "enabled_vpu_elementwise_operations": null,
+      "enabled_vpu_elementwise_regions": [
+        "add_14#add0",
+        "add_16#add0",
+        "add_2#add0",
+        "add_7#add0",
+        "add_9#add0",
+        "mul_0#mul0",
+        "mul_1#mul0",
+        "mul_10#mul0",
+        "mul_11#mul0",
+        "mul_12#mul0",
+        "mul_13#mul0",
+        "mul_14#mul0",
+        "mul_15#mul0",
+        "mul_16#mul0",
+        "mul_17#mul0",
+        "mul_18#mul0",
+        "mul_19#mul0",
+        "mul_2#mul0",
+        "mul_20#mul0",
+        "mul_21#mul0",
+        "mul_22#mul0",
+        "mul_23#mul0",
+        "mul_24#mul0",
+        "mul_25#mul0",
+        "mul_3#mul0",
+        "mul_4#mul0",
+        "mul_5#mul0",
+        "mul_6#mul0",
+        "mul_7#mul0",
+        "mul_8#mul0",
+        "mul_9#mul0",
+        "reduce_0#div0",
+        "reduce_1#div0",
+        "reduce_2#div0",
+        "reduce_3#div0",
+        "reduce_4#div0"
+      ],
+      "output_sha256": {
+        "bytes": 128000,
+        "elements": 32000,
+        "encoding": "f32le",
+        "sha256": "c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad"
+      },
+      "spike_log_sha256": "ea4c76d08a10302d6fa0e53f6a81994a405c6602fd952a3d1e5d4d9f67f3d96b",
+      "vpu_regions": {
+        "add": 8,
+        "elementwise": 36,
+        "reduce": 5,
         "softmax": 0,
         "unary": 16
       }

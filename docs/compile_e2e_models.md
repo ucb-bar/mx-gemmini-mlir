@@ -251,15 +251,20 @@ alone is insufficient. Full-model numerical correctness still requires an
 independent reference that implements the selected FP4/FP8 conversion and
 MX/VPU BF16 arithmetic and checks logits or actions plus recurrent state.
 An [independent 64-token, 22-layer TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)
-passes its generated checks on Spike, but its final logits have only 0.672
-cosine similarity to the current all-FP8 compiler run. Its selected source
-timers and the compiler's stage timer have different boundaries, so those
-cycle counts are reported without a speedup ratio. Treat the compiled model
-as a numerical diagnostic until this gap is resolved.
+passes its generated checks on Spike. Its final logits have 0.672 cosine to
+the initial all-five-class VPU compiler run. A [full-depth selected-VPU
+control](evidence/tinyllama_full_safe_vpu_20261014/README.md) keeps the MX
+contractions and offloads residual add, unary, and reduction operations; its
+logits have 0.977 cosine to the source and the same next token for this input.
+The source's selected timers and the compiler's full-stage timer have
+different boundaries and use different host/VPU work, so no cycle ratio is
+reported. This is still a numerical diagnostic, not a general accuracy
+qualification.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
 elementwise-only routes each change the final token and reduce logit cosine
-to about 0.91; add, unary, and reduction routes retain about 0.99 cosine
+to about 0.91. The two attention-shaped elementwise additions alone do the
+same; residual-add, unary, and reduction routes retain about 0.99 cosine
 on this input. These are diagnostic settings, not an accepted numerical
 policy for other inputs or full sessions.
 The [current evidence](full_model_compilation.md) separates compiled links,
