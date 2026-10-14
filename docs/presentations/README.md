@@ -87,7 +87,9 @@ regenerate the stage catalogs and inspect their precision choices.
 
 Read the first three rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
-only the MX issuers change. The last row compares compiler-issued commands
+only the MX issuers change. The small full-model cycle gaps are therefore
+expected and cannot establish parity with an independently scheduled model.
+The last row compares compiler-issued commands
 with one fused source attention kernel at the same 64×256×128 shape. These
 timings do **not** compare the compiler with Nicolas's fused kernels stitched
 into a full TinyLlama or SmolVLA model. Matching output hashes prove agreement

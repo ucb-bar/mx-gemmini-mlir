@@ -349,10 +349,10 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     set_text(add_shape,
-             "Full-model rows change only the MX matrix command code. Both runs use "
-             "the same Merlin host and VPU code.\n"
+             "Full-model rows swap MX issuers inside the same Merlin host/VPU "
+             "program; small cycle gaps are expected.\n"
              "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
-             "as either complete model.",
+             "as complete models.",
              size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
     footer.top = Inches(5.91)
