@@ -34,6 +34,8 @@ def main() -> None:
     parser.add_argument("--rtl-root", type=Path, required=True)
     parser.add_argument("--riscv-root", type=Path, required=True)
     parser.add_argument("--max-m-tile", type=int, default=128)
+    parser.add_argument("--object-only", action="store_true",
+                        help="emit only the replacement catalog, without a stage ELF")
     args = parser.parse_args()
     stage = args.stage.resolve(strict=True)
     cat = stage / "device_catalog"
@@ -61,7 +63,11 @@ def main() -> None:
     for name, entry in sorted(issuers.items(), key=lambda pair: int(pair[0].split("_")[-1])):
         m, n, k = entry["padded_shape_mnk"]
         fmt = entry["precision"]
-        if fmt not in {"mxfp4", "mxfp8"} or m % 32 or n % 32 or k % 32:
+        # Nicolas's FP8 loop accepts DIM16 rows/columns; FP4's packed
+        # two-lane mesh requires 2*DIM in both output axes.
+        output_alignment = 32 if fmt == "mxfp4" else 16
+        if (fmt not in {"mxfp4", "mxfp8"} or m % output_alignment
+                or n % output_alignment or k % 32):
             raise ValueError(f"unsupported source shape: {name} {fmt} {m,n,k}")
         tile = min(m, args.max_m_tile)
         if m % tile:
@@ -105,12 +111,14 @@ def main() -> None:
                                 check=True, capture_output=True, text=True).stdout
     if unresolved:
         raise ValueError(f"Nicolas catalog has undefined symbols: {unresolved[:1000]}")
-    recipe = json.loads((stage / "compilation_recipe.json").read_text())
-    command = list(recipe["commands"][-1]["argv"])
-    command[command.index(str(cat / "mx_catalog.o"))] = str(catalog_obj)
-    elf = out / "model.elf"
-    command[command.index(str(stage / "model.elf"))] = str(elf)
-    run(command, out / "stage_link.log")
+    elf = None
+    if not args.object_only:
+        recipe = json.loads((stage / "compilation_recipe.json").read_text())
+        command = list(recipe["commands"][-1]["argv"])
+        command[command.index(str(cat / "mx_catalog.o"))] = str(catalog_obj)
+        elf = out / "model.elf"
+        command[command.index(str(stage / "model.elf"))] = str(elf)
+        run(command, out / "stage_link.log")
     receipt = {
         "schema": "mx_gemmini.nicolas_issuer_substitution.v1",
         "scope": "same compiled host and quantization; Nicolas native MX matrix loop only",
@@ -122,14 +130,20 @@ def main() -> None:
         "catalog_manifest_sha256": sha(manifest),
         "original_catalog_object_sha256": sha(cat / "mx_catalog.o"),
         "replacement_catalog_object_sha256": sha(catalog_obj),
-        "source_sha256": sha(source), "elf_sha256": sha(elf),
+        "source_sha256": sha(source),
         "issuers": {name: {"precision": entry["precision"],
                              "padded_shape_mnk": entry["padded_shape_mnk"]}
                     for name, entry in sorted(issuers.items())},
         "max_m_tile": args.max_m_tile,
     }
+    if elf is not None:
+        receipt["elf_sha256"] = sha(elf)
+    else:
+        receipt["output_kind"] = "catalog_object"
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({"issuers": len(issuers), "elf_sha256": receipt["elf_sha256"]}))
+    print(json.dumps({"issuers": len(issuers),
+                      "catalog_sha256": receipt["replacement_catalog_object_sha256"],
+                      "elf_sha256": receipt.get("elf_sha256")}))
 
 
 if __name__ == "__main__":
