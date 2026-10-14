@@ -89,6 +89,8 @@ Read the first three rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
+The deck generator checks the changed-object receipts and refuses to label
+a comparison as an issuer swap if any other stage object changed.
 The last row compares compiler-issued commands
 with one fused source attention kernel at the same 64×256×128 shape. These
 timings do **not** compare the compiler with Nicolas's fused kernels stitched

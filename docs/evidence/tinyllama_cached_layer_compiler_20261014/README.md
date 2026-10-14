@@ -40,8 +40,10 @@ cost in the per-operation accelerator path, including packing, conversions,
 and transfers. It does not isolate hardware busy time. The generated
 `mx_dense_kernel_3.c`, for example, calls `mx_pack_activation_f32`, issues
 one MX kernel, then converts its BF16 output back to f32. The corresponding
-source program carries packed data between phases. The instrumented build
-is diagnostic; use the uninstrumented row above for stage timing.
+source program carries packed data between phases. A scheduled MX/VPU region
+that retains packed operands and intermediate state across operations is the
+next compiler optimization to test. The instrumented build is diagnostic;
+use the uninstrumented row above for stage timing.
 
 [`summary.json`](summary.json) binds the captured MLIR, selected profile,
 Spike extension, run receipts, and output digests. [`output_metrics.json`](output_metrics.json)

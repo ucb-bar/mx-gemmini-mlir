@@ -420,6 +420,12 @@ def main() -> None:
                 or not isinstance(comparison.get("candidate_cycles"), int)
                 or comparison["candidate_cycles"] <= 0):
             parser.error("full-session comparison lacks equal-output timing evidence")
+        changed = comparison.get("changed_stage_objects")
+        if (not isinstance(changed, list) or not changed
+                or any(not isinstance(name, str)
+                       or not name.endswith("/device_catalog/mx_catalog.o")
+                       for name in changed)):
+            parser.error("issuer-swap slide requires only MX catalog object changes")
     if tiny_comparison is not None and (
             tiny_comparison.get("reference_run_sha256") !=
             hashlib.sha256(args.tiny_full_run.read_bytes()).hexdigest()):
