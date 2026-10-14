@@ -112,7 +112,7 @@ def verify() -> None:
     assert catalog["checkpoint_weights_sha256"] == (
         receipt["compiler_checkpoint_weights_sha256"])
     assert catalog["covered_contractions"] == len(catalog["bindings"]) == 200
-    assert catalog["vpu_add_source_regions"] == 88
+    assert len(catalog["vpu_add_source_regions"]) == 88
     assert catalog["precision_overrides"] == overrides["regions"]
     assert all(binding["target_dtypes"][:2] == ["f8E4M3FN", "f8E4M3FN"]
                for binding in catalog["bindings"])

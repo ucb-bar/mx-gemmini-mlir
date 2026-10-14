@@ -447,7 +447,7 @@ def results(slide, smol_comparison: dict | None,
             f"{mixed['cosine']:.3f}; all-FP8 {fp8['cosine']:.3f}. "
             "Neither selects the FP32 top token.\n"
             "Remaining 32 decode logits and final SmolVLA actions pending; "
-            "this does not assess the 64-token timing row."
+            "the independent cycle row has no valid speedup ratio."
         )
     else:
         callout = (

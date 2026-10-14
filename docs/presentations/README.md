@@ -109,7 +109,7 @@ The requested full-model performance comparison needs an independently
 stitched MX+VPU program for each captured session, matching inputs, weights,
 precision, shapes, outputs, and Spike settings. Neither full-session
 issuer swap supplies that program. The independent prefill is only one
-64-token, all-FP8 stage; the captured full sessions use mixed FP4/FP8.
+128-token, all-FP8 stage; the captured full sessions use mixed FP4/FP8.
 Its raw cycle counts do not supply a full-model speedup.
 
 The [prefill precision archive](../evidence/tinyllama_prefill_precision_20261014/README.md)
@@ -127,13 +127,17 @@ expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
 The third row compares an **independently written full prefill program**
-against the compiled 64-token, 22-layer TinyLlama stage. Both use the modeled
+against the compiled 128-token, 22-layer TinyLlama stage. Both use the modeled
 `e4m3_vpu` clock, the same 200 FP32 checkpoint tensors, and identical input
-tokens. Their logits have 0.9816 cosine and the same top token. The source
+tokens. Their logits have 0.9454 cosine and different top tokens. The source
 uses 44 VPU residual-add calls while the compiler lowers 88 add regions and
-uses different host math. The compiled attention has 65 allocated key slots
-where the source computes 64 valid keys. The slide therefore prints raw
+uses different host math. The compiled attention has 160 allocated key slots
+where the source computes 128 valid keys. The slide therefore prints raw
 counts with **NO RATIO**.
+The [128-token receipt](../evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
+records 9,611,186,417 source and 11,442,665,332 compiler modeled cycles.
+The independent source and compiler logits have cosine 0.9454 and select
+tokens 29871 and 362, respectively; the captured FP32 top token is 279.
 The last row compares one fused source attention kernel at the same
 64×256×128 shape. None of these rows compares a fused source implementation
 of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
@@ -254,6 +258,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/radiance_kernel_comparison_20261014/receipt.json \
   --equal-work-attention \
     docs/evidence/attn_vpu_equal_work_20261013/receipt.json \
+  --tiny-prefill128 \
+    docs/evidence/nicolas_tinyllama_prefill128_source_20261014/receipt.json \
   --tiny-prefill-precision \
     docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx

@@ -272,6 +272,11 @@ modeled comparison, use `--isa=rv64gc_zicntr` at Spike run time and a Merlin
 stage harness that reads the `cycle` CSR through `rdcycle`. The earlier
 `mcycle` harness bypasses Nicolas's timing-model override even when
 `GEMMINI_MODE=both` is set.
+The [independent 128-token prefill](evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
+now reports 9,611,186,417 source and 11,442,665,332 compiler modeled
+cycles with identical 128 input IDs and 200 FP32 checkpoint tensors. Their
+logits have 0.9454 cosine and different top tokens. Host/VPU work, attention
+key slots, and timing boundaries differ, so the counts have no speedup ratio.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
 elementwise-only routes each change the final token and reduce logit cosine

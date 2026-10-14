@@ -78,6 +78,16 @@ This is a one-pass prefill diagnostic: the source calls the VPU for 44
 residual adds, while the compiler lowers 88 add regions and uses different
 host math. The raw cycle difference is not a full 33-step model speedup.
 
+The [independent 128-token prefill](evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
+uses the same 200 FP32 checkpoint tensors and 128 input IDs on both sides.
+Nicolas's source takes **9,611,186,417** modeled cycles and the all-FP8
+compiler prefill takes **11,442,665,332**. Their final logits have cosine
+**0.9454** and different top tokens. The source reaches 0.9932 cosine to
+captured FP32 logits; the compiler reaches 0.9432. Different host/VPU work,
+128 versus 160 attention key slots, and timing boundaries still prohibit a
+speedup ratio. This is one prefill stage, not the 33-step session or a
+mixed FP4/FP8 source baseline.
+
 The [captured TinyLlama layer-5 source run](evidence/nicolas_tinyllama_layer5_captured128_20261014/README.md)
 uses the captured token IDs and byte-identical layer weights. The
 [compiler section probe](evidence/tinyllama_cached_layer_compiler_20261014/README.md)

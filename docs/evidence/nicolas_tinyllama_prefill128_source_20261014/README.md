@@ -25,11 +25,22 @@ ends after the final head fence. The compiler's two `cycle` CSR reads enclose
 the session reset through state commit. The archived verifier checks all
 32,000 final logits, the source output against the generated BF16 reference,
 and the two modeled cycle counters. See [receipt.json](receipt.json) after
-the runs complete, then run:
+the completed runs, then run:
 
 ```sh
 python3 -B docs/evidence/nicolas_tinyllama_prefill128_source_20261014/verify.py
 ```
+
+| Program | Modeled stage cycles | Logit cosine vs captured FP32 | Top token |
+| --- | ---: | ---: | ---: |
+| Nicolas source | 9,611,186,417 | 0.9932 | 29871 |
+| Compiler, 200 FP8 MX sites | 11,442,665,332 | 0.9432 | 362 |
+
+The two programs' final logits have cosine **0.9454** to each other; the
+captured FP32 top token is **279**. The source's emitted final BF16 logits
+match its generated quantized reference exactly. These measurements show a
+substantial numerical gap in the compiler prefill for this input, alongside
+the separate mixed FP4/FP8 [precision diagnostic](../tinyllama_prefill_precision_20261014/README.md).
 
 The raw cycles have **no speedup ratio**. The source computes 128 valid
 attention keys while the compiler's first QK operation issues 160 allocated
