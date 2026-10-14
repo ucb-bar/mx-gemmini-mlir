@@ -13,6 +13,26 @@ format pairs and 36 legal tuple variants. Chipyard profiles also record
 explicit Rocket, system-bus, L2, and serial-TL overrides. The VPU+FP4 wrapper
 selects four L2 banks and a 128-cycle outer latency setting.
 
+The pinned [MxGen PE decoder](https://github.com/ucb-bar/MxGen/blob/dba3e7e706efa156d96efe595cd9935c825ea14d/src/main/scala/mxgen/Classifier.scala)
+defines mode IDs 0–11. Modes 0–8 choose the pair of significand widths
+(including the implicit leading bit):
+
+| Activation width ↓ / weight width → | 2 bits | 3 bits | 4 bits |
+| --- | ---: | ---: | ---: |
+| 2 bits | 0 | 1 | 2 |
+| 3 bits | 3 | 4 | 5 |
+| 4 bits | 6 | 7 | 8 |
+
+Modes 9–11 are LUT-enabled four-product variants: 9 for 4×4, 10 for
+4×(2 or 3), and 11 for (2 or 3)×4. The mode ID is only one part of a legal
+compute tuple. Modes 0–8 may also consume a LUT-projected operand; for
+example, FP6 E3M2 × FP6 E3M2 can use mode 4 with LUTs on both sides.
+Modes 9–11 specifically add the four-product path when a 4-bit-significand
+operand is LUT-projected. Different exponent formats can share a width and
+mode. The selected `MxE4M3Fp4VpuGemminiRocketConfig` exposes two matrix tuples:
+direct FP4 E2M1 × FP4 E2M1 (mode 0) and direct FP8 E4M3 × FP8 E4M3
+(mode 8). Its VPU opcodes are a separate command family.
+
 The source parser is a conservative projection of these Scala declarations,
 not a Scala elaboration. `load_profile(..., rtl_root=...)` regenerates and
 compares the whole profile to reject source drift or edited capabilities.
