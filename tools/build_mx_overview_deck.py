@@ -7,6 +7,7 @@ native PowerPoint objects; the university seal is the template's master image.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import re
@@ -534,16 +535,38 @@ def main() -> None:
     if prefill128 is not None:
         pair = prefill128.get("comparisons", {}).get("source_vs_compiler", {})
         cycles = prefill128.get("stage_cycles", {})
+        evidence_dir = args.tiny_prefill128.parent
+        artifact_hashes = prefill128.get("artifact_sha256") or {}
         if (prefill128.get("schema") != "mx_gemmini.tinyllama_prefill128_source.v1"
                 or prefill128.get("cycle_ratio_valid") is not False
+                or prefill128.get("source_output_matches_generated_quantized_logits") is not True
                 or prefill128.get("checkpoint_fp32_tensors_matched") != 200
                 or prefill128.get("source_attention_valid_keys") != 128
                 or prefill128.get("compiler_attention_key_slots") != 160
                 or prefill128.get("perf_config") != "e4m3_vpu"
                 or any(type(cycles.get(key)) is not int or cycles[key] <= 0
                        for key in ("source", "compiler"))
-                or not 0 <= pair.get("cosine", -1) <= 1):
+                or not 0 <= pair.get("cosine", -1) <= 1
+                or not {"source_spike.log.gz", "compiler_spike.log.gz",
+                        "source_generated_last_bf16.bin"} <= set(artifact_hashes)
+                or any(hashlib.sha256((evidence_dir / name).read_bytes()).hexdigest()
+                       != expected for name, expected in artifact_hashes.items())):
             parser.error("128-token prefill needs completed independent evidence")
+        source_log = gzip.decompress(
+            (evidence_dir / "source_spike.log.gz").read_bytes()).decode()
+        compiler_log = gzip.decompress(
+            (evidence_dir / "compiler_spike.log.gz").read_bytes()).decode()
+        source_cycles = re.search(r"^stage_cycles64 0x([0-9a-f]+)$",
+                                  source_log, re.M)
+        compiler_cycles = re.search(r"^METRIC cycles (\d+)$",
+                                    compiler_log, re.M)
+        if (source_cycles is None or compiler_cycles is None
+                or int(source_cycles.group(1), 16) != cycles["source"]
+                or int(compiler_cycles.group(1)) != cycles["compiler"]
+                or "llama MODEL benchmark finished (22 layer(s) + lm_head)."
+                not in source_log
+                or not re.search(r"^DONE$", compiler_log, re.M)):
+            parser.error("128-token prefill logs do not support the slide counts")
     if radiance is not None:
         rows = radiance.get("rows") or []
         if (radiance.get("schema") != "mx_gemmini.radiance_kernel_comparison.v1"

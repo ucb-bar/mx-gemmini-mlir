@@ -221,3 +221,6 @@ The script keeps only the template's architecture, process, and results
 layouts, edits their native objects, and adds source-specific labels and
 figures. The generator accepts the full TinyLlama run/comparison receipts only
 when the complete 33-step run and equal-output comparator succeed.
+Its optional `--tiny-prefill128` row requires the archived source and compiler
+Spike logs, their hashes, and the verified modeled cycle counters. A preview
+receipt or an incomplete run cannot replace the measured row.
