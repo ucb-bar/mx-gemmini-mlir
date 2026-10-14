@@ -1,0 +1,121 @@
+{
+  "catalog_sha256": "48564a99a4764a8f4e5b1f05b652a9127f93f0b0d6c33f22c558bd419691506e",
+  "correction": "FP4 activation row-pair pitch is physical K bytes",
+  "generated_source_sha256": "1e82c0c0c27a0f4ca6986a93f615475b69ea2cc6b574e9dd712057aa80f802ec",
+  "issuer_shapes": {
+    "mx_issue_0": {
+      "padded_shape_mnk": [
+        64,
+        736,
+        32
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_1": {
+      "padded_shape_mnk": [
+        64,
+        736,
+        1440
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_10": {
+      "padded_shape_mnk": [
+        64,
+        176,
+        64
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_11": {
+      "padded_shape_mnk": [
+        64,
+        64,
+        192
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_12": {
+      "padded_shape_mnk": [
+        64,
+        128,
+        64
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_13": {
+      "padded_shape_mnk": [
+        64,
+        64,
+        128
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_2": {
+      "padded_shape_mnk": [
+        64,
+        736,
+        736
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_3": {
+      "padded_shape_mnk": [
+        64,
+        960,
+        736
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_4": {
+      "padded_shape_mnk": [
+        64,
+        320,
+        736
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_5": {
+      "padded_shape_mnk": [
+        64,
+        736,
+        960
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_6": {
+      "padded_shape_mnk": [
+        64,
+        2048,
+        736
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_7": {
+      "padded_shape_mnk": [
+        64,
+        736,
+        2048
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_8": {
+      "padded_shape_mnk": [
+        128,
+        320,
+        320
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_9": {
+      "padded_shape_mnk": [
+        64,
+        32,
+        736
+      ],
+      "precision": "mxfp4"
+    }
+  },
+  "schema": "mx_gemmini.nicolas_stitch_prototype.v1",
+  "source_header_sha256": "98bc0384dbf1917af9427dd30a51770063e56152933259d5fb32e5e04a5505e8"
+}

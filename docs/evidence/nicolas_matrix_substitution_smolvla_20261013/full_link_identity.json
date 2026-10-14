@@ -1,0 +1,34 @@
+{
+  "changed_objects": [
+    {
+      "compiler_sha256": "7c07190ec38fcaab4c682c5402c8411864eb9e225e5be36c25aedfafc0fcaca0",
+      "nicolas_sha256": "1b69a78f2f68bf04a830126c770530624d256491054caa656781129dba1efb1c",
+      "relative": "device_catalog/mx_catalog.o",
+      "stage": "flow_denoise"
+    },
+    {
+      "compiler_sha256": "431616ab500a2bfcbd18f0f6e82678d589263054a9a22785c34ed771d7550a13",
+      "nicolas_sha256": "78d53961bc38623c6065d28402b2615e13c066c12c599bebdfd25c39d35c106d",
+      "relative": "device_catalog/mx_catalog.o",
+      "stage": "prefix_encode"
+    }
+  ],
+  "npu_commit": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "npu_kernel_source_changed_since_pinned": false,
+  "npu_main_checked": "c32b207da40f6e3944b6079ba91faa5b1540430f",
+  "same_session_fields": [
+    "schema",
+    "performance_schema",
+    "session_root",
+    "programs",
+    "bindings",
+    "profile_sha256",
+    "shared_weight_stage",
+    "shared_weight_bytes",
+    "shared_weight_sha256",
+    "arena_layout",
+    "static_malloc_estimates",
+    "mem_bytes"
+  ],
+  "schema": "mx_gemmini.nicolas_native_matrix_session_identity.v1"
+}
