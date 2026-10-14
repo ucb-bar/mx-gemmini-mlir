@@ -1,0 +1,43 @@
+llama_layer_e2e: TinyLlama layer, 64 tokens after a 64-token cache (causal over 128 keys), D=2048 F=5632, 32 heads / 4 kv heads, all stages on MxGemmini
+key blocks: first 64, last 64, middle 128
+attn_flash: E4M3, Sq=128 Sk=128 d=64, Bk=128 (2 key blocks), online softmax on the VPU, K/V resident
+mask: causal (each head's queries are the last keys)
+mesh order: QK(j+2) before PV(j)
+vector order: softmax(j+1) before PV(j); loads, update(j-1), SR(j+1) after it
+softmax: fused EXPSUM (exp(S - m) and its row sums in one pass)
+spad layout: bank split, stats in bank 2 (banks 0-1 only mesh operands)
+1/sqrt(d): folded into Q's scales (no VPU pass)
+hash xn1    265f4576a57d0ec4
+hash q      8c5490e0e4ce8147
+hash q2     a22c29b48e4888f7
+hash k      2f16f3eb4e0dc637
+hash v      81219e451e8019b7
+hash o      0652caa6b60012b7
+hash yattn  af298be785cb840f
+hash hmid   0d5cbff145babb7c
+hash xn2    fcd282910e523d6b
+hash h      b66cd5577e4bd30e
+hash ymlp   eae3fadc4c66c5b2
+hash hout   82604555a193269d
+static const uint64_t E2E_EXPECT[12] = {0x265f4576a57d0ec4ULL, 0x8c5490e0e4ce8147ULL, 0xa22c29b48e4888f7ULL, 0x2f16f3eb4e0dc637ULL, 0x81219e451e8019b7ULL, 0x0652caa6b60012b7ULL, 0xaf298be785cb840fULL, 0x0d5cbff145babb7cULL, 0xfcd282910e523d6bULL, 0xb66cd5577e4bd30eULL, 0xeae3fadc4c66c5b2ULL, 0x82604555a193269dULL};
+h codes: +0 2025, -0 2055; hash with -0 -> +0: 40e8fb5a5ef3bd0e
+accuracy  xn1    rel_fro  26834 ppm vs fp64 (MX dequantized)
+accuracy  O      rel_fro 195297 ppm vs fp64 (MX dequantized, all heads)
+accuracy  Yattn  rel_fro 187904 ppm vs fp64
+accuracy  h_mid  rel_fro  37964 ppm vs fp64 (update h_mid - h_pre: 188016 ppm)
+accuracy  Ymlp   rel_fro 149110 ppm vs fp64
+accuracy  h_out  rel_fro  70959 ppm vs fp64, 71011 ppm vs TinyLlama hidden_states (layer update h_out - h_pre: 154689 ppm vs fp64, 154795 ppm vs TinyLlama)
+PERF phase rmsnorm1 -> MX              9056 cycles ( 1%)
+PERF phase Q/K/V proj                 23876 cycles ( 4%); mesh ideal   1310720 -> util 5489%
+PERF phase rope + K/V cache          264535 cycles (45%)
+PERF phase attention (16 passes)      72613 cycles (12%); mesh ideal    131072 -> util 180%
+PERF phase o_proj                     28861 cycles ( 4%); mesh ideal   1048576 -> util 3633%
+PERF phase residual1 + rmsnorm2       19886 cycles ( 3%)
+PERF phase gate/up proj               32361 cycles ( 5%); mesh ideal   5767168 -> util 17821%
+PERF phase swiglu -> MX               51979 cycles ( 8%)
+PERF phase down proj                  62942 cycles (10%); mesh ideal   2883584 -> util 4581%
+PERF phase residual2                  16092 cycles ( 2%)
+PERF layer: 582204 cycles from launch to h_out; mesh ideal 11141120 -> util 1913.6%
+llama_layer_e2e DONE (no Spike hashes yet)
+Gemmini extension configured with:
+    dim = 16

@@ -1,0 +1,63 @@
+{
+  "schema": "mx_gemmini.tinyllama_layer_source_weight_match.v1",
+  "model_id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+  "capture_stage": "tiny_llama_session/stages/prefill",
+  "layer": 5,
+  "weights": [
+    {
+      "weight": "model.layers.5.self_attn.q_proj.weight",
+      "bytes": 16777216,
+      "sha256": "3efa3b6816d4027dca636064ad4055c4f02beb57099ff72d4cef8c6e2eacef66",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.self_attn.k_proj.weight",
+      "bytes": 2097152,
+      "sha256": "319c6fe536ef616d289a7e34d8d6a0cbe30aef90a4234d644e87b338d69fbd3e",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.self_attn.v_proj.weight",
+      "bytes": 2097152,
+      "sha256": "219c0b3aa1256b0cc0f71f81eb989bee5d8cf5fa3c268579729894755047dc74",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.self_attn.o_proj.weight",
+      "bytes": 16777216,
+      "sha256": "fa451c90833eacec9826bfaf3871eb5d6436bb01caeb959f820ef34b6196224b",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.mlp.gate_proj.weight",
+      "bytes": 46137344,
+      "sha256": "474c47b1bafdc3dea95e519ac2e8cfbd50107c93cb059646130da4b52133dbc5",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.mlp.up_proj.weight",
+      "bytes": 46137344,
+      "sha256": "c523768c6750c36052df956d8ffb05cf336c887c3384a5d77da111a4397f4179",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.mlp.down_proj.weight",
+      "bytes": 46137344,
+      "sha256": "d7d6e25ee782a1f54f6e3a21960d5c031f418f4dd7e2e4781679f88b50d372e8",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.input_layernorm.weight",
+      "bytes": 8192,
+      "sha256": "49b1c2b277e576a64fa19555975d24c012b990f6bf5690e4c2550d3b34962396",
+      "matches_capture": true
+    },
+    {
+      "weight": "model.layers.5.post_attention_layernorm.weight",
+      "bytes": 8192,
+      "sha256": "87582f8e071db5f0d266643a24ee611d0e5243b60c58b24fedfd760abe3d9ef3",
+      "matches_capture": true
+    }
+  ],
+  "matched_weights": 9
+}

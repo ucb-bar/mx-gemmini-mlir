@@ -89,10 +89,11 @@ Read the first three rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The last row compares compiler-issued commands
 with one fused source attention kernel at the same 64×256×128 shape. These
-timings do **not** compare the
-compiler with Nicolas's fused kernels stitched into a full TinyLlama or
-SmolVLA model. Matching output hashes prove agreement with the captured
+timings do **not** compare the compiler with Nicolas's fused kernels stitched
+into a full TinyLlama or SmolVLA model. Matching output hashes prove agreement
+with the captured
 outputs; they do not measure model accuracy against an independent reference.
+Spike cycle counts are simulator results, not FPGA latency.
 
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
 records 43,523 compiler versus 43,641 Nicolas source Spike cycles for a

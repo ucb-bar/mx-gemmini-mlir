@@ -361,8 +361,8 @@ def results(slide, smol_comparison: dict | None,
         footer_text = (
             "* Output hashes match: SmolVLA 33/33; TinyLlama 99/99. This checks "
             "the captured outputs, not model accuracy.\n"
-            "Nicolas e4m3_vpu Spike, host tracking off. The dense attention "
-            "row compares one fused kernel, not a whole model."
+            "e4m3_vpu Spike cycles are not FPGA latency. Dense attention "
+            "compares one fused source kernel, not a full model."
         )
     else:
         tiny_status = ("TinyLlama full receipt not supplied; "

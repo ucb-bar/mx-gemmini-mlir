@@ -1,0 +1,181 @@
+{
+  "schema": "mx_gemmini.nicolas_tinyllama_layer_source_capture.v1",
+  "scope": "source_only_single_layer",
+  "source_npu_commit": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "source_gemmini_rtl_commit": "266c593",
+  "quantizer_commit": "587456ad53240b24e5adb18f1179973d572fa57b",
+  "model_id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+  "captured_stage": "tiny_llama_session/stages/prefill",
+  "layer": 5,
+  "prompt_tokens": 128,
+  "cached_tokens": 64,
+  "query_tokens": 64,
+  "profile": "MxE4M3Fp4VpuGemminiRocketConfig",
+  "source_mx_precision": "FP8 E4M3 for projections and attention",
+  "captured_compiler_layer_bindings": [
+    {
+      "region": "matmul_46",
+      "fqn": "lm.model.layers.5.self_attn.q_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x2048xf32>",
+        "tensor<128x2048xf32>"
+      ]
+    },
+    {
+      "region": "matmul_47",
+      "fqn": "lm.model.layers.5.self_attn.k_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x256xf32>",
+        "tensor<128x256xf32>"
+      ]
+    },
+    {
+      "region": "matmul_48",
+      "fqn": "lm.model.layers.5.self_attn.v_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x256xf32>",
+        "tensor<128x256xf32>"
+      ]
+    },
+    {
+      "region": "matmul_51",
+      "fqn": "lm.model.layers.5.self_attn.o_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x2048xf32>",
+        "tensor<128x2048xf32>"
+      ]
+    },
+    {
+      "region": "matmul_52",
+      "fqn": "lm.model.layers.5.mlp.gate_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x5632xf32>",
+        "tensor<128x5632xf32>"
+      ]
+    },
+    {
+      "region": "matmul_53",
+      "fqn": "lm.model.layers.5.mlp.up_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x2048xf32>",
+        "tensor<2048x5632xf32>",
+        "tensor<128x5632xf32>"
+      ]
+    },
+    {
+      "region": "matmul_54",
+      "fqn": "lm.model.layers.5.mlp.down_proj",
+      "target_dtypes": [
+        "f4E2M1FN",
+        "f4E2M1FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<128x5632xf32>",
+        "tensor<5632x2048xf32>",
+        "tensor<128x2048xf32>"
+      ]
+    },
+    {
+      "region": "matmul_49",
+      "fqn": "lm.model.layers.5.self_attn",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<32x128x64xf32>",
+        "tensor<32x64x160xf32>",
+        "tensor<32x128x160xf32>"
+      ]
+    },
+    {
+      "region": "matmul_50",
+      "fqn": "lm.model.layers.5.self_attn",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<32x128x160xf32>",
+        "tensor<32x160x64xf32>",
+        "tensor<32x128x64xf32>"
+      ]
+    }
+  ],
+  "captured_checkpoint_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "source_checkpoint_layer_weights_match": "9/9 byte identical",
+  "spike_exit_code": 0,
+  "spike_cycle_counter": "rdcycle",
+  "source_layer_cycles": 582204,
+  "source_reported_mesh_ideal": 11141120,
+  "source_rel_fro_hout_vs_fp64_ppm": 70959,
+  "source_rel_fro_hout_vs_pytorch_ppm": 71011,
+  "source_output_hashes": {
+    "xn1": "265f4576a57d0ec4",
+    "q": "8c5490e0e4ce8147",
+    "q2": "a22c29b48e4888f7",
+    "k": "2f16f3eb4e0dc637",
+    "v": "81219e451e8019b7",
+    "o": "0652caa6b60012b7",
+    "yattn": "af298be785cb840f",
+    "hmid": "0d5cbff145babb7c",
+    "xn2": "fcd282910e523d6b",
+    "h": "b66cd5577e4bd30e",
+    "ymlp": "eae3fadc4c66c5b2",
+    "hout": "82604555a193269d"
+  },
+  "hashes": {
+    "input_ids_npz_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+    "source_c_sha256": "b75910ee1ae7c6211186cd7bddb7afa3b255a1b575bcb842afa7f1cbcff0c028",
+    "attention_c_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+    "source_generator_sha256": "7108d1129c7c5de1f8b3d3cf929ce352ee16b6929be3a98e64b2fc9840174e38",
+    "capture_patch_sha256": "b73328678460c7fe0b4337de6d50a97ef220a87397bc118c675423da953db7a5",
+    "generated_blob_sha256": "e25b0eb4938e02fe1bf367f04140a1650374d33932378571b1e6b6eff26891fd",
+    "source_elf_sha256": "f3b0e86f12ddc4b5d1a6dfc85e539df93aa84530f9b5cf089c68e135d25e5531",
+    "source_spike_log_sha256": "a81159d57b8e4cfb146f546955f88f875691bcdda972cf8ae17c47d6d7a9d065",
+    "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+    "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+    "captured_compiler_catalog_sha256": "01edb821ecd6caec2d6075f92c30991387d9af3140349785d9bb12482e08446f",
+    "weight_match_sha256": "81dcbab6558a2497981e52e839ea164b1e4b188c1fc4c6c39a7b20bb9ec42b0a"
+  },
+  "comparable_to_compiler_full_model": false,
+  "comparison_limit": "The source runs 64 query tokens with FP8 projections; the captured compiler prefill runs 128 query tokens and FP4 projections. Its output also differs from float32 PyTorch. No same-work compiler layer cycle or equal-output comparison is claimed."
+}

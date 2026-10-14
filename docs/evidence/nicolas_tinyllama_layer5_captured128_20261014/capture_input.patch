@@ -1,0 +1,22 @@
+--- a/gen_llama_layer_e2e.py
++++ b/gen_llama_layer_e2e.py
+@@ -37,2 +37 @@
+-from datasets import load_dataset  # noqa: E402
+-from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
++from transformers import AutoModelForCausalLM  # noqa: E402
+@@ -44 +43 @@
+-DATA = Path(__file__).resolve().parent.parent / "data"
++DATA = Path(__file__).resolve().parent
+@@ -106,0 +106 @@
++    ap.add_argument("--input-ids", type=Path, required=True)
+@@ -108,0 +109 @@
++    torch.set_num_threads(4)
+@@ -110 +110,0 @@
+-    tok = AutoTokenizer.from_pretrained(a.model_id)
+@@ -118,2 +118,4 @@
+-    ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
+-    ids = tok("\n\n".join(ds["text"]), return_tensors="pt").input_ids[:, :T]
++    with np.load(a.input_ids) as captured:
++        ids = torch.from_numpy(captured["in0"].copy()).long()
++    if tuple(ids.shape) != (1, T):
++        raise ValueError(f"captured input shape {tuple(ids.shape)} != (1, {T})")
