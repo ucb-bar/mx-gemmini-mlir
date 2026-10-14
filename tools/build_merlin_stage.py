@@ -248,8 +248,8 @@ def main() -> None:
         if not profile_table_path.is_file() or profile_table_path.is_symlink():
             raise RuntimeError("Merlin did not emit the requested operation profile table")
         profile_op_count = len(json.loads(profile_table_path.read_text(encoding="utf-8")))
-        if profile_op_count > 8192:
-            raise RuntimeError("operation profile exceeds the linked 8192-op counter table")
+        if profile_op_count > 1_000_000:
+            raise RuntimeError("operation profile exceeds the supported counter table")
     if hashlib.sha256(source.read_bytes()).hexdigest() != capture_sha:
         raise RuntimeError("Merlin changed the receipt-bound model2MLIR capture source")
     if weights_sha is not None and _sha(weights_path) != weights_sha:
@@ -380,6 +380,8 @@ def main() -> None:
         "op_profile_table": str(profile_table_path) if args.op_profile else None,
         "op_profile_table_sha256": _sha(profile_table_path) if args.op_profile else None,
         "op_profile_operations": profile_op_count,
+        "op_profile_capacity": (max(8192, 1 << (profile_op_count - 1).bit_length())
+                                if profile_op_count is not None else None),
         "checkpoint_weights_sha256": weights_sha,
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "build_hash": result.get("build_hash"),

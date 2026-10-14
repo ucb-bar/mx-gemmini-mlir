@@ -29,6 +29,13 @@ The [guest log](pruned_spike.log), [extension report](pruned_gemmini_perf.txt),
 [fast-build profile report](fast_profile_report.json), and
 [profiled guest log](fast_profile_spike.log) retain the raw evidence.
 
+The pruned stage's [profile report](pruned_profile_report.json) and
+[guest log](pruned_profile_spike.log) attribute 99.22% of its 2,113,014,338
+instrumented cycles. Host operations now take 385,950,608 cycles, MX calls
+1,208,877,122, and VPU calls 501,696,666. The four dynamic batched
+attention call signatures remain the largest MX cost. The profile is a
+diagnostic build; the uninstrumented run supplies the timing above.
+
 These are same-input, one-stage Spike results under the pinned `e4m3_vpu`
 timing preset with `mem.host_tracking=0`. They establish compiler output
 parity, not independent quantized PyTorch agreement or full-session timing.

@@ -55,7 +55,7 @@ def report_stage_profile(build: Path, spike_log: Path) -> dict:
             != receipt["op_profile_table_sha256"]):
         raise ValueError("operation profile table differs from the stage receipt")
     table = json.loads(table_path.read_text())
-    if not isinstance(table, list) or len(table) > 8192:
+    if not isinstance(table, list) or len(table) > receipt.get("op_profile_capacity", 8192):
         raise ValueError("operation table exceeds the linked profiler capacity")
     if (receipt.get("op_profile_operations") is not None and
             len(table) != receipt["op_profile_operations"]):

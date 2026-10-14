@@ -42,3 +42,22 @@ def test_stage_profile_reconciles_guest_ticks_and_build(tmp_path) -> None:
     log.write_text(log.read_text().replace("build_hash abc123", "build_hash stale"))
     with pytest.raises(ValueError, match="not for this stage"):
         report_stage_profile(build, log)
+
+
+def test_stage_profile_accepts_receipt_bound_capacity_above_8192(tmp_path) -> None:
+    build = tmp_path / "build"
+    build.mkdir()
+    table = [{"id": i, "mlir_op": "arith.constant"} for i in range(8193)]
+    (build / "op_profile_table.json").write_text(json.dumps(table))
+    receipt = {"op_profile": True, "build_hash": "wide",
+               "op_profile_operations": len(table), "op_profile_capacity": 16384}
+    (build / "mx_stage_probe.json").write_text(json.dumps(receipt))
+    log = tmp_path / "spike.log"
+    log.write_text("PROF 8192 10 1\nMETRIC prof_total_ticks 10\n"
+                   "METRIC cycles 10\nMETRIC build_hash wide\n"
+                   "METRIC memref_rank_mismatch 0\nDONE\n")
+    assert report_stage_profile(build, log)["observed_operations"] == 1
+    receipt["op_profile_capacity"] = 8192
+    (build / "mx_stage_probe.json").write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match="linked profiler capacity"):
+        report_stage_profile(build, log)
