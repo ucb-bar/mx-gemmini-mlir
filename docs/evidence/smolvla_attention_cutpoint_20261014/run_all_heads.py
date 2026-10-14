@@ -29,6 +29,8 @@ def sha256(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--cutpoint", type=Path,
+                        default=HERE / "cutpoint.npz")
     parser.add_argument("--heads", default="0-14", help="Head range a-b or one head")
     args = parser.parse_args()
     if "-" in args.heads:
@@ -49,6 +51,7 @@ def main() -> None:
             subprocess.run(
                 [sys.executable, "-B", str(HERE / "generate_header.py"),
                  "--rocc-tools", str(rocc_tools), "--head-index", str(head),
+                 "--cutpoint", str(args.cutpoint.resolve()),
                  "--out", str(header)], check=True, stdout=stream,
                 stderr=subprocess.STDOUT)
         expected = out / "expect.h"

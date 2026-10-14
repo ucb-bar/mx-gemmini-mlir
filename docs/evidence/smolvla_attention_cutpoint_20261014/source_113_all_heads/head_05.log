@@ -1,0 +1,22 @@
+gemmini: GEMMINI_MODE=both
+attn_flash: E4M3, Sq=64 Sk=128 d=64, Bk=64 (2 key blocks), online softmax on the VPU, K/V resident
+mask: arbitrary Boolean mask, block-major BF16
+mesh order: QK(j+2) before PV(j)
+vector order: softmax(j+1) before PV(j); loads, update(j-1), SR(j+1) after it
+softmax: SUB, EXP, RSUM
+spad layout: bank split, stats in bank 0 (S / O_j / O in banks 2-3)
+1/sqrt(d): folded into Q's scales (no VPU pass)
+  pipelined  O: 0/4096 differ
+check O hash: serial 734651b579776f73, pipelined 734651b579776f73 (equal)
+check O hash vs Spike: match (734651b579776f73)
+accuracy O head 0 (50 rows): rel_fro 35921 ppm vs fp32 attention
+PERF serial     23509 cycles: loads 5205 | QK 3344 | softmax 6334 | requant 1088 | PV 3274 | O update 1570 | final 2687
+PERF pipelined  16775 cycles (71% of serial); mesh ideal 4096 -> util 24% (serial 17%)
+attn_flash PASSED
+gemmini perf [mx_rocket]: 400 commands, 8 loops, 57 fences; last activity 107623; host stalled 35466 cycles; 24974 events
+  mesh: 512 tiles, 8192 busy cycles; VPU: 38 commands
+  load: 73728 bytes in 2688 Gets (mean latency 63.3); store: 3072 reads, 2048 Puts; scales: 1152 bytes
+  memory: L2 2118 hits (780 on a pending fill), 588 misses; bus busy 4736, DRAM busy 5952 cycles; CPU stores 6604 lines, L1 probes 252, partial-write fills 139, dirty write-backs 17
+  ports busy: sp0 r7936/w2816 sp1 r5120/w2048 sp2 r8192/w6144 sp3 r11264/w9216 acc0 3584 acc1 3584
+Gemmini extension configured with:
+    dim = 16

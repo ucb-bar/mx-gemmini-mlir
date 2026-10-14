@@ -1,0 +1,73 @@
+{
+  "artifact_sha256": {
+    "first11_overrides.json": "f415247206c3f6749dc8220b8f5edd1e28019c6f75f9da7bb3f904eb52863853",
+    "first11_prefill.bin": "bd453d21ba2e9a1b8c97e6a78fa65fa81143a3985ec8d04b30af6d76d8f630f8",
+    "first11_prepacked_catalog.json": "4e47d713759f70ef20b5235206f6bd8d93d8820a5167ef914e29533e5acaf502",
+    "first11_prepacked_perf_report.txt": "1ade38300f768c8603286d96a75e0457d8c153b6e7960af78932a743dacd5494",
+    "first11_prepacked_prefill.bin": "bd453d21ba2e9a1b8c97e6a78fa65fa81143a3985ec8d04b30af6d76d8f630f8",
+    "first11_prepacked_probe.json": "10d126996cfb933cbf61d481944ff8d5c4529d83724bff33c4a72bfcfa3b15a2",
+    "first11_prepacked_spike.log.gz": "9bc522774ea87348344b0761c07dcd56fe71c68cc6f54b5c73d01213c2ace445",
+    "first11_runtime_probe.json": "5964e1655928272278568eb14815857a435846eade0a2f1f8cb63663cc6d9f16",
+    "first11_spike_receipt.json": "84058625263adf2237e2459f1d1162b0365fd6db35eb8e98fff37f88a8f71a6c",
+    "fp8_prefill.bin": "1a17538b96dc7413ef094dca10c70872d6b238fb1e01719a1ba075bdb693d8e8",
+    "mixed_prefill.bin": "3d118323ef01ea3803f6f89cd0bffad16450aa3ce56d13ea2d022e389d504d4f",
+    "reference.npy": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0"
+  },
+  "build_hash": "ddbdadd3a492",
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "elf_bytes": 5193071024,
+  "elf_sha256": "52f7a75abac7cc1ec5aaf7ed7229528fea7ac6aa038a1a5198cd54f87ef97f28",
+  "matrix_sites": {
+    "fp4": 78,
+    "fp8": 122
+  },
+  "numerical_qualification": "not_established",
+  "observed": {
+    "cycles": 12114181400,
+    "vs_all_fp8_spike": {
+      "actual_top_token": 24262,
+      "cosine": -0.3786296546700842,
+      "normalized_rmse": 1.4275884058775223,
+      "reference_top_rank_in_actual": 17516,
+      "reference_top_token": 362,
+      "rmse": 2.8788232568387118,
+      "top_token_equal": false
+    },
+    "vs_captured_fp32": {
+      "actual_top_token": 24262,
+      "cosine": -0.440486017430707,
+      "normalized_rmse": 1.3617852182004795,
+      "reference_top_rank_in_actual": 31430,
+      "reference_top_token": 279,
+      "rmse": 3.3335402301351946,
+      "top_token_equal": false
+    },
+    "vs_mixed_spike": {
+      "actual_top_token": 24262,
+      "cosine": 0.1720651896845294,
+      "normalized_rmse": 1.3876478029034056,
+      "reference_top_rank_in_actual": 31679,
+      "reference_top_token": 5817,
+      "rmse": 1.7243525331740461,
+      "top_token_equal": false
+    },
+    "vs_runtime_packed_first11": {
+      "actual_top_token": 24262,
+      "cosine": 0.9999999999999999,
+      "normalized_rmse": 0.0,
+      "reference_top_rank_in_actual": 1,
+      "reference_top_token": 24262,
+      "rmse": 0.0,
+      "top_token_equal": true
+    }
+  },
+  "perf_config": "e4m3_vpu",
+  "perf_set": "mem.host_tracking=0",
+  "prepacked_checkpoint_kernels": 155,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "runtime_control_build_hash": "0aa86c351d99",
+  "runtime_control_cycles": 90552028722,
+  "schema": "mx_gemmini.tinyllama_first11_prepacked_spike.v1",
+  "scope": "one captured 128-token prefill, 22 layers and head",
+  "spike_isa": "rv64gc_zicntr"
+}

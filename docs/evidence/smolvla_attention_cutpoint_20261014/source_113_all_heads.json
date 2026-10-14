@@ -1,0 +1,155 @@
+{
+  "scope": "first SmolVLA flow step, all 15 113-key attention heads run separately",
+  "cutpoint_sha256": "19fcd4c7ec2e39870632ad0b97074b240029afd77c78b98bf8c148eae338f356",
+  "source_revision": "npu-exploration@0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "logical_shape": [
+    50,
+    113,
+    64
+  ],
+  "physical_shape": [
+    64,
+    128,
+    64
+  ],
+  "rows": [
+    {
+      "head": 0,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 48646,
+      "output_hash": "e20c7751ba0113cb",
+      "generated_header_sha256": "978a3dd21db328657827d0b7e84b749759de272773b3c6c6258bb31643444214",
+      "source_log_sha256": "8f104950e3f4ba9625438e30c1ef13f33f3729397dc83b2beb21823e28f3acf6"
+    },
+    {
+      "head": 1,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 55249,
+      "output_hash": "285da2f4b132dc89",
+      "generated_header_sha256": "1812a4185e4c3dc8bc5dad4adbbb1b80d52a0e0203e57ae4eb270aa76cdaafc6",
+      "source_log_sha256": "f1ed20a572c4944a02ed93f164afffb30ee188fdccdf738475e9c8e53b52c593"
+    },
+    {
+      "head": 2,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 61265,
+      "output_hash": "4e04f025ad581037",
+      "generated_header_sha256": "566904e4cd4c43fd91465a3c232b54635984c15a83ade6160088712e6a084514",
+      "source_log_sha256": "47b6d38059da6244521fc7f55994f114bfe7664e62bd5f67cc3a33f1a0d92859"
+    },
+    {
+      "head": 3,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 70950,
+      "output_hash": "b18c0940108e5092",
+      "generated_header_sha256": "e47f06ba8a32e7128f58cdc483876d5e5384b9d1014ca77f318a5e67d5cbc14a",
+      "source_log_sha256": "a745a31d46ba8472df09f867da1609378f3b3c7f3410a64d30f3cb9b75bd1c27"
+    },
+    {
+      "head": 4,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 44165,
+      "output_hash": "77d6e61dbe02bd1d",
+      "generated_header_sha256": "3041501c5c5d55c23e7e549562c406d0e39fb5e4c6164038a9802ce140588022",
+      "source_log_sha256": "060e879c806c279d14d1b2173a665754ab817c787cf93c8c9680d8bb42b7a9c8"
+    },
+    {
+      "head": 5,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 35921,
+      "output_hash": "734651b579776f73",
+      "generated_header_sha256": "ec4ee79baaa6c6d70cac62f3e7f4ec6b3b2879741d300b9bc6cad4bf8535f3f4",
+      "source_log_sha256": "1a7e5533941f46df119fdffc1726f93e226dab07947580abe973d98f9d024c18"
+    },
+    {
+      "head": 6,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 66079,
+      "output_hash": "c12ea8e4fc3b3fcc",
+      "generated_header_sha256": "7ea9ca460fa5d67b2df263735dc308597fa691adafe13985f37fd8c2c729da01",
+      "source_log_sha256": "79f02bc30e9bc5f85679b5f7221ca8d88522be8f8043c01cdb0d2fdf413afea5"
+    },
+    {
+      "head": 7,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 40477,
+      "output_hash": "f4f59b699117823b",
+      "generated_header_sha256": "3b8e040234b587e730ca10be0aac4264203d426d8d2c04d7c186eb72dbde884f",
+      "source_log_sha256": "c18e6a008ca4203e96813a16ace13566524af90ff8c23fd68fb08743e83bfd90"
+    },
+    {
+      "head": 8,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 53200,
+      "output_hash": "85764ae2c0d69a9b",
+      "generated_header_sha256": "61eb14e10990f46229bea82fe6318a7045a014f6993ca085d0b6e8865c0fce3d",
+      "source_log_sha256": "65af9bf11608774ec11f2e95d4e82bc616b2ad8bdbba5ff009bb9abd1113f611"
+    },
+    {
+      "head": 9,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 56156,
+      "output_hash": "fbd23e819295c908",
+      "generated_header_sha256": "b26b1f94115646f9b6a206b6afb7400221bc894571eef3f9d66bfeca82990579",
+      "source_log_sha256": "917d3751d1b5e21a86388ded1d6f95215f6f78135bcbd0171ce8aafaee37dc04"
+    },
+    {
+      "head": 10,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 77506,
+      "output_hash": "ef864ccf149c0b22",
+      "generated_header_sha256": "4f87da6e570bd7c941898e95d531326d47e99d2d12ecca636da565d562e7ba73",
+      "source_log_sha256": "66567793274d04c769d312f5a4ef1d02f1cb3cd5b2409ed67289fd4c622cde55"
+    },
+    {
+      "head": 11,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 73317,
+      "output_hash": "a514e28c1b28b0de",
+      "generated_header_sha256": "87c1290684f6eb41169d7f970403fc36aca0b22b32483ea210b41b965afce7d4",
+      "source_log_sha256": "a271fbe0002a00fb36f8c98e2ac5de69a86cbd0964aceca1218b2faec50d7461"
+    },
+    {
+      "head": 12,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 48868,
+      "output_hash": "9f14195ff93e2480",
+      "generated_header_sha256": "a9f6ba24d2eb12eaef3ad6de55ee9a0d4e3c22fb837bb3cbc4b6c0f617f3ba18",
+      "source_log_sha256": "1089aff555ee9944ba3aeca04d8b8215f71dbe0d1621bfbd01bc4e30b14f8334"
+    },
+    {
+      "head": 13,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 43870,
+      "output_hash": "62867f76b03c6cc8",
+      "generated_header_sha256": "2a1ede4db61ae22a8216600dbbc8d17e425426125aa97ef9104a1dea5802fbbb",
+      "source_log_sha256": "b9c7effdf7147fa1f2a3ee50549f52da9475ef6a92297f129b23b1d6c2f00dfc"
+    },
+    {
+      "head": 14,
+      "serial_cycles": 23509,
+      "pipelined_cycles": 16775,
+      "relative_frobenius_error_ppm_vs_captured_fp32": 62701,
+      "output_hash": "d89ad60de768097d",
+      "generated_header_sha256": "52e507c7b57c34eadebdc364f8d5d25a19d1a77da591133dc61fd03b09694311",
+      "source_log_sha256": "e85448fa3d73e18fcd9da8a7df70893ae42cf9146585ce7902b49c84f3c3a10e"
+    }
+  ],
+  "sum_of_separately_timed_head_cycles": 251625,
+  "is_stitched_attention_or_full_model": false
+}

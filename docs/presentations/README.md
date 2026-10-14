@@ -130,9 +130,11 @@ confirms all 99 output hashes. Mean decode cosine to captured FP32 is −0.324
 with 0/32 top-token matches. The slide presents these values separately
 from issuer-swap cycle comparisons.
 Promoting the first 11 layers' 77 dense sites to FP8 in a separate
-runtime-packed [Spike prefill](../evidence/tinyllama_prefill_precision_20261014/first11_spike_receipt.json)
-gives cosine −0.440. Its 90,552,028,722 cycles cannot be compared directly
-with the prepacked mixed full-session stage.
+[Spike prefill](../evidence/tinyllama_prefill_precision_20261014/first11_prepacked_spike_receipt.json)
+gives cosine −0.440. Its prepacked and runtime-packed forms have identical
+logits; modeled prefill cycles are 12,114,181,400 and 90,552,028,722,
+respectively. This is a packing-cost comparison for one prefill, not a
+full-session compiler-versus-source speedup.
 
 The [original SmolVLA action archive](../evidence/smolvla_full_action_values_20261014/README.md)
 checks the final action and all ten flow outputs against the captured

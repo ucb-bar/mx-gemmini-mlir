@@ -18,7 +18,8 @@ from torch.utils._python_dispatch import TorchDispatchMode
 
 
 class AttentionTap(TorchDispatchMode):
-    def __init__(self) -> None:
+    def __init__(self, keys: int) -> None:
+        self.keys = keys
         self.data: dict[str, np.ndarray] = {}
         super().__init__()
 
@@ -26,17 +27,17 @@ class AttentionTap(TorchDispatchMode):
         if func == torch.ops.aten.bmm.default and len(args) >= 2:
             left, right = args[:2]
             pair = (tuple(left.shape), tuple(right.shape))
-            if pair == ((15, 50, 64), (15, 64, 163)) and "q" not in self.data:
+            if pair == ((15, 50, 64), (15, 64, self.keys)) and "q" not in self.data:
                 with torch._C._DisableTorchDispatch():
                     self.data["q"] = left.detach().cpu().numpy().copy()
                     self.data["kt"] = right.detach().cpu().numpy().copy()
-            if pair == ((15, 50, 163), (15, 163, 64)) and "p" not in self.data:
+            if pair == ((15, 50, self.keys), (15, self.keys, 64)) and "p" not in self.data:
                 with torch._C._DisableTorchDispatch():
                     self.data["p"] = left.detach().cpu().numpy().copy()
                     self.data["v"] = right.detach().cpu().numpy().copy()
         if func == torch.ops.aten.where.self and len(args) >= 3:
             mask = args[0]
-            if tuple(mask.shape) == (1, 1, 50, 163) and "mask" not in self.data:
+            if tuple(mask.shape) == (1, 1, 50, self.keys) and "mask" not in self.data:
                 with torch._C._DisableTorchDispatch():
                     self.data["mask"] = mask.detach().cpu().numpy().copy()
         return func(*args, **(kwargs or {}))
@@ -56,6 +57,8 @@ def main() -> None:
     parser.add_argument("--flow-stage", type=Path, required=True,
                         help="Captured smolvla_session/stages/flow_denoise directory")
     parser.add_argument("--out", type=Path, default=Path(__file__).with_name("cutpoint.npz"))
+    parser.add_argument("--keys", type=int, choices=(113, 163), default=163,
+                        help="Select the first flow attention call with this key count")
     args = parser.parse_args()
     sys.path.insert(0, str(args.model2mlir / "workloads/smolvla"))
     from loader import (_MODEL_ID, _MODEL_REVISION, _load_pretrained_config,
@@ -73,7 +76,7 @@ def main() -> None:
     golden_path = args.flow_stage / "session_goldens.npz"
     with np.load(input_path, allow_pickle=False) as arrays:
         inputs = tuple(torch.from_numpy(arrays[f"in{i}"].copy()) for i in range(4))
-    tap = AttentionTap()
+    tap = AttentionTap(args.keys)
     with torch.no_grad(), tap:
         observed = flow(*inputs)[0].detach().cpu().numpy().copy()
     with torch.no_grad():

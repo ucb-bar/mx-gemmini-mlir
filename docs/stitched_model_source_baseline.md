@@ -33,14 +33,16 @@ The SmolVLA mask is an arbitrary `1×1×50×163` Boolean tensor in the captured
 flow MLIR. The [pinned attention cutpoint](evidence/smolvla_attention_cutpoint_20261014/README.md)
 now archives actual Q/K/V operands, mask, and softmax probabilities from the
 first denoising step. Recomputed masked softmax matches the captured
-probabilities below `2e-9` RMSE. The unmodified flash source applies a
+probabilities below `5e-9` RMSE. The unmodified flash source applies a
 causal mask only to its last key block. A small source patch now applies
 SmolVLA's Boolean mask through `VPU_ADD` on **every** block. All 15 heads
-of the first flow step pass separately on Spike at padded 64×192×64, with
-22,447 pipelined modeled cycles per separately timed head and 2.977–6.356%
-relative output error versus each captured FP32 attention result. Other
-flow steps and the rest of the model still need a stitched source run before
-this becomes a full-model cycle control.
+of the first 163-key attention call pass separately on Spike at padded
+64×192×64, with 22,447 pipelined modeled cycles per separately timed head
+and 2.977–6.356% relative output error versus each captured FP32 result.
+All 15 heads of the first 113-key call pass at padded 64×128×64, with
+16,775 cycles per head and 3.592–7.751% relative error. Other calls and
+flow steps, plus the rest of the model, still need a stitched source run
+before this becomes a full-model cycle control.
 
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.

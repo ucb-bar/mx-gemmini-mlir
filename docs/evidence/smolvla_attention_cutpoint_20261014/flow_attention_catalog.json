@@ -1,0 +1,266 @@
+{
+  "attention_bindings": [
+    {
+      "region": "matmul_6",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_7",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_15",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_16",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_24",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_25",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_33",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_34",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_42",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_43",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_51",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_52",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_60",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_61",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_69",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_70",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_78",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_79",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_87",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_88",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_96",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_97",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_105",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_106",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_114",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_115",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_123",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_124",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_132",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x163xf32>",
+        "tensor<15x50x163xf32>"
+      ]
+    },
+    {
+      "region": "matmul_133",
+      "tensor_types": [
+        "tensor<15x50x163xf32>",
+        "tensor<15x163x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    },
+    {
+      "region": "matmul_141",
+      "tensor_types": [
+        "tensor<15x50x64xf32>",
+        "tensor<15x64x113xf32>",
+        "tensor<15x50x113xf32>"
+      ]
+    },
+    {
+      "region": "matmul_142",
+      "tensor_types": [
+        "tensor<15x50x113xf32>",
+        "tensor<15x113x64xf32>",
+        "tensor<15x50x64xf32>"
+      ]
+    }
+  ],
+  "covered_contractions": 148,
+  "flow_capture_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "raw_catalog_sha256": "013129be99caf1131abd3280a3c5734f60b574d2f2c31b68ef009174b5f29652",
+  "schema": "mx_gemmini.smolvla_flow_attention_catalog.v1",
+  "transformed_source_sha256": "04acdde05e751c8d4454c97a99e8c8e1db91682cf7a31d77c60e87f254f2e754"
+}

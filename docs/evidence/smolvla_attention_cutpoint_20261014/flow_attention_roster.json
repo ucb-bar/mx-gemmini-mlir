@@ -1,0 +1,77 @@
+{
+  "schema": "mx_gemmini.smolvla_attention_roster_analysis.v1",
+  "flow_attention_catalog_sha256": "2e3779bf05171d6ab002405bd94b0b924c224b64f41bd951693390a862ef8208",
+  "raw_flow_catalog_sha256": "013129be99caf1131abd3280a3c5734f60b574d2f2c31b68ef009174b5f29652",
+  "flow_capture_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+  "transformed_source_sha256": "04acdde05e751c8d4454c97a99e8c8e1db91682cf7a31d77c60e87f254f2e754",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "full_session_link_sha256": "2aaf3a671c7e7f6f5daa708c1971b3b2055b6f77f3148943340b86630c61c735",
+  "flow_steps": 10,
+  "pairs": [
+    {
+      "logical_keys": 163,
+      "qk_regions": [
+        "matmul_6",
+        "matmul_24",
+        "matmul_42",
+        "matmul_60",
+        "matmul_78",
+        "matmul_96",
+        "matmul_114",
+        "matmul_132"
+      ],
+      "pv_regions": [
+        "matmul_7",
+        "matmul_25",
+        "matmul_43",
+        "matmul_61",
+        "matmul_79",
+        "matmul_97",
+        "matmul_115",
+        "matmul_133"
+      ],
+      "attention_calls_per_flow_step": 8,
+      "heads_per_call": 15,
+      "first_call_standalone_source_cycles_per_head": 22447,
+      "illustrative_warm_source_head_sum_per_flow_step": 2693640,
+      "source_receipt_sha256": "09743447a8ec4e8ee7ba73fdc420c6b0018f5f3b016e07c1b28601fcc9c3ed38"
+    },
+    {
+      "logical_keys": 113,
+      "qk_regions": [
+        "matmul_15",
+        "matmul_33",
+        "matmul_51",
+        "matmul_69",
+        "matmul_87",
+        "matmul_105",
+        "matmul_123",
+        "matmul_141"
+      ],
+      "pv_regions": [
+        "matmul_16",
+        "matmul_34",
+        "matmul_52",
+        "matmul_70",
+        "matmul_88",
+        "matmul_106",
+        "matmul_124",
+        "matmul_142"
+      ],
+      "attention_calls_per_flow_step": 8,
+      "heads_per_call": 15,
+      "first_call_standalone_source_cycles_per_head": 16775,
+      "illustrative_warm_source_head_sum_per_flow_step": 2013000,
+      "source_receipt_sha256": "17e3fe2c8c8b2e3b0e2accf177c6cc7808ab1921641c9843f0e4faef6b5fb273"
+    }
+  ],
+  "illustrative_warm_source_head_sum_per_flow_step": 4706640,
+  "illustrative_warm_source_head_sum_for_ten_steps": 47066400,
+  "is_measured_stitched_stage_or_full_model": false,
+  "limitations": [
+    "Only the first call of each key shape in the first flow step was measured.",
+    "The arithmetic repeats separately warmed source-head timings across calls and steps.",
+    "The source head passes omit the rest of the flow graph, host work, and cross-call scheduling.",
+    "No compiler-versus-source cycle ratio follows from this arithmetic."
+  ]
+}

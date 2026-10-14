@@ -40,21 +40,25 @@ def main() -> None:
         v = arrays["v"][args.head_index]
         p = arrays["p"][args.head_index]
         captured_mask = arrays["mask"][0, 0]
-    assert q.shape == (50, 64) and kt.shape == (64, 163)
-    assert v.shape == (163, 64) and captured_mask.shape == (50, 163)
+    keys = kt.shape[1]
+    assert keys in (113, 163)
+    assert q.shape == (50, 64) and kt.shape == (64, keys)
+    assert v.shape == (keys, 64) and captured_mask.shape == (50, keys)
+    physical_keys = ((keys + 63) // 64) * 64
+    blocks = physical_keys // 64
 
     padded_q = np.zeros((64, 64), dtype=np.float32)
-    padded_kt = np.zeros((64, 192), dtype=np.float32)
-    padded_v = np.zeros((192, 64), dtype=np.float32)
+    padded_kt = np.zeros((64, physical_keys), dtype=np.float32)
+    padded_v = np.zeros((physical_keys, 64), dtype=np.float32)
     padded_q[:50] = q
-    padded_kt[:, :163] = kt
-    padded_v[:163] = v
-    mask = np.zeros((64, 192), dtype=bool)
-    mask[:50, :163] = captured_mask
+    padded_kt[:, :keys] = kt
+    padded_v[:keys] = v
+    mask = np.zeros((64, physical_keys), dtype=bool)
+    mask[:50, :keys] = captured_mask
     mask[50:, 0] = True  # give discarded padded rows one finite softmax entry
     mask_blocks = np.stack([
         np.where(mask[:, block * 64:(block + 1) * 64], 0, 0xFF80).astype(np.uint16)
-        for block in range(3)
+        for block in range(blocks)
     ])
 
     fmt = generator.FORMATS["fp8"]
@@ -73,7 +77,7 @@ def main() -> None:
     )
     parts = [
         "#ifndef SMOL_ATTENTION_HEAD0_H", "#define SMOL_ATTENTION_HEAD0_H",
-        "#include <stdint.h>", "#define ATTN_SQ 64", "#define ATTN_SK 192",
+        "#include <stdint.h>", "#define ATTN_SQ 64", f"#define ATTN_SK {physical_keys}",
         "#define ATTN_D 64", "#define ATTN_VALID_Q 50", "#define ATTN_HEADS 1",
         "#define ATTN_CAUSAL 0", "#define ATTN_ARBITRARY_MASK 1",
         "#define ATTN_SCALE_IN_Q 0",
@@ -83,14 +87,14 @@ def main() -> None:
         array("KT_SCALES", kt_scales, 2, "uint8_t", "[ATTN_D/32][ATTN_SK]"),
         array("V_IN", v_codes, 2, "uint8_t", "[ATTN_SK][ATTN_D]"),
         array("V_SCALES", v_scales, 2, "uint8_t", "[ATTN_SK/32][ATTN_D]"),
-        ("static const uint16_t MASK_BLOCK_BF16[3][ATTN_SQ][64] "
+        (f"static const uint16_t MASK_BLOCK_BF16[{blocks}][ATTN_SQ][64] "
          f"__attribute__((aligned(64))) = {{\n{mask_rows}\n}};"),
         f"static const uint32_t O_REF_F_F32[ATTN_SQ][ATTN_D] = {{\n{f32_words(reference)}\n}};",
         "#endif",
     ]
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("\n".join(parts) + "\n")
-    print(f"wrote {args.out}; head {args.head_index}; "
+    print(f"wrote {args.out}; head {args.head_index}; keys {keys}; "
           f"valid mask fraction {captured_mask.mean():.6f}")
 
 

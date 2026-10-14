@@ -13,7 +13,7 @@ in the first denoising step: `q[15,50,64]`, `kt[15,64,163]`, probabilities
 `6b5b713660c819aa8f69a5174464b46258491bc81a86a8b4073b6c56cc9f122a`.
 The mask is 84.9693% true and has no fully masked query row. Run
 `python -B verify.py` with NumPy to check that masked `softmax(q @ kt / 8)`
-matches the captured probabilities; the RMSE is below `2e-9`.
+matches the captured probabilities; the RMSE is below `5e-9`.
 
 To recapture with the pinned checkpoint already cached locally, run from this
 directory (substitute your model2MLIR checkout and captured stage paths):
@@ -25,6 +25,14 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -B capture.py \
   --out cutpoint.npz
 python -B verify.py
 ```
+
+The same flow step also has attention over 113 prefix keys. Capture its
+first 15-head call with `capture.py --keys 113 --out cutpoint113.npz`.
+Its archived [`cutpoint113.npz`](cutpoint113.npz) has SHA-256
+`19fcd4c7ec2e39870632ad0b97074b240029afd77c78b98bf8c148eae338f356`.
+All 113 logical keys are valid; masked padded keys still matter when it is
+mapped to 128 physical columns. Its recomputed softmax has RMSE below
+`3e-8` against captured probabilities across the NumPy builds used here.
 
 The capture hook changed no eager output: tapped and untapped flow-step
 outputs were bit equal. The newly loaded eager model's first-step output
@@ -80,14 +88,45 @@ head in that first flow step. All 15 serial/pipelined output hashes agree
 and all pass the source checker. Each separately timed pipelined run takes
 22,447 modeled cycles with this fixed shape and schedule. Relative error
 versus each head's captured FP32 output ranges from **2.977% to 6.356%**.
-The 336,705-cycle sum is a diagnostic sum of 15 standalone passes, not a
-stitched attention-stage timing. This regenerates them using the same
+The 336,705-cycle sum is a diagnostic sum of 15 standalone passes.
+
+The [113-key receipt](source_113_all_heads.json) and
+[15 more source logs](source_113_all_heads/) cover the other attention shape.
+These heads use 64×128×64 physical tiles with an archived
+[head-0 operand header](smol_head113.h). All 15 pass the source checker;
+their separately timed pipelined passes take **16,775 cycles each** and
+their relative errors range from **3.592% to 7.751%**. The 251,625-cycle
+sum is another diagnostic sum. Neither sum is a stitched stage timing.
+
+This regenerates the first shape using the same
 environment variables as `run_source.sh`; `ROCC_TOOLS` can name a separate
 quantizer-tools checkout:
 
 ```sh
 python -B run_all_heads.py --out-dir "$OUT_DIR"
+python -B run_all_heads.py --cutpoint cutpoint113.npz \
+  --out-dir "$OUT_DIR/keys113"
 ```
 
 These are **attention heads in one flow step**. They are not matched compiler
 cutpoints, a full SmolVLA run, or a stitched-model cycle ratio.
+
+## Flow-stage attention roster
+
+The [projected flow catalog](flow_attention_catalog.json) records the 32
+QK/PV matrix bindings from the corrected mixed FP4/FP8 full-session flow
+build. Eight attention calls
+per step have 163 keys and eight have 113 keys; each has 15 heads. The
+[roster analysis](flow_attention_roster.json) combines those counts with the
+separately timed first-call source heads. Repeating their warm head timings
+arithmetically gives 4,706,640 cycles for the matrix and VPU work represented
+by 16 calls in one step, or 47,066,400 over ten steps. This is an
+**illustrative sum**, not a measured stage or model timing. It omits all
+other flow operations, host work, and scheduling between calls, and reuses
+first-call operands and timings for later calls and steps. It cannot support
+a compiler-versus-source speedup claim.
+
+To regenerate the clean catalog projection from a captured flow build, pass
+its `device_catalog/mx_catalog.json` and `mx_stage_probe.json` to
+`project_flow_catalog.py --catalog ... --probe ...`, then run
+`python -B analyze_flow_attention_roster.py`.
