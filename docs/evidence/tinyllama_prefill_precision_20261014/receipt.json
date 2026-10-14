@@ -1,0 +1,75 @@
+{
+  "all_fp8_compiler_cycles": 11442665332,
+  "artifact_sha256": {
+    "all_fp8_proxy.npy": "902df616a1b898c245a9a2d076d6b34de4521cede0efc06a87d8b1f1c89a84cc",
+    "all_fp8_result.json": "2624c4ceba497fa97147f0397e139e539c542c2d3db645ea2700e331f38cbea2",
+    "default_proxy.npy": "e96a8362c986f8f3f903265d3b32efb131e399b58f773444d4dfba4519bce2bb",
+    "default_result.json": "f36d625140a3d4b4ceceb7c2ca313f30e65c35f4f39fb3b0abea28430355c023",
+    "fp8_prefill.bin": "1a17538b96dc7413ef094dca10c70872d6b238fb1e01719a1ba075bdb693d8e8",
+    "fp8_spike.log.gz": "75d649a47e28ab450269ae29ae0bbc45b53b45f3b23fc4465e44f98466d495de",
+    "head_only_overrides.json": "d01ec21be8526f2429f20e36b76d23c37e2dd7df30964d6897c1da6578e45a6e",
+    "head_only_proxy.npy": "69b8abe70aa7527649771462bc6d8182c8e5a93440f502f59f30fd7b77f8ba31",
+    "head_only_result.json": "a1fad93d753d960bef81950f73a6977b58368c89ff7067a0d39785a4e3cab78c",
+    "mixed_prefill.bin": "3d118323ef01ea3803f6f89cd0bffad16450aa3ce56d13ea2d022e389d504d4f",
+    "reference.npy": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0"
+  },
+  "capture_inputs_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "catalog_sha256": "445a255b67aa15518bac19484861f567139dbc8839265aaba9b6709db97bbdde",
+  "checkpoint_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "metrics": {
+    "all_fp8_operand_proxy": {
+      "actual_top_token": 362,
+      "cosine": 0.9223841012168305,
+      "normalized_rmse": 0.39997591926449355,
+      "reference_top_rank_in_actual": 2,
+      "reference_top_token": 279,
+      "rmse": 0.979108746469889,
+      "top_token_equal": false
+    },
+    "all_fp8_spike": {
+      "actual_top_token": 362,
+      "cosine": 0.9431923555424874,
+      "normalized_rmse": 0.35305216671942957,
+      "reference_top_rank_in_actual": 3,
+      "reference_top_token": 279,
+      "rmse": 0.8642431900170275,
+      "top_token_equal": false
+    },
+    "default_operand_proxy": {
+      "actual_top_token": 800,
+      "cosine": 0.4977544308850506,
+      "normalized_rmse": 1.1292880470601478,
+      "reference_top_rank_in_actual": 40,
+      "reference_top_token": 279,
+      "rmse": 2.7644059327214716,
+      "top_token_equal": false
+    },
+    "head_only_operand_proxy": {
+      "actual_top_token": 983,
+      "cosine": 0.5350051217908856,
+      "normalized_rmse": 1.0120070876509963,
+      "reference_top_rank_in_actual": 42,
+      "reference_top_token": 279,
+      "rmse": 2.4773116162360194,
+      "top_token_equal": false
+    },
+    "mixed_fp4_fp8_spike": {
+      "actual_top_token": 5817,
+      "cosine": -0.31324465553177055,
+      "normalized_rmse": 1.2552759345019477,
+      "reference_top_rank_in_actual": 21944,
+      "reference_top_token": 279,
+      "rmse": 3.072814105819408,
+      "top_token_equal": false
+    }
+  },
+  "mixed_fast_run_sha256": "490984bf6eaf053430d9edd147000e34820daff4af4f8004f85e8b9938c1a919",
+  "mixed_prefill_matches_completed_fast_run": true,
+  "model2mlir_revision": "9153d34a07a099df7a1a97424c4e029f651d2363",
+  "numerical_qualification": "not_established",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "reference_kind": "captured_unquantized_fp32",
+  "schema": "mx_gemmini.tinyllama_prefill_precision.v1",
+  "scope": "one captured TinyLlama 22-layer prefill and final LM head"
+}

@@ -468,3 +468,13 @@ shows why this control is useful: early projections were close to the operand
 proxy, but error grew through the MLP and the final random-weight logits.
 The [pretrained TinyLlama sensitivity record](evidence/tinyllama_precision_sweep_20261013/README.md)
 compares the default FP4 dense policy with two capture-bound FP8 promotions.
+The [prefill Spike precision check](evidence/tinyllama_prefill_precision_20261014/README.md)
+finds cosine −0.313 between default mixed FP4/FP8 logits and the captured
+FP32 logits on the fixed input; an all-FP8 compiler prefill reaches 0.943.
+Neither selects the FP32 top token. This is a numerical diagnostic, not a
+generation-quality threshold. Treat a linked ELF and matching issuer-swap
+output hashes as execution evidence only; they do not validate the selected
+quantization policy.
+An additional operand-only split promotes the first 11 layers' dense sites
+to FP8 and selects the FP32 top token on this input. Its 0.805 cosine still
+needs a Spike check; see the half-sweep receipt in the same archive.

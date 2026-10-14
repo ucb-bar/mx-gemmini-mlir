@@ -316,10 +316,12 @@ def results(slide, smol_comparison: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
             radiance: dict | None, prefill128: dict | None,
             equal_work: dict | None, tiny_logits: dict | None,
-            smol_actions: dict | None, total: int = 3) -> None:
+            smol_actions: dict | None, prefill_precision: dict | None,
+            total: int = 3) -> None:
     shapes = slide.shapes
-    title = ("MX results: full-model Spike"
-             if tiny_logits or smol_actions else "MX results: Spike and Radiance")
+    title = ("MX results: full-model Spike" if tiny_logits or smol_actions
+             else "MX results: Spike and numerical drift" if prefill_precision
+             else "MX results: Spike and Radiance")
     set_text(shapes[0], title, size=27,
              bold=True)
     frame = shapes[1]
@@ -406,13 +408,27 @@ def results(slide, smol_comparison: dict | None,
     elif tiny_logits:
         prefill = tiny_logits["prefill_metrics"]
         decode = tiny_logits["decode_summary"]
+        control = ("All-FP8 prefill control cosine "
+                   f"{prefill_precision['metrics']['all_fp8_spike']['cosine']:.3f}; "
+                   if prefill_precision else "")
         callout = (
             "TinyLlama logits vs captured FP32 on fixed synthetic inputs: "
             f"prefill cosine {prefill['cosine']:.3f}; decode mean "
             f"{decode['cosine_mean']:.3f}, top token "
             f"{decode['top_token_matches']}/32.\n"
-            "Full-session output hashes match the timed compiler run; "
-            "these values do not establish generation quality."
+            f"{control}output hashes match the timed run; "
+            "no generation-quality claim."
+        )
+    elif smol_actions and prefill_precision:
+        mixed = prefill_precision["metrics"]["mixed_fp4_fp8_spike"]
+        fp8 = prefill_precision["metrics"]["all_fp8_spike"]
+        action = smol_actions["final_action_metrics"]
+        callout = (
+            "TinyLlama prefill vs FP32: mixed FP4/FP8 cosine "
+            f"{mixed['cosine']:.3f}, all-FP8 {fp8['cosine']:.3f}. "
+            "33-step logits pending.\n"
+            f"SmolVLA final action vs FP32: cosine {action['cosine']:.3f}, "
+            f"normalized RMSE {action['normalized_rmse']:.3f}. No quality threshold."
         )
     elif smol_actions:
         action = smol_actions["final_action_metrics"]
@@ -422,6 +438,16 @@ def results(slide, smol_comparison: dict | None,
             f"{action['normalized_rmse']:.3f}.\n"
             "Full-session output hashes match the timed compiler run; "
             "these values do not establish task success."
+        )
+    elif prefill_precision:
+        mixed = prefill_precision["metrics"]["mixed_fp4_fp8_spike"]
+        fp8 = prefill_precision["metrics"]["all_fp8_spike"]
+        callout = (
+            "Separate TinyLlama prefill vs FP32: mixed FP4/FP8 Spike cosine "
+            f"{mixed['cosine']:.3f}; all-FP8 {fp8['cosine']:.3f}. "
+            "Neither selects the FP32 top token.\n"
+            "Remaining 32 decode logits and final SmolVLA actions pending; "
+            "this does not assess the 64-token timing row."
         )
     else:
         callout = (
@@ -604,6 +630,7 @@ def main() -> None:
     parser.add_argument("--equal-work-attention", type=Path)
     parser.add_argument("--tiny-full-logits", type=Path)
     parser.add_argument("--smol-action-values", type=Path)
+    parser.add_argument("--tiny-prefill-precision", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -631,6 +658,30 @@ def main() -> None:
                    if args.tiny_full_logits else None)
     smol_actions = (json.loads(args.smol_action_values.read_text())
                     if args.smol_action_values else None)
+    prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
+                         if args.tiny_prefill_precision else None)
+    if prefill_precision is not None:
+        values = prefill_precision.get("metrics") or {}
+        mixed = values.get("mixed_fp4_fp8_spike") or {}
+        fp8 = values.get("all_fp8_spike") or {}
+        artifacts = prefill_precision.get("artifact_sha256") or {}
+        if (tiny_run is None
+                or prefill_precision.get("schema") !=
+                "mx_gemmini.tinyllama_prefill_precision.v1"
+                or prefill_precision.get("numerical_qualification") !=
+                "not_established"
+                or prefill_precision.get("mixed_prefill_matches_completed_fast_run")
+                is not True
+                or prefill_precision.get("mixed_fast_run_sha256") !=
+                file_sha256(args.tiny_full_run)
+                or not artifacts
+                or any(file_sha256(args.tiny_prefill_precision.parent / name)
+                       != digest for name, digest in artifacts.items())
+                or any(not isinstance(row.get("cosine"), (int, float))
+                       or not math.isfinite(row["cosine"])
+                       or not -1 <= row["cosine"] <= 1
+                       for row in (mixed, fp8))):
+            parser.error("TinyLlama prefill precision needs the verified archive")
     for name, receipt, source, schema in (
             ("TinyLlama logits", tiny_logits, args.tiny_full_logits,
              "mx_gemmini.tinyllama_full_logits.v1"),
@@ -886,7 +937,7 @@ def main() -> None:
     configurations(prs.slides[1], total)
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
-            equal_work, tiny_logits, smol_actions, total)
+            equal_work, tiny_logits, smol_actions, prefill_precision, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)

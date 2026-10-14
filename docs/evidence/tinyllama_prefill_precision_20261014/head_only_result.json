@@ -1,0 +1,25 @@
+{
+  "baseline_logits_sha256": "9f67bb9337850fe9eb610756c3c7d952c2a59d2261f34908a3097d3f37a00b41",
+  "baseline_top_token": 279,
+  "capacity": 160,
+  "capture_inputs_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "capture_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "fp4_linear_sites": 154,
+  "fp8_attention_calls": 44,
+  "fp8_linear_sites": 1,
+  "fp8_rotary_bmm_calls": 1,
+  "layers": 22,
+  "model2mlir_revision": "9153d34a07a099df7a1a97424c4e029f651d2363",
+  "precision_overrides": {
+    "matmul_199": "mxfp8"
+  },
+  "precision_overrides_sha256": "d01ec21be8526f2429f20e36b76d23c37e2dd7df30964d6897c1da6578e45a6e",
+  "proxy_logits_sha256": "ca6574362bc4df0030f193f71f4f853028771fabd9509c22efd0bcf685ec376d",
+  "proxy_max_abs_vs_unquantized": 12.778509140014648,
+  "proxy_mean_abs_vs_unquantized": 1.9447976350784302,
+  "proxy_top_token": 983,
+  "schema": "mx_gemmini.tinyllama_operand_fake_quant.v1",
+  "stage_kind": "prefill",
+  "status": "diagnostic_not_mesh_oracle"
+}

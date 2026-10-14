@@ -112,6 +112,14 @@ issuer swap supplies that program. The independent prefill is only one
 64-token, all-FP8 stage; the captured full sessions use mixed FP4/FP8.
 Its raw cycle counts do not supply a full-model speedup.
 
+The [prefill precision archive](../evidence/tinyllama_prefill_precision_20261014/README.md)
+adds a separate numerical diagnostic on the captured FP32 input: the mixed
+FP4/FP8 compiler prefill has logit cosine −0.313, while an all-FP8 compiler
+prefill has cosine 0.943. Neither selects the FP32 top token. The mixed
+prefill bytes match the completed full-session compiler output hash; the
+33-step logit archive is still running. The slide presents these values
+separately from issuer-swap cycle comparisons.
+
 Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
@@ -149,7 +157,7 @@ cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
 
-The slide also names the separate [Radiance MX kernel
+The deck also contains a separate [Radiance MX kernel
 control](../evidence/radiance_kernel_comparison_20261014/README.md). Its
 source-bound compiler commands match all 16,384 BF16 outputs of each FP8
 256×64×2048 and FP4 256×64×5632 read-once GEMM, with exactly 128 KiB and
@@ -246,6 +254,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/radiance_kernel_comparison_20261014/receipt.json \
   --equal-work-attention \
     docs/evidence/attn_vpu_equal_work_20261013/receipt.json \
+  --tiny-prefill-precision \
+    docs/evidence/tinyllama_prefill_precision_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
