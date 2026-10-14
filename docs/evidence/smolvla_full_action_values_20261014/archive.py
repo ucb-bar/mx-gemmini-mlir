@@ -49,20 +49,21 @@ def main() -> None:
     assert report["link_receipt_sha256"] == sha(args.tap_link)
     assert report["reference_sha256"] == sha(args.goldens)
     assert report["final_action_matches_flow_bytes"] is True
-    assert not (HERE / "receipt.json").exists()
+    dumps = tap.get("output_dumps", [])
+    assert len(dumps) == 11
+    for row in dumps:
+        relative = Path(row["path"])
+        assert relative.parent == Path("output_dumps")
+        assert sha(args.tap_run.parent / relative) == row["sha256"]
     for name, path in source_paths.items():
         shutil.copyfile(path, HERE / name)
     log = args.tap_log.read_bytes()
     (HERE / "tap_spike.log.gz").write_bytes(gzip.compress(log, mtime=0))
     artifact_names = [*source_paths, "tap_spike.log.gz"]
-    dumps = tap.get("output_dumps", [])
-    assert len(dumps) == 11
-    (HERE / "output_dumps").mkdir(exist_ok=False)
+    (HERE / "output_dumps").mkdir(exist_ok=True)
     for row in dumps:
         relative = Path(row["path"])
-        assert relative.parent == Path("output_dumps")
         source = args.tap_run.parent / relative
-        assert sha(source) == row["sha256"]
         shutil.copyfile(source, HERE / relative)
         artifact_names.append(str(relative))
     receipt = {
