@@ -3,7 +3,8 @@
 [Editable PowerPoint deck](mx_gemmini_dialect_overview.pptx) contains three
 slides based on the supplied Lab Pastel PowerPoint template. The diagrams,
 text, callout, and results table are PowerPoint objects. The university seal
-is the template's master image.
+is the template's master image. The MLIR, C, and JSON examples use editable
+syntax-colored text runs.
 
 ## Slide 1: compiler structure
 
@@ -84,6 +85,15 @@ regenerate the stage catalogs and inspect their precision choices.
 
 ## Slide 3: measured scope
 
+Read the first three rows as **MX matrix command code comparisons**. The
+compiler and Nicolas variants run the same Merlin host program and VPU code;
+only the MX issuers change. The last row compares compiler-issued commands
+with one fused source attention kernel at the same 64×256×128 shape. These
+timings do **not** compare the
+compiler with Nicolas's fused kernels stitched into a full TinyLlama or
+SmolVLA model. Matching output hashes prove agreement with the captured
+outputs; they do not measure model accuracy against an independent reference.
+
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
 records 43,523 compiler versus 43,641 Nicolas source Spike cycles for a
 64×256×128 dense MX+VPU attention kernel. Both runs pass the same output
@@ -112,6 +122,8 @@ measures an `M=32` FP8 schedule. The captured session has a 128-token prefill
 and one-token decode with 155 FP4 and 45 FP8 MX bindings per stage. A stitched
 source baseline needs those shapes and precision choices to match before its
 cycle count can stand beside the model result.
+The [matched source baseline requirements](../stitched_model_source_baseline.md)
+record the remaining model and kernel interfaces.
 
 ## Regenerate
 

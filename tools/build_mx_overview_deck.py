@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from pptx import Presentation
@@ -25,6 +26,31 @@ CREAM = RGBColor(253, 248, 241)
 PALE_BLUE = RGBColor(225, 232, 236)
 SAND = RGBColor(237, 229, 220)
 SAGE = RGBColor(229, 231, 218)
+CODE_PURPLE = RGBColor(108, 61, 128)
+CODE_GREEN = RGBColor(40, 112, 79)
+CODE_ORANGE = RGBColor(164, 79, 37)
+CODE_TEAL = RGBColor(0, 104, 116)
+
+CODE_TOKEN = re.compile(
+    r'"(?:[^"\\]|\\.)*"|%[A-Za-z][\w]*|\b(?:true|false|before|after|'
+    r'__asm__|volatile|objdump|contract|return)\b|\b(?:0x[0-9a-fA-F]+|'
+    r'\d+(?:\.\d+)?)\b|\b(?:mx_gemmini\.[A-Za-z_]+|'
+    r'activation_format|weight_format|pe_mode|profile_sha256|'
+    r'geometry|legal_compute|resources|mesh_rows|mesh_columns|'
+    r'scratchpad_bytes|vpu|spad_requant)\b'
+)
+
+
+def code_color(token: str, following: str):
+    if token.startswith('"'):
+        if token.startswith('"mx_gemmini.'):
+            return CODE_PURPLE
+        return CODE_PURPLE if following.lstrip().startswith(":") else CODE_GREEN
+    if token.startswith("%"):
+        return CODE_TEAL
+    if token[0].isdigit():
+        return CODE_ORANGE
+    return CODE_PURPLE
 
 
 def set_text(shape, text: str, *, size: float, bold: bool = False,
@@ -84,13 +110,27 @@ def add_code(slide, source: str, x: float, y: float, w: float, h: float,
     frame.margin_bottom = Inches(0.04)
     for index, line in enumerate(source.split("\n")):
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
+        paragraph.alignment = PP_ALIGN.LEFT
         paragraph.space_before = Pt(0)
         paragraph.space_after = Pt(0)
-        run = paragraph.add_run()
-        run.text = line
-        run.font.name = "Liberation Mono"
-        run.font.size = Pt(size)
-        run.font.color.rgb = NAVY
+        offset = 0
+        for match in CODE_TOKEN.finditer(line):
+            for value, color in ((line[offset:match.start()], NAVY),
+                                 (match.group(), code_color(match.group(),
+                                                            line[match.end():]))):
+                if value:
+                    run = paragraph.add_run()
+                    run.text = value
+                    run.font.name = "Liberation Mono"
+                    run.font.size = Pt(size)
+                    run.font.color.rgb = color
+            offset = match.end()
+        if offset < len(line):
+            run = paragraph.add_run()
+            run.text = line[offset:]
+            run.font.name = "Liberation Mono"
+            run.font.size = Pt(size)
+            run.font.color.rgb = NAVY
     return box
 
 
@@ -167,7 +207,7 @@ def architecture(slide) -> None:
     transforms = (
         ("bind_profile", "Legal PE tuple +\nprofile digest"),
         ("MXBF16Catalog\nPreparation", "Select BF16\nMX sites"),
-        ("schedule.plan", "Choose native\nloop and tiles"),
+        ("schedule.plan", "Choose native\nloop policy"),
         ("MXVPUPostOffload", "Map softmax, add\nand reductions"),
         ("physical_program", "Order DMA, compute\nand VPU commands"),
     )
@@ -264,7 +304,7 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 def results(slide, smol_comparison: dict | None,
             tiny_run: dict | None, tiny_comparison: dict | None) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "MX+VPU Spike cycle results", size=27,
+    set_text(shapes[0], "Spike cycles by comparison scope", size=27,
              bold=True)
     frame = shapes[1]
     table = frame.table
@@ -284,17 +324,17 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     values = (
-        ("Workload / scope", "Compiler cycles", "Nicolas cycles", "Compiler Δ"),
-        ("SmolVLA · full 12-step session",
+        ("Workload / compared code", "Compiler cycles", "Nicolas path cycles", "Compiler Δ"),
+        ("SmolVLA full 12 steps · issuer swap",
          f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
          delta(smol_compiler, smol_native)),
-        ("TinyLlama · full 33-step session",
+        ("TinyLlama full 33 steps · issuer swap",
          f"{tiny_compiler:,}*" if tiny_compiler else "running",
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
-        ("SmolVLA flow · one step", "2,112,653,481", "2,112,919,925", "−0.0126%"),
-        ("Dense attention 64×256×128", "43,523", "43,641", "−0.27%"),
+        ("SmolVLA flow 1 step · issuer swap", "2,112,653,481", "2,112,919,925", "−0.0126%"),
+        ("Dense attention 64×256×128 · fused source", "43,523", "43,641", "−0.27%"),
     )
     for row_index, row in enumerate(values):
         for col_index, text in enumerate(row):
@@ -302,25 +342,27 @@ def results(slide, smol_comparison: dict | None,
                      heading=row_index == 0,
                      bold=row_index in (1, 2) and col_index == 0,
                      align=PP_ALIGN.LEFT if col_index == 0 else PP_ALIGN.CENTER,
-                     size=11.8 if row_index == 0 else 12.4)
+                     size=11.2 if row_index == 0 else 12.4)
     add_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.94),
                                        Inches(5.10), Inches(11.46), Inches(0.61))
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     set_text(add_shape,
-             "Full-model source variants replace two MX issuer catalogs; host graph and VPU "
-             "stay fixed. A matched fused handwritten whole-model baseline is unmeasured.",
-             size=11.5, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+             "Full-model rows change only the MX matrix command code. Both runs use "
+             "the same Merlin host and VPU code.\n"
+             "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
+             "as either complete model.",
+             size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
     if tiny_comparison and smol_comparison:
         footer_text = (
-            "* Full-session output hashes match: SmolVLA 33/33, TinyLlama 99/99. "
-            "Independent quantized accuracy remains open.\n"
-            "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention "
-            "outputs also match."
+            "* Output hashes match: SmolVLA 33/33; TinyLlama 99/99. This checks "
+            "the captured outputs, not model accuracy.\n"
+            "Nicolas e4m3_vpu Spike, host tracking off. The dense attention "
+            "row compares one fused kernel, not a whole model."
         )
     else:
         tiny_status = ("TinyLlama full receipt not supplied; "
