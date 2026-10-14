@@ -9,6 +9,7 @@ import pytest
 
 from tools.run_linked_merlin_session import (
     extract_output_dumps, observe_session_output, session_progress,
+    validate_linked_layout,
 )
 
 
@@ -66,6 +67,18 @@ def test_guest_arena_failure_is_not_hidden_by_spike_exit_zero() -> None:
                    "FAIL session output ABI"):
         with pytest.raises(ValueError, match="complete valid session"):
             observe_session_output(_log() + marker + "\n", _session(), exit_code=0)
+
+
+def test_runner_rejects_tinyllama_arena_overlapping_linked_elf() -> None:
+    layout = {"arena_base": 0xC0000000, "arena_bytes": 2 << 30,
+              "weights_base": 0x200000000, "mem_bytes": 11 << 30}
+    check = dict(mem_bytes=11 << 30, weight_bytes=4_400_193_536,
+                 measured_static_end=0xC49108F0)
+    with pytest.raises(ValueError, match="overlaps static data"):
+        validate_linked_layout(layout, **check)
+    layout["arena_base"] = 0xD0000000
+    layout["static_end"] = check["measured_static_end"]
+    validate_linked_layout(layout, **check)
 
 
 def test_per_step_cycles_and_instructions_cover_the_whole_session() -> None:

@@ -13,6 +13,8 @@ import json
 from pathlib import Path
 import subprocess
 
+from .link_merlin_session import _symbol_address
+
 
 def sha(path: Path) -> str:
     with path.open("rb") as stream:
@@ -145,6 +147,10 @@ def relink(base_link: Path, builds: dict[str, Path],
                str(libm), "-o", str(elf)]
     with (output / "link.log").open("w") as log:
         subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT)
+    static_end = _symbol_address(nm, elf, "_stack_top")
+    if static_end > layout["arena_base"]:
+        raise ValueError("replacement catalog extends into the session arena")
+    record["arena_layout"]["static_end"] = static_end
     record["elf"] = str(elf)
     record["elf_bytes"] = elf.stat().st_size
     record["elf_sha256"] = sha(elf)

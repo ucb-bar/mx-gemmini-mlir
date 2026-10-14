@@ -12,6 +12,8 @@ import subprocess
 import sys
 import time
 
+from .link_merlin_session import _symbol_address
+
 
 _BYTES = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -20,6 +22,25 @@ _SHA = re.compile(r"[0-9a-f]{64}\Z")
 def _sha(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def validate_linked_layout(layout: dict, *, mem_bytes: int,
+                           weight_bytes: int | None,
+                           measured_static_end: int) -> None:
+    """Reject an arena that can overwrite the ELF, weights, or Spike memory."""
+    arena_start = int(layout["arena_base"])
+    arena_end = arena_start + int(layout["arena_bytes"])
+    weight_start = int(layout["weights_base"])
+    weight_end = weight_start + weight_bytes if weight_bytes is not None else weight_start
+    recorded_static_end = layout.get("static_end")
+    if recorded_static_end is not None and int(recorded_static_end) != measured_static_end:
+        raise ValueError("linked session static extent differs from its receipt")
+    if (arena_start < 0x80000000 or arena_end > 0x80000000 + mem_bytes
+            or arena_start < measured_static_end
+            or max(arena_start, weight_start) < min(arena_end, weight_end)
+            or int(layout["mem_bytes"]) > mem_bytes):
+        raise ValueError("linked session arena overlaps static data or weights, "
+                         "or exceeds Spike memory")
 
 
 def _expected(session) -> list[tuple[str, int, int, int | None, int | None]]:
@@ -235,15 +256,15 @@ def run_session(
         raise ValueError("linked program schedule differs from capture")
     layout = link.get("arena_layout")
     if layout is not None:
-        arena_start = int(layout["arena_base"])
-        arena_end = arena_start + int(layout["arena_bytes"])
-        weight_start = int(layout["weights_base"])
+        nm = riscv_root / "bin/riscv64-unknown-elf-nm"
+        if not nm.is_file():
+            raise ValueError("Spike session needs RV64 nm to verify the linked static extent")
+        measured_static_end = _symbol_address(nm, elf, "_stack_top")
         weight_bytes = link.get("shared_weight_bytes")
-        weight_end = weight_start + int(weight_bytes) if weight_bytes is not None else weight_start
-        if (arena_start < 0x80000000 or arena_end > 0x80000000 + int(link["mem_bytes"])
-                or max(arena_start, weight_start) < min(arena_end, weight_end)
-                or int(layout["mem_bytes"]) > int(link["mem_bytes"])):
-            raise ValueError("linked session arena overlaps weights or exceeds Spike memory")
+        validate_linked_layout(layout, mem_bytes=int(link["mem_bytes"]),
+                               weight_bytes=(int(weight_bytes) if weight_bytes is not None
+                                             else None),
+                               measured_static_end=measured_static_end)
     if sum(row["selected_operations"] for row in link["programs"]) and spike_extlib is None:
         raise ValueError("MX session requires a pinned Spike extension")
     spike = riscv_root / "bin/spike"

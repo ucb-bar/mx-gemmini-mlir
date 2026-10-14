@@ -43,6 +43,18 @@ def _defined(nm: Path, object_path: Path) -> set[str]:
     return {row.split()[0] for row in result.stdout.splitlines() if len(row.split()) >= 2}
 
 
+def _symbol_address(nm: Path, elf: Path, symbol: str) -> int:
+    result = subprocess.run(
+        [str(nm), "--defined-only", "--format=posix", str(elf)],
+        check=True, capture_output=True, text=True,
+    )
+    addresses = [int(parts[2], 16) for row in result.stdout.splitlines()
+                 if (parts := row.split()) and parts[0] == symbol and len(parts) >= 3]
+    if len(addresses) != 1:
+        raise ValueError(f"linked session lacks one {symbol} symbol")
+    return addresses[0]
+
+
 def _stage_objects(build: Path) -> list[Path]:
     model = build / "model.o"
     if not model.is_file():
@@ -113,6 +125,7 @@ def _session_main(output_counts: list[int], *, weights_base: int,
 void console_init(void);
 void htif_puts(const char *);
 void htif_putd(long);
+void htif_puthex(unsigned long long);
 void htif_putc(char);
 void htif_exit(int);
 void merlin_arena_reset(void);
@@ -196,7 +209,12 @@ int main(int hart) {{
         void *value = output_pointer(program, output);
         size_t bytes = output_bytes(program, output);
         if (!value || !bytes) {{
-          htif_puts("FAIL session output ABI\\n"); htif_exit(1); return 1;
+          htif_puts("FAIL session output ABI program="); htif_putd(program);
+          htif_puts(" step="); htif_putd(step);
+          htif_puts(" output="); htif_putd(output);
+          htif_puts(" pointer="); htif_puthex((unsigned long long)(uintptr_t)value);
+          htif_puts(" bytes="); htif_putd((long)bytes);
+          htif_putc('\\n'); htif_exit(1); return 1;
         }}
         report(program, step, output, value, bytes);
         if ({dump_condition}) dump_output(program, step, output, value, bytes);
@@ -321,11 +339,6 @@ def link_session(
         "model_call", "merlin_model", "mlir_rt", "crt", "console", "libc_min"))
     malloc_source = bare / "merlin_malloc.c"
     malloc_object = output / "session_malloc.o"
-    _run([cc, *flags,
-          f"-DMERLIN_ARENA_BASE_ADDR={hex(layout['arena_base'])}ULL",
-          f"-DMERLIN_ARENA_SIZE_BYTES={hex(layout['arena_bytes'])}ULL",
-          f"-DMERLIN_WEIGHTS_BASE_ADDR={hex(layout['weights_base'])}ULL",
-          "-c", malloc_source, "-o", malloc_object])
     all_objects.append(malloc_object)
     weight_object = output / "weights_blob.o"
     _run([ld, "-r", "-b", "binary", "-o", weight_object, "weights.bin"],
@@ -351,10 +364,26 @@ def link_session(
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
     elf = output / "session.elf"
     libm = riscv_root / "riscv64-unknown-elf/lib/libm.a"
-    _run([cc, *flags, "-nostdlib", "-nostartfiles",
-          f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
-          "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
-          "-T", bare / "model_link.ld", *all_objects, libm, "-o", elf])
+    for attempt in range(3):
+        _run([cc, *flags,
+              f"-DMERLIN_ARENA_BASE_ADDR={hex(layout['arena_base'])}ULL",
+              f"-DMERLIN_ARENA_SIZE_BYTES={hex(layout['arena_bytes'])}ULL",
+              f"-DMERLIN_WEIGHTS_BASE_ADDR={hex(layout['weights_base'])}ULL",
+              "-c", malloc_source, "-o", malloc_object])
+        _run([cc, *flags, "-nostdlib", "-nostartfiles",
+              f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
+              "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
+              "-T", bare / "model_link.ld", *all_objects, libm, "-o", elf])
+        static_end = _symbol_address(nm, elf, "_stack_top")
+        checked = spike_session_layout(weights_bytes=weight_bytes,
+                                       arena_bytes=arena_bytes,
+                                       static_end=static_end)
+        if checked["arena_base"] == layout["arena_base"]:
+            layout = checked
+            break
+        layout = checked
+    else:
+        raise ValueError("linked static extent did not stabilize below the arena")
     record = {
         "schema": "mx_gemmini.linked_merlin_session.v1",
         "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
