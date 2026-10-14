@@ -151,10 +151,20 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                      input_format: str = "fp8_e4m3",
                      softmax_mode: str = "split", causal: bool = False,
                      arbitrary_mask: bool = False,
+                     schedule_plan: str | None = None,
                      block_first: int | None = None, block_last: int | None = None,
                      v3: bool = True
                      ) -> tuple[str, dict]:
-    """Render a source-bound, fenced QK/softmax/requant/PV program."""
+    """Render a source-bound flash program under a checked schedule plan."""
+    schedule = "serial"
+    if schedule_plan is not None:
+        from .merlin_schedule_policy import selected_policy
+        schedule = selected_policy(schedule_plan, symbol="mx_issue")
+        if schedule not in {"serial", "queued"}:
+            raise ValueError("flash schedule plan selects an unsupported policy")
+    queued = schedule == "queued"
+    if queued and not arbitrary_mask:
+        raise ValueError("queued flash schedule needs a selected masked head")
     buffers, buffer_bytes = flash_buffer_abi(shape, block_k, input_format,
                                              causal=causal,
                                              arbitrary_mask=arbitrary_mask)
@@ -223,6 +233,9 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
     if (profile.get("source", {}).get("gemmini_revision") !=
             "266c593f2cb51d7e3fe83fc0317072b585ac3c52"):
         raise ValueError("flash needs Nicolas's managed-scale MX RTL")
+    if queued and profile_sha256(profile) != (
+            "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d"):
+        raise ValueError("queued flash needs the qualified MX+VPU profile")
     SQ, SK, D, BK = shape.sq, shape.sk, shape.d, block_k
     fp4 = input_format == "fp4_e2m1"
     qt = 2 if fp4 else 1
@@ -261,10 +274,10 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                "mid_fp4_expsum" if fp4 and softmax_mode == "expsum" else
                "mid_fp4" if fp4 else "mid_expsum" if softmax_mode == "expsum"
                else "mid" if folded else "fa")
-    policy = {"schema": f"mx_gemmini.flash_{variant}_serial_policy.v1",
+    policy = {"schema": f"mx_gemmini.flash_{variant}_{schedule}_policy.v1",
               "shape_sq_sk_d_bk": [SQ, SK, D, BK],
               "block_order": ["QK", "softmax", "requant", "PV", "update"],
-              "fenced": True, "fold_q_scale_shift": 3 if folded else 0,
+              "fenced": not queued, "fold_q_scale_shift": 3 if folded else 0,
               "spad_q_v_kt_p_st_o": [SP_Q, SP_V, SP_KT, SP_P, ST, SP_O],
               "score_rows": [_score(j) for j in range(NB)],
               "probability_rows": [_probability(j) for j in range(NB)],
@@ -290,13 +303,15 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
         policy["input_format"] = input_format
     if softmax_mode == "expsum":
         policy["softmax_mode"] = softmax_mode
-    binding = {"schema": f"mx_gemmini.flash_{variant}_serial_binding.v1",
+    binding = {"schema": f"mx_gemmini.flash_{variant}_{schedule}_binding.v1",
                "profile_sha256": profile_sha256(profile),
                "source_sha256": _sha(source_core.encode()),
                "wrapper_sha256": _sha(source_wrapper.encode()),
                "header_sha256": _sha(source_header.encode()),
                "frontend_sha256": _sha(frontend.encode()),
                "policy": policy}
+    if schedule_plan is not None:
+        binding["schedule_plan_sha256"] = _sha(schedule_plan.encode())
     binding["policy_sha256"] = _sha(json.dumps(policy, sort_keys=True,
                                                 separators=(",", ":")).encode())
     binding["manifest_sha256"] = _sha(json.dumps(binding, sort_keys=True,
@@ -495,6 +510,13 @@ def render_flash_mid(frontend: str, source_core: str, source_wrapper: str,
                          f"total_bytes = {SQ * D * 2} : i32, "
                          f"tile_cols = 16 : i32, spad_row = {SP_O} : i32"),
                   "    func.return", "  }", "}", ""))
+    if queued:
+        expected_waits = 11 if NB == 2 else 16
+        if sum(line.lstrip().startswith('"mx_gemmini.wait"')
+               for line in lines) != expected_waits:
+            raise ValueError("queued flash wait inventory differs")
+        lines = [line for line in lines if not
+                 line.lstrip().startswith('"mx_gemmini.wait"')]
     mlir = "\n".join(lines)
     report = verify_ir(mlir, profile)
     if (report["memory_phases"], report["flash_setups"], report["spad_matmuls"],
@@ -513,6 +535,7 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                     input_format: str = "fp8_e4m3",
                     softmax_mode: str = "split", causal: bool = False,
                     arbitrary_mask: bool = False,
+                    schedule_plan: str | None = None,
                     block_first: int | None = None, block_last: int | None = None,
                     v3: bool = True
                     ) -> tuple[Command | Fence, ...]:
@@ -522,6 +545,7 @@ def lower_flash_mid(mlir_text: str, frontend: str, source_core: str,
                                    block_k=block_k, input_format=input_format,
                                    softmax_mode=softmax_mode, causal=causal,
                                    arbitrary_mask=arbitrary_mask,
+                                   schedule_plan=schedule_plan,
                                    block_first=block_first, block_last=block_last,
                                    v3=v3)
     if mlir_text != expected:

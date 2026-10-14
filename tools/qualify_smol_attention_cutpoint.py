@@ -1,8 +1,9 @@
 """Compare typed MX commands with Nicolas's captured SmolVLA attention heads.
 
 Both programs run in one Spike guest, alternate after accelerator flushes,
-and check the complete BF16 output hash after every pass. The source uses its
-pipelined schedule; the typed compiler currently emits a fenced serial plan.
+and check the complete BF16 output after every pass. The source uses its
+pipelined schedule. The typed compiler uses a fenced serial graph by default,
+or a queued graph selected by a checked Merlin schedule plan.
 """
 
 from __future__ import annotations
@@ -64,7 +65,8 @@ def paired_rows(log: str, expected_hash: str) -> tuple[list[int], list[int]]:
 
 
 def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
-                 raw_core: Path, scratch: Path) -> dict:
+                 raw_core: Path, scratch: Path,
+                 schedule_plan: str | None) -> dict:
     case = scratch / f"keys{keys}"
     case.mkdir()
     front = EVIDENCE / f"attention{keys}.model2mlir.mlir"
@@ -91,11 +93,15 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
     core = patched.read_text()
     mlir, binding = render_flash_mid(
         frontend, core, core, header.read_text(), profile,
-        shape=shape, block_k=64, arbitrary_mask=True)
+        shape=shape, block_k=64, arbitrary_mask=True,
+        schedule_plan=schedule_plan)
     commands = lower_flash_mid(
         mlir, frontend, core, core, header.read_text(), profile,
-        shape=shape, block_k=64, arbitrary_mask=True)
-    expected_commands = 178 if keys == 113 else 248
+        shape=shape, block_k=64, arbitrary_mask=True,
+        schedule_plan=schedule_plan)
+    expected_commands = ((167 if keys == 113 else 232)
+                         if schedule_plan is not None else
+                         (178 if keys == 113 else 248))
     if len(commands) != expected_commands:
         raise ValueError("typed arbitrary-mask command roster differs")
     (case / "attention.mx.mlir").write_text(mlir)
@@ -139,7 +145,7 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
         (case / "spike.log").read_text(), row["output_hash"])
     source_mean = sum(source_cycles) / len(source_cycles)
     compiler_mean = sum(compiler_cycles) / len(compiler_cycles)
-    return {
+    result = {
         "logical_keys": keys,
         "physical_shape": [shape.sq, shape.sk, shape.d],
         "cutpoint_sha256": sha(cutpoint),
@@ -151,7 +157,6 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
         "elf_sha256": sha(elf),
         "expected_output_hash": row["output_hash"],
         "source_pipelined_cycles": source_cycles,
-        "compiler_fenced_cycles": compiler_cycles,
         "compiler_over_source_fraction": compiler_mean / source_mean - 1,
         "command_count": sum(isinstance(command, Command)
                              for command in commands),
@@ -159,6 +164,9 @@ def qualify_case(keys: int, *, args: argparse.Namespace, profile: dict,
                                             for command in commands),
         "same_output": True,
     }
+    result["compiler_queued_cycles" if schedule_plan is not None else
+           "compiler_fenced_cycles"] = compiler_cycles
+    return result
 
 
 def main() -> None:
@@ -167,6 +175,7 @@ def main() -> None:
                  "riscv_env", "spike_extension", "mx_opt", "scratch_dir",
                  "archive_dir"):
         parser.add_argument("--" + name.replace("_", "-"), required=True, type=Path)
+    parser.add_argument("--schedule-plan", type=Path)
     args = parser.parse_args()
     for name in ("npu_root", "profile", "rtl_root", "riscv_root", "rocc_root",
                  "riscv_env", "spike_extension", "mx_opt", "scratch_dir",
@@ -181,9 +190,15 @@ def main() -> None:
     if revision != NPU_REVISION or sha(raw_core) != RAW_CORE_SHA256:
         raise ValueError("Nicolas source revision differs")
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
+    schedule_plan = args.schedule_plan.read_text() if args.schedule_plan else None
+    if schedule_plan is not None:
+        from mx_gemmini_support.merlin_schedule_policy import selected_policy
+        if selected_policy(schedule_plan, symbol="mx_issue") != "queued":
+            raise ValueError("queued comparison needs a checked Merlin schedule plan")
     args.scratch_dir.mkdir(parents=True)
     rows = [qualify_case(keys, args=args, profile=profile,
-                         raw_core=raw_core, scratch=args.scratch_dir)
+                         raw_core=raw_core, scratch=args.scratch_dir,
+                         schedule_plan=schedule_plan)
             for keys in (113, 163)]
     args.archive_dir.mkdir(parents=True)
     artifacts = {}
@@ -199,7 +214,9 @@ def main() -> None:
         (target / "spike.log.gz").write_bytes(compressed)
         artifacts[f"keys{keys}/spike.log.gz"] = sha(target / "spike.log.gz")
     receipt = {
-        "schema": "mx_gemmini.smolvla_masked_attention_paired.v1",
+        "schema": ("mx_gemmini.smolvla_masked_attention_paired_queued.v1"
+                   if schedule_plan is not None else
+                   "mx_gemmini.smolvla_masked_attention_paired.v1"),
         "scope": "first 15-head call of each key shape; head 0 only",
         "is_stitched_stage_or_full_model": False,
         "profile_sha256": profile_sha256(profile),
@@ -211,9 +228,12 @@ def main() -> None:
         "spike_extension_sha256": sha(args.spike_extension),
         "spike_mode": "GEMMINI_MODE=both; no performance override",
         "timing_boundary": "same guest, source and compiler alternate after flushes",
+        "compiler_schedule": "queued" if schedule_plan is not None else "fenced",
         "artifact_sha256": artifacts,
         "rows": rows,
     }
+    if args.schedule_plan is not None:
+        receipt["schedule_plan_sha256"] = sha(args.schedule_plan)
     (args.archive_dir / "receipt.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"rows": rows}, indent=2, sort_keys=True))

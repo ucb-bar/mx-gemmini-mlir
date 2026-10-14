@@ -69,3 +69,27 @@ def test_mask_cannot_disappear_from_frontend_or_source() -> None:
                          SOURCE.replace("gemmini_vpu_binary", "missing"),
                          header, PROFILE, shape=shape, block_k=64,
                          arbitrary_mask=True)
+
+
+@pytest.mark.parametrize("keys,physical,commands", [
+    (113, 128, 167), (163, 192, 232),
+])
+def test_merlin_plan_selects_queued_head_without_waits(
+        keys: int, physical: int, commands: int) -> None:
+    pytest.importorskip("merlin")
+    plan = (DATA / "attention_queue.schedule.mlir").read_text()
+    frontend = (DATA / f"attention{keys}.model2mlir.mlir").read_text()
+    header = (DATA / ("smol_head113.h" if keys == 113 else "smol_head0.h")).read_text()
+    shape = DenseAttentionShape(64, physical, 64)
+    graph, binding = render_flash_mid(
+        frontend, SOURCE, SOURCE, header, PROFILE, shape=shape,
+        block_k=64, arbitrary_mask=True, schedule_plan=plan)
+    assert '"mx_gemmini.wait"' not in graph
+    assert binding["policy"]["fenced"] is False
+    assert len(lower_flash_mid(graph, frontend, SOURCE, SOURCE, header,
+                               PROFILE, shape=shape, block_k=64,
+                               arbitrary_mask=True, schedule_plan=plan)) == commands
+    with pytest.raises(ValueError, match="unsupported policy"):
+        render_flash_mid(frontend, SOURCE, SOURCE, header, PROFILE,
+                         shape=shape, block_k=64, arbitrary_mask=True,
+                         schedule_plan=plan.replace("mx_queued_commands", "invented"))

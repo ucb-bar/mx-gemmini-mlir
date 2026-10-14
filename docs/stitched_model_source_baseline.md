@@ -50,6 +50,10 @@ one alternating Spike guest. The compiler's fenced command stream takes
 18,398 versus Nicolas's 16,717 pipelined cycles at 113 keys, and 27,171
 versus 22,057 cycles at 163 keys. This identifies a real scheduling gap on
 captured SmolVLA operands. It does not time a whole attention call or model.
+With a Merlin `schedule.plan` selecting queued MX commands, those head costs
+fall to 17,669 and 24,241 cycles while retaining exact BF16 outputs. The
+remaining gaps versus source are +5.7% and +9.9%; the queued policy has not
+been applied to the full SmolVLA session.
 
 The [equal-work dense attention kernel](evidence/attn_vpu_equal_work_20261013/README.md)
 already compares one fused MX+VPU source shape with compiler-issued commands.

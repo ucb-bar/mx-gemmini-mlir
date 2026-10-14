@@ -127,18 +127,31 @@ flushes; every pass matches **all 4,096 BF16 output values**.
 | 113 keys, padded to 128 | 16,717 / 16,717 | 18,398 / 18,398 | +10.1% |
 | 163 keys, padded to 192 | 22,057 / 22,057 | 27,171 / 27,171 | +23.2% |
 
-These are matched **head-level** outputs and timings. The compiler still
-fences between stages while Nicolas overlaps the key blocks. The difference
-measures that scheduling gap for head 0 of each first attention call; it is
-not a 15-head call, a denoising step, or a whole-model cycle ratio. The
-earlier 64×256×128 dense attention result in the presentation uses a
-different source shape and schedule.
+The [Merlin `schedule.plan` queue policy](attention_queue.schedule.mlir)
+selects an additional typed lowering for these same two heads. It removes
+the stage waits from the MX graph while keeping its checked command order.
+The selected pinned MX+VPU Spike model accepts the queued commands and both
+passes again match all 4,096 BF16 values. The
+[queued receipt](compiled_pair_queued/receipt.json) measures:
+
+| Captured head | Source pipelined cycles | Compiler queued cycles | Compiler cost |
+| --- | ---: | ---: | ---: |
+| 113 keys | 16,717 / 16,717 | 17,669 / 17,669 | +5.7% |
+| 163 keys | 22,057 / 22,057 | 24,241 / 24,241 | +9.9% |
+
+These are matched **head-level** outputs and timings. The queued program
+does not implement Nicolas's cross-block QK/PV issue order; the remaining
+gap is for head 0 of each first attention call. This is not a 15-head call,
+a denoising step, an FPGA timing claim, or a whole-model cycle ratio. The
+earlier 64×256×128 dense attention result uses a different source shape.
 
 The archived [verifier](verify_compiled_pair.py) checks the source operands,
 frontends, issued objects, repeated Spike results, and exact output check:
 
 ```sh
 python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py
+python -B docs/evidence/smolvla_attention_cutpoint_20261014/verify_compiled_pair.py \
+  --archive compiled_pair_queued
 ```
 
 To rebuild the pair, use `python -m tools.qualify_smol_attention_cutpoint`
@@ -147,6 +160,10 @@ with `--npu-root`, `--profile`, `--rtl-root`, `--riscv-root`, `--rocc-root`,
 `--archive-dir`. The last two paths must be new task-local directories.
 `build_frontend.py --model2mlir ... --keys 113|163 --out ...` regenerates
 the two archived frontends from the captured checkpoint operands.
+For the queued variant, add `--schedule-plan`
+`docs/evidence/smolvla_attention_cutpoint_20261014/attention_queue.schedule.mlir`
+and set `PYTHONPATH` to the Merlin `src/` directory. The plan is parsed and
+bound to `@mx_issue`; an altered policy or graph fails before command emission.
 
 ## Flow-stage attention roster
 

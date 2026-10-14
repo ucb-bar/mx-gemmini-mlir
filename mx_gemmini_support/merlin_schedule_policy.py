@@ -11,7 +11,8 @@ from merlin.xdsl_dialects import _common
 from merlin.xdsl_dialects import schedule as s
 
 
-_POLICIES = {"native": "mx_native_dram_loop", "serial": "mx_serial_commands"}
+_POLICIES = {"native": "mx_native_dram_loop", "serial": "mx_serial_commands",
+             "queued": "mx_queued_commands"}
 
 
 def build_policy_plan(symbol: str, *, schedule: str = "native") -> str:

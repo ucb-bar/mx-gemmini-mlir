@@ -1,0 +1,86 @@
+{
+  "artifact_sha256": {
+    "keys113/attention.mx.mlir": "ae78cb4ab7796c98205bc7b8cbd1889b6972db1682566dc448b0ccd3f2fe879d",
+    "keys113/binding.json": "3192297c895a0c7c27b9bfe83bed97fd33953739321c499536d9db607e037da0",
+    "keys113/mx_issue.c": "2524e71d969f3d6565fee3943aee1d205025013f66ad7db36fb1a945247d60e8",
+    "keys113/mx_issue.o": "3718e446ddf9147e239aa1ff8d4419db7f2cb2dff42d2430c5227d4cd8ce0a92",
+    "keys113/spike.log.gz": "6edba8b60dd011d5b04b456ac5cc72ab6c260db4e1b719834c457658cbc5defd",
+    "keys163/attention.mx.mlir": "0bd772c3bbfe3e66975ed02fe45fa9d605e5bb1d46141698184a3e8c62183512",
+    "keys163/binding.json": "397b0994092055998a733d4978ebb70468539c1521529db470a505546dac1326",
+    "keys163/mx_issue.c": "1e94800c9b8417f35f8e2d8ae08a125141bb43207a587cbd76f46b7d88be87ce",
+    "keys163/mx_issue.o": "a06ca1baf00ad01afbcffb263a5ac198e3ea7705f7933e2e8984b0a64e634e0b",
+    "keys163/spike.log.gz": "66c0d6f76884a44d4b31ec278d8f0ad3bfb28187d400121c15b89c300059de6d"
+  },
+  "compiler_schedule": "queued",
+  "driver_sha256": "78596b275681abe53d65b7e2a170e7b1faaac2f854ec09574fcac44957700023",
+  "is_stitched_stage_or_full_model": false,
+  "original_source_sha256": "004459aa0e95def61427d5a6e9d8f71be59fcbc281a93a35745c1f33591bf7c0",
+  "patched_source_sha256": "21dd12d942cc27b27a609d3e6b95503705c8fbd018232b0320a6da9e89ac88ee",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "rows": [
+    {
+      "command_count": 167,
+      "compiler_over_source_fraction": 0.05694801698869423,
+      "compiler_queued_cycles": [
+        17669,
+        17669
+      ],
+      "cutpoint_sha256": "19fcd4c7ec2e39870632ad0b97074b240029afd77c78b98bf8c148eae338f356",
+      "elf_sha256": "0f8b6328fac69046898fadb66926cecb4d96e6cf49013489e3cd30ee80e4f5ce",
+      "expected_output_hash": "e20c7751ba0113cb",
+      "fence_count": 0,
+      "header_sha256": "978a3dd21db328657827d0b7e84b749759de272773b3c6c6258bb31643444214",
+      "issuer_object_sha256": "3718e446ddf9147e239aa1ff8d4419db7f2cb2dff42d2430c5227d4cd8ce0a92",
+      "issuer_source_sha256": "2524e71d969f3d6565fee3943aee1d205025013f66ad7db36fb1a945247d60e8",
+      "logical_keys": 113,
+      "model2mlir_frontend_sha256": "31000e284353e46c71ece78ec6d68d063616b0e1c1c62f68aaf5b7a6d544a903",
+      "physical_shape": [
+        64,
+        128,
+        64
+      ],
+      "same_output": true,
+      "source_pipelined_cycles": [
+        16717,
+        16717
+      ],
+      "typed_mlir_sha256": "ae78cb4ab7796c98205bc7b8cbd1889b6972db1682566dc448b0ccd3f2fe879d"
+    },
+    {
+      "command_count": 232,
+      "compiler_over_source_fraction": 0.09901618533798784,
+      "compiler_queued_cycles": [
+        24241,
+        24241
+      ],
+      "cutpoint_sha256": "6b5b713660c819aa8f69a5174464b46258491bc81a86a8b4073b6c56cc9f122a",
+      "elf_sha256": "9aff4f5c05d6ead1cf25bfed941bb16347dfd1f4e2438f9aae2950f62e22a4b6",
+      "expected_output_hash": "437d801250f000dd",
+      "fence_count": 0,
+      "header_sha256": "d5908341d0d5d1660c10bc1369d2bd2a2bf248c41f6a5aa1ff131600adead5a1",
+      "issuer_object_sha256": "a06ca1baf00ad01afbcffb263a5ac198e3ea7705f7933e2e8984b0a64e634e0b",
+      "issuer_source_sha256": "1e94800c9b8417f35f8e2d8ae08a125141bb43207a587cbd76f46b7d88be87ce",
+      "logical_keys": 163,
+      "model2mlir_frontend_sha256": "0a842f600885b2cb087ce82ade49d368467cc917c19b87fd9ed98dcc300be905",
+      "physical_shape": [
+        64,
+        192,
+        64
+      ],
+      "same_output": true,
+      "source_pipelined_cycles": [
+        22057,
+        22057
+      ],
+      "typed_mlir_sha256": "0bd772c3bbfe3e66975ed02fe45fa9d605e5bb1d46141698184a3e8c62183512"
+    }
+  ],
+  "schedule_plan_sha256": "acb45cbe1d3f281b557530d66e1b0370a9986669caa81eb9fc468ef3f9f992ab",
+  "schema": "mx_gemmini.smolvla_masked_attention_paired_queued.v1",
+  "scope": "first 15-head call of each key shape; head 0 only",
+  "source_patch_sha256": "332713aa09a75c4b70d46898697560242badf440866ed70ccaa81aa8bc521d52",
+  "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "spike_mode": "GEMMINI_MODE=both; no performance override",
+  "timing_boundary": "same guest, source and compiler alternate after flushes"
+}

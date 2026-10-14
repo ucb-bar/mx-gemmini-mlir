@@ -326,7 +326,7 @@ def results(slide, smol_comparison: dict | None,
             smol_corrected: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
-    title = ("MX results: full-model Spike" if tiny_logits or smol_actions
+    title = ("MX results: Spike comparisons" if tiny_logits or smol_actions
              else "MX results: Spike and numerical drift" if prefill_precision
              else "MX results: Spike and Radiance")
     set_text(shapes[0], title, size=27,
@@ -373,10 +373,12 @@ def results(slide, smol_comparison: dict | None,
          "2,112,919,925", "−0.0126%"))
     if smol_attention_pair:
         short, long = smol_attention_pair["rows"]
+        cycle_field = ("compiler_queued_cycles" if
+                       smol_attention_pair.get("compiler_schedule") == "queued"
+                       else "compiler_fenced_cycles")
         attention_row = (
             "SmolVLA attention head · 113 / 163 keys‡",
-            f"{short['compiler_fenced_cycles'][0]:,} / "
-            f"{long['compiler_fenced_cycles'][0]:,}",
+            f"{short[cycle_field][0]:,} / {long[cycle_field][0]:,}",
             f"{short['source_pipelined_cycles'][0]:,} / "
             f"{long['source_pipelined_cycles'][0]:,}",
             f"{short['compiler_over_source_fraction'] * 100:+.1f}% / "
@@ -618,9 +620,10 @@ def results(slide, smol_comparison: dict | None,
             f"output hashes match. {smol_status}"
         )
     if smol_attention_pair:
+        schedule = smol_attention_pair.get("compiler_schedule", "fenced")
         footer_text += (
             "\n‡ Captured first-call head 0: all 4,096 BF16 values match per "
-            "shape; source pipelined, compiler fenced. No whole-model ratio."
+            f"shape; source pipelined, compiler {schedule}. No whole-model ratio."
         )
     set_text(
         footer,
@@ -806,19 +809,25 @@ def main() -> None:
     if smol_attention_pair is not None:
         rows = smol_attention_pair.get("rows") or []
         artifacts = smol_attention_pair.get("artifact_sha256") or {}
-        if (smol_attention_pair.get("schema") !=
-                "mx_gemmini.smolvla_masked_attention_paired.v1"
+        queued = smol_attention_pair.get("compiler_schedule") == "queued"
+        cycle_field = "compiler_queued_cycles" if queued else "compiler_fenced_cycles"
+        expected_schema = ("mx_gemmini.smolvla_masked_attention_paired_queued.v1"
+                           if queued else "mx_gemmini.smolvla_masked_attention_paired.v1")
+        if (smol_attention_pair.get("schema") != expected_schema
                 or smol_attention_pair.get("is_stitched_stage_or_full_model") is not False
                 or prefill_precision is None
                 or smol_attention_pair.get("profile_sha256") !=
                 prefill_precision["profile_sha256"]
+                or (queued and smol_attention_pair.get("schedule_plan_sha256") !=
+                    file_sha256(args.smol_attention_pair.parent.parent /
+                                "attention_queue.schedule.mlir"))
                 or [row.get("logical_keys") for row in rows] != [113, 163]
                 or not artifacts
                 or any(file_sha256(args.smol_attention_pair.parent / name)
                        != digest for name, digest in artifacts.items())
                 or any(row.get("same_output") is not True or
                        len(row.get("source_pipelined_cycles", [])) != 2 or
-                       len(row.get("compiler_fenced_cycles", [])) != 2 or
+                       len(row.get(cycle_field, [])) != 2 or
                        row["compiler_over_source_fraction"] < 0
                        for row in rows)):
             parser.error("SmolVLA attention row needs its verified paired archive")
