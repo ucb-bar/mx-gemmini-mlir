@@ -1,0 +1,84 @@
+--- a/baremetal/mxgemmini/src/llama_model.c
++++ b/baremetal/mxgemmini/src/llama_model.c
+@@ -47,0 +48 @@
++#include "include/vpu_ref.h"
+@@ -186,0 +188,27 @@
++#ifdef LLAMA_VPU_RESIDUAL
++// Lift the residual ADD command sequence from Nicolas's llama_layer_e2e.c.
++static void residual_vpu(const uint16_t *a, const uint16_t *b, uint16_t *out) {
++  const int rows = LLAMA_D; // Eight BF16 token rows, 16 bytes per SPAD row.
++  gemmini_config_ld(DIM);
++  gemmini_config_st(DIM);
++  for (int c = 0; c < LLAMA_M / 16; c++) {
++    for (int s = 0; s < 2; s++) {
++      const int token = c * 16 + s * 8;
++      const uint32_t x = (uint32_t) (2 * s * BANK_ROWS);
++      const uint32_t y = (uint32_t) ((2 * s + 1) * BANK_ROWS);
++      for (int r = 0; r < rows; r += DIM) {
++        gemmini_extended_mvin((const uint8_t *) (a + token * LLAMA_D) + r * DIM,
++                              x + r, DIM, DIM);
++        gemmini_extended_mvin((const uint8_t *) (b + token * LLAMA_D) + r * DIM,
++                              y + r, DIM, DIM);
++      }
++      gemmini_vpu_binary(VPU_ADD, x, x, y, rows);
++      for (int r = 0; r < rows; r += DIM)
++        gemmini_extended_mvout((uint8_t *) (out + token * LLAMA_D) + r * DIM,
++                               x + r, DIM, DIM);
++    }
++  }
++  gemmini_fence();
++}
++#endif
++
+@@ -228,0 +257,3 @@
++#ifdef LLAMA_STAGE_TIMING
++#define STAGE(acc, expr) do { } while (0)
++#else
+@@ -230,0 +262 @@
++#endif
+@@ -317,0 +350,3 @@
++#ifdef LLAMA_STAGE_TIMING
++  const uint64_t stage_start = read_cycles();
++#endif
+@@ -501,0 +537,3 @@
++#ifdef LLAMA_VPU_RESIDUAL
++    residual_vpu(X_hw, Y_hw, Xmid_hw);
++#else
+@@ -503,0 +542 @@
++#endif
+@@ -586,0 +626,3 @@
++#ifdef LLAMA_VPU_RESIDUAL
++    residual_vpu(Xmid_hw, Y_hw, X_hw);
++#else
+@@ -588,0 +631 @@
++#endif
+@@ -591,0 +635 @@
++#ifndef LLAMA_STAGE_TIMING
+@@ -598,0 +643 @@
++#endif
+@@ -616,0 +662 @@
++#ifndef LLAMA_STAGE_TIMING
+@@ -620,0 +667 @@
++#endif
+@@ -643,0 +691,6 @@
++#ifdef LLAMA_STAGE_TIMING
++    gemmini_fence();
++    const uint64_t stage_cycles = read_cycles() - stage_start;
++    printf("stage_cycles64 0x%08x%08x\n",
++           (unsigned) (stage_cycles >> 32), (unsigned) stage_cycles);
++#else
+@@ -695,0 +749,7 @@
++#endif
++#if defined(LLAMA_STAGE_TIMING) && defined(LLAMA_DUMP_LAST_LOGITS)
++    printf("last_logits_bf16 ");
++    for (int v = 0; v < LLAMA_V; v++)
++      printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
++    printf("\n");
++#endif
+@@ -705,0 +766,4 @@
++#ifdef LLAMA_STAGE_TIMING
++  printf("llama MODEL benchmark finished (%d layer(s)%s).\n",
++         LLAMA_NL, LLAMA_HAS_HEAD ? " + lm_head" : "");
++#else
+@@ -715,0 +780 @@
++#endif

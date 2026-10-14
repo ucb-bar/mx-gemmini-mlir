@@ -260,6 +260,9 @@ The source's selected timers and the compiler's full-stage timer have
 different boundaries and use different host/VPU work, so no cycle ratio is
 reported. This is still a numerical diagnostic, not a general accuracy
 qualification.
+For a stage-only source timing comparison, pass
+`--spike-isa rv64gc_zicntr` to `tools.build_merlin_stage` so the compiler
+run uses the same counter-enabled Spike ISA as Nicolas's `read_cycles` run.
 The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
 hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
 elementwise-only routes each change the final token and reduce logit cosine

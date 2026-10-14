@@ -1,0 +1,59 @@
+{
+  "comparisons": {
+    "compiler_add_vs_pytorch": {
+      "a_argmax": 5056,
+      "b_argmax": 5056,
+      "cosine": 0.9912107583763772,
+      "rmse": 0.38860770358803837
+    },
+    "source_vs_compiler_add": {
+      "a_argmax": 5056,
+      "b_argmax": 5056,
+      "cosine": 0.9958029485317755,
+      "rmse": 0.2701934756709387
+    },
+    "source_vs_pytorch": {
+      "a_argmax": 5056,
+      "b_argmax": 5056,
+      "cosine": 0.9968358814509203,
+      "rmse": 0.24226986993752764
+    }
+  },
+  "compiler_add_cycles": 455307913,
+  "compiler_add_spike_log_sha256": "695294768668d92a2a1273bf591013d99260e8628fe627a52b967260a6cfd871",
+  "compiler_checkpoint_weights_sha256": "80fe322204686a87941a7b6d2bf41bd76ac63a256253275e97f29e3156a8d683",
+  "compiler_spike_isa": "rv64gc",
+  "cycle_ratio_reasons": [
+    "two-layer diagnostic is not a full model",
+    "output logits are close but not bit identical",
+    "source and compiler Spike ISA strings differ by zicntr"
+  ],
+  "cycle_ratio_valid": false,
+  "diagnostic_elf_sha256": "9d561b85244f5bdf75ab7d7f1ec99bd13a5d46f68bb1bef3dc5ce6b073a2d536",
+  "diagnostic_l2_wrapper.c_sha256": "cc5ceb7022fb0e61d4920d5d76071b1b89bbf4d330314301ddc7e97b4848f433",
+  "diagnostic_spike_log_sha256": "9f3dd709927dc5e01a66b258f7baab7c22f730f18e0ab4ee081887fde1f52f0e",
+  "exact_fp32_checkpoint_tensors_matched": 20,
+  "input_ids_npz_sha256": "f162393ec59b1ac6afb43459c1c6c848ba4aa85950a27ec2e88b1917b7d6ba2d",
+  "pytorch_logits_sha256": "6cc6bd27fbcbbdc00c8ba948cf3f89d9007700c1b1e3026476e173157ad28eec",
+  "rtl_commit": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+  "schema": "mx_gemmini.nicolas_tinyllama_l2_vpu_residual_spike.v1",
+  "scope": "64-token prefill, first two pretrained decoder layers plus final norm and head",
+  "source_capture_npz_sha256": {
+    "layer0.npz": "56c1eac349fe647698cf86f96e6e49569285b41e23ac70fcf2c73bc2c58a93a9",
+    "layer1.npz": "7214fce2ba38e03655ad2b57937713e47b13301d4bf4b0bc4a3a0a1509d1afde",
+    "model.npz": "6cc1befe32ae7871c09312bacc821adab5c6a86de536332ff10af4946f9a37c1"
+  },
+  "source_commit": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "source_data_blob_sha256": "6b04c5778225cf280fd3c5c9eaba9bafb9ce32f8ec428db667380360b19dfd3c",
+  "source_data_header_sha256": "3a43c6026d3fd66530f6651cf1821083a8a9c223cbf55fb53bbef17c581e9f01",
+  "source_internal_checks_passed": true,
+  "source_last_logits_hex_sha256": "fd18cf3e324db07b7a82a32fb792bfe9471c3430eed1d1474ba0ca81af954b90",
+  "source_spike_isa": "rv64gc_zicntr",
+  "source_stage_timer_scope": "from residual stream setup through full head readback; validation excluded",
+  "spike_extlib_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "stage_cycles": 366920372,
+  "timed_elf_sha256": "24bd99f78bd6cd2d1573a44ed90cd729bdd91bd371d08514c28aa8e05800e547",
+  "timed_l2_wrapper.c_sha256": "bc4b9f70f17e24ce575704dbed568967e99ab80dd1e51cd756f1ee1e527ed36e",
+  "timed_spike_log_sha256": "bd419cb4f10f703030a13b8e2f7faff29979fee829286be48fb28b119755394c",
+  "vpu_patch_sha256": "b63375f19cec244d91ef3f9724eea8dad82f6a53f195065b84d2f77e5ead9c6a"
+}

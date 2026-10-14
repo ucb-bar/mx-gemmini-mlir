@@ -152,6 +152,9 @@ def main() -> None:
                         help="wall-clock limit per compiler/link command; 0 disables it")
     parser.add_argument("--spike-extlib", type=Path,
                         help="run the built ELF on Spike with this pinned Gemmini extension")
+    parser.add_argument("--spike-isa", choices=("rv64gc", "rv64gc_zicntr"),
+                        default="rv64gc",
+                        help="Spike ISA; use zicntr when comparing source read_cycles timers")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
     all_vpu_classes = frozenset(("softmax", "add", "elementwise", "unary", "reduce"))
@@ -460,12 +463,13 @@ def main() -> None:
         "compile_timeout_s": args.compile_timeout_s,
         "first_output_sha256_enabled": output_sha256,
         "all_output_sha256_enabled": True,
+        "spike_isa": args.spike_isa,
     }
     if args.spike_extlib is not None:
         extlib = args.spike_extlib.resolve(strict=True)
         if not extlib.is_file():
             raise ValueError("Spike extension must be a regular shared library")
-        command = [str(riscv_root / "bin/spike"), "--isa=rv64gc",
+        command = [str(riscv_root / "bin/spike"), f"--isa={args.spike_isa}",
                    f"--extlib={extlib}", "--extension=gemmini",
                    f"-m{hex(spike_model.DRAM_BASE)}:{hex(result['mem_bytes'])}",
                    str(elf)]
