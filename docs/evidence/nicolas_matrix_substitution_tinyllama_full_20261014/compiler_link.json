@@ -1,0 +1,80 @@
+{
+  "arena_layout": {
+    "arena_base": 3489660928,
+    "arena_bytes": 2147483648,
+    "mem_bytes": 11811160064,
+    "static_end": 3297839344,
+    "weights_base": 8589934592
+  },
+  "arena_relocation_reason": "linked _stack_top exceeded planned arena base",
+  "bindings": [
+    {
+      "name": "kv_cache",
+      "source_output": 1,
+      "source_program": "prefill",
+      "target_input": 205,
+      "target_program": "decode"
+    },
+    {
+      "name": "position",
+      "source_output": 2,
+      "source_program": "prefill",
+      "target_input": 206,
+      "target_program": "decode"
+    }
+  ],
+  "dump_outputs": [],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_safe_layout_base_20261013/session.elf",
+  "elf_bytes": 5524059192,
+  "elf_sha256": "3665c160fca84838779ebced250b59ecefff071598ab893ee3ce0d31986cbc36",
+  "mem_bytes": 11811160064,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+      "name": "prefill",
+      "outputs": 3,
+      "selected_operations": 200,
+      "steps": 1
+    },
+    {
+      "capture_model_sha256": "f5303c334d1d37e3224893ce15e8cb560316e689a5e9798d08f9ad73d27081e2",
+      "name": "decode",
+      "outputs": 3,
+      "selected_operations": 200,
+      "steps": 32
+    }
+  ],
+  "relinked_from_sha256": "45b3bc9f9aba1614170df82aac7a224aee90467ae27ab30be40bc7838dcf086b",
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_recapture/tiny_llama/tiny_llama_session",
+  "shared_weight_bytes": 4400193536,
+  "shared_weight_sha256": "9be0ca271944ab7db0ee33c6652debf84fc3e0cc1924af1d4d0bb84906841dee",
+  "shared_weight_stage": "prefill",
+  "stage_object_sha256": {
+    "decode": {
+      "device/device_catalog_shim.o": "93a293da2f0cd837e6f0fdeb94e0cc10fb52e478ffe29ab72e69465172bc3114",
+      "device_catalog/mx_catalog.o": "449ff5ec226f45f158f65a2abec7265456e68458f6a625ad27aa96cccf9f5098",
+      "model.o": "d41f02208941fec72934a55e7abf966571b08ca84960183cb10d5b93a8b1cd50"
+    },
+    "prefill": {
+      "device/device_catalog_shim.o": "ebefff426ad106c03c48e53ea4d174e6957b42ea13a79a5799d1050768e26808",
+      "device_catalog/mx_catalog.o": "c6dffee4c71558c102aff238a8fea39b40ade8791b1a04ca3083fb22b45407fd",
+      "model.o": "107a4bd7fd11ed022bc94b0423d8dd81973be40d17bd2ee390ba34b6df232218"
+    }
+  },
+  "static_malloc_estimates": {
+    "decode": {
+      "callsites": 1156,
+      "dynamic_sites": 0,
+      "literal_bytes": 462046028
+    },
+    "prefill": {
+      "callsites": 1135,
+      "dynamic_sites": 0,
+      "literal_bytes": 1484331926
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}

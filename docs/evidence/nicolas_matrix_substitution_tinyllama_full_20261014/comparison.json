@@ -1,0 +1,36 @@
+{
+  "candidate_cycles": 83544602795,
+  "candidate_link_sha256": "1322dd719e20eaeeffc3b9d8b9cd6ea46c78676b2a51fa106402ba0660ba801b",
+  "candidate_over_reference": 0.9999645524316246,
+  "candidate_run_sha256": "ff50910ef487c20e781d54398d8ecf4d050236eb953d89a7874c60e61a41cf73",
+  "changed_stage_objects": [
+    "decode/device_catalog/mx_catalog.o",
+    "prefill/device_catalog/mx_catalog.o"
+  ],
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "output_digest_parity": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "candidate_cycles": 11974767715,
+      "candidate_over_reference": 0.9996771759808267,
+      "name": "prefill",
+      "reference_cycles": 11978634706,
+      "steps": 1
+    },
+    {
+      "candidate_cycles": 71569835080,
+      "candidate_over_reference": 1.0000126512021972,
+      "name": "decode",
+      "reference_cycles": 71568929647,
+      "steps": 32
+    }
+  ],
+  "reference_cycles": 83547564353,
+  "reference_link_sha256": "ffc56579dde50c4cdcddada78d55098cb2254b5b5d41119e6433acff311cf8fb",
+  "reference_run_sha256": "490984bf6eaf053430d9edd147000e34820daff4af4f8004f85e8b9938c1a919",
+  "schema": "mx_gemmini.equal_input_session_cycles.v1",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "timing_config": "e4m3_vpu",
+  "timing_overrides": "mem.host_tracking=0"
+}

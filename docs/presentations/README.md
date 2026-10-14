@@ -94,13 +94,24 @@ cycles for one flow step, with identical declared output hashes.
 
 The [full SmolVLA comparison](../evidence/nicolas_matrix_substitution_smolvla_full_20261013/README.md)
 records 72,066,544,354 compiler cycles and 71,875,683,634 Nicolas native
-matrix-issuer cycles over all 12 steps. All 33 output digests match. This
-experiment changes MX matrix issuers while holding the host graph and VPU
-objects fixed. A whole-model handwritten fused MX+VPU baseline on the same
-captured SmolVLA graph has not been measured, so the slide does not estimate
-its cycles. An earlier TinyLlama session linked its scratch arena over static
-program data and exited during prefill. Corrected paired 33-step Spike runs
-are underway; the slide marks their missing cycle total until they complete.
+matrix-issuer cycles over all 12 steps. All 33 output digests match. The
+[full TinyLlama comparison](../evidence/nicolas_matrix_substitution_tinyllama_full_20261014/README.md)
+records 83,547,564,353 compiler cycles and 83,544,602,795 Nicolas issuer
+cycles over one prefill and 32 decode steps. All 99 output digests match.
+Both full-model experiments change MX matrix issuers while holding the host
+graph and VPU objects fixed.
+
+A whole-model handwritten fused MX+VPU baseline on the same captured graphs
+has not been measured, so the slide does not estimate its cycles. For example,
+Nicolas's `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;
+the captured SmolVLA flow contains 15 heads of 50 queries against 163 keys,
+with a boolean key mask. A matched fused replacement must preserve that
+padding and mask behavior before its cycles can be compared.
+[Nicolas's native full-layer TinyLlama kernel][nicolas-layer]
+measures an `M=32` FP8 schedule. The captured session has a 128-token prefill
+and one-token decode with 155 FP4 and 45 FP8 MX bindings per stage. A stitched
+source baseline needs those shapes and precision choices to match before its
+cycle count can stand beside the model result.
 
 ## Regenerate
 
@@ -111,10 +122,16 @@ python tools/build_mx_overview_deck.py \
   --template /path/to/Lab_Pastel_Template.pptx \
   --smol-full-comparison \
     docs/evidence/nicolas_matrix_substitution_smolvla_full_20261013/comparison.json \
+  --tiny-full-run \
+    docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/compiler/mx_session_run.json \
+  --tiny-full-comparison \
+    docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/comparison.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
 The script keeps only the template's architecture, process, and results
 layouts, edits their native objects, and adds source-specific labels and
-figures. The generator accepts optional full TinyLlama run/comparison receipts
-only when the complete 33-step run and equal-output comparator succeed.
+figures. The generator accepts the full TinyLlama run/comparison receipts only
+when the complete 33-step run and equal-output comparator succeed.
+
+[nicolas-layer]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/llama_layer_full_native.c

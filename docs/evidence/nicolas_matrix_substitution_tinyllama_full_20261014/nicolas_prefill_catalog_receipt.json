@@ -1,0 +1,79 @@
+{
+  "catalog_manifest_sha256": "01edb821ecd6caec2d6075f92c30991387d9af3140349785d9bb12482e08446f",
+  "issuers": {
+    "mx_issue_0": {
+      "padded_shape_mnk": [
+        128,
+        2048,
+        2048
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_1": {
+      "padded_shape_mnk": [
+        128,
+        256,
+        2048
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_2": {
+      "padded_shape_mnk": [
+        128,
+        5632,
+        2048
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_3": {
+      "padded_shape_mnk": [
+        128,
+        2048,
+        5632
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_4": {
+      "padded_shape_mnk": [
+        128,
+        32000,
+        2048
+      ],
+      "precision": "mxfp4"
+    },
+    "mx_issue_5": {
+      "padded_shape_mnk": [
+        32,
+        128,
+        32
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_6": {
+      "padded_shape_mnk": [
+        128,
+        160,
+        64
+      ],
+      "precision": "mxfp8"
+    },
+    "mx_issue_7": {
+      "padded_shape_mnk": [
+        128,
+        64,
+        160
+      ],
+      "precision": "mxfp8"
+    }
+  },
+  "max_m_tile": 128,
+  "original_catalog_object_sha256": "c6dffee4c71558c102aff238a8fea39b40ade8791b1a04ca3083fb22b45407fd",
+  "output_kind": "catalog_object",
+  "replacement_catalog_object_sha256": "226b99a663f59df558ba2071c31e469f337c3c3434b5af6d1a16b12b623a3d94",
+  "schema": "mx_gemmini.nicolas_issuer_substitution.v1",
+  "scope": "same compiled host and quantization; Nicolas native MX matrix loop only",
+  "source_header_sha256": "98bc0384dbf1917af9427dd30a51770063e56152933259d5fb32e5e04a5505e8",
+  "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "source_sha256": "1479a9259f3e50896ad71558ef14dc2bf99db271e18ed90c07d405c02a91f241",
+  "stage_receipt_sha256": "29ad718c1c0e6a296623aa4147c38f78973ed49aba6a8e31d0b2ddbb7bd19173"
+}

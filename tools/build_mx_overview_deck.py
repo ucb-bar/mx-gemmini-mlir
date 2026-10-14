@@ -284,7 +284,7 @@ def results(slide, smol_comparison: dict | None,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     values = (
-        ("Workload / scope", "Compiler cycles", "Native source cycles", "Compiler Δ"),
+        ("Workload / scope", "Compiler cycles", "Nicolas cycles", "Compiler Δ"),
         ("SmolVLA · full 12-step session",
          f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
@@ -315,18 +315,28 @@ def results(slide, smol_comparison: dict | None,
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    tiny_status = ("TinyLlama: 33 steps and 99 output hashes match; independent accuracy remains open."
-                   if tiny_comparison else
-                   "TinyLlama corrected full Spike runs are in progress; no model cycle total.")
-    smol_status = ("Full SmolVLA issuer-swap outputs match (33/33)."
-                   if smol_comparison else
-                   "Full SmolVLA issuer-swap parity awaits its source run.")
+    if tiny_comparison and smol_comparison:
+        footer_text = (
+            "* Full-session output hashes match: SmolVLA 33/33, TinyLlama 99/99. "
+            "Independent quantized accuracy remains open.\n"
+            "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention "
+            "outputs also match."
+        )
+    else:
+        tiny_status = ("TinyLlama full receipt not supplied; "
+                       "no model cycle total.")
+        smol_status = ("Full SmolVLA issuer-swap outputs match (33/33)."
+                       if smol_comparison else
+                       "Full SmolVLA issuer-swap parity awaits its source run.")
+        footer_text = (
+            "* Completed timing receipt; independent quantized accuracy remains open. "
+            f"{tiny_status}\n"
+            "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention "
+            f"output hashes match. {smol_status}"
+        )
     set_text(
         footer,
-        "* Completed timing receipt; independent quantized accuracy remains open. "
-        f"{tiny_status}\n"
-        "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention output hashes match. "
-        f"{smol_status}",
+        footer_text,
         size=9.6, color=GREY, align=PP_ALIGN.LEFT,
     )
     page_number(slide, 3)
