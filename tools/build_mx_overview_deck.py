@@ -7,6 +7,7 @@ native PowerPoint objects; the university seal is the template's master image.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from pptx import Presentation
@@ -21,6 +22,8 @@ INK = RGBColor(49, 52, 85)
 GREY = RGBColor(91, 89, 87)
 CREAM = RGBColor(253, 248, 241)
 PALE_BLUE = RGBColor(225, 232, 236)
+SAND = RGBColor(237, 229, 220)
+SAGE = RGBColor(229, 231, 218)
 
 
 def set_text(shape, text: str, *, size: float, bold: bool = False,
@@ -54,6 +57,48 @@ def add_text(slide, text: str, x: float, y: float, w: float, h: float,
     return shape
 
 
+def add_panel(slide, x: float, y: float, w: float, h: float, fill):
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                   Inches(x), Inches(y), Inches(w), Inches(h))
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.color.rgb = RGBColor(176, 165, 151)
+    return shape
+
+
+def add_code(slide, source: str, x: float, y: float, w: float, h: float,
+             *, size: float = 11.2):
+    box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                 Inches(x), Inches(y), Inches(w), Inches(h))
+    box.fill.solid()
+    box.fill.fore_color.rgb = CREAM
+    box.line.color.rgb = RGBColor(211, 202, 191)
+    frame = box.text_frame
+    frame.clear()
+    frame.word_wrap = False
+    frame.vertical_anchor = MSO_ANCHOR.TOP
+    frame.margin_left = Inches(0.12)
+    frame.margin_top = Inches(0.10)
+    frame.margin_right = Inches(0.08)
+    frame.margin_bottom = Inches(0.04)
+    for index, line in enumerate(source.split("\n")):
+        paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
+        paragraph.space_before = Pt(0)
+        paragraph.space_after = Pt(0)
+        run = paragraph.add_run()
+        run.text = line
+        run.font.name = "Liberation Mono"
+        run.font.size = Pt(size)
+        run.font.color.rgb = NAVY
+    return box
+
+
+def clear_content(slide) -> None:
+    # Keep the template title. All new content remains native PowerPoint art.
+    for shape in list(slide.shapes)[1:]:
+        shape._element.getparent().remove(shape._element)
+
+
 def keep_slides(prs: Presentation) -> None:
     # Template slides: process 20, architecture 23, results table 33.
     slide_ids = list(prs.slides._sldIdLst)
@@ -84,63 +129,114 @@ def page_number(slide, number: int) -> None:
 
 
 def architecture(slide) -> None:
-    shapes = slide.shapes
-    set_text(shapes[0], "MX Gemmini dialect to executable", size=27, bold=True)
-    set_text(shapes[2],
-             "TYPED TARGET IR  →  PROFILED SCHEDULE  →  RISC-V COMMAND PROGRAM",
-             size=12, bold=True, color=GREY, align=PP_ALIGN.LEFT)
-    for index, label, color in ((4, "Typed MX IR", GREY),
-                                (11, "Legality + schedule", NAVY),
-                                (18, "Binary + Spike", RGBColor(117, 132, 106))):
-        set_text(shapes[index], label, size=18, bold=True, color=color)
+    set_text(slide.shapes[0], "MX dialect: typed IR to RV64", size=27,
+             bold=True)
+    clear_content(slide)
+    add_panel(slide, 0.94, 1.64, 5.65, 2.98, SAND)
+    add_panel(slide, 6.76, 1.64, 5.65, 2.98, PALE_BLUE)
+    add_text(slide, "Radiance FP4 GEMM → typed MX", 1.15, 1.82, 5.2, 0.34,
+             size=17.5, bold=True, color=NAVY)
+    add_code(slide,
+             '%acc = "mx_gemmini.contract"(%A,%As,%B,%Bs) {\n'
+             '  activation_format = "fp4_e2m1",\n'
+             '  weight_format = "fp4_e2m1", pe_mode = 0 : i32 }\n'
+             '%out = "mx_gemmini.readout_bf16"(%acc)',
+             1.15, 2.24, 5.20, 1.42, size=11.1)
+    add_text(slide,
+             "resource → packed codes + E8M0 scales → mvin; contract → MX "
+             "compute. Radiance softmax uses vpu_execute; readout_bf16 / "
+             "spad_requant / wait finish the tile.",
+             1.15, 3.76, 5.17, 0.75, size=10.6, color=INK)
+    add_text(slide, "Compiled attention object → binary", 6.98, 1.82,
+             5.2, 0.34, size=17.5, bold=True, color=NAVY)
+    add_code(slide,
+             '__asm__ volatile(\n'
+             '  ".insn r 0x7b, 3, 2, x0, %0, %1"\n'
+             '  : : "r"(Q_IN),\n'
+             '      "r"(0x0010001000000000));\n'
+             'objdump: 4a: 04b6b07b  .insn 4, 0x04b6b07b',
+             6.98, 2.24, 5.20, 1.42, size=10.3)
+    add_text(slide,
+             "physical_program orders mvin → compute → VPU → mvout. "
+             "RoCC C + data asm → RV64 GCC → ELF → Nicolas Spike.",
+             6.98, 3.82, 5.17, 0.60, size=11.0, color=INK)
 
-    boxes = {
-        6: "resource · contract\nupload_lut · encode",
-        8: "vpu_execute · spad_requant\nreadout · wait",
-        13: "RTL profile + payload\nPE tuple · capacity checks",
-        15: "precision + tiling policy\nschedule.plan · native loops",
-        20: "physical_program → RoCC\nDMA · compute · VPU",
-        22: "RoCC C + data asm\nRV64 GCC → ELF → Spike",
-    }
-    for index, text in boxes.items():
-        shape = shapes[index]
-        shape.top = Inches(3.71 if index in (6, 13, 20) else 4.51)
-        shape.height = Inches(0.68)
-        set_text(shape, text, size=11.1, bold=True, color=INK)
-    footer = shapes[23]
-    footer.top = Inches(5.63)
-    footer.height = Inches(0.51)
-    set_text(
-        footer,
-        "Merlin transforms: MXBF16CatalogPreparation + MXVPUPostOffload; mx-gemmini-opt verifies typed IR.\n"
-        "Standalone commands bypass LLVM; the full-model host currently uses Merlin → LLVM → RV64.",
-        size=10.2, color=GREY, align=PP_ALIGN.LEFT,
+    add_text(slide, "Implemented transforms and checks", 0.96, 4.76,
+             11.4, 0.30, size=16, bold=True, color=NAVY)
+    transforms = (
+        ("bind_profile", "Legal PE tuple +\nprofile digest"),
+        ("MXBF16Catalog\nPreparation", "Select BF16\nMX sites"),
+        ("schedule.plan", "Choose native\nloop and tiles"),
+        ("MXVPUPostOffload", "Map softmax, add\nand reductions"),
+        ("physical_program", "Order DMA, compute\nand VPU commands"),
     )
+    for index, (name, action) in enumerate(transforms):
+        x = 0.94 + index * 2.34
+        add_panel(slide, x, 5.15, 2.15, 1.08,
+                  (CREAM, PALE_BLUE, CREAM, SAGE, CREAM)[index])
+        add_text(slide, name, x + 0.10, 5.25, 1.95, 0.37,
+                 size=11.7, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+        add_text(slide, action, x + 0.10, 5.72, 1.95, 0.40,
+                 size=10.8, color=INK, align=PP_ALIGN.CENTER)
+    add_text(slide,
+             "mx-gemmini-opt verifies typed IR. The standalone command path bypasses LLVM; "
+             "the generic full-model host currently uses Merlin → LLVM → RV64.",
+             0.96, 6.38, 11.45, 0.36, size=10.2, color=GREY)
     page_number(slide, 1)
 
 
 def configurations(slide) -> None:
-    shapes = slide.shapes
-    set_text(shapes[0], "One dialect, many MX configurations", size=27,
+    set_text(slide.shapes[0], "One JSON profile changes legal MLIR", size=27,
              bold=True)
-    stages = (
-        (3, 4, "RTL + MxGen", "41 MX fragments\n40 SoC wrappers\npinned source hashes"),
-        (8, 9, "Profile JSON", "mesh / DMA / queues\nLUT + scales + VPU\nlegal PE tuples"),
-        (13, 14, "Typed legality", "format + projection\nDIM / SRAM bounds\nreject invalid modes"),
-        (18, 19, "Schedule + emit", "schedule.plan + tiles\nSPAD / DMA / loops\nRoCC command IR"),
-        (23, 24, "Spike qualify", "Nicolas kernels\nnumeric + cycle receipts\nper config / mode"),
-    )
-    for heading, body, title, detail in stages:
-        set_text(shapes[heading], title, size=17.2, bold=True)
-        set_text(shapes[body], detail, size=13.0, color=INK)
-    add_text(
-        slide,
-        "RTL/MxGen defines capabilities; npu-exploration supplies reference kernels. "
-        "Selected DIM16 MX+VPU: E4M3 + FP4,\n"
-        "two 8-lane BF16 VPUs and SPAD_REQUANT. FP6 is separate; "
-        "each profile needs numerical qualification.",
-        0.95, 6.05, 10.55, 0.61, size=10.2, color=GREY,
-    )
+    clear_content(slide)
+    add_panel(slide, 0.94, 1.62, 6.04, 4.82, SAND)
+    add_panel(slide, 7.16, 1.62, 5.25, 4.82, PALE_BLUE)
+    add_text(slide, "Selected RTL profile fields", 1.15, 1.79,
+             5.58, 0.34, size=17.2, bold=True, color=NAVY)
+    add_code(slide,
+             '{\n'
+             ' "geometry": {"mesh_rows":16,"mesh_columns":16},\n'
+             ' "legal_compute": [\n'
+             '  {"activation_format":"fp4_e2m1",\n'
+             '   "weight_format":"fp4_e2m1","pe_mode":0},\n'
+             '  {"activation_format":"fp8_e4m3",\n'
+             '   "weight_format":"fp8_e4m3","pe_mode":8}\n'
+             ' ],\n'
+             ' "resources": {"scratchpad_bytes":262144,\n'
+             '               "vpu":true,"spad_requant":true}\n'
+             '}',
+             1.15, 2.22, 5.57, 2.81, size=10.45)
+    add_text(slide,
+             "MxE4M3Fp4VpuGemminiRocketConfig · direct projections in both "
+             "legal rows · two 8-lane BF16 VPUs.",
+             1.15, 5.18, 5.57, 0.52, size=11.1, color=INK)
+    add_text(slide,
+             "RTL 266c593 + MxGen dba3e7 → 41 fragments / 40 SoC wrappers; "
+             "each JSON stores source hashes.",
+             1.15, 5.81, 5.57, 0.39, size=10.4, color=GREY)
+
+    add_text(slide, "Before → after bind_profile", 7.38, 1.79,
+             4.78, 0.34, size=17.2, bold=True, color=NAVY)
+    add_code(slide,
+             'before: contract {format = "mxfp4"}\n'
+             'after:  contract {\n'
+             '  activation_format = "fp4_e2m1",\n'
+             '  weight_format = "fp4_e2m1",\n'
+             '  pe_mode = 0 : i32,\n'
+             '  profile_sha256 = "e9e33f..." }',
+             7.38, 2.22, 4.79, 1.64, size=10.85)
+    add_text(slide, "Compiler consequences", 7.38, 4.06,
+             4.78, 0.30, size=14.1, bold=True, color=NAVY)
+    add_text(slide,
+             "• FP4 selects PE 0; 256 KiB SPAD bounds tiling.\n"
+             "• vpu_execute / spad_requant become legal.\n"
+             "• FP6 contracts reject here; use its LUT profile.\n"
+             "• load_profile(rtl_root) rejects RTL drift.",
+             7.38, 4.42, 4.78, 1.62, size=11.6, color=INK)
+    add_text(slide,
+             "npu-exploration supplies source kernels for per-mode Spike checks; "
+             "the RTL profile alone is structural, not a performance claim.",
+             0.96, 6.50, 11.45, 0.25, size=10.2, color=GREY)
     page_number(slide, 2)
 
 
@@ -164,48 +260,71 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
     run.font.color.rgb = RGBColor(255, 255, 255) if heading else INK
 
 
-def results(slide) -> None:
+def results(slide, smol_comparison: dict | None,
+            tiny_run: dict | None, tiny_comparison: dict | None) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "What paired Spike runs show", size=27, bold=True)
+    set_text(shapes[0], "MX+VPU Spike cycle results", size=27,
+             bold=True)
     frame = shapes[1]
     table = frame.table
-    table._tbl.remove(table.rows[len(table.rows) - 1]._tr)
-    table.rows[0].height = Inches(0.66)
+    table.rows[0].height = Inches(0.60)
     for row in list(table.rows)[1:]:
-        row.height = Inches(0.72)
+        row.height = Inches(0.63)
+    smol_compiler = 72_066_544_354
+    smol_native = (smol_comparison["candidate_cycles"]
+                   if smol_comparison else None)
+    tiny_compiler = (tiny_run["total_performance"]["cycles"]
+                     if tiny_run else None)
+    tiny_native = (tiny_comparison["candidate_cycles"]
+                   if tiny_comparison else None)
+
+    def delta(compiler: int | None, native: int | None) -> str:
+        return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
+
     values = (
-        ("Paired workload", "Compiler cycles", "Nicolas cycles", "Compiler Δ"),
-        ("Dense attention 64×256×128", "43,523", "43,641", "−0.27%"),
+        ("Workload / scope", "Compiler cycles", "Native source cycles", "Compiler Δ"),
+        ("SmolVLA · full 12-step session", f"{smol_compiler:,}*",
+         f"{smol_native:,}" if smol_native else "running",
+         delta(smol_compiler, smol_native)),
+        ("TinyLlama · full 33-step session",
+         f"{tiny_compiler:,}*" if tiny_compiler else "prefill trap",
+         f"{tiny_native:,}" if tiny_native else "pending",
+         delta(tiny_compiler, tiny_native)),
         ("SmolVLA flow · one step", "2,112,653,481", "2,112,919,925", "−0.0126%"),
-        ("SmolVLA · 12-step matrix swap", "72,066,544,354*", "running", "—"),
+        ("Dense attention 64×256×128", "43,523", "43,641", "−0.27%"),
     )
     for row_index, row in enumerate(values):
         for col_index, text in enumerate(row):
             set_cell(table.cell(row_index, col_index), text,
                      heading=row_index == 0,
-                     bold=row_index == 3 and col_index == 0,
+                     bold=row_index in (1, 2) and col_index == 0,
                      align=PP_ALIGN.LEFT if col_index == 0 else PP_ALIGN.CENTER,
-                     size=12.2 if row_index == 0 else 13.0 if col_index == 0 else 13.1)
-    # Keep the template's table fills while highlighting the active full run.
+                     size=11.8 if row_index == 0 else 12.4)
     add_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.94),
-                                       Inches(5.08), Inches(11.46), Inches(0.64))
+                                       Inches(5.10), Inches(11.46), Inches(0.61))
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     set_text(add_shape,
-             "Paired kernel / flow results match outputs. The source swap changes MX issuers only; "
-             "no matched full fused handwritten MX+VPU model baseline exists yet.",
+             "Native source swaps only MX matrix issuers; host graph and VPU stay fixed. "
+             "A matched full fused handwritten MX+VPU baseline is still missing.",
              size=11.5, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
+    tiny_status = ("TinyLlama full run completed; independent accuracy remains open."
+                   if tiny_run else
+                   "TinyLlama optimized prefill trapped before output; no model cycle total.")
+    smol_status = ("Full SmolVLA issuer-swap outputs match."
+                   if smol_comparison else
+                   "Full SmolVLA issuer-swap parity awaits its source run.")
     set_text(
         footer,
-        "* Completed compiler timing receipt; full-session numeric qualification pending. "
-        "Spike e4m3_vpu model, host tracking off.\n"
-        "Evidence: docs/evidence/attn_vpu_equal_work_20261013 and "
-        "docs/evidence/nicolas_matrix_substitution_smolvla_20261013.",
-        size=10.0, color=GREY, align=PP_ALIGN.LEFT,
+        "* Completed timing receipt; independent quantized accuracy remains open. "
+        f"{tiny_status}\n"
+        "Nicolas e4m3_vpu Spike, host tracking off. Paired flow/attention output hashes match. "
+        f"{smol_status}",
+        size=9.6, color=GREY, align=PP_ALIGN.LEFT,
     )
     page_number(slide, 3)
 
@@ -214,13 +333,37 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--smol-full-comparison", type=Path)
+    parser.add_argument("--tiny-full-run", type=Path)
+    parser.add_argument("--tiny-full-comparison", type=Path)
     args = parser.parse_args()
+    smol_comparison = (json.loads(args.smol_full_comparison.read_text())
+                       if args.smol_full_comparison else None)
+    tiny_run = (json.loads(args.tiny_full_run.read_text())
+                if args.tiny_full_run else None)
+    tiny_comparison = (json.loads(args.tiny_full_comparison.read_text())
+                       if args.tiny_full_comparison else None)
+    if tiny_run is not None and (
+            tiny_run.get("complete") is not True or tiny_run.get("exit_code") != 0
+            or len(tiny_run.get("step_performance", [])) != 33
+            or not isinstance((tiny_run.get("total_performance") or {}).get("cycles"), int)):
+        parser.error("TinyLlama full run is incomplete")
+    for comparison, expected in ((smol_comparison, 72_066_544_354),
+                                 (tiny_comparison,
+                                  tiny_run["total_performance"]["cycles"]
+                                  if tiny_run else None)):
+        if comparison is None:
+            continue
+        if (comparison.get("schema") != "mx_gemmini.equal_input_session_cycles.v1"
+                or comparison.get("output_digest_parity") is not True
+                or comparison.get("reference_cycles") != expected):
+            parser.error("full-session comparison lacks equal-output timing evidence")
     prs = Presentation(args.template)
     keep_slides(prs)
     style_master(prs)
     architecture(prs.slides[0])
     configurations(prs.slides[1])
-    results(prs.slides[2])
+    results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

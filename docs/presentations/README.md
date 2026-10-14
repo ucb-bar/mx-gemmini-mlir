@@ -15,6 +15,34 @@ integration currently live in Python modules under `mx_gemmini_support/`.
 `MXBF16CatalogPreparation` and `MXVPUPostOffload` are Merlin-side
 transformations, not registered C++ MLIR passes.
 
+Slide 1 quotes an abbreviated form of the FP4 payload in
+[`payload_bound.mlir`](../evidence/nicolas_direct_sixteen_28936e2_266c593/fp4_128x128x64_requant_dim32/payload_bound.mlir).
+Its four `mx_gemmini.resource` operands contain packed activation/weight
+codes and E8M0 scales. `mx_gemmini.contract` fixes the FP4 direct PE tuple;
+`mx_gemmini.readout_bf16` requests the result. The physical lowering produces
+`mvin`, MX compute, VPU, and `mvout` commands as needed by the selected
+kernel. The right code box quotes the first `mvin` from the generated
+[`mx_issue.c`](../evidence/attn_vpu_equal_work_20261013/object/timed/mx_issue.c)
+for the dense attention object. Its compiled RV64 object contains
+`04b6b07b` at offset `0x4a` (`.insn 4, 0x04b6b07b`). That is one actual
+RoCC instruction word, not the whole program binary.
+
+The five named transformations/checks on the slide have distinct jobs:
+
+| Stage | Concrete effect |
+| --- | --- |
+| `bind_profile` | Replaces the captured `format = "mxfp4"` with a legal PE tuple and stamps the exact profile digest on the MX ops. |
+| `MXBF16CatalogPreparation` | Selects eligible BF16 matmuls in the Merlin graph, inserts the needed f32 boundary, and records the quantization choice. |
+| `schedule.plan` | Binds a catalog symbol to `mx_native_dram_loop` or `mx_serial_commands`; issuer lowering consumes the selected policy. |
+| `MXVPUPostOffload` | Rewrites source-bound softmax, add, elementwise, unary, and reduction regions to VPU calls. |
+| `physical_program` | Orders DMA, MX, VPU, wait, and readback commands before C/assembly emission. |
+
+The mapping to the reference kernels is explicit: Radiance FP4/FP8 GEMMs
+correspond to `resource` + `contract` + readout; its vector postprocessing
+corresponds to `vpu_execute`, `spad_requant`, and `wait`. The slide shows a
+representative path, while each source kernel's selected precision and tile
+shape still come from its captured workload and target profile.
+
 The standalone command path is typed MX MLIR → physical RoCC commands →
 generated C issuer and assembly data → RV64 GCC → ELF. It bypasses LLVM.
 The full-model path currently lowers the generic host graph through Merlin
@@ -34,6 +62,18 @@ numerical and timing qualification on its selected target. The selected
 non-VPU configuration. Nicolas's `npu-exploration` kernels provide source
 checks and performance reference programs, while RTL defines hardware
 capabilities. See [profile inventory](../current_mx_profiles.md).
+
+The JSON box is a shortened excerpt of the selected
+[`MxE4M3Fp4VpuGemminiRocketConfig` profile](../../profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json).
+For this file, `profile_sha256(profile)` is
+`e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d`.
+The [`bind_handoff`](../../mx_gemmini_support/bind_profile.py) code selects
+the one direct FP4 row for a captured `mxfp4` contract and emits
+`activation_format = "fp4_e2m1"`, `weight_format = "fp4_e2m1"`,
+`pe_mode = 0`, and that digest. With this profile an FP6 contract has no
+legal row and fails binding. The profile's 256 KiB scratchpad and 16×16
+mesh also constrain the later tile plan. Profile binding checks the pinned
+RTL hashes when invoked with `--rtl-root`.
 
 ## Slide 3: measured scope
 
