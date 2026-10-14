@@ -166,6 +166,17 @@ modeled cycles. The output values differ, so that is not an equal-output
 speedup; the fast issuer-swap row also has a different timing boundary.
 Correcting the timestep alone does not remove the accumulated action drift.
 
+The [full all-FP8 SmolVLA control](../evidence/smolvla_all_fp8_full_action_20261014/README.md)
+binds all 391 selected prefix and flow contractions to direct E4M3. It
+preserves the corrected run's captured programs, checkpoint weight blob,
+target profile, arena layout, and output ABI. All 12 steps complete on
+Nicolas's MX+VPU Spike. Final action cosine to captured FP32 rises from
+0.058102 (mixed) to **0.988524** (all-FP8), while normalized RMSE falls
+from 1.830469 to **0.246502**. The complete session takes
+180,219,637,915 modeled cycles versus 316,515,603,374 for the corrected
+mixed control. Their outputs differ, so this is a precision-policy cost
+comparison, not an equal-output speedup or a source-kernel baseline.
+
 The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
 uses the exact full-run compiler flow object with captured FP32 state and
 prefix cache. Its output has 0.907 cosine to the FP32 reference, compared
@@ -343,6 +354,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/smolvla_prefix_factor_20261014/receipt.json \
   --smol-corrected-action \
     docs/evidence/smolvla_scalar_full_action_20261014/receipt.json \
+  --smol-all-fp8-action \
+    docs/evidence/smolvla_all_fp8_full_action_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
@@ -354,8 +367,8 @@ Its optional `--tiny-prefill128` row requires the archived source and compiler
 Spike logs, their hashes, and the verified modeled cycle counters. A preview
 receipt or an incomplete run cannot replace the measured row.
 
-The results callout reports TinyLlama logit drift and the corrected
-SmolVLA final-action drift from captured FP32 outputs on fixed synthetic
+The results callout reports TinyLlama logit drift and the mixed versus
+all-FP8 SmolVLA final-action comparison to captured FP32 on fixed synthetic
 inputs. The generator checks archive hashes and binds each full-session
 receipt to its timed run. These metrics are diagnostics rather than
 generation or robotics task-success thresholds.

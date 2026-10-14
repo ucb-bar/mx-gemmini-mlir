@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import re
+import runpy
 from pathlib import Path
 
 from pptx import Presentation
@@ -324,6 +325,7 @@ def results(slide, smol_comparison: dict | None,
             smol_reference_step: dict | None,
             smol_prefix_factor: dict | None,
             smol_corrected: dict | None,
+            smol_all_fp8: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: Spike comparisons" if tiny_logits or smol_actions
@@ -420,7 +422,14 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
     step_comparison = None
-    if smol_corrected:
+    if smol_all_fp8:
+        corrected = smol_corrected["final_action_metrics"]["cosine"]
+        fp8 = smol_all_fp8["final_action_metrics"]["cosine"]
+        step_comparison = (
+            "SmolVLA final cosine vs FP32: mixed "
+            f"{corrected:.3f} → all-FP8 {fp8:.3f}; outputs differ."
+        )
+    elif smol_corrected:
         corrected = smol_corrected["final_action_metrics"]["cosine"]
         prior = smol_actions["final_action_metrics"]["cosine"]
         step_comparison = (
@@ -719,6 +728,7 @@ def main() -> None:
     parser.add_argument("--smol-reference-step", type=Path)
     parser.add_argument("--smol-prefix-factor", type=Path)
     parser.add_argument("--smol-corrected-action", type=Path)
+    parser.add_argument("--smol-all-fp8-action", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     parser.add_argument("--tiny-first11-prepacked", type=Path)
     args = parser.parse_args()
@@ -759,6 +769,17 @@ def main() -> None:
     smol_corrected = (json.loads((args.smol_corrected_action.parent /
                                   "fp32_comparison.json").read_text())
                       if args.smol_corrected_action else None)
+    smol_all_fp8 = None
+    if args.smol_all_fp8_action:
+        if (smol_corrected is None
+                or args.smol_all_fp8_action.name != "receipt.json"):
+            parser.error("all-FP8 actions need the corrected full-action receipt")
+        folder = args.smol_all_fp8_action.parent
+        verified = runpy.run_path(str(folder / "archive.py"))["verify"]()
+        smol_all_fp8 = json.loads((folder / "fp32_comparison.json").read_text())
+        if (verified["final_action_cosine"] !=
+                smol_all_fp8["final_action_metrics"]["cosine"]):
+            parser.error("all-FP8 slide metric differs from verified archive")
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     first11_prepacked = (json.loads(args.tiny_first11_prepacked.read_text())
@@ -1182,7 +1203,8 @@ def main() -> None:
             equal_work, smol_attention_pair, tiny_logits, smol_actions,
             prefill_precision,
             first11_prepacked,
-            smol_reference_step, smol_prefix_factor, smol_corrected, total)
+            smol_reference_step, smol_prefix_factor, smol_corrected,
+            smol_all_fp8, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)

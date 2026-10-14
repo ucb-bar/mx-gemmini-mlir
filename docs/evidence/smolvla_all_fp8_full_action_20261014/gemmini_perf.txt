@@ -1,0 +1,5 @@
+gemmini perf [e4m3_vpu]: 21406393 commands, 446775 loops, 248433 fences; last activity 182403797293; host stalled 2085743237 cycles; 2328096870 events
+  mesh: 48141352 tiles, 770261632 busy cycles; VPU: 271426 commands
+  load: 13007251216 bytes in 366786337 Gets (mean latency 79.9); store: 105161172 reads, 113779860 Puts; scales: 315957264 bytes
+  memory: L2 259930635 hits (5132090 on a pending fill), 112496564 misses; bus busy 480566197, DRAM busy 1185279312 cycles; CPU stores 0 lines, L1 probes 0, partial-write fills 16620867, dirty write-backs 19042483 (host tracking off)
+  ports busy: sp0 r951930191/w687730015 sp1 r151921706/w151921706 sp2 r136144980/w114703812 sp3 r41462549/w41462549 acc0 378866112 acc1 379496992

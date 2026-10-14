@@ -1,0 +1,904 @@
+{
+  "all_output_sha256_enabled": true,
+  "arena_estimate": null,
+  "arena_mb": 2048,
+  "arena_selection": "explicit",
+  "build_hash": "6108ceac2832",
+  "cache_checkpoint_weights": false,
+  "cached_checkpoint_kernels": 0,
+  "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+  "catalog_manifest": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_all_fp8_20261014/prefix_build/device_catalog/mx_catalog.json",
+  "checkpoint_weights_sha256": null,
+  "compile_timeout_s": 3600,
+  "diagnostic_host_vpu": false,
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_all_fp8_20261014/prefix_build/model.elf",
+  "elf_bytes": 911561976,
+  "enabled_vpu_classes": [
+    "add",
+    "elementwise",
+    "reduce",
+    "softmax",
+    "unary"
+  ],
+  "enabled_vpu_elementwise_operations": null,
+  "enabled_vpu_elementwise_regions": null,
+  "execution_route": "mx_gemmini_and_host",
+  "expected_selected_operations": 243,
+  "first_output_sha256_enabled": true,
+  "mem_bytes": 7516192768,
+  "op_profile": false,
+  "op_profile_capacity": null,
+  "op_profile_operations": null,
+  "op_profile_table": null,
+  "op_profile_table_sha256": null,
+  "precision_overrides": {
+    "matmul_0": "mxfp8",
+    "matmul_1": "mxfp8",
+    "matmul_10": "mxfp8",
+    "matmul_100": "mxfp8",
+    "matmul_103": "mxfp8",
+    "matmul_104": "mxfp8",
+    "matmul_105": "mxfp8",
+    "matmul_106": "mxfp8",
+    "matmul_107": "mxfp8",
+    "matmul_108": "mxfp8",
+    "matmul_109": "mxfp8",
+    "matmul_112": "mxfp8",
+    "matmul_113": "mxfp8",
+    "matmul_114": "mxfp8",
+    "matmul_115": "mxfp8",
+    "matmul_116": "mxfp8",
+    "matmul_117": "mxfp8",
+    "matmul_118": "mxfp8",
+    "matmul_121": "mxfp8",
+    "matmul_122": "mxfp8",
+    "matmul_123": "mxfp8",
+    "matmul_124": "mxfp8",
+    "matmul_125": "mxfp8",
+    "matmul_126": "mxfp8",
+    "matmul_127": "mxfp8",
+    "matmul_13": "mxfp8",
+    "matmul_130": "mxfp8",
+    "matmul_131": "mxfp8",
+    "matmul_132": "mxfp8",
+    "matmul_133": "mxfp8",
+    "matmul_134": "mxfp8",
+    "matmul_135": "mxfp8",
+    "matmul_136": "mxfp8",
+    "matmul_139": "mxfp8",
+    "matmul_14": "mxfp8",
+    "matmul_140": "mxfp8",
+    "matmul_141": "mxfp8",
+    "matmul_142": "mxfp8",
+    "matmul_143": "mxfp8",
+    "matmul_144": "mxfp8",
+    "matmul_145": "mxfp8",
+    "matmul_148": "mxfp8",
+    "matmul_149": "mxfp8",
+    "matmul_15": "mxfp8",
+    "matmul_150": "mxfp8",
+    "matmul_151": "mxfp8",
+    "matmul_152": "mxfp8",
+    "matmul_153": "mxfp8",
+    "matmul_154": "mxfp8",
+    "matmul_157": "mxfp8",
+    "matmul_158": "mxfp8",
+    "matmul_159": "mxfp8",
+    "matmul_16": "mxfp8",
+    "matmul_160": "mxfp8",
+    "matmul_161": "mxfp8",
+    "matmul_162": "mxfp8",
+    "matmul_163": "mxfp8",
+    "matmul_166": "mxfp8",
+    "matmul_167": "mxfp8",
+    "matmul_168": "mxfp8",
+    "matmul_169": "mxfp8",
+    "matmul_17": "mxfp8",
+    "matmul_170": "mxfp8",
+    "matmul_171": "mxfp8",
+    "matmul_172": "mxfp8",
+    "matmul_175": "mxfp8",
+    "matmul_176": "mxfp8",
+    "matmul_177": "mxfp8",
+    "matmul_178": "mxfp8",
+    "matmul_179": "mxfp8",
+    "matmul_18": "mxfp8",
+    "matmul_180": "mxfp8",
+    "matmul_181": "mxfp8",
+    "matmul_184": "mxfp8",
+    "matmul_185": "mxfp8",
+    "matmul_186": "mxfp8",
+    "matmul_187": "mxfp8",
+    "matmul_188": "mxfp8",
+    "matmul_189": "mxfp8",
+    "matmul_190": "mxfp8",
+    "matmul_193": "mxfp8",
+    "matmul_194": "mxfp8",
+    "matmul_195": "mxfp8",
+    "matmul_196": "mxfp8",
+    "matmul_197": "mxfp8",
+    "matmul_198": "mxfp8",
+    "matmul_199": "mxfp8",
+    "matmul_2": "mxfp8",
+    "matmul_202": "mxfp8",
+    "matmul_203": "mxfp8",
+    "matmul_204": "mxfp8",
+    "matmul_205": "mxfp8",
+    "matmul_206": "mxfp8",
+    "matmul_207": "mxfp8",
+    "matmul_208": "mxfp8",
+    "matmul_21": "mxfp8",
+    "matmul_211": "mxfp8",
+    "matmul_212": "mxfp8",
+    "matmul_213": "mxfp8",
+    "matmul_214": "mxfp8",
+    "matmul_215": "mxfp8",
+    "matmul_216": "mxfp8",
+    "matmul_217": "mxfp8",
+    "matmul_22": "mxfp8",
+    "matmul_220": "mxfp8",
+    "matmul_221": "mxfp8",
+    "matmul_222": "mxfp8",
+    "matmul_223": "mxfp8",
+    "matmul_224": "mxfp8",
+    "matmul_225": "mxfp8",
+    "matmul_226": "mxfp8",
+    "matmul_229": "mxfp8",
+    "matmul_23": "mxfp8",
+    "matmul_230": "mxfp8",
+    "matmul_231": "mxfp8",
+    "matmul_232": "mxfp8",
+    "matmul_233": "mxfp8",
+    "matmul_234": "mxfp8",
+    "matmul_235": "mxfp8",
+    "matmul_238": "mxfp8",
+    "matmul_239": "mxfp8",
+    "matmul_24": "mxfp8",
+    "matmul_240": "mxfp8",
+    "matmul_241": "mxfp8",
+    "matmul_25": "mxfp8",
+    "matmul_26": "mxfp8",
+    "matmul_29": "mxfp8",
+    "matmul_30": "mxfp8",
+    "matmul_31": "mxfp8",
+    "matmul_32": "mxfp8",
+    "matmul_33": "mxfp8",
+    "matmul_34": "mxfp8",
+    "matmul_37": "mxfp8",
+    "matmul_38": "mxfp8",
+    "matmul_39": "mxfp8",
+    "matmul_40": "mxfp8",
+    "matmul_41": "mxfp8",
+    "matmul_42": "mxfp8",
+    "matmul_45": "mxfp8",
+    "matmul_46": "mxfp8",
+    "matmul_47": "mxfp8",
+    "matmul_48": "mxfp8",
+    "matmul_49": "mxfp8",
+    "matmul_5": "mxfp8",
+    "matmul_50": "mxfp8",
+    "matmul_53": "mxfp8",
+    "matmul_54": "mxfp8",
+    "matmul_55": "mxfp8",
+    "matmul_56": "mxfp8",
+    "matmul_57": "mxfp8",
+    "matmul_58": "mxfp8",
+    "matmul_6": "mxfp8",
+    "matmul_61": "mxfp8",
+    "matmul_62": "mxfp8",
+    "matmul_63": "mxfp8",
+    "matmul_64": "mxfp8",
+    "matmul_65": "mxfp8",
+    "matmul_66": "mxfp8",
+    "matmul_69": "mxfp8",
+    "matmul_7": "mxfp8",
+    "matmul_70": "mxfp8",
+    "matmul_71": "mxfp8",
+    "matmul_72": "mxfp8",
+    "matmul_73": "mxfp8",
+    "matmul_74": "mxfp8",
+    "matmul_77": "mxfp8",
+    "matmul_78": "mxfp8",
+    "matmul_79": "mxfp8",
+    "matmul_8": "mxfp8",
+    "matmul_80": "mxfp8",
+    "matmul_81": "mxfp8",
+    "matmul_82": "mxfp8",
+    "matmul_85": "mxfp8",
+    "matmul_86": "mxfp8",
+    "matmul_87": "mxfp8",
+    "matmul_88": "mxfp8",
+    "matmul_89": "mxfp8",
+    "matmul_9": "mxfp8",
+    "matmul_90": "mxfp8",
+    "matmul_93": "mxfp8",
+    "matmul_94": "mxfp8",
+    "matmul_95": "mxfp8",
+    "matmul_96": "mxfp8",
+    "matmul_97": "mxfp8",
+    "matmul_98": "mxfp8",
+    "matmul_99": "mxfp8"
+  },
+  "precision_overrides_sha256": "03131c95c77a075a3a3289a6cb9a022a1d9bd82b4681a67433fa64b76b566ce9",
+  "prepack_checkpoint_weights": false,
+  "prepacked_checkpoint_kernels": 0,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "raw_selected_source_coverage_complete": true,
+  "schema": "mx_gemmini.merlin_stage_probe.v1",
+  "selected_operations": 243,
+  "spike_arena_base": 3221225472,
+  "spike_isa": "rv64gc",
+  "status": "linked_experimental_numeric_qualification_pending",
+  "unbound_precision_proposals": 0,
+  "unique_kernels": 14,
+  "vpu_add_lowered_regions": 161,
+  "vpu_elementwise_lowered_regions": 621,
+  "vpu_reduce_lowered_regions": 95,
+  "vpu_residual_eligible": {
+    "add": 0,
+    "elementwise": 0,
+    "reduce": 0,
+    "softmax": 0,
+    "unary": 0
+  },
+  "vpu_softmax_host_regions": 0,
+  "vpu_softmax_inventory": {
+    "direct_profile_matches_unlowered": 0,
+    "host_owned_regions": 0,
+    "inventory_phase": "reconciled_after_link",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "regions": [
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.0.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_0",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.1.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_1",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.2.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_2",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.3.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_3",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.4.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_4",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.5.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_5",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_6",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_7",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_8",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_9",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_10",
+        "row_width": 1024
+      },
+      {
+        "fqn": "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.self_attn",
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "logical_rows": 12288,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          12,
+          1024,
+          1024
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_11",
+        "row_width": 1024
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_12",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_13",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_14",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_15",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_16",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_17",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_18",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_19",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_20",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_21",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_22",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_23",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_24",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_25",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_26",
+        "row_width": 113
+      },
+      {
+        "fqn": null,
+        "input_dtype": "f32",
+        "input_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "logical_rows": 1695,
+        "output_dtype": "f32",
+        "output_shape": [
+          1,
+          15,
+          113,
+          113
+        ],
+        "owner": "mx_gemmini_vpu",
+        "profile_direct_match": false,
+        "reason": "source_bound_converted_vpu_row_softmax",
+        "region": "softmax_27",
+        "row_width": 113
+      }
+    ],
+    "schema": "mx_gemmini.merlin_vpu_softmax_inventory.v1",
+    "softmax_regions": 28,
+    "source_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285"
+  },
+  "vpu_softmax_lowered_regions": 28,
+  "vpu_softmax_selected_regions": 28,
+  "vpu_unary_lowered_regions": 151,
+  "widened_bf16_contractions": 72
+}

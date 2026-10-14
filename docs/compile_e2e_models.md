@@ -330,8 +330,19 @@ output hashes match BF16-rounded VPU addition despite the f32 ABI; the
 selected MX lowering now leaves one-element f32 arithmetic on the host.
 The [corrected one-step Spike replay](evidence/smolvla_scalar_state_precision_20261014/README.md)
 confirms the source FP32 timestep exactly and preserves the 0.907-cosine
-flow output byte for byte. A revised *full* session is still needed for a
-new final-action quality or performance claim.
+flow output byte for byte. The
+[corrected full 12-step session](evidence/smolvla_scalar_full_action_20261014/README.md)
+keeps the timestep exact through all ten flow steps. Its final action has
+0.058 cosine and 1.830 normalized RMSE to the captured FP32 action; that
+small numerical improvement does not establish task accuracy.
+The [all-FP8 full-session control](evidence/smolvla_all_fp8_full_action_20261014/README.md)
+binds all 391 selected prefix and flow matrix sites to direct E4M3 on
+the same MX+VPU profile and captured checkpoint. All 12 steps complete on
+Nicolas's Spike. Its final action has 0.988524 cosine and 0.246502
+normalized RMSE to captured FP32, versus 0.058102 and 1.830469 for the
+corrected mixed run. Its 180,219,637,915 modeled session cycles compare
+with 316,515,603,374 for mixed precision. Outputs differ, so the cycle
+change measures precision-policy cost rather than equal-output speedup.
 The [prefix-cache control](evidence/smolvla_prefix_factor_20261014/README.md)
 holds compiled step-8 state and timestep fixed and replaces only the prefix
 cache with its FP32 value. Final-step cosine to FP32 changes from 0.054 to
