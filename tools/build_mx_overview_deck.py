@@ -302,9 +302,10 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
 
 
 def results(slide, smol_comparison: dict | None,
-            tiny_run: dict | None, tiny_comparison: dict | None) -> None:
+            tiny_run: dict | None, tiny_comparison: dict | None,
+            layer_probe: dict | None) -> None:
     shapes = slide.shapes
-    set_text(shapes[0], "Spike cycles by comparison scope", size=27,
+    set_text(shapes[0], "Spike results by measurement scope", size=27,
              bold=True)
     frame = shapes[1]
     table = frame.table
@@ -323,6 +324,13 @@ def results(slide, smol_comparison: dict | None,
     def delta(compiler: int | None, native: int | None) -> str:
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
+    layer_row = (
+        ("TinyLlama cached layer · unpaired",
+         f"{layer_probe['compiler_runs']['fp8_prepacked']['cycles']:,}†",
+         f"{layer_probe['source_layer']['cycles']:,}†", "NO RATIO")
+        if layer_probe else
+        ("SmolVLA flow 1 step · issuer swap", "2,112,653,481",
+         "2,112,919,925", "−0.0126%"))
     values = (
         ("Workload / compared code", "Compiler cycles", "Nicolas path cycles", "Compiler Δ"),
         ("SmolVLA full 12 steps · issuer swap",
@@ -333,14 +341,14 @@ def results(slide, smol_comparison: dict | None,
          f"{tiny_compiler:,}*" if tiny_compiler else "running",
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
-        ("SmolVLA flow 1 step · issuer swap", "2,112,653,481", "2,112,919,925", "−0.0126%"),
+        layer_row,
         ("Dense attention 64×256×128 · fused source", "43,523", "43,641", "−0.27%"),
     )
     for row_index, row in enumerate(values):
         for col_index, text in enumerate(row):
             set_cell(table.cell(row_index, col_index), text,
                      heading=row_index == 0,
-                     bold=row_index in (1, 2) and col_index == 0,
+                     bold=row_index in (1, 2, 3) and col_index == 0,
                      align=PP_ALIGN.LEFT if col_index == 0 else PP_ALIGN.CENTER,
                      size=11.2 if row_index == 0 else 12.4)
     add_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.94),
@@ -348,16 +356,32 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
-    set_text(add_shape,
-             "Full-model rows swap MX issuers inside the same Merlin host/VPU "
-             "program; small cycle gaps are expected.\n"
-             "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
-             "as complete models.",
+    callout = (
+        "Full-model rows swap MX issuers inside one Merlin host/VPU program; "
+        "small cycle gaps are expected.\n"
+        "† The layer uses the same tokens and weights but different timed work "
+        "and tensor formats. Its cycle ratio is invalid."
+        if layer_probe else
+        "Full-model rows swap MX issuers inside the same Merlin host/VPU "
+        "program; small cycle gaps are expected.\n"
+        "Nicolas's fused MX+VPU kernels have not yet been stitched and timed "
+        "as complete models.")
+    set_text(add_shape, callout,
              size=10.6, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
     footer = shapes[2]
     footer.top = Inches(5.91)
     footer.height = Inches(0.66)
-    if tiny_comparison and smol_comparison:
+    if tiny_comparison and smol_comparison and layer_probe:
+        compiler_error = layer_probe["compiler_runs"]["fp8_prepacked"]["rel_fro_vs_pytorch"]
+        source_error = layer_probe["source_layer"]["rel_fro_vs_pytorch"]
+        footer_text = (
+            "* Issuer-swap output hashes match: SmolVLA 33/33; TinyLlama 99/99. "
+            "This is not an independent model accuracy check.\n"
+            f"† Layer error vs PyTorch: compiler {compiler_error:.2%}; "
+            f"source {source_error:.2%}. Dense attention is one fused kernel. "
+            "Spike cycles are not FPGA latency."
+        )
+    elif tiny_comparison and smol_comparison:
         footer_text = (
             "* Output hashes match: SmolVLA 33/33; TinyLlama 99/99. This checks "
             "the captured outputs, not model accuracy.\n"
@@ -391,6 +415,7 @@ def main() -> None:
     parser.add_argument("--smol-full-comparison", type=Path)
     parser.add_argument("--tiny-full-run", type=Path)
     parser.add_argument("--tiny-full-comparison", type=Path)
+    parser.add_argument("--tiny-layer-probe", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
         parser.error("TinyLlama needs both the full run and equal-output comparison")
@@ -400,6 +425,27 @@ def main() -> None:
                 if args.tiny_full_run else None)
     tiny_comparison = (json.loads(args.tiny_full_comparison.read_text())
                        if args.tiny_full_comparison else None)
+    layer_probe = (json.loads(args.tiny_layer_probe.read_text())
+                   if args.tiny_layer_probe else None)
+    if layer_probe is not None:
+        source = layer_probe.get("source_layer") or {}
+        compiled = (layer_probe.get("compiler_runs") or {}).get("fp8_prepacked") or {}
+        if (layer_probe.get("schema") != "mx_gemmini.tinyllama_cached_layer_probe.v1"
+                or layer_probe.get("timing_comparison_valid") is not False
+                or type(source.get("cycles")) is not int or source["cycles"] <= 0
+                or type(compiled.get("cycles")) is not int or compiled["cycles"] <= 0
+                or compiled.get("completed") is not True):
+            parser.error("cached layer needs completed unpaired evidence")
+        source_path = args.tiny_layer_probe.parent / source["source_evidence"]
+        source_receipt = json.loads(source_path.read_text())
+        output = json.loads((args.tiny_layer_probe.parent / "output_metrics.json").read_text())
+        if (source_receipt.get("source_layer_cycles") != source["cycles"]
+                or source_receipt.get("source_rel_fro_hout_vs_pytorch_ppm") / 1e6
+                != source.get("rel_fro_vs_pytorch")
+                or output.get("output_sha256") != compiled.get("output_sha256")
+                or output.get("compiler_to_m2m_golden_rel_fro")
+                != compiled.get("rel_fro_vs_pytorch")):
+            parser.error("cached layer numbers differ from source or output evidence")
     if tiny_run is not None and (
             tiny_run.get("complete") is not True or tiny_run.get("exit_code") != 0
             or len(tiny_run.get("step_performance", [])) != 33
@@ -435,7 +481,8 @@ def main() -> None:
     style_master(prs)
     architecture(prs.slides[0])
     configurations(prs.slides[1])
-    results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison)
+    results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
+            layer_probe)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.out)
 

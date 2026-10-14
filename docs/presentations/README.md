@@ -85,18 +85,18 @@ regenerate the stage catalogs and inspect their precision choices.
 
 ## Slide 3: measured scope
 
-Read the first three rows as **MX matrix command code comparisons**. The
+Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
-The last row compares compiler-issued commands
-with one fused source attention kernel at the same 64×256×128 shape. These
-timings do **not** compare the compiler with Nicolas's fused kernels stitched
-into a full TinyLlama or SmolVLA model. Matching output hashes prove agreement
-with the captured
-outputs; they do not measure model accuracy against an independent reference.
+The third row shows the cached TinyLlama layer as **unpaired**: its compiler
+stage and Nicolas source kernel have different input formats and timed work.
+The last row compares one fused source attention kernel at the same
+64×256×128 shape. None of these rows compares a fused source implementation
+of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
+agreement between those two executables, not independent model accuracy.
 Spike cycle counts are simulator results, not FPGA latency.
 
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
@@ -122,8 +122,8 @@ Nicolas's `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;
 the captured SmolVLA flow contains 15 heads of 50 queries against 163 keys,
 with a boolean key mask. A matched fused replacement must preserve that
 padding and mask behavior before its cycles can be compared.
-[Nicolas's native full-layer TinyLlama kernel][nicolas-layer]
-measures an `M=32` FP8 schedule. The captured session has a 128-token prefill
+The independent cached-layer probe adapts Nicolas's FP8 source to 64 cached
+plus 64 query tokens. The captured full-model session has a 128-token prefill
 and one-token decode with 155 FP4 and 45 FP8 MX bindings per stage. A stitched
 source baseline needs those shapes and precision choices to match before its
 cycle count can stand beside the model result.
@@ -133,7 +133,8 @@ The [cached TinyLlama layer probe](../evidence/tinyllama_cached_layer_compiler_2
 now runs a real 64-query layer from PyTorch through model2MLIR and the MX
 compiler. It exposes per-operation packing and intermediate conversion costs,
 but its stage cycle window differs from Nicolas's timed source kernel.
-Those two numbers are kept off the slide's paired table.
+The slide prints both raw counters with **NO RATIO** and an explicit timing
+warning. Its generator verifies the source receipt and compiler output metrics.
 
 ## Regenerate
 
@@ -148,6 +149,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/compiler/mx_session_run.json \
   --tiny-full-comparison \
     docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/comparison.json \
+  --tiny-layer-probe \
+    docs/evidence/tinyllama_cached_layer_compiler_20261014/summary.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
@@ -155,5 +158,3 @@ The script keeps only the template's architecture, process, and results
 layouts, edits their native objects, and adds source-specific labels and
 figures. The generator accepts the full TinyLlama run/comparison receipts only
 when the complete 33-step run and equal-output comparator succeed.
-
-[nicolas-layer]: https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/llama_layer_full_native.c
