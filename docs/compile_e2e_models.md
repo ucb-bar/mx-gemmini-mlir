@@ -332,6 +332,11 @@ The [corrected one-step Spike replay](evidence/smolvla_scalar_state_precision_20
 confirms the source FP32 timestep exactly and preserves the 0.907-cosine
 flow output byte for byte. A revised *full* session is still needed for a
 new final-action quality or performance claim.
+The [prefix-cache control](evidence/smolvla_prefix_factor_20261014/README.md)
+holds compiled step-8 state and timestep fixed and replaces only the prefix
+cache with its FP32 value. Final-step cosine to FP32 changes from 0.054 to
+0.066; resetting both cache and prior state yielded 0.907. Accumulated flow
+state error is the larger immediate difference at this step.
 
 ### Inspect full TinyLlama logits
 

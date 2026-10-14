@@ -150,6 +150,12 @@ The [scalar-state control](../evidence/smolvla_scalar_state_precision_20261014/R
 removes only the one-element FP32 VPU route. Its isolated Spike output
 matches the old flow output byte for byte, while its timestep matches the
 captured FP32 update exactly. A corrected full session remains pending.
+The [prefix-cache control](../evidence/smolvla_prefix_factor_20261014/README.md)
+holds compiled step-8 flow state and timestep fixed while replacing only
+the prefix cache with the captured FP32 value. Step-9 cosine to FP32 moves
+from 0.054 to 0.066, compared with 0.907 when both cache and prior flow
+state are reset. This narrows the immediate step-9 difference to accumulated
+flow state; it does not isolate how earlier prefix errors affected that state.
 
 Read the first two rows as **MX matrix command code comparisons**. The
 compiler and Nicolas variants run the same Merlin host program and VPU code;
@@ -297,6 +303,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/smolvla_full_action_values_20261014/receipt.json \
   --smol-reference-step \
     docs/evidence/smolvla_reference_step_replay_20261014/receipt.json \
+  --smol-prefix-factor \
+    docs/evidence/smolvla_prefix_factor_20261014/receipt.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

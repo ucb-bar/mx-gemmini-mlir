@@ -1,0 +1,60 @@
+{
+  "arena_layout": {
+    "arena_base": 3221225472,
+    "arena_bytes": 2147483648,
+    "mem_bytes": 7516192768,
+    "static_end": 2164452560,
+    "weights_base": 8589934592
+  },
+  "bindings": [],
+  "dump_limit_bytes": 16384,
+  "dump_outputs": [
+    {
+      "bytes": 6400,
+      "name": "flow_denoise",
+      "output": 0,
+      "program": 0
+    },
+    {
+      "bytes": 4,
+      "name": "flow_denoise",
+      "output": 2,
+      "program": 0
+    }
+  ],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/smol_prefix_factor_link_20261014/session.elf",
+  "elf_bytes": 912421128,
+  "elf_sha256": "ede1313df2aa361e946b7a23c60ba06dac56490fd377f1e6f3fda39022154771",
+  "mem_bytes": 7516192768,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "name": "flow_denoise",
+      "outputs": 3,
+      "selected_operations": 148,
+      "steps": 1
+    }
+  ],
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_prefix_factor_session_20261014",
+  "shared_weight_bytes": 906639456,
+  "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+  "shared_weight_stage": "flow_denoise",
+  "stage_object_sha256": {
+    "flow_denoise": {
+      "device/device_catalog_shim.o": "1f90024663a8eda8babd11e2879a6a0967140344893dd1c783e3ede9a3571ff2",
+      "device_catalog/mx_catalog.o": "39d404fb5dc6fb3cc7c7f11d8dd745d92ba7088f180edbb673beb87350edb882",
+      "model.o": "ae9879d88bab395d0389a92d9043075140984f07db2b00b8a37f627d4a673937"
+    }
+  },
+  "static_malloc_estimates": {
+    "flow_denoise": {
+      "callsites": 1368,
+      "dynamic_sites": 0,
+      "literal_bytes": 576205706
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}

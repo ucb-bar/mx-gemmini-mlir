@@ -1,0 +1,29 @@
+{
+  "artifact_sha256": {
+    "derived_replay_receipt.json": "5925b43520f43612976540758bcc41f389094451f591b59ab26d0afd99f756f2",
+    "flow_step9.bin": "d190115e2ccad0ae22c804ea0b9b79faea14d193cd5b8987828b80b8a39a248b",
+    "gemmini_perf.txt": "82f2f9000dacf6376884abf1ee8663b2e79f24eeb72fbea553d6807ffe611622",
+    "link.json": "8e528aa2a674fa1e6bf9fb2d5a16f5fdb2adfb26e604e69a8a7e73c7f65956a1",
+    "run.json": "4575f670a13c3cb39b270952bbe561442594c080d571c8e0e34ac63bf252307c",
+    "spike.log.gz": "8437f3cdea983e3e0b01e0cfa0c799477326757a4c7fd61839e92d292085d235",
+    "timestep_step9.bin": "638c09c6171277441461a1da389270bdb0b1b3c160a23dda8316be7ceb409550"
+  },
+  "cycle_ratio_valid": false,
+  "metrics": {
+    "factor_vs_fp32": {
+      "cosine": 0.06605734462377656,
+      "normalized_rmse": 1.6974392063582704
+    },
+    "factor_vs_full": {
+      "cosine": 0.9843747452855813,
+      "normalized_rmse": 0.1760862353593325
+    },
+    "full_vs_fp32": {
+      "cosine": 0.054453522863493246,
+      "normalized_rmse": 1.725878124331419
+    }
+  },
+  "numerical_qualification": "not_established",
+  "schema": "mx_gemmini.smolvla_prefix_factor_result.v1",
+  "scope": "compiled step-8 state and time; captured FP32 prefix cache"
+}

@@ -1,0 +1,20 @@
+{
+  "compiled_run_sha256": "c18ca380b0c52179ae5987170a20bfb1af2507bbfcd3fbb93011f6bbf74e469e",
+  "compiled_state_step8_sha256": "50e3a9cea61fa8fc5ddf99894030d08462c0e4312bee75c51009879d26a71e20",
+  "compiled_timestep_step8_sha256": "85d668eab86ccff93cac8129c23b6e519521e1ade41ca333fd3a072e425f698a",
+  "derived_inputs_sha256": "8c1aa4993b1045fdd53064e36abe2ded666a637e2948a320cf3d17e8578caaa2",
+  "diagnostic": "compiled_state_fp32_prefix_control",
+  "flow_input_sha256": "50e3a9cea61fa8fc5ddf99894030d08462c0e4312bee75c51009879d26a71e20",
+  "initial_cache_bf16_sha256": "c5e217c65642ff83f5746f596066d43d467187581e13dbd432cf2e660c38e41a",
+  "initial_cache_sha256": "79361e6788f156ba8a81168f97a6c0ae077e41b07a037c3057d5b96fdd878963",
+  "model_mlir_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+  "reference_output_sha256": "5f969809a70a9e90a62a7eaee23f19dd14ad136937e653bd2278438c4731849c",
+  "reference_step": 9,
+  "schema": "mx_gemmini.smolvla_prefix_factor.v1",
+  "session_contract_sha256": "77bfcfeeb3425e08745123b8df8fc08720399ac7ca94ce33d6c6d09fe87fc296",
+  "source_child_contract_sha256": "fde1036d0f8e73531f4d136b18ce953107c9ce629f7823fd0bedf10e70908034",
+  "source_inputs_sha256": "4ddbc494f37c31c4bba97f7158f73e90d8491ab40b20fc1536626e3319a57075",
+  "source_quality_sha256": "d61259c6e424d41767efded955832af1e58b0ed5358b7803854d8d4b0435ac3b",
+  "source_session_contract_sha256": "1ce9c8c732c3d48ec27dd5a362461cf4fe8695c71e9ff08d43585f57668cf33b",
+  "timestep_input": 0.09521484375
+}

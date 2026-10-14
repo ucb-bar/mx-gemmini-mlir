@@ -319,6 +319,7 @@ def results(slide, smol_comparison: dict | None,
             equal_work: dict | None, tiny_logits: dict | None,
             smol_actions: dict | None, prefill_precision: dict | None,
             smol_reference_step: dict | None,
+            smol_prefix_factor: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: full-model Spike" if tiny_logits or smol_actions
@@ -395,6 +396,23 @@ def results(slide, smol_comparison: dict | None,
     add_shape.fill.solid()
     add_shape.fill.fore_color.rgb = PALE_BLUE
     add_shape.line.fill.background()
+    step_comparison = None
+    if smol_reference_step:
+        full_cosine = smol_reference_step["metrics"]["full_vs_fp32"]["cosine"]
+        reset_cosine = smol_reference_step["metrics"]["isolated_vs_fp32"]["cosine"]
+        if smol_prefix_factor:
+            prefix_cosine = smol_prefix_factor["metrics"]["factor_vs_fp32"]["cosine"]
+            step_comparison = (
+                "SmolVLA step 9 vs FP32: full "
+                f"{full_cosine:.3f}; FP32 prefix only {prefix_cosine:.3f}; "
+                f"FP32 prefix + FP32 state {reset_cosine:.3f}."
+            )
+        else:
+            step_comparison = (
+                "SmolVLA step 9 vs FP32: full "
+                f"{full_cosine:.3f}; replay on FP32 cache/state "
+                f"{reset_cosine:.3f} (prefix + history reset)."
+            )
     if tiny_logits and smol_actions:
         prefill = tiny_logits["prefill_metrics"]
         decode = tiny_logits["decode_summary"]
@@ -404,11 +422,7 @@ def results(slide, smol_comparison: dict | None,
             "FP32 drift on fixed synthetic inputs: TinyLlama prefill logits "
             f"cosine {prefill['cosine']:.3f}; decode mean {decode['cosine_mean']:.3f}, "
             f"top token {decode['top_token_matches']}/32.\n" +
-            ("SmolVLA step 9 vs FP32: full "
-             f"{action['cosine']:.3f}; replay on FP32 cache/state "
-             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f} "
-             "(prefix + history reset)."
-             if smol_reference_step else
+            (step_comparison if step_comparison else
              "SmolVLA flow 0 → final action cosine "
              f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
              f"final normalized RMSE {action['normalized_rmse']:.3f}.")
@@ -436,11 +450,7 @@ def results(slide, smol_comparison: dict | None,
             "TinyLlama prefill vs FP32: mixed FP4/FP8 cosine "
             f"{mixed['cosine']:.3f}, all-FP8 {fp8['cosine']:.3f}. "
             "33-step logits pending.\n" +
-            ("SmolVLA step 9 vs FP32: full "
-             f"{action['cosine']:.3f}; replay on FP32 cache/state "
-             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f} "
-             "(prefix + history reset)."
-             if smol_reference_step else
+            (step_comparison if step_comparison else
              "SmolVLA flow 0 → final action vs FP32: cosine "
              f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
              f"final normalized RMSE {action['normalized_rmse']:.3f}.")
@@ -452,10 +462,7 @@ def results(slide, smol_comparison: dict | None,
             "SmolVLA flow 0 → final action vs captured FP32: cosine "
             f"{first_flow['cosine']:.3f} → {action['cosine']:.3f}; "
             f"final normalized RMSE {action['normalized_rmse']:.3f}.\n" +
-            ("Step 9 on FP32 state/cache: cosine "
-             f"{smol_reference_step['metrics']['isolated_vs_fp32']['cosine']:.3f}; "
-             "prefix and earlier flow errors removed."
-             if smol_reference_step else
+            (step_comparison if step_comparison else
              "Full-session output hashes match the timed compiler run; "
              "these values do not establish task success.")
         )
@@ -651,6 +658,7 @@ def main() -> None:
     parser.add_argument("--tiny-full-logits", type=Path)
     parser.add_argument("--smol-action-values", type=Path)
     parser.add_argument("--smol-reference-step", type=Path)
+    parser.add_argument("--smol-prefix-factor", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     args = parser.parse_args()
     if (args.tiny_full_run is None) != (args.tiny_full_comparison is None):
@@ -681,6 +689,8 @@ def main() -> None:
                     if args.smol_action_values else None)
     smol_reference_step = (json.loads(args.smol_reference_step.read_text())
                            if args.smol_reference_step else None)
+    smol_prefix_factor = (json.loads(args.smol_prefix_factor.read_text())
+                          if args.smol_prefix_factor else None)
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     if prefill_precision is not None:
@@ -782,6 +792,39 @@ def main() -> None:
                 or full.get("cosine") !=
                 smol_actions["final_action_metrics"]["cosine"]):
             parser.error("SmolVLA isolated replay needs the verified full action archive")
+    if smol_prefix_factor is not None:
+        if smol_actions is None or smol_reference_step is None:
+            parser.error("SmolVLA prefix control needs the full action and isolated replay")
+        folder = args.smol_prefix_factor.parent
+        artifacts = smol_prefix_factor.get("artifact_sha256") or {}
+        values = smol_prefix_factor.get("metrics") or {}
+        derived = json.loads((folder / "derived_replay_receipt.json").read_text())
+        control_link = json.loads((folder / "link.json").read_text())
+        full_link = json.loads((args.smol_action_values.parent / "tap_link.json").read_text())
+        if (smol_prefix_factor.get("schema") !=
+                "mx_gemmini.smolvla_prefix_factor_result.v1"
+                or smol_prefix_factor.get("cycle_ratio_valid") is not False
+                or smol_prefix_factor.get("numerical_qualification") !=
+                "not_established"
+                or not artifacts
+                or any(file_sha256(folder / path) != digest
+                       for path, digest in artifacts.items())
+                or derived.get("compiled_run_sha256") !=
+                file_sha256(args.smol_action_values.parent / "tap_run.json")
+                or control_link["stage_object_sha256"]["flow_denoise"] !=
+                full_link["stage_object_sha256"]["flow_denoise"]
+                or control_link["profile_sha256"] != full_link["profile_sha256"]
+                or control_link["shared_weight_sha256"] !=
+                full_link["shared_weight_sha256"]
+                or set(values) !=
+                {"factor_vs_fp32", "full_vs_fp32", "factor_vs_full"}
+                or any(not isinstance(row.get("cosine"), (int, float))
+                       or not math.isfinite(row["cosine"])
+                       or not -1 <= row["cosine"] <= 1
+                       for row in values.values())
+                or abs(values["full_vs_fp32"]["cosine"] -
+                       smol_actions["final_action_metrics"]["cosine"]) > 1e-9):
+            parser.error("SmolVLA prefix control needs its verified full action archive")
     if equal_work is not None:
         evidence_dir = args.equal_work_attention.parent
         if (equal_work.get("schema") !=
@@ -993,7 +1036,7 @@ def main() -> None:
     results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
             equal_work, tiny_logits, smol_actions, prefill_precision,
-            smol_reference_step, total)
+            smol_reference_step, smol_prefix_factor, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)
