@@ -116,6 +116,13 @@ cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
 
+An [independent two-layer TinyLlama source smoke
+test](../evidence/nicolas_tinyllama_two_layer_source_20261014/README.md)
+passes every generated stage check on the same Spike extension. Its separate
+timers report 6.20 million mesh cycles and 347.48 million scalar host cycles.
+It uses 64 tokens, two FP8 layers, and host scalar operations, so those
+counters are not a cycle baseline for the compiler's captured full session.
+
 A whole-model handwritten fused MX+VPU baseline on the same captured graphs
 has not been measured, so the slide does not estimate its cycles. For example,
 Nicolas's `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;

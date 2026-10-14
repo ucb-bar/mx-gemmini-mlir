@@ -1,0 +1,5 @@
+--- a/baremetal/mxgemmini/gen/mesh_par.py
++++ b/baremetal/mxgemmini/gen/mesh_par.py
+@@ -104 +104 @@
+-    workers = workers or min(len(os.sched_getaffinity(0)), N // chunk_n)
++    workers = workers or min(8, len(os.sched_getaffinity(0)), N // chunk_n)

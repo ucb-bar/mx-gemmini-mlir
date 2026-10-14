@@ -1,0 +1,32 @@
+--- a/kernels/captures/llama_model.py
++++ b/kernels/captures/llama_model.py
+@@ -70,0 +71,2 @@
++    ap.add_argument("--input-ids", type=Path,
++                    help="captured model2MLIR prefill inputs.npz; uses seq+1 IDs")
+@@ -101,8 +103,12 @@
+-    from datasets import load_dataset
+-    from transformers import AutoTokenizer
+-    testdata = load_dataset(*WIKITEXT2, split="test")
+-    tokenizer = AutoTokenizer.from_pretrained(args.model_id, use_fast=False)
+-    enc = tokenizer("\n\n".join(testdata["text"]), return_tensors="pt")
+-    # One extra token: the last position's label is the token AFTER the window, which is what a
+-    # perplexity over all `seq` positions needs.
+-    ids_all = enc.input_ids[:, args.tok0:args.tok0 + args.seq + 1]
++    if args.input_ids is not None:
++        with np.load(args.input_ids, allow_pickle=False) as captured:
++            ids_all = torch.from_numpy(captured["in0"].copy()).long()
++        ids_all = ids_all[:, args.tok0:args.tok0 + args.seq + 1]
++    else:
++        from datasets import load_dataset
++        from transformers import AutoTokenizer
++        testdata = load_dataset(*WIKITEXT2, split="test")
++        tokenizer = AutoTokenizer.from_pretrained(args.model_id, use_fast=False)
++        enc = tokenizer("\n\n".join(testdata["text"]), return_tensors="pt")
++        # One extra token supplies the last position's perplexity label.
++        ids_all = enc.input_ids[:, args.tok0:args.tok0 + args.seq + 1]
+@@ -217 +223,4 @@
+-    print(f"  tokens : {tokenizer.decode(ids[0][:16])!r} ...")
++    if args.input_ids is None:
++        print(f"  tokens : {tokenizer.decode(ids[0][:16])!r} ...")
++    else:
++        print(f"  token ids: {ids[0][:16].tolist()} ...")

@@ -1,0 +1,9 @@
+llama MODEL: 2 layer(s)  M=64 D=2048 F=5632 heads=32 kv=4 (fp8 e4m3 + E8M0)
+plan  spad 16384 rows | attn proj N=32, o_proj 2 x 1024 | mlp proj 176 x 32, down 4 x 512 (22 K-tiles of 256)
+layer  0  mesh 0  host 0  seam 0  |  h_out vs model: rel_fro 61398 ppm
+layer  1  mesh 0  host 0  seam 0  |  h_out vs model: rel_fro 132838 ppm
+grade final hidden vs model: rel_fro 132838 ppm
+cycles mesh 6199178, host 347476561
+llama MODEL test PASSED (2 layer(s); every mesh stage, every seam and every host stage bit-exact).
+Gemmini extension configured with:
+    dim = 16
