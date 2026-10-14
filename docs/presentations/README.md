@@ -16,7 +16,7 @@ integration currently live in Python modules under `mx_gemmini_support/`.
 transformations, not registered C++ MLIR passes.
 
 Slide 1 quotes an abbreviated form of the FP4 payload in
-[`payload_bound.mlir`](../evidence/nicolas_direct_sixteen_28936e2_266c593/fp4_128x128x64_requant_dim32/payload_bound.mlir).
+[`payload_bound.mlir`](../evidence/nicolas_direct_sixteen_28936e2_266c593/fp4_64x64x64_nonrequant_dim32/payload_bound.mlir).
 Its four `mx_gemmini.resource` operands contain packed activation/weight
 codes and E8M0 scales. `mx_gemmini.contract` fixes the FP4 direct PE tuple;
 `mx_gemmini.readout_bf16` requests the result. The physical lowering produces
@@ -85,13 +85,14 @@ receipt](../evidence/nicolas_matrix_substitution_smolvla_20261013/README.md)
 records 2,112,653,481 compiler versus 2,112,919,925 Nicolas native issuer
 cycles for one flow step, with identical declared output hashes.
 
-The compiler's 12-step SmolVLA timing receipt records 72,066,544,354 modeled
-cycles; full-session numeric qualification remains pending. The source-side
-12-step issuer substitution is still running as of 2026-10-13. That
+The [full SmolVLA comparison](../evidence/nicolas_matrix_substitution_smolvla_full_20261013/README.md)
+records 72,066,544,354 compiler cycles and 71,875,683,634 Nicolas native
+matrix-issuer cycles over all 12 steps. All 33 output digests match. This
 experiment changes MX matrix issuers while holding the host graph and VPU
 objects fixed. A whole-model handwritten fused MX+VPU baseline on the same
 captured SmolVLA graph has not been measured, so the slide does not estimate
-its cycles.
+its cycles. TinyLlama's optimized full session still exits during prefill;
+the slide marks its missing cycle total rather than extrapolating one.
 
 ## Regenerate
 
@@ -100,10 +101,12 @@ Install `python-pptx`, then run:
 ```sh
 python tools/build_mx_overview_deck.py \
   --template /path/to/Lab_Pastel_Template.pptx \
+  --smol-full-comparison \
+    docs/evidence/nicolas_matrix_substitution_smolvla_full_20261013/comparison.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 
 The script keeps only the template's architecture, process, and results
 layouts, edits their native objects, and adds source-specific labels and
-figures. Update the source-side 12-step cell only after the linked-session
-comparison tool confirms matching output digests and timing receipts.
+figures. The generator accepts optional full TinyLlama run/comparison receipts
+only when the complete 33-step run and equal-output comparator succeed.

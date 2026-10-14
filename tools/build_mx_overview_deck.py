@@ -134,7 +134,7 @@ def architecture(slide) -> None:
     clear_content(slide)
     add_panel(slide, 0.94, 1.64, 5.65, 2.98, SAND)
     add_panel(slide, 6.76, 1.64, 5.65, 2.98, PALE_BLUE)
-    add_text(slide, "Radiance FP4 GEMM → typed MX", 1.15, 1.82, 5.2, 0.34,
+    add_text(slide, "FP4 GEMM → typed MX", 1.15, 1.82, 5.2, 0.34,
              size=17.5, bold=True, color=NAVY)
     add_code(slide,
              '%acc = "mx_gemmini.contract"(%A,%As,%B,%Bs) {\n'
@@ -231,7 +231,7 @@ def configurations(slide) -> None:
              "• FP4 selects PE 0; 256 KiB SPAD bounds tiling.\n"
              "• vpu_execute / spad_requant become legal.\n"
              "• FP6 contracts reject here; use its LUT profile.\n"
-             "• load_profile(rtl_root) rejects RTL drift.",
+             "• load_profile(profile, rtl_root=rtl) rejects drift.",
              7.38, 4.42, 4.78, 1.62, size=11.6, color=INK)
     add_text(slide,
              "npu-exploration supplies source kernels for per-mode Spike checks; "
@@ -356,7 +356,9 @@ def main() -> None:
             continue
         if (comparison.get("schema") != "mx_gemmini.equal_input_session_cycles.v1"
                 or comparison.get("output_digest_parity") is not True
-                or comparison.get("reference_cycles") != expected):
+                or comparison.get("reference_cycles") != expected
+                or not isinstance(comparison.get("candidate_cycles"), int)
+                or comparison["candidate_cycles"] <= 0):
             parser.error("full-session comparison lacks equal-output timing evidence")
     prs = Presentation(args.template)
     keep_slides(prs)

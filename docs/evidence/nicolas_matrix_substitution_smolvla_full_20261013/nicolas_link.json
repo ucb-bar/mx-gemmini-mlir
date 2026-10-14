@@ -1,0 +1,99 @@
+{
+  "arena_layout": {
+    "arena_base": 9663676416,
+    "arena_bytes": 7516192768,
+    "mem_bytes": 15032385536,
+    "weights_base": 8589934592
+  },
+  "bindings": [
+    {
+      "name": "prefix_pad_masks",
+      "source_output": 0,
+      "source_program": "prefix_encode",
+      "target_input": 505,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "prefix_kv_cache",
+      "source_output": 1,
+      "source_program": "prefix_encode",
+      "target_input": 506,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "decoded_flow_state",
+      "source_output": 0,
+      "source_program": "flow_denoise",
+      "target_input": 0,
+      "target_program": "action_decode"
+    }
+  ],
+  "dump_outputs": [],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/nicolas_native_matrix_full_link_20261013/session.elf",
+  "elf_bytes": 1106814304,
+  "elf_sha256": "7f73924b874e96c108fbf6f9dcbbcaf7c311eebd37cc8e7792e9741bd1baeab1",
+  "mem_bytes": 15032385536,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+      "name": "prefix_encode",
+      "outputs": 2,
+      "selected_operations": 243,
+      "steps": 1
+    },
+    {
+      "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "name": "flow_denoise",
+      "outputs": 3,
+      "selected_operations": 148,
+      "steps": 10
+    },
+    {
+      "capture_model_sha256": "c194700d5a9e19aa83456862f666a41559c83e51b992709bba598d681176224b",
+      "name": "action_decode",
+      "outputs": 1,
+      "selected_operations": 0,
+      "steps": 1
+    }
+  ],
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/captures_xdsl065/smolvla/smolvla_session",
+  "shared_weight_bytes": 906639456,
+  "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+  "shared_weight_stage": "prefix_encode",
+  "stage_object_sha256": {
+    "action_decode": {
+      "model.o": "f2a9b20e79e1303fdc78d63e2697b46a405579ac8f3f11a8ff457cb01b02db03"
+    },
+    "flow_denoise": {
+      "device/device_catalog_shim.o": "20bab5ceb8ad7bca654216d0f72910108ceb5b4e40efe065063985278fff3185",
+      "device_catalog/mx_catalog.o": "1b69a78f2f68bf04a830126c770530624d256491054caa656781129dba1efb1c",
+      "model.o": "f8b42d6c69ec802568225af7f9e57f702f4309861669e4d14b963b68f1cdd0b1"
+    },
+    "prefix_encode": {
+      "device/device_catalog_shim.o": "a0e61fd160a30cae091bd6491a61f32e1e9ef904b332827ef49804cc126203d1",
+      "device_catalog/mx_catalog.o": "78d53961bc38623c6065d28402b2615e13c066c12c599bebdfd25c39d35c106d",
+      "model.o": "6cd2c71fa98a6f74e08fb0cf2ab1da2e0c4a284e5b19720ab3273c3a24eb4a77"
+    }
+  },
+  "static_malloc_estimates": {
+    "action_decode": {
+      "callsites": 0,
+      "dynamic_sites": 0,
+      "literal_bytes": 0
+    },
+    "flow_denoise": {
+      "callsites": 1273,
+      "dynamic_sites": 0,
+      "literal_bytes": 203493396
+    },
+    "prefix_encode": {
+      "callsites": 2218,
+      "dynamic_sites": 1,
+      "literal_bytes": 4821420933
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}

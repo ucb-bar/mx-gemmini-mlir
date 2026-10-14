@@ -1,0 +1,43 @@
+{
+  "candidate_cycles": 71875683634,
+  "candidate_link_sha256": "795abad861fd9a1aa19a40a9f11dddb16e1310fe63ea76da2ade540f6e95118e",
+  "candidate_over_reference": 0.9973516043857679,
+  "candidate_run_sha256": "1afc225fa1c927c85315be971d44beb6075a8af50c760678a2dd2e365317a888",
+  "changed_stage_objects": [
+    "flow_denoise/device_catalog/mx_catalog.o",
+    "prefix_encode/device_catalog/mx_catalog.o"
+  ],
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "output_digest_parity": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "candidate_cycles": 50557656572,
+      "candidate_over_reference": 0.9964228069057057,
+      "name": "prefix_encode",
+      "reference_cycles": 50739160346,
+      "steps": 1
+    },
+    {
+      "candidate_cycles": 21318022826,
+      "candidate_over_reference": 0.999561270718671,
+      "name": "flow_denoise",
+      "reference_cycles": 21327379772,
+      "steps": 10
+    },
+    {
+      "candidate_cycles": 4236,
+      "candidate_over_reference": 1.0,
+      "name": "action_decode",
+      "reference_cycles": 4236,
+      "steps": 1
+    }
+  ],
+  "reference_cycles": 72066544354,
+  "reference_link_sha256": "1d3d561995bd13be4fb37edea196ec49f9c1240f79738277809f395e26a67cb0",
+  "reference_run_sha256": "b8de13c10daa2ad0ae6c0c90bae11f39ab26948ab34bd72938726812aed47b58",
+  "schema": "mx_gemmini.equal_input_session_cycles.v1",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "timing_config": "e4m3_vpu",
+  "timing_overrides": "mem.host_tracking=0"
+}
