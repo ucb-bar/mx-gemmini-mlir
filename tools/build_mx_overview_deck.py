@@ -377,8 +377,10 @@ def results(slide, smol_comparison: dict | None,
         short, long = smol_attention_pair["rows"]
         schedule = smol_attention_pair.get("compiler_schedule", "fenced")
         cycle_field = f"compiler_{schedule}_cycles"
+        late_pair = short.get("captured_step") == long.get("captured_step") == 9
         attention_row = (
-            "SmolVLA attention head · 113 / 163 keys‡",
+            ("SmolVLA final-step head · 113 / 163 keys‡" if late_pair else
+             "SmolVLA attention head · 113 / 163 keys‡"),
             f"{short[cycle_field][0]:,} / {long[cycle_field][0]:,}",
             f"{short['source_pipelined_cycles'][0]:,} / "
             f"{long['source_pipelined_cycles'][0]:,}",
@@ -629,8 +631,11 @@ def results(slide, smol_comparison: dict | None,
         )
     if smol_attention_pair:
         schedule = smol_attention_pair.get("compiler_schedule", "fenced")
+        scope = ("final flow step" if all(row.get("captured_step") == 9
+                                        for row in smol_attention_pair["rows"])
+                 else "first call")
         footer_text += (
-            "\n‡ Captured first-call head 0: all 4,096 BF16 values match per "
+            f"\n‡ Captured {scope}, head 0: all 4,096 BF16 values match per "
             f"shape; source pipelined, compiler {schedule}. No whole-model ratio."
         )
     set_text(
@@ -831,6 +836,10 @@ def main() -> None:
         artifacts = smol_attention_pair.get("artifact_sha256") or {}
         schedule = smol_attention_pair.get("compiler_schedule", "fenced")
         overlapped = schedule in {"queued", "pipelined"}
+        late_pair = ([row.get("captured_step") for row in rows] == [9, 9])
+        pair_root = args.smol_attention_pair.parent.parent
+        plan_root = (pair_root.parent / "smolvla_attention_cutpoint_20261014"
+                     if late_pair else pair_root)
         cycle_field = f"compiler_{schedule}_cycles"
         expected_schema = (f"mx_gemmini.smolvla_masked_attention_paired_{schedule}.v1"
                            if overlapped else "mx_gemmini.smolvla_masked_attention_paired.v1")
@@ -841,7 +850,7 @@ def main() -> None:
                 prefill_precision["profile_sha256"]
                 or schedule not in {"fenced", "queued", "pipelined"}
                 or (overlapped and smol_attention_pair.get("schedule_plan_sha256") !=
-                    file_sha256(args.smol_attention_pair.parent.parent /
+                    file_sha256(plan_root /
                                 ("attention_queue.schedule.mlir" if schedule == "queued"
                                  else "attention_pipeline.schedule.mlir")))
                 or (schedule == "pipelined" and
@@ -849,6 +858,13 @@ def main() -> None:
                     file_sha256(Path(__file__).resolve().parents[1] /
                                 "tools/fixtures/smol_attention_compiler_first_driver.c"))
                 or [row.get("logical_keys") for row in rows] != [113, 163]
+                or (late_pair and (
+                    smol_attention_pair.get("scope") !=
+                    "final flow step calls 14 and 15; head 0 only" or
+                    [row.get("captured_call") for row in rows] != [15, 14] or
+                    smol_attention_pair.get("spike_mode") !=
+                    "GEMMINI_MODE=both; GEMMINI_PERF_CONFIG=e4m3_vpu; "
+                    "GEMMINI_PERF_SET=mem.host_tracking=0"))
                 or not artifacts
                 or any(file_sha256(args.smol_attention_pair.parent / name)
                        != digest for name, digest in artifacts.items())
