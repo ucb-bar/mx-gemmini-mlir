@@ -1,0 +1,14 @@
+{
+  "archive_sha256": "33b405450bc247266e6557179ca6366b2ddff93e7dc72e53e17738c2cc379e04",
+  "complete": true,
+  "cycle_ratio_valid_without_matched_compiler_run": false,
+  "emitted_logit_rows": 33,
+  "input_identity_sha256": "effbff2da0f9263e581d85dd282dcd29f11af3092a7349fba6c42e8eb813cbf5",
+  "rows_match_generated_bf16_reference": true,
+  "schema": "mx_gemmini.nicolas_tinyllama_onepass_source_timed.v1",
+  "scope": "160-token causal forward through 22 layers and LM head; source timer starts from precomputed BF16 embeddings",
+  "source_vs_captured_fp32_late_cosine_mean": 0.9885641558918008,
+  "source_vs_captured_fp32_top_matches_33": 27,
+  "spike_log_sha256": "c19f8468426a5f2089f8950b0178db327b76656bda5a0cf647796eb4e1d28864",
+  "stage_cycles": 12703713784
+}

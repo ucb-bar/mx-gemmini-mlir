@@ -31,6 +31,15 @@ qualifications. The source BF16 forward and the compiler FP32 capture have
 mean cosine of those rows is 0.999960. This verifies the input capture, not
 the Spike program outputs.
 
+The [independent timed source run](source_timed_summary.json) has now
+completed on Nicolas's MX+VPU Spike: **12,703,713,784 modeled cycles** for
+the 160-token forward. Its 33 emitted BF16 logit rows exactly match the
+generated source reference. Against the captured FP32 logits, 27/33 late
+top tokens match and mean cosine is 0.988564. The compressed
+[Spike log](source_timed.log.gz) preserves the emitted rows and counter.
+These are source program results; the matched compiler run must finish
+before reporting a compiler versus source comparison.
+
 ## Reproduce the inputs
 
 Use model2MLIR commit `902cb22` or later on `cx/mx-vpu-four-model-e2e`,
