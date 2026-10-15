@@ -1,0 +1,76 @@
+--- a/baremetal/mxgemmini/src/llama_model.c
++++ b/baremetal/mxgemmini/src/llama_model.c
+@@ -90,7 +90,7 @@
+ #define SPAD_ROWS    (BANK_NUM * BANK_ROWS)
+ #define ROWS8(m, n)  ((m) * (n) / DIM)
+ #define ROWS16(m, n) ((m) * (n) * 2 / DIM)
+-#define A_MTILE      (LLAMA_M > 64 ? 64 : LLAMA_M)
++#define A_MTILE      (LLAMA_M % 64 == 0 ? 64 : 32)
+ 
+ #ifndef LLAMA_SCALE_ROWS_MAX
+ #define LLAMA_SCALE_ROWS_MAX 256
+@@ -114,10 +114,13 @@
+ #define A_H2_B_V_ARG  (A_H2_B_V + ROWS8(LLAMA_M, LLAMA_H))
+ #define A_H2_C_S      A_H2_B_V_ARG
+ #define A_H2_C_O      (A_H2_C_S + ROWS16(LLAMA_M, LLAMA_M))
++#define ACC_TILES(m, n) (((m) / DIM) * ((n) / DIM))
++#define ACC_HALF_FITS(m, n) (ACC_TILES((m), (n)) <= ACC_ROWS / 2)
+ #define A_P3_COST(dc) (ROWS16(LLAMA_M, (dc)) + ROWS8(LLAMA_H, (dc)) + ROWS8(LLAMA_M, LLAMA_H))
+-#define A_YCHUNK   (A_P3_COST(2048) <= SPAD_ROWS ? 2048 : A_P3_COST(1024) <= SPAD_ROWS ? 1024 : \
+-                    A_P3_COST(512) <= SPAD_ROWS ? 512 : A_P3_COST(256) <= SPAD_ROWS ? 256 : \
+-                    A_P3_COST(128) <= SPAD_ROWS ? 128 : 64)
++#define A_P3FITS(dc) (A_P3_COST(dc) <= SPAD_ROWS && ACC_HALF_FITS(LLAMA_M, (dc)))
++#define A_YCHUNK   (A_P3FITS(2048) ? 2048 : A_P3FITS(1024) ? 1024 : \
++                    A_P3FITS(512) ? 512 : A_P3FITS(256) ? 256 : \
++                    A_P3FITS(128) ? 128 : 64)
+ #define A_YCHUNKS     (LLAMA_D / A_YCHUNK)
+ #define A_SPAD_Y      0
+ #define A_SPAD_WO     (A_SPAD_Y + ROWS16(LLAMA_M, A_YCHUNK))
+@@ -143,6 +146,7 @@
+ #define M_SPAD_GU     M_SPAD_WB_ARG
+ #define M_Y_COST(kt, nc) (ROWS8(LLAMA_M, (kt)) + ROWS8((kt), (nc)) + ROWS16(LLAMA_M, (nc)))
+ #define M_YFITS(kt, nc)  (M_Y_COST((kt), (nc)) <= SPAD_ROWS && \
++                          ACC_HALF_FITS(LLAMA_M, (nc)) && \
+                           SCALE_ROWS((kt), (nc)) <= LLAMA_SCALE_ROWS_MAX && \
+                           SCALE_ROWS((kt), LLAMA_M) <= LLAMA_SCALE_ROWS_MAX)
+ #define M_NCHUNK (M_YFITS(128, 1024) ? 1024 : M_YFITS(128, 512) ? 512 : \
+@@ -174,12 +178,15 @@
+ LLAMA_REQUIRE(a_heads_fit,       A_H2_C_O + ROWS8(LLAMA_M, LLAMA_H) <= SPAD_ROWS);
+ LLAMA_REQUIRE(a_ychunk_divides,  A_YCHUNK * A_YCHUNKS == LLAMA_D);
+ LLAMA_REQUIRE(a_oproj_fits,      A_SPAD_OA + ROWS8(LLAMA_M, LLAMA_H) <= SPAD_ROWS);
++LLAMA_REQUIRE(a_oproj_acc_fits,  ACC_HALF_FITS(LLAMA_M, A_YCHUNK));
++LLAMA_REQUIRE(o_scale_slot_align, (LLAMA_M * LLAMA_GH) % 32 == 0);
+ LLAMA_REQUIRE(m_pktile_divides,  M_PKTILE * M_PKTILES == LLAMA_D);
+ LLAMA_REQUIRE(m_fchunk_divides,  M_FCHUNK * M_FCHUNKS == LLAMA_F);
+ LLAMA_REQUIRE(m_proj_fits,       M_SPAD_GU + ROWS16(LLAMA_M, M_FCHUNK) <= SPAD_ROWS);
+ LLAMA_REQUIRE(m_ktile_divides,   M_KTILE * M_KTILES == LLAMA_F);
+ LLAMA_REQUIRE(m_nchunk_divides,  M_NCHUNK * M_NCHUNKS == LLAMA_D);
+ LLAMA_REQUIRE(m_down_fits,       M_SPAD_Y + ROWS16(LLAMA_M, M_NCHUNK) <= SPAD_ROWS);
++LLAMA_REQUIRE(m_down_acc_fits,   ACC_HALF_FITS(LLAMA_M, M_NCHUNK));
+ LLAMA_REQUIRE(m_proj_scale_fits, SCALE_ROWS(M_PKTILE, M_FCHUNK) <= LLAMA_SCALE_ROWS_MAX);
+ LLAMA_REQUIRE(m_down_scale_fits, SCALE_ROWS(M_KTILE, M_NCHUNK) <= LLAMA_SCALE_ROWS_MAX);
+ LLAMA_REQUIRE(m_down_ascale_fits, SCALE_ROWS(M_KTILE, LLAMA_M) <= LLAMA_SCALE_ROWS_MAX);
+@@ -228,7 +235,7 @@
+ static float    p_f[LLAMA_M * LLAMA_M];
+ static uint8_t  p_codes[LLAMA_M * LLAMA_M], p_scales[LLAMA_GM * LLAMA_M];
+ static uint8_t  O_hw[LLAMA_NH][LLAMA_M * LLAMA_H];
+-static uint32_t o_scales_dram[LLAMA_NH][64] __attribute__((aligned(32)));
++static uint32_t o_scales_dram[LLAMA_NH][(LLAMA_M * LLAMA_GH + 3) / 4] __attribute__((aligned(32)));
+ static uint8_t  wo_scales_chunk[LLAMA_GH * A_YCHUNK];
+ static uint8_t  o_scales_a[LLAMA_GH * LLAMA_M];
+ static uint8_t  a_proj_scales_chunk[LLAMA_GD * A_PROJ_N];
+@@ -798,6 +805,14 @@
+       printf("%04x", (unsigned) logits_hw[(LLAMA_M - 1) * LLAMA_V + v]);
+     printf("\n");
+ #endif
++#ifdef LLAMA_DUMP_SESSION_LOGITS
++    for (int m = 127; m < LLAMA_M; m++) {
++      printf("session_logits_bf16 %d ", m - 127);
++      for (int v = 0; v < LLAMA_V; v++)
++        printf("%04x", (unsigned) logits_hw[m * LLAMA_V + v]);
++      printf("\n");
++    }
++#endif
+   }
+ #else
+   printf("grade final hidden vs model: rel_fro %d ppm\n",

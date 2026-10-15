@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -45,6 +46,10 @@ def main() -> None:
                         help="required for any stage with MX calls")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--timeout-s", type=int, default=3600)
+    parser.add_argument("--spike-isa", choices=("rv64gc", "rv64gc_zicntr"),
+                        default="rv64gc")
+    parser.add_argument("--perf-config", help="pinned Gemmini extension performance mode")
+    parser.add_argument("--perf-set", help="pinned Gemmini extension performance settings")
     args = parser.parse_args()
     if args.timeout_s < 1:
         parser.error("--timeout-s must be positive")
@@ -94,17 +99,29 @@ def main() -> None:
     mem_bytes = build.get("mem_bytes")
     if type(mem_bytes) is not int or mem_bytes < elf.stat().st_size:
         parser.error("build receipt has no valid Spike memory size")
-    cmd = [str(spike), "--isa=rv64gc"]
+    cmd = [str(spike), f"--isa={args.spike_isa}"]
     if extlib is not None:
         cmd += [f"--extlib={extlib}", "--extension=gemmini"]
     cmd += [f"-m{hex(spike_model.DRAM_BASE)}:{hex(mem_bytes)}", str(elf)]
     elf_sha = _sha(elf)
     out.mkdir(parents=True)
+    run_env = os.environ.copy()
+    spike_environment = {}
+    if extlib is not None:
+        spike_environment["GEMMINI_MODE"] = "both"
+    if args.perf_config is not None:
+        spike_environment["GEMMINI_PERF_CONFIG"] = args.perf_config
+    if args.perf_set is not None:
+        spike_environment["GEMMINI_PERF_SET"] = args.perf_set
+    if args.perf_config is not None or args.perf_set is not None:
+        spike_environment["GEMMINI_PERF_OUT"] = str(out / "mx_perf.txt")
+    run_env.update(spike_environment)
     log = out / "spike.log"
     with log.open("wb") as stream:
         try:
             completed = subprocess.run(cmd, stdout=stream, stderr=subprocess.STDOUT,
-                                       timeout=args.timeout_s, check=False)
+                                       timeout=args.timeout_s, check=False,
+                                       env=run_env)
             exit_code = completed.returncode
         except subprocess.TimeoutExpired:
             exit_code = 124
@@ -126,6 +143,7 @@ def main() -> None:
         "spike_sha256": _sha(spike),
         "extension_sha256": _sha(extlib) if extlib is not None else None,
         "command": cmd,
+        "spike_environment": spike_environment,
         "exit_code": exit_code,
         "done": done,
         "log": str(log),

@@ -1,0 +1,20 @@
+{
+  "all_mx_operand_pairs_e4m3": true,
+  "build_hash": "9221d44579d1",
+  "build_receipt_sha256": "74d1f2bb8adc152d716857421cc5533ed03220c9afc649b103bd1aed6fa46c71",
+  "capture_model_sha256": "4165fc24aef9abd48cc4f416915f8500c0dc9a6e2a77c0926ac0fb3e33dfa850",
+  "catalog_manifest_sha256": "207f8c9b3c686aead2a7602a15a79bf0e82ed3bdbe476c0fef87d2ecc5d13721",
+  "elf_bytes": 5468132512,
+  "precision_overrides_sha256": "426f682790e29c4ad1fefd2f17b26a8a27d5cb3e9540fcc9bfd6bce88840d0d5",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.tinyllama_onepass160_build_summary.v1",
+  "selected_mx_contractions": 200,
+  "spike_memory_bytes": 11811160064,
+  "vpu_lowered_regions": {
+    "add": 88,
+    "elementwise": 358,
+    "reduce": 45,
+    "softmax": 22,
+    "unary": 156
+  }
+}
