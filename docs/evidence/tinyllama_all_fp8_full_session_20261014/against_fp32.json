@@ -1,0 +1,350 @@
+{
+  "decode_build_receipt_sha256": "4657138b88208ea21592d6ee15566caf2e511400ea8f4f000531ead52f072ce6",
+  "decode_reference_sha256": "38d2af32bf3f6e47de07a257cab846e8f582091312d206af307cd116dc5f7585",
+  "decode_step_metrics": [
+    {
+      "actual_top_token": 29889,
+      "cosine": 0.7777629828918363,
+      "normalized_rmse": 0.6343558621033536,
+      "reference_top_rank_in_actual": 26,
+      "reference_top_token": 29871,
+      "rmse": 1.549184075363506,
+      "step": 0,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29889,
+      "cosine": 0.8259672173644109,
+      "normalized_rmse": 0.564768853521064,
+      "reference_top_rank_in_actual": 24,
+      "reference_top_token": 29871,
+      "rmse": 1.7497081676611563,
+      "step": 1,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 30705,
+      "cosine": 0.631017834143203,
+      "normalized_rmse": 0.7845345387707281,
+      "reference_top_rank_in_actual": 82,
+      "reference_top_token": 29982,
+      "rmse": 2.0962752254989634,
+      "step": 2,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29889,
+      "cosine": 0.6118951185357565,
+      "normalized_rmse": 0.7911547497183095,
+      "reference_top_rank_in_actual": 6,
+      "reference_top_token": 5391,
+      "rmse": 1.716559807698577,
+      "step": 3,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 13,
+      "cosine": 0.8451046403372201,
+      "normalized_rmse": 0.6652220928433739,
+      "reference_top_rank_in_actual": 7,
+      "reference_top_token": 29908,
+      "rmse": 1.9819602031730845,
+      "step": 4,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29889,
+      "cosine": 0.6962944916106576,
+      "normalized_rmse": 0.7247440065254045,
+      "reference_top_rank_in_actual": 49,
+      "reference_top_token": 29871,
+      "rmse": 2.2607557587852187,
+      "step": 5,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 439,
+      "cosine": 0.6097113549841258,
+      "normalized_rmse": 0.8184671238130103,
+      "reference_top_rank_in_actual": 172,
+      "reference_top_token": 327,
+      "rmse": 1.6800812481546108,
+      "step": 6,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 25956,
+      "cosine": 0.430763097965893,
+      "normalized_rmse": 0.9512171547897037,
+      "reference_top_rank_in_actual": 1544,
+      "reference_top_token": 529,
+      "rmse": 2.2896401097129466,
+      "step": 7,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29889,
+      "cosine": 0.6217521405036832,
+      "normalized_rmse": 0.9057202324516388,
+      "reference_top_rank_in_actual": 29,
+      "reference_top_token": 29875,
+      "rmse": 2.0288272426513414,
+      "step": 8,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.6773104245501821,
+      "normalized_rmse": 0.7362679197813382,
+      "reference_top_rank_in_actual": 9,
+      "reference_top_token": 29871,
+      "rmse": 1.657008583316344,
+      "step": 9,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.7858181011846648,
+      "normalized_rmse": 0.7024989040886824,
+      "reference_top_rank_in_actual": 4,
+      "reference_top_token": 29871,
+      "rmse": 2.5220538328525457,
+      "step": 10,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 292,
+      "cosine": 0.6201439674252448,
+      "normalized_rmse": 0.9979956385524514,
+      "reference_top_rank_in_actual": 2,
+      "reference_top_token": 287,
+      "rmse": 2.508098861175604,
+      "step": 11,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29915,
+      "cosine": 0.667043821270361,
+      "normalized_rmse": 0.8093353009757395,
+      "reference_top_rank_in_actual": 3,
+      "reference_top_token": 29889,
+      "rmse": 2.0745559525371107,
+      "step": 12,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.6351397205522877,
+      "normalized_rmse": 0.7796757991883545,
+      "reference_top_rank_in_actual": 2,
+      "reference_top_token": 29889,
+      "rmse": 1.7153683073423505,
+      "step": 13,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 14407,
+      "cosine": 0.6606528088283746,
+      "normalized_rmse": 0.7555571198288722,
+      "reference_top_rank_in_actual": 4,
+      "reference_top_token": 29889,
+      "rmse": 1.7401466670475199,
+      "step": 14,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 14407,
+      "cosine": 0.5714316794999775,
+      "normalized_rmse": 0.8213835424149489,
+      "reference_top_rank_in_actual": 53,
+      "reference_top_token": 29871,
+      "rmse": 1.7591751227885597,
+      "step": 15,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.6924228659065046,
+      "normalized_rmse": 0.7215931253609711,
+      "reference_top_rank_in_actual": 26,
+      "reference_top_token": 29871,
+      "rmse": 1.7742102934002528,
+      "step": 16,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29873,
+      "cosine": 0.6624649552870884,
+      "normalized_rmse": 0.7516340846210404,
+      "reference_top_rank_in_actual": 1,
+      "reference_top_token": 29873,
+      "rmse": 1.80160987809946,
+      "step": 17,
+      "top_token_equal": true
+    },
+    {
+      "actual_top_token": 29915,
+      "cosine": 0.46214023007383354,
+      "normalized_rmse": 1.4551206212741925,
+      "reference_top_rank_in_actual": 708,
+      "reference_top_token": 29873,
+      "rmse": 2.9184781590573325,
+      "step": 18,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.7382140116703846,
+      "normalized_rmse": 0.6833973655666571,
+      "reference_top_rank_in_actual": 7,
+      "reference_top_token": 29871,
+      "rmse": 1.7727185223582278,
+      "step": 19,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29915,
+      "cosine": 0.7273401282672383,
+      "normalized_rmse": 0.8269083184520063,
+      "reference_top_rank_in_actual": 24,
+      "reference_top_token": 29871,
+      "rmse": 1.9546967908806616,
+      "step": 20,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.7544605619103185,
+      "normalized_rmse": 0.6800868836624823,
+      "reference_top_rank_in_actual": 5,
+      "reference_top_token": 29871,
+      "rmse": 2.028822512886857,
+      "step": 21,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 14407,
+      "cosine": 0.6764822518509505,
+      "normalized_rmse": 0.7399291947661155,
+      "reference_top_rank_in_actual": 13,
+      "reference_top_token": 29871,
+      "rmse": 1.753585350858447,
+      "step": 22,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29899,
+      "cosine": 0.7282971433698463,
+      "normalized_rmse": 0.8203501728954898,
+      "reference_top_rank_in_actual": 250,
+      "reference_top_token": 29871,
+      "rmse": 2.05255045601739,
+      "step": 23,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.7510571491462751,
+      "normalized_rmse": 1.0298573700923714,
+      "reference_top_rank_in_actual": 6,
+      "reference_top_token": 29871,
+      "rmse": 2.391379574582479,
+      "step": 24,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.6013781733423306,
+      "normalized_rmse": 0.828582642558107,
+      "reference_top_rank_in_actual": 2,
+      "reference_top_token": 29871,
+      "rmse": 1.8964845920841686,
+      "step": 25,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 362,
+      "cosine": 0.4858490620030052,
+      "normalized_rmse": 0.8942090401275644,
+      "reference_top_rank_in_actual": 1,
+      "reference_top_token": 362,
+      "rmse": 1.7176685974475698,
+      "step": 26,
+      "top_token_equal": true
+    },
+    {
+      "actual_top_token": 920,
+      "cosine": 0.7293936988244715,
+      "normalized_rmse": 0.7355374005143193,
+      "reference_top_rank_in_actual": 48,
+      "reference_top_token": 29871,
+      "rmse": 2.033299866821095,
+      "step": 27,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 439,
+      "cosine": 0.7227715005368661,
+      "normalized_rmse": 0.7029410017568447,
+      "reference_top_rank_in_actual": 40,
+      "reference_top_token": 29871,
+      "rmse": 1.9083413577440076,
+      "step": 28,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 29892,
+      "cosine": 0.7049549049155063,
+      "normalized_rmse": 0.71056651564509,
+      "reference_top_rank_in_actual": 22,
+      "reference_top_token": 29871,
+      "rmse": 1.6861186672786688,
+      "step": 29,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 14407,
+      "cosine": 0.6579148425951344,
+      "normalized_rmse": 0.7851753557758624,
+      "reference_top_rank_in_actual": 543,
+      "reference_top_token": 29978,
+      "rmse": 2.36659434349622,
+      "step": 30,
+      "top_token_equal": false
+    },
+    {
+      "actual_top_token": 272,
+      "cosine": 0.4464595273180369,
+      "normalized_rmse": 0.8950441210795655,
+      "reference_top_rank_in_actual": 31,
+      "reference_top_token": 4395,
+      "rmse": 1.934706066031413,
+      "step": 31,
+      "top_token_equal": false
+    }
+  ],
+  "decode_summary": {
+    "cosine_mean": 0.6627940752708021,
+    "cosine_min": 0.430763097965893,
+    "steps": 32,
+    "top_token_matches": 2
+  },
+  "link_receipt_sha256": "402149865947d72616eff41c9bc86bcc87917ab7e69a22f475ddaeebd80663ad",
+  "numerical_qualification": "not_established",
+  "prefill_build_receipt_sha256": "300bb04c9422560b2c0820d78bcf4a36c80bcf89ed31fc4f924152898e36759e",
+  "prefill_metrics": {
+    "actual_top_token": 29889,
+    "cosine": 0.774152964202679,
+    "normalized_rmse": 0.6491756227819064,
+    "reference_top_rank_in_actual": 903,
+    "reference_top_token": 279,
+    "rmse": 1.5891294941695915,
+    "top_token_equal": false
+  },
+  "prefill_reference_sha256": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0",
+  "reference_kind": "captured_unquantized_fp32",
+  "run_receipt_sha256": "5fe9ae712ac446d679bdddaa3ec0911ef79941928bf26eb1c34723ea0e47e1a7",
+  "schema": "mx_gemmini.tinyllama_all_fp8_session_fp32.v1",
+  "scope": "128-token prefill plus 32 cached decode calls",
+  "total_modeled_cycles": 72901458175
+}
