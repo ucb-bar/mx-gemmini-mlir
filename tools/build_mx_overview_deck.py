@@ -313,7 +313,7 @@ def set_cell(cell, text: str, *, heading: bool = False, bold: bool = False,
     run.font.color.rgb = RGBColor(255, 255, 255) if heading else INK
 
 
-def results(slide, smol_comparison: dict | None,
+def results(slide, smol_comparison: dict | None, smol_full_mode: str,
             tiny_run: dict | None, tiny_comparison: dict | None,
             layer_probe: dict | None, full_source: dict | None,
             safe_vpu: dict | None, full_vpu: dict | None,
@@ -397,7 +397,7 @@ def results(slide, smol_comparison: dict | None,
         )
     values = (
         ("Workload / compared code", "Compiler cycles", "Control/source cycles", "Compiler Δ"),
-        ("SmolVLA full 12 steps · issuer swap",
+        (f"SmolVLA {smol_full_mode} 12-step · issuer swap",
          f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
          delta(smol_compiler, smol_native)),
@@ -718,6 +718,9 @@ def main() -> None:
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--smol-full-comparison", type=Path)
+    parser.add_argument("--smol-full-mode", choices=("mixed", "all-FP8"),
+                        default="mixed",
+                        help="precision of the full SmolVLA issuer-swap row")
     parser.add_argument("--tiny-full-run", type=Path)
     parser.add_argument("--tiny-full-comparison", type=Path)
     parser.add_argument("--tiny-layer-probe", type=Path)
@@ -1204,6 +1207,18 @@ def main() -> None:
                        or not name.endswith("/device_catalog/mx_catalog.o")
                        for name in changed)):
             parser.error("issuer-swap slide requires only MX catalog object changes")
+    if args.smol_full_mode == "all-FP8":
+        if smol_comparison is None or args.smol_all_fp8_action is None:
+            parser.error("all-FP8 SmolVLA cycles need the verified full-action archive")
+        folder = args.smol_all_fp8_action.parent
+        if (smol_comparison.get("reference_run_sha256") !=
+                file_sha256(folder / "run.json")
+                or smol_comparison.get("reference_link_sha256") !=
+                file_sha256(folder / "link.json")
+                or smol_comparison.get("reference_cycles") !=
+                json.loads((folder / "run.json").read_text())[
+                    "total_performance"]["cycles"]):
+            parser.error("all-FP8 SmolVLA cycles differ from the verified run")
     if tiny_comparison is not None and (
             tiny_comparison.get("reference_run_sha256") !=
             hashlib.sha256(args.tiny_full_run.read_bytes()).hexdigest()):
@@ -1214,7 +1229,8 @@ def main() -> None:
     total = 4 if radiance is not None else 3
     architecture(prs.slides[0], total)
     configurations(prs.slides[1], total)
-    results(prs.slides[2], smol_comparison, tiny_run, tiny_comparison,
+    results(prs.slides[2], smol_comparison, args.smol_full_mode,
+            tiny_run, tiny_comparison,
             layer_probe, full_source, safe_vpu, full_vpu, radiance, prefill128,
             equal_work, smol_attention_pair, tiny_logits, smol_actions,
             prefill_precision,

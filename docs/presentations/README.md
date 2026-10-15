@@ -107,6 +107,12 @@ regenerate the stage catalogs and inspect their precision choices.
 The rows answer different questions. They must not be read as one
 whole-model compiler-versus-handwritten speedup:
 
+The full SmolVLA row in the current deck uses the mixed FP4/FP8 session.
+The generator labels its precision explicitly. An all-FP8 issuer-swap
+comparison can replace that row once both complete runs have matching
+output hashes; `--smol-full-mode all-FP8` also binds its compiler timing to
+the archived all-FP8 full-action run.
+
 | Row | Changed work | What the result tests |
 | --- | --- | --- |
 | Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
@@ -327,6 +333,7 @@ python tools/build_mx_overview_deck.py \
   --template /path/to/Lab_Pastel_Template.pptx \
   --smol-full-comparison \
     docs/evidence/nicolas_matrix_substitution_smolvla_full_20261013/comparison.json \
+  --smol-full-mode mixed \
   --tiny-full-run \
     docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/compiler/mx_session_run.json \
   --tiny-full-comparison \
