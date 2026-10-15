@@ -123,6 +123,16 @@ captured FP32 logits; the compiler reaches 0.9432. Different host/VPU work,
 speedup ratio. This is one prefill stage, not the 33-step session or a
 mixed FP4/FP8 source baseline.
 
+The [independent 160-token one-pass
+forward](evidence/nicolas_tinyllama_lookup_equal_boundary_20261015/README.md)
+adds the token embedding lookup inside Nicolas's timer. The same IDs,
+checkpoint tensors, all-FP8 matrix policy, and token-to-logits logical
+boundary give 12,762,360,525 source versus 15,170,996,572 compiler modeled
+cycles. The compiler uses 18.873% more raw cycles, while the source matches
+131/160 captured FP32 top tokens versus 103/160 for the compiler. This is
+one full-depth forward, not the cached 33-step session, and the numerical
+quality differs; the raw ratio is not an equal-quality speedup.
+
 The [captured TinyLlama layer-5 source run](evidence/nicolas_tinyllama_layer5_captured128_20261014/README.md)
 uses the captured token IDs and byte-identical layer weights. The
 [compiler section probe](evidence/tinyllama_cached_layer_compiler_20261014/README.md)

@@ -1,0 +1,14 @@
+{
+  "bf16_mismatches": 0,
+  "compiler_inputs_sha256": "4e81f62550001dee1a5d84c9e3a2348e8b1f14285ca86c84b7f9279368ef14cd",
+  "compiler_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "embedding_bytes": 262144000,
+  "embedding_table_sha256": "4e66a081d1ef1eccc5bb068971888d442942ac2451ce238ab12bf17d40e113a1",
+  "lookup_source_sha256": "f4569f8b04eaa0e021f2b5142ce7e8d6098a5c63f6a9bbab3588672de56128d6",
+  "matched_bf16_elements": 327680,
+  "schema": "mx_gemmini.nicolas_tinyllama_lookup_source.v1",
+  "scope": "token IDs to logits; FP32 gather and BF16 rounding inside source timer",
+  "source_activations_sha256": "32e9552f4a81ec09f33cf1896b8e4d0d5b90ee466a068c1136bab9aed9dd9e8f",
+  "source_c_sha256": "ffd14dc19420dfb803cb55e49013a7aaf957ce6dd703b4a375212eed2fec9254",
+  "token_ids_sha256": "576db97ad917906c6a1d6ce806cea4e91109cf67cd0de45c55fdc3aa0837d83c"
+}

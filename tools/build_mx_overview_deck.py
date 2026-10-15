@@ -329,6 +329,7 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
             tiny_all_fp8: dict | None,
             tiny_onepass_source: dict | None,
             tiny_onepass_comparison: dict | None,
+            tiny_onepass_equal_boundary: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: Spike comparisons" if tiny_logits or smol_actions
@@ -354,6 +355,11 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 160-token forward · independent",
+         f"{tiny_onepass_equal_boundary['compiler_stage_cycles']:,}†",
+         f"{tiny_onepass_equal_boundary['source_stage_cycles']:,}†",
+         f"{tiny_onepass_equal_boundary['compiler_cycle_difference_percent']:+.1f}% raw")
+        if tiny_onepass_equal_boundary else
         ("TinyLlama 160-token forward · independent",
          f"{tiny_onepass_comparison['compiler_stage_cycles']:,}†",
          f"{tiny_onepass_comparison['source_stage_cycles']:,}†",
@@ -587,7 +593,16 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
     footer.top = Inches(6.00 if smol_attention_pair else
                         6.04 if show_first11 else 5.91)
     footer.height = Inches(0.75 if smol_attention_pair else 0.66)
-    if tiny_comparison and smol_comparison and tiny_onepass_comparison:
+    if tiny_comparison and smol_comparison and tiny_onepass_equal_boundary:
+        footer_text = (
+            "* Issuer swap: host/VPU fixed; TinyLlama 99/99 and SmolVLA "
+            "33/33 output hashes match.\n"
+            "† All-FP8 token-to-logits: same IDs/weights. FP32 top matches "
+            f"source {tiny_onepass_equal_boundary['source_vs_fp32_top_matches_160']}/160, "
+            f"compiler {tiny_onepass_equal_boundary['compiler_vs_fp32_top_matches_160']}/160. "
+            "Raw cycles; no equal-quality speedup."
+        )
+    elif tiny_comparison and smol_comparison and tiny_onepass_comparison:
         footer_text = (
             "* Issuer swap: host/VPU fixed; output hashes match SmolVLA "
             "33/33 and TinyLlama 99/99.\n"
@@ -780,6 +795,7 @@ def main() -> None:
     parser.add_argument("--tiny-all-fp8-session", type=Path)
     parser.add_argument("--tiny-onepass-source", type=Path)
     parser.add_argument("--tiny-onepass-comparison", type=Path)
+    parser.add_argument("--tiny-onepass-equal-boundary", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     parser.add_argument("--tiny-first11-prepacked", type=Path)
     args = parser.parse_args()
@@ -886,6 +902,23 @@ def main() -> None:
                 or tiny_onepass_comparison.get(
                     "source_vs_compiler_top_matches_33") != 24):
             parser.error("one-pass compiler result differs from verified archive")
+    tiny_onepass_equal_boundary = None
+    if args.tiny_onepass_equal_boundary:
+        if args.tiny_onepass_comparison is None:
+            parser.error("equal-boundary run needs the earlier one-pass archive")
+        folder = args.tiny_onepass_equal_boundary.parent
+        if args.tiny_onepass_equal_boundary.name != "fair_comparison.json":
+            parser.error("equal-boundary run needs its archived comparison")
+        runpy.run_path(str(folder / "verify.py"))["check"]()
+        tiny_onepass_equal_boundary = json.loads(
+            args.tiny_onepass_equal_boundary.read_text())
+        if (tiny_onepass_equal_boundary.get("schema") !=
+                "mx_gemmini.tinyllama_onepass_equal_boundary.v1"
+                or tiny_onepass_equal_boundary.get("equal_quality_speedup_valid")
+                is not False
+                or tiny_onepass_equal_boundary.get("compiler_stage_cycles") !=
+                tiny_onepass_comparison["compiler_stage_cycles"]):
+            parser.error("equal-boundary result differs from verified archive")
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     first11_prepacked = (json.loads(args.tiny_first11_prepacked.read_text())
@@ -1350,7 +1383,7 @@ def main() -> None:
             first11_prepacked,
             smol_reference_step, smol_prefix_factor, smol_corrected,
             smol_all_fp8, tiny_all_fp8, tiny_onepass_source,
-            tiny_onepass_comparison, total)
+            tiny_onepass_comparison, tiny_onepass_equal_boundary, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)

@@ -289,6 +289,9 @@ on this input. These are diagnostic settings, not an accepted numerical
 policy for other inputs or full sessions.
 The [current evidence](full_model_compilation.md) separates compiled links,
 individual Spike executions, and numerical qualification.
+The [full-model comparison guide](fair_full_model_comparisons.md) distinguishes
+complete-session MX issuer substitutions from independently scheduled source
+programs and records the input, precision, and timing boundaries for each.
 The [paired MX+VPU attention timing check](evidence/attn_vpu_timing_20261012/README.md)
 provides a smaller, reproducible performance comparison against Nicolas's
 handwritten program.

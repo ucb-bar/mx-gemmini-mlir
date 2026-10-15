@@ -1,0 +1,23 @@
+{
+  "build_receipt_sha256": "85496213e68a29aa8a2aeea2d6342dbe8fe1a1d7f1218a34fbbac48c317cc762",
+  "emitted_logit_rows": 33,
+  "emitted_top_tokens": 160,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "log_sha256": "c25248ff9c51c9d0e9fafa6b3dfbd57e3f4223bf6d17babc0467be919b25986f",
+  "schema": "mx_gemmini.nicolas_tinyllama_lookup_spike.v1",
+  "spike_command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_dense_timed_cached_checked_g_20261013/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x2c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/nicolas_full_model_m160_lookup/run/llama_model_lookup.elf"
+  ],
+  "spike_environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "stage_cycles": 12762360525
+}
