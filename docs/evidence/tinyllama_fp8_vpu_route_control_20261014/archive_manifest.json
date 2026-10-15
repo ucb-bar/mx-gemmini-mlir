@@ -1,0 +1,13 @@
+{
+  "created_utc": "2026-10-15T03:45:35.606809+00:00",
+  "files": {
+    "comparison.json": "e938cea994f91de8977b16aa4829e0d440359324cf9a562370fc6d73f9dfb32a",
+    "full_run.json": "b5554ba576406c5d5dc96d8adc0eb04a717926ffaac673006b27f8932988deec",
+    "full_spike.log": "18192d358c747d9c738abe857e4abd1030193cd7620f618daf4bfb1fd44aa279",
+    "safe_build.json": "b4766bcaa69944a9204910bd73af6b180ff9c3bddac383bc9bc03822f79c9728",
+    "safe_catalog.json": "e2667317405c4f9d03e1b882bbea9c513683f9cec32b053680fa7a937290f949",
+    "safe_run.json": "a684c50a4ff092ede77901248584de4dcf9f3cae22b627fff794d7cb1012ee18",
+    "safe_spike.log": "74502f177425acaaac51ba02570c262d5f391cc0ff7ea81e87a782b75d47a2b4"
+  },
+  "schema": "mx_gemmini.tinyllama_fp8_vpu_route_archive.v1"
+}

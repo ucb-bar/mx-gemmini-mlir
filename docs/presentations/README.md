@@ -107,11 +107,11 @@ regenerate the stage catalogs and inspect their precision choices.
 The rows answer different questions. They must not be read as one
 whole-model compiler-versus-handwritten speedup:
 
-The full SmolVLA row in the current deck uses the mixed FP4/FP8 session.
-The generator labels its precision explicitly. An all-FP8 issuer-swap
-comparison can replace that row once both complete runs have matching
-output hashes; `--smol-full-mode all-FP8` also binds its compiler timing to
-the archived all-FP8 full-action run.
+The full SmolVLA row uses the
+[all-FP8 issuer-swap comparison](../evidence/nicolas_matrix_substitution_smolvla_all_fp8_20261014/README.md).
+Both complete runs have 33 matching output hashes. The generator binds
+the compiler timing to the archived all-FP8 full-action run. The earlier
+mixed FP4/FP8 issuer-swap result remains a separate control.
 
 The independent 160-token TinyLlama source forward has completed at
 12,703,713,784 modeled cycles with matched IDs and checkpoint tensors.
@@ -200,6 +200,9 @@ from 1.830469 to **0.246502**. The complete session takes
 180,219,637,915 modeled cycles versus 316,515,603,374 for the corrected
 mixed control. Their outputs differ, so this is a precision-policy cost
 comparison, not an equal-output speedup or a source-kernel baseline.
+The matched all-FP8 Nicolas issuer control takes 179,451,403,096 cycles
+for the same 12 steps and outputs, making the compiler's MX issuer overhead
+0.428% within the fixed host/VPU program.
 
 The [full all-FP8 TinyLlama control](../evidence/tinyllama_all_fp8_full_session_20261014/README.md)
 completes the 128-token prefill and all 32 cached decodes in
@@ -208,6 +211,14 @@ cosine is 0.774 and mean decode cosine is 0.663, with 2/32 matching decode
 top tokens. Slide 3 places these beside the mixed FP4/FP8 numerical results;
 the full-session issuer-swap row still uses the mixed policy. Their outputs
 differ, so their cycle totals do not form an equal-output speedup.
+
+The separate [VPU route control](../evidence/tinyllama_fp8_vpu_route_control_20261014/README.md)
+keeps the 200 FP8 matrix bindings and standalone timer boundary fixed.
+The safe add/reduce/unary route takes 10,804,276,937 cycles; adding VPU
+softmax and elementwise takes 12,276,460,508 cycles. Their output hashes
+and top tokens differ, so the measured cycle difference is not an
+equal-output speedup. The results table stays focused on issuer swaps and
+the independent TinyLlama source forward.
 
 The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
 uses the exact full-run compiler flow object with captured FP32 state and
@@ -347,8 +358,8 @@ Install `python-pptx`, then run:
 python tools/build_mx_overview_deck.py \
   --template /path/to/Lab_Pastel_Template.pptx \
   --smol-full-comparison \
-    docs/evidence/nicolas_matrix_substitution_smolvla_full_20261013/comparison.json \
-  --smol-full-mode mixed \
+    docs/evidence/nicolas_matrix_substitution_smolvla_all_fp8_20261014/comparison.json \
+  --smol-full-mode all-FP8 \
   --tiny-full-run \
     docs/evidence/nicolas_matrix_substitution_tinyllama_full_20261014/compiler/mx_session_run.json \
   --tiny-full-comparison \

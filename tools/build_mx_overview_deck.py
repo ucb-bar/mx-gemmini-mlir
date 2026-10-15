@@ -1009,11 +1009,26 @@ def main() -> None:
     if smol_actions is not None:
         action = smol_actions.get("final_action_metrics") or {}
         flow = smol_actions.get("flow_step_metrics") or []
+        mixed_pair_dir = (args.smol_action_values.parent.parent /
+                          "nicolas_matrix_substitution_smolvla_full_20261013")
+        archived_mixed_run = mixed_pair_dir / "compiler/mx_session_run.json"
+        archived_mixed_cycles = json.loads(archived_mixed_run.read_text())[
+            "total_performance"]["cycles"]
+        mixed_pair = json.loads((mixed_pair_dir / "comparison.json").read_text())
         if (smol_comparison is None
                 or smol_actions.get("fast_run_sha256") !=
-                smol_comparison.get("reference_run_sha256")
+                file_sha256(archived_mixed_run)
                 or smol_actions.get("fast_compiler_cycles") !=
-                smol_comparison.get("reference_cycles")
+                archived_mixed_cycles
+                or mixed_pair.get("reference_run_sha256") !=
+                file_sha256(archived_mixed_run)
+                or mixed_pair.get("reference_cycles") != archived_mixed_cycles
+                or mixed_pair.get("output_digest_parity") is not True
+                or (args.smol_full_mode == "mixed" and
+                    (smol_actions.get("fast_run_sha256") !=
+                     smol_comparison.get("reference_run_sha256") or
+                     archived_mixed_cycles !=
+                     smol_comparison.get("reference_cycles")))
                 or len(flow) != 10
                 or [row.get("step") for row in flow] != list(range(10))
                 or flow[-1] != action

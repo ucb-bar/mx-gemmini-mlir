@@ -1,0 +1,133 @@
+{
+  "arena_layout": {
+    "arena_base": 9663676416,
+    "arena_bytes": 8589934592,
+    "mem_bytes": 16106127360,
+    "static_end": 2187063760,
+    "weights_base": 8589934592
+  },
+  "bindings": [
+    {
+      "name": "prefix_pad_masks",
+      "source_output": 0,
+      "source_program": "prefix_encode",
+      "target_input": 505,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "prefix_kv_cache",
+      "source_output": 1,
+      "source_program": "prefix_encode",
+      "target_input": 506,
+      "target_program": "flow_denoise"
+    },
+    {
+      "name": "decoded_flow_state",
+      "source_output": 0,
+      "source_program": "flow_denoise",
+      "target_input": 0,
+      "target_program": "action_decode"
+    }
+  ],
+  "catalog_replacements": {
+    "flow_denoise": {
+      "catalog_sha256": "df6aed5d1c883ebaafe59ac431b8348482ffa3c50f4ff253f768c1e55eea98a2",
+      "receipt_sha256": "467ba5765a951fabba284d6aae4d4b3a5a5740b1a0a98db53dc3b93ae058fe73",
+      "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb"
+    },
+    "prefix_encode": {
+      "catalog_sha256": "0c2459802ecbe2c574cd9973e9a3692a64aa1ba9eca0f89e1b9e46c7b5fc75f7",
+      "receipt_sha256": "3992f28d0daf5047858eef7ce9c57fe7f91cb6d4a322beb9d567cace8a0c533f",
+      "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb"
+    }
+  },
+  "dump_limit_bytes": 16384,
+  "dump_outputs": [
+    {
+      "bytes": 6400,
+      "name": "flow_denoise",
+      "output": 0,
+      "program": 1
+    },
+    {
+      "bytes": 4,
+      "name": "flow_denoise",
+      "output": 2,
+      "program": 1
+    },
+    {
+      "bytes": 6400,
+      "name": "action_decode",
+      "output": 0,
+      "program": 2
+    }
+  ],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/smol_all_fp8_nicolas_link/session.elf",
+  "elf_bytes": 917467672,
+  "elf_sha256": "df9af3b766ef3975efd3e72d06a59cfd7fc8d7670f91c080f22f3d4f1b790494",
+  "mem_bytes": 16106127360,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285",
+      "name": "prefix_encode",
+      "outputs": 2,
+      "selected_operations": 243,
+      "steps": 1
+    },
+    {
+      "capture_model_sha256": "2e709838aee113a2678d838dc4389943438e6487793bb3b426b3707868724e17",
+      "name": "flow_denoise",
+      "outputs": 3,
+      "selected_operations": 148,
+      "steps": 10
+    },
+    {
+      "capture_model_sha256": "c194700d5a9e19aa83456862f666a41559c83e51b992709bba598d681176224b",
+      "name": "action_decode",
+      "outputs": 1,
+      "selected_operations": 0,
+      "steps": 1
+    }
+  ],
+  "relinked_from_sha256": "8f38edea1931a15620187331a60892e7e923dcd4b9882951aba486648830948f",
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/captures_xdsl065/smolvla/smolvla_session",
+  "shared_weight_bytes": 906639456,
+  "shared_weight_sha256": "39a60b8be2a711ca2302eba6e900dce59778b5d6351bd9a518f034e8e631b986",
+  "shared_weight_stage": "prefix_encode",
+  "stage_object_sha256": {
+    "action_decode": {
+      "model.o": "f2a9b20e79e1303fdc78d63e2697b46a405579ac8f3f11a8ff457cb01b02db03"
+    },
+    "flow_denoise": {
+      "device/device_catalog_shim.o": "1f90024663a8eda8babd11e2879a6a0967140344893dd1c783e3ede9a3571ff2",
+      "device_catalog/mx_catalog.o": "df6aed5d1c883ebaafe59ac431b8348482ffa3c50f4ff253f768c1e55eea98a2",
+      "model.o": "dbf6c2bb94b22bd695c919af78295d3164a8911be683bbe6dba1c336e08832bd"
+    },
+    "prefix_encode": {
+      "device/device_catalog_shim.o": "3b214e3c951ed827b603bb1ba4481bc5938b48a30d5380070bc6e90a7cfc509a",
+      "device_catalog/mx_catalog.o": "0c2459802ecbe2c574cd9973e9a3692a64aa1ba9eca0f89e1b9e46c7b5fc75f7",
+      "model.o": "c0343d465c569544a9fee9ae39ec8c6166dd689fa8451174c455b847ed272ca2"
+    }
+  },
+  "static_malloc_estimates": {
+    "action_decode": {
+      "callsites": 0,
+      "dynamic_sites": 0,
+      "literal_bytes": 0
+    },
+    "flow_denoise": {
+      "callsites": 1367,
+      "dynamic_sites": 0,
+      "literal_bytes": 576205618
+    },
+    "prefix_encode": {
+      "callsites": 2385,
+      "dynamic_sites": 1,
+      "literal_bytes": 5771344815
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}

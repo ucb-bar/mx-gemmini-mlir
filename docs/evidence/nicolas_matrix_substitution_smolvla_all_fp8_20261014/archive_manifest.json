@@ -1,0 +1,13 @@
+{
+  "created_utc": "2026-10-15T03:42:02.866926+00:00",
+  "files": {
+    "comparison.json": "6167593296b6a5e51cc719256ff8393e54ff9cd9267a2a8015124e90fd7c2bf8",
+    "compiler/mx_session_run.json": "9a1be1ef6fdc929501ad072814f48766e2ee8c9b6adb4c67d7e79a526893d107",
+    "compiler/spike.log": "106c5e6bd9725ae17a9d0159816070dd2e903902b1a9dc81ce7e3e47aec8f587",
+    "compiler_link.json": "8f38edea1931a15620187331a60892e7e923dcd4b9882951aba486648830948f",
+    "nicolas/mx_session_run.json": "c303780d0d4b8b750dc7b8020e6c5ff829b4cb4a795da8ebfaa41afd2e00140d",
+    "nicolas/spike.log": "5eb1a0126bb9cf4b1730a5f8b1d2c4db3d288ae592c31f67f44f5375e92ab6e9",
+    "nicolas_link.json": "6930e88e5adeea575f9704b0b14b0f0f6d3afa9f5ac3d3854c82d8ecc0e64ee1"
+  },
+  "schema": "mx_gemmini.smolvla_all_fp8_issuer_archive.v1"
+}

@@ -1,0 +1,88 @@
+{
+  "build_hash": "34ccc16353f6",
+  "build_receipt_sha256": "300bb04c9422560b2c0820d78bcf4a36c80bcf89ed31fc4f924152898e36759e",
+  "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_dense_timed_cached_checked_g_20261013/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x2c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_all_fp8_full_session/prefill_build/model.elf"
+  ],
+  "diagnostic_host_vpu": false,
+  "diagnostic_partial_vpu": false,
+  "done": true,
+  "elf_bytes": 5468059696,
+  "elf_sha256": "1e8cfb2bdf908b3171364727e5afd40944162a64e0eb0764fc9a27cb550f0748",
+  "enabled_vpu_classes": [
+    "add",
+    "elementwise",
+    "reduce",
+    "softmax",
+    "unary"
+  ],
+  "execution_route": "mx_gemmini_and_host",
+  "exit_code": 0,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "log": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_m128_fp8_full_vpu_stage_run/spike.log",
+  "log_sha256": "18192d358c747d9c738abe857e4abd1030193cd7620f618daf4bfb1fd44aa279",
+  "output_digests": {
+    "first_typed": {
+      "bytes": 128000,
+      "elements": 32000,
+      "encoding": "f32le",
+      "sha256": "8ebd26b5a6042f642ab380da8d5b7bc89b1f2a223f08a1783bba95f7efefd6a4"
+    },
+    "indexed": [
+      {
+        "bytes": 128000,
+        "dtype": "f32",
+        "elements": 32000,
+        "index": 0,
+        "sha256": "8ebd26b5a6042f642ab380da8d5b7bc89b1f2a223f08a1783bba95f7efefd6a4",
+        "shape": [
+          1,
+          32000
+        ]
+      },
+      {
+        "bytes": 7208960,
+        "dtype": "f32",
+        "elements": 1802240,
+        "index": 1,
+        "sha256": "2f2fc16e290b6ae40a761f780369cbea76b47ff8812de38c6ef6ccf8e1dfeaf8",
+        "shape": [
+          2,
+          22,
+          1,
+          4,
+          160,
+          64
+        ]
+      },
+      {
+        "bytes": 176,
+        "dtype": "i64",
+        "elements": 22,
+        "index": 2,
+        "sha256": "1aaadabaa0ee4e0ec840a65b363281cd43322571cb38316aeb277cfe4bf40381",
+        "shape": [
+          22
+        ]
+      }
+    ],
+    "numerical_qualification": "not_established"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.linked_stage_spike_run.v1",
+  "selected_operations": 200,
+  "spike_environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_OUT": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_m128_fp8_full_vpu_stage_run/mx_perf.txt",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending"
+}

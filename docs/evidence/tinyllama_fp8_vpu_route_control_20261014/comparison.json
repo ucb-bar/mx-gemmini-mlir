@@ -1,0 +1,66 @@
+{
+  "captured_input_sha256": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+  "equal_output_speedup_valid": false,
+  "fp32_reference_top_token": 279,
+  "full_build_sha256": "300bb04c9422560b2c0820d78bcf4a36c80bcf89ed31fc4f924152898e36759e",
+  "full_link_sha256": "402149865947d72616eff41c9bc86bcc87917ab7e69a22f475ddaeebd80663ad",
+  "full_prefill_log_prefix_sha256": "a573032f1bce42eff601058f918978d2598e7d2d1e3644d4857a690c5f250bf8",
+  "full_standalone_matches_linked_full_output": true,
+  "full_standalone_output_sha256": "8ebd26b5a6042f642ab380da8d5b7bc89b1f2a223f08a1783bba95f7efefd6a4",
+  "full_standalone_run_sha256": "b5554ba576406c5d5dc96d8adc0eb04a717926ffaac673006b27f8932988deec",
+  "full_standalone_top_token": 29889,
+  "full_vpu_lowered_regions": {
+    "add": 88,
+    "elementwise": 358,
+    "reduce": 45,
+    "softmax": 22,
+    "unary": 156
+  },
+  "identity": {
+    "capture_model_sha256": "8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031",
+    "checkpoint_weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+    "expected_selected_operations": 200,
+    "precision_overrides_sha256": "4d3200610f4d032ed15281c94e850d5294becbed469425e63460d06e288675d9",
+    "prepack_checkpoint_weights": true,
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "selected_operations": 200
+  },
+  "linked_cycle_boundary_difference": "safe run is a standalone stage; full run is a linked session",
+  "linked_cycle_ratio_valid": false,
+  "linked_full_prefill_cycles": 12276438703,
+  "linked_full_prefill_output_sha256": "8ebd26b5a6042f642ab380da8d5b7bc89b1f2a223f08a1783bba95f7efefd6a4",
+  "linked_full_vs_fp32": {
+    "actual_top_token": 29889,
+    "cosine": 0.7741529642026789,
+    "normalized_rmse": 0.6491756227819064,
+    "reference_top_rank_in_actual": 903,
+    "reference_top_token": 279,
+    "rmse": 1.5891294941695915,
+    "top_token_equal": false
+  },
+  "numerical_scope": "stage receipts emit full-output hashes and top tokens only",
+  "reference_sha256": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0",
+  "safe_build_sha256": "b4766bcaa69944a9204910bd73af6b180ff9c3bddac383bc9bc03822f79c9728",
+  "safe_matches_full_standalone_output": false,
+  "safe_matches_linked_full_output": false,
+  "safe_prefill_output_sha256": "71116f11f7b83992c5fb4202787829e6ce9401b71f9057f2d9a3d4e281694032",
+  "safe_prefill_top_token": 362,
+  "safe_run_sha256": "a684c50a4ff092ede77901248584de4dcf9f3cae22b627fff794d7cb1012ee18",
+  "safe_standalone_cycles": 10804276937,
+  "safe_vpu_lowered_regions": {
+    "add": 88,
+    "elementwise": 0,
+    "reduce": 45,
+    "softmax": 0,
+    "unary": 156
+  },
+  "safe_vs_fp32_top_token_equal": false,
+  "schema": "mx_gemmini.tinyllama_vpu_route_comparison.v3",
+  "scope": "128-token prefill, first 1x32000 FP32 output",
+  "standalone_cycle_ratio_valid": true,
+  "standalone_cycles": {
+    "full_vpu": 12276460508,
+    "safe_over_full": 0.8800807797947424,
+    "safe_vpu": 10804276937
+  }
+}
