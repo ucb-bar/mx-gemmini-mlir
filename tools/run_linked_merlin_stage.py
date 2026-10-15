@@ -64,6 +64,7 @@ def main() -> None:
             or build.get("status") not in {
                 "linked_experimental_numeric_qualification_pending",
                 "linked_diagnostic_host_vpu_numeric_qualification_pending",
+                "linked_diagnostic_partial_vpu_numeric_qualification_pending",
                 "spike_inference_incomplete"}):
         parser.error("build receipt is not a linked MX stage probe")
     if build.get("capture_model_sha256") != _sha(source):
@@ -80,7 +81,13 @@ def main() -> None:
     diagnostic_host_vpu = build.get("diagnostic_host_vpu") is True
     if diagnostic_host_vpu and selected == 0:
         parser.error("host-VPU diagnostic requires MX-routed contractions")
+    diagnostic_partial_vpu = (
+        build.get("status") ==
+        "linked_diagnostic_partial_vpu_numeric_qualification_pending")
+    if diagnostic_partial_vpu and selected == 0:
+        parser.error("partial-VPU diagnostic requires MX-routed contractions")
     route = ("mx_gemmini_and_host_vpu_control" if diagnostic_host_vpu else
+             "mx_gemmini_and_partial_vpu_control" if diagnostic_partial_vpu else
              "mx_gemmini_and_host" if selected else "host_only")
     if build.get("execution_route", route) != route:
         parser.error("build receipt execution route conflicts with MX selection")
@@ -137,6 +144,8 @@ def main() -> None:
         "build_hash": build["build_hash"],
         "execution_route": route,
         "diagnostic_host_vpu": diagnostic_host_vpu,
+        "diagnostic_partial_vpu": diagnostic_partial_vpu,
+        "enabled_vpu_classes": build.get("enabled_vpu_classes"),
         "selected_operations": selected,
         "elf_sha256": elf_sha,
         "elf_bytes": elf.stat().st_size,
