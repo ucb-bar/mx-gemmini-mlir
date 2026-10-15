@@ -133,6 +133,7 @@ def main() -> None:
             for i in range(33)],
         "source_stage_cycles": source_cycles,
         "compiler_stage_cycles": compiler_cycles,
+        "cycle_ratio_valid": False,
         "cycle_boundary_difference": (
             "source starts from precomputed BF16 embeddings; compiler performs "
             "token embedding lookup. Both use the same token IDs and checkpoint weights."),

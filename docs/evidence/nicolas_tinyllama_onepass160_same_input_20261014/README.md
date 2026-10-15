@@ -37,8 +37,26 @@ the 160-token forward. Its 33 emitted BF16 logit rows exactly match the
 generated source reference. Against the captured FP32 logits, 27/33 late
 top tokens match and mean cosine is 0.988564. The compressed
 [Spike log](source_timed.log.gz) preserves the emitted rows and counter.
-These are source program results; the matched compiler run must finish
-before reporting a compiler versus source comparison.
+These source rows provide an independent check of the generated reference.
+
+The [matched compiler run](matched_onepass_comparison.json) has now
+completed at **15,170,996,572 modeled cycles**. Its 160 top-token IDs are
+recorded in the [Spike log](compiler_spike.log). Nicolas's source and the
+compiler select the same top token at **24/33** late positions. Against the
+captured FP32 logits, the source matches **27/33** late top tokens and the
+compiler matches **20/33**; the compiler matches **103/160** positions over
+the entire forward. The compiler guest emitted the full-output digest and
+top-token list, not its full logit tensor, so this comparison does not claim
+a source-versus-compiler logit cosine. The source starts from precomputed
+BF16 embeddings while the compiler includes token lookup, and their host/VPU
+placements differ. The two cycle counts are diagnostic, not a speedup ratio.
+
+Run `python -B verify_matched.py` with NumPy to check the archived IDs,
+200 FP8 bindings, source BF16 rows, top tokens, receipts, and counters
+without the multi-gigabyte checkpoint. The compact archive includes the
+33 late captured FP32 rows and the generated source BF16 reference slice;
+the [manifest](matched_archive_manifest.json) records each file hash and the
+full source blob hash for reproduction.
 
 ## Reproduce the inputs
 

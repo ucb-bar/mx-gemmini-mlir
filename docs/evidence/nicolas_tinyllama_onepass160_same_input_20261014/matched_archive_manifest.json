@@ -1,0 +1,18 @@
+{
+  "files": {
+    "compiler_build.json": "74d1f2bb8adc152d716857421cc5533ed03220c9afc649b103bd1aed6fa46c71",
+    "compiler_catalog.json": "207f8c9b3c686aead2a7602a15a79bf0e82ed3bdbe476c0fef87d2ecc5d13721",
+    "compiler_run.json": "ed1dbcdafccbc19ce3c91b78e9399b05bbd653f1b5f1bdd77bc57b23e2e75350",
+    "compiler_spike.log": "0f00cb59d9ce78d4813e8240e0fa0328921f8526e4d80236f72a876d373c1c0f",
+    "fp32_argmax_160.npy": "4b8ca85d979182cd9f6f619f3d2c946bee981c39416da3f3efbb9cebfad8c5ed",
+    "fp32_late_logits.npy": "71423c06da43087ad210a82ee9ae26cf54c7350d318d27c018fdd67c3cd0657a",
+    "input_identity.json": "effbff2da0f9263e581d85dd282dcd29f11af3092a7349fba6c42e8eb813cbf5",
+    "matched_onepass_comparison.json": "1dcc8cab34db992ed4c864fbca69d972d383b1598504cb86340cffe31fe59d53",
+    "source_header.h": "7c8266b095a4f437adcde1de7a06c06482219086d19acf2df245f69837972da0",
+    "source_reference_late_bf16.bin": "444cc04fdebfc2b4244bcfe71899593db4a7ab8b927f1257371c970441a25c2c",
+    "source_timed.log.gz": "33b405450bc247266e6557179ca6366b2ddff93e7dc72e53e17738c2cc379e04",
+    "source_timed_summary.json": "d6bc7a19592081c9d234dfe66373456037a0e937689817aeeb2575cdbc608e86"
+  },
+  "schema": "mx_gemmini.nicolas_tinyllama_onepass_matched_archive.v1",
+  "unarchived_source_blob_sha256": "72091951ddcdea981424281525552622f8408b70dc44bb7c0345d17c24859883"
+}

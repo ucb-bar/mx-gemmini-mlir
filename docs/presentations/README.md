@@ -115,14 +115,16 @@ the archived all-FP8 full-action run.
 
 The independent 160-token TinyLlama source forward has completed at
 12,703,713,784 modeled cycles with matched IDs and checkpoint tensors.
-Its compiler one-pass run remains active, so the table shows the source
-counter and a pending compiler cell. The row is a different program boundary
-from the cached 33-step session above it.
+The matched compiler one-pass takes 15,170,996,572 cycles. Their late
+top tokens match at 24/33 positions. The table displays both raw counts
+and **NO RATIO** because the source starts after embedding lookup and the
+host/VPU placement differs. This row is a different program boundary from
+the cached 33-step session above it.
 
 | Row | Changed work | What the result tests |
 | --- | --- | --- |
 | Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
-| TinyLlama independent 160-token forward | Nicolas's complete 22-layer source program; matched compiler run pending | Source timing and input identity for a future one-pass comparison |
+| TinyLlama independent 160-token forward | Nicolas's complete 22-layer source program versus the matched compiler one-pass | Raw timing and late top-token agreement across different host/VPU boundaries |
 | Captured SmolVLA attention | One final-step head at each of 113 and 163 keys; 4,096 BF16 values each | Pipelined source versus compiler cross-block scheduling on actual model operands |
 
 The [final-step paired archive](../evidence/smolvla_attention_session_20261014/README.md)
@@ -146,9 +148,10 @@ written MX+VPU programs with matched inputs, weights, precision, outputs,
 and timing boundaries. Neither full-session issuer swap supplies that
 program. Nicolas's all-FP8 160-token TinyLlama forward is independent and
 uses the same IDs and checkpoint tensors as the compiler one-pass capture;
-its compiler Spike run is still active. It is not the cached 33-step
-session, and its source timer excludes the compiler's embedding lookup.
-There is no valid full-session compiler/source speedup yet.
+the compiler Spike run now completes with 24/33 matching late top tokens.
+It is not the cached 33-step session, and its source timer excludes the
+compiler's embedding lookup. There is no valid full-session compiler/source
+speedup yet.
 
 The [prefill precision archive](../evidence/tinyllama_prefill_precision_20261014/README.md)
 adds a separate numerical diagnostic on the captured FP32 input: the mixed
@@ -235,10 +238,11 @@ The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
 The third row reports the **independently written 160-token TinyLlama
 forward** through all 22 layers and the LM head. Its completed source
-counter is 12,703,713,784 modeled cycles. The compiler one-pass counter
-is pending. Both programs use all 200 FP8 MX matrix sites and matched IDs
+counter is 12,703,713,784 modeled cycles; the matched compiler counter is
+15,170,996,572. Both programs use all 200 FP8 MX matrix sites and matched IDs
 and checkpoint tensors, but their host/VPU placement and timer boundaries
-differ. The separate
+differ. They select the same top token at 24/33 recorded late positions.
+The separate
 [128-token prefill control](../evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
 records 9,611,186,417 source and 11,442,665,332 compiler cycles with
 0.9454 logit cosine; it is no longer the slide row. The last slide row
@@ -385,6 +389,8 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/tinyllama_all_fp8_full_session_20261014/against_fp32.json \
   --tiny-onepass-source \
     docs/evidence/nicolas_tinyllama_onepass160_same_input_20261014/source_timed_summary.json \
+  --tiny-onepass-comparison \
+    docs/evidence/nicolas_tinyllama_onepass160_same_input_20261014/matched_onepass_comparison.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

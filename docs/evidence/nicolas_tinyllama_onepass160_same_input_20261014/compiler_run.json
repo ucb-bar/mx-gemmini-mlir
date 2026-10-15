@@ -1,0 +1,56 @@
+{
+  "build_hash": "9221d44579d1",
+  "build_receipt_sha256": "74d1f2bb8adc152d716857421cc5533ed03220c9afc649b103bd1aed6fa46c71",
+  "capture_model_sha256": "4165fc24aef9abd48cc4f416915f8500c0dc9a6e2a77c0926ac0fb3e33dfa850",
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_dense_timed_cached_checked_g_20261013/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x2c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_onepass160_compiler_build/model.elf"
+  ],
+  "diagnostic_host_vpu": false,
+  "done": true,
+  "elf_bytes": 5468132512,
+  "elf_sha256": "d258f16f755f505aa73611d80935e837154a2975aec4417f1689d0980476bec6",
+  "execution_route": "mx_gemmini_and_host",
+  "exit_code": 0,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "log": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_onepass160_compiler_run/spike.log",
+  "log_sha256": "0f00cb59d9ce78d4813e8240e0fa0328921f8526e4d80236f72a876d373c1c0f",
+  "output_digests": {
+    "first_typed": {
+      "bytes": 20480000,
+      "elements": 5120000,
+      "encoding": "f32le",
+      "sha256": "ba427c0fb2837cb2cdcdaf982d7c7f6caac6f4c521492db6f671b0b0cf6936f6"
+    },
+    "indexed": [
+      {
+        "bytes": 20480000,
+        "dtype": "f32",
+        "elements": 5120000,
+        "index": 0,
+        "sha256": "ba427c0fb2837cb2cdcdaf982d7c7f6caac6f4c521492db6f671b0b0cf6936f6",
+        "shape": [
+          1,
+          160,
+          32000
+        ]
+      }
+    ],
+    "numerical_qualification": "not_established"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.linked_stage_spike_run.v1",
+  "selected_operations": 200,
+  "spike_environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_OUT": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_onepass160_compiler_run/mx_perf.txt",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending"
+}
