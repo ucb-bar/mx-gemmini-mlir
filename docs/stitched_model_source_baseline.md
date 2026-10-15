@@ -44,6 +44,14 @@ All 15 heads of the first 113-key call pass at padded 64×128×64, with
 flow steps, plus the rest of the model, still need a stitched source run
 before this becomes a full-model cycle control.
 
+The [recurrent SmolVLA attention capture](evidence/smolvla_attention_session_20261014/README.md)
+now records the model's Q/K/P/V operands and Boolean masks for all **16
+attention calls in each of 10 flow steps** (160 calls, 2,400 head instances).
+Nicolas's fused source also passes on the final step's 163-key and 113-key
+head-0 calls at 16,955 and 15,163 modeled cycles. These additional cutpoints
+show the source kernel accepts late-session data; they do not connect the
+heads to the rest of the source model or produce a full-stage cycle count.
+
 The [matched compiler/source head comparison](evidence/smolvla_attention_cutpoint_20261014/README.md#matched-typed-compiler-comparison)
 now checks all 4,096 BF16 outputs for head 0 of both first-call shapes in
 one alternating Spike guest. The compiler's fenced command stream takes

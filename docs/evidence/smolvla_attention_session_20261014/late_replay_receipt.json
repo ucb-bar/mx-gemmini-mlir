@@ -1,0 +1,37 @@
+{
+  "full_model_cycle_comparison": false,
+  "perf_config": "e4m3_vpu",
+  "perf_set": "mem.host_tracking=0",
+  "rows": [
+    {
+      "call": 14,
+      "compressed_log_sha256": "9a7ef1a1422f7c29d230136815291be2a79b7af2d185af528bf1b6c508069f15",
+      "cutpoint_sha256": "d3e466c5d5d733fd63b2653a5ab5e1ffc1ff515df209c086cec8fda6759e9d6e",
+      "head": 0,
+      "header_sha256": "e45c71b5612689f54336483428cb84e553d04b0c93605eb40d8b26a4be7c9104",
+      "keys": 163,
+      "pipelined_cycles": 16955,
+      "relative_fro_error_ppm": 53538,
+      "source_output_hash": "ef95848476196446",
+      "spike_log_sha256": "88c29a619fba9c9a2aff1efc71c2cd6b40d35e90c8a046fa28169989ed822202",
+      "step": 9
+    },
+    {
+      "call": 15,
+      "compressed_log_sha256": "516e8a003fc161111f85294a6b5cc2d5f6768d103516dbbd96133c1a413a1b73",
+      "cutpoint_sha256": "6c9f7c6e3982345500f10b72c24e169a63da8bdbf1e495a32cb3c91da3130c3b",
+      "head": 0,
+      "header_sha256": "2c0be82a5a7423792a7a41e8033f1e6aa0f06ad80684b06d890a6ef630cb1e8e",
+      "keys": 113,
+      "pipelined_cycles": 15163,
+      "relative_fro_error_ppm": 39587,
+      "source_output_hash": "ceacf31b60ef6e78",
+      "spike_log_sha256": "da4610b9fedfb3c17021fc2d6d97be0242019ab392a372f797d0d37fb60bca6b",
+      "step": 9
+    }
+  ],
+  "schema": "mx_gemmini.smolvla_late_source_attention.v1",
+  "scope": "final recurrent flow step, calls 14 and 15, head 0 only",
+  "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5"
+}
