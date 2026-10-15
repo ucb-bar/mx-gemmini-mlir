@@ -56,6 +56,16 @@ def check() -> None:
     assert build["selected_operations"] == len(catalog["bindings"]) == 200
     assert all(row["target_dtypes"][:2] == ["f8E4M3FN", "f8E4M3FN"]
                for row in catalog["bindings"])
+    for name, expected_tiles, expected_vpu, expected_load in (
+            ("source", 40970240, 880, 2713452544),
+            ("compiler", 40970280, 44872, 4407640384)):
+        perf = (HERE / f"{name}_perf.txt").read_text()
+        tiles, vpu = re.search(
+            r"mesh: (\d+) tiles, \d+ busy cycles; VPU: (\d+) commands",
+            perf).groups()
+        loaded = re.search(r"load: (\d+) bytes", perf).group(1)
+        assert (int(tiles), int(vpu), int(loaded)) == (
+            expected_tiles, expected_vpu, expected_load)
 
     source_cycles = int(re.search(r"^stage_cycles64 0x([0-9a-f]{16})$",
                                   source, re.M).group(1), 16)

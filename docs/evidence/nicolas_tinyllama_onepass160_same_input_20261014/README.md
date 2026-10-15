@@ -51,6 +51,14 @@ a source-versus-compiler logit cosine. The source starts from precomputed
 BF16 embeddings while the compiler includes token lookup, and their host/VPU
 placements differ. The two cycle counts are diagnostic, not a speedup ratio.
 
+The pinned Spike [source](source_perf.txt) and
+[compiler](compiler_perf.txt) extension reports show 40,970,240 and
+40,970,280 MX mesh tiles, respectively. The compiler issues 44,872 VPU
+commands versus 880 in the source and records 4.408 GB versus 2.713 GB
+of extension load traffic. These counters show similar matrix work and
+different vector/data-movement schedules; they do not assign the raw cycle
+gap to a single cause.
+
 Run `python -B verify_matched.py` with NumPy to check the archived IDs,
 200 FP8 bindings, source BF16 rows, top tokens, receipts, and counters
 without the multi-gigabyte checkpoint. The compact archive includes the
