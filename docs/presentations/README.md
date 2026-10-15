@@ -113,10 +113,16 @@ comparison can replace that row once both complete runs have matching
 output hashes; `--smol-full-mode all-FP8` also binds its compiler timing to
 the archived all-FP8 full-action run.
 
+The independent 160-token TinyLlama source forward has completed at
+12,703,713,784 modeled cycles with matched IDs and checkpoint tensors.
+Its compiler one-pass run remains active, so the table shows the source
+counter and a pending compiler cell. The row is a different program boundary
+from the cached 33-step session above it.
+
 | Row | Changed work | What the result tests |
 | --- | --- | --- |
 | Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
-| TinyLlama independent prefill | Complete source program versus compiled prefill, with different host and VPU work | Functional agreement and a diagnostic raw cycle gap for one prompt |
+| TinyLlama independent 160-token forward | Nicolas's complete 22-layer source program; matched compiler run pending | Source timing and input identity for a future one-pass comparison |
 | Captured SmolVLA attention | One final-step head at each of 113 and 163 keys; 4,096 BF16 values each | Pipelined source versus compiler cross-block scheduling on actual model operands |
 
 The [final-step paired archive](../evidence/smolvla_attention_session_20261014/README.md)
@@ -135,12 +141,14 @@ extension's default timing model found −4.1%/−3.1% for the pipelined graph,
 +5.7%/+9.9% for queued, and +10.1%/+23.2% for fenced. Those settings
 and operands differ from the final-step row; all are head-level measurements.
 
-The requested full-model performance comparison needs an independently
-stitched MX+VPU program for each captured session, matching inputs, weights,
-precision, shapes, outputs, and Spike settings. Neither full-session
-issuer swap supplies that program. The independent prefill is only one
-128-token, all-FP8 stage; the captured full sessions use mixed FP4/FP8.
-Its raw cycle counts do not supply a full-model speedup.
+The requested complete-session performance comparison needs independently
+written MX+VPU programs with matched inputs, weights, precision, outputs,
+and timing boundaries. Neither full-session issuer swap supplies that
+program. Nicolas's all-FP8 160-token TinyLlama forward is independent and
+uses the same IDs and checkpoint tensors as the compiler one-pass capture;
+its compiler Spike run is still active. It is not the cached 33-step
+session, and its source timer excludes the compiler's embedding lookup.
+There is no valid full-session compiler/source speedup yet.
 
 The [prefill precision archive](../evidence/tinyllama_prefill_precision_20261014/README.md)
 adds a separate numerical diagnostic on the captured FP32 input: the mixed
@@ -190,6 +198,14 @@ from 1.830469 to **0.246502**. The complete session takes
 mixed control. Their outputs differ, so this is a precision-policy cost
 comparison, not an equal-output speedup or a source-kernel baseline.
 
+The [full all-FP8 TinyLlama control](../evidence/tinyllama_all_fp8_full_session_20261014/README.md)
+completes the 128-token prefill and all 32 cached decodes in
+72,901,458,175 modeled cycles. Against the captured FP32 logits, prefill
+cosine is 0.774 and mean decode cosine is 0.663, with 2/32 matching decode
+top tokens. Slide 3 places these beside the mixed FP4/FP8 numerical results;
+the full-session issuer-swap row still uses the mixed policy. Their outputs
+differ, so their cycle totals do not form an equal-output speedup.
+
 The [isolated step-9 replay](../evidence/smolvla_reference_step_replay_20261014/README.md)
 uses the exact full-run compiler flow object with captured FP32 state and
 prefix cache. Its output has 0.907 cosine to the FP32 reference, compared
@@ -217,23 +233,18 @@ only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
 a comparison as an issuer swap if any other stage object changed.
-The third row compares an **independently written full prefill program**
-against the compiled 128-token, 22-layer TinyLlama stage. Both use the modeled
-`e4m3_vpu` clock, the same 200 FP32 checkpoint tensors, and identical input
-tokens. Their logits have 0.9454 cosine and different top tokens. The source
-uses 44 VPU residual-add calls while the compiler lowers 88 add regions and
-uses different host math. The compiled attention has 160 allocated key slots
-where the source computes 128 valid keys. The slide therefore prints raw
-counts with **NO RATIO**.
-The [128-token receipt](../evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
-records 9,611,186,417 source and 11,442,665,332 compiler modeled cycles.
-The independent source and compiler logits have cosine 0.9454 and select
-tokens 29871 and 362, respectively; the captured FP32 top token is 279.
-The last row compares one fused source attention kernel at the same
-64×256×128 shape. None of these rows compares a fused source implementation
-of a complete TinyLlama or SmolVLA model. The issuer-swap output hashes show
-agreement between those two executables, not independent model accuracy.
-Spike cycle counts are simulator results, not FPGA latency.
+The third row reports the **independently written 160-token TinyLlama
+forward** through all 22 layers and the LM head. Its completed source
+counter is 12,703,713,784 modeled cycles. The compiler one-pass counter
+is pending. Both programs use all 200 FP8 MX matrix sites and matched IDs
+and checkpoint tensors, but their host/VPU placement and timer boundaries
+differ. The separate
+[128-token prefill control](../evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
+records 9,611,186,417 source and 11,442,665,332 compiler cycles with
+0.9454 logit cosine; it is no longer the slide row. The last slide row
+compares captured SmolVLA final-step attention heads at 113 and 163 keys.
+No row establishes an independent complete-session speedup. Spike cycles
+are simulator results, not FPGA latency.
 
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
 records 43,523 compiler versus 43,641 Nicolas source Spike cycles for a
@@ -370,6 +381,10 @@ python tools/build_mx_overview_deck.py \
     docs/evidence/smolvla_scalar_full_action_20261014/receipt.json \
   --smol-all-fp8-action \
     docs/evidence/smolvla_all_fp8_full_action_20261014/receipt.json \
+  --tiny-all-fp8-session \
+    docs/evidence/tinyllama_all_fp8_full_session_20261014/against_fp32.json \
+  --tiny-onepass-source \
+    docs/evidence/nicolas_tinyllama_onepass160_same_input_20261014/source_timed_summary.json \
   --out docs/presentations/mx_gemmini_dialect_overview.pptx
 ```
 

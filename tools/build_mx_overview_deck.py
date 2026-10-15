@@ -326,6 +326,8 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
             smol_prefix_factor: dict | None,
             smol_corrected: dict | None,
             smol_all_fp8: dict | None,
+            tiny_all_fp8: dict | None,
+            tiny_onepass_source: dict | None,
             total: int = 3) -> None:
     shapes = slide.shapes
     title = ("MX results: Spike comparisons" if tiny_logits or smol_actions
@@ -351,6 +353,9 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
         return f"{(compiler / native - 1) * 100:+.3f}%" if compiler and native else "—"
 
     layer_row = (
+        ("TinyLlama 160-token forward · independent",
+         "running", f"{tiny_onepass_source['stage_cycles']:,}†", "PENDING")
+        if tiny_onepass_source else
         ("TinyLlama 128-token prefill · independent",
          f"{prefill128['stage_cycles']['compiler']:,}†",
          f"{prefill128['stage_cycles']['source']:,}†", "NO RATIO")
@@ -401,7 +406,7 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
          f"{smol_compiler:,}*" if smol_compiler else "pending",
          f"{smol_native:,}" if smol_native else "running",
          delta(smol_compiler, smol_native)),
-        ("TinyLlama full 33 steps · issuer swap",
+        ("TinyLlama mixed 33 steps · issuer swap",
          f"{tiny_compiler:,}*" if tiny_compiler else "running",
          f"{tiny_native:,}" if tiny_native else "pending",
          delta(tiny_compiler, tiny_native)),
@@ -460,7 +465,19 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
         decode = tiny_logits["decode_summary"]
         action = smol_actions["final_action_metrics"]
         first_flow = smol_actions["flow_step_metrics"][0]
-        if show_first11:
+        if tiny_all_fp8 and smol_all_fp8:
+            fp8_prefill = tiny_all_fp8["prefill_metrics"]
+            fp8_decode = tiny_all_fp8["decode_summary"]
+            callout = (
+                "TinyLlama vs FP32: mixed prefill "
+                f"{prefill['cosine']:.3f}, decode {decode['cosine_mean']:.3f} "
+                f"({decode['top_token_matches']}/32 top); all-FP8 full "
+                f"prefill {fp8_prefill['cosine']:.3f}, decode "
+                f"{fp8_decode['cosine_mean']:.3f} "
+                f"({fp8_decode['top_token_matches']}/32 top).\n"
+                + step_comparison
+            )
+        elif show_first11:
             fp8 = prefill_precision["metrics"]["all_fp8_spike"]
             observed = first11_prepacked["observed"]
             callout = (
@@ -564,7 +581,15 @@ def results(slide, smol_comparison: dict | None, smol_full_mode: str,
     footer.top = Inches(6.00 if smol_attention_pair else
                         6.04 if show_first11 else 5.91)
     footer.height = Inches(0.75 if smol_attention_pair else 0.66)
-    if tiny_comparison and smol_comparison and prefill128:
+    if tiny_comparison and smol_comparison and tiny_onepass_source:
+        footer_text = (
+            "* Issuer swap: host/VPU fixed; output hashes match SmolVLA "
+            "33/33 and TinyLlama 99/99.\n"
+            "† All-FP8 source forward: same 160 IDs and 200 FP32 weights. "
+            "Compiler one-pass still running; host work and timers differ. "
+            "No ratio."
+        )
+    elif tiny_comparison and smol_comparison and prefill128:
         agreement = prefill128["comparisons"]["source_vs_compiler"]
         footer_text = (
             "* Issuer swap: host/VPU fixed; modeled cycles. Output hashes "
@@ -737,6 +762,8 @@ def main() -> None:
     parser.add_argument("--smol-prefix-factor", type=Path)
     parser.add_argument("--smol-corrected-action", type=Path)
     parser.add_argument("--smol-all-fp8-action", type=Path)
+    parser.add_argument("--tiny-all-fp8-session", type=Path)
+    parser.add_argument("--tiny-onepass-source", type=Path)
     parser.add_argument("--tiny-prefill-precision", type=Path)
     parser.add_argument("--tiny-first11-prepacked", type=Path)
     args = parser.parse_args()
@@ -788,6 +815,43 @@ def main() -> None:
         if (verified["final_action_cosine"] !=
                 smol_all_fp8["final_action_metrics"]["cosine"]):
             parser.error("all-FP8 slide metric differs from verified archive")
+    tiny_all_fp8 = None
+    if args.tiny_all_fp8_session:
+        folder = args.tiny_all_fp8_session.parent
+        if args.tiny_all_fp8_session.name != "against_fp32.json":
+            parser.error("all-FP8 TinyLlama needs its archived FP32 comparison")
+        runpy.run_path(str(folder / "verify.py"))["verify"]()
+        tiny_all_fp8 = json.loads(args.tiny_all_fp8_session.read_text())
+        if (tiny_all_fp8.get("schema") !=
+                "mx_gemmini.tinyllama_all_fp8_session_fp32.v1"
+                or tiny_all_fp8.get("total_modeled_cycles") !=
+                json.loads((folder / "run.json").read_text())[
+                    "total_performance"]["cycles"]):
+            parser.error("all-FP8 TinyLlama values differ from verified archive")
+    tiny_onepass_source = None
+    if args.tiny_onepass_source:
+        folder = args.tiny_onepass_source.parent
+        if args.tiny_onepass_source.name != "source_timed_summary.json":
+            parser.error("one-pass source needs its archived timing summary")
+        tiny_onepass_source = json.loads(args.tiny_onepass_source.read_text())
+        compressed = (folder / "source_timed.log.gz").read_bytes()
+        raw_log = gzip.decompress(compressed)
+        if (tiny_onepass_source.get("schema") !=
+                "mx_gemmini.nicolas_tinyllama_onepass_source_timed.v1"
+                or tiny_onepass_source.get("complete") is not True
+                or tiny_onepass_source.get("stage_cycles", 0) <= 0
+                or tiny_onepass_source.get("emitted_logit_rows") != 33
+                or tiny_onepass_source.get("rows_match_generated_bf16_reference")
+                is not True
+                or tiny_onepass_source.get("input_identity_sha256") !=
+                file_sha256(folder / "input_identity.json")
+                or tiny_onepass_source.get("archive_sha256") !=
+                hashlib.sha256(compressed).hexdigest()
+                or tiny_onepass_source.get("spike_log_sha256") !=
+                hashlib.sha256(raw_log).hexdigest()
+                or f"stage_cycles64 0x{tiny_onepass_source['stage_cycles']:016x}".encode()
+                not in raw_log):
+            parser.error("one-pass source timing differs from archived log")
     prefill_precision = (json.loads(args.tiny_prefill_precision.read_text())
                          if args.tiny_prefill_precision else None)
     first11_prepacked = (json.loads(args.tiny_first11_prepacked.read_text())
@@ -1236,7 +1300,7 @@ def main() -> None:
             prefill_precision,
             first11_prepacked,
             smol_reference_step, smol_prefix_factor, smol_corrected,
-            smol_all_fp8, total)
+            smol_all_fp8, tiny_all_fp8, tiny_onepass_source, total)
     if radiance is not None:
         radiance_results(prs.slides.add_slide(prs.slides[2].slide_layout),
                          radiance)
