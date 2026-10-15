@@ -11,6 +11,7 @@ import re
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
+FIRST = HERE.parent / 'smolvla_attention_cutpoint_20261014'
 
 
 def sha(path: Path) -> str:
@@ -19,6 +20,66 @@ def sha(path: Path) -> str:
         for block in iter(lambda: stream.read(1 << 20), b''):
             value.update(block)
     return value.hexdigest()
+
+
+def verify_compiler_pair(late: dict) -> None:
+    folder = HERE / 'compiled_pair_pipeline'
+    receipt = json.loads((folder / 'receipt.json').read_text())
+    assert receipt['schema'] == 'mx_gemmini.smolvla_masked_attention_paired_pipelined.v1'
+    assert receipt['scope'] == 'final flow step calls 14 and 15; head 0 only'
+    assert receipt['is_stitched_stage_or_full_model'] is False
+    assert receipt['compiler_schedule'] == 'pipelined'
+    assert receipt['spike_mode'] == ('GEMMINI_MODE=both; '
+                                     'GEMMINI_PERF_CONFIG=e4m3_vpu; '
+                                     'GEMMINI_PERF_SET=mem.host_tracking=0')
+    assert receipt['source_revision'] == late['source_revision']
+    assert receipt['spike_extension_sha256'] == late['spike_extension_sha256']
+    assert receipt['source_patch_sha256'] == sha(FIRST / 'attn_flash_smol.patch')
+    assert receipt['schedule_plan_sha256'] == sha(
+        FIRST / 'attention_pipeline.schedule.mlir')
+    assert receipt['driver_sha256'] == sha(
+        HERE.parents[2] / 'tools/fixtures/smol_attention_compiler_first_driver.c')
+    for name, digest in receipt['artifact_sha256'].items():
+        assert sha(folder / name) == digest, name
+    assert [row['logical_keys'] for row in receipt['rows']] == [113, 163]
+    for row in receipt['rows']:
+        keys = row['logical_keys']
+        call = 15 if keys == 113 else 14
+        source = next(entry for entry in late['rows'] if entry['call'] == call)
+        case = folder / f'keys{keys}'
+        assert row['captured_step'] == 9 and row['captured_call'] == call
+        assert row['cutpoint_sha256'] == source['cutpoint_sha256']
+        assert row['header_sha256'] == source['header_sha256']
+        assert row['expected_output_hash'] == source['source_output_hash']
+        assert row['model2mlir_frontend_sha256'] == sha(
+            FIRST / f'attention{keys}.model2mlir.mlir')
+        assert row['typed_mlir_sha256'] == sha(case / 'attention.mx.mlir')
+        assert row['issuer_source_sha256'] == sha(case / 'mx_issue.c')
+        assert row['issuer_object_sha256'] == sha(case / 'mx_issue.o')
+        assert row['physical_shape'] == [64, 128 if keys == 113 else 192, 64]
+        assert row['command_count'] == (167 if keys == 113 else 232)
+        assert row['fence_count'] == 0 and row['same_output'] is True
+        log = gzip.decompress((case / 'spike.log.gz').read_bytes()).decode()
+        assert 'attn_flash PASSED' in log
+        assert 'gemmini perf [e4m3_vpu]:' in log
+        assert 'paired full BF16 output match 4096 values' in log
+        assert 'compiler first full BF16 output match 4096 values' in log
+        assert f"compiler first fresh guest hash {row['expected_output_hash']}" in log
+        assert f"check O hash vs Spike: match ({row['expected_output_hash']})" in log
+        matches = re.findall(
+            r'^paired (pipeline|compiler) ([0-3]) cycles (\d+) hash ([0-9a-f]{16})$',
+            log, re.M)
+        assert [(kind, int(index)) for kind, index, _, _ in matches] == [
+            ('pipeline', 0), ('compiler', 1),
+            ('pipeline', 2), ('compiler', 3)]
+        assert all(digest == row['expected_output_hash']
+                   for _, _, _, digest in matches)
+        reference = [int(matches[index][2]) for index in (0, 2)]
+        compiler = [int(matches[index][2]) for index in (1, 3)]
+        assert reference == row['source_pipelined_cycles']
+        assert compiler == row['compiler_pipelined_cycles']
+        assert abs(sum(compiler) / sum(reference) - 1 -
+                   row['compiler_over_source_fraction']) < 1e-12
 
 
 def main() -> None:
@@ -83,7 +144,8 @@ def main() -> None:
                 with np.load(args.step_dir / 'step09.npz', allow_pickle=False) as step:
                     for name in ('q', 'kt', 'p', 'v', 'mask'):
                         assert np.array_equal(data[name], step[f'call{call:02d}_{name}'])
-    print('SmolVLA attention capture and late source replays verified')
+    verify_compiler_pair(late)
+    print('SmolVLA attention capture, source, and compiler pairs verified')
 
 
 if __name__ == '__main__':

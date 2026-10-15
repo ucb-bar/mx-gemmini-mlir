@@ -51,6 +51,11 @@ Nicolas's fused source also passes on the final step's 163-key and 113-key
 head-0 calls at 16,955 and 15,163 modeled cycles. These additional cutpoints
 show the source kernel accepts late-session data; they do not connect the
 heads to the rest of the source model or produce a full-stage cycle count.
+The [paired final-step compiler/source check](evidence/smolvla_attention_session_20261014/README.md)
+then matches all 4,096 BF16 outputs per head in one `e4m3_vpu` Spike guest.
+The compiler's cross-block schedule takes 15,733 versus 16,956 source cycles
+for 163 keys and 14,132 versus 15,165 for 113 keys. These paired cycles have
+the same timing boundary; they remain head cutpoints, not a full-model ratio.
 
 The [matched compiler/source head comparison](evidence/smolvla_attention_cutpoint_20261014/README.md#matched-typed-compiler-comparison)
 now checks all 4,096 BF16 outputs for head 0 of both first-call shapes in
