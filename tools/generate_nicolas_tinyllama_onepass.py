@@ -26,12 +26,15 @@ def main() -> None:
     weights = args.weights_capture.resolve(strict=True)
     activations = args.activation_capture.resolve(strict=True)
     generator = args.source_generator.resolve(strict=True)
-    out = args.out_dir.resolve(strict=True)
+    out = args.out_dir.absolute()
+    if out.exists():
+        parser.error("--out-dir must be fresh")
     if not all((weights / f"layer{i}.npz").is_file() for i in range(22)):
         parser.error("weight capture needs all 22 layer files")
     if not (weights / "model.npz").is_file() or not (activations / "model.npz").is_file():
         parser.error("both captures need model.npz")
 
+    out.mkdir(parents=True)
     sys.path.insert(0, str(generator.parent))
     import gen_llama_model as gen  # noqa: PLC0415
 

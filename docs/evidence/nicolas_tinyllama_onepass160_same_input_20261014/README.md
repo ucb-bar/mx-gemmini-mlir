@@ -12,7 +12,9 @@ and FP8 recipe without the multi-gigabyte checkpoint files.
 
 This is **one causal forward** through all 22 TinyLlama decoder layers and
 the LM head. It is distinct from a 128-token prefill followed by 32 cached
-decode calls. Both programs use E4M3 MX operands for all 200 matrix sites;
+decode calls. Both use 160 physical attention key positions, removing the
+key-slot mismatch in the earlier prefill probe. Both use E4M3 MX operands
+for all 200 matrix sites;
 the compiler's [override map](all_fp8_overrides.json) selects them. The
 compiler also offloads 22 softmax, 88 add, 358 elementwise, 156 unary, and
 45 reduction regions to the VPU, as recorded in the

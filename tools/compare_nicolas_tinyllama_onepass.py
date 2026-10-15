@@ -41,10 +41,12 @@ def main() -> None:
     parser.add_argument("--source-blob", type=Path, required=True)
     parser.add_argument("--compiler-log", type=Path, required=True)
     parser.add_argument("--compiler-build-receipt", type=Path, required=True)
+    parser.add_argument("--compiler-run-receipt", type=Path)
     parser.add_argument("--compiler-bundle", type=Path, required=True)
     parser.add_argument("--input-identity", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    run_receipt = args.compiler_run_receipt or args.compiler_log.parent / "mx_spike_run.json"
 
     identity = json.loads(args.input_identity.read_text())
     if (identity.get("schema") != "mx_gemmini.nicolas_tinyllama_onepass_input_identity.v1"
@@ -68,9 +70,22 @@ def main() -> None:
             row["target_dtypes"][:2] != ["f8E4M3FN", "f8E4M3FN"]
             for row in bindings)):
         raise ValueError("compiler did not use all-FP8 MX contractions")
+    run = json.loads(run_receipt.read_text())
+    environment = run.get("spike_environment") or {}
+    if (run.get("schema") != "mx_gemmini.linked_stage_spike_run.v1"
+            or run.get("done") is not True
+            or run.get("build_receipt_sha256") != sha(args.compiler_build_receipt)
+            or environment.get("GEMMINI_MODE") != "both"
+            or environment.get("GEMMINI_PERF_CONFIG") != "e4m3_vpu"
+            or environment.get("GEMMINI_PERF_SET") !=
+            "mem.host_tracking=0"
+            or "--isa=rv64gc_zicntr" not in run.get("command", [])):
+        raise ValueError("compiler Spike run has a different extension configuration")
 
     source_log = args.source_log.read_text()
     compiler_log = args.compiler_log.read_text()
+    if run.get("log_sha256") != sha(args.compiler_log):
+        raise ValueError("compiler log differs from its run receipt")
     if ("llama MODEL benchmark finished (22 layer(s) + lm_head)." not in source_log
             or "\nDONE\n" not in "\n" + compiler_log):
         raise ValueError("both Spike runs must finish")
@@ -146,6 +161,7 @@ def main() -> None:
             "source_log": sha(args.source_log),
             "compiler_log": sha(args.compiler_log),
             "compiler_build_receipt": sha(args.compiler_build_receipt),
+            "compiler_run_receipt": sha(run_receipt),
             "source_header": sha(args.source_header),
             "source_blob": sha(args.source_blob),
         },

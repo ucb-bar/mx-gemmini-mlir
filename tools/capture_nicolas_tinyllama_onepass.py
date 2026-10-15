@@ -21,9 +21,11 @@ def main() -> None:
     if args.threads < 1:
         parser.error("--threads must be positive")
     with np.load(args.input_ids, allow_pickle=False) as data:
-        ids = data["in0"].reshape(-1).astype(np.int64, copy=True)
-    if ids.shape != (160,):
-        parser.error("source capture needs exactly 160 token IDs")
+        original_ids = data["in0"]
+    if (original_ids.shape not in ((160,), (1, 160))
+            or original_ids.dtype not in (np.dtype("int32"), np.dtype("int64"))):
+        parser.error("source capture needs 160 integer token IDs")
+    ids = original_ids.reshape(-1).astype(np.int64, copy=True)
     out = args.out_dir.absolute()
     if out.exists():
         parser.error("--out-dir must be fresh")
@@ -32,6 +34,8 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         args.checkpoint, use_safetensors=True, torch_dtype=torch.bfloat16,
         local_files_only=True).eval()
+    if np.any(ids < 0) or np.any(ids >= model.config.vocab_size):
+        parser.error("token IDs exceed checkpoint vocabulary")
     values: dict[str, np.ndarray] = {}
     handles = []
 
