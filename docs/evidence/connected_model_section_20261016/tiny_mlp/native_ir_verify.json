@@ -1,0 +1,8 @@
+{
+  "tool_sha256": "77610bfe834403a876827e5632b1dec5ea2a1ebb53c72c56c04a2804442649c2",
+  "modules": [
+    "kernel_8192_0.mlir",
+    "kernel_8192_1.mlir"
+  ],
+  "exit_code": 0
+}

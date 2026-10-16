@@ -1,0 +1,17 @@
+{
+  "handoffs": [
+    {
+      "producer": 0,
+      "consumer": 1,
+      "buffer": "b4",
+      "interface": "mx_guarded_f32_bf16_multiply_chain",
+      "saved_cycles": null
+    }
+  ],
+  "groups": [
+    [
+      0,
+      1
+    ]
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "boundary_policy": "bf16_rne_each_vpu_call",
+  "capture_receipt": {
+    "elements": 137,
+    "fixture": "tail",
+    "schema": "mx_gemmini.independent_fixture.v1"
+  },
+  "elements": 137,
+  "expected_fallback": false,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "calibrated_plan.json": "8599c69e96f0c155b2460898818c63d3847ae3aae1415d86dcbfbcb20e99303a",
+    "compile_common_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dispatch_program.json": "8463b5fc4728bcf547df9db5f8555e27d487a29245e000cf0f59202cd3e3608c",
+    "driver.c": "1ec421220e8e31c083a7a79f392bec39d6165fcd90bd349faf4c931b0f6b87bd",
+    "outlined.mlir": "c994521aaa7ceb97cb76ad3cde257b8b397a444a9e68116ae01b9f67be340e71",
+    "payload.S": "02006e21c1b8f405482febe9cf5e0b0dadfea6b98d0ec0640f126e21f7f5a6f0",
+    "payload.bin": "0debe99ce842814ea56876fe5de29beed0eace2bba32bc3cb004c097d4829434",
+    "plan.json": "5a3cdda6d15139abc5d03e3856c6dfbdb08ddca6919ed6bff31b4914eea3f316",
+    "source.mlir": "48f9e96737c915f09ab2455ffebe32229598f0ba267dffa1110ab8b9b8f76f4c"
+  },
+  "gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "implementation_sha256": {
+    "connected_elementwise.py": "ee6a810fe3f5a9ba2c35bf6664a5efd5f0336b4f6ee0ff7b4852a712db4c6c1b",
+    "connected_vpu.py": "f4bb1146d4851c8907f75b285722a172a99db7a89c30f57360094fe60b426502",
+    "qualify_connected_elementwise_spike.py": "93c072c964cf46ec46e447d79b70bf45ba3e380ce53e5ff2a191741f4c0c486d",
+    "vpu_add_kernel.py": "f647e2b542da4998499d3b9100cc34abc45120d3fa90af26bbc78a0fc318871b"
+  },
+  "measured_warm_saved_cycles": 2783,
+  "planner_sha256": "e8d694e0520f9cefbde8c8ee7079eed61d0fad76b8706bdb9009c88424ec3e63",
+  "production_selected": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "results": {
+    "connected": {
+      "checks": [
+        [
+          0,
+          7105,
+          0,
+          2041163775
+        ],
+        [
+          1,
+          6822,
+          0,
+          2041163775
+        ],
+        [
+          2,
+          6822,
+          0,
+          2041163775
+        ]
+      ],
+      "counters": {
+        "commands": 48,
+        "fences": 12,
+        "load_bytes": 2592,
+        "scale_bytes": 0,
+        "store_puts": 54
+      },
+      "files_sha256": {
+        "issue.c": "9f95066023040ca21dc7c24d0c82c4a5ab423abc18e34532cc3fe87618c0e8e5",
+        "perf.txt": "cb415412ffbd1c47edbb3f92a8be2a75d8fcb025bff522dc2f6dde9b26abdce8",
+        "section.elf": "4dfdf756c6daf786c4cc39d1dc8271f71ee2e6d9d53f7639b6cb682a3e521f4f",
+        "spike.log": "2db86e4b84881ddf453f976bad6a9179a96c9fb9dedad9f3508519051b818781"
+      },
+      "removed_transfer_bytes_per_call": 576
+    },
+    "materialized": {
+      "checks": [
+        [
+          0,
+          9997,
+          0,
+          2041163775
+        ],
+        [
+          1,
+          9605,
+          0,
+          2041163775
+        ],
+        [
+          2,
+          9605,
+          0,
+          2041163775
+        ]
+      ],
+      "counters": {
+        "commands": 60,
+        "fences": 18,
+        "load_bytes": 3456,
+        "scale_bytes": 0,
+        "store_puts": 108
+      },
+      "files_sha256": {
+        "issue.c": "373b52430e800b55c18c46425112429d7ba5a8eba4e7307dbda376233bb8ecd3",
+        "perf.txt": "9bf7737975e7ac717dd57bfbdcefeab2729f4c8b2eb1cc8606b3311a89785fb7",
+        "section.elf": "0ca31098f65f166a9632e15af173b399105f022b851fafccceb1cd39aca19bd2",
+        "spike.log": "06c5030292d80d788d6bbdc5d51e48574e9990786f65c40b6e792febfb5f500d"
+      },
+      "removed_transfer_bytes_per_call": 0
+    }
+  },
+  "schema": "mx_gemmini.connected_elementwise_spike.v1",
+  "shape": [
+    137
+  ],
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "timing": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  }
+}

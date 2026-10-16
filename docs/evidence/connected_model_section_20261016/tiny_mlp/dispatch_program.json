@@ -1,0 +1,114 @@
+{
+  "entry": "forward",
+  "args": [
+    0,
+    1,
+    2
+  ],
+  "buffers": {
+    "b0": {
+      "id": "b0",
+      "shape": [
+        1,
+        64,
+        5632
+      ],
+      "dtype": "f32",
+      "kind": "arg",
+      "arg_index": 0
+    },
+    "b1": {
+      "id": "b1",
+      "shape": [
+        1,
+        64,
+        5632
+      ],
+      "dtype": "f32",
+      "kind": "arg",
+      "arg_index": 1
+    },
+    "b2": {
+      "id": "b2",
+      "shape": [
+        1,
+        64,
+        5632
+      ],
+      "dtype": "f32",
+      "kind": "arg",
+      "arg_index": 2
+    },
+    "b4": {
+      "id": "b4",
+      "shape": [
+        1,
+        64,
+        5632
+      ],
+      "dtype": "f32",
+      "kind": "intermediate",
+      "arg_index": null
+    },
+    "b6": {
+      "id": "b6",
+      "shape": [
+        1,
+        64,
+        5632
+      ],
+      "dtype": "f32",
+      "kind": "intermediate",
+      "arg_index": null
+    }
+  },
+  "nodes": [
+    {
+      "kind": "dispatch",
+      "op": "forward$kernel_0__rmul_0",
+      "inputs": [
+        "b0",
+        "b1"
+      ],
+      "outputs": [
+        "b4"
+      ],
+      "prov": {
+        "prov.region_id": "mul_0",
+        "prov._pattern_hint": "mul",
+        "prov.op": "mul",
+        "prov.family": "elementwise",
+        "prov.trace_role": "lowering",
+        "prov.aten": "aten.mul.Tensor",
+        "prov.orig_dtype": "float32"
+      },
+      "regions": 0,
+      "captures": []
+    },
+    {
+      "kind": "dispatch",
+      "op": "forward$kernel_1__rmul_1",
+      "inputs": [
+        "b4",
+        "b2"
+      ],
+      "outputs": [
+        "b6"
+      ],
+      "prov": {
+        "prov.region_id": "mul_1",
+        "prov._pattern_hint": "mul",
+        "prov.op": "mul",
+        "prov.family": "elementwise",
+        "prov.trace_role": "lowering",
+        "prov.aten": "aten.mul.Tensor",
+        "prov.orig_dtype": "float32"
+      },
+      "regions": 0,
+      "captures": []
+    }
+  ],
+  "results": [
+    "b6"
+  ]
+}

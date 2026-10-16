@@ -1,0 +1,143 @@
+{
+  "boundary_policy": "bf16_rne_each_vpu_call",
+  "capture_receipt": {
+    "files_sha256": {
+      "bf16_policy_golden.npy": "6f798897606731ba90fdeece500541c737d34b47d9fe4dceaf6af853586ccc5b",
+      "capture_trace.json": "b7ddc72a158229482839845e874f3a3f2d56660a722b5385ce119cadad30a0e3",
+      "golden.npy": "12cda653d2a3a4b572153328f988fb56d202e6e3dd5d3b6d2baadbeb2a5b877c",
+      "inputs.npz": "ad4bdbc99c77c671a8becd3988f92491f5539ebe05a05d70609b89ce03f432c1",
+      "source.mlir": "dc3072fd3c4d8f525b7383ab96e66fdde4e6f1c38ac26d7b06299ea7dcbf3b24"
+    },
+    "layer_index": 5,
+    "model2mlir_revision": "905d2c918f839596c9d1198cbdeb42d4c12a325b",
+    "original_layer_golden_checked": true,
+    "preparation_sha256": "c39dfb3a67ae6b3117456d64a79712bca2a9a5bdbf3320c37472cfae3a6bb049",
+    "relative_error_to_f32": 0.0036849760054217255,
+    "schema": "mx_gemmini.connected_mlp_capture.v1",
+    "shape": [
+      1,
+      64,
+      5632
+    ],
+    "source_bundle_sha256": {
+      "capture_receipt.json": "950cbe5761c5b7ab18f2c6632cb759011a8aede76cec6167a3d21ae6b2df4ae1",
+      "golden.npy": "7cecd342c993b521d0560768b815373f8aadff20e1f9c3ab05f793cecb0ed699",
+      "inputs.npz": "02dba20348c34cd092b63e734cf88246e6c44ac134786d38fc36d1b19aa8e0a6",
+      "weights.safetensors": "a0530edeba3284f307f6d81f065fb2c8b89df010a7e4f2c3f40bc4f918403a40"
+    }
+  },
+  "elements": 360448,
+  "expected_fallback": false,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "files_sha256": {
+    "calibrated_plan.json": "069821545aa2f18625caf899957ccdc70ea0c9bcba90ff14361877e51bbba748",
+    "compile_common_0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile_common_3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dispatch_program.json": "9eee09d67c7b1a3dc9f7537a0b32ae1fe07612184290866722adce23df940ce5",
+    "driver.c": "5c0c6fc9f8bfd552ef9544bc45cd70a0965435bf23e7bb74ba90167de73764fe",
+    "outlined.mlir": "a7f5eccaec51b5bf2c81c216a5cb408daaf932ddd3ce017240fc018c923aebd4",
+    "payload.S": "02006e21c1b8f405482febe9cf5e0b0dadfea6b98d0ec0640f126e21f7f5a6f0",
+    "payload.bin": "bec269d54189e0fb4ecc14158608ba79103b88758d7e7eb26e95e9cf4bca7744",
+    "plan.json": "5a3cdda6d15139abc5d03e3856c6dfbdb08ddca6919ed6bff31b4914eea3f316",
+    "source.mlir": "dc3072fd3c4d8f525b7383ab96e66fdde4e6f1c38ac26d7b06299ea7dcbf3b24"
+  },
+  "gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "implementation_sha256": {
+    "connected_elementwise.py": "ee6a810fe3f5a9ba2c35bf6664a5efd5f0336b4f6ee0ff7b4852a712db4c6c1b",
+    "connected_vpu.py": "f4bb1146d4851c8907f75b285722a172a99db7a89c30f57360094fe60b426502",
+    "qualify_connected_elementwise_spike.py": "93c072c964cf46ec46e447d79b70bf45ba3e380ce53e5ff2a191741f4c0c486d",
+    "vpu_add_kernel.py": "f647e2b542da4998499d3b9100cc34abc45120d3fa90af26bbc78a0fc318871b"
+  },
+  "measured_warm_saved_cycles": 5881348,
+  "planner_sha256": "e8d694e0520f9cefbde8c8ee7079eed61d0fad76b8706bdb9009c88424ec3e63",
+  "production_selected": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "results": {
+    "connected": {
+      "checks": [
+        [
+          0,
+          16883577,
+          0,
+          3940654533
+        ],
+        [
+          1,
+          16878060,
+          0,
+          3940654533
+        ],
+        [
+          2,
+          16878060,
+          0,
+          3940654533
+        ]
+      ],
+      "counters": {
+        "commands": 34848,
+        "fences": 270,
+        "load_bytes": 6488064,
+        "scale_bytes": 0,
+        "store_puts": 135168
+      },
+      "files_sha256": {
+        "issue.c": "6c2fa4c358a7653f5628cf490e520ea5a706be871bf651beeae7d2db4c69bd3b",
+        "perf.txt": "15ad4b484690cc4541be3398c996d7a2ffd2e6320716eb93ac49c1498cb02d63",
+        "section.elf": "846578872fc4eb1ed8dc181a204dfe5b76512db8c9b3740199863b8fdc2e12cf",
+        "spike.log": "382f39d61180add52b489040aafe4fafa3d37626086918f1b67fb5ce2cf9b359"
+      },
+      "removed_transfer_bytes_per_call": 1441792
+    },
+    "materialized": {
+      "checks": [
+        [
+          0,
+          22767324,
+          0,
+          3940654533
+        ],
+        [
+          1,
+          22760183,
+          0,
+          3940654533
+        ],
+        [
+          2,
+          22759408,
+          0,
+          3940654533
+        ]
+      ],
+      "counters": {
+        "commands": 51744,
+        "fences": 534,
+        "load_bytes": 8650752,
+        "scale_bytes": 0,
+        "store_puts": 270336
+      },
+      "files_sha256": {
+        "issue.c": "24e8ceb9073f35001e2600fd618236b67ed3f8bee0c947be2065fa4a7ad5a023",
+        "perf.txt": "2cca324f42f460e9698a565276504fffd569f411628f36e36511f0580377cf57",
+        "section.elf": "b3da751bb8ec9f61030ddfc588269bd9d5f48b0b6d69177884515a68cffcb928",
+        "spike.log": "bf7f44ff60198dd89493b3fe9e5fbe0911fc55dd811f0f0484fdf06005387933"
+      },
+      "removed_transfer_bytes_per_call": 0
+    }
+  },
+  "schema": "mx_gemmini.connected_elementwise_spike.v1",
+  "shape": [
+    1,
+    64,
+    5632
+  ],
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "timing": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  }
+}

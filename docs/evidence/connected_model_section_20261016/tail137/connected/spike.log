@@ -1,0 +1,6 @@
+gemmini: GEMMINI_MODE=both
+SECTION run=0 cycles=7105 mismatches=0 hash=2041163775
+SECTION run=1 cycles=6822 mismatches=0 hash=2041163775
+SECTION run=2 cycles=6822 mismatches=0 hash=2041163775
+Gemmini extension configured with:
+    dim = 16

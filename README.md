@@ -73,6 +73,9 @@ session linking, and the remaining numerical gates.
 The [connected-dispatch experiment](docs/evidence/connected_dispatch_20261016/README.md)
 checks Merlin's shared residency planner through generated MX VPU binaries on
 Spike, with identical captured PyTorch outputs and fewer intermediate transfers.
+The [TinyLlama section experiment](docs/evidence/connected_model_section_20261016/README.md)
+extends this path to two f32 model multiplies under the selected BF16 boundary
+policy, with every output checked and host conversion overhead included.
 
 ## Source-kernel regression tests
 

@@ -625,3 +625,10 @@ and records modeled cycles and transfer counters. The
 [evidence and reproduction commands](evidence/connected_dispatch_20261016/README.md)
 cover aligned and partial-block shapes. This path currently qualifies connected
 scalar VPU regions; it is not yet enabled by the full-model stage builder.
+
+`tools.prepare_connected_tiny_mlp` and
+`tools.qualify_connected_elementwise_spike` additionally qualify a
+[checkpoint-backed TinyLlama multiply section](evidence/connected_model_section_20261016/README.md).
+The original and connected kernels retain the same explicitly selected BF16
+rounding policy. This is a section-level result with a checked runtime fallback,
+not a full-model compiler option or a strict-FP32 numerical claim.
