@@ -1,0 +1,18 @@
+{
+  "tool_sha256": "77610bfe834403a876827e5632b1dec5ea2a1ebb53c72c56c04a2804442649c2",
+  "commands": [
+    [
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx-current-build-gcc/tools/mx-gemmini-opt",
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/connected_vpu_m2m_20261016_checked64/kernel_0.mlir",
+      "-o",
+      "/dev/null"
+    ],
+    [
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx-current-build-gcc/tools/mx-gemmini-opt",
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/connected_vpu_m2m_20261016_checked64/kernel_1.mlir",
+      "-o",
+      "/dev/null"
+    ]
+  ],
+  "exit_code": 0
+}

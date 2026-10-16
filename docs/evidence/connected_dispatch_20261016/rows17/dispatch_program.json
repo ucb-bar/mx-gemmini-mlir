@@ -1,0 +1,85 @@
+{
+  "entry": "forward",
+  "args": [
+    0
+  ],
+  "buffers": {
+    "b0": {
+      "id": "b0",
+      "shape": [
+        17,
+        8
+      ],
+      "dtype": "bf16",
+      "kind": "arg",
+      "arg_index": 0
+    },
+    "b1": {
+      "id": "b1",
+      "shape": [
+        17,
+        8
+      ],
+      "dtype": "bf16",
+      "kind": "intermediate",
+      "arg_index": null
+    },
+    "b2": {
+      "id": "b2",
+      "shape": [
+        17,
+        8
+      ],
+      "dtype": "bf16",
+      "kind": "intermediate",
+      "arg_index": null
+    }
+  },
+  "nodes": [
+    {
+      "kind": "dispatch",
+      "op": "forward$kernel_0__rmul_0",
+      "inputs": [
+        "b0"
+      ],
+      "outputs": [
+        "b1"
+      ],
+      "prov": {
+        "prov.region_id": "mul_0",
+        "prov._pattern_hint": "mul",
+        "prov.op": "mul",
+        "prov.family": "elementwise",
+        "prov.trace_role": "lowering",
+        "prov.aten": "aten.mul.Tensor",
+        "prov.orig_dtype": "bfloat16"
+      },
+      "regions": 0,
+      "captures": []
+    },
+    {
+      "kind": "dispatch",
+      "op": "forward$kernel_1__radd_0",
+      "inputs": [
+        "b1"
+      ],
+      "outputs": [
+        "b2"
+      ],
+      "prov": {
+        "prov.region_id": "add_0",
+        "prov._pattern_hint": "add",
+        "prov.op": "add",
+        "prov.family": "elementwise",
+        "prov.trace_role": "lowering",
+        "prov.aten": "aten.add.Tensor",
+        "prov.orig_dtype": "bfloat16"
+      },
+      "regions": 0,
+      "captures": []
+    }
+  ],
+  "results": [
+    "b2"
+  ]
+}

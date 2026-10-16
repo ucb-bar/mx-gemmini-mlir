@@ -70,6 +70,9 @@ tracks compiled equivalents of source kernels. The
 kernel-level lowering and Spike comparisons. The
 [full-model status](docs/full_model_compilation.md) summarizes graph coverage,
 session linking, and the remaining numerical gates.
+The [connected-dispatch experiment](docs/evidence/connected_dispatch_20261016/README.md)
+checks Merlin's shared residency planner through generated MX VPU binaries on
+Spike, with identical captured PyTorch outputs and fewer intermediate transfers.
 
 ## Source-kernel regression tests
 

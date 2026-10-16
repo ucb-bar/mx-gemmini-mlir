@@ -1,0 +1,57 @@
+{
+  "cases": {
+    "17": {
+      "files_sha256": {
+        "baseline/commands.json": "216dfdf31decfc8bd8bdf4970d7620ae1366a8a53f690fba23b8aedc7c8f1a72",
+        "baseline/driver.c": "d7ae0bc265db59b641f1f8c6e1bb1237cd31441748a61869ad234c15388c722c",
+        "baseline/issue.c": "a10b77cd5cca9f6eba05b54a6d8dc324f3225eb6d1b781e798f740853813256f",
+        "baseline/perf.txt": "cf902b391731f1e4ca7c0bb251e8cb2ece00d526536b6277e5737608925c9bd7",
+        "baseline/spike.log": "21920b2ce23f5796574bd427fe76ffb2b9fa9bc30e5e0ffe3aead8d5398ccb0f",
+        "calibrated_plan.json": "bf53ded653090105bd9986c5e1e6dd087c1acbf3fbeb5f759c2ee43e04b40a97",
+        "capture_trace.json": "153e9e7f875db67374f234882c816edc07f0623fb15eb19c8fc19911b66b8ec2",
+        "connected/commands.json": "56ba137e606ae144f94559d935c7c9bf75175590dd328a101455ad6350744128",
+        "connected/driver.c": "d7ae0bc265db59b641f1f8c6e1bb1237cd31441748a61869ad234c15388c722c",
+        "connected/issue.c": "bd610ee58f71a1620f6fbdbb5f9b791809ce42e6ec63c9e9180dbf31ff8cfa95",
+        "connected/perf.txt": "beb9bcd0bcdab7a2b8ea5a2d43bba9d011e74d7cf7f9766402e3d6c18b21d532",
+        "connected/spike.log": "dcb8a0d0f8412674ce0ee77b14de7a73cc979e577830a9b73d0c8c274e9aaf1d",
+        "dispatch_program.json": "935edc69335470bf1a31a098a3a1aceddd0d72a8e720c30cabd65681e4a95093",
+        "golden.bin": "ae67165f09d2dffe7ba40f78cc9476121d3ad065ea49a6b7c048d73fcfc07af9",
+        "input.bin": "71d612e3633b9a2287f154ba135d4437672617864c9d8b601f6db8b3765d78b4",
+        "kernel_0.mlir": "97dfedc9d7c3309a4f6a7df6556fe1cfeabbca030ac1707991a566fb47f4bd91",
+        "kernel_1.mlir": "57c4a61a64622398ead8f978f4ac938475ccfc852c74871483e49596cd4da41a",
+        "native_ir_verify.json": "7471351d7df4c49f3f8efe43caed69df1dc95a287e09430767d9785aa101e398",
+        "outlined.mlir": "f36b88f229996b46b39fec34754ceb2867e990b23d2871a5d81282b9ca36c02a",
+        "plan.json": "af8a614c0eea0b2a651a0e65d5c503ec1d565bcfa68ab784426071e8ee83f588",
+        "receipt.json": "71bde6e3c4f1ee028c70ff12de68e76edf2bf890ac29013fc64ecc6cf39ef800",
+        "source.mlir": "804901e46a55cd892c704bce41e01f7a7e2b2fb04f19ec5e7dadcba544be16ea"
+      }
+    },
+    "64": {
+      "files_sha256": {
+        "baseline/commands.json": "38f9a5d8ae5d312a06d5194583cef8158893c7d7deb4fe00f7ec27da9cf9645b",
+        "baseline/driver.c": "6fb43a6f20872b379faec3c114bce4a0e184814b38d894222930f1949bc3ce3f",
+        "baseline/issue.c": "7dbe23050d41d9c58bbfa063bc89c104dfd38729f3333b56cdaaf3cfeb896e7e",
+        "baseline/perf.txt": "46941181ae6476c3a97665fc8abdea39fcee8fc6cf1942d47abaf249623cca36",
+        "baseline/spike.log": "c8fbe1dab768aac7a431a198ec8ea86a1eed8071241f28b66119cf2b733c0094",
+        "calibrated_plan.json": "fe21491cc19e89524f88879553a8605bf5b45aeb664a75b0805b5946f1bf55b2",
+        "capture_trace.json": "5a6ae3effd29ac9fdcc864654d3bdddd45968fc92fed57a17ebdb0a8cc5c90e8",
+        "connected/commands.json": "eb545791ded62c195b8d677ae4897c27ea10e5c27fa8ff6163b9c5e658bbdc52",
+        "connected/driver.c": "6fb43a6f20872b379faec3c114bce4a0e184814b38d894222930f1949bc3ce3f",
+        "connected/issue.c": "eb9a7237a303dc033c1b01cd1cccdf86e4adec71ae6aaa633d7c0ce990c61474",
+        "connected/perf.txt": "fcef6bd9023add1bd624a1de59828063cce0ac7b4fa8864dba76a1082c201f00",
+        "connected/spike.log": "dcc5676f54c3f19d737a55554dbc403bd2195fc0ed434760a514a521f5c19891",
+        "dispatch_program.json": "fc8387f1a6457d2b3feb4005b2e29c43d7d3428953751832e8654026eb3e09d8",
+        "golden.bin": "33c1a5b004d12444e7c1898f9c982ef68128c145648d12cafa503fd92fa2aec3",
+        "input.bin": "fba7482f9001b23cf7b8e64f84bab330cc4c7bf2a81667a34d59c5b532a8b5b5",
+        "kernel_0.mlir": "186da1703cfe0f1efc65410d2afcd682ef6c6416b4075ef4a50b59b9644ab832",
+        "kernel_1.mlir": "86c0fac2c848bedfe2f2bfb85ee09a7a6ff766eb627bf34b03ad242a58488c47",
+        "native_ir_verify.json": "69b7487e309e6501603474ec1c9cee20eab13e8d8ffe0a5588a9ef121553ce36",
+        "outlined.mlir": "9bf36f41c78a1e565bcdb9dd33525a9e6179f89232789b98efdab46528974cce",
+        "plan.json": "af8a614c0eea0b2a651a0e65d5c503ec1d565bcfa68ab784426071e8ee83f588",
+        "receipt.json": "4c645377e942274133faa12ea81c224c9c6095e6334185fdfa1831e3a4bbdb0a",
+        "source.mlir": "677f3dcdc53519b465d986cc31e4e02fddc50ccb4829f1a65b19b369d35be24d"
+      }
+    }
+  },
+  "schema": "mx_gemmini.connected_dispatch_archive.v1"
+}

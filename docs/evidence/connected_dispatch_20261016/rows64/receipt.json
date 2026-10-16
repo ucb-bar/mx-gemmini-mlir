@@ -1,0 +1,119 @@
+{
+  "adapter_sha256": "f4bb1146d4851c8907f75b285722a172a99db7a89c30f57360094fe60b426502",
+  "calibrated_plan_sha256": "fe21491cc19e89524f88879553a8605bf5b45aeb664a75b0805b5946f1bf55b2",
+  "capture_trace_sha256": "5a6ae3effd29ac9fdcc864654d3bdddd45968fc92fed57a17ebdb0a8cc5c90e8",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "golden_sha256": "33c1a5b004d12444e7c1898f9c982ef68128c145648d12cafa503fd92fa2aec3",
+  "input_sha256": "fba7482f9001b23cf7b8e64f84bab330cc4c7bf2a81667a34d59c5b532a8b5b5",
+  "measured_warm_saved_cycles": 221,
+  "model2mlir_revision": "905d2c918f839596c9d1198cbdeb42d4c12a325b",
+  "planner_sha256": "e8d694e0520f9cefbde8c8ee7079eed61d0fad76b8706bdb9009c88424ec3e63",
+  "production_selected": true,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "results": {
+    "baseline": {
+      "checks": [
+        [
+          0,
+          990,
+          0,
+          3204709282
+        ],
+        [
+          1,
+          623,
+          0,
+          3204709282
+        ],
+        [
+          2,
+          623,
+          0,
+          3204709282
+        ]
+      ],
+      "command": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "--isa=rv64gc_zicntr",
+        "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/dense-compact-spike-g/libgemmini.so",
+        "--extension=gemmini",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/connected_vpu_m2m_20261016_checked64/baseline/chain.elf"
+      ],
+      "command_count": 26,
+      "commands_sha256": "38f9a5d8ae5d312a06d5194583cef8158893c7d7deb4fe00f7ec27da9cf9645b",
+      "counters": {
+        "commands": 72,
+        "fences": 18,
+        "load_bytes": 6144,
+        "scale_bytes": 0,
+        "store_puts": 384
+      },
+      "driver_sha256": "6fb43a6f20872b379faec3c114bce4a0e184814b38d894222930f1949bc3ce3f",
+      "elf_sha256": "333385c875c2470d56e03295fa10fc7d654b681a2dbb04d57c412b09d21d5734",
+      "issuer_sha256": "7dbe23050d41d9c58bbfa063bc89c104dfd38729f3333b56cdaaf3cfeb896e7e",
+      "perf_sha256": "46941181ae6476c3a97665fc8abdea39fcee8fc6cf1942d47abaf249623cca36",
+      "removed_transfer_bytes_per_call": 0,
+      "spike_log_sha256": "c8fbe1dab768aac7a431a198ec8ea86a1eed8071241f28b66119cf2b733c0094"
+    },
+    "connected": {
+      "checks": [
+        [
+          0,
+          665,
+          0,
+          3204709282
+        ],
+        [
+          1,
+          402,
+          0,
+          3204709282
+        ],
+        [
+          2,
+          402,
+          0,
+          3204709282
+        ]
+      ],
+      "command": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "--isa=rv64gc_zicntr",
+        "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/dense-compact-spike-g/libgemmini.so",
+        "--extension=gemmini",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/connected_vpu_m2m_20261016_checked64/connected/chain.elf"
+      ],
+      "command_count": 18,
+      "commands_sha256": "eb545791ded62c195b8d677ae4897c27ea10e5c27fa8ff6163b9c5e658bbdc52",
+      "counters": {
+        "commands": 48,
+        "fences": 18,
+        "load_bytes": 3072,
+        "scale_bytes": 0,
+        "store_puts": 192
+      },
+      "driver_sha256": "6fb43a6f20872b379faec3c114bce4a0e184814b38d894222930f1949bc3ce3f",
+      "elf_sha256": "19e1dd6505ef50d8ac0e086a6bf350b2f1dc95473c506abe01de0a6d09b5a912",
+      "issuer_sha256": "eb9a7237a303dc033c1b01cd1cccdf86e4adec71ae6aaa633d7c0ce990c61474",
+      "perf_sha256": "fcef6bd9023add1bd624a1de59828063cce0ac7b4fa8864dba76a1082c201f00",
+      "removed_transfer_bytes_per_call": 2048,
+      "spike_log_sha256": "dcc5676f54c3f19d737a55554dbc403bd2195fc0ed434760a514a521f5c19891"
+    }
+  },
+  "rows": 64,
+  "runner_sha256": "55643ea1864a9d6e6ac04a31f539486b10d3f52486ee571f2293f2eafa07a25d",
+  "schema": "mx_gemmini.connected_dispatch_spike.v1",
+  "source_mlir_sha256": "677f3dcdc53519b465d986cc31e4e02fddc50ccb4829f1a65b19b369d35be24d",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "startup_sha256": {
+    "crt.S": "2794cf1a7ae21537060453864c94a811869e72335e98b9eb1e8aeee4de7f0508",
+    "syscalls.c": "71b02fbad1f1d29c7f13fb6ab96a18f90cd7c257398b4a52cd8c9f2b459dfcab",
+    "test.ld": "77ff20ffb473836e779809ff47b34fbcc391152025d19de4d6fd7380948658f4"
+  },
+  "timing": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  }
+}

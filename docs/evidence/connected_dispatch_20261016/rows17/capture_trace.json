@@ -1,0 +1,1306 @@
+{
+  "schema": "m2m.frontend_trace.v1",
+  "status": "complete",
+  "counting_unit": "static_captured_call_sites",
+  "graphs": {
+    "original": {
+      "schema": "m2m.frontend_graph.v1",
+      "stage": "original",
+      "status": "complete",
+      "graph_id": "g:original:root",
+      "nodes": [
+        {
+          "id": "g:original:root:n0",
+          "graph_id": "g:original:root",
+          "ordinal": 0,
+          "op": "placeholder",
+          "target": "x",
+          "classification": "structural",
+          "args": [],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:original:root:n0:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:original:root:n0:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {},
+          "input_kind": "USER_INPUT",
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": []
+        },
+        {
+          "id": "g:original:root:n1",
+          "graph_id": "g:original:root",
+          "ordinal": 1,
+          "op": "call_function",
+          "target": "aten.mul.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:original:root:n0",
+              "value_id": "g:original:root:n0:v0"
+            },
+            1.1015625
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:original:root:n1:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:original:root:n1:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": []
+        },
+        {
+          "id": "g:original:root:n2",
+          "graph_id": "g:original:root",
+          "ordinal": 2,
+          "op": "call_function",
+          "target": "aten.add.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:original:root:n1",
+              "value_id": "g:original:root:n1:v0"
+            },
+            0.333984375
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:original:root:n2:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:original:root:n2:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": []
+        },
+        {
+          "id": "g:original:root:n3",
+          "graph_id": "g:original:root",
+          "ordinal": 3,
+          "op": "output",
+          "target": "output",
+          "classification": "structural",
+          "args": [
+            [
+              {
+                "node_id": "g:original:root:n2",
+                "value_id": "g:original:root:n2:v0"
+              }
+            ]
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:original:root:n3:v0",
+              "kind": "unknown",
+              "shape": null,
+              "dtype": null,
+              "storage_dtype": null,
+              "compute_dtype": null,
+              "device": null,
+              "layout": null,
+              "stride": null
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "unobserved"
+          },
+          "module_stack": {},
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": []
+        }
+      ],
+      "edges": [
+        {
+          "producer_node_id": "g:original:root:n0",
+          "producer_value_id": "g:original:root:n0:v0",
+          "consumer_node_id": "g:original:root:n1",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:original:root:n1",
+          "producer_value_id": "g:original:root:n1:v0",
+          "consumer_node_id": "g:original:root:n2",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:original:root:n2",
+          "producer_value_id": "g:original:root:n2:v0",
+          "consumer_node_id": "g:original:root:n3",
+          "argument_path": "args/0/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        }
+      ],
+      "operator_schemas": {
+        "aten.add.Tensor": "aten::add.Tensor(Tensor self, Tensor other, *, Scalar alpha=1) -> Tensor",
+        "aten.mul.Tensor": "aten::mul.Tensor(Tensor self, Tensor other) -> Tensor"
+      },
+      "call_count": 2,
+      "counting_unit": "static_captured_call_sites",
+      "by_target": {
+        "aten.add.Tensor": 1,
+        "aten.mul.Tensor": 1
+      },
+      "graph_signature": "\n# inputs\nx: USER_INPUT\n\n# outputs\nadd: USER_OUTPUT\n",
+      "range_constraints": {},
+      "runtime_versions": {
+        "torch": "2.10.0+cu128"
+      },
+      "eliminations": [],
+      "sha256": "abcea923e0ffe6934c533ac529b43c1fd1ae6b61aaceb52453f3c5ac05d9c34a"
+    },
+    "quantized": {
+      "schema": "m2m.frontend_graph.v1",
+      "stage": "quantized",
+      "status": "complete",
+      "graph_id": "g:quantized:root",
+      "nodes": [
+        {
+          "id": "g:quantized:root:n0",
+          "graph_id": "g:quantized:root",
+          "ordinal": 0,
+          "op": "placeholder",
+          "target": "x",
+          "classification": "structural",
+          "args": [],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:quantized:root:n0:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:quantized:root:n0:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {},
+          "input_kind": "USER_INPUT",
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n0"
+          ]
+        },
+        {
+          "id": "g:quantized:root:n1",
+          "graph_id": "g:quantized:root",
+          "ordinal": 1,
+          "op": "call_function",
+          "target": "aten.mul.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:quantized:root:n0",
+              "value_id": "g:quantized:root:n0:v0"
+            },
+            1.1015625
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:quantized:root:n1:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:quantized:root:n1:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n1"
+          ]
+        },
+        {
+          "id": "g:quantized:root:n2",
+          "graph_id": "g:quantized:root",
+          "ordinal": 2,
+          "op": "call_function",
+          "target": "aten.add.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:quantized:root:n1",
+              "value_id": "g:quantized:root:n1:v0"
+            },
+            0.333984375
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:quantized:root:n2:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:quantized:root:n2:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n2"
+          ]
+        },
+        {
+          "id": "g:quantized:root:n3",
+          "graph_id": "g:quantized:root",
+          "ordinal": 3,
+          "op": "output",
+          "target": "output",
+          "classification": "structural",
+          "args": [
+            [
+              {
+                "node_id": "g:quantized:root:n2",
+                "value_id": "g:quantized:root:n2:v0"
+              }
+            ]
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:quantized:root:n3:v0",
+              "kind": "unknown",
+              "shape": null,
+              "dtype": null,
+              "storage_dtype": null,
+              "compute_dtype": null,
+              "device": null,
+              "layout": null,
+              "stride": null
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "unobserved"
+          },
+          "module_stack": {},
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n3"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "producer_node_id": "g:quantized:root:n0",
+          "producer_value_id": "g:quantized:root:n0:v0",
+          "consumer_node_id": "g:quantized:root:n1",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:quantized:root:n1",
+          "producer_value_id": "g:quantized:root:n1:v0",
+          "consumer_node_id": "g:quantized:root:n2",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:quantized:root:n2",
+          "producer_value_id": "g:quantized:root:n2:v0",
+          "consumer_node_id": "g:quantized:root:n3",
+          "argument_path": "args/0/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        }
+      ],
+      "operator_schemas": {
+        "aten.add.Tensor": "aten::add.Tensor(Tensor self, Tensor other, *, Scalar alpha=1) -> Tensor",
+        "aten.mul.Tensor": "aten::mul.Tensor(Tensor self, Tensor other) -> Tensor"
+      },
+      "call_count": 2,
+      "counting_unit": "static_captured_call_sites",
+      "by_target": {
+        "aten.add.Tensor": 1,
+        "aten.mul.Tensor": 1
+      },
+      "graph_signature": "\n# inputs\nx: USER_INPUT\n\n# outputs\nadd: USER_OUTPUT\n",
+      "range_constraints": {},
+      "runtime_versions": {
+        "torch": "2.10.0+cu128"
+      },
+      "eliminations": [],
+      "sha256": "074f62ca89bc07edf212ddc3082c5e033468e31ba87d4344d4eb21aa60a5963a"
+    },
+    "prepared": {
+      "schema": "m2m.frontend_graph.v1",
+      "stage": "prepared",
+      "status": "complete",
+      "graph_id": "g:prepared:root",
+      "nodes": [
+        {
+          "id": "g:prepared:root:n0",
+          "graph_id": "g:prepared:root",
+          "ordinal": 0,
+          "op": "placeholder",
+          "target": "x",
+          "classification": "structural",
+          "args": [],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:prepared:root:n0:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:prepared:root:n0:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {},
+          "input_kind": "USER_INPUT",
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n0",
+            "g:quantized:root:n0"
+          ]
+        },
+        {
+          "id": "g:prepared:root:n1",
+          "graph_id": "g:prepared:root",
+          "ordinal": 1,
+          "op": "call_function",
+          "target": "aten.mul.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:prepared:root:n0",
+              "value_id": "g:prepared:root:n0:v0"
+            },
+            1.1015625
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:prepared:root:n1:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:prepared:root:n1:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n1",
+            "g:quantized:root:n1"
+          ]
+        },
+        {
+          "id": "g:prepared:root:n2",
+          "graph_id": "g:prepared:root",
+          "ordinal": 2,
+          "op": "call_function",
+          "target": "aten.add.Tensor",
+          "classification": "aten",
+          "args": [
+            {
+              "node_id": "g:prepared:root:n1",
+              "value_id": "g:prepared:root:n1:v0"
+            },
+            0.333984375
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:prepared:root:n2:v0",
+              "kind": "tensor",
+              "shape": [
+                17,
+                8
+              ],
+              "dtype": "bfloat16",
+              "storage_dtype": "bfloat16",
+              "compute_dtype": null,
+              "device": "cpu",
+              "layout": "torch.strided",
+              "stride": [
+                8,
+                1
+              ]
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "observed",
+            "container": "single",
+            "values": [
+              {
+                "result_id": "g:prepared:root:n2:v0",
+                "kind": "tensor"
+              }
+            ]
+          },
+          "module_stack": {
+            "L__self__": [
+              "",
+              "__main__.capture_graph.<locals>.ScalarChain"
+            ]
+          },
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n2",
+            "g:quantized:root:n2"
+          ]
+        },
+        {
+          "id": "g:prepared:root:n3",
+          "graph_id": "g:prepared:root",
+          "ordinal": 3,
+          "op": "output",
+          "target": "output",
+          "classification": "structural",
+          "args": [
+            [
+              {
+                "node_id": "g:prepared:root:n2",
+                "value_id": "g:prepared:root:n2:v0"
+              }
+            ]
+          ],
+          "kwargs": {},
+          "results": [
+            {
+              "id": "g:prepared:root:n3:v0",
+              "kind": "unknown",
+              "shape": null,
+              "dtype": null,
+              "storage_dtype": null,
+              "compute_dtype": null,
+              "device": null,
+              "layout": null,
+              "stride": null
+            }
+          ],
+          "result_metadata": {
+            "schema": "m2m.frontend_result_metadata.v1",
+            "status": "unobserved"
+          },
+          "module_stack": {},
+          "input_kind": null,
+          "input_target": null,
+          "transformation": null,
+          "origin_node_ids": [
+            "g:original:root:n3",
+            "g:quantized:root:n3"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "producer_node_id": "g:prepared:root:n0",
+          "producer_value_id": "g:prepared:root:n0:v0",
+          "consumer_node_id": "g:prepared:root:n1",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:prepared:root:n1",
+          "producer_value_id": "g:prepared:root:n1:v0",
+          "consumer_node_id": "g:prepared:root:n2",
+          "argument_path": "args/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        },
+        {
+          "producer_node_id": "g:prepared:root:n2",
+          "producer_value_id": "g:prepared:root:n2:v0",
+          "consumer_node_id": "g:prepared:root:n3",
+          "argument_path": "args/0/0",
+          "shape": [
+            17,
+            8
+          ],
+          "dtype": "bfloat16",
+          "value_kind": "tensor"
+        }
+      ],
+      "operator_schemas": {
+        "aten.add.Tensor": "aten::add.Tensor(Tensor self, Tensor other, *, Scalar alpha=1) -> Tensor",
+        "aten.mul.Tensor": "aten::mul.Tensor(Tensor self, Tensor other) -> Tensor"
+      },
+      "call_count": 2,
+      "counting_unit": "static_captured_call_sites",
+      "by_target": {
+        "aten.add.Tensor": 1,
+        "aten.mul.Tensor": 1
+      },
+      "graph_signature": "\n# inputs\nx: USER_INPUT\n\n# outputs\nadd: USER_OUTPUT\n",
+      "range_constraints": {},
+      "runtime_versions": {
+        "torch": "2.10.0+cu128"
+      },
+      "eliminations": [],
+      "sha256": "f39b82f3c334f147db84eeab95140fba93a7cb82a4fa69ad6ced52df3b0d5378"
+    }
+  },
+  "transformations": [
+    {
+      "from_stage": "original",
+      "to_stage": "quantized",
+      "status": "complete",
+      "relations": [
+        {
+          "source_ids": [
+            "g:original:root:n0"
+          ],
+          "destination_ids": [
+            "g:quantized:root:n0"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:original:root:n1"
+          ],
+          "destination_ids": [
+            "g:quantized:root:n1"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:original:root:n2"
+          ],
+          "destination_ids": [
+            "g:quantized:root:n2"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:original:root:n3"
+          ],
+          "destination_ids": [
+            "g:quantized:root:n3"
+          ],
+          "kind": "identity"
+        }
+      ],
+      "unresolved_source_ids": [],
+      "unresolved_destination_ids": []
+    },
+    {
+      "from_stage": "quantized",
+      "to_stage": "prepared",
+      "status": "complete",
+      "relations": [
+        {
+          "source_ids": [
+            "g:quantized:root:n0"
+          ],
+          "destination_ids": [
+            "g:prepared:root:n0"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:quantized:root:n1"
+          ],
+          "destination_ids": [
+            "g:prepared:root:n1"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:quantized:root:n2"
+          ],
+          "destination_ids": [
+            "g:prepared:root:n2"
+          ],
+          "kind": "identity"
+        },
+        {
+          "source_ids": [
+            "g:quantized:root:n3"
+          ],
+          "destination_ids": [
+            "g:prepared:root:n3"
+          ],
+          "kind": "identity"
+        }
+      ],
+      "unresolved_source_ids": [],
+      "unresolved_destination_ids": []
+    }
+  ],
+  "precision": {
+    "scope": "FXImporter FP8 storage projection audit",
+    "status": "no_known_projection",
+    "projections": []
+  },
+  "mlir": {
+    "sha256": "804901e46a55cd892c704bce41e01f7a7e2b2fb04f19ec5e7dadcba544be16ea",
+    "bytes": 6396,
+    "serialization": "generic",
+    "operations": [
+      {
+        "ordinal": 0,
+        "operation": "builtin.module",
+        "xdsl_operation": "builtin.module",
+        "source_node_ids": [],
+        "origin_node_ids": [],
+        "role": "structural",
+        "operand_types": [],
+        "result_types": [],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 1,
+        "operation": "func.func",
+        "xdsl_operation": "func.func",
+        "source_node_ids": [],
+        "origin_node_ids": [],
+        "role": "structural",
+        "operand_types": [],
+        "result_types": [],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 2,
+        "operation": "arith.constant",
+        "xdsl_operation": "arith.constant",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [],
+        "result_types": [
+          "f32"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 3,
+        "operation": "tensor.splat",
+        "xdsl_operation": "tensor.splat",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "f32"
+        ],
+        "result_types": [
+          "tensor<17x8xf32>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 4,
+        "operation": "tensor.empty",
+        "xdsl_operation": "tensor.empty",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [],
+        "result_types": [
+          "tensor<17x8xf32>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 5,
+        "operation": "linalg.generic",
+        "xdsl_operation": "linalg.generic",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "tensor<17x8xbf16>",
+          "tensor<17x8xf32>",
+          "tensor<17x8xf32>"
+        ],
+        "result_types": [
+          "tensor<17x8xf32>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 6,
+        "operation": "arith.extf",
+        "xdsl_operation": "arith.extf",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "bf16"
+        ],
+        "result_types": [
+          "f32"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 7,
+        "operation": "arith.mulf",
+        "xdsl_operation": "arith.mulf",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "f32",
+          "f32"
+        ],
+        "result_types": [
+          "f32"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 8,
+        "operation": "linalg.yield",
+        "xdsl_operation": "linalg.yield",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "f32"
+        ],
+        "result_types": [],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 9,
+        "operation": "tensor.empty",
+        "xdsl_operation": "tensor.empty",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [],
+        "result_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 10,
+        "operation": "linalg.generic",
+        "xdsl_operation": "linalg.generic",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "tensor<17x8xf32>",
+          "tensor<17x8xbf16>"
+        ],
+        "result_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 11,
+        "operation": "arith.truncf",
+        "xdsl_operation": "arith.truncf",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "f32"
+        ],
+        "result_types": [
+          "bf16"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 12,
+        "operation": "linalg.yield",
+        "xdsl_operation": "linalg.yield",
+        "source_node_ids": [
+          "g:prepared:root:n1"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n1",
+          "g:quantized:root:n1"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "bf16"
+        ],
+        "result_types": [],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 13,
+        "operation": "arith.constant",
+        "xdsl_operation": "arith.constant",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [],
+        "result_types": [
+          "bf16"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 14,
+        "operation": "tensor.splat",
+        "xdsl_operation": "tensor.splat",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "bf16"
+        ],
+        "result_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 15,
+        "operation": "tensor.empty",
+        "xdsl_operation": "tensor.empty",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [],
+        "result_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 16,
+        "operation": "linalg.generic",
+        "xdsl_operation": "linalg.generic",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "tensor<17x8xbf16>",
+          "tensor<17x8xbf16>",
+          "tensor<17x8xbf16>"
+        ],
+        "result_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 17,
+        "operation": "arith.addf",
+        "xdsl_operation": "arith.addf",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "bf16",
+          "bf16"
+        ],
+        "result_types": [
+          "bf16"
+        ],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 18,
+        "operation": "linalg.yield",
+        "xdsl_operation": "linalg.yield",
+        "source_node_ids": [
+          "g:prepared:root:n2"
+        ],
+        "origin_node_ids": [
+          "g:original:root:n2",
+          "g:quantized:root:n2"
+        ],
+        "role": "lowering",
+        "operand_types": [
+          "bf16"
+        ],
+        "result_types": [],
+        "location": "loc(unknown)"
+      },
+      {
+        "ordinal": 19,
+        "operation": "func.return",
+        "xdsl_operation": "func.return",
+        "source_node_ids": [],
+        "origin_node_ids": [],
+        "role": "structural",
+        "operand_types": [
+          "tensor<17x8xbf16>"
+        ],
+        "result_types": [],
+        "location": "loc(unknown)"
+      }
+    ],
+    "source_correspondence": [
+      {
+        "node_id": "g:prepared:root:n1",
+        "mlir_ordinals": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "status": "lowered"
+      },
+      {
+        "node_id": "g:prepared:root:n2",
+        "mlir_ordinals": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "status": "lowered"
+      }
+    ]
+  },
+  "blockers": []
+}

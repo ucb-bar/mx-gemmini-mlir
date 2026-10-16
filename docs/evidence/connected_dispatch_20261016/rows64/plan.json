@@ -1,0 +1,17 @@
+{
+  "handoffs": [
+    {
+      "producer": 0,
+      "consumer": 1,
+      "buffer": "b1",
+      "interface": "mx_bf16_resident_vpu",
+      "saved_cycles": null
+    }
+  ],
+  "groups": [
+    [
+      0,
+      1
+    ]
+  ]
+}

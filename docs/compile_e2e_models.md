@@ -615,3 +615,13 @@ quantization policy.
 An additional operand-only split promotes the first 11 layers' dense sites
 to FP8 and selects the FP32 top token on this input. Its 0.805 cosine still
 needs a Spike check; see the half-sweep receipt in the same archive.
+
+## Connected dispatch qualification
+
+`tools.qualify_connected_dispatch_spike` exercises the generic Merlin residency
+pass with source-derived BF16 VPU fragments. It captures a small PyTorch graph,
+builds materialized and connected RV64 executables, compares all output bits,
+and records modeled cycles and transfer counters. The
+[evidence and reproduction commands](evidence/connected_dispatch_20261016/README.md)
+cover aligned and partial-block shapes. This path currently qualifies connected
+scalar VPU regions; it is not yet enabled by the full-model stage builder.

@@ -1,0 +1,9 @@
+gemmini: GEMMINI_MODE=both
+HANDOFF run=0 cycles=665 mismatches=0 hash=3204709282
+ROUNDING sensitive=147
+HANDOFF run=1 cycles=402 mismatches=0 hash=3204709282
+ROUNDING sensitive=147
+HANDOFF run=2 cycles=402 mismatches=0 hash=3204709282
+ROUNDING sensitive=147
+Gemmini extension configured with:
+    dim = 16
