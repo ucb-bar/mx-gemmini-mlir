@@ -1,0 +1,38 @@
+{
+  "checks": {
+    "mean_kl_nats": false,
+    "top1_agreement": true,
+    "worst_kl_nats": false
+  },
+  "compiler": {
+    "mean_kl_nats": 0.19282848823852092,
+    "positions": 1,
+    "top1_agreement": 1,
+    "worst_kl_nats": 0.19282848823852092
+  },
+  "compiler_spike_log_sha256": "672cafdebdd338105fd21140aa9ba0eef6f1769f6c7ce13dd28c1276ab394ff2",
+  "compiler_stage_cycles": 5072967821,
+  "cycle_ratio_reasons": [
+    "source and compiler host algorithms and timer setup differ",
+    "logits require numerical rather than bit-exact cross-program comparison"
+  ],
+  "cycle_ratio_valid": false,
+  "float_reference_npy_sha256": "c8b5703f387d94b9bab0f00c62ce7e85ea42333cc8e60792b0b5c2da9b074763",
+  "full_model_session_qualified": false,
+  "full_receipt_sha256": "17f7ce2acee88ebbf88911f871dfbf27f607c973e79ff65ffd399ce8cf54edd6",
+  "margin": 1.05,
+  "model": "tinyllama",
+  "passed": false,
+  "qualification_scope": "numerical_arrays_only",
+  "schema": "mx_gemmini.model_quality.v1",
+  "scope": "one_64_token_prefill_last_logit_row",
+  "source": {
+    "mean_kl_nats": 0.07089764980831058,
+    "positions": 1,
+    "top1_agreement": 1,
+    "worst_kl_nats": 0.07089764980831058
+  },
+  "source_and_compiler_spike_timing": "e4m3_vpu_mem.host_tracking=0",
+  "source_stage_cycles": 4328997732,
+  "source_vpu_spike_log_sha256": "0ec3b49eed290e680881a1427d693cef1e35219ebb22f4d4d6a7b30138445940"
+}

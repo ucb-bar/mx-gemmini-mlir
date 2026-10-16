@@ -34,6 +34,11 @@ prefill but include different setup and host/VPU operations. The compiler's
 raw counter is **743,970,089 cycles higher**; this is a diagnostic gap,
 not a calibrated model speedup ratio. It is also one prefill, not the
 33-step autoregressive TinyLlama session.
+The [last-row numerical gate](quality_gate.json) fails: source KL to the
+captured FP32 logits is **0.07090** nats and compiler KL is **0.19283**,
+against a 5% limit of **0.07444**. Both predict token 1230. These numbers
+measure this older add-only compiler control; the newer capture-bound policy
+needs its own full-depth run.
 
 Both binaries ran with `GEMMINI_MODE=both`,
 `GEMMINI_PERF_CONFIG=e4m3_vpu`, `mem.host_tracking=0`, and

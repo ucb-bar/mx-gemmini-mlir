@@ -71,6 +71,10 @@ has last-row KL **0.15506** against Nicolas's **0.07090**. Its
 [quality receipt](evidence/tinyllama_full_safe_vpu_20261014/quality_gate.json)
 fails the 5% gate despite matching the top token. That one-row result does
 not measure the newer per-site policy or a cached session.
+The older paired MX+VPU source and compiler prefill has source KL **0.07090**
+and compiler KL **0.19283**. Its [receipt](evidence/nicolas_tinyllama_full_source_vpu_20261014/quality_gate.json)
+also fails; differences in host algorithms and setup still prevent using
+its cycle ratio as a matched performance result.
 
 The source-generation input recipe and pinned revisions are in the
 [one-pass evidence](evidence/nicolas_tinyllama_onepass160_same_input_20261014/README.md).
