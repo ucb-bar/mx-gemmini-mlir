@@ -6,6 +6,7 @@ import copy
 import gzip
 import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -138,6 +139,31 @@ def test_archived_nicolas_late_logits_define_quality_target() -> None:
     assert np.max(kl) == pytest.approx(0.1896034181, abs=1e-8)
     assert np.count_nonzero(np.argmax(reference, axis=1) ==
                             np.argmax(source, axis=1)) == 27
+
+
+def test_full_depth_selected_vpu_control_misses_quality_gate() -> None:
+    source_dir = ROOT / "docs/evidence/nicolas_tinyllama_full_source_20261014"
+    compiler_dir = ROOT / "docs/evidence/tinyllama_full_safe_vpu_20261014"
+    float_logits = np.load(source_dir / "pytorch_last_logits.npy",
+                           allow_pickle=False).reshape(1, -1)
+    source_log = gzip.decompress((source_dir / "source_spike.log.gz").read_bytes())
+    source_hex = re.search(rb"^last_logits_bf16 ([0-9a-f]+)$", source_log,
+                           re.MULTILINE).group(1)
+    source_bits = np.fromiter((int(source_hex[i:i + 4], 16)
+                               for i in range(0, len(source_hex), 4)),
+                              dtype="<u4")
+    source_logits = (source_bits << 16).view("<f4").reshape(1, -1)
+    compiler_log = gzip.decompress((compiler_dir / "spike.log.gz").read_bytes())
+    compiler_bits = [int(word) for line in compiler_log.splitlines()
+                     if line.startswith(b"OUT_CHUNK f32 ")
+                     for word in line.split()[4:]]
+    compiler_logits = np.asarray(compiler_bits, dtype="<u4").view("<f4")
+    report = compare_tinyllama(float_logits, source_logits,
+                               compiler_logits.reshape(1, -1))
+    archived = json.loads((compiler_dir / "quality_gate.json").read_text())
+    for key in ("source", "compiler", "checks", "passed"):
+        assert report[key] == archived[key]
+    assert not report["passed"]
 
 
 def test_smol_quality_gate_checks_each_action_dimension() -> None:

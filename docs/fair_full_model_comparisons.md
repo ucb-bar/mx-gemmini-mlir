@@ -66,6 +66,11 @@ requires compiler mean KL at most **0.0673798**, worst-row KL at most
 **0.1990836**, and at least 27/33 top-token matches for these same rows.
 The current compiler one-pass log records a full-output digest and top tokens,
 but not all logit values, so its KL gate is not yet measurable from that run.
+On the separate archived 64-token prefill, the selected-VPU compiler control
+has last-row KL **0.15506** against Nicolas's **0.07090**. Its
+[quality receipt](evidence/tinyllama_full_safe_vpu_20261014/quality_gate.json)
+fails the 5% gate despite matching the top token. That one-row result does
+not measure the newer per-site policy or a cached session.
 
 The source-generation input recipe and pinned revisions are in the
 [one-pass evidence](evidence/nicolas_tinyllama_onepass160_same_input_20261014/README.md).

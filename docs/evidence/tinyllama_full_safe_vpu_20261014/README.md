@@ -15,6 +15,12 @@ row](../nicolas_tinyllama_full_source_20261014/README.md). All three rows
 predict token **1230** for this one diagnostic input. This improves upon the
 earlier compiler control that offloaded attention softmax and elementwise
 adds; it does not establish language-model accuracy across inputs.
+The [5% numerical gate](quality_gate.json) also fails for this one row:
+Nicolas's source has KL **0.07090** nats to the FP32 logits, while the
+compiler has KL **0.15506**. The allowed compiler KL is **0.07444**.
+Matching the top token does not close this error gap. This control predates
+the per-site execution policy; it is a full-depth diagnostic, not a
+qualification of that newer policy.
 
 The independent source program reported **4,456,723,475 cycles** in selected
 MX and scalar-host windows. The two counters are **not a speedup comparison**:
