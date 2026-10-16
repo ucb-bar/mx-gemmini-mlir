@@ -7,6 +7,29 @@ from collections import defaultdict
 import hashlib
 import json
 from pathlib import Path
+import re
+
+
+def parse_gemmini_perf(text: str) -> dict:
+    """Read the pinned Spike extension's aggregate command and traffic counts."""
+    patterns = {
+        "mode": r"^gemmini perf \[([^\]]+)\]:",
+        "commands": r"^gemmini perf \[[^\]]+\]: (\d+) commands",
+        "loops": r"^gemmini perf \[[^\]]+\]: \d+ commands, (\d+) loops",
+        "fences": r"^gemmini perf \[[^\]]+\]: \d+ commands, \d+ loops, (\d+) fences",
+        "mesh_tiles": r"^  mesh: (\d+) tiles",
+        "mesh_busy_cycles": r"^  mesh: \d+ tiles, (\d+) busy cycles",
+        "vpu_commands": r"^  mesh: \d+ tiles, \d+ busy cycles; VPU: (\d+) commands",
+        "load_bytes": r"^  load: (\d+) bytes",
+        "scale_bytes": r"^  load: .*; scales: (\d+) bytes",
+    }
+    values = {}
+    for name, pattern in patterns.items():
+        matches = re.findall(pattern, text, re.MULTILINE)
+        if len(matches) != 1:
+            raise ValueError(f"Spike extension perf lacks one {name} counter")
+        values[name] = matches[0] if name == "mode" else int(matches[0])
+    return values
 
 
 def _source_regions(build: Path, table: list[dict]) -> dict[int, str]:
@@ -45,7 +68,8 @@ def _source_regions(build: Path, table: list[dict]) -> dict[int, str]:
     return {ident: region for ident, _, region in matched}
 
 
-def report_stage_profile(build: Path, spike_log: Path) -> dict:
+def report_stage_profile(build: Path, spike_log: Path,
+                         perf_log: Path | None = None) -> dict:
     receipt = json.loads((build / "mx_stage_probe.json").read_text())
     if not receipt.get("op_profile"):
         raise ValueError("stage was not built with --op-profile")
@@ -115,7 +139,7 @@ def report_stage_profile(build: Path, spike_log: Path) -> dict:
                      "region": region, "fqn": record.get("fqn"),
                      "callee": callee or None, "family": family})
     rows.sort(key=lambda row: row["cycles"], reverse=True)
-    return {
+    report = {
         "schema": "mx_gemmini.stage_op_profile.v1",
         "build_hash": receipt["build_hash"],
         "cycles": cycles,
@@ -128,15 +152,20 @@ def report_stage_profile(build: Path, spike_log: Path) -> dict:
         "by_source_region": dict(sorted(regions.items(), key=lambda item: -item[1])),
         "top_ops": rows[:30],
     }
+    if perf_log is not None:
+        report["accelerator"] = parse_gemmini_perf(perf_log.read_text())
+    return report
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build", type=Path, required=True)
     parser.add_argument("--spike-log", type=Path, required=True)
+    parser.add_argument("--perf-log", type=Path,
+                        help="optional Gemmini extension performance summary")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    report = report_stage_profile(args.build, args.spike_log)
+    report = report_stage_profile(args.build, args.spike_log, args.perf_log)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({key: report[key] for key in (

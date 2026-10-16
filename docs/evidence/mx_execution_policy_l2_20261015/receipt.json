@@ -1,0 +1,90 @@
+{
+  "accelerator": {
+    "commands": 160161,
+    "fences": 1818,
+    "load_bytes": 216553600,
+    "loops": 2857,
+    "mesh_busy_cycles": 38584576,
+    "mesh_tiles": 2411536,
+    "mode": "e4m3_vpu",
+    "scale_bytes": 6076512,
+    "vpu_commands": 1094
+  },
+  "archived_65_site_output_sha256": "c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad",
+  "build_hash": "6b969564ab48",
+  "cycle_comparison_scope": "no_same_preset_baseline",
+  "execution_policy_sha256": "6eecf30671086c0468603d2d156799e6ac3f8f483aab37baa4d060453c2f6d92",
+  "guest_done": true,
+  "guest_metrics": {
+    "build_hash": "6b969564ab48",
+    "cycles": "577315560",
+    "memref_rank_mismatch": "0"
+  },
+  "matches_archived_65_site_output": true,
+  "output_digests": {
+    "first_typed": {
+      "bytes": 128000,
+      "elements": 32000,
+      "encoding": "f32le",
+      "sha256": "c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad"
+    },
+    "indexed": [
+      {
+        "bytes": 128000,
+        "dtype": "f32",
+        "elements": 32000,
+        "index": 0,
+        "sha256": "c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad",
+        "shape": [
+          1,
+          32000
+        ]
+      },
+      {
+        "bytes": 266240,
+        "dtype": "f32",
+        "elements": 66560,
+        "index": 1,
+        "sha256": "0d107db456d29369e00dede08f3868068fd59c0a56487be95d1e139f37f5c531",
+        "shape": [
+          2,
+          2,
+          1,
+          4,
+          65,
+          64
+        ]
+      },
+      {
+        "bytes": 16,
+        "dtype": "i64",
+        "elements": 2,
+        "index": 2,
+        "sha256": "e82537abbbfcc0bcbb95705bc5bd014c85c94470b66f72e035cdeec832f18178",
+        "shape": [
+          2
+        ]
+      }
+    ],
+    "numerical_qualification": "not_established"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "quality_scope": "two_layer_output_identity_only",
+  "routed_vpu_sites": {
+    "add": 8,
+    "elementwise": 36,
+    "reduce": 5,
+    "softmax": 0,
+    "unary": 16
+  },
+  "schema": "mx_gemmini.execution_policy_spike.v1",
+  "scope": "pretrained_tinyllama_first_two_layers_prefill_last_logits",
+  "selected_matrix_sites": 20,
+  "source_mlir_sha256": "e80312a1ec1785349283524f2ab91dab3527b333986de9c041b8e6c4663ee340",
+  "spike_extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "spike_isa": "rv64gc_zicntr",
+  "spike_log_sha256": "76a5f0e3cd1eca63630ca64c999e1671a1e23e8dea93299699970a220c702ef0",
+  "spike_mode": "both",
+  "spike_perf_config": "e4m3_vpu",
+  "spike_perf_set": "mem.host_tracking=0"
+}

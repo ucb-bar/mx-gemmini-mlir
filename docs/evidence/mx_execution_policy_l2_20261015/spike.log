@@ -1,0 +1,19 @@
+gemmini: GEMMINI_MODE=both
+OUT 1 3228631040
+ARGMAX 1 5056
+SUM 3347434618
+OUT_SHA256 f32le 32000 128000 c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad
+OUT_SHA256_INDEX 0 rawbytes 32000 128000 c4322c6551c769381a794710a2395f9d261ba9d5312e7df50436c6ef1e1878ad
+OUT_SHA256_INDEX 1 rawbytes 66560 266240 0d107db456d29369e00dede08f3868068fd59c0a56487be95d1e139f37f5c531
+OUT_SHA256_INDEX 2 rawbytes 2 16 e82537abbbfcc0bcbb95705bc5bd014c85c94470b66f72e035cdeec832f18178
+METRIC cycles 577315560
+METRIC build_hash 6b969564ab48
+METRIC memref_rank_mismatch 0
+DONE
+gemmini perf [e4m3_vpu]: 160161 commands, 2857 loops, 1818 fences; last activity 568236433; host stalled 42659691 cycles; 56622826 events
+  mesh: 2411536 tiles, 38584576 busy cycles; VPU: 1094 commands
+  load: 216553600 bytes in 4441352 Gets (mean latency 168.3); store: 899576 reads, 909816 Puts; scales: 6076512 bytes
+  memory: L2 1663964 hits (56791 on a pending fill), 2872814 misses; bus busy 5351168, DRAM busy 24225720 cycles; CPU stores 0 lines, L1 probes 0, partial-write fills 10339, dirty write-backs 145062 (host tracking off)
+  ports busy: sp0 r39493496/w3333816 sp1 r5654224/w5654224 sp2 r745400/w745400 sp3 r4816936/w4816936 acc0 19418816 acc1 19011584
+Gemmini extension configured with:
+    dim = 16

@@ -148,8 +148,9 @@ void _mlir_ciface_{symbol}(mx_memref_{len(shape)}d *result,
 class MXVPUAddPostOffload:
     """Replace exact source addf generics with destination-passing VPU calls."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *, enabled_regions: frozenset[str] | None = None):
         self.profile = profile
+        self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from xdsl.dialects import func, tensor
@@ -161,7 +162,12 @@ class MXVPUAddPostOffload:
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
-        sites = selected_add_sites(source, self.profile)
+        all_sites = selected_add_sites(source, self.profile)
+        if self.enabled_regions is not None and not self.enabled_regions <= {
+                site["region"] for site in all_sites}:
+            raise ValueError("MX VPU add policy names unknown source regions")
+        sites = [site for site in all_sites if self.enabled_regions is None or
+                 site["region"] in self.enabled_regions]
         if not sites:
             return prepared
         module = parse_mlir_file(prepared)
@@ -236,20 +242,30 @@ class MXVPUPostOffload:
     def __init__(self, profile: dict, *, fixed_weight_catalog: Path | None = None,
                  enabled_classes: frozenset[str] | None = None,
                  enabled_elementwise_operations: frozenset[str] | None = None,
-                 enabled_elementwise_regions: frozenset[str] | None = None):
+                 enabled_elementwise_regions: frozenset[str] | None = None,
+                 enabled_site_regions: dict[str, frozenset[str]] | None = None):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
 
-        self.softmax = MXVPUSoftmaxPostOffload(profile)
-        self.add = MXVPUAddPostOffload(profile)
+        self.enabled_site_regions = enabled_site_regions or {}
+        self.softmax = MXVPUSoftmaxPostOffload(
+            profile, enabled_regions=self.enabled_site_regions.get("softmax"))
+        self.add = MXVPUAddPostOffload(
+            profile, enabled_regions=self.enabled_site_regions.get("add"))
         self.elementwise = MXVPUElementwisePostOffload(
             profile, enabled_operations=enabled_elementwise_operations,
-            enabled_regions=enabled_elementwise_regions)
-        self.unary = MXVPUUnaryPostOffload(profile)
-        self.reduce = MXVPUReducePostOffload(profile)
+            enabled_regions=(self.enabled_site_regions.get("elementwise") or None
+                             if "elementwise" in self.enabled_site_regions else
+                             enabled_elementwise_regions))
+        self.unary = MXVPUUnaryPostOffload(
+            profile, enabled_regions=self.enabled_site_regions.get("unary"))
+        self.reduce = MXVPUReducePostOffload(
+            profile, enabled_regions=self.enabled_site_regions.get("reduce"))
         valid = frozenset(("softmax", "add", "elementwise", "unary", "reduce"))
+        if not self.enabled_site_regions.keys() <= valid:
+            raise ValueError("unknown MX VPU per-site policy class")
         self.enabled_classes = valid if enabled_classes is None else frozenset(enabled_classes)
         if not self.enabled_classes <= valid:
             raise ValueError(f"unknown MX VPU classes: {sorted(self.enabled_classes - valid)}")
@@ -262,8 +278,17 @@ class MXVPUPostOffload:
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         selected = prepared
+        if self.enabled_site_regions:
+            from .execution_policy import reconcile_vpu_regions
+
+            resolved, _ = reconcile_vpu_regions(
+                Path(prepared).read_text(), self.softmax.profile,
+                self.enabled_site_regions)
+            self.enabled_site_regions = resolved
+            for name in ("softmax", "add", "elementwise", "unary", "reduce"):
+                getattr(self, name).enabled_regions = resolved[name]
         for name in ("softmax", "add", "elementwise", "unary", "reduce"):
-            if name in self.enabled_classes:
+            if name in self.enabled_classes and self.enabled_site_regions.get(name) != frozenset():
                 selected = getattr(self, name)(selected, sidecar, workdir)
         return (self.fixed_weight(selected, sidecar, workdir)
                 if self.fixed_weight is not None else selected)

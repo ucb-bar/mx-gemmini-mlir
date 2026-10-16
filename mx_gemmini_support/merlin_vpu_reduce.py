@@ -135,8 +135,9 @@ void _mlir_ciface_{symbol}(mx_memref_{rank_out}d *result,
 class MXVPUReducePostOffload:
     """Replace verified source reductions with destination-passing VPU calls."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *, enabled_regions: frozenset[str] | None = None):
         self.profile = profile
+        self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from xdsl.dialects import func, tensor
@@ -148,7 +149,12 @@ class MXVPUReducePostOffload:
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
-        sites = selected_row_reduce_sites(source, self.profile)
+        all_sites = selected_row_reduce_sites(source, self.profile)
+        if self.enabled_regions is not None and not self.enabled_regions <= {
+                site["region"] for site in all_sites}:
+            raise ValueError("MX VPU reduction policy names unknown source regions")
+        sites = [site for site in all_sites if self.enabled_regions is None or
+                 site["region"] in self.enabled_regions]
         if not sites:
             return prepared
         module = parse_mlir_file(prepared)

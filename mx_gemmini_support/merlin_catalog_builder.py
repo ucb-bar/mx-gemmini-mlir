@@ -49,13 +49,26 @@ def _run(command: list[str], *, label: str) -> None:
         raise RuntimeError(f"MX {label} failed: {result.stderr[-1200:]}")
 
 
+def select_routed_vpu_sites(name: str, sites: list[dict],
+                            enabled: dict[str, frozenset[str]] | None) -> list[dict]:
+    """Compile only VPU kernels that the captured execution policy can call."""
+    if enabled is None:
+        return sites
+    selected = enabled[name]
+    if not selected <= {site["region"] for site in sites}:
+        raise ValueError(f"MX VPU {name} policy differs from prepared source")
+    return [site for site in sites if site["region"] in selected]
+
+
 def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          riscv_root: Path,
                          checkpoint_manifest: dict | None = None,
                          checkpoint_weights_path: Path | None = None,
                          cache_immutable_weights: bool = False,
                          prepack_immutable_weights: bool = False,
-                         precision_overrides: dict[str, str] | None = None) -> tuple[Path, Path]:
+                         precision_overrides: dict[str, str] | None = None,
+                         enabled_vpu_regions: dict[str, frozenset[str]] | None = None
+                         ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     plan = plan_merlin_catalog(
         prepared, profile, checkpoint_manifest=checkpoint_manifest,
@@ -211,7 +224,18 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
         })
-    softmax_sites = selected_softmax_sites(Path(prepared).read_text(), profile)
+    prepared_text = Path(prepared).read_text()
+    route_aliases = {}
+    if enabled_vpu_regions is not None:
+        from .execution_policy import reconcile_vpu_regions
+
+        enabled_vpu_regions, route_aliases = reconcile_vpu_regions(
+            prepared_text, profile, enabled_vpu_regions)
+
+    def routed(name: str, sites: list[dict]) -> list[dict]:
+        return select_routed_vpu_sites(name, sites, enabled_vpu_regions)
+
+    softmax_sites = routed("softmax", selected_softmax_sites(prepared_text, profile))
     softmax_shapes = {tuple(site["shape"]): site for site in softmax_sites}
     softmax_kernels = []
     for shape, site in softmax_shapes.items():
@@ -229,7 +253,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "kernel_symbol": site["kernel_symbol"],
             "vpu_steps": list(generated.vpu_steps),
         })
-    add_sites = selected_add_sites(Path(prepared).read_text(), profile)
+    add_sites = routed("add", selected_add_sites(prepared_text, profile))
     add_shapes = {site["symbol"]: site for site in add_sites}
     add_kernels = []
     for site in add_shapes.values():
@@ -245,7 +269,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "dtype": site["dtype"], "broadcast": site["broadcast"],
             "elements_per_chunk": generated.elements_per_chunk,
         })
-    elementwise_sites = selected_elementwise_sites(Path(prepared).read_text(), profile)
+    elementwise_sites = routed("elementwise", selected_elementwise_sites(
+        prepared_text, profile))
     elementwise_shapes = {site["symbol"]: site for site in elementwise_sites}
     elementwise_kernels = []
     for site in elementwise_shapes.values():
@@ -269,7 +294,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "rhs_axes": list(site["rhs_axes"]),
             "elements_per_chunk": generated.elements_per_chunk,
         })
-    unary_sites = selected_unary_sites(Path(prepared).read_text(), profile)
+    unary_sites = routed("unary", selected_unary_sites(prepared_text, profile))
     unary_shapes = {site["symbol"]: site for site in unary_sites}
     unary_kernels = []
     for site in unary_shapes.values():
@@ -284,7 +309,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "shape": list(site["shape"]),
             "elements_per_chunk": generated.elements_per_chunk,
         })
-    reduce_sites = selected_row_reduce_sites(Path(prepared).read_text(), profile)
+    reduce_sites = routed("reduce", selected_row_reduce_sites(prepared_text, profile))
     reduce_shapes = {site["symbol"]: site for site in reduce_sites}
     reduce_kernels = []
     for site in reduce_shapes.values():
@@ -389,6 +414,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "kernels": kernel_records,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
+        "resolved_vpu_regions": ({name: sorted(sites) for name, sites in
+                                  enabled_vpu_regions.items()}
+                                 if enabled_vpu_regions is not None else None),
+        "vpu_source_aliases": route_aliases,
         "vpu_softmax": {
             "status": "source_bound_f32_to_bf16_vpu_to_f32",
             "numeric_policy": "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities",
@@ -437,7 +466,9 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 riscv_root: Path,
                                 cached_weight_stage: Path | None = None,
                                 prepacked_weight_stage: Path | None = None,
-                                precision_overrides: dict[str, str] | None = None) -> Callable[[Path, Path], tuple[Path, Path]]:
+                                precision_overrides: dict[str, str] | None = None,
+                                enabled_vpu_regions: dict[str, frozenset[str]] | None = None
+                                ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
     riscv_root = Path(riscv_root).resolve(strict=True)
@@ -463,6 +494,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                                              else None),
                                     cache_immutable_weights=cached_weight_stage is not None,
                                     prepack_immutable_weights=prepacked_weight_stage is not None,
-                                    precision_overrides=precision_overrides)
+                                    precision_overrides=precision_overrides,
+                                    enabled_vpu_regions=enabled_vpu_regions)
 
     return build

@@ -93,6 +93,19 @@ def _require_source_coverage(expected_regions: set[str], catalog: dict) -> None:
         )
 
 
+def _require_softmax_coverage(selected: set[str], lowered: list[dict],
+                              catalog: set[str], *,
+                              enabled: frozenset[str] | None,
+                              class_enabled: bool) -> None:
+    actual = [row["region"] for row in lowered]
+    expected_calls = (set(enabled) if enabled is not None else
+                      selected if class_enabled else set())
+    expected_catalog = set(enabled) if enabled is not None else selected
+    if (len(actual) != len(set(actual)) or set(actual) != expected_calls or
+            catalog != expected_catalog):
+        raise RuntimeError("MX VPU softmax source selection, rewrite, and catalog disagree")
+
+
 def _observe_spike_evidence(console: str, source: Path, build_hash: str,
                             *, first_typed: bool) -> dict:
     """Check completed console records against the captured result ABI."""
@@ -147,16 +160,24 @@ def main() -> None:
                         help="instrument Merlin's prepared top-level operations for a diagnostic Spike build")
     parser.add_argument("--precision-overrides", type=Path,
                         help="receipt-bound FP8 overrides for sensitive FP4 source regions")
+    parser.add_argument("--execution-policy", type=Path,
+                        help="capture-bound MX matrix precision and per-site VPU routing")
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
                         help="wall-clock limit per compiler/link command; 0 disables it")
     parser.add_argument("--spike-extlib", type=Path,
                         help="run the built ELF on Spike with this pinned Gemmini extension")
     parser.add_argument("--spike-isa", choices=("rv64gc", "rv64gc_zicntr"),
-                        default="rv64gc",
-                        help="Spike ISA; use zicntr when comparing source read_cycles timers")
+                        default="rv64gc_zicntr",
+                        help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.execution_policy is not None and (
+            args.precision_overrides is not None or args.diagnostic_host_vpu or
+            args.diagnostic_vpu_classes is not None or
+            args.diagnostic_elementwise_ops is not None or
+            args.diagnostic_elementwise_regions is not None):
+        parser.error("--execution-policy cannot be combined with diagnostic routing flags")
     all_vpu_classes = frozenset(("softmax", "add", "elementwise", "unary", "reduce"))
     if args.diagnostic_host_vpu and args.diagnostic_vpu_classes is not None:
         parser.error("choose one VPU diagnostic mode")
@@ -217,13 +238,28 @@ def main() -> None:
 
     profile = load_profile(profile_path, rtl_root=args.rtl_root)
     profile_sha = profile_sha256(profile)
+    policy_path = None
+    execution_policy = None
+    enabled_site_regions = None
+    if args.execution_policy is not None:
+        from mx_gemmini_support.execution_policy import load_policy
+
+        if args.execution_policy.is_symlink():
+            parser.error("--execution-policy must be a regular file")
+        policy_path = args.execution_policy.resolve(strict=True)
+        execution_policy, resolved_policy = load_policy(
+            policy_path, source.read_text(encoding="utf-8"), profile)
+        enabled_site_regions = resolved_policy["enabled_vpu_regions"]
     if args.precision_overrides is not None and args.precision_overrides.is_symlink():
         parser.error("--precision-overrides must be a regular file")
     override_path = (args.precision_overrides.resolve(strict=True)
                      if args.precision_overrides is not None else None)
     overrides = (_load_precision_overrides(override_path, capture_sha, profile_sha)
                  if override_path is not None else None)
+    if execution_policy is not None:
+        overrides = resolved_policy["precision_overrides"]
     override_sha = _sha(override_path) if override_path is not None else None
+    policy_sha = _sha(policy_path) if policy_path is not None else None
     os.environ["MERLIN_TARGET_PATH"] = str(ROOT)
     os.environ["MERLIN_COMPILER_PYTHON"] = sys.executable
     os.environ["MERLIN_MLIR_INSTALL"] = str(llvm_root)
@@ -267,7 +303,7 @@ def main() -> None:
                     or record.get("sha256") != (_sha(artifact) if name.endswith(".json")
                                                 else weights_sha)):
                 parser.error(f"checkpoint artifact differs from capture receipt: {name}")
-    if diagnostic_vpu and not expected_regions:
+    if (diagnostic_vpu or execution_policy is not None) and not expected_regions:
         parser.error("VPU diagnostics require selected MX contractions")
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
@@ -278,12 +314,14 @@ def main() -> None:
             profile_path=profile_path, riscv_root=riscv_root,
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
-            precision_overrides=overrides),
+            precision_overrides=overrides,
+            enabled_vpu_regions=enabled_site_regions),
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
             enabled_elementwise_operations=enabled_elementwise_operations,
             enabled_elementwise_regions=enabled_elementwise_regions,
+            enabled_site_regions=enabled_site_regions,
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -310,6 +348,8 @@ def main() -> None:
         raise RuntimeError("captured checkpoint changed during MX stage compilation")
     if override_sha is not None and _sha(override_path) != override_sha:
         raise RuntimeError("MX precision overrides changed during stage compilation")
+    if policy_sha is not None and _sha(policy_path) != policy_sha:
+        raise RuntimeError("MX execution policy changed during stage compilation")
     elf = Path(result["elf"])
     catalog_path = work / "device_catalog/mx_catalog.json"
     if device is None:
@@ -326,21 +366,29 @@ def main() -> None:
             if (binding["region"] in (overrides or {}) and
                     binding["target_dtypes"][:2] != ["f8E4M3FN", "f8E4M3FN"]):
                 raise RuntimeError("MX catalog override did not bind FP8 operands")
+            if execution_policy is not None:
+                expected_dtype = ("f8E4M3FN" if
+                                  execution_policy["matrix_formats"][binding["region"]]
+                                  == "mxfp8" else "f4E2M1FN")
+                if binding["target_dtypes"][:2] != [expected_dtype, expected_dtype]:
+                    raise RuntimeError("MX linked catalog differs from execution policy")
     rewrite_path = work / "device_host_abi/mx_vpu_softmax_rewrite.json"
     lowered_vpu = (json.loads(rewrite_path.read_text(encoding="utf-8"))["regions"]
                    if rewrite_path.is_file() else [])
     selected_vpu_regions = {row["region"] for row in vpu_selected}
     lowered_vpu_regions = {row["region"] for row in lowered_vpu}
     catalog_vpu_regions = set(catalog.get("vpu_softmax", {}).get("source_regions", ()))
-    softmax_coverage_invalid = (
-        len(lowered_vpu_regions) != len(lowered_vpu)
-        or ("softmax" in enabled_vpu_classes and
-            (selected_vpu_regions != lowered_vpu_regions or
-             selected_vpu_regions != catalog_vpu_regions))
-        or ("softmax" not in enabled_vpu_classes and bool(lowered_vpu_regions))
-    )
-    if softmax_coverage_invalid:
-        raise RuntimeError("MX VPU softmax source selection, rewrite, and catalog disagree")
+    resolved_vpu_regions = (catalog.get("resolved_vpu_regions")
+                            if enabled_site_regions is not None else None)
+    if enabled_site_regions is not None and (
+            not isinstance(resolved_vpu_regions, dict) or
+            set(resolved_vpu_regions) != set(enabled_site_regions)):
+        raise RuntimeError("MX catalog lost the resolved VPU execution policy")
+    _require_softmax_coverage(
+        selected_vpu_regions, lowered_vpu, catalog_vpu_regions,
+        enabled=(frozenset(resolved_vpu_regions["softmax"])
+                 if resolved_vpu_regions is not None else None),
+        class_enabled="softmax" in enabled_vpu_classes)
     # The inventory is taken before rewriting; reconcile its ownership with
     # the actual linked catalog so the final receipt cannot label a VPU call
     # as host-owned merely because the direct profile matcher was narrower.
@@ -379,6 +427,18 @@ def main() -> None:
     if (len({row["region"] for row in lowered_reduce}) != len(lowered_reduce) or
             not {row["region"] for row in lowered_reduce} <= catalog_reduce_regions):
         raise RuntimeError("MX VPU reduction rewrite exceeds its source-bound catalog")
+    if enabled_site_regions is not None:
+        lowered_by_class = {
+            "softmax": lowered_vpu, "add": lowered_add,
+            "elementwise": lowered_elementwise, "unary": lowered_unary,
+            "reduce": lowered_reduce,
+        }
+        for name, rows in lowered_by_class.items():
+            expected = set(resolved_vpu_regions[name])
+            if {row["region"] for row in rows} != expected:
+                raise RuntimeError(f"MX VPU {name} did not obey the execution policy")
+            if set(catalog[f"vpu_{name}"]["source_regions"]) != expected:
+                raise RuntimeError(f"MX VPU {name} catalog differs from execution policy")
     residual_eligible = {}
     post_receipt = work / "device_host_abi/post_offload_transform.json"
     if post_receipt.is_file():
@@ -396,18 +456,22 @@ def main() -> None:
             "unary": len(selected_unary_sites(selected_text, profile)),
             "reduce": len(selected_row_reduce_sites(selected_text, profile)),
         }
-        if any(count for name, count in residual_eligible.items()
-               if name in enabled_vpu_classes):
+        if enabled_site_regions is None and any(
+                count for name, count in residual_eligible.items()
+                if name in enabled_vpu_classes):
             raise RuntimeError(f"MX VPU eligible source sites remained on host: {residual_eligible}")
     bf16_receipt = work / "device_prepared/mx_bf16_catalog.json"
     widened_bf16 = (json.loads(bf16_receipt.read_text(encoding="utf-8"))["widened_operations"]
                     if bf16_receipt.is_file() else 0)
-    status = ("linked_diagnostic_host_vpu_numeric_qualification_pending"
+    status = ("linked_policy_numeric_qualification_pending"
+              if execution_policy is not None else
+              "linked_diagnostic_host_vpu_numeric_qualification_pending"
               if args.diagnostic_host_vpu else
               "linked_diagnostic_partial_vpu_numeric_qualification_pending"
               if diagnostic_vpu else
               "linked_experimental_numeric_qualification_pending")
-    route = ("mx_gemmini_and_host_vpu_control" if args.diagnostic_host_vpu else
+    route = ("mx_gemmini_per_site_policy" if execution_policy is not None else
+             "mx_gemmini_and_host_vpu_control" if args.diagnostic_host_vpu else
              "mx_gemmini_and_partial_vpu_control" if diagnostic_vpu else
              "mx_gemmini_and_host" if device is not None else "host_only")
     receipt = {
@@ -416,6 +480,8 @@ def main() -> None:
         "capture_model_sha256": capture_sha,
         "profile_sha256": profile_sha256(profile),
         "precision_overrides_sha256": override_sha,
+        "execution_policy_sha256": policy_sha,
+        "execution_policy": execution_policy,
         "precision_overrides": overrides or {},
         "catalog_manifest": str(catalog_path) if device is not None else None,
         "execution_route": route,

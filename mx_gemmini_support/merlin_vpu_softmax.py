@@ -119,8 +119,9 @@ void _mlir_ciface_{symbol}(mx_memref_4d *result,
 class MXVPUSoftmaxPostOffload:
     """Replace exactly matched softmax regions after matrix catalog routing."""
 
-    def __init__(self, profile: dict):
+    def __init__(self, profile: dict, *, enabled_regions: frozenset[str] | None = None):
         self.profile = profile
+        self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from xdsl.dialects import func, tensor
@@ -132,8 +133,12 @@ class MXVPUSoftmaxPostOffload:
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
-        selected = {row["region"]: row for row in
-                    selected_softmax_sites(source, self.profile)}
+        all_sites = selected_softmax_sites(source, self.profile)
+        if self.enabled_regions is not None and not self.enabled_regions <= {
+                row["region"] for row in all_sites}:
+            raise ValueError("MX VPU softmax policy names unknown source regions")
+        selected = {row["region"]: row for row in all_sites if
+                    self.enabled_regions is None or row["region"] in self.enabled_regions}
         if not selected:
             return prepared
         module = parse_mlir_file(prepared)

@@ -14,6 +14,7 @@ from tools.build_merlin_stage import (
     _observe_spike_evidence,
     _raw_selected_regions,
     _require_source_coverage,
+    _require_softmax_coverage,
 )
 from tools.make_precision_overrides import make_manifest
 from test_merlin_bf16_prepare import ROOT, SOURCE
@@ -75,6 +76,19 @@ def test_stage_refuses_partial_catalog_after_merlin_preparation(tmp_path, monkey
         _require_source_coverage(expected, {"bindings": [], "unbound_precision_proposals": []})
     _require_source_coverage(expected, {
         "bindings": [{"region": "matmul_0"}], "unbound_precision_proposals": []})
+
+
+def test_softmax_catalog_preserves_diagnostic_and_policy_routes() -> None:
+    selected = {"softmax_0", "softmax_1"}
+    _require_softmax_coverage(selected, [], selected,
+                              enabled=None, class_enabled=False)
+    _require_softmax_coverage(selected, [{"region": "softmax_1"}],
+                              {"softmax_1"},
+                              enabled=frozenset(("softmax_1",)), class_enabled=True)
+    with pytest.raises(RuntimeError, match="softmax source selection"):
+        _require_softmax_coverage(selected, [], {"softmax_1"},
+                                  enabled=frozenset(("softmax_1",)),
+                                  class_enabled=True)
 
 
 def test_completed_spike_evidence_covers_all_result_shapes(tmp_path, monkeypatch) -> None:

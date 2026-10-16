@@ -431,6 +431,11 @@ sites reduced one flow step from 41.11 billion to 6.66 billion modeled cycles
 under the same timing preset. To inspect remaining costs, build a diagnostic
 stage with `--op-profile`, run that ELF on Spike, then summarize it with
 `tools.report_stage_profile --build BUILD --spike-log LOG --out REPORT.json`.
+If the extension wrote its performance summary separately, add
+`--perf-log PERF.txt` to include MX command, VPU command, mesh tile, and load
+byte counts in the same report. These aggregate counters do not attribute
+individual adapter phases; use the projection `--phase-cycles` control below
+when separating packing, issue, and readout costs.
 The [SmolVLA flow profile](evidence/smolvla_flow_op_profile_20261013/README.md)
 maps MX timing back to source matmul regions and includes its guest log and
 operation table. The
@@ -473,7 +478,66 @@ alongside `--dense-adapter --time-dense`. Its receipt records both calls in
 the packed bytes. The stage option above uses the same adapter mode at each
 source-proven checkpoint site.
 
-## 7. Test a source-bound FP8 promotion
+## 7. Choose per-site precision and VPU placement
+
+For a complete per-site MX experiment, generate an execution policy from each
+receipt-bound stage with MX contractions. SmolVLA's host-only `action_decode`
+does not need one. The generated starting policy selects FP8 for every MX
+matrix site, keeps eligible VPU work except softmax and general elementwise
+adds, and leaves those sensitive operations on the compiled host. These are
+starting decisions, **not** an accuracy-qualified model policy. The same
+source region and profile digests bind every entry to the capture. Edit exact
+`matrix_formats` entries to `mxfp4` where legal or `vpu_placements` entries
+between `host` and `vpu`, then rebuild every affected stage:
+
+```sh
+"$CAPTURE_PY" -m tools.make_execution_policy \
+  --stage "$SESSION/stages/prefill" --profile "$MX_PROFILE" \
+  --out "$ARTIFACT_ROOT/tiny_prefill_policy.json"
+"$CAPTURE_PY" -m tools.build_merlin_stage \
+  --stage "$SESSION/stages/prefill" \
+  --workdir "$ARTIFACT_ROOT/builds/tiny_prefill_policy" \
+  --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
+  --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT" \
+  --prepack-checkpoint-weights \
+  --execution-policy "$ARTIFACT_ROOT/tiny_prefill_policy.json"
+```
+
+The builder rejects changed captures, profiles, missing or unknown site IDs,
+and illegal matrix formats. Its linked receipt records the policy digest and
+checks actual matrix and VPU placement against every selected entry. The
+policy cannot be combined with the older diagnostic VPU or precision override
+flags. Connected attention schedules remain a separate qualification path.
+One-element adds that Merlin folds into scalar work stay on the host; their
+source IDs remain in the policy so they cannot silently disappear.
+The [two-layer Spike receipt](evidence/mx_execution_policy_l2_20261015/README.md)
+shows that the policy routes 65 VPU sites and reproduces the archived
+65-site control's complete logit-row digest. Full-stage policies reconcile
+against the matched TinyLlama prefill/decode and SmolVLA prefix/flow captures;
+those four policies have not yet completed a linked full-session Spike run.
+
+When an independent Nicolas source program has the same captured inputs and
+output boundary, dump both programs' outputs as NumPy arrays and run
+`tools.compare_mx_model_quality`. TinyLlama uses float64 softmax KL and
+top-token agreement; SmolVLA uses relative RMSE and normalized worst error
+for all 32 action dimensions. Compiler error must be within 5% of Nicolas's
+error against the same float capture, and
+TinyLlama top-token agreement cannot be lower. The tool checks numerical
+arrays only; the source and compiler run receipts must separately prove input,
+checkpoint, profile, and timing identity before comparing cycles.
+
+```sh
+"$CAPTURE_PY" -m tools.compare_mx_model_quality --model tinyllama \
+  --float "$ARTIFACT_ROOT/float_logits.npy" \
+  --source "$ARTIFACT_ROOT/nicolas_logits.npy" \
+  --compiler "$ARTIFACT_ROOT/compiler_logits.npy" \
+  --out "$ARTIFACT_ROOT/tiny_quality.json"
+```
+
+The existing 160-token compiler Spike log records all top-token IDs but only
+a digest of its full logit tensor. A new dump-enabled run is required for its
+KL comparison. The independent cached TinyLlama and full SmolVLA source
+programs are still needed for their full-session Nicolas-relative gates.
 
 The default FP4 dense policy is a starting point, not a model-quality result.
 For a numerical experiment, a stage can promote selected FP4 dense source

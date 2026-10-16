@@ -59,6 +59,13 @@ source run. The two programs therefore have matched logical inputs and
 outputs to measure, but **not equal numerical quality**. Neither the cycle
 ratio nor the issuer-only controls establish a full-session, equal-quality
 compiler-versus-handwritten speedup.
+Using float64 softmax on the archived 33 late rows, Nicolas's source has
+mean KL **0.0641713** and worst-row KL **0.1896034** nats against the captured
+FP32 logits, with 27/33 top-token matches. The 5% numerical gate therefore
+requires compiler mean KL at most **0.0673798**, worst-row KL at most
+**0.1990836**, and at least 27/33 top-token matches for these same rows.
+The current compiler one-pass log records a full-output digest and top tokens,
+but not all logit values, so its KL gate is not yet measurable from that run.
 
 The source-generation input recipe and pinned revisions are in the
 [one-pass evidence](evidence/nicolas_tinyllama_onepass160_same_input_20261014/README.md).
