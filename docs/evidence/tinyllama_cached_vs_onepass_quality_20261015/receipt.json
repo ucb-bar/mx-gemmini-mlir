@@ -1,0 +1,52 @@
+{
+  "checks": {
+    "mean_kl_nats": false,
+    "top1_agreement": false,
+    "worst_kl_nats": false
+  },
+  "compiler": {
+    "mean_kl_nats": 1.9208584243984939,
+    "positions": 33,
+    "top1_agreement": 2,
+    "worst_kl_nats": 3.564276958866586
+  },
+  "compiler_logit_bytes_sha256": "0a0424a6404c391c8e5cf980a89b57890c642d4e1e3f987c9d6be4f470a959b9",
+  "compiler_schedule": "128_token_prefill_then_32_cached_decode_steps",
+  "cycle_ratio_valid": false,
+  "decode_tokens": 32,
+  "evidence_sha256": {
+    "compiler_decode_fp32": "38d2af32bf3f6e47de07a257cab846e8f582091312d206af307cd116dc5f7585",
+    "compiler_prefill_fp32": "09683da4c21f639623f6b8e092fff3d3dd017fd735f73ce74370b5168e48b5c0",
+    "compiler_run": "5fe9ae712ac446d679bdddaa3ec0911ef79941928bf26eb1c34723ea0e47e1a7",
+    "source_bf16_late": "444cc04fdebfc2b4244bcfe71899593db4a7ab8b927f1257371c970441a25c2c",
+    "source_fp32_late": "71423c06da43087ad210a82ee9ae26cf54c7350d318d27c018fdd67c3cd0657a",
+    "source_timed_log_gz": "33b405450bc247266e6557179ca6366b2ddff93e7dc72e53e17738c2cc379e04"
+  },
+  "fp32_reference_agreement": {
+    "max_absolute_logit_difference": 2.6702880859375e-05,
+    "mean_kl_nats": 2.7001036073670548e-08,
+    "rows": 33,
+    "top1_matches": 33
+  },
+  "full_session_equal_schedule_baseline": false,
+  "input_ids_exact": true,
+  "input_sha256": {
+    "decode": "fc0c517192485c78e77ffdc5a16bf59c6cbbdcabb1b81a85f35ba5f064ef7af3",
+    "prefill": "e3cd1498c335462f59174cf1d45c05c12f68bfd471210edfaf14168bea08af0e",
+    "source_160": "4e81f62550001dee1a5d84c9e3a2348e8b1f14285ca86c84b7f9279368ef14cd"
+  },
+  "margin": 1.05,
+  "model": "tinyllama",
+  "passed": false,
+  "prefill_tokens": 128,
+  "qualification_scope": "numerical_arrays_only",
+  "schema": "mx_gemmini.model_quality.v1",
+  "scope": "same_160_token_ids_128_prefill_32_cached_decode_vs_onepass_late_rows",
+  "source": {
+    "mean_kl_nats": 0.06417127884866583,
+    "positions": 33,
+    "top1_agreement": 27,
+    "worst_kl_nats": 0.18960319318328828
+  },
+  "source_schedule": "single_160_token_causal_forward"
+}

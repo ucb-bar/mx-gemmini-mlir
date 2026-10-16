@@ -534,10 +534,34 @@ checkpoint, profile, and timing identity before comparing cycles.
   --out "$ARTIFACT_ROOT/tiny_quality.json"
 ```
 
+When the linked run selected `--dump-output prefill:0` and
+`--dump-output decode:0`, assemble its hash-checked raw dumps directly:
+
+```sh
+"$CAPTURE_PY" -m tools.assemble_session_output \
+  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
+  --run-receipt "$ARTIFACT_ROOT/runs/tiny_llama_logits/mx_session_run.json" \
+  --merlin-src "$MERLIN_ROOT/src" \
+  --program prefill --program decode --squeeze-leading-one \
+  --out "$ARTIFACT_ROOT/compiler_logits.npy"
+```
+
+This writes `[33, 32000]` logits and a companion digest receipt. For
+SmolVLA, use `--program action_decode --squeeze-leading-one
+--omit-single-step-axis` to produce a `[50, 32]` final action. The shared
+dump reader and ABI checks live in Merlin; the MX command checks the Spike
+run receipt and formats the selected array.
+
 The existing 160-token compiler Spike log records all top-token IDs but only
 a digest of its full logit tensor. A new dump-enabled run is required for its
 KL comparison. The independent cached TinyLlama and full SmolVLA source
 programs are still needed for their full-session Nicolas-relative gates.
+The archived cached TinyLlama compiler session does have 33 logit dumps;
+[`tools.assemble_session_output`](../tools/assemble_session_output.py) can
+turn them into a verified `[33, 32000]` NumPy array. An
+[aligned-row comparison](evidence/tinyllama_cached_vs_onepass_quality_20261015/README.md)
+with Nicolas's one-pass source fails the numerical gate. It cannot establish
+a cached-session cycle ratio because the source uses a different schedule.
 
 The default FP4 dense policy is a starting point, not a model-quality result.
 For a numerical experiment, a stage can promote selected FP4 dense source

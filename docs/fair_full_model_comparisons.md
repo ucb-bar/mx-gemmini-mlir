@@ -66,6 +66,14 @@ requires compiler mean KL at most **0.0673798**, worst-row KL at most
 **0.1990836**, and at least 27/33 top-token matches for these same rows.
 The current compiler one-pass log records a full-output digest and top tokens,
 but not all logit values, so its KL gate is not yet measurable from that run.
+The separate compiled **cached** session has all 33 logit dumps. Its tokens
+exactly match Nicolas's 160-token one-pass source, and the FP32 references
+agree within `2.67e-5` per logit. On those aligned rows, the archived
+[numerical comparison](evidence/tinyllama_cached_vs_onepass_quality_20261015/README.md)
+finds compiler mean KL **1.92086** versus source **0.06417**, with 2/33
+versus 27/33 correct top tokens. The source schedule is one-pass, so these
+outputs can diagnose quality but their cycle counts cannot form a paired
+cached-session speedup.
 On the separate archived 64-token prefill, the selected-VPU compiler control
 has last-row KL **0.15506** against Nicolas's **0.07090**. Its
 [quality receipt](evidence/tinyllama_full_safe_vpu_20261014/quality_gate.json)
