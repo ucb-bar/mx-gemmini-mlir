@@ -7,7 +7,7 @@ not distinguish those two inputs.
 
 This control holds the **compiled step-8 flow state and compiled timestep**
 fixed. It changes only the prefix cache to the captured FP32 value. The
-same compiled flow object, weights, profile, and Nicolas `e4m3_vpu` Spike
+same compiled flow object, weights, profile, and reference `e4m3_vpu` Spike
 extension are used. The compiled state bytes and BF16-rounded timestep are
 verified against the archived full run's output hashes before linking.
 

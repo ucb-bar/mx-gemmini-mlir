@@ -1,6 +1,6 @@
 # TinyLlama source and compiler: one 160-token input
 
-This control gives Nicolas's handwritten MX+VPU source program and the
+This control gives the reference implementation’s handwritten MX+VPU source program and the
 model2MLIR → Merlin → MX+VPU compiler program the **same 160 token IDs** and
 the **same 200 FP32 checkpoint tensors**. The archived
 [input identity receipt](input_identity.json) checks every tensor exactly.
@@ -18,7 +18,7 @@ for all 200 matrix sites;
 the compiler's [override map](all_fp8_overrides.json) selects them. The
 compiler also offloads 22 softmax, 88 add, 358 elementwise, 156 unary, and
 45 reduction regions to the VPU, as recorded in the
-[compiler build summary](compiler_build_summary.json). Nicolas's source
+[compiler build summary](compiler_build_summary.json). The reference implementation’s source
 keeps softmax, RoPE, normalization, and SwiGLU on the host and uses the VPU
 for residual adds.
 
@@ -32,7 +32,7 @@ mean cosine of those rows is 0.999960. This verifies the input capture, not
 the Spike program outputs.
 
 The [independent timed source run](source_timed_summary.json) has now
-completed on Nicolas's MX+VPU Spike: **12,703,713,784 modeled cycles** for
+completed on the reference implementation’s MX+VPU Spike: **12,703,713,784 modeled cycles** for
 the 160-token forward. Its 33 emitted BF16 logit rows exactly match the
 generated source reference. Against the captured FP32 logits, 27/33 late
 top tokens match and mean cosine is 0.988564. The compressed
@@ -41,7 +41,7 @@ These source rows provide an independent check of the generated reference.
 
 The [matched compiler run](matched_onepass_comparison.json) has now
 completed at **15,170,996,572 modeled cycles**. Its 160 top-token IDs are
-recorded in the [Spike log](compiler_spike.log). Nicolas's source and the
+recorded in the [Spike log](compiler_spike.log). The reference implementation’s source and the
 compiler select the same top token at **24/33** late positions. Against the
 captured FP32 logits, the source matches **27/33** late top tokens and the
 compiler matches **20/33**; the compiler matches **103/160** positions over
@@ -69,7 +69,7 @@ full source blob hash for reproduction.
 ## Reproduce the inputs
 
 Use model2MLIR commit `902cb22` or later on `cx/mx-vpu-four-model-e2e`,
-the pinned MX profile `MxE4M3Fp4VpuGemminiRocketConfig`, and Nicolas's
+the pinned MX profile `MxE4M3Fp4VpuGemminiRocketConfig`, and the reference implementation’s
 `npu-exploration` source at `0344bcba70b899039ccd0ac0801ca5605d46d3eb`.
 The archived [input IDs](input_ids.npz) are the exact model2MLIR
 `inputs.npz` file. Extract `in0` to a one-dimensional NumPy `.npy` file and
@@ -80,18 +80,18 @@ with `--prepack-checkpoint-weights`,
 `--precision-overrides all_fp8_overrides.json`, and
 `--spike-arena-base 0xd0000000`.
 
-To regenerate Nicolas's source input from the same IDs and checkpoint, use
+To regenerate the reference implementation’s source input from the same IDs and checkpoint, use
 `tools/capture_nicolas_tinyllama_onepass.py --input-ids input_ids.npz
 --out-dir ACT_DIR`. Combine that activation capture with the checkpoint
 weight capture using
 `tools/generate_nicolas_tinyllama_onepass.py --weights-capture WEIGHT_DIR
 --activation-capture ACT_DIR --source-generator NPU/baremetal/mxgemmini/gen/gen_llama_model.py
 --out-dir SOURCE_DIR`. The generator needs the 22 `layerN.npz` weight files
-and `model.npz` from Nicolas's pinned checkpoint capture, produced by
+and `model.npz` from the reference implementation’s pinned checkpoint capture, produced by
 `python -m kernels.captures.llama_model` in that repository. Apply the earlier
 [VPU residual patch](../nicolas_tinyllama_full_source_vpu_20261014/vpu_residual.patch),
 the [128-token tiling patch](../nicolas_tinyllama_prefill128_source_20261014/m128_tiling.patch),
-then this [160-token tile and logit patch](m160_tiling.patch) to Nicolas's
+then this [160-token tile and logit patch](m160_tiling.patch) to the reference implementation’s
 `llama_model.c` before compiling the source driver.
 
 Check the two captures before timing:

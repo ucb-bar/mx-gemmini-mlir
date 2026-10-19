@@ -135,7 +135,7 @@ def lower_first_fp8_rectangular(plan: RectangularPairPlan, *,
                                 weight_scales_buffer: str,
                                 output_scales_buffer: str
                                 ) -> tuple[Command | Fence, ...]:
-    """Use Nicolas's rectangular k-major B tile layout for MM1."""
+    """Use the reference implementation’s rectangular k-major B tile layout for MM1."""
     i, j, kk = plan.m_tiles, plan.first_n_tiles, plan.first_k_tiles
     commands: list[Command | Fence] = [
         _cmd(7, 0, 0),
@@ -213,7 +213,7 @@ def plan_fp8_resident_pair(profile: dict, *, shape: tuple[int, int, int],
               "B": (b_row, rows),
               "C1": (c1_row, c1_row + c_rows),
               "C2": (c2_row, c2_row + c_rows)}
-    # MM1 has consumed A before it writes C1. Nicolas's 64³ source reuses
+    # MM1 has consumed A before it writes C1. the reference implementation’s 64³ source reuses
     # rows 128..255 for C1; all other pairs must remain disjoint.
     if (b_row < 0 or any(end > rows for _, end in ranges.values()) or
             any(not (left[1] <= right[0] or right[1] <= left[0])
@@ -275,7 +275,7 @@ def lower_first_fp8_resident(plan: ResidentPairPlan, *,
 def _plan_packed_resident_pair(profile: dict, *, shape: tuple[int, int, int],
                                a_row: int, c1_row: int, c2_row: int,
                                precision: str) -> ResidentPairPlan:
-    """Place Nicolas's packed direct or LUT-indexed square chain."""
+    """Place the reference implementation’s packed direct or LUT-indexed square chain."""
     resources = profile["resources"]
     if (profile.get("transport") != "rocket_rocc" or
             profile["name"] != "MxGemminiRocketConfig" or

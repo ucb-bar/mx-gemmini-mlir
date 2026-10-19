@@ -6,7 +6,7 @@ one deterministic random-weight model forward, then BF16 operand conversion,
 MXFP4 E2M1 quantization, E8M0 scales per 32 elements, direct nibble packing,
 the pinned `MxE4M3Fp4VpuGemminiRocketConfig`, and compiler-generated MX
 commands. The independent Radiance `mx_golden.cpp` result matched every BF16
-value from Nicolas's pinned MX Spike model. The source profile identifies the
+value from the reference implementation’s pinned MX Spike model. The source profile identifies the
 MX+VPU RTL, although these programs use the matrix engine only.
 
 | Model | Source matmul M×N×K | Compared BF16 values, including padded rows | Real model values | Mean absolute error vs PyTorch f32 |

@@ -1,6 +1,6 @@
 # Typed causal streamed flash attention on Spike
 
-Nicolas's unmodified `attn_flash_llama_causal.c` selects 64 queries over
+the reference implementation’s unmodified `attn_flash_llama_causal.c` selects 64 queries over
 2,048 keys, dimension 64, `BK=256`, and a causal mask on the last 64 keys.
 The [data header](attn_vpu_llama_causal.h.gz) was generated with his
 `gen_attn_vpu.py --sq 64 --sk 2048 --d 64 --seed 0 --tag
@@ -35,7 +35,7 @@ real TinyLlama capture or performance. No FPGA was used.
 
 To replay, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

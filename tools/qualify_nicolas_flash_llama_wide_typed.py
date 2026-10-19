@@ -1,4 +1,4 @@
-"""Replay Nicolas's two-V-buffer streamed flash against typed MX on Spike."""
+"""Replay the reference implementation’s two-V-buffer streamed flash against typed MX on Spike."""
 
 from __future__ import annotations
 

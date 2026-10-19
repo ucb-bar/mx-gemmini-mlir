@@ -1,8 +1,10 @@
-# Nicolas single-tile debug source audit
+<a id="nicolas-single-tile-debug-source-audit"></a>
+
+# Reference single-tile debug source audit
 
 Run `python -m tools.audit_nicolas_single_tile_debug --rtl-root
 /path/to/gemmini-mx-cleanup-266c593 --check` to verify the
-[machine-readable audit](index.json) against Nicolas's pinned source.
+[machine-readable audit](index.json) against the reference implementation’s pinned source.
 
 `matmul_single_tile_test.c` is a debug program, not a numerical source oracle.
 Its active MVIN loops start at tile index one, so for the header's 32×32×32

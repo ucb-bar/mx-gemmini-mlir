@@ -47,12 +47,12 @@ not certify numerical parity, command scheduling, a bitstream, or throughput.
 Separate [Spike qualification receipts](compiled_mx_pipeline.md#dim16-all-asymmetric-source-matrix)
 now cover 30 of 36 legal BF16 source modes in the DIM16 all-asymmetric Rocket
 profile. The DIM8 and DIM32 checked-in source sets cover 21 of 36 modes each;
-generated-mode tests from Nicolas's pinned model bring each mesh to **35 of 36**
+generated-mode tests from the reference implementation’s pinned model bring each mesh to **35 of 36**
 BF16 modes passing on unmodified Spike, with independent generated-mode
 reproductions. See the [mesh qualification index](compiled_mx_pipeline.md#dim8-and-dim32-all-asymmetric-source-matrices).
 The Radiance direct E4M3×E4M3 source driver separately qualifies a 31st
 distinct DIM16 mode with two full-output Spike runs; it is not part of
-Nicolas's checked-in source-mode matrix.
+the reference implementation’s checked-in source-mode matrix.
 The [plain MX Rocket profile](compiled_mx_pipeline.md#nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6)
 now has direct compiler-on-Spike evidence for its three selected FP8, FP4,
 and FP6 Radiance source kernels: 36,864 BF16 outputs match across two builds
@@ -67,8 +67,8 @@ also compile from the archived model2MLIR captures. Their BF16 references
 are derived from Radiance's pinned host model for each target mesh, because
 the checked-in source golden uses the DIM16 accumulator schedule. Six
 selected FP8/FP4/FP6 cases match all **73,728** target mesh reference outputs per
-run on the corresponding Nicolas Spike extensions.
-Four more cells have separate full-output tests from Nicolas's validated
+run on the corresponding the pinned Spike model extensions.
+Four more cells have separate full-output tests from the reference implementation’s validated
 `gen_asym.py` data model, giving **35 of 36 distinct DIM16 modes** with
 numerical parity on the unmodified Spike extension. The remaining direct
 E4M3 × E4M3-LUT cell fails on that extension because its weight-lane packing
@@ -79,7 +79,7 @@ The corresponding DIM8/DIM32 direct-E4M3 × E4M3-LUT cells fail on the same
 stock Spike branch and pass with the same isolated model correction; they
 remain unqualified on the stock model.
 
-Nicolas's public branch includes `MxE4M3VpuGemminiRocketConfig` and
+The reference implementation’s public branch includes `MxE4M3VpuGemminiRocketConfig` and
 `MxE4M3Fp4VpuGemminiRocketConfig`. Both build two 8-lane BF16 scratchpad
 VPUs with `EXPSUB` and `EXPSUM`, plus `SPAD_REQUANT`. The latter config also
 builds FP4×FP4 mode 0 beside direct E4M3 mode 8. The dialect exposes
@@ -87,7 +87,7 @@ builds FP4×FP4 mode 0 beside direct E4M3 mode 8. The dialect exposes
 lowerer checks profile gates, row bounds, and the RTL's funct 33/34 bitfields
 before emitting a Rocket RoCC C issuer.
 The [compiler-issued VPU evidence](compiled_mx_pipeline.md#compiler-issued-base-vpu-operations)
-now covers the 12 base opcodes on Nicolas's pinned Spike model; the two
+now covers the 12 base opcodes on the reference implementation’s pinned Spike model; the two
 fused opcodes have a separate [source-bound qualification](compiled_mx_pipeline.md#compiler-issued-fused-expsub-and-expsum).
 Together with the [variant qualifications](compiled_mx_pipeline.md#compiler-issued-vpu-broadcast-and-same-bank-variants)
 and [ordering qualifications](compiled_mx_pipeline.md#compiler-issued-vpu-dependencies-and-memory-ordering),
@@ -98,7 +98,7 @@ These are independent source-bound programs rather than one general scheduler
 for the entire source benchmark.
 The [public BF16 softmax object](evidence/mx_public_vpu_softmax_3f9af55/README.md)
 lowers its six typed VPU operations plus configuration, transfers, and readout
-to a data-free RV64 object. Nicolas's checker reports zero mismatches across
+to a data-free RV64 object. The reference implementation’s checker reports zero mismatches across
 all 512 BF16 outputs on each of the two named VPU Rocket profiles.
 The [public dependent-chain object](evidence/nicolas_vpu_chain_public_266c593/README.md)
 uses an explicit three-op sequence schema with runtime buffer spans. It
@@ -110,7 +110,7 @@ runtime pointer, checks that it fits the RTL's 33-bit address field, shifts it
 into funct 34, and keeps the source/destination scratchpad fields separate.
 The fixed-address form remains available for known baremetal mappings.
 The source-bound compiler has also qualified a full
-MM1→VPU×2→SPAD_REQUANT→resident MM2 command chain on Nicolas's Spike.
+MM1→VPU×2→SPAD_REQUANT→resident MM2 command chain on the pinned Spike model.
 Its checked frontend and target inputs now form one SSA-connected typed chain
 for the qualified 64³ E4M3 source case; general scheduling remains pending.
 The same physical path accepts an ordered 1–16 scalar VPU chain. A
@@ -160,7 +160,7 @@ Cyclotron. The naive 256×256 source driver itself does not implement four
 output tiles, so this is a derived source decomposition.
 The [captured scalar ADDS case](compiled_mx_pipeline.md#captured-bf16-scalar-adds-across-four-mx-output-tiles)
 binds `matmul + 1.5` to one VPU command per output tile. FP8 and generated FP4
-each match all 65,536 BF16 outputs on Nicolas's pinned Spike in two builds.
+each match all 65,536 BF16 outputs on the reference implementation’s pinned Spike in two builds.
 The FP8 general source CLI independently reproduces the captured program.
 The [ordered affine case](compiled_mx_pipeline.md#ordered-scalar-mx-vpu-chain-from-a-pytorch-capture)
 keeps each BF16 output tile resident for captured `* 2.0` then `+ 1.5`.
@@ -176,10 +176,10 @@ The stock model lacks the compiler DMA/VPU command subset. See
 
 The [full BF16 source roster](compiled_mx_pipeline.md#dim8dim32-source-roster-on-nicolass-spike)
 now runs from the pinned model2MLIR capture through compiler-generated
-RV64 ELFs on Nicolas's DIM8 and DIM32 Spike extensions. Each mesh matches
+RV64 ELFs on the reference implementation’s DIM8 and DIM32 Spike extensions. Each mesh matches
 all 23 FP4/FP6/FP8 drivers and 376,832 target-model BF16 outputs in two
 runs. The target reference records the geometry-specific accumulator schedule
-and Nicolas's product floor. The separate VPU-enabled Rocket profile matches
+and the reference implementation’s product floor. The separate VPU-enabled Rocket profile matches
 the selected FP8 and FP4 matrix drivers twice; its vector instruction
 coverage is documented above. The eight quantized-output source drivers are
 qualified separately on DIM8, DIM16, and DIM32 with the generated Radiance

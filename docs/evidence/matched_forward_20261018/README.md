@@ -8,7 +8,7 @@ Both prepack immutable weights and project unused checkpoint entry arguments.
 
 | Token-to-logits execution | Modeled cycles | Mean KL, late33 | Worst KL | Top matches, late33 |
 | --- | ---: | ---: | ---: | ---: |
-| Retained independent Nicolás source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
+| Retained independent reference source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
 | Fresh all-VPU compiler baseline | 15,171,236,821 | 0.2962464 | 0.7839974 | 20/33 |
 | Numerical-placement + connected-multiply candidate | 15,984,649,026 | 0.0637956 | 0.1699798 | 27/33 |
 

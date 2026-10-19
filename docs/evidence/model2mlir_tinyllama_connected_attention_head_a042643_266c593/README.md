@@ -33,7 +33,7 @@ command program are in `bundle/` and `object/`.
 programs. The host applied scale and mask, decoded the VPU result, and staged
 each next input. The compiler does not yet route the score and probability
 buffers on device, lower the entire attention graph, or run full TinyLlama.
-Nicolas's [current application kernels](https://github.com/ucb-bar/npu-exploration/tree/main/baremetal/mxgemmini/src)
+The reference implementation’s [current application kernels](https://github.com/ucb-bar/npu-exploration/tree/main/baremetal/mxgemmini/src)
 also include requantized `P @ V` resident in scratchpad before `o_proj`,
 while this archive checks BF16 PV readout. That resident path is a separate
 coverage target.

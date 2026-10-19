@@ -1,4 +1,6 @@
-# Nicolas E4M3 LUT matrices across DIM8 and DIM32
+<a id="nicolas-e4m3-lut-matrices-across-dim8-and-dim32"></a>
+
+# Reference E4M3 LUT matrices across DIM8 and DIM32
 
 Compiler commit `4f316aca75817acfb31702772ba2f168521b5412` replayed three
 more pinned E4M3 LUT source programs through fresh PyTorch/model2MLIR

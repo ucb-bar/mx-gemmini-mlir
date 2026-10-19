@@ -1,4 +1,4 @@
-"""Bind Nicolas's packed FP6 chains and their runtime LUT banks to typed MX IR."""
+"""Bind the reference implementation’s packed FP6 chains and their runtime LUT banks to typed MX IR."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Bind Nicolas's plain FP8 chain and its checked 96-wide derived fixture."""
+"""Bind the reference implementation’s plain FP8 chain and its checked 96-wide derived fixture."""
 
 from __future__ import annotations
 

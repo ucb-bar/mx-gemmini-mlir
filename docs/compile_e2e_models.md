@@ -1,685 +1,351 @@
-# Compile model sessions for MX Gemmini + VPU
+# Compile and run complete models
 
-This guide builds standalone RV64 session executables for TinyLlama,
-DeepSeek-R1-Distill-Qwen-1.5B, Gemma 2 2B, and SmolVLA. The flow is
-model2MLIR capture → Merlin whole-graph lowering → MX Gemmini matrix and VPU
-lowering → session link. The resulting ELF contains compiled host code for
-operations outside the selected MX/VPU patterns. No Python model is required
-by the ELF at run time.
+This guide builds captured models with model2MLIR, Merlin, and the MX Gemmini
+backend. It covers the three workloads with completed, audited executions:
+TinyLlama's 160-token forward, TinyLlama's 128-token prefill followed by 32
+cached decodes, and SmolVLA's prefix encoder followed by ten flow steps and
+action decoding. The result is a standalone RV64 executable, with a separate
+packaging step for FireSim.
 
-The commands below use the
-[`MxE4M3Fp4VpuGemminiRocketConfig`](../profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json)
-profile. The target selects FP4 for eligible ordinary matmuls and FP8 for
-eligible attention and rotary contractions. Capture the source model in FP32:
-the target applies this mixed-precision policy during compilation. The
-model2MLIR `fp8` capture option represents a different frontend policy.
-For these full sessions, the generated adapter rounds live FP32 operands to
-BF16, derives E8M0 scales, and packs FP4 or FP8 codes at each selected
-contraction call by default. Source-proven checkpoint RHS operands can instead
-be packed at build time with `--prepack-checkpoint-weights`; dynamic operands
-remain live. No calibration or model-level accuracy search has accepted this
-precision policy. The separate [model2MLIR quantization handoff](quantization_handoff.md)
-can capture static quantized weights and an exact site census, but its current
-MX dialect result is an operation plan, not the executable full-session path
-documented here.
+The published cycle counts are from the `e4m3_vpu` Rocket-Spike timing model
+with `mem.host_tracking=0`. They are not FPGA measurements. See the
+[results and comparison methodology](fair_full_model_comparisons.md) and the
+[artifact audit](model_results_audit.md) before using a speedup in a report.
 
-## Prerequisites
+## Models and inputs
 
-- Editable checkouts of this repository, [Merlin](https://github.com/ucb-bar/merlin),
-  and [model2MLIR](https://github.com/ucb-bar/model2MLIR). Use compatible
-  versions of all three; the [linked-session evidence](evidence/four_vpu_session_links_20261012/README.md)
-  records the profile and artifact identities used for the published builds.
-- A Python environment with the packages needed by model2MLIR's four loaders,
-  including PyTorch, Transformers, LeRobot for SmolVLA, xDSL 0.65, NumPy,
-  safetensors, and the MX package. Install each repository's dependencies in
-  that environment. `--python` below points the capture driver to it.
-- An installed LLVM/MLIR toolchain with `bin/clang`, an RV64 bare-metal
-  toolchain with `riscv64-unknown-elf-gcc` and `spike`, and the Gemmini Spike
-  extension built for the selected RTL profile. The extension is needed for
-  execution, not for compilation or linking.
-- Access to the four pretrained checkpoints. Set `HF_HOME` to a cache with
-  those checkpoints if necessary. SmolVLA's loader requires its pinned
-  `lerobot/smolvla_base` revision to be available locally.
-- A fresh writable artifact directory with ample space. The linked Gemma ELF
-  alone is approximately 13 GB; the other ELFs and intermediate objects add
-  tens of GB. Choose a new directory for each run to keep its receipts and
-  outputs together.
+| Workload name | Checkpoint | Executed work | Retained numerical reference |
+| --- | --- | --- | --- |
+| `tinyllama-forward` | `TinyLlama/TinyLlama-1.1B-Chat-v1.0` | All 22 layers and LM head, 160 fixed token IDs; all 160 logit rows | Floating-point model, all 5,120,000 F32 logits; independent quantized source distributions at 33 positions |
+| `tinyllama-cached` | Same checkpoint | 128-token prefill, then 32 one-token decodes with persistent KV state | Floating-point trajectory; 33 last-token logit tensors and all output/state digests |
+| `smolvla` | `lerobot/smolvla_base` | Prefix, ten recurrent flow steps, action decode | Floating-point trajectory preserving the model's native BF16 backbone; ten flow outputs and final action |
 
-Set absolute paths from the MX repository root:
+TinyLlama uses checkpoint revision
+`fe8a4ea1ffedaf415f4da2f062534de366a451e6`. SmolVLA uses
+`c83c3163b8ca9b7e67c509fffd9121e66cb96205`.
+The token stream is fixed and the SmolVLA observations are synthetic model-ready
+inputs. SmolVLA receives one F32 image of shape `1×3×512×512`, one Boolean
+image-valid flag, `1×48` I64 text IDs and a Boolean text mask, and `1×32` F32
+state. Its action/noise shape is `1×50×32`. This workload does not include image
+preprocessing, tokenization, a camera driver, or robot control.
+
+DeepSeek-R1-Distill-Qwen-1.5B and Gemma 2 2B have also been captured and linked.
+Their [link evidence](evidence/four_vpu_session_links_20261012/README.md) is a
+compilation result; this release does not publish completed numerical or
+performance results for them.
+
+## Versions and environments
+
+The machine-readable [release registry](../examples/models/release.json) pins
+repository commits, checkpoint revisions, target profile, exact policies,
+weight identities, measured executable hashes, and tool binary hashes. Its
+MX revision identifies the compiler baseline; the reproduction helpers and
+capture supplement are supplied by this checkout. Historical build receipts
+remain authoritative for the producers of each measured artifact.
+
+| Repository | Revision used by this release |
+| --- | --- |
+| [mx-gemmini-mlir](https://github.com/ucb-bar/mx-gemmini-mlir) | `fd5fff33aea54ee1e175b97bb88496351fda88e9` compiler baseline |
+| [Merlin](https://github.com/ucb-bar/merlin) | `5e81a25d27246b490f947c9201fd20fabe27c69e` |
+| [model2MLIR](https://github.com/ucb-bar/model2MLIR) | `f5e5c674a585bebbc2507dbd028ebf9d26e2afbc` |
+| [Gemmini](https://github.com/ucb-bar/gemmini) | `266c593f2cb51d7e3fe83fc0317072b585ac3c52` |
+| [mxgen](https://github.com/ucb-bar/mxgen) | `dba3e7e706efa156d96efe595cd9935c825ea14d` |
+| [libgemmini](https://github.com/ucb-bar/libgemmini) | `876631072ecc7cc8197df5dc69c4d26bd4cd5f54` |
+| [gemmini-rocc-tests](https://github.com/ucb-bar/gemmini-rocc-tests) | `350547f9843f46f485d4d1dd4c20b2f52f4844bf` |
+| [LLVM/MLIR](https://github.com/llvm/llvm-project) | `a47bddccec30255619bb8c37fa59700e661d4e66` |
+| [Chipyard](https://github.com/ucb-bar/chipyard) | `d45f86f4cca379715ac0ceb3a9f2369927796794`, toolchain/startup checkout |
+| [FireSim](https://github.com/firesim/firesim) | `b084672c2f8cf32e55d78f73a001074c23f8a2b8`, workload-format validation |
+
+The Chipyard and FireSim pins above do not identify a measured FPGA design.
+FireSim hardware must include the pinned Gemmini integration described below.
+
+Use Python 3.12. The capture environment used PyTorch 2.10.0, Transformers
+5.3.0, LeRobot 0.5.1, NumPy 2.2.6, xDSL 0.65.0, safetensors 0.8.0, and
+torchao 0.16.0, with model2MLIR's FX importer. The compiler environment used
+PyTorch 2.10.0, Transformers 5.9.0, NumPy 2.4.6, xDSL 0.65.0, and
+`torch-mlir==20260531.828`. Keep these environments separate. The original
+wheel URLs and a complete environment lock were not retained; installing
+these versions alone does not establish a bit-for-bit historical rebuild.
+
+Install the checkouts in the corresponding environments:
 
 ```sh
-export MX_ROOT="$(pwd)"
-export M2M_ROOT=/path/to/model2MLIR
+export MX_ROOT=/path/to/mx-gemmini-mlir
 export MERLIN_ROOT=/path/to/merlin
-export LLVM_INSTALL=/path/to/llvm-install
+export M2M_ROOT=/path/to/model2MLIR
+export CAPTURE_PY=/path/to/capture-env/bin/python
+export COMPILER_PY=/path/to/compiler-env/bin/python
+export LLVM_INSTALL=/path/to/llvm-mlir/install
 export RISCV_ROOT=/path/to/riscv-tools
-export CAPTURE_PY=/path/to/capture-environment/bin/python
-export ARTIFACT_ROOT=/path/to/new-artifacts
-export MX_PROFILE="$MX_ROOT/profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
+export TORCH_MLIR_WHEEL=/path/to/compatible-torch-mlir-wheel.whl
+export ARTIFACT_ROOT=/path/to/model-artifacts
 export PYTHONPATH="$MX_ROOT:$MERLIN_ROOT/src:$M2M_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-mkdir -p "$ARTIFACT_ROOT/captures" "$ARTIFACT_ROOT/audits"
+export MERLIN_COMPILER_PYTHON="$COMPILER_PY"
+export MERLIN_MLIR_INSTALL="$LLVM_INSTALL"
+
+"$CAPTURE_PY" -m pip install -c "$MX_ROOT/examples/models/capture-constraints.txt" \
+  -e "$M2M_ROOT[quant,examples]" -e "$MERLIN_ROOT" -e "$MX_ROOT[ir]" \
+  'lerobot[smolvla]==0.5.1'
+"$COMPILER_PY" -m pip install -c "$MX_ROOT/examples/models/compiler-constraints.txt" \
+  -e "$MERLIN_ROOT" -e "$MX_ROOT[ir]" 'torch==2.10.0' 'transformers==5.9.0'
+# Supply the recorded torch-mlir build in the compiler environment:
+"$COMPILER_PY" -m pip install --no-deps "$TORCH_MLIR_WHEEL"
+mkdir -p "$ARTIFACT_ROOT"
+cd "$MX_ROOT"
 ```
 
-If the selected Python environment is new, install the three repositories and
-the SmolVLA loader dependency. `uv` can install into that environment without
-activating it:
+The constraints record the observed versions rather than a complete lock.
+The `torch-mlir` wheel path is a required external input; use the compatible
+Python 3.12 build from your toolchain distribution, or supply another
+compatible torch-mlir build and qualify its outputs as a fresh toolchain.
+Do not infer a wheel download URL from the version string.
+
+The RV64 tools used GCC 13.2.0 (`gc891d8dc23e`) and Spike 1.1.1-dev.
+Build LLVM with MLIR, Clang, and the RISC-V target enabled. Build the Spike
+extension from the pinned Gemmini/libgemmini sources, following their build
+instructions, and set `SPIKE_EXTLIB` to the resulting `libgemmini.so`.
+The registry records the measured Clang, Spike, extension, and `libm.a`
+SHA-256 values. The audited Spike source checkout is
+`9c190a07c6838f6392bafa4ad83acea462c7f759`; the recorded executable hash is
+the authority for matching the historical simulator binary. The host-math guard additionally checks the actual library;
+a different library must be reviewed as a new numerical configuration.
+
+## Quantization and placement
+
+Capture with `--formats fp32`, then select MX formats in the backend. The
+frontend's `fp8` option is a different weight-only transformation and does
+not reproduce these runs. In SmolVLA, the `fp32` capture label leaves the
+native BF16 backbone intact. Its external checkpoint contains 474 BF16 and
+26 F32 tensors. TinyLlama's external capture contains 201 F32 tensors:
+200 model checkpoint tensors plus a captured constant.
+
+All offloaded matrix bindings in the completed runs use **MXFP8**, with E4M3
+codes and E8M0 scales per group of 32. Packing rounds operands through BF16.
+The VPU operates on BF16; logical inputs, outputs, and host operations retain
+the types in the captured IR, often F32. Checkpoint prepacking moves constant
+packing out of model execution; it does not remove matrix execution.
+
+| Stage | FP8 matrix bindings | Host matrix bindings | Other placement |
+| --- | ---: | ---: | --- |
+| TinyLlama forward / cached prefill | 199 | 1 | VPU reductions, normalization components, activations and selected adds; 22 host softmax sites and 22 host elementwise sites |
+| TinyLlama decode | 199 | 1 | Same host softmax/elementwise counts; 45 adds remain on host, 88 on VPU |
+| SmolVLA prefix | 243 | 0 | 28 host softmax and 52 host elementwise sites; selected remaining arithmetic on VPU |
+| SmolVLA flow | 148 | 0 | 16 host softmax and one host elementwise site; selected remaining arithmetic on VPU |
+| SmolVLA action decode | 0 | 0 | Compiled host code |
+
+Counts describe captured binding sites, not dynamic matrix launches. The
+[policy files](../examples/models/policies/) enumerate every selected operation
+by identity and the registry records the full placement census. These files
+are checked against the actual build probes by the audit tool. Sensitive
+attention and normalization boundaries therefore cannot silently move to a
+lower precision under a broad default policy. Mixed FP4/FP8 remains an
+experimental alternative and is not the policy behind the current numbers.
+
+## Obtain captures and checkpoint files
+
+For an exact input replay, use the archived captures. Exporting requires the
+external `weights.safetensors` files because multi-gigabyte checkpoint data
+is not distributed in this repository. Expected file hashes are in the
+registry. TinyLlama prefill, decode, and forward use the same checkpoint file;
+SmolVLA prefix and flow also share one file. Action decode needs none.
 
 ```sh
-uv pip install --python "$CAPTURE_PY" \
-  -e "$MERLIN_ROOT" -e "$M2M_ROOT[quant,examples]" \
-  -e "$MX_ROOT[ir,capture]" 'lerobot[smolvla]==0.5.1'
+"$CAPTURE_PY" -m tools.model_release export --model tinyllama-cached \
+  --weights "all=/path/to/tinyllama/weights.safetensors" \
+  --out "$ARTIFACT_ROOT/tinyllama-cached-inputs"
+
+"$CAPTURE_PY" -m tools.model_release export --model smolvla \
+  --weights "all=/path/to/smolvla/weights.safetensors" \
+  --out "$ARTIFACT_ROOT/smolvla-inputs"
+
+"$CAPTURE_PY" -m tools.model_release export --model tinyllama-forward \
+  --weights "all=/path/to/tinyllama/weights.safetensors" \
+  --out "$ARTIFACT_ROOT/tinyllama-forward-inputs"
 ```
 
-The variables identify toolchain installations and checkouts; they are not
-hard-coded into the compiler. Keep the selected profile and Spike extension
-from the same RTL configuration.
+Each destination must be fresh. The exporter verifies archive members,
+capture supplements, policies, and checkpoint hashes, and writes an
+`inputs.json` checksum manifest. By default it copies checkpoint data;
+`--link-weights` can share an immutable local file on the same filesystem.
 
-## 1. Capture the four sessions
+To inspect the inputs before obtaining checkpoint files, replace `--weights`
+with `--capture-only`. This exports reference inputs and policies but cannot
+be compiled. Obtain the pinned Hugging Face snapshots using
+`huggingface_hub.snapshot_download(repo_id=..., revision=...)`, then generate
+externalized weights through the model2MLIR capture recipes below. The
+TinyLlama loader at the pinned revision does not accept a checkpoint revision:
+use an isolated Hugging Face cache containing only the pinned snapshot, then
+set `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1`. SmolVLA's loader explicitly
+pins its revision. Its LeRobot constructor also loads the VLM backbone and
+processor. Cache `HuggingFaceTB/SmolVLM2-500M-Video-Instruct` at
+`7b375e1b73b11138ff12fe22c8f2822d8fe03467` before an offline fresh capture.
+The [frontend dependency record](../examples/models/frontend-dependencies.json)
+binds the metadata observed during this audit; the original capture did not
+separately bind that initialization dependency. The final externalized
+checkpoint hash is the required correspondence check. Never accept a changed
+checkpoint merely because its model name matches.
 
-Run these commands from any directory. The empty layer overrides clear the
-small random-weight defaults in the model2MLIR capture recipes.
+For a fresh capture, first materialize the recorded source inputs without
+checkpoint files:
+
+```sh
+"$CAPTURE_PY" -m tools.model_release export --model tinyllama-cached \
+  --capture-only --out "$ARTIFACT_ROOT/recapture-tinyllama"
+"$CAPTURE_PY" -m tools.model_release export --model smolvla \
+  --capture-only --out "$ARTIFACT_ROOT/recapture-smolvla"
+
+"$CAPTURE_PY" - <<'PYINPUTS'
+import os
+from pathlib import Path
+import numpy as np
+root = Path(os.environ["ARTIFACT_ROOT"])
+tiny = root / "recapture-tinyllama/capture/stages"
+with np.load(tiny / "prefill/inputs.npz") as p, np.load(tiny / "decode/session_inputs.npz") as d:
+    ids = np.concatenate((p["in0"].reshape(-1), d["decode_tokens"].reshape(-1)))
+np.save(root / "recorded-token-ids.npy", ids)
+smol = root / "recapture-smolvla/capture/stages"
+with np.load(smol / "prefix_encode/inputs.npz") as p, np.load(smol / "flow_denoise/inputs.npz") as f:
+    np.savez(root / "recorded-observation.npz", image=p["in0"], image_mask=p["in1"],
+             language_tokens=p["in2"], language_mask=p["in3"], state=p["in4"], noise=f["in2"])
+PYINPUTS
+```
+
+The full-model capture recipes are:
 
 ```sh
 "$CAPTURE_PY" "$M2M_ROOT/workloads/capture.py" tiny_llama \
-  --formats fp32 --python "$CAPTURE_PY" \
-  --output-root "$ARTIFACT_ROOT/captures" \
+  --formats fp32 --python "$CAPTURE_PY" --output-root "$ARTIFACT_ROOT/recapture" \
   --env M2M_LLAMA_SESSION=e2e --env M2M_LLAMA_LAYERS= \
-  --env M2M_LLAMA_ATTENTION=eager
-
-"$CAPTURE_PY" "$M2M_ROOT/workloads/capture.py" deepseek_r1_qwen \
-  --formats fp32 --python "$CAPTURE_PY" \
-  --output-root "$ARTIFACT_ROOT/captures" \
-  --env M2M_QWEN_SESSION=e2e --env M2M_QWEN_LAYERS= \
-  --env M2M_QWEN_ATTENTION=eager
-
-"$CAPTURE_PY" "$M2M_ROOT/workloads/capture.py" gemma2_2b \
-  --formats fp32 --python "$CAPTURE_PY" \
-  --output-root "$ARTIFACT_ROOT/captures" \
-  --env M2M_GEMMA_SESSION=e2e --env M2M_GEMMA_LAYERS= \
-  --env M2M_GEMMA_SLICE_LAYERS= --env M2M_GEMMA_ENTRY=ids
+  --env M2M_LLAMA_CHECKPOINT_LAYERS= --env M2M_LLAMA_ATTENTION=eager \
+  --env M2M_PREFILL_TOKENS=128 --env M2M_DECODE_TOKENS=32 \
+  --env "M2M_LLAMA_TOKEN_IDS=$ARTIFACT_ROOT/recorded-token-ids.npy" \
+  --env M2M_LLAMA_TOKEN_SOURCE=archived-model-inputs
 
 "$CAPTURE_PY" "$M2M_ROOT/workloads/capture.py" smolvla \
-  --formats fp32 --python "$CAPTURE_PY" \
-  --output-root "$ARTIFACT_ROOT/captures" \
+  --formats fp32 --python "$CAPTURE_PY" --output-root "$ARTIFACT_ROOT/recapture" \
   --env M2M_SMOLVLA_SESSION=e2e --env M2M_SMOLVLA_PRETRAINED=1 \
-  --env M2M_SMOLVLA_VLM_LAYERS= --env M2M_SMOLVLA_EXPERT_LAYERS=
+  --env M2M_SMOLVLA_VLM_LAYERS= --env M2M_SMOLVLA_EXPERT_LAYERS= \
+  --env "M2M_SMOLVLA_INPUT_NPZ=$ARTIFACT_ROOT/recorded-observation.npz" \
+  --env M2M_SMOLVLA_INPUT_SOURCE=archived-model-inputs
 ```
 
-Each result is under
-`$ARTIFACT_ROOT/captures/<model>/<model>_session/`. The language models contain
-`prefill` and `decode` stages. SmolVLA contains `prefix_encode`,
-`flow_denoise`, and `action_decode`. The default inputs are synthetic; provide
-documented token or image/state inputs in model2MLIR for a workload-specific
-quality measurement. A successful capture verifies stage receipts, whole-bundle
-integrity, and zero opaque operations; it does not prove target execution.
+For a single 160-token forward, use the TinyLlama command with
+`--env M2M_LLAMA_SESSION= --env M2M_SEQ=160` instead of the session selection.
+The same token file covers all 160 positions. A fresh session capture writes `<model>/<model>_session/` with separate stage
+bundles. Compare its externalized weight SHA-256 with the registry before
+using that file with the archived capture. Serialization or frontend changes
+can produce different bytes; that case requires a new capture/weight
+correspondence check, not an override of the exporter. The archived input
+replay is reproducible once the matching checkpoint and toolchain files are
+available; a fully hermetic checkpoint-to-historical-ELF rebuild is not yet
+provided.
 
-## 2. Audit and compile the stages
+## Compile, link, and run
 
-Run the target commands from the MX repository root with the environment
-above. The audit is optional but gives a readable FP4/FP8 and operation-family
-inventory before building large ELFs.
-
-```sh
-cd "$MX_ROOT"
-for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b smolvla; do
-  SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-  "$CAPTURE_PY" -m tools.audit_model2mlir_session \
-    --session "$SESSION" --profile "$MX_PROFILE" \
-    --out "$ARTIFACT_ROOT/audits/$MODEL.json"
-done
-
-for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b; do
-  SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-  for STAGE in prefill decode; do
-    "$CAPTURE_PY" -m tools.build_merlin_stage \
-      --stage "$SESSION/stages/$STAGE" \
-      --workdir "$ARTIFACT_ROOT/builds/$MODEL/$STAGE" \
-      --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-      --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT"
-  done
-done
-
-MODEL=smolvla
-SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-for STAGE in prefix_encode flow_denoise action_decode; do
-  "$CAPTURE_PY" -m tools.build_merlin_stage \
-    --stage "$SESSION/stages/$STAGE" \
-    --workdir "$ARTIFACT_ROOT/builds/$MODEL/$STAGE" \
-    --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-    --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT"
-done
-```
-
-Each stage writes `mx_stage_probe.json` and `model.elf` to its build
-directory. The probe rejects a changed capture and missing MX catalog sites.
-For the selected profile it also rejects eligible VPU operations left in the
-final host MLIR. `action_decode` has no selected MX/VPU work and uses Merlin's
-compiled host path. `--diagnostic-host-vpu` is a numerical control and must
-not be used for a production session link.
-
-A large stage-only Spike image can place linked static data above the
-historical `0xc0000000` activation arena. Merlin now rejects that overlap
-before returning an ELF. For a standalone stage run, pass an MiB-aligned
-`--spike-arena-base` above the reported `_stack_top` (for example,
-`0xd0000000` for the measured 64-token TinyLlama FP8 build), together with
-an `--arena-mb` large enough for the stage. The full-session linker has its
-own linked-boundary relocation check.
-
-## 3. Link each complete session
+Choose `MODEL=tinyllama-cached`, `smolvla`, or `tinyllama-forward`:
 
 ```sh
-for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b; do
-  SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-  "$CAPTURE_PY" -m tools.link_merlin_session \
-    --session-root "$SESSION" \
-    --stage-build "prefill=$ARTIFACT_ROOT/builds/$MODEL/prefill" \
-    --stage-build "decode=$ARTIFACT_ROOT/builds/$MODEL/decode" \
-    --workdir "$ARTIFACT_ROOT/links/$MODEL" \
-    --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-    --riscv-root "$RISCV_ROOT"
-done
-
-MODEL=smolvla
-SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-"$CAPTURE_PY" -m tools.link_merlin_session \
-  --session-root "$SESSION" \
-  --stage-build "prefix_encode=$ARTIFACT_ROOT/builds/$MODEL/prefix_encode" \
-  --stage-build "flow_denoise=$ARTIFACT_ROOT/builds/$MODEL/flow_denoise" \
-  --stage-build "action_decode=$ARTIFACT_ROOT/builds/$MODEL/action_decode" \
-  --workdir "$ARTIFACT_ROOT/links/$MODEL" \
-  --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-  --riscv-root "$RISCV_ROOT"
-```
-
-Each link produces `session.elf` and `mx_session_link.json`. The linker checks
-the stage roster, source and profile hashes, object hashes, shared checkpoint
-weights, and persistent-state bindings. The receipt status
-`linked_experimental_numeric_qualification_pending` means compilation and
-linking succeeded; it is not a numerical acceptance result.
-For stages built with `--host-math-guard guard.json`, pass that same explicit
-contract to the session linker. The final GNU wrapper applies to all calls in
-the session, including native stages, and therefore requires the reviewed exact
-return-bit, errno and floating-effect contract. Different stage contracts or
-an omitted session selection refuse. The linker rebuilds one common wrapper
-through Merlin, pins the actual library, and retains defining-supplier traces
-from the final link. The runner reopens the wrapper and completed link recipe
-before execution. Native sessions retain their existing link path.
-For large prepacked sessions, the linker places each MX catalog's code and
-constants together so RISC-V PC-relative references stay in range. It records
-`_merlin_static_end` after those catalogs; sessions without catalogs use
-`_stack_top`. The Spike scratch arena sits above the measured static extent
-and below the fixed weight blob when space allows. The linker relocates the
-arena and relinks if needed; the runner measures the recorded ELF symbol again
-before execution.
-
-## 4. Run on Spike and inspect the receipt
-
-This step needs a `libgemmini.so` built from the same RTL/Spike configuration
-as the profile. Full checkpoint sessions can take hours on Spike.
-
-```sh
+export MODEL=tinyllama-cached
 export SPIKE_EXTLIB=/path/to/libgemmini.so
-for MODEL in tiny_llama deepseek_r1_qwen gemma2_2b smolvla; do
-  SESSION="$ARTIFACT_ROOT/captures/$MODEL/${MODEL}_session"
-  "$CAPTURE_PY" -m tools.run_linked_merlin_session \
-    --link-receipt "$ARTIFACT_ROOT/links/$MODEL/mx_session_link.json" \
-    --session-root "$SESSION" --merlin-src "$MERLIN_ROOT/src" \
-    --riscv-root "$RISCV_ROOT" --spike-extlib "$SPIKE_EXTLIB" \
-    --out-dir "$ARTIFACT_ROOT/runs/$MODEL" \
-    --timeout-s 172800 --progress-interval-s 60 \
-    --perf-config e4m3_vpu --perf-set mem.host_tracking=0
-done
+
+"$CAPTURE_PY" -m tools.model_release build --model "$MODEL" \
+  --inputs "$ARTIFACT_ROOT/$MODEL-inputs" \
+  --build-dir "$ARTIFACT_ROOT/$MODEL-build" \
+  --merlin-root "$MERLIN_ROOT" --llvm-install "$LLVM_INSTALL" \
+  --riscv-root "$RISCV_ROOT" --python "$CAPTURE_PY" \
+  --spike-extlib "$SPIKE_EXTLIB" --plan "$ARTIFACT_ROOT/$MODEL-plan.json" \
+  --execute
 ```
 
-While Spike runs, inspect `runs/<model>/progress.json` or watch the runner's
-periodic status lines. They report completed steps, total steps, the active
-program/step, and any completed step's Spike cycle and retired-instruction
-counts. `spike.log` contains the guest `SESSION_BEGIN`, `SESSION_PERF`, and
-`SESSION_SHA` records as they arrive.
+Omit `--execute` to review the complete command plan first. Build and plan
+paths must be fresh. Omit `--spike-extlib` for compilation/linking without
+execution. Full models can take hours in Spike. The helper selects the exact
+per-stage policy and host-math guard, prepacked/pruned checkpoint objects,
+BF16 transport, shared activation packing, the 2 GiB stage arena, and the
+applicable RHS reuse/compaction options. It records the timing environment
+in the plan. The standalone forward dumps all logits; session links dump all
+33 selected TinyLlama logit tensors or all 11 SmolVLA action tensors.
 
-Inspect `runs/<model>/mx_session_run.json` after the run. A structurally complete run has
-`status: complete_numeric_qualification_pending` and validates every
-program/step/output digest, zero memref rank mismatches, and guest `DONE`.
-`--perf-config e4m3_vpu` selects Nicolas's extension's functional plus timing
-mode and its VPU timing preset. `mem.host_tracking=0` skips CPU-store cache
-tracking to make large model runs practical; MX/VPU commands remain timed.
-Omit that override for the preset's fuller memory model after establishing a
-baseline. The runner pins the mode, preset, and overrides in the receipt and
-writes `gemmini_perf.txt` when the guest exits. Other `--perf-set` values can
-support controlled sensitivity studies. Retain the same capture and executable
-when comparing settings.
+Stage builds contain `model.elf`, lowered IR, the MX catalog, and
+`mx_stage_probe.json`. Session builds additionally contain
+`link/session.elf`, `link/mx_session_link.json`, `run/spike.log`, complete
+`run/output_dumps/`, and `run/mx_session_run.json`. The linker verifies the
+stage roster, object identities, shared weights, persistent-state bindings,
+and arena/static-data placement. Structural admission is separate from
+numerical qualification; a successful link alone is insufficient.
 
-`step_performance` records each compiled model step; `program_performance`
-groups them by stage; `total_performance` sums them across the whole session.
-The measured interval includes arena reset,
-state handoff, and model execution. It excludes ELF loading, result hashing,
-and console output. Compare compiler changes with the same capture, precision
-policy, timing preset and overrides, Spike binary, and extension. These are
-Nicolas's modeled cycles; the fast setting excludes CPU-store cache effects,
-and hardware latency claims still need RTL or FPGA calibration.
-`incomplete` or a nonzero command result is a failed execution; process exit
-alone is insufficient. The stage/session observers and matched timing comparators
-also refuse an explicit `gemmini perf: MODEL DEADLOCK` diagnostic, including
-receipt-bound exit-zero runs with complete functional outputs. Absence of that
-diagnostic does not establish complete modeled arithmetic work; retain the work
-counter checks for experimental command sequences.
-Full-model numerical correctness still requires an
-independent reference that implements the selected FP4/FP8 conversion and
-MX/VPU BF16 arithmetic and checks logits or actions plus recurrent state.
-An [independent 64-token, 22-layer TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)
-passes its generated checks on Spike. Its final logits have 0.672 cosine to
-the initial all-five-class VPU compiler run. A [full-depth selected-VPU
-control](evidence/tinyllama_full_safe_vpu_20261014/README.md) keeps the MX
-contractions and offloads residual add, unary, and reduction operations; its
-logits have 0.977 cosine to the source and the same next token for this input.
-The source's selected timers and the compiler's full-stage timer have
-different boundaries and use different host/VPU work, so no cycle ratio is
-reported. These counters use Spike's default functional mode; Nicolas's
-`e4m3_vpu` timing model is disabled. This is still a numerical diagnostic,
-not a general accuracy qualification.
-The [matched 22-layer source/VPU prefill
-control](evidence/nicolas_tinyllama_full_source_vpu_20261014/README.md)
-uses `GEMMINI_MODE=both` with `e4m3_vpu`: 4,328,997,732 source versus
-5,072,967,821 compiler modeled stage cycles on the same 64 input IDs and
-200 FP32 checkpoint tensors. Its final logits have 0.9816 cosine and the
-same top token. Source and compiler host/VPU work differ, so this remains
-a diagnostic count pair with no calibrated speedup ratio. To reproduce this
-modeled comparison, use `--isa=rv64gc_zicntr` at Spike run time and a Merlin
-stage harness that reads the `cycle` CSR through `rdcycle`. The earlier
-`mcycle` harness bypasses Nicolas's timing-model override even when
-`GEMMINI_MODE=both` is set.
-The [independent 128-token prefill](evidence/nicolas_tinyllama_prefill128_source_20261014/README.md)
-now reports 9,611,186,417 source and 11,442,665,332 compiler modeled
-cycles with identical 128 input IDs and 200 FP32 checkpoint tensors. Their
-logits have 0.9454 cosine and different top tokens. Host/VPU work, attention
-key slots, and timing boundaries differ, so the counts have no speedup ratio.
-The [matched two-layer VPU class controls](evidence/tinyllama_l2_vpu_class_controls_20261014/README.md)
-hold the checkpoint, MX catalog, and inputs fixed. Softmax-only and
-elementwise-only routes each change the final token and reduce logit cosine
-to about 0.91. The two attention-shaped elementwise additions alone do the
-same; residual-add, unary, and reduction routes retain about 0.99 cosine
-on this input. These are diagnostic settings, not an accepted numerical
-policy for other inputs or full sessions.
-The [current evidence](full_model_compilation.md) separates compiled links,
-individual Spike executions, and numerical qualification.
-The [full-model comparison guide](fair_full_model_comparisons.md) distinguishes
-complete-session MX issuer substitutions from independently scheduled source
-programs and records the input, precision, and timing boundaries for each.
-The [paired MX+VPU attention timing check](evidence/attn_vpu_timing_20261012/README.md)
-provides a smaller, reproducible performance comparison against Nicolas's
-handwritten program.
-The [completed SmolVLA session](evidence/smolvla_vpu_full_session_timing_20261013/README.md)
-provides a full-session stage breakdown with the faster timing override.
-
-## 5. Inspect SmolVLA action values
-
-For a numerical diagnostic, link SmolVLA again in a fresh directory with
-`--dump-output flow_denoise:0 --dump-output action_decode:0`. Run that link in
-a fresh output directory with the same Spike command above. Each selected
-output is at most 16 KiB; the runner checks its raw bytes against the guest's
-`SESSION_SHA` before saving `output_dumps/*.bin`. Dumping occurs after the
-timed step, so the step counters retain the same measurement boundary.
+Check a completed session against every published output/state digest and
+all complete output tensors:
 
 ```sh
-"$CAPTURE_PY" -m tools.compare_smolvla_session \
-  --run-receipt "$ARTIFACT_ROOT/runs/smolvla_values/mx_session_run.json" \
-  --link-receipt "$ARTIFACT_ROOT/links/smolvla_values/mx_session_link.json" \
-  --session-root "$ARTIFACT_ROOT/captures/smolvla/smolvla_session" \
-  --out "$ARTIFACT_ROOT/runs/smolvla_values/fp32_comparison.json"
+"$CAPTURE_PY" -m tools.check_reproduced_model --model "$MODEL" \
+  --link-receipt "$ARTIFACT_ROOT/$MODEL-build/link/mx_session_link.json" \
+  --run-receipt "$ARTIFACT_ROOT/$MODEL-build/run/mx_session_run.json" \
+  --out "$ARTIFACT_ROOT/$MODEL-output-check.json"
 ```
 
-The comparison reports errors for each flow step and the final action against
-the capture's unquantized FP32 trajectory. It also checks that action decode
-preserves the last flow state. These errors expose drift; they are not an
-acceptance test for MX precision. A separate reference using exact MX operand,
-mesh, and VPU arithmetic is needed to distinguish intended quantization drift
-from a compiler numerical defect.
-The [completed 12-step action-value archive](evidence/smolvla_full_action_values_20261014/README.md)
-verifies every saved flow/action dump and matches all 33 output digests to the
-earlier timed compiler run. Cosine to the captured FP32 trajectory drops from
-0.997 at flow step 0 to 0.054 at the final action; final normalized RMSE is
-1.726. The tapped executable has different stage objects, so its cycle count
-is not the optimized full-session cycle result.
-The [isolated step-9 control](evidence/smolvla_reference_step_replay_20261014/README.md)
-reuses the full-run compiled flow object on the captured FP32 state and
-prefix cache. Its cosine to the FP32 step-9 output is 0.907, versus 0.054
-in the full compiled session. This resets both prefix and previous flow
-errors, so the contributions are not separately measured. All ten timestep
-output hashes match BF16-rounded VPU addition despite the f32 ABI; the
-selected MX lowering now leaves one-element f32 arithmetic on the host.
-The [corrected one-step Spike replay](evidence/smolvla_scalar_state_precision_20261014/README.md)
-confirms the source FP32 timestep exactly and preserves the 0.907-cosine
-flow output byte for byte. The
-[corrected full 12-step session](evidence/smolvla_scalar_full_action_20261014/README.md)
-keeps the timestep exact through all ten flow steps. Its final action has
-0.058 cosine and 1.830 normalized RMSE to the captured FP32 action; that
-small numerical improvement does not establish task accuracy.
-The [all-FP8 full-session control](evidence/smolvla_all_fp8_full_action_20261014/README.md)
-binds all 391 selected prefix and flow matrix sites to direct E4M3 on
-the same MX+VPU profile and captured checkpoint. All 12 steps complete on
-Nicolas's Spike. Its final action has 0.988524 cosine and 0.246502
-normalized RMSE to captured FP32, versus 0.058102 and 1.830469 for the
-corrected mixed run. Its 180,219,637,915 modeled session cycles compare
-with 316,515,603,374 for mixed precision. Outputs differ, so the cycle
-change measures precision-policy cost rather than equal-output speedup.
-The [prefix-cache control](evidence/smolvla_prefix_factor_20261014/README.md)
-holds compiled step-8 state and timestep fixed and replaces only the prefix
-cache with its FP32 value. Final-step cosine to FP32 changes from 0.054 to
-0.066; resetting both cache and prior state yielded 0.907. Accumulated flow
-state error is the larger immediate difference at this step.
+For `tinyllama-forward`, use
+`--stage-build "$ARTIFACT_ROOT/tinyllama-forward-build/forward"` instead of
+the two receipt arguments. Output parity preserves the published numerical
+result; a performance ratio additionally requires equal tool hashes, profile,
+timing settings, and measurement boundaries. A deadlocked timing model is
+rejected even if the functional simulator exits zero and prints correct values.
 
-### Inspect full TinyLlama logits
+Session totals include reset, program-state handoff, and existing step
+intervals. Console output and phase bookkeeping are outside these intervals.
+The forward interval covers token lookup through logits. Compilation,
+checkpoint download, and constant prepacking are outside model execution.
 
-TinyLlama's output 0 is 128,000 bytes per step. The session linker keeps its
-16 KiB default console limit, so select an explicit bounded limit to inspect
-one prefill and all 32 decode outputs. This relink reuses the existing stage
-objects and weight blob; it writes one new ELF without regenerating the
-multi-gigabyte checkpoint data.
+## Package a session for FireSim
 
 ```sh
-"$CAPTURE_PY" -m tools.relink_merlin_session_catalogs \
-  --base-link "$ARTIFACT_ROOT/links/tiny_llama/mx_session_link.json" \
-  --stage-build "prefill=$ARTIFACT_ROOT/builds/tiny_llama/prefill" \
-  --stage-build "decode=$ARTIFACT_ROOT/builds/tiny_llama/decode" \
-  --dump-output prefill:0 --dump-output decode:0 \
-  --dump-limit-bytes 128000 \
-  --out "$ARTIFACT_ROOT/links/tiny_llama_logits" \
-  --merlin-src "$MERLIN_ROOT/src" --riscv-root "$RISCV_ROOT"
-"$CAPTURE_PY" -m tools.run_linked_merlin_session \
-  --link-receipt "$ARTIFACT_ROOT/links/tiny_llama_logits/mx_session_link.json" \
-  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
-  --merlin-src "$MERLIN_ROOT/src" --riscv-root "$RISCV_ROOT" \
-  --spike-extlib "$SPIKE_EXTLIB" \
-  --out-dir "$ARTIFACT_ROOT/runs/tiny_llama_logits" \
-  --timeout-s 172800 --progress-interval-s 60 \
-  --perf-config e4m3_vpu --perf-set mem.host_tracking=0
-"$CAPTURE_PY" -m tools.compare_tinyllama_session \
-  --run-receipt "$ARTIFACT_ROOT/runs/tiny_llama_logits/mx_session_run.json" \
-  --link-receipt "$ARTIFACT_ROOT/links/tiny_llama_logits/mx_session_link.json" \
-  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
-  --fast-run-receipt "$ARTIFACT_ROOT/runs/tiny_llama/mx_session_run.json" \
-  --fast-link-receipt "$ARTIFACT_ROOT/links/tiny_llama/mx_session_link.json" \
-  --out "$ARTIFACT_ROOT/runs/tiny_llama_logits/fp32_comparison.json"
+"$CAPTURE_PY" -m tools.package_firesim_model \
+  --elf "$ARTIFACT_ROOT/$MODEL-build/link/session.elf" \
+  --link-receipt "$ARTIFACT_ROOT/$MODEL-build/link/mx_session_link.json" \
+  --name "mx-$MODEL" --out "$ARTIFACT_ROOT/firesim-$MODEL"
 ```
 
-The selected dumps total 4,224,000 raw bytes, below the linker's 8 MiB
-session cap. The runner checks each dump against its guest output hash. The
-comparator then requires all 99 output hashes to match the earlier full run
-before reporting per-step FP32 logit cosine, normalized RMSE, and top-token
-agreement. The captured token stream is synthetic and fixed across runs;
-these measurements are numerical diagnostics, not generation-quality results.
-The [completed full-logit archive](evidence/tinyllama_full_logits_20261014/README.md)
-checks all 99 output hashes against the earlier timed run. Against captured
-unquantized FP32, prefill cosine is −0.313 and mean decode cosine is −0.324;
-none of the 32 decode steps selects the FP32 top token. The fixed synthetic
-input and unqualified mixed FP4/FP8 arithmetic limit the interpretation.
+The packager checks the executable hash against its link receipt, selected
+profile, RV64 ELF load segments and entry point. It creates a bare-metal
+workload with no root filesystem:
 
-## 6. Inspect fixed weights and profile conversion
+```text
+firesim-<model>/
+  workloads/mx-<model>.json
+  workloads/mx-<model>/session.elf
+  requirements.json
+  mx_session_link.json
+  target_profile.json
+```
 
-For a compiled stage, inspect the RHS of each live MX call against the
-captured checkpoint manifest:
+Check the package with the pinned FireSim checkout before deployment:
 
 ```sh
-"$CAPTURE_PY" -m tools.audit_immutable_weights \
-  --build "$ARTIFACT_ROOT/builds/smolvla/flow_denoise" \
-  --stage "$ARTIFACT_ROOT/captures/smolvla/smolvla_session/stages/flow_denoise" \
-  --out "$ARTIFACT_ROOT/audits/smolvla_flow_weights.json"
+"$CAPTURE_PY" -m tools.check_firesim_package \
+  --package "$ARTIFACT_ROOT/firesim-$MODEL" --firesim-root /path/to/firesim \
+  --out "$ARTIFACT_ROOT/$MODEL-firesim-check.json"
 ```
 
-`checkpoint_parameter_candidate` means the RHS traces through a transpose
-and an exact BF16-to-F32 cast to one stored parameter. The audit checks the
-capture and catalog bindings; it does not assume that dynamic attention
-operands can be prepacked. For a session bound to one checkpoint,
-`tools.build_merlin_stage` accepts `--prepack-checkpoint-weights`. It verifies
-the checkpoint and manifest against the capture receipt, packs each proven
-parameter using the live adapter's C quantizer, and embeds its MX codes and
-scales in the ELF. Dynamic RHS operands keep live packing. The alternative
-`--cache-checkpoint-weights` packs a proven parameter on its first call and
-reuses the bytes for later calls. The two options are mutually exclusive.
+Copy the JSON and workload directory into FireSim's `deploy/workloads/`.
+In the FireSim runtime configuration, set `workload.workload_name` to that
+JSON filename and `target_config.default_hw_config` to your matching hardware
+DB entry, then use the platform's normal `firesim infrasetup` and
+`firesim runworkload` flow. The package format was tested with the pinned
+[FireSim workload parser](https://github.com/firesim/firesim/blob/b084672c2f8cf32e55d78f73a001074c23f8a2b8/deploy/runtools/workload.py).
 
-The [paired SmolVLA flow Spike run](evidence/smolvla_flow_prepack_spike_20261013/README.md)
-shows identical declared output digests and MX command counts for live,
-first-call cached, and build-time prepacked builds. Prepacking 116 checkpoint
-sites reduced one flow step from 41.11 billion to 6.66 billion modeled cycles
-under the same timing preset. To inspect remaining costs, build a diagnostic
-stage with `--op-profile`, run that ELF on Spike, then summarize it with
-`tools.report_stage_profile --build BUILD --spike-log LOG --out REPORT.json`.
-If the extension wrote its performance summary separately, add
-`--perf-log PERF.txt` to include MX command, VPU command, mesh tile, and load
-byte counts in the same report. These aggregate counters do not attribute
-individual adapter phases; use the projection `--phase-cycles` control below
-when separating packing, issue, and readout costs.
-The [SmolVLA flow profile](evidence/smolvla_flow_op_profile_20261013/README.md)
-maps MX timing back to source matmul regions and includes its guest log and
-operation table. The
-[exact quantizer lookup run](evidence/smolvla_flow_fast_quant_spike_20261013/README.md)
-shows 3,291,395,119 cycles for the same prepacked stage, down from
-6,659,754,454, with all output hashes and MX/VPU command counts unchanged.
-The [fixed-RHS host rewrite](evidence/smolvla_flow_fixed_rhs_20261013/README.md)
-removes the now-unused checkpoint transpose and cast paths. It reduces the
-same stage to 2,112,653,481 cycles with the output hashes and command counts
-still unchanged. The rewrite checks source region, ordinal, tensor type, and
-parameter provenance against the captured catalog before changing each call.
-Use an uninstrumented build for performance comparisons.
+Hardware must implement `MxE4M3Fp4VpuGemminiRocketConfig` from the pinned
+[Gemmini integration](https://github.com/ucb-bar/gemmini/blob/266c593f2cb51d7e3fe83fc0317072b585ac3c52/chipyard/GemminiConfigs.scala):
+16×16 mesh, 256 KiB scratchpad, 64 KiB accumulator, 16 KiB scale memory,
+32-element MX groups, VPU, and a 512-bit system bus. Use the full profile's
+Chipyard overrides, not just the configuration name. `requirements.json`
+records the load address range and runtime memory requirement. The audited
+cached TinyLlama ELF is 2,439,169,264 bytes and requires an **8 GiB** DRAM
+configuration after rounding the complete address span to a power of two.
 
-The small-LLaMA archived projection has a reproducible paired Spike check:
-
-```sh
-for MODE in runtime prepacked; do
-  EXTRA=
-  if [ "$MODE" = prepacked ]; then EXTRA=--prepacked-weight; fi
-  "$CAPTURE_PY" -m tools.qualify_runtime_f32_projection_spike \
-    --site g --dense-adapter --time-dense --native-scheduled-issuer $EXTRA \
-    --rtl-root /path/to/gemmini-mx-cleanup-266c593 \
-    --riscv-root "$RISCV_ROOT" \
-    --out-dir "$ARTIFACT_ROOT/projection-$MODE"
-done
-```
-
-The prepacked run uses the same C MXQuant implementation at build time,
-checks its bytes against the archived bundle, and links them as fixed data.
-Both runs verify every logical BF16 output and use the same native command
-schedule. Compare `dense_cycles` in their receipts with matching Spike and
-profile hashes. `--phase-cycles` without `--dense-adapter` reports padding,
-activation packing, weight packing, issue, and widening for the same
-projection. These short kernel measurements do not predict full-model speedup
-until checkpoint binding and graph scheduling are integrated.
-
-For a repeated-call diagnostic, use `--cached-weight --dense-repeats 2`
-alongside `--dense-adapter --time-dense`. Its receipt records both calls in
-`dense_cycles_by_call`; the first call packs the RHS, and the second reuses
-the packed bytes. The stage option above uses the same adapter mode at each
-source-proven checkpoint site.
-
-## 7. Choose per-site precision and VPU placement
-
-For a complete per-site MX experiment, generate an execution policy from each
-receipt-bound stage with MX contractions. SmolVLA's host-only `action_decode`
-does not need one. The generated starting policy selects FP8 for every MX
-matrix site, keeps eligible VPU work except softmax and general elementwise
-adds, and leaves those sensitive operations on the compiled host. These are
-starting decisions, **not** an accuracy-qualified model policy. The same
-source region and profile digests bind every entry to the capture. Edit exact
-`matrix_formats` entries to `mxfp4` where legal or `vpu_placements` entries
-between `host` and `vpu`, then rebuild every affected stage:
-
-```sh
-"$CAPTURE_PY" -m tools.make_execution_policy \
-  --stage "$SESSION/stages/prefill" --profile "$MX_PROFILE" \
-  --out "$ARTIFACT_ROOT/tiny_prefill_policy.json"
-"$CAPTURE_PY" -m tools.build_merlin_stage \
-  --stage "$SESSION/stages/prefill" \
-  --workdir "$ARTIFACT_ROOT/builds/tiny_prefill_policy" \
-  --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-  --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT" \
-  --prepack-checkpoint-weights \
-  --execution-policy "$ARTIFACT_ROOT/tiny_prefill_policy.json"
-```
-
-The builder rejects changed captures, profiles, missing or unknown site IDs,
-and illegal matrix formats. Its linked receipt records the policy digest and
-checks actual matrix and VPU placement against every selected entry. The
-policy cannot be combined with the older diagnostic VPU or precision override
-flags. Connected attention schedules remain a separate qualification path.
-One-element adds that Merlin folds into scalar work stay on the host; their
-source IDs remain in the policy so they cannot silently disappear.
-The [two-layer Spike receipt](evidence/mx_execution_policy_l2_20261015/README.md)
-shows that the policy routes 65 VPU sites and reproduces the archived
-65-site control's complete logit-row digest. Full-stage policies reconcile
-against the matched TinyLlama prefill/decode and SmolVLA prefix/flow captures;
-those four policies have not yet completed a linked full-session Spike run.
-
-When an independent Nicolas source program has the same captured inputs and
-output boundary, dump both programs' outputs as NumPy arrays and run
-`tools.compare_mx_model_quality`. TinyLlama uses float64 softmax KL and
-top-token agreement; SmolVLA uses relative RMSE and normalized worst error
-for all 32 action dimensions. Compiler error must be within 5% of Nicolas's
-error against the same float capture, and
-TinyLlama top-token agreement cannot be lower. The tool checks numerical
-arrays only; the source and compiler run receipts must separately prove input,
-checkpoint, profile, and timing identity before comparing cycles.
-
-```sh
-"$CAPTURE_PY" -m tools.compare_mx_model_quality --model tinyllama \
-  --float "$ARTIFACT_ROOT/float_logits.npy" \
-  --source "$ARTIFACT_ROOT/nicolas_logits.npy" \
-  --compiler "$ARTIFACT_ROOT/compiler_logits.npy" \
-  --out "$ARTIFACT_ROOT/tiny_quality.json"
-```
-
-When the linked run selected `--dump-output prefill:0` and
-`--dump-output decode:0`, assemble its hash-checked raw dumps directly:
-
-```sh
-"$CAPTURE_PY" -m tools.assemble_session_output \
-  --session-root "$ARTIFACT_ROOT/captures/tiny_llama/tiny_llama_session" \
-  --run-receipt "$ARTIFACT_ROOT/runs/tiny_llama_logits/mx_session_run.json" \
-  --merlin-src "$MERLIN_ROOT/src" \
-  --program prefill --program decode --squeeze-leading-one \
-  --out "$ARTIFACT_ROOT/compiler_logits.npy"
-```
-
-This writes `[33, 32000]` logits and a companion digest receipt. For
-SmolVLA, use `--program action_decode --squeeze-leading-one
---omit-single-step-axis` to produce a `[50, 32]` final action. The shared
-dump reader and ABI checks live in Merlin; the MX command checks the Spike
-run receipt and formats the selected array.
-
-The existing 160-token compiler Spike log records all top-token IDs but only
-a digest of its full logit tensor. A new dump-enabled run is required for its
-KL comparison. The independent cached TinyLlama and full SmolVLA source
-programs are still needed for their full-session Nicolas-relative gates.
-The archived cached TinyLlama compiler session does have 33 logit dumps;
-[`tools.assemble_session_output`](../tools/assemble_session_output.py) can
-turn them into a verified `[33, 32000]` NumPy array. An
-[aligned-row comparison](evidence/tinyllama_cached_vs_onepass_quality_20261015/README.md)
-with Nicolas's one-pass source fails the numerical gate. It cannot establish
-a cached-session cycle ratio because the source uses a different schedule.
-
-The default FP4 dense policy is a starting point, not a model-quality result.
-For a numerical experiment, a stage can promote selected FP4 dense source
-regions to FP8 while keeping those contractions on MX Gemmini. Generate one
-JSON file per captured stage with `tools.make_precision_overrides`. It binds
-the exact source and profile digests and accepts only current FP4 dense source
-regions. Get region IDs from the stage audit or catalog:
-
-```sh
-"$CAPTURE_PY" -m tools.make_precision_overrides \
-  --stage "$SESSION/stages/prefill" --profile "$MX_PROFILE" \
-  --promote-region matmul_0 \
-  --out "$ARTIFACT_ROOT/tiny_prefill_fp8_overrides.json"
-"$CAPTURE_PY" -m tools.build_merlin_stage \
-  --stage "$SESSION/stages/prefill" \
-  --workdir "$ARTIFACT_ROOT/builds/tiny_prefill_fp8" \
-  --profile "$MX_PROFILE" --merlin-src "$MERLIN_ROOT/src" \
-  --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT" \
-  --precision-overrides "$ARTIFACT_ROOT/tiny_prefill_fp8_overrides.json"
-```
-
-Link and run the rebuilt stage with the same session inputs and Spike
-settings. The build refuses changed source/profile digests, unknown regions,
-FP8 attention sites, and any override that would move an MX site to the host.
-The chosen map and its file digest appear in `mx_stage_probe.json` and the
-catalog. Rebuild every affected stage when comparing a recurrent session.
-
-For TinyLlama, `tools.diagnose_tinyllama_operand_quant` accepts the same
-`--precision-overrides` and `--profile` pair. Set `--expected-fp4` to the
-remaining dense sites and keep `--expected-fp8` and
-`--expected-fp8-bmm` for the unchanged attention and rotary sites. Its
-pretrained PyTorch run is a faster operand-level sensitivity check before
-building a large stage ELF; `--expected-fp4 0` permits an all-FP8 dense
-control. The diagnostic does not model MX mesh or VPU arithmetic.
-
-Compare output and state against a reference before accepting a policy.
-An FP8 promotion increases operand precision; it does not by itself prove
-model quality or fix a mesh, VPU, or host numerical defect. The
-[two-layer diagnostic](evidence/tiny_two_layer_whole_stage_spike_20261011/README.md)
-shows why this control is useful: early projections were close to the operand
-proxy, but error grew through the MLP and the final random-weight logits.
-The [pretrained TinyLlama sensitivity record](evidence/tinyllama_precision_sweep_20261013/README.md)
-compares the default FP4 dense policy with two capture-bound FP8 promotions.
-The [prefill Spike precision check](evidence/tinyllama_prefill_precision_20261014/README.md)
-finds cosine −0.313 between default mixed FP4/FP8 logits and the captured
-FP32 logits on the fixed input; an all-FP8 compiler prefill reaches 0.943.
-Neither selects the FP32 top token. This is a numerical diagnostic, not a
-generation-quality threshold. Treat a linked ELF and matching issuer-swap
-output hashes as execution evidence only; they do not validate the selected
-quantization policy.
-An additional operand-only split promotes the first 11 layers' dense sites
-to FP8 and selects the FP32 top token on this input. Its 0.805 cosine still
-needs a Spike check; see the half-sweep receipt in the same archive.
-
-## Connected dispatch qualification
-
-`tools.build_merlin_stage --execution-policy POLICY --connect-vpu-multiplies`
-now integrates private f32 multiply pairs into whole-stage compilation. This
-is an opt-in experiment under the existing per-call BF16 VPU policy. Both
-operations must already be selected for the VPU. The pass derives the pair
-from actual typed arithmetic and SSA uses, checks intervening tensor work,
-and retains the private BF16 intermediate in scratchpad. It preserves both
-rounding steps and falls back to the original kernels for nonfinite or extreme
-inputs. Unknown effects, fanout, unsupported arithmetic, and host-selected
-operations prevent connection. The catalog and final rewrite must report the
-same pairs, or compilation fails.
-
-The existing generated execution policy keeps softmax and general elementwise
-adds on the host. Connecting multiplies does not change those placements or
-qualify full-model numerical quality. There is no automatic profitability
-selection: measure the candidate on the chosen inputs before adopting it.
-The [stage integration evidence](evidence/stage_multiply_20261018/README.md)
-records an executed small MX graph and the checkpoint-backed MLP section.
-
-`--reuse-batch-rhs` additionally selects exact contiguous RHS batch repetition
-proved from typed copies, reshapes, matrix transposes and singleton broadcasts.
-It requires `--integer-quant-groups` and an explicit execution policy. Merlin
-proves the repetition and retargets the unchanged tensor ABI; MX retains the
-private encoded RHS across synchronous slices within each repeated group.
-Every group refreshes on every invocation. Original activation packing, matrix
-order, rounding, exceptional partial outputs and fences remain required.
-Unknown source repetition retains the original entry. This does not remove
-the materialized broadcast or cache state across decode steps. Native section
-and complete compiled graph measurements are required before enabling a policy
-broadly; the flag defaults off.
-
-Current Merlin requires explicit linked-image admission for device builds.
-For these trusted compiler experiments, pass `--structural-elf-admission` to
-select Merlin's existing digest-and-declared-ISA service. Its receipt is
-bound to the final ELF; it imposes no accelerator instruction policy and
-establishes no hardware or numerical qualification. Leaving this option out
-does not silently select a policy. The tool also respects an explicitly set
-`MERLIN_COMPILER_PYTHON`, so capture and LLVM Python environments can differ.
-
-`tools.qualify_connected_dispatch_spike` exercises the generic Merlin residency
-pass with source-derived BF16 VPU fragments. It captures a small PyTorch graph,
-builds materialized and connected RV64 executables, compares all output bits,
-and records modeled cycles and transfer counters. The
-[evidence and reproduction commands](evidence/connected_dispatch_20261016/README.md)
-cover aligned and partial-block shapes. This path currently qualifies connected
-scalar VPU regions; it is not yet enabled by the full-model stage builder.
-
-`tools.prepare_connected_tiny_mlp` and
-`tools.qualify_connected_elementwise_spike` additionally qualify a
-[checkpoint-backed TinyLlama multiply section](evidence/connected_model_section_20261016/README.md).
-The original and connected kernels retain the same explicitly selected BF16
-rounding policy. This is a section-level result with a checked runtime fallback,
-not a full-model compiler option or a strict-FP32 numerical claim.
+No matching bitstream identifier or completed FPGA execution is qualified by
+this release. In particular, the Spike executable uses host-target console
+and exit support: verify that transport on the selected FireSim platform,
+then retain the complete output/state checks after the hardware run. The
+package status is deliberately `packaged_not_fpga_executed`. FPGA cycles
+must be published as a new result rather than substituted for the Spike
+model counts.

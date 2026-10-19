@@ -1,8 +1,8 @@
-"""Compile Nicolas's chained VPU and memory-ordering checks for Spike.
+"""Compile the reference implementation’s chained VPU and memory-ordering checks for Spike.
 
 The PyTorch captures identify the arithmetic graph. Source-bound scheduling
 places transfers and typed VPU commands in the same order as vpu_ops.c. The
-C driver only generates source inputs and evaluates Nicolas's BF16 reference.
+C driver only generates source inputs and evaluates the reference implementation’s BF16 reference.
 """
 
 from __future__ import annotations

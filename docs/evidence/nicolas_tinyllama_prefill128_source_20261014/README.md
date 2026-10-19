@@ -1,7 +1,7 @@
 # Independent 128-token TinyLlama prefill diagnostic
 
 This bundle checks one 128-token prefill through all 22 TinyLlama decoder
-layers and the LM head. Nicolas's `llama_model.c` source and the compiler's
+layers and the LM head. The reference implementation’s `llama_model.c` source and the compiler's
 model2MLIR → Merlin → MX+VPU program use the same 128 input IDs and the same
 200 FP32 checkpoint tensors. The source input file includes one additional
 next-token **label** used by its generator; that ID is not a forward input.
@@ -12,13 +12,13 @@ This is an **all-FP8 diagnostic**. The compiler's
 [override recipe](all_fp8_overrides.json) promotes 155 matrix sites from the
 captured mixed FP4/FP8 policy to FP8, giving 200 FP8 MX bindings in the
 [catalog summary](catalog_summary.json). It also offloads 88 add regions to
-the VPU. The source calls its VPU residual-add path 44 times. Nicolas's
+the VPU. The source calls its VPU residual-add path 44 times. The reference implementation’s
 source is adapted with a 64-row Q/K/V and LM-head tile in
 [this patch](m128_tiling.patch) to respect its activation scale window.
 The pinned source accepts that zero-context patch with
 `git apply --unidiff-zero` after the archived VPU residual patch.
 
-Both executables run on Nicolas's pinned `e4m3_vpu` Spike extension with
+Both executables run on the reference implementation’s pinned `e4m3_vpu` Spike extension with
 `GEMMINI_MODE=both`, `GEMMINI_PERF_SET=mem.host_tracking=0`, and the
 `rv64gc_zicntr` ISA. The source counter starts before `gemmini_flush` and
 ends after the final head fence. The compiler's two `cycle` CSR reads enclose
@@ -33,7 +33,7 @@ python3 -B docs/evidence/nicolas_tinyllama_prefill128_source_20261014/verify.py
 
 | Program | Modeled stage cycles | Logit cosine vs captured FP32 | Top token |
 | --- | ---: | ---: | ---: |
-| Nicolas source | 9,611,186,417 | 0.9932 | 29871 |
+| reference source | 9,611,186,417 | 0.9932 | 29871 |
 | Compiler, 200 FP8 MX sites | 11,442,665,332 | 0.9432 | 362 |
 
 The two programs' final logits have cosine **0.9454** to each other; the

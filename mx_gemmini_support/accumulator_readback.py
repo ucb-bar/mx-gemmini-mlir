@@ -1,4 +1,4 @@
-"""Source-checked accumulator DRAM readout for Nicolas's MX experiments.
+"""Source-checked accumulator DRAM readout for the reference implementation’s MX experiments.
 
 The pinned Spike extension cannot execute this destination. This lowering
 produces hardware-directed RoCC commands, but deliberately makes no numerical
@@ -119,7 +119,7 @@ def lower_accumulator_dram_readout(base: PhysicalProgram, profile: dict,
             any(step.phase in {"vpu", "spad_requant"} for step in base.steps)):
         raise ValueError("accumulator readout needs one checked BF16 source tile")
 
-    # Nicolas's hardware branches use a 64-bit out_t with four BF16 lanes.
+    # the reference implementation’s hardware branches use a 64-bit out_t with four BF16 lanes.
     # Their MVOUT loops group four J tiles for FP8 and use one J tile for FP4.
     tile_i = m // (_DIM * (2 if precision == "FP4" else 1))
     tile_j = n // (_DIM * (2 if precision == "FP4" else 1))

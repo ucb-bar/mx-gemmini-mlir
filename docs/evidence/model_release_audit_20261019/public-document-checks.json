@@ -1,0 +1,24 @@
+{
+  "existing_python_files_with_unchanged_executable_asts": 117,
+  "git_diff_check": "passed",
+  "lint": "Ruff E9,F,I passed",
+  "main_guide_shell_blocks_bash_syntax_checked": true,
+  "recorded_input_example_executed": true,
+  "rewritten_guide_relative_links_resolve": true,
+  "schema": "mx_gemmini.public_document_checks.v1",
+  "scope": "documentation, helper refusals and retained artifacts; no full-model simulation or FPGA execution initiated",
+  "smolvla_image_shape": [
+    1,
+    3,
+    512,
+    512
+  ],
+  "smolvla_noise_shape": [
+    1,
+    50,
+    32
+  ],
+  "tinyllama_token_shape": [
+    160
+  ]
+}

@@ -1,4 +1,4 @@
-"""Capture and replay Nicolas's dependent ADD→MULS→RMAX VPU source chain."""
+"""Capture and replay the reference implementation’s dependent ADD→MULS→RMAX VPU source chain."""
 
 from __future__ import annotations
 

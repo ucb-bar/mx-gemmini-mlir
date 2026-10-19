@@ -14,7 +14,7 @@ supplies 16×32 BF16 output bytes from pinned MX Spike. The host applies the
 verified 1/8 scale, an infinite causal mask, and padding to those bytes. A
 model2MLIR capture of a BF16 16×32 softmax lowers to the existing six VPU
 operations in typed MX MLIR, then to a **data-free, 17-command RV64 object**.
-Nicolas's pinned Spike model matched all **512 BF16 outputs** against its
+The reference implementation’s pinned Spike model matched all **512 BF16 outputs** against its
 independent `vpu_ref_exec` arithmetic reference. The eight real rows have
 zero output at every masked position. The real 8×8 probability block has
 mean absolute error **0.00279** versus the captured PyTorch f32 result; this

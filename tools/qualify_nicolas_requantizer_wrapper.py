@@ -1,4 +1,4 @@
-"""Run the selected Nicolas requantizer wrapper through three MX output modes.
+"""Run the selected reference requantizer wrapper through three MX output modes.
 
 The frontend handoffs must come from a current model2MLIR Radiance roster
 capture. FP8 and FP4 use the source requant drivers. FP6 uses the checked-in

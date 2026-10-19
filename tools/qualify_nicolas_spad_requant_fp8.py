@@ -1,4 +1,4 @@
-"""Compile Nicolas's typed flat+tiled FP8 SPAD_REQUANT and check its source oracle."""
+"""Compile the reference implementation’s typed flat+tiled FP8 SPAD_REQUANT and check its source oracle."""
 
 from __future__ import annotations
 

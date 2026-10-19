@@ -1,4 +1,4 @@
-"""Run every used GQA QK head/block tile from a generated fixture on Nicolas's Spike.
+"""Run every used GQA QK head/block tile from a generated fixture on the reference implementation’s Spike.
 
 First run qualify_radiance_gqa_qk --generated-hardware-model. This command
 reuses its pinned model2MLIR capture and source-generated header, then compiles

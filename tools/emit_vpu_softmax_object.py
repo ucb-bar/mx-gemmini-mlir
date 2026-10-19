@@ -1,4 +1,4 @@
-"""Compile the typed Nicolas BF16 VPU softmax to a data-free RV64 object."""
+"""Compile the typed reference BF16 VPU softmax to a data-free RV64 object."""
 
 from __future__ import annotations
 

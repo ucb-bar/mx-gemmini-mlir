@@ -1,4 +1,6 @@
-# Radiance MX GEMM source roster on Nicolas's Spike
+<a id="radiance-mx-gemm-source-roster-on-nicolass-spike"></a>
+
+# Radiance MX GEMM source roster on the pinned Spike model
 
 This archive records compiler-generated RV64 programs executed on the
 `gemmini-mx-cleanup` Spike extension at RTL revision
@@ -23,7 +25,7 @@ qualification is documented in `docs/compiled_mx_pipeline.md`.
 The DIM8 and DIM32 reference is derived from Radiance's pinned host model.
 The model must first reproduce the checked-in DIM16 source golden exactly.
 The target derivation then changes the mesh accumulator schedule and adds
-Nicolas's product floor below exponent −16. Its policy and source/target
+the reference implementation’s product floor below exponent −16. Its policy and source/target
 golden hashes are in each bundle manifest. This is a target-model comparison,
 not an assertion that DIM8 or DIM32 output bytes equal the DIM16 header.
 

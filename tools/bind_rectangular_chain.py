@@ -1,4 +1,4 @@
-"""Bind Nicolas's captured rectangular pair to checked wire inputs and goldens."""
+"""Bind the reference implementation’s captured rectangular pair to checked wire inputs and goldens."""
 
 from __future__ import annotations
 

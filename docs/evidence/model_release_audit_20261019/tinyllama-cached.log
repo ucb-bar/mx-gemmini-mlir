@@ -1,0 +1,5 @@
+reference 23669399808 cycles; full protocol, taps and diagnostics checked
+candidate 20262623973 cycles; full protocol, taps and diagnostics checked
+Counters, wider process scope: {"candidate": {"commands": 9329686, "fences": 181785, "gets": 614509232, "host_stalled": 5087513262, "load_bytes": 37493680896, "loops": 753192, "mesh_busy": 2622095360, "mesh_tiles": 163880960, "puts": 25860912, "scale_bytes": 1155792896, "store_reads": 25860912, "vpu_commands": 42754}, "reference": {"commands": 9329686, "fences": 181785, "gets": 614509232, "host_stalled": 5087497498, "load_bytes": 37493680896, "loops": 753192, "mesh_busy": 2622095360, "mesh_tiles": 163880960, "puts": 25860912, "scale_bytes": 1155792896, "store_reads": 25860912, "vpu_commands": 42754}}
+PASS: two complete 128+32 sessions, 99 hashes and 33 full logit tensors identical.
+Captured FP32 diagnostics recomputed; no independent cached-source quality threshold established.

@@ -11,21 +11,26 @@ The code is licensed under [Apache-2.0](LICENSE).
 
 ## Compile a model session
 
-The [end-to-end model guide](docs/compile_e2e_models.md) gives commands to
-capture, compile, link, and run TinyLlama, DeepSeek-R1-Distill-Qwen-1.5B,
-Gemma 2 2B, and SmolVLA with model2MLIR, Merlin, and the selected MX+VPU
-profile. It uses FP4 for eligible ordinary matmuls and FP8 for eligible
-attention contractions. Unmapped operations execute in Merlin's compiled
-host path.
+The [model guide](docs/compile_e2e_models.md) gives pinned checkpoint and
+repository versions, exact quantization/placement policies, and commands to
+compile, link, run, check outputs, and package a FireSim workload.
 
-All four pretrained model sessions have linked as standalone RV64 Spike
-executables. The [session evidence](docs/evidence/four_vpu_session_links_20261012/README.md)
-records their stage coverage and artifact identities. One
-[full-checkpoint TinyLlama decode stage](docs/evidence/tiny_vpu_decode_spike_20261012/README.md)
-has completed on the pinned MX+VPU Spike extension. Full VPU-enabled sessions,
-independent quantized numerical comparisons, and performance parity remain
-under qualification. The selected contract is marked
-`structural_unqualified` and `phase0_admitted: false`.
+Completed Rocket-Spike results use FP8 for every offloaded matrix binding:
+
+| Workload | Modeled cycles | Comparison |
+| --- | ---: | --- |
+| TinyLlama, 160-token full forward | 10,326,818,367 | 1.236× versus an independent quantized program |
+| TinyLlama, prefill + 32 cached decodes | 20,262,623,973 | 3.655× versus the corrected compiler baseline |
+| SmolVLA, prefix + ten flows + action | 73,577,503,143 | 1.196× versus the previous compiler build |
+
+The [comparison methodology](docs/fair_full_model_comparisons.md) explains
+numerical gates, timing boundaries, source repositories, and kernel coverage.
+The [artifact audit](docs/model_results_audit.md) checks the completed output
+streams, actual executables, generated catalogs, and build receipts. FireSim
+workload packaging is format-validated; FPGA execution remains unmeasured.
+DeepSeek-R1-Distill-Qwen-1.5B and Gemma 2 2B have compilation/link evidence only.
+The target contract remains `structural_unqualified`, with
+`phase0_admitted: false`.
 
 ## Build and inspect the dialect
 
@@ -79,10 +84,8 @@ policy, with every output checked and host conversion overhead included.
 
 ## Source-kernel regression tests
 
-Tests that compare generated objects with the original MX source kernels
-require external checkouts and a RISC-V toolchain. Set `NICOLAS_NPU_ROOT` to
-the `npu-exploration` checkout, `NICOLAS_MX_RTL_ROOT` to the pinned Gemmini MX
-RTL checkout, and `RISCV_ROOT` to the RISC-V toolchain before running
-`python -m pytest tests`. Some tests also accept `MX_GEMMINI_RTL_ROOT` and
-`MX_GEMMINI_RISCV_ROOT` for the same respective paths. Tests that need an
-unavailable external input skip rather than assuming a machine-specific path.
+Tests that compare generated objects with source kernels need the pinned
+external repositories and a RISC-V toolchain. The source identities are in the
+[release registry](examples/models/release.json); test-specific environment
+variables are documented alongside each test. Run `python -m pytest tests`.
+Checks requiring unavailable external inputs skip explicitly.

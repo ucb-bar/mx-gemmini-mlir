@@ -1,4 +1,6 @@
-# Nicolas FP4 resident chain on Spike
+<a id="nicolas-fp4-resident-chain-on-spike"></a>
+
+# Reference FP4 resident chain on Spike
 
 The `gemmini-mx-cleanup` sources
 `matmul_tiled_fp4_64x64_chain.c` and `matmul_tiled_fp4_128x128_chain.c`
@@ -14,7 +16,7 @@ The compiler path is:
 1. `capture_nicolas_fp4_resident_chain.py` captures the two PyTorch `matmul`
    sites with model2MLIR and `examples/fp4-policy.yaml`.
 2. `fp4_plain_chain.py` binds those sites to the packed A/B/B2 bytes and scales
-   in Nicolas's checked source header. The typed graph has a live
+   in the reference implementation’s checked source header. The typed graph has a live
    `contract → readout_quantized → resident_contract` edge.
 3. `resident_pair_graph.py` checks SSA edges, buffer lengths, profile, and
    scratchpad lifetimes, then issues the same physical commands used by the
@@ -22,12 +24,12 @@ The compiler path is:
    `emit_resident_pair_object.py --precision fp4_e2m1` and builds a data-free
    RV64 RoCC object with an explicit ten-buffer ABI.
 4. `qualify_nicolas_fp4_resident_chain.py` links the compiler issuer into a
-   diagnostic copy of Nicolas's source. Only accelerator issue sites change;
+   diagnostic copy of the reference implementation’s source. Only accelerator issue sites change;
    the source's C1/C2 nibble and scale comparisons remain. Both source and
-   compiler ELFs run against Nicolas's pinned `libgemmini` Spike extension.
+   compiler ELFs run against the reference implementation’s pinned `libgemmini` Spike extension.
 
 The PyTorch capture establishes graph sites and shapes. Its random examples
-are not used as hardware operands. Nicolas's packed header supplies the exact
+are not used as hardware operands. The reference implementation’s packed header supplies the exact
 runtime bytes and source goldens.
 
 Reproduce the 128³ case from a checkout with the pinned toolchain and RTL

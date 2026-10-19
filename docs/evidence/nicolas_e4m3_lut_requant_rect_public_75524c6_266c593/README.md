@@ -1,4 +1,6 @@
-# Rectangular Nicolas E4M3 LUT-index requantization
+<a id="rectangular-nicolas-e4m3-lut-index-requantization"></a>
+
+# Rectangular reference E4M3 LUT-index requantization
 
 Compiler commit `75524c6d0666be404ceba247814290e866076c8a` compiled the
 two pinned rectangular DIM32 E4M3 LUT-index requant programs from fresh

@@ -2,7 +2,7 @@
 
 The compiler built the first two pretrained TinyLlama layers with 20 MX
 contractions and 65 selected VPU source sites. The policy kept softmax and the
-two attention-score adds on the host. Its linked ELF completed on Nicolas's
+two attention-score adds on the host. Its linked ELF completed on the reference implementation’s
 MX+VPU Spike extension with `rv64gc_zicntr`, `GEMMINI_MODE=both`, the
 `e4m3_vpu` timing preset, and `mem.host_tracking=0`.
 

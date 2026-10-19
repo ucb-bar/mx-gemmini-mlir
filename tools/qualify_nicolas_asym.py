@@ -1,9 +1,9 @@
-"""Capture PyTorch matmul, bind a Nicolas MX header, and run Spike.
+"""Capture PyTorch matmul, bind a reference MX header, and run Spike.
 
 The PyTorch graph supplies the contraction site and shape. Its random example
 inputs do not produce the packed operands; the explicit source recipe changes
 the captured symmetric MX policy to the selected profile's formats. Named C
-tests use checked-in headers. Generated modes use Nicolas's pinned data model
+tests use checked-in headers. Generated modes use the reference implementation’s pinned data model
 with a separate generation manifest and no replacement handwritten kernel.
 """
 

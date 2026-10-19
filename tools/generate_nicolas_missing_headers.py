@@ -1,4 +1,4 @@
-"""Generate five DIM16 BF16 test headers with Nicolas's pinned model.
+"""Generate five DIM16 BF16 test headers with the reference implementation’s pinned model.
 
 Run this only in an isolated checkout of gemmini-mx-cleanup. The script first
 regenerates a checked-in E2M3×E4M3 header and requires byte-identical output.
@@ -65,7 +65,7 @@ def main() -> None:
             sys.argv += ["--header-path", str(header)]
         module.main()
 
-    # The reference library and generator must reproduce an existing Nicolas
+    # The reference library and generator must reproduce an existing reference
     # golden before their newly registered pairs are trusted.
     baseline = software / "include/matmul_data_asym_e2m3_e4m3.h"
     original = baseline.read_bytes()

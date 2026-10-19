@@ -1,4 +1,4 @@
-"""Give Nicolas's one-pass TinyLlama source the compiler's token lookup.
+"""Give the reference implementation’s one-pass TinyLlama source the compiler's token lookup.
 
 The source generator stores precomputed BF16 embeddings in its model blob.
 For an end-to-end timing boundary, this tool instead embeds the checkpoint's

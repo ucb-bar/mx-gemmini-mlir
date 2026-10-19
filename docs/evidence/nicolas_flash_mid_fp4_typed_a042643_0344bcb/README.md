@@ -1,12 +1,12 @@
 # Typed FP4 blocked flash attention on Spike
 
-This qualification uses Nicolas's pinned `attn_flash.c` core (`npu-exploration`
+This qualification uses the reference implementation’s pinned `attn_flash.c` core (`npu-exploration`
 `0344bcb`) with a four-line [FP4 wrapper](../../../tools/fixtures/nicolas_flash_mid_fp4.c).
 The source generator `gen_attn_fp4.py` produced the [packed Q/K/V data and
 E8M0 scales](attn_vpu_mid_fp4.h.gz) from random seed 0 using `--sq 64 --sk 128
 --d 64 --bk 32 --tag _mid_fp4`. Its independent bit-exact golden is
 `f0caacc02eab4345`. This is a small FP4 configuration of the source core,
-not a claim that Nicolas's named 2048-key FP4 experiments compile.
+not a claim that the reference implementation’s named 2048-key FP4 experiments compile.
 
 The [typed graph](flash_mid_fp4.mlir) uses the clean model2MLIR `a042643`
 capture of the same QK→softmax→PV shape and binds it to this FP4 data header.
@@ -26,7 +26,7 @@ compiler reproduced the object and both ELFs byte for byte.
 
 To reproduce, set `NPU_ROOT` to the `npu-exploration` `0344bcb` checkout,
 `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64
-toolchain, `SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR`
+toolchain, `SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR`
 to a fresh directory:
 
 ```sh

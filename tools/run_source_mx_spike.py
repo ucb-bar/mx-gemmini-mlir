@@ -1,6 +1,6 @@
 """Build and run a bound source-data MX diagnostic on pinned Spike.
 
-This builds Nicolas's libgemmini gitlink in the output directory, so an older
+This builds the reference implementation’s libgemmini gitlink in the output directory, so an older
 installed Gemmini extension cannot silently stand in for the selected source.
 """
 

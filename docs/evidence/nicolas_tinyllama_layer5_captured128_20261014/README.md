@@ -1,7 +1,9 @@
-# Nicolas's TinyLlama layer on captured inputs
+<a id="nicolass-tinyllama-layer-on-captured-inputs"></a>
+
+# Reference TinyLlama layer on captured inputs
 
 This is a **source-only section result**, not a compiler-versus-source
-comparison. It runs Nicolas's fused MX+VPU layer-5 kernel from
+comparison. It runs the reference implementation’s fused MX+VPU layer-5 kernel from
 `npu-exploration` `0344bcb` on the same 128 input token IDs used by the
 model2MLIR TinyLlama prefill capture. The first 64 tokens populate its KV
 cache; the kernel processes the remaining 64. The layer's nine source weights

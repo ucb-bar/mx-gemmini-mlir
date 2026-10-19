@@ -1,4 +1,4 @@
-"""Bind Nicolas's dense attention softmax/requant seam to typed MX commands.
+"""Bind the reference implementation’s dense attention softmax/requant seam to typed MX commands.
 
 The surrounding QK and PV matrix commands are a separate lowering. This
 module preserves the exact resident scratchpad layout and source VPU order

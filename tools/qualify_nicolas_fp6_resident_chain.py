@@ -1,4 +1,4 @@
-"""Compare a typed connected FP6 resident pair with Nicolas's source on Spike."""
+"""Compare a typed connected FP6 resident pair with the reference implementation’s source on Spike."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ BUFFERS = (*FP6_INPUTS, *OUTPUTS)
 
 
 def compiler_driver(source: str, *, dimension: int = 64) -> str:
-    """Retain Nicolas's complete four-way reference comparison unchanged."""
+    """Retain the reference implementation’s complete four-way reference comparison unchanged."""
     include = f'"include/matmul_fp6_{dimension}x{dimension}_chain.h"'
     if (source.count(MARKER) != 1 or source.count("gemmini_loop_ws_spad(") != 2 or
             source.count(include) != 1):

@@ -1,7 +1,9 @@
-# Nicolas FP4 DIM32 requantized output through a public MX object
+<a id="nicolas-fp4-dim32-requantized-output-through-a-public-mx-object"></a>
+
+# Reference FP4 DIM32 requantized output through a public MX object
 
 Commit `f475d05` captured a 128³ PyTorch matmul with model2MLIR `e9ded36`,
-bound Nicolas's checked-in `matmul_tiled_fp4_128x128_requant_dim32.c`
+bound the reference implementation’s checked-in `matmul_tiled_fp4_128x128_requant_dim32.c`
 operands and `matmul_fp4_128x128_dim32.h` golden, selected typed FP4
 quantized readout, and compiled a data-free RV64 RoCC issuer through
 `tools.compile_object`. Pinned Spike with the **DIM32 extension** matched

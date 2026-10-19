@@ -1,4 +1,4 @@
-"""Emit Nicolas's verified dual-layout FP4 SPAD_REQUANT as a public RV64 object.
+"""Emit the reference implementation’s verified dual-layout FP4 SPAD_REQUANT as a public RV64 object.
 
 The typed graph has one BF16 input and two output layouts. This emitter owns
 only the fixed runtime ABI; command semantics come from the existing physical

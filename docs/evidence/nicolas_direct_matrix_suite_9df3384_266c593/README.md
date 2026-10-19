@@ -1,4 +1,6 @@
-# Fifteen direct Nicolas matrix cases through the public MX object compiler
+<a id="fifteen-direct-nicolas-matrix-cases-through-the-public-mx-object-compiler"></a>
+
+# Fifteen direct reference matrix cases through the public MX object compiler
 
 Compiler commit `9df3384937e89b4b79f5234d68379fdf5a5388ef` ran the complete
 registered direct-matrix suite from fresh PyTorch/model2MLIR captures,
@@ -6,7 +8,7 @@ source-payload binding, `tools.compile_object`, RV64 linking, and pinned Spike.
 The index records **15 passed cases** and **163,072 compared items**. The sum
 combines BF16 values, FP8 codes, packed FP4/FP6 bytes, and E8M0 scales.
 
-This revision adds four checked Nicolas source programs:
+This revision adds four checked reference source programs:
 
 | Source case | Comparison |
 |---|---:|

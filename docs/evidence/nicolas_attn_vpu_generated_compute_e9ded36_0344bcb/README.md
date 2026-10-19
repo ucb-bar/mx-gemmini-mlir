@@ -1,6 +1,8 @@
-# Generated compute stages for Nicolas's dense attention
+<a id="generated-compute-stages-for-nicolass-dense-attention"></a>
 
-This replay uses Nicolas's `attn_vpu.c` at `npu-exploration` `0344bcb`, its
+# Generated compute stages for the reference implementation’s dense attention
+
+This replay uses the reference implementation’s `attn_vpu.c` at `npu-exploration` `0344bcb`, its
 default 32×64×64 data, the current model2MLIR `e9ded36` capture, and the
 `MxE4M3Fp4VpuGemminiRocketConfig` profile from RTL `266c593`.
 
@@ -10,7 +12,7 @@ matrix packets as two data-free RV64 objects. The transformed source checker
 calls all three generated issuers. It contains no handwritten `mm` helper,
 VPU call, or `spad_requant` call. The archived ELF links those three objects.
 
-Two runs on Nicolas's pinned Spike extension produced identical logs. The
+Two runs on the reference implementation’s pinned Spike extension produced identical logs. The
 score matches all 512 four-element words of the source mesh golden; the score,
 BF16 probability, requantized probability, and PV output hashes match the
 unmodified [source baseline](../nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/README.md).
@@ -24,7 +26,7 @@ transfer/readout lowering, and a single linked runtime ABI.
 
 From the repo root, set `NPU_ROOT` to the pinned `npu-exploration` checkout,
 `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX extension, and `OUT_DIR` to a fresh directory:
+`SPIKE_EXTENSION` to the reference implementation’s MX extension, and `OUT_DIR` to a fresh directory:
 
 ```sh
 python -m tools.qualify_nicolas_attn_compute \

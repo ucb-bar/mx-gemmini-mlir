@@ -37,7 +37,7 @@ its earlier linked Spike run matched all 1,600 elements of the first captured
 result against unquantized PyTorch exactly. That is one isolated stage result,
 not the complete SmolVLA session.
 
-Nicolas's pinned MX Spike extension executed standalone generated VPU objects
+The reference implementation’s pinned MX Spike extension executed standalone generated VPU objects
 for softmax, broadcast and scalar binary arithmetic, mixed BF16/f32
 arithmetic, GELU, `10000^x`, and signed row reductions. `index.json` records
 the precise result and SHA-256 of each passing receipt. These tests compare
@@ -56,4 +56,4 @@ complete quantized inference sessions have not been compared against an
 independent PyTorch reference. Prior whole-session Spike evidence predates
 this VPU rewrite. This archive is a coverage and isolated arithmetic milestone,
 not a claim of full-model numerical correctness or performance parity with
-Nicolas's handwritten kernels.
+the reference implementation’s handwritten kernels.

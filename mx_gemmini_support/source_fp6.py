@@ -143,7 +143,7 @@ def read_source_fp6_payload(kernel: SourceGemm) -> SourceFp6Payload:
     repacked = pack_fp6_indexed_contraction(
         a_codes, b_codes, activation_lut=lut_lines["A_lut"],
         weight_lut=lut_lines["B_lut"], granularity_shift=1)
-    # Some earlier Nicolas LUT lines contain duplicate codes. A canonical
+    # Some earlier reference LUT lines contain duplicate codes. A canonical
     # encoder picks the first matching index, while the source preserves its
     # original alias index. Keep the original bytes and require that every
     # differing nibble decodes to exactly the same E3M2 code.

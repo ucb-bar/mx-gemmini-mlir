@@ -1,7 +1,7 @@
-"""Replay every qualified direct Nicolas matrix case through the public object CLI.
+"""Replay every qualified direct reference matrix case through the public object CLI.
 
 This covers the checked-in source matrix results named in CASES. It does not
-compile performance instrumentation or the other Nicolas C programs.
+compile performance instrumentation or the other reference C programs.
 """
 
 from __future__ import annotations

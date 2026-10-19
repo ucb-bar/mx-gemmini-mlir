@@ -1,6 +1,6 @@
 # Merlin schedule IR to MX native loops
 
-The [receipt](receipt.json) records three model-derived kernels executed on Nicolas's pinned
+The [receipt](receipt.json) records three model-derived kernels executed on the reference implementation’s pinned
 Gemmini MX Spike extension. The two FP4 MLP projections use captured small-LLaMA f32 operands,
 the target-owned runtime quantizer, and the existing three-pointer Merlin catalog ABI. The FP8
 attention QK head uses captured packed TinyLlama operands. Each output matched its archived
@@ -21,7 +21,7 @@ cycle counts or speedups: the native hardware loop performs transfers and comput
 runtime f32 quantization plus host graph operations still cost time.
 
 The [linked full-checkpoint TinyLlama native prefill](tiny_native_prefill_spike.log) reached guest
-`DONE` on Nicolas's pinned Spike with zero memref rank mismatches. Its 32,000 f32 logits have the
+`DONE` on the reference implementation’s pinned Spike with zero memref rank mismatches. Its 32,000 f32 logits have the
 same SHA-256 as the [serial MX prefill](../tiny_full_checkpoint_prefill_spike_20261011/README.md):
 `e829ba982b701c5c8e2b64af8d9279cd23a106ddfa84ca147d6c82a00f4b6459`.
 The native run reported 374,780,809,774 simulated cycles versus 374,944,319,266 for the serial

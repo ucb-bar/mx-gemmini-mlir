@@ -15,7 +15,7 @@ Every site is a real rank-two region in the [full captured graph](../model2mlir_
 
 With the first pair, **all six shape-padding candidates** in the current
 small LLaMA precision proposal compile as individual FP4 objects and execute
-on Nicolas's pinned MX Spike model. Across the six, all **53,248 padded BF16
+on the reference implementation’s pinned MX Spike model. Across the six, all **53,248 padded BF16
 words** matched the independent Radiance MX arithmetic reference; 13,056 are
 logical model outputs. Packed resources, goldens, bound MLIR, objects, ELFs,
 Spike logs, and result manifests are archived for the four sites here.

@@ -1,4 +1,4 @@
-"""Rebuild and replay Nicolas's unmodified four-block flash attention on Spike."""
+"""Rebuild and replay the reference implementation’s unmodified four-block flash attention on Spike."""
 
 from __future__ import annotations
 

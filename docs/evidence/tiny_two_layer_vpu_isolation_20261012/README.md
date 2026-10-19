@@ -1,4 +1,6 @@
-# Two-layer TinyLlama decode VPU isolation on Nicolas's Spike
+<a id="two-layer-tinyllama-decode-vpu-isolation-on-nicolass-spike"></a>
+
+# Two-layer TinyLlama decode VPU isolation on the pinned Spike model
 
 Two RV64 programs compiled the same receipt-bound, random-weight TinyLlama
 decode capture under the same MX+VPU profile. Both route the same 20 source
@@ -8,7 +10,7 @@ diagnostic build leaves VPU-eligible arithmetic on Merlin's host route; the
 target build lowers two softmax, eight add, 36 other binary, 16 unary, and seven
 row-reduction source regions to the VPU.
 
-Both programs completed on Nicolas's pinned Spike extension with guest `DONE`,
+Both programs completed on the reference implementation’s pinned Spike extension with guest `DONE`,
 zero memref rank mismatches, and complete logits, KV-cache, and position-state
 digests. Their results differ:
 

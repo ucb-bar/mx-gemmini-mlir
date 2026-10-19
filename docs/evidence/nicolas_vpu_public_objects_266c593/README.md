@@ -1,4 +1,6 @@
-# Nicolas VPU operations through the public object compiler
+<a id="nicolas-vpu-operations-through-the-public-object-compiler"></a>
+
+# Reference VPU operations through the public object compiler
 
 Fourteen typed MX VPU operations now compile through `tools.compile_object`
 into **data-free RV64 Rocket/RoCC objects**. The twelve base operations use
@@ -10,7 +12,7 @@ captures. Every bound module passed the newly built native `mx-gemmini-opt`
 verifier. The public compiler selected the `vpu_elementwise` family, generated
 the transfers, VPU command, and readout, then emitted a linkable object.
 
-All fourteen objects were linked to host drivers that generate Nicolas's
+All fourteen objects were linked to host drivers that generate the reference implementation’s
 pinned inputs and check against `vpu_ref.h`. Pinned Spike reports **zero
 mismatches over 6,016 primary BF16 outputs and 128 EXPSUM outputs**. The
 twelve base issuers match the older specialized compiler issuers byte for

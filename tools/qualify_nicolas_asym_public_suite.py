@@ -1,4 +1,4 @@
-"""Replay all 74 pinned Nicolas asymmetric C programs with public MX objects."""
+"""Replay all 74 pinned reference asymmetric C programs with public MX objects."""
 
 from __future__ import annotations
 

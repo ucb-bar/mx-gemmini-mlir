@@ -1,4 +1,4 @@
-"""Independent BF16-to-MX output references for Nicolas's current convention."""
+"""Independent BF16-to-MX output references for the reference implementation’s current convention."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def exact_bf16_x2(source: bytes) -> bytes:
 
 def _bf16_scalar_arithmetic(source: bytes, scalar_bf16: int,
                             operation: str) -> bytes:
-    """Apply Nicolas's double arithmetic followed by BF16 RNE."""
+    """Apply the reference implementation’s double arithmetic followed by BF16 RNE."""
     if len(source) % 2:
         raise ValueError("BF16 scalar reference requires complete 16-bit values")
     if (not isinstance(scalar_bf16, int) or isinstance(scalar_bf16, bool) or
@@ -87,12 +87,12 @@ def _bf16_scalar_arithmetic(source: bytes, scalar_bf16: int,
 
 
 def bf16_mul_scalar(source: bytes, scalar_bf16: int) -> bytes:
-    """Match Nicolas vpu_ref.h MULS, including final BF16 RNE."""
+    """Match reference vpu_ref.h MULS, including final BF16 RNE."""
     return _bf16_scalar_arithmetic(source, scalar_bf16, "mul")
 
 
 def bf16_add_scalar(source: bytes, scalar_bf16: int) -> bytes:
-    """Match Nicolas vpu_ref.h ADDS, including final BF16 RNE."""
+    """Match reference vpu_ref.h ADDS, including final BF16 RNE."""
     return _bf16_scalar_arithmetic(source, scalar_bf16, "add")
 
 
@@ -214,7 +214,7 @@ def quantize_bf16_radiance_header_fp8(bf16_bytes: bytes, m: int,
 
 
 def quantize_bf16_fp4_output(bf16_bytes: bytes, m: int, n: int) -> tuple[bytes, bytes]:
-    """Use Nicolas's E2M1 output projection and packed-even/odd-M layout."""
+    """Use the reference implementation’s E2M1 output projection and packed-even/odd-M layout."""
     if m <= 0 or m % 2 or n <= 0 or n % 32 or len(bf16_bytes) != 2 * m * n:
         raise ValueError("BF16 FP4 output reference shape or byte count is invalid")
     values = [struct.unpack("<f", (word << 16).to_bytes(4, "little"))[0]
@@ -276,7 +276,7 @@ def quantize_bf16_fp6_lut_output(bf16_bytes: bytes, m: int, n: int,
                                   output_lut_bytes: bytes) -> tuple[bytes, bytes]:
     """Project each row pair onto its C LUT and pack indices along M.
 
-    The finder measures distance in Nicolas's 9-bit fixed representation and
+    The finder measures distance in the reference implementation’s 9-bit fixed representation and
     resolves ties by the lowest LUT index. Output E8M0 scales are row-major.
     """
     if (m <= 0 or m % 2 or m > 128 or n <= 0 or n % 32 or

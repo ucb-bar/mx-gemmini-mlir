@@ -1,9 +1,8 @@
 # MX Gemmini derivation and phase ownership
 
 Fixed RTL, MxGen, contract, model, inputs, policy, and tool versions must give
-the same Phase 0 artifacts. An agent may improve the tools or propose an
-authored policy, but an agent is not in the Phase 0 derivation path. The RTL
-remains authoritative for hardware facts. A software contract can declare
+the same Phase 0 artifacts. The derivation runs deterministic compiler tools
+with an explicitly selected policy. The RTL remains authoritative for hardware facts. A software contract can declare
 semantics and host policy that RTL extraction does not establish; its presence
 alone is not evidence that those declarations are true.
 
@@ -99,7 +98,7 @@ active OOT capability contract intentionally declares no compute unit. The
 host capability screens are also `unknown`. The synthesis profile is a
 candidate artifact, not a Phase 0 admission or a functional compiler result.
 
-The OOT proposal can be reproduced from explicit inputs without an agent:
+The OOT proposal can be reproduced from explicit inputs with the command-line tools:
 
 ```sh
 python -m mx_gemmini_support.capability_proposal \

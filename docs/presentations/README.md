@@ -63,7 +63,7 @@ numerical and timing qualification on its selected target. The selected
 `MxE4M3Fp4VpuGemminiRocketConfig` has direct E4M3 and FP4 modes, two
 8-lane BF16 VPUs, and `SPAD_REQUANT`. Its operand LUT is absent (`lut: false`);
 FP6 is available in a separate
-non-VPU configuration. Nicolas's `npu-exploration` kernels provide source
+non-VPU configuration. The reference implementation’s `npu-exploration` kernels provide source
 checks and performance reference programs, while RTL defines hardware
 capabilities. See [profile inventory](../current_mx_profiles.md).
 
@@ -125,7 +125,7 @@ not the cached 33-step session above it.
 | Row | Changed work | What the result tests |
 | --- | --- | --- |
 | Full TinyLlama and SmolVLA sessions | MX matrix issuers only; host graph and VPU objects stay fixed | MX command emission and its cost inside the captured program |
-| TinyLlama independent 160-token forward | Nicolas's complete 22-layer source program versus the matched compiler one-pass | Matched token-to-logits input, raw timing, and full top-token agreement with different host/VPU policies |
+| TinyLlama independent 160-token forward | the reference implementation’s complete 22-layer source program versus the matched compiler one-pass | Matched token-to-logits input, raw timing, and full top-token agreement with different host/VPU policies |
 | Captured SmolVLA attention | One final-step head at each of 113 and 163 keys; 4,096 BF16 values each | Pipelined source versus compiler cross-block scheduling on actual model operands |
 
 The [final-step paired archive](../evidence/smolvla_attention_session_20261014/README.md)
@@ -147,7 +147,7 @@ and operands differ from the final-step row; all are head-level measurements.
 The requested complete-session performance comparison needs independently
 written MX+VPU programs with matched inputs, weights, precision, outputs,
 and timing boundaries. Neither full-session issuer swap supplies that
-program. Nicolas's all-FP8 160-token TinyLlama forward is independent and
+program. The reference implementation’s all-FP8 160-token TinyLlama forward is independent and
 now includes the checkpoint token lookup in its timer. The matched
 [one-pass archive](../evidence/nicolas_tinyllama_lookup_equal_boundary_20261015/README.md)
 records the raw cycle difference and the 131/160 versus 103/160 FP32
@@ -196,13 +196,13 @@ The [full all-FP8 SmolVLA control](../evidence/smolvla_all_fp8_full_action_20261
 binds all 391 selected prefix and flow contractions to direct E4M3. It
 preserves the corrected run's captured programs, checkpoint weight blob,
 target profile, arena layout, and output ABI. All 12 steps complete on
-Nicolas's MX+VPU Spike. Final action cosine to captured FP32 rises from
+the reference implementation’s MX+VPU Spike. Final action cosine to captured FP32 rises from
 0.058102 (mixed) to **0.988524** (all-FP8), while normalized RMSE falls
 from 1.830469 to **0.246502**. The complete session takes
 180,219,637,915 modeled cycles versus 316,515,603,374 for the corrected
 mixed control. Their outputs differ, so this is a precision-policy cost
 comparison, not an equal-output speedup or a source-kernel baseline.
-The matched all-FP8 Nicolas issuer control takes 179,451,403,096 cycles
+The matched all-FP8 reference issuer control takes 179,451,403,096 cycles
 for the same 12 steps and outputs, making the compiler's MX issuer overhead
 0.428% within the fixed host/VPU program.
 
@@ -244,7 +244,7 @@ state are reset. This narrows the immediate step-9 difference to accumulated
 flow state; it does not isolate how earlier prefix errors affected that state.
 
 Read the first two rows as **MX matrix command code comparisons**. The
-compiler and Nicolas variants run the same Merlin host program and VPU code;
+compiler and reference variants run the same Merlin host program and VPU code;
 only the MX issuers change. The small full-model cycle gaps are therefore
 expected and cannot establish parity with an independently scheduled model.
 The deck generator checks the changed-object receipts and refuses to label
@@ -266,18 +266,18 @@ No row establishes an independent complete-session speedup. Spike cycles
 are simulator results, not FPGA latency.
 
 The [equal-work attention receipt](../evidence/attn_vpu_equal_work_20261013/README.md)
-records 43,523 compiler versus 43,641 Nicolas source Spike cycles for a
+records 43,523 compiler versus 43,641 reference source Spike cycles for a
 64×256×128 dense MX+VPU attention kernel. Both runs pass the same output
 checks. The [SmolVLA issuer substitution
 receipt](../evidence/nicolas_matrix_substitution_smolvla_20261013/README.md)
-records 2,112,653,481 compiler versus 2,112,919,925 Nicolas native issuer
+records 2,112,653,481 compiler versus 2,112,919,925 reference native issuer
 cycles for one flow step, with identical declared output hashes.
 
 The [full SmolVLA comparison](../evidence/nicolas_matrix_substitution_smolvla_full_20261013/README.md)
-records 72,066,544,354 compiler cycles and 71,875,683,634 Nicolas native
+records 72,066,544,354 compiler cycles and 71,875,683,634 reference native
 matrix-issuer cycles over all 12 steps. All 33 output digests match. The
 [full TinyLlama comparison](../evidence/nicolas_matrix_substitution_tinyllama_full_20261014/README.md)
-records 83,547,564,353 compiler cycles and 83,544,602,795 Nicolas issuer
+records 83,547,564,353 compiler cycles and 83,544,602,795 reference issuer
 cycles over one prefill and 32 decode steps. All 99 output digests match.
 Both full-model experiments change MX matrix issuers while holding the host
 graph and VPU objects fixed.
@@ -289,7 +289,7 @@ source-bound compiler commands match all 16,384 BF16 outputs of each FP8
 176 KiB of weight reads. The equal-shape Radiance FP8 four-pass re-stream
 control reads 512 KiB. These validate output and weight traffic; the original
 Radiance kernels issue MX commands through Muon and have no paired cycles on
-Nicolas's Rocket Spike model. Radiance's published flash-attention cycles
+the reference implementation’s Rocket Spike model. Radiance's published flash-attention cycles
 include Muon SIMT work and are not compared to the MX+VPU Spike cycles. The
 separate source-produced GQA PV control matches 65,536 BF16 values on Spike;
 it does not compile the whole mixed Muon+MX kernel.
@@ -314,11 +314,11 @@ counters are not a cycle baseline for the compiler's captured full session.
 
 A handwritten fused MX+VPU baseline for the complete captured 33-step
 TinyLlama or 12-step SmolVLA session has not been measured. For example,
-Nicolas's `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;
+the reference implementation’s `attn_vpu_fa.c` wrapper fixes a 64×256×128 dense attention shape;
 the captured SmolVLA flow contains 15 heads of 50 queries against 163 keys,
 with a boolean key mask. A matched fused replacement must preserve that
 padding and mask behavior before its cycles can be compared.
-The independent cached-layer probe adapts Nicolas's FP8 source to 64 cached
+The independent cached-layer probe adapts the reference implementation’s FP8 source to 64 cached
 plus 64 query tokens. The captured full-model session has a 128-token prefill
 and one-token decode with 155 FP4 and 45 FP8 MX bindings per stage. A stitched
 source baseline needs those shapes and precision choices to match before its
@@ -328,7 +328,7 @@ record the remaining model and kernel interfaces.
 The [cached TinyLlama layer probe](../evidence/tinyllama_cached_layer_compiler_20261014/README.md)
 now runs a real 64-query layer from PyTorch through model2MLIR and the MX
 compiler. It exposes per-operation packing and intermediate conversion costs,
-but its stage cycle window differs from Nicolas's timed source kernel.
+but its stage cycle window differs from the reference implementation’s timed source kernel.
 The cached-layer measurements remain in that evidence directory; the slide
 now uses the full source run because it covers all decoder layers and the head.
 
@@ -341,7 +341,7 @@ case, the compiler uses one 256×64 output tile and reads 128 KiB of weights
 once. The Radiance four-pass control uses four 64×64 tiles and reads 512 KiB.
 The FP4 256×64×5632 down-projection reads 176 KiB. The slide also identifies
 four batched GEMV controls and the narrower GQA PV cutpoint. Radiance source
-uses a Muon+MX system; these compiler controls use Nicolas's standalone
+uses a Muon+MX system; these compiler controls use the reference implementation’s standalone
 Rocket+MX+VPU Spike model. The output and schedule checks do not establish
 a cross-system cycle ratio.
 

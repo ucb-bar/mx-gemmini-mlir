@@ -1,10 +1,10 @@
 # Public MX object compiler: BF16 VPU softmax
 
 The `3f9af55` compiler revision captured a 16×32 BF16 softmax from model2MLIR,
-bound its six VPU operations to both Nicolas DIM16 VPU Rocket profiles, and
+bound its six VPU operations to both reference DIM16 VPU Rocket profiles, and
 compiled the typed module through `python -m tools.compile_object`. The output
 is a linkable RV64 RoCC `mx_issue.o` with two pointer arguments and no embedded
-input or golden data. The qualifier linked that object with Nicolas's original
+input or golden data. The qualifier linked that object with the reference implementation’s original
 input generator and bit-exact checker. Pinned Spike compared all 512 BF16
 outputs: zero mismatches for both profiles.
 

@@ -1,6 +1,6 @@
 # Typed fused EXPSUM flash attention on Spike
 
-This qualification selects the fused `ATTN_EXPSUM=1` path of Nicolas's
+This qualification selects the fused `ATTN_EXPSUM=1` path of the reference implementation’s
 `attn_flash.c` at `npu-exploration` `0344bcb`. The pinned [wrapper](../../../tools/fixtures/nicolas_flash_mid_expsum.c)
 uses the existing 64×128×64, `BK=32`, FP8 data header and the clean
 model2MLIR `a042643` capture of the same QK→softmax→PV shape. The compiler
@@ -24,7 +24,7 @@ masking need separate qualification.
 
 To reproduce, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

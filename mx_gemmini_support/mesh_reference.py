@@ -4,7 +4,7 @@ Radiance's checked-in C_out_bf16 is computed for DIM16. The mesh precision
 schedule changes for DIM8 and DIM32, so those bytes cannot be used as a
 bit-exact oracle for another mesh. This module transforms the dimension,
 tile extent, and accumulator schedule in Radiance's independent host model.
-The optional v2 policy also applies Nicolas's product floor to the target
+The optional v2 policy also applies the reference implementation’s product floor to the target
 run. It first recompiles DIM16 and requires exact agreement with the source
 header before applying that target-only correction.
 """

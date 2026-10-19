@@ -1,7 +1,7 @@
 """Explicit source specialization of a captured matmul for asymmetric MX.
 
 The current model2MLIR MX policy captures the matmul site but describes
-symmetric quantization. A recipe naming Nicolas's packed source operands is
+symmetric quantization. A recipe naming the reference implementation’s packed source operands is
 therefore required before changing either operand's format or projection.
 """
 
@@ -398,7 +398,7 @@ def _source_lut_fits(profile: dict, variant: dict) -> bool:
 
 
 def source_recipe(source: Path, header: Path, profile: dict) -> dict:
-    """Bind one checked-in Nicolas test and its data to a legal profile mode."""
+    """Bind one checked-in reference test and its data to a legal profile mode."""
     if not source.is_file() or not header.is_file():
         raise ValueError("selected asymmetric source or data header is absent")
     source_text, header_text = source.read_text(), header.read_text()
@@ -510,7 +510,7 @@ _MESH_BASELINE_SHA256 = {
 
 
 def generated_header_recipe(generator: Path, header: Path, profile: dict) -> dict:
-    """Bind a new Nicolas-model header without claiming a checked-in C driver.
+    """Bind a new reference-model header without claiming a checked-in C driver.
 
     The generator is pinned gen_asym.py. The header bytes, baseline reproduction,
     and every required array are checked before the contraction is lowered.
@@ -832,7 +832,7 @@ int main(void) {{
 
 
 def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
-    """Export Nicolas's packed input and BF16 golden arrays as binary resources."""
+    """Export the reference implementation’s packed input and BF16 golden arrays as binary resources."""
     from .source_fp6 import _array, _bytes
 
     if sha256(header) != recipe.get("source_header_sha256"):
@@ -900,7 +900,7 @@ def read_asymmetric_resources(header: Path, recipe: dict) -> dict[str, bytes]:
 
 
 def _resource_manifest(recipe: dict, resources: dict[str, bytes], header: Path) -> dict:
-    """Describe every Nicolas source byte array with its physical shape."""
+    """Describe every reference source byte array with its physical shape."""
     from .source_payload import Resource
 
     variant = recipe.get("source_layout") or _VARIANTS_BY_HEADER[header.name]

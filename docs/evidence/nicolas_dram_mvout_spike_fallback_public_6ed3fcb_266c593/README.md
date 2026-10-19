@@ -1,10 +1,12 @@
-# Nicolas DRAM-mvout source programs: Spike fallback
+<a id="nicolas-dram-mvout-source-programs-spike-fallback"></a>
+
+# Reference DRAM-mvout source programs: Spike fallback
 
 The three pinned `*DRAMMvout.c` programs have two conditional execution
 paths. Under `SPIKE_SIM`, each computes BF16 C into scratchpad row zero and
 reads it through `gemmini_mx_read_smem`. Under the hardware path, each selects
 accumulator address `0x80000000`, skips the scratchpad store, and issues
-accumulator-to-DRAM `gemmini_mvout` commands. Nicolas's pinned Spike extension
+accumulator-to-DRAM `gemmini_mvout` commands. The reference implementation’s pinned Spike extension
 does not model the latter path.
 
 The source-bound compiler now emits a data-free RV64 RoCC object for the
@@ -13,7 +15,7 @@ provides the contraction; the checked source headers provide packed operands,
 scales, and the BF16 golden. The compiler stores C at scratchpad row zero and
 reads it through RoCC MVOUT. The original source uses a CPU scratchpad read,
 so transport differs. Both paths independently match every golden BF16 value
-on Nicolas's pinned Spike:
+on the reference implementation’s pinned Spike:
 
 | Source | BF16 values | Compiled object | Original source |
 |---|---:|---|---|

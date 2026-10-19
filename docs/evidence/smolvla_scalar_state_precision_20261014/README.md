@@ -12,7 +12,7 @@ hash as the [isolated step-9 control](../smolvla_reference_step_replay_20261014/
 The VPU source-region set loses exactly `add_96#add0` (352 to 351 regions);
 the number of distinct VPU elementwise kernels falls from 19 to 18.
 
-The linked one-step program was run on Nicolas's `e4m3_vpu` Spike extension
+The linked one-step program was run on the reference implementation’s `e4m3_vpu` Spike extension
 with the captured FP32 step-8 flow state, FP32 prefix cache, and step-9
 timestep. The timestep output is now **`-7.450580596923828e-08`**, exactly
 the FP32 source update. The 1,600-element flow output is byte-identical to

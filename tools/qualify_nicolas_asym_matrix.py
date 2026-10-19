@@ -1,6 +1,6 @@
-"""Compile Nicolas asymmetric source modes on their matching Rocket mesh profile.
+"""Compile reference asymmetric source modes on their matching Rocket mesh profile.
 
-Each row captures a fresh PyTorch matmul through model2MLIR, binds Nicolas's
+Each row captures a fresh PyTorch matmul through model2MLIR, binds the reference implementation’s
 checked-in packed arrays to typed MX MLIR, emits a standalone RoCC ELF, and
 compares every BF16 source output on the pinned Spike extension.
 """

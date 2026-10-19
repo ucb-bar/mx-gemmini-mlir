@@ -1,11 +1,13 @@
-# Nicolas dense attention mid-shape source oracle
+<a id="nicolas-dense-attention-mid-shape-source-oracle"></a>
+
+# Reference dense attention mid-shape source oracle
 
 This archive pins the unmodified `attn_vpu_mid.c` wrapper and shared
 `attn_vpu.c` from `npu-exploration` `0344bcb`. The source generator produced
 `Sq=64`, `Sk=128`, `d=64`, seed 0 E4M3 operands and E8M0 scales. The
 [compressed header](attn_vpu_mid.h.gz) includes its bit-exact mesh score
 golden. The [expectation header](attn_vpu_mid_expect.h) records the four
-stage hashes discovered on Nicolas's pinned Spike model.
+stage hashes discovered on the reference implementation’s pinned Spike model.
 
 The [unmodified source ELF](source.elf) ran twice on that model with identical
 logs. The [archived log](source_spike.log) reports zero differing score words

@@ -8,7 +8,7 @@ capture's FP8 choice. Eligible softmax, add, elementwise, unary, and
 reduction regions also lower to the VPU. The selected hardware profile is
 [`MxE4M3Fp4VpuGemminiRocketConfig`](../../../profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json).
 
-On Nicolas's pinned MX+VPU Spike, all 33 steps completed with
+On the reference implementation’s pinned MX+VPU Spike, all 33 steps completed with
 **72,901,458,175 modeled cycles** under `e4m3_vpu` and
 `mem.host_tracking=0`. All 99 output digests and all 33 full logit dumps are
 present in the [run receipt](run.json). The
@@ -20,7 +20,7 @@ generation quality or a useful quantization policy.
 
 The earlier mixed FP4/FP8 full session has different outputs and a different
 precision policy. Its cycle count is not an equal-output speedup denominator
-for this run. Nicolas's independent 160-token source program is a single
+for this run. The reference implementation’s independent 160-token source program is a single
 causal forward with a different host/VPU placement and timing boundary; its
 source-only result is archived in
 [`nicolas_tinyllama_onepass160_same_input_20261014`](../nicolas_tinyllama_onepass160_same_input_20261014/README.md).

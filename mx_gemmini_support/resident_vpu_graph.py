@@ -1,6 +1,6 @@
 """Lower a typed MM1→BF16 readout→scalar VPU chain→requant→MM2 graph.
 
-This is the qualified DIM16 E4M3 64³ mode from Nicolas's MX+VPU build.
+This is the qualified DIM16 E4M3 64³ mode from the reference implementation’s MX+VPU build.
 The graph and runtime input bytes, rather than a source C fixture, determine
 the physical command stream. Source adapters can compare it to their audit.
 """

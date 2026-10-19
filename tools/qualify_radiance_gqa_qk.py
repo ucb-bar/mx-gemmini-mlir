@@ -1,6 +1,6 @@
-"""Compile a GQA QK headroom candidate on Nicolas's Spike.
+"""Compile a GQA QK headroom candidate on the reference implementation’s Spike.
 
-The committed Radiance attention generator's Q/K codes overflow Nicolas's
+The committed Radiance attention generator's Q/K codes overflow the reference implementation’s
 reduced-precision MX product path. The default mode derives shifted bytes from
 the original header. With --generated-hardware-model, a pinned patch is applied
 to a copied generator and the emitted header is compiled directly. Both modes

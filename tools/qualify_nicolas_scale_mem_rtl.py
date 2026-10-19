@@ -1,4 +1,4 @@
-"""Run a scoped Chisel test on Nicolas's unmodified MX scale-memory RTL.
+"""Run a scoped Chisel test on the reference implementation’s unmodified MX scale-memory RTL.
 
 The isolated Mill project supplies only the two interface bundles needed to
 compile ScalingFactorMem.scala. The tested module is copied byte-for-byte from

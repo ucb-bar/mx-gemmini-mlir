@@ -1,4 +1,4 @@
-"""Verify that a model2MLIR one-pass bundle and Nicolas source use one input.
+"""Verify that a model2MLIR one-pass bundle and reference source use one input.
 
 The source generator takes checkpoint tensors from its earlier layer capture
 and 160-token activations from a later capture. This check binds both to the

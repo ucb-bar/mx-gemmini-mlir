@@ -1,8 +1,10 @@
-# Experimental Nicolas MX accumulator Spike replay
+<a id="experimental-nicolas-mx-accumulator-spike-replay"></a>
+
+# Experimental reference MX accumulator Spike replay
 
 The three compiler-generated, data-free accumulator issuer objects in
 [`nicolas_accumulator_readout_objects_266c593`](../nicolas_accumulator_readout_objects_266c593/README.md)
-were linked with drivers containing Nicolas's pinned source data and run on a
+were linked with drivers containing the reference implementation’s pinned source data and run on a
 **task-local patched Spike extension**. All 24,576 BF16 values matched the
 source goldens: 4,096 for FP8 64³, 4,096 for FP4 64³, and 16,384 for FP8
 128×128×256. The [index](index.json) pins source, object, extension, driver,
@@ -11,7 +13,7 @@ check. Two fresh builds in distinct output directories produced identical
 extension, driver, ELF, and Spike log hashes.
 
 The [candidate patch](../../../tools/patches/nicolas_spike_mx_accumulator_candidate_266c593.patch)
-changes only a copied `software/libgemmini` extension from Nicolas's pinned
+changes only a copied `software/libgemmini` extension from the reference implementation’s pinned
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52` RTL checkout. It routes
 accumulator-tagged BF16 readouts from Spike's existing MX shadow result to
 DRAM using the source's FP8/FP4 output geometry and rejects unsupported
@@ -28,7 +30,7 @@ claimed.
 
 The [constant-scale replay](../nicolas_accumulator_constant_scale_divergence_266c593/README.md)
 uses the same generated objects and candidate extension but changes their
-runtime A/B scales to the `0x7f` values written by Nicolas's hardware branch.
+runtime A/B scales to the `0x7f` values written by the reference implementation’s hardware branch.
 It diverges from the source-header goldens in 24,516 of 24,576 BF16 values.
 
 To replay from a fresh checkout with the pinned RTL and RISC-V tools:
@@ -42,4 +44,4 @@ python -m tools.qualify_nicolas_accumulator_candidate \
 The tool refuses to overwrite an output directory, checks the pinned RTL
 source hashes and archived object manifests, applies the patch to a copy,
 builds the Spike extension, links all three generated objects, and checks
-every BF16 output. It leaves the Nicolas RTL checkout untouched.
+every BF16 output. It leaves the reference RTL checkout untouched.

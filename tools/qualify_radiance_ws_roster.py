@@ -1,4 +1,4 @@
-"""Capture and qualify Radiance's two read-once MX GEMMs on Nicolas's Spike."""
+"""Capture and qualify Radiance's two read-once MX GEMMs on the reference implementation’s Spike."""
 
 from __future__ import annotations
 

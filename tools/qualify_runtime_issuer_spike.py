@@ -1,6 +1,6 @@
 """Run the model-derived TinyLlama MX issuer twice with distinct live pointers.
 
-This checks the encoded-pointer ABI on Nicolas's Spike, not a whole model.
+This checks the encoded-pointer ABI on the reference implementation’s Spike, not a whole model.
 """
 
 from __future__ import annotations

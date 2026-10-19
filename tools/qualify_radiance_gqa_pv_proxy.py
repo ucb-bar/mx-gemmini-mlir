@@ -1,4 +1,4 @@
-"""Capture and run the first source-derived GQA PV contraction on Nicolas Spike.
+"""Capture and run the first source-derived GQA PV contraction on reference Spike.
 
 The P operand follows the pinned Muon requantization formula but substitutes
 BF16-rounded Torch exp for mu_fexp. The result qualifies MX PV consumption of

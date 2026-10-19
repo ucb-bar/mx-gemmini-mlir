@@ -1,11 +1,11 @@
 # 128-cubed connected MX/VPU source-derived graph
 
 Published compiler commit `cc4859c` was cloned from
-`handwritten-implementation`, then used to capture Nicolas's two 128³ FP8
+`handwritten-implementation`, then used to capture the reference implementation’s two 128³ FP8
 matmuls with model2MLIR `e9ded36`. The compiler bound the original source
 operand bytes, lowered one typed MM1 → BF16 readout → VPU ×2 → resident
 requant → MM2 graph, emitted a data-free RV64 RoCC object, linked an ELF, and
-ran it on Nicolas's pinned Gemmini Spike extension.
+ran it on the reference implementation’s pinned Gemmini Spike extension.
 
 | Target profile | C1 BF16 | C1 FP8 | C1 E8M0 scales | C2 FP8 | C2 E8M0 scales |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -22,10 +22,10 @@ the original source input hashes with the existing plain 128³ source archive,
 checks the BF16 ×2 reference, re-lowers the typed graph, and rejects changed
 input bytes or a scratchpad output overlapping the live BF16 tile.
 
-**Numerical scope:** Nicolas's 128³ source provides the unchanged A1/B1/B2
+**Numerical scope:** the reference implementation’s 128³ source provides the unchanged A1/B1/B2
 codes and scales and MM1 BF16 golden. The source does not contain this VPU
 chain. The VPU ×2 C1 reference is derived from those BF16 bits; the C2
-reference comes from Nicolas's pinned FP8 mesh model, after that same model
+reference comes from the reference implementation’s pinned FP8 mesh model, after that same model
 is checked against the source's original C2 golden. This is a functional
 Spike result, not an RTL timing or FPGA qualification.
 

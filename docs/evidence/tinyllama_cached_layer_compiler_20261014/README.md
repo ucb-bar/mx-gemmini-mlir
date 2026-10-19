@@ -7,7 +7,7 @@ extracts layer 5, a 64 token KV cache, and the following 64 query tokens.
 It checks the cached PyTorch layer against the full checkpoint. The resulting
 model2MLIR bundle has zero opaque operations, nine externalized checkpoint
 weight tensors, and a 64×2048 output. The nine weight tensors match the
-[Nicolas source capture](../nicolas_tinyllama_layer5_captured128_20261014/README.md)
+[reference source capture](../nicolas_tinyllama_layer5_captured128_20261014/README.md)
 byte for byte.
 
 The selected MX profile routes all nine contractions to MX. It routes one
@@ -23,11 +23,11 @@ attention contractions were already FP8.
 | FP8 throughout, weights packed at build time | 268,345,341 | 59/64 |
 
 The build-time packed FP8 output is 7.60% relative Frobenius error from
-the same PyTorch layer. The independently written Nicolas FP8 source layer
+the same PyTorch layer. The independently written reference FP8 source layer
 reported 7.10% error. Its timed kernel took 582,204 Spike `rdcycle`
 counts. **These cycle values are not a speedup comparison:** the compiler
 counter covers the standalone stage with its representation conversions;
-Nicolas starts after its binary operands are already packed and stops when
+reference starts after its binary operands are already packed and stops when
 `h_out` reaches DRAM. The compiler uses f32 graph boundaries and separately
 materialized MX/VPU calls. The source keeps packed intermediates resident
 and fuses the attention schedule. The outputs also differ numerically, so
@@ -47,7 +47,7 @@ use the uninstrumented row above for stage timing.
 
 [`summary.json`](summary.json) binds the captured MLIR, selected profile,
 Spike extension, run receipts, and output digests. [`output_metrics.json`](output_metrics.json)
-contains the full-output checks against the bundle golden and Nicolas's
+contains the full-output checks against the bundle golden and the reference implementation’s
 reference tensor. [`stage_profile.json`](stage_profile.json) contains the
 source-region operation attribution. The 169 MB checkpoint weights and
 ELFs stay in the task artifacts; the [model2MLIR loader](https://github.com/ucb-bar/model2MLIR/tree/cx/mx-vpu-four-model-e2e/workloads/tiny_llama_layer)

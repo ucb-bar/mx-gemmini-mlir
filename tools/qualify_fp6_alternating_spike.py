@@ -1,6 +1,6 @@
 """Qualify an FP6 alternating-scale program against stock and corrected Spike.
 
-This copies Nicolas's pinned extension into an isolated directory. The only
+This copies the reference implementation’s pinned extension into an isolated directory. The only
 model change is applying the CONFIG_SCALE_MEM half selector in the FP6 LUT
 compute branch, as the RTL ScaleFactorMem does. Both models run the same ELF.
 """

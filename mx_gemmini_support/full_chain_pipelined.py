@@ -1,4 +1,4 @@
-"""Add the captured MM1 to Nicolas's source-bound two-branch MX+VPU chain."""
+"""Add the captured MM1 to the reference implementation’s source-bound two-branch MX+VPU chain."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def _digest(resources: dict[str, bytes]) -> str:
 def audit_full_chain_pipelined(source_path: Path, header_path: Path,
                                 first_source_path: Path, seam_source_path: Path,
                                 profile: dict) -> tuple[dict[str, bytes], dict]:
-    """Audit all six packed MM1/B2 inputs against Nicolas's source files."""
+    """Audit all six packed MM1/B2 inputs against the reference implementation’s source files."""
     resources, facts = audit_chain_pipelined(source_path, header_path, profile)
     _, first_resources, first_facts = capture_nicolas_vpu_requant(
         seam_source_path, header_path, profile, include_resident_matmul=True,

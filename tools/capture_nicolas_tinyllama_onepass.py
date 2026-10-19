@@ -1,4 +1,4 @@
-"""Capture BF16 activations for Nicolas's source generator on fixed token IDs."""
+"""Capture BF16 activations for the reference implementation’s source generator on fixed token IDs."""
 
 from __future__ import annotations
 

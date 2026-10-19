@@ -1,10 +1,12 @@
-# Nicolas alternate FP8 32³ transfer source
+<a id="nicolas-alternate-fp8-32³-transfer-source"></a>
+
+# Reference alternate FP8 32³ transfer source
 
 The pinned `matmul_tiled_fp8.c` source uses a different loop nest description
 from `matmul_tiled_fp8_32x32x32.c` for B transfers, while sharing the same
 checked-in 32³ operand and golden header. Both the original source executable
 and a fresh PyTorch → model2MLIR → typed MX MLIR → public RV64 object replay
-pass all **1,024 BF16 output comparisons** on Nicolas's pinned Spike.
+pass all **1,024 BF16 output comparisons** on the reference implementation’s pinned Spike.
 
 The [transfer equivalence audit](transfer_equivalence.json) evaluates the
 source's A and B address formulas and compares every resulting DRAM byte offset

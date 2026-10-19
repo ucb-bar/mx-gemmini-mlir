@@ -1,11 +1,11 @@
 # MX Gemmini compiler path and qualification
 
-This repository targets Nicolas's `gemmini-mx-cleanup` revision
+This repository targets the reference implementation’s `gemmini-mx-cleanup` revision
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52`. The profile exporter covers
 its 41 MX fragments and 40 Chipyard wrappers. The first executable lowering
 uses `MxE4M3Fp4VpuGemminiRocketConfig` for FP8 and FP4, and
 `MxE3M2OnlyGemminiRocketConfig` for FP6. The former has two 8-lane BF16 VPUs,
-the fused `EXPSUB`/`EXPSUM` operations, and `SPAD_REQUANT`. Nicolas's current
+the fused `EXPSUB`/`EXPSUM` operations, and `SPAD_REQUANT`. The reference implementation’s current
 branch has no single profile combining that VPU with FP6 E3M2 LUT compute.
 
 ## Compiler inputs and output
@@ -83,7 +83,7 @@ record the generator, model2MLIR, policy, source, and profile identities.
 The 256×256×256 FP8 header uses the same generator; its
 [capture](evidence/model2mlir_radiance_mx_fp8_256x256x256_capture_receipt.json)
 records that the original 128 KiB source scratchpad cannot place the C tile
-beside double-buffered operands, while the selected Nicolas MX+VPU profile's
+beside double-buffered operands, while the selected reference MX+VPU profile's
 256 KiB scratchpad can. Its numerical reference comes from the source golden
 generator, not execution of the original driver at that size.
 
@@ -134,7 +134,7 @@ links two independent builds each for
 [FP6 BF16](evidence/ssa_source_binding_266c593/fp6/bound.mlir),
 [FP4 BF16](evidence/ssa_source_binding_266c593/fp4/bound.mlir),
 [FP8 matrix→VPU→requant](evidence/ssa_source_binding_266c593/fp8_vpu/bound.mlir),
-Nicolas's [generated FP6 asymmetric mode](evidence/ssa_source_binding_266c593/asym_fp6_e3m2_e3m2/bound.mlir),
+the reference implementation’s [generated FP6 asymmetric mode](evidence/ssa_source_binding_266c593/asym_fp6_e3m2_e3m2/bound.mlir),
 and FP4×E4M3 mixed modes on
 [DIM8](evidence/ssa_source_binding_266c593/asym_dim8_fp4_e4m3/bound.mlir)
 and [DIM32](evidence/ssa_source_binding_266c593/asym_dim32_fp4_e4m3/bound.mlir).
@@ -144,7 +144,7 @@ program, and **4,096 BF16 outputs in each asymmetric case**, respectively.
 Each pair reproduces bound MLIR, physical commands, issuer, ELF, and Spike
 log hashes after excluding only the path-bearing link log. All six physical
 program hashes equal their previously qualified streams. The VPU result uses
-Nicolas's current quantized oracle; the FP6 source run retains the serial
+the reference implementation’s current quantized oracle; the FP6 source run retains the serial
 Spike scale-selector workaround. These are Rocket/Spike results and do not
 qualify a Radiance FPGA image.
 
@@ -183,7 +183,7 @@ qualification remain open.
 
 The compiler now emits quantized FP8 and packed FP4 readout commands from a source-bound
 model2MLIR contraction. The payload contains both the Radiance header's
-`C_out`/`C_scales_row` and a separately named Nicolas reference computed from
+`C_out`/`C_scales_row` and a separately named reference reference computed from
 the source BF16 golden. FP8 uses the current MXQuant power-of-two scale,
 hardware 2^-23 floor, and round-to-nearest-even E4M3 grid. FP4 uses the
 current output scale (code zero for an all-zero block), BF16→E3M1→E2M1
@@ -193,9 +193,9 @@ and FP4's 2,048 packed bytes and 128 scales, matched the pinned MXQuant
 implementation exactly in the
 [FP8 oracle check](../tests/test_quantized_lowering.py) and
 [FP4 oracle check](../tests/test_source_quantized_payload.py). The standalone
-checker compares both codes and scales on Nicolas's pinned Spike.
+checker compares both codes and scales on the reference implementation’s pinned Spike.
 
-| Source shape and tile | Spike vs Nicolas reference | Radiance header difference | Evidence |
+| Source shape and tile | Spike vs reference reference | Radiance header difference | Evidence |
 |---|---:|---|---|
 | FP8 64×64×64, one 64×64 tile | 4,096 codes + 128 scales exact | 4,091 codes + 128 scales | [capture](evidence/model2mlir_radiance_mx_fp8_64x64x64_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_64x64x64_quant_20261009.json) |
 | FP8 128×128×256, one 128×128 tile | 16,384 codes + 512 scales exact | 16,376 codes + 512 scales | [capture](evidence/model2mlir_radiance_mx_fp8_128x128x256_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp8_128x128x256_quant_20261009.json) |
@@ -206,11 +206,11 @@ checker compares both codes and scales on Nicolas's pinned Spike.
 | FP4 128×128×512, K tile 512 | 8,192 packed bytes + 512 scales exact | Header codes are FP8; 512 scales differ | [capture](evidence/model2mlir_radiance_mx_fp4_128x128x512_tk512_quant_capture_receipt.json), [Spike](evidence/compiled_mx_fp4_128x128x512_tk512_quant_20261009.json) |
 
 The discrepancy is a convention difference: `radiance-kernels/lib/golden/mx_golden.cpp`
-uses `log2_pmax = 8` for FP8 output, whereas Nicolas's current
+uses `log2_pmax = 8` for FP8 output, whereas the reference implementation’s current
 `src/main/scala/gemmini/MxRequantizer.scala` and pinned Spike use
-`log2_pmax_floor = 0`. The hardware requant path above retains Nicolas's
+`log2_pmax_floor = 0`. The hardware requant path above retains the reference implementation’s
 convention. The 128×128×256 source driver cannot stage its C tile in the
-original 128 KiB scratchpad; Nicolas's 256 KiB profile admits the tile.
+original 128 KiB scratchpad; the reference implementation’s 256 KiB profile admits the tile.
 The Radiance generator's `C_out` uses FP8 output even for generated FP4
 headers, so a source-compatible FP4-input run produces FP8 codes.
 
@@ -242,7 +242,9 @@ python -m tools.qualify_source_mx \
   --source-header-quantized
 ```
 
-## FP6 LUT-indexed quantized readout on Nicolas's Spike
+<a id="fp6-lut-indexed-quantized-readout-on-nicolass-spike"></a>
+
+## FP6 LUT-indexed quantized readout on the pinned Spike model
 
 The checked-in FP6 128×128×2048 header contains packed operands, three LUT
 banks, BF16 `C_out_bf16`, projected `C_proj_hw`, and output scales. The
@@ -257,7 +259,7 @@ For a 16-wave K loop, the physical lowering keeps intermediate outputs in
 BF16, then selects FP6 output on the final wave. The initial attempt to select
 FP6 on every wave failed Spike because requantization overwrote intermediate
 accumulator values. The final program now matches an independent BF16→E3M2→C
-LUT reference on Nicolas's pinned Spike: **8,192 packed index bytes and 512
+LUT reference on the reference implementation’s pinned Spike: **8,192 packed index bytes and 512
 E8M0 scales, all exact**. The header's `C_proj_hw` differs in 8,175 bytes and
 its 512 output scales all differ from the current target convention. This is
 target-convention parity, with the source discrepancy recorded explicitly in
@@ -268,7 +270,7 @@ generated source files, objects, ELF, extension, and Spike log hashes; its
 [second receipt](evidence/compiled_mx_fp6_128x128x2048_quant_repro_20261009.json)
 records the check. The linker diagnostic log includes the output directory
 path, so that log's hash differs.
-The FP6 output path uses the E3M2-only profile; Nicolas's current MX+VPU
+The FP6 output path uses the E3M2-only profile; the reference implementation’s current MX+VPU
 profile has no E3M2 LUT compute mode.
 
 Reproduce the fullout hardware FP6 output path with the same profile, RTL,
@@ -290,9 +292,9 @@ Fresh PyTorch→model2MLIR captures of both requant drivers bind their source
 operands, E8M0 scales, and three 64-line LUT banks to typed MX MLIR. The
 explicit `mx_gemmini.host_requantize` consumes the BF16 readout and C LUT.
 The RV64 host epilogue reproduces the source BF16→FP6 projection and packs
-the C LUT indices. On Nicolas's pinned Spike, both depths matched all
+the C LUT indices. On the reference implementation’s pinned Spike, both depths matched all
 **8,192 packed source bytes and 512 E8M0 scales**. The separate MX hardware
-FP6 readout also passed Nicolas's oracle for these depths; that output uses
+FP6 readout also passed the reference implementation’s oracle for these depths; that output uses
 a different scale and code convention. See the archived
 [FP6 source qualification](evidence/radiance_fp6_requant_266c593/qualification.json),
 which includes the generated headers, frontend captures, bound MLIR, payload
@@ -323,7 +325,7 @@ The sibling FP6 **fullout** drivers at 128×128×128, 128×128×256,
 128×128×512, and 128×128×1024 use generated operand headers and separate
 fresh PyTorch→model2MLIR captures. Their typed contractions lower to
 standalone BF16 MX readout programs. All **16,384 BF16 values per driver**
-matched the source golden on Nicolas's pinned Spike. The
+matched the source golden on the reference implementation’s pinned Spike. The
 [fullout qualification](evidence/radiance_fp6_fullout_266c593/qualification.json)
 archives all four frontend captures, bound MLIR, packed payloads, physical
 commands, generated issuers, receipts, and Spike logs. The 1024-depth case
@@ -348,7 +350,7 @@ Two checked [FP8](../examples/mx_fp8_vpu_x2_profile_bound.mlir) and
 [FP4](../examples/mx_fp4_vpu_x2_profile_bound.mlir) programs add an in-place
 VPU `MULS` by BF16 2.0. The expected outputs are derived independently by
 exact BF16 exponent shifts from the source BF16 golden; the checker refuses
-values for which that derivation is invalid. On Nicolas's Spike extension,
+values for which that derivation is invalid. On the pinned Spike model extension,
 both compiler-generated mixed command streams matched every derived output:
 [FP8 receipt](evidence/compiled_mx_fp8_vpu_x2_20261009.json) and
 [FP4 receipt](evidence/compiled_mx_fp4_vpu_x2_20261009.json). These epilogues
@@ -376,7 +378,7 @@ checked before issue.
 
 An independent exact BF16 exponent shift followed by the current FP8 output
 reference supplies the expected codes and scales. The compiler-generated
-RV64 ELF matched **4,096 FP8 codes and 128 E8M0 scales** on Nicolas's pinned
+RV64 ELF matched **4,096 FP8 codes and 128 E8M0 scales** on the reference implementation’s pinned
 Spike. Separate output directories reproduced the generated source, objects,
 ELF, extension, and Spike log hashes. See the [typed MLIR](evidence/matrix_vpu_requant_fp8_64x64x128_payload_bound.mlir),
 [qualification](evidence/matrix_vpu_requant_fp8_64x64x128_qualification.json),
@@ -390,7 +392,7 @@ the earlier command-only MLIR path byte for byte.
 The source header's unscaled quantized output differs in 4,094 codes and
 all 128 scales; it is retained as a separate source reference. This is an
 explicit target composition test, not a claim that the handwritten Radiance
-GEMM contains VPU operations. The Nicolas source chain below qualifies the
+GEMM contains VPU operations. The reference source chain below qualifies the
 resident second matrix operand separately and then in a single program with
 the first matrix.
 
@@ -412,7 +414,7 @@ This composition adds VPU×2 to the source GEMM; it does not claim that the
 handwritten fullout GEMM uses VPU. Multiple output tiles and requant blocks
 outside the selected hardware range remain rejected.
 
-Nicolas's reference `vpu_ops`, `vpu_softmax`, and
+The reference implementation’s reference `vpu_ops`, `vpu_softmax`, and
 `chain_vpu_spad_requant` programs were also built and run directly against
 the pinned Spike extension. They passed all reference comparisons, including
 the fused VPU cases and the VPU→requant→matmul chain. That is model capability
@@ -420,10 +422,12 @@ evidence; the [reference receipt](evidence/nicolas_vpu_spike_reference_20261009.
 records source, ELF, tool, and log hashes. Compiler-issued VPU coverage now
 includes the following source-audited cases.
 
-### Nicolas VPU source oracle across all operations
+<a id="nicolas-vpu-source-oracle-across-all-operations"></a>
+
+### Reference VPU source oracle across all operations
 
 The [source VPU receipt](evidence/nicolas_vpu_source_all_ops_266c593/receipt.json)
-builds Nicolas's `bareMetalC/vpu_ops.c` with `VPU_FUSED=1` and runs it on his
+builds the reference implementation’s `bareMetalC/vpu_ops.c` with `VPU_FUSED=1` and runs it on his
 pinned Spike extension. Its [log](evidence/nicolas_vpu_source_all_ops_266c593/spike.log)
 passes **29 / 29** source-reference checks, including all 14 VPU opcodes,
 EXPSUB and EXPSUM, broadcast/reduction forms, same-bank access, and dependent
@@ -434,19 +438,19 @@ log hashes. Reproduce with:
 python -m tools.qualify_nicolas_vpu_ops_source \
   --rtl-root /path/to/gemmini-mx-cleanup \
   --riscv-root /path/to/riscv-tools \
-  --out-dir /tmp/nicolas-vpu-source
+  --out-dir $ARTIFACT_ROOT/source-vpu-source
 ```
 
 This source executable is the full VPU oracle. The compiler-issued base,
 variant, and ordering qualifications below now cover all **29 named source
-checks** on Nicolas's pinned Spike extension. Each case is compiled into an
+checks** on the reference implementation’s pinned Spike extension. Each case is compiled into an
 independent ELF with the source input sequence and reference calculation;
 the monolithic source benchmark remains a separate qualification for these
 per-operation objects. A later [single-object source-order replay](evidence/nicolas_vpu_ops_program_public_266c593/README.md)
 issues all 30 VPU commands in one generated executable, with timed readout
 snapshots and a write-after-read reload. It matches all 13,056 BF16 values
 across 29 named source checks under both VPU Rocket profiles. The thin CPU
-driver supplies Nicolas's input and reference logic; the compiler produces
+driver supplies the reference implementation’s input and reference logic; the compiler produces
 the accelerator command stream. This qualifies selected functional outputs
 on Spike, not RTL queue timing or the source benchmark's performance behavior.
 
@@ -457,10 +461,10 @@ captures 12 BF16 PyTorch operations through model2MLIR `e9ded36`: add,
 subtract, multiply, maximum, scalar add and multiply, exp, reciprocal,
 reciprocal square root, row maximum, row absolute maximum, and row sum. A
 checked binding selects one typed `mx_gemmini.vpu_execute` per capture on
-Nicolas's two-unit MX+VPU profile. The compiler emits the load/store
+the reference implementation’s two-unit MX+VPU profile. The compiler emits the load/store
 configuration, source transfers, funct-33 VPU command, and output transfers.
 The C driver reproduces the exact `vpu_ops.c` input sequence, including the
-unary special values, and computes its expected output with Nicolas's
+unary special values, and computes its expected output with the reference implementation’s
 `vpu_ref.h`. No accelerator command is handwritten in that driver.
 
 All **4,992 / 4,992 BF16 outputs** across those 12 operations match on the
@@ -478,7 +482,7 @@ python -m tools.qualify_nicolas_vpu_elementwise \
   --model2mlir-root /path/to/model2MLIR \
   --rtl-root /path/to/gemmini-mx-cleanup \
   --riscv-root /path/to/riscv-tools \
-  --out-dir /tmp/nicolas-vpu-base
+  --out-dir $ARTIFACT_ROOT/source-vpu-base
 ```
 
 For reductions, the source VPU reduces four scratchpad rows and all eight
@@ -491,7 +495,7 @@ source BF16 rounding rule. These are Spike results, not RTL or FPGA results.
 The [fused VPU receipt](evidence/nicolas_vpu_fused_compiled_266c593/index.json)
 captures `exp(a - b)` and `exp(a - b)` plus a grouped sum from BF16 PyTorch
 with model2MLIR `e9ded36`, then binds each graph to one typed VPU operation
-on Nicolas's fused two-unit profile. The compiler emits all configuration,
+on the reference implementation’s fused two-unit profile. The compiler emits all configuration,
 input transfers, funct-33 compute, and output transfers. The C driver only
 reproduces the source test's input generator and calls `vpu_ref.h` for the
 BF16 golden. The [EXPSUB](evidence/nicolas_vpu_fused_compiled_266c593/expsub/bound.mlir)
@@ -506,25 +510,25 @@ python -m tools.qualify_nicolas_vpu_fused \
   --model2mlir-root /path/to/model2MLIR \
   --rtl-root /path/to/gemmini-mx-cleanup \
   --riscv-root /path/to/riscv-tools \
-  --out-dir /tmp/nicolas-vpu-fused
+  --out-dir $ARTIFACT_ROOT/source-vpu-fused
 ```
 
 PyTorch identifies the operation and shapes; the source VPU reference defines
 the rounded BF16 results. These checks qualify the two fused opcodes on
-Nicolas's Spike model. The base-op checks above cover the other 12 opcodes;
+the pinned Spike model. The base-op checks above cover the other 12 opcodes;
 the source ordering variants and RTL/FPGA behavior remain separate gates.
 
 ### Compiler-issued VPU broadcast and same-bank variants
 
 The [variant receipt](evidence/nicolas_vpu_variants_compiled_266c593/index.json)
-captures Nicolas's remaining single-operation source forms through the same
+captures the reference implementation’s remaining single-operation source forms through the same
 model2MLIR revision. Eleven independent programs cover MUL and MAX with
 same-bank or broadcast sources, broadcast SUB across two addresses, plain and
 broadcast EXPSUB, both EXPSUM placements with their sum outputs, and RSUM
 with reduction length one. The binding selects the actual source bank
 addresses and transfers only the rows the VPU reads. The generated issuer
 places no fence between DMA and VPU commands, matching the source ordering
-test. Nicolas's input generator and `vpu_ref.h` are the driver oracle.
+test. The reference implementation’s input generator and `vpu_ref.h` are the driver oracle.
 
 All **5,888 / 5,888 BF16 values** across these 11 programs match on pinned
 Spike. Two clean runs reproduce their captures, bound MLIR, issuers, ELFs,
@@ -539,10 +543,10 @@ python -m tools.qualify_nicolas_vpu_variants \
   --model2mlir-root /path/to/model2MLIR \
   --rtl-root /path/to/gemmini-mx-cleanup \
   --riscv-root /path/to/riscv-tools \
-  --out-dir /tmp/nicolas-vpu-variants
+  --out-dir $ARTIFACT_ROOT/source-vpu-variants
 ```
 
-These checks establish numerical and ordered-command parity on Nicolas's
+These checks establish numerical and ordered-command parity on the reference implementation’s
 Spike extension. The dependent-command cases are qualified separately below.
 
 ### Compiler-issued VPU dependencies and memory ordering
@@ -572,11 +576,11 @@ python -m tools.qualify_nicolas_vpu_ordering \
   --model2mlir-root /path/to/model2MLIR \
   --rtl-root /path/to/gemmini-mx-cleanup \
   --riscv-root /path/to/riscv-tools \
-  --out-dir /tmp/nicolas-vpu-ordering
+  --out-dir $ARTIFACT_ROOT/source-vpu-ordering
 ```
 
 Together with the base and variant receipts, the coverage tests map every
-one of Nicolas's 29 source log checks to a compiler-issued Spike comparison.
+one of the reference implementation’s 29 source log checks to a compiler-issued Spike comparison.
 This is a source-specific schedule qualification. General graph scheduling,
 the monolithic 29-case compiler executable, and RTL/FPGA validation are
 separate work.
@@ -584,7 +588,7 @@ separate work.
 ### Public object for a dependent VPU sequence
 
 The [public sequence replay](evidence/nicolas_vpu_chain_public_266c593/README.md)
-revisits Nicolas's ADD→in-place MULS→RMAX case through the public
+revisits the reference implementation’s ADD→in-place MULS→RMAX case through the public
 tools.compile_object entry point. A PyTorch graph is captured with upstream
 model2MLIR e9ded36, then a source-checked binding forms three ordered typed
 VPU operations. The new sequence lowerer checks that each scratchpad source
@@ -593,7 +597,7 @@ emits runtime input transfers plus both intermediate and final readouts.
 Its object contains no operand or golden bytes.
 
 The generated object matches all **512 intermediate BF16 values** and
-**128 final BF16 values** against Nicolas's vpu_ref.h on pinned Spike under
+**128 final BF16 values** against the reference implementation’s vpu_ref.h on pinned Spike under
 both Rocket VPU profiles. A second build of the first profile reproduces its
 frontend, object, ELF, and simulator receipt hashes. The two profiles share
 the same issuer and outputs but retain distinct bound MLIR and profile hashes.
@@ -604,12 +608,12 @@ monolithic source test and RTL timing remain separate.
 
 `tools.qualify_nicolas_vpu_softmax` captures `torch.softmax` on a 16×32 BF16
 tensor with pinned model2MLIR `e9ded36`. It checks the resulting max, subtract,
-exp, sum, and division decomposition, then binds Nicolas's six-step BF16 VPU
+exp, sum, and division decomposition, then binds the reference implementation’s six-step BF16 VPU
 schedule to the MX+VPU profile. The typed
 [VPU MLIR](evidence/nicolas_vpu_softmax_full_ce54256/softmax.profile_bound.mlir)
 lowers to a 17-command Rocket program: flush, load/store configuration, four
 input transfers, six funct-33 VPU operations, and four output transfers. The
-generated issuer replaces Nicolas's MX configuration, transfer, and VPU calls;
+generated issuer replaces the reference implementation’s MX configuration, transfer, and VPU calls;
 the source retains input generation, a completion fence, and its bit-exact VPU
 reference checker. On
 pinned Spike, all **512 BF16 outputs** match the reference. Two clean runs
@@ -634,7 +638,7 @@ python -m tools.qualify_nicolas_vpu_softmax \
 ### Matrix/VPU/requant source chain
 
 `source_vector_chain.py` checks the exact `VPU_MULS` and tiled, resident
-`SPAD_REQUANT` calls in Nicolas's `chain_vpu_spad_requant.c`, then emits
+`SPAD_REQUANT` calls in the reference implementation’s `chain_vpu_spad_requant.c`, then emits
 [typed MLIR](evidence/nicolas_chain_vpu_requant_64x64_source_bound.mlir).
 The compiler binds the E8M0 scale destination as a checked runtime pointer,
 issues generic BF16 input and tiled FP8 output transfers around those typed
@@ -655,7 +659,7 @@ source buffers, C2 destination, and E4M3 format. The profile verifier checks
 the 64×64×64 DIM16 geometry, scratchpad lifetimes, and output mode; the
 physical lowerer emits B2 scale and weight transfers, a resident output-scale
 configuration, and `LOOP_WS_SPAD` without reloading C1 or its scales. Its
-source audit checks Nicolas's B2 transfer and second-matmul calls, and an
+source audit checks the reference implementation’s B2 transfer and second-matmul calls, and an
 independent exact BF16×2 output oracle matches his C2 header. The generated
 ELF compares **4,096 C1 codes, 128 C1 scales, 4,096 C2 codes, and 128 C2
 scales**; all match on pinned Spike. Two clean output directories reproduce
@@ -663,7 +667,7 @@ the typed MLIR, generated source, objects, ELF, extension, and Spike log
 hashes. See the [typed MLIR](evidence/nicolas_chain_vpu_requant_resident_64x64_source_bound.mlir),
 [Spike receipt](evidence/compiled_nicolas_resident_chain_64x64_20261009.json),
 and [reproduction](evidence/compiled_nicolas_resident_chain_64x64_repro_20261009.json).
-This path starts from Nicolas's C1 BF16 source tile, so it still excludes MM1.
+This path starts from the reference implementation’s C1 BF16 source tile, so it still excludes MM1.
 
 The new `tools.capture_nicolas_chain` command captures
 `torch.matmul(torch.matmul(A, B1), B2)` with model2MLIR
@@ -674,17 +678,17 @@ captures reproduce the source MLIR, handoff, bound MLIR, and quantization
 manifest hashes ([receipt](evidence/model2mlir_nicolas_chain_two_site_capture_20261009.json),
 [reproduction](evidence/model2mlir_nicolas_chain_two_site_capture_repro_20261009.json),
 [bound MLIR](evidence/model2mlir_nicolas_chain_two_site_profile_bound_20261009.mlir)).
-The PyTorch examples supply contraction structure; Nicolas's header supplies
+The PyTorch examples supply contraction structure; the reference implementation’s header supplies
 the actual packed bytes and scales.
 
 With both frontend artifacts, the compiler now emits **one ordered RV64
-program** for MM1→VPU×2→SPAD_REQUANT→resident MM2. MM1 loads Nicolas's
+program** for MM1→VPU×2→SPAD_REQUANT→resident MM2. MM1 loads the reference implementation’s
 A1/B1 codes and scales and writes BF16 C1 to a live scratchpad tile; VPU and
 requant consume it there; MM2 consumes tiled C1 codes and resident activation
 scales without a DRAM reload. A diagnostic mvout copies MM1's BF16 C1 for
 comparison while the chain continues to use the on-chip tile. The program
 compares all **4,096 C1 BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 4,096
-C2 FP8 codes, and 128 C2 scales** against Nicolas's source header and its
+C2 FP8 codes, and 128 C2 scales** against the reference implementation’s source header and its
 independent exact ×2 oracle. Every comparison matches on the pinned Spike
 extension. Two independent builds reproduce the typed MLIR, generated
 source, objects, ELF, extension, and Spike log hashes. See the
@@ -704,12 +708,12 @@ This remains a source-bound 64³ specialization. General shape scheduling and
 independent lowering of arbitrary `mx_gemmini.contract` graphs remain open.
 
 The same typed `mx_gemmini.resident_contract` physical lowerer now accepts
-Nicolas's **128³ FP8 resident MM2** under the plain
+the reference implementation’s **128³ FP8 resident MM2** under the plain
 `MxGemminiRocketConfig`, which has a requantizer but no VPU or
 `SPAD_REQUANT`. Its scratchpad validation derives the C1, B2, and C2 spans
 from the operation's dimensions and rejects overlaps. The
 [128³ source-bound MLIR and Spike archive](evidence/nicolas_resident_mm2_128_266c593/index.json)
-preloads C1 codes and its transposed scales from Nicolas's checked-in chain
+preloads C1 codes and its transposed scales from the reference implementation’s checked-in chain
 header, then lowers the SSA-bound MM2 op into B2 scale and weight transfers,
 resident scale selection, compute, and C2 readout. The generated RV64 ELF
 matches **16,384 C2 FP8 codes and 512 E8M0 scales** on stock Spike; a second
@@ -722,7 +726,7 @@ uses current upstream model2MLIR `e9ded36`, the plain MX profile, and
 as profile-bound `mx_gemmini.contract` sites with no opaque frontend calls.
 Two independent captures reproduce the source MLIR, handoff, bound MLIR,
 and manifest byte for byte. The PyTorch examples establish graph structure;
-Nicolas's source header supplies the packed operands and numerical goldens.
+the reference implementation’s source header supplies the packed operands and numerical goldens.
 The capture alone is frontend evidence; the connected lowering below binds
 those two sites to the source payload.
 
@@ -739,13 +743,13 @@ Capture the two sites again with `python -m tools.capture_nicolas_chain
 `mx-gemmini-opt` paths; see the command's `--help` for its full arguments.
 
 The [connected 128³ MLIR and Spike archive](evidence/nicolas_connected_plain_chain_128_266c593/index.json)
-binds both captured sites to Nicolas's A1/B1/B2 codes and E8M0 scales. Its
+binds both captured sites to the reference implementation’s A1/B1/B2 codes and E8M0 scales. Its
 typed `mx_gemmini.contract` produces quantized C1 codes and scales, which the
 SSA-bound `mx_gemmini.resident_contract` consumes. The physical schedule
 loads A1/B1, requantizes C1 into the tiled scratchpad and on-chip activation
 scale window, then loads only B2 for MM2. A diagnostic readback checks C1
 without making MM2 reload it. The generated RV64 ELF matches **16,384 C1
-codes, 512 C1 scales, 16,384 C2 codes, and 512 C2 scales** against Nicolas's
+codes, 512 C1 scales, 16,384 C2 codes, and 512 C2 scales** against the reference implementation’s
 checked-in header on stock Spike. An independent build reproduces the MLIR,
 commands, objects, ELF, extension, and log hashes. This is source-bound to
 the 128³ E4M3 plain MX recipe; arbitrary connected graphs still need a
@@ -759,15 +763,15 @@ insufficient memory. Its source weight layout emitter remains scoped to
 square N/K weights. The plan
 emits the same 128³ command bytes as the archived Spike run.
 The [published planner rerun](evidence/nicolas_resident_pair_plan_b1b5882/index.json)
-checks this from commit `b1b5882` on Nicolas's stock Spike: the generated
+checks this from commit `b1b5882` on the reference implementation’s stock Spike: the generated
 MLIR, physical program, objects, ELF, and log hashes remain equal to the
 connected-chain baseline, with every C1 and C2 output matched.
 
 The [64×128×128 connected chain archive](evidence/nicolas_connected_plain_chain_64x128_d512fc2/index.json)
-qualifies a second output shape with the same plain MX profile and Nicolas's
+qualifies a second output shape with the same plain MX profile and the reference implementation’s
 stock Spike extension. Current model2MLIR `e9ded36` captures two PyTorch
 matmul sites with `A` shaped 64×128 and both weight matrices shaped 128×128.
-The compiler binds them to the first 64 independent rows of Nicolas's
+The compiler binds them to the first 64 independent rows of the reference implementation’s
 checked-in 128³ packed inputs and C1/C2 goldens. A1's four E8M0 scale groups
 are cropped per group; B1 and B2 stay complete. The derived plan emits 32
 A1 tile transfers, 64 each for B1/B2, and 32 tile readouts for each result.
@@ -776,7 +780,7 @@ RV64 builds reproduce identical manifests, objects, ELF, and Spike log. Both
 runs match **8,192 FP8 codes and 256 E8M0 scales at each site**. The archive
 includes the typed MLIR, physical C issuer, source bytes, ELF, hashes, and
 full-output Spike result. This qualifies a source row-prefix specialization;
-it does not assert that Nicolas checked in a separate 64×128×128 C driver.
+it does not assert that reference checked in a separate 64×128×128 C driver.
 A [fresh checkout of the published compiler](evidence/nicolas_connected_plain_chain_64x128_fresh_5cf6e1a/index.json)
 replayed the archived frontend capture and reproduced the generated program,
 ELF, and complete Spike result from commit `5cf6e1a`.
@@ -786,7 +790,7 @@ extends that same source specialization to M = **16, 32, 48, 64, 80, 96,
 112, and 128**, with N = K = 128. Six new shapes use a fresh two-site
 PyTorch capture from the current model2MLIR HEAD `e9ded36`; the 64 and 128
 cases retain their separate archives above. For each new shape, two captures
-and two generated RV64 builds match byte for byte. Nicolas's stock Spike
+and two generated RV64 builds match byte for byte. The reference implementation’s stock Spike
 matches every C1 and C2 code and scale: per site, **2,048 through 16,384
 FP8 codes** and **64 through 512 E8M0 scales** according to M. Each archived
 case contains the frontend capture, typed connected MLIR, packed source
@@ -801,7 +805,7 @@ It reads the `contract → readout_quantized → resident_contract` SSA graph,
 checks all six tensor arguments and runtime payload hashes, verifies the
 profile-backed scratchpad plan, and issues both matrix streams plus readout.
 Runtime symbols and contraction site IDs are supplied by the caller rather
-than fixed to Nicolas's names. The Nicolas adapter retains the source/header
+than fixed to the reference implementation’s names. The reference adapter retains the source/header
 digest, selected profile, and placement checks. Archived commands for all
 eight row counts remain byte-identical; a renamed 96×128×128 graph also
 passes the native `mx-gemmini-opt` verifier and the reusable lowerer. This
@@ -822,7 +826,7 @@ builds `mx_issue.o` with **zero embedded operand or golden bytes**. The object
 manifest records the ten pointer positions, minimum sizes, layouts, command
 hashes, tool hashes, and selected profile. The [object and Spike archive](evidence/nicolas_resident_pair_object_1eebfc5/index.json)
 qualifies M = 16, 96, and 128. Each object is the sole MX command issuer in
-the linked source comparison harness; Nicolas's stock Spike matches every
+the linked source comparison harness; the reference implementation’s stock Spike matches every
 C1/C2 FP8 code and E8M0 scale. Two independent M = 96 builds reproduce the
 object, linked ELF, and Spike log byte for byte.
 A [fresh checkout of published commit `5172afa`](evidence/nicolas_resident_pair_object_fresh_5172afa/index.json)
@@ -855,10 +859,10 @@ The [16×96×96 connected pair archive](evidence/nicolas_plain_pair_16x96_derive
 adds a changed N/K width to the plain MX path. A fresh checkout of
 `f460d91` captured both contractions through model2MLIR `e9ded36`, compiled
 the typed `contract → readout_quantized → resident_contract` graph, emitted a
-data-free RV64 object, and linked that object as the sole MX issuer. Nicolas's
+data-free RV64 object, and linked that object as the sole MX issuer. The reference implementation’s
 stock Spike matched **1,536 C1 and 1,536 C2 FP8 codes**, plus **48 scales per
 site**, with zero mismatches. The inputs are a 96-wide slice of the checked-in
-128³ source wire data. The pinned Nicolas mesh model first reproduced the
+128³ source wire data. The pinned reference mesh model first reproduced the
 unchanged 128³ C1 and C2 source goldens; it then produced the 96-wide reference.
 This is a source-derived numerical check for one new shape, not an unchanged
 96-wide source golden or RTL/FPGA qualification. The archived capture, input
@@ -902,16 +906,16 @@ For the 64-row case, use `--output-rows 64` during capture and
 `--source-rows 64` in both Spike qualifiers, with distinct output directories.
 
 The [rectangular connected-pair archive](evidence/nicolas_rectangular_pair_64x96x64_64x64x96_c0be9b9/index.json)
-adds **MM1 64×96×64 → MM2 64×64×96**. Nicolas's checked-in
+adds **MM1 64×96×64 → MM2 64×64×96**. The reference implementation’s checked-in
 `matmul_fp8_64x96x64` A/B wire inputs and unchanged C1 codes, scales, and
 BF16 golden qualify the first stage. B2 is a 96×64 slice of the checked-in
-128³ chain weight; the pinned Nicolas mesh model derives C2. A fresh checkout
+128³ chain weight; the pinned reference mesh model derives C2. A fresh checkout
 of `c0be9b9` captured both sites through model2MLIR `e9ded36`, bound their
 distinct tensor shapes, emitted a data-free RV64 object, and linked it as the
 only MX issuer. Stock Spike matched **6,144 C1 codes and 192 scales**, then
 **4,096 C2 codes and 128 scales**, with zero mismatches. The first attempt
 had 3,992 C2 code and 34 scale mismatches because MM2 reused the square
-chain's B traversal. The fixed rectangular path uses Nicolas's K-major
+chain's B traversal. The fixed rectangular path uses the reference implementation’s K-major
 weight tile order; its regression test and both Spike logs are archived.
 This qualifies the selected Rocket RoCC/Spike configuration, not RTL or FPGA.
 The archived `bound/connected.mlir.gz` and six `bound/*.bin.gz` files can be
@@ -921,7 +925,7 @@ object, C issuer, and physical command stream byte for byte.
 The [narrow rectangular archive](evidence/nicolas_rectangular_pair_64x96x64_64x32x96_ea746a2/index.json)
 repeats capture → bind → object → stock Spike from a fresh `ea746a2`
 checkout with `--second-width 32` and separate output directories. It keeps
-Nicolas's unchanged 64×96×64 MM1 golden and slices B2 to 96×32. The B1 and
+the reference implementation’s unchanged 64×96×64 MM1 golden and slices B2 to 96×32. The B1 and
 B2 buffers are **6,144 and 3,072 bytes**, with distinct scratchpad tail
 placements. Spike matched **6,144 C1 codes, 192 C1 scales, 2,048 C2 codes,
 and 64 C2 scales** against the checked source/model references. The first
@@ -961,18 +965,18 @@ checks the `contract → readout_bf16 → vpu_execute → spad_requant →
 resident_contract` SSA edges, six input lengths and payload hashes, VPU
 scratchpad lifetime, MM2 placement, and the selected MX+VPU profile. The
 caller supplies runtime symbols and site IDs. The source adapter continues
-to check Nicolas's header, first-matmul capture, VPU seam, and output goldens.
+to check the reference implementation’s header, first-matmul capture, VPU seam, and output goldens.
 The command stream and `mx_issue.o` are byte-identical to the established
 source path. The [Spike and fresh-checkout archive](evidence/nicolas_resident_vpu_object_6c9ed40/index.json)
 records 0 mismatches across 4,096 BF16 values, 8,192 FP8 codes, and 256
-E8M0 scales on Nicolas's stock Spike for
+E8M0 scales on the reference implementation’s stock Spike for
 `MxE4M3Fp4VpuGemminiRocketConfig`. The object carries no operand or golden
 data. This numerical qualification covers the 64³ scalar ×2 chain; other
 VPU operations, shapes, and precisions need their own tests.
 
 The [narrow MX+VPU archive](evidence/nicolas_narrow_vpu_pair_64x64x64_64x32x64_9cd918c/index.json)
 adds a captured 64×64×64 MM1 followed by VPU ×2, resident requant, and a
-64×32×64 MM2. It uses Nicolas's unchanged 64³ chain source and its first
+64×32×64 MM2. It uses the reference implementation’s unchanged 64³ chain source and its first
 32 B2 columns. The first output block is checked twice: against the source
 codes/scales and against independently requantized source BF16. From a fresh
 `9cd918c` checkout, the typed graph compiled to a data-free RoCC object and
@@ -983,7 +987,7 @@ byte. The archived compressed MLIR and inputs also recompile to the same
 object, issuer, and physical program.
 
 The same narrow graph was independently captured, bound, compiled, and run
-under Nicolas's **E4M3-only VPU** profile. Its
+under the reference implementation’s **E4M3-only VPU** profile. Its
 [configuration receipt](evidence/nicolas_narrow_vpu_pair_e4m3_only_103acdc/index.json)
 records the distinct profile hash and zero mismatches on stock Spike for all
 the outputs above. The source payloads, generated issuer/object, ELF, and
@@ -999,7 +1003,7 @@ To reproduce, capture with `--matrix-dim 64 --first-k 64 --second-width 32
 directory. The bind and Spike qualifiers check the source, profile,
 model2MLIR receipt, runtime payloads, and object hashes.
 
-To reproduce from a checked-out compiler and Nicolas's source tree, first
+To reproduce from a checked-out compiler and the reference implementation’s source tree, first
 run `tools.qualify_nicolas_vector_requant` with `--connected-ssa` and the
 archived two-site frontend receipt to materialize checked input `.bin` files.
 Then use the generated `connected_bound.mlir` and `build/` directory:
@@ -1103,7 +1107,7 @@ python -m tools.qualify_nicolas_resident_128 \
 ```
 
 A [fresh GitHub checkout of `ae945d0`](evidence/nicolas_connected_plain_chain_128_fresh_checkout_ae945d0/index.json)
-built `mx-gemmini-opt` from source and ran that exact command with Nicolas's
+built `mx-gemmini-opt` from source and ran that exact command with the reference implementation’s
 RTL and RISC-V toolchain. It reproduced the connected MLIR, physical program,
 objects, ELF, and Spike log hashes from the checked-in baseline. The archive
 records the fresh compiler revision, native tool hash, artifact manifest, and
@@ -1151,7 +1155,9 @@ and
 Add `--connected-ssa` to emit and compile the single SSA-connected function.
 The output directory must be new.
 
-## Nicolas's standalone asymmetric mode
+<a id="nicolass-standalone-asymmetric-mode"></a>
+
+## Reference standalone asymmetric mode
 
 `MxAsymE4M3Fp4GemminiRocketConfig` admits E4M3 activation through the
 4-bit-addressed, 8-bit-entry LUT with direct FP4 weights (`pe_mode=10`), and
@@ -1162,12 +1168,12 @@ selected before emitting the command sequence.
 
 `tools.qualify_nicolas_asym` captures a fresh 64×64×64 PyTorch matmul through
 the pinned model2MLIR checkout, then requires an explicit recipe naming
-Nicolas's `matmul_tiled_asym_e4m3_fp4_64x64.c`, its packed data header, the
+the reference implementation’s `matmul_tiled_asym_e4m3_fp4_64x64.c`, its packed data header, the
 frontend site ID, the selected profile digest, and the exact legal compute
 tuple. The ordinary symmetric handoff binder continues to reject this mode.
 The specialized MLIR is accepted by `mx-gemmini-opt`; the source-bound
 lowerer emits LUT, scale, operand DMA, compute, and BF16 readback commands
-into a standalone RV64 ELF. On Nicolas's pinned Spike extension, the ELF
+into a standalone RV64 ELF. On the reference implementation’s pinned Spike extension, the ELF
 matches **all 4,096 BF16 source golden values**. Two fresh captures and builds
 match the model2MLIR artifacts, generated issue source, RV64 objects and ELF,
 Spike extension, and Spike log hashes. The
@@ -1176,12 +1182,12 @@ Spike extension, and Spike log hashes. The
 [specialized MLIR](evidence/model2mlir_nicolas_asym_e4m3_fp4_bound_20261009.mlir),
 and [generated issue source](evidence/compiled_nicolas_asym_e4m3_fp4_issue_20261009.c)
 record the command and provenance checks. The random PyTorch examples
-establish graph structure and shape; Nicolas's header supplies the physical
+establish graph structure and shape; the reference implementation’s header supplies the physical
 packed operands and scales. This is a bounded source specialization for the
 standalone asymmetric config, not a claim that model2MLIR currently emits
 mixed-operand quantization or that the MX+VPU profile supports it.
 
-The same command with `--variant direct` selects Nicolas's separate
+The same command with `--variant direct` selects the reference implementation’s separate
 `matmul_tiled_asym_e4m3s_fp4_64x64.c` and data header. This changes the
 activation projection, physical PE mode, operand layout, and number of M
 tiles. Its generated ELF also matches **all 4,096 BF16 source values** on
@@ -1196,7 +1202,7 @@ mode evidence; the recipes and bound contracts differ.
 
 The default qualification command now lowers both modes into the same
 `PhysicalProgram` representation used by the symmetric MX compiler. The
-lowerer exports Nicolas's packed arrays as hashed binary resources, checks
+lowerer exports the reference implementation’s packed arrays as hashed binary resources, checks
 the typed site and profile mode, and emits ordered configuration, LUT or
 disable, scale, DMA, compute, and readout commands. The existing standalone
 emitter produces a generic RoCC command issuer, data object, and BF16
@@ -1230,7 +1236,7 @@ Use `--variant direct` for mode 6. The default `lut` selects mode 10.
 
 ### FP6 E3M2 activation with FP4 weights
 
-Nicolas's `MxAsymFp6Fp4GemminiRocketConfig` has a separate legal mode:
+the reference implementation’s `MxAsymFp6Fp4GemminiRocketConfig` has a separate legal mode:
 FP6 E3M2 activation through a 6-bit-entry LUT, direct FP4 weights, and PE
 mode 3. `--variant fp6_lut` selects his
 `matmul_tiled_asym_fp6_fp4_64x64.c` and checked-in data header. The compiler
@@ -1262,7 +1268,7 @@ python -m tools.qualify_nicolas_asym --variant fp6_lut \
 
 ### FP4 activation with FP6 E3M2 weights
 
-Nicolas's `MxAsymFp4Fp6GemminiRocketConfig` reverses the mixed pair:
+the reference implementation’s `MxAsymFp4Fp6GemminiRocketConfig` reverses the mixed pair:
 direct FP4 activation, FP6 E3M2 weights through a 6-bit-entry LUT, and PE
 mode 1. `--variant fp4_fp6_lut` binds
 `matmul_tiled_asym_fp4_fp6_64x64.c` and its checked-in data header to a fresh
@@ -1295,7 +1301,7 @@ python -m tools.qualify_nicolas_asym --variant fp4_fp6_lut \
 The standalone `MxAsymE4M3E2M3GemminiRocketConfig` selects PE mode 9.
 Both operands use 8-bit LUT entries; the weight codes use the low six bits.
 The compiler emits the per-operand alternate-format bit in `CONFIG_EX` and
-loads Nicolas's checked-in E4M3 and E2M3 LUT banks. The generated physical
+loads the reference implementation’s checked-in E4M3 and E2M3 LUT banks. The generated physical
 program has 63 commands. Its standalone ELF matches **all 4,096 BF16 source
 values** on the pinned Spike extension, and two fresh captures and builds
 match on frontend artifacts, resources, commands, issuer, objects, ELF,
@@ -1319,7 +1325,7 @@ python -m tools.qualify_nicolas_asym --variant e4m3_e2m3_lut \
 
 ### E5M2 activation with FP4 weights
 
-Nicolas's `MxAsymE5M2Fp4GemminiRocketConfig` selects E5M2 activation through
+the reference implementation’s `MxAsymE5M2Fp4GemminiRocketConfig` selects E5M2 activation through
 an 8-bit LUT, direct FP4 weights, and PE mode 3. This exercises the FP8
 alternate-format bit in `CONFIG_EX` independently of the E4M3 cases. The
 source-bound typed contraction lowers to 63 physical commands. Two fresh
@@ -1344,7 +1350,7 @@ python -m tools.qualify_nicolas_asym --variant e5m2_fp4_lut \
 
 ### Direct FP8 operand layouts
 
-Two more Nicolas modes require different transfer geometry. E4M3 direct
+Two more reference modes require different transfer geometry. E4M3 direct
 activation × E3M2 LUT weight uses a full 64×64 activation array and only a
 weight LUT. FP4 direct activation × E4M3 direct weight uses a full 64×64
 weight array and four N tiles instead of two. The physical lowerer now derives
@@ -1363,13 +1369,15 @@ or [FP4×E4M3](evidence/model2mlir_nicolas_asym_payload_fp4_e4m3s_bound_20261009
 resource manifest before physical lowering. These are standalone MX profiles
 without VPU.
 
-### Typed binding of Nicolas's packed source resources
+<a id="typed-binding-of-nicolass-packed-source-resources"></a>
+
+### Typed binding of the reference implementation’s packed source resources
 
 The asymmetric CLI now materializes an external resource manifest before
 physical lowering. It records each checked-in operand, E8M0 scale, LUT,
 and BF16 golden array with its byte hash, shape, element width, and layout.
 The manifest digest is attached to the typed `mx_gemmini.contract` and its
-module, with an explicit Nicolas source origin. Both the Python verifier and
+module, with an explicit reference source origin. Both the Python verifier and
 `mx-gemmini-opt` check this binding. The physical lowerer regenerates the
 manifest from the named source and refuses a missing or changed binding.
 The byte arrays remain separate compiler input files; the PyTorch capture
@@ -1387,7 +1395,7 @@ with the binding.
 
 ### Dedicated DIM16 asymmetric mode matrix
 
-The matrix CLI discovers Nicolas's 64×64×64 asymmetric tests, derives each
+The matrix CLI discovers the reference implementation’s 64×64×64 asymmetric tests, derives each
 mode from its named source/header pair, and checks it against the matching
 RTL-derived profile. Preflight requires every legal compute cell in the 20
 dedicated DIM16 `MxAsym*GemminiRocketConfig` profiles to have exactly one
@@ -1395,7 +1403,7 @@ source variant. Removing a source test makes preflight fail. The CLI captures
 a fresh PyTorch matmul with the pinned model2MLIR, binds the checked-in
 operand, scale, LUT, and BF16 golden bytes to typed MLIR, emits a physical
 command program and standalone RV64 ELF, then compares all source outputs
-on Nicolas's pinned Spike extension.
+on the reference implementation’s pinned Spike extension.
 
 Two independent post-commit matrix runs passed **26 / 26 legal modes** and
 **106,496 / 106,496 BF16 values per run**. For every mode, the captured
@@ -1406,7 +1414,7 @@ differ. The [first matrix receipt](evidence/nicolas_asym_matrix_dim16_266c593/ma
 and [reproduction](evidence/nicolas_asym_matrix_dim16_266c593/matrix_repro.json)
 index all 52 [per-mode receipts](evidence/nicolas_asym_matrix_dim16_266c593/)
 and record the selected PE tuple for each mode. They pin compiler revision
-`338faa8`, Nicolas RTL `266c593`, and the source/tool hashes.
+`338faa8`, reference RTL `266c593`, and the source/tool hashes.
 
 ```sh
 python -m tools.qualify_nicolas_asym_matrix \
@@ -1424,7 +1432,7 @@ all-asymmetric source modes. MX+VPU evidence appears above.
 
 The same compiler path now derives transfer geometry, scratchpad row ranges,
 and loop tile counts from `MxDim8AllAsymGemminiRocketConfig` and
-`MxDim32AllAsymGemminiRocketConfig`. It binds each named Nicolas source/header
+`MxDim32AllAsymGemminiRocketConfig`. It binds each named reference source/header
 pair to typed MLIR, emits an RV64 RoCC ELF, and compares every BF16 output
 against the checked-in source golden using the matching `gemmini_dim8` or
 `gemmini_dim32` Spike extension.
@@ -1437,7 +1445,7 @@ The [DIM8 first run](evidence/nicolas_asym_matrix_dim8_266c593/matrix_first.json
 [DIM8 reproduction](evidence/nicolas_asym_matrix_dim8_266c593/matrix_repro.json),
 [DIM32 first run](evidence/nicolas_asym_matrix_dim32_266c593/matrix_first.json),
 and [DIM32 reproduction](evidence/nicolas_asym_matrix_dim32_266c593/matrix_repro.json)
-index 84 per-mode receipts and pin compiler `de188c1`, Nicolas RTL `266c593`,
+index 84 per-mode receipts and pin compiler `de188c1`, reference RTL `266c593`,
 model2MLIR `7485a82`, and MXQuant `b4af543`.
 
 ```sh
@@ -1449,7 +1457,7 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 8 \
 # Repeat with --mesh-dim 32 and a new output directory.
 ```
 
-Each all-asymmetric profile has **36 legal compute cells**. Nicolas checks in
+Each all-asymmetric profile has **36 legal compute cells**. Reference checks in
 64³ source tests for 21 of them. The
 [generation wrapper](../tools/generate_nicolas_mesh_headers.py) regenerates a
 checked-in header byte for byte at each mesh before obtaining the 15 missing
@@ -1472,7 +1480,7 @@ hashes agree between runs after omitting the path-bearing link log hash. The
 [DIM8 generated reproduction](evidence/nicolas_generated_mesh_dim8_266c593/matrix_generated_repro.json),
 [DIM32 full matrix](evidence/nicolas_generated_mesh_dim32_266c593/matrix_first.json),
 and [DIM32 generated reproduction](evidence/nicolas_generated_mesh_dim32_266c593/matrix_generated_repro.json)
-pin compiler `d8d2f55`, Nicolas RTL `266c593`, model2MLIR `7485a82`,
+pin compiler `d8d2f55`, reference RTL `266c593`, model2MLIR `7485a82`,
 MXQuant `b4af543`, source headers, and simulator hashes. The
 [DIM8 qualification index](evidence/nicolas_generated_mesh_dim8_266c593/qualification.json)
 and [DIM32 qualification index](evidence/nicolas_generated_mesh_dim32_266c593/qualification.json)
@@ -1486,7 +1494,7 @@ that includes RTL `weight_lut_en` in weight lane selection. The
 [DIM8 diagnostic](evidence/nicolas_generated_mesh_dim8_266c593/e4m3s_e4m3/patch_diagnostic.json)
 and [DIM32 diagnostic](evidence/nicolas_generated_mesh_dim32_266c593/e4m3s_e4m3/patch_diagnostic.json)
 include both extension and log hashes. That change is not merged into
-Nicolas's Spike branch. These two legal cells remain unqualified on the
+the pinned Spike model branch. These two legal cells remain unqualified on the
 pinned stock model. These 64³ BF16 tests do not establish general PyTorch
 operand quantization, arbitrary shapes, quantized readouts, timing, or FPGA.
 
@@ -1505,7 +1513,7 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 8 \
 
 ### DIM16 all-asymmetric source matrix
 
-Nicolas's `MxAllAsymGemminiRocketConfig` selects one DIM16 Rocket profile with
+the reference implementation’s `MxAllAsymGemminiRocketConfig` selects one DIM16 Rocket profile with
 36 legal compute cells. All 26 checked-in DIM16 asymmetric 64³ source/header
 pairs bind to this profile. The matrix command selects it with `--all-asym`;
 without that flag, DIM16 selects the dedicated per-pair profiles above.
@@ -1516,7 +1524,7 @@ extension. Every frontend artifact, bound payload, physical program, generated
 source, object, ELF, extension, and Spike log hash agrees across runs. Only
 path-bearing link log hashes differ. The [first matrix receipt](evidence/nicolas_asym_matrix_dim16_all_266c593/matrix_first.json)
 and [reproduction](evidence/nicolas_asym_matrix_dim16_all_266c593/matrix_repro.json)
-index 52 per-mode receipts and pin compiler `0e03168` and Nicolas RTL
+index 52 per-mode receipts and pin compiler `0e03168` and reference RTL
 `266c593`.
 
 ```sh
@@ -1531,7 +1539,7 @@ These asymmetric-only aggregate receipts enumerate the **10 legal cells**
 outside their source set. They qualify the 64³ BF16 cases they name on Spike;
 arbitrary shapes remain unqualified.
 
-Nicolas also checks in same-format E2M3, E4M3, and E5M2 LUT source tests with
+Reference also checks in same-format E2M3, E4M3, and E5M2 LUT source tests with
 BF16 goldens. `--include-symmetric-lut` adds these three tests to the DIM16
 all-asymmetric matrix. Two fresh runs passed **29 / 29 source modes** and
 **118,784 / 118,784 BF16 outputs per run**. The per-mode frontend, payload,
@@ -1551,7 +1559,7 @@ python -m tools.qualify_nicolas_asym_matrix --mesh-dim 16 --all-asym \
   --out-dir /new/dim16-combined-output --jobs 4
 ```
 
-Nicolas also checks in a direct FP4×FP4 mode-0 BF16 source test. Adding
+reference also checks in a direct FP4×FP4 mode-0 BF16 source test. Adding
 `--include-symmetric-fp4` to the command above passes **30 / 30 selected
 modes** and **122,880 / 122,880 BF16 outputs** on the pinned DIM16 Spike.
 The [30-mode matrix receipt](evidence/nicolas_asym_matrix_dim16_all_plus_fp4_266c593/matrix_first.json)
@@ -1560,7 +1568,7 @@ An [independent FP4-only run](evidence/nicolas_asym_matrix_dim16_all_plus_fp4_26
 reproduces the new mode's frontend, physical program, ELF, and Spike log;
 only its path-bearing link log hash differs. The older 29-mode subset has the
 two full reproductions above. The 30-mode aggregate enumerates **six legal
-cells without checked-in Nicolas BF16 source tests**. It does not imply
+cells without checked-in reference BF16 source tests**. It does not imply
 those cells are unsupported by RTL.
 
 ### Radiance direct FP8 on the all-asymmetric profile
@@ -1581,7 +1589,7 @@ and Rocket RoCC issuer. Two independent Spike builds each match
 manifests match after omitting only the path-bearing link log hash. The
 [frontend receipt](evidence/radiance_fp8_dim16_all_asym_266c593/capture_receipt.json)
 pins the Radiance, model2MLIR, and MXQuant revisions. This qualifies one
-additional legal DIM16 compute cell beyond the 30 checked-in Nicolas cases;
+additional legal DIM16 compute cell beyond the 30 checked-in reference cases;
 five cells now lack full-output source evidence across these two source sets.
 It is a Rocket/Spike result, not a Radiance FPGA result.
 
@@ -1596,9 +1604,9 @@ python kernels/gemm_mxgemmini/gen_mxgemm_data.py fp8 64 64 64
 
 ### Generated DIM16 mode probes
 
-Five other legal cells lack a checked-in Nicolas fullout driver. The
+Five other legal cells lack a checked-in reference fullout driver. The
 [generation wrapper](../tools/generate_nicolas_missing_headers.py) registers
-their format pairs with Nicolas's pinned `gen_asym.py` without changing its
+their format pairs with the reference implementation’s pinned `gen_asym.py` without changing its
 quantization or matrix model. Before emitting new headers, it regenerates a
 checked-in E2M3×E4M3 header byte for byte. Its
 [manifest](evidence/nicolas_generated_modes_266c593/mx_gemmini_generated_modes_manifest.json)
@@ -1606,7 +1614,7 @@ pins the generator, baseline hash, RTL and software revisions, and the
 upstream microxcaling revision `7bc41952`. The new headers are archived with
 their hashes. `tools.qualify_nicolas_asym --generated-mode <mode>` binds one
 such header to a current model2MLIR matmul capture, lowers the physical MX
-commands, builds an RV64 Rocket ELF, and runs Nicolas's Spike extension. No
+commands, builds an RV64 Rocket ELF, and runs the pinned Spike model extension. No
 new handwritten C kernel enters the compiled output.
 
 | Activation × weight | Stock Spike BF16 result | Evidence |
@@ -1619,7 +1627,7 @@ new handwritten C kernel enters the compiled output.
 
 The four passing modes reproduce their frontend and target MLIR, physical
 program, C issuer, ELF, and Spike log hashes; only path-bearing link log
-hashes differ. With the 30 checked-in Nicolas modes and the separate Radiance
+hashes differ. With the 30 checked-in reference modes and the separate Radiance
 direct FP8 mode, **35 of 36 distinct DIM16 legal cells** now have full-output
 parity on unmodified Spike. These counts refer to the 64³ BF16 mode tests;
 they do not qualify arbitrary shapes, quantized readouts, timing, or FPGA.
@@ -1628,13 +1636,13 @@ enumerates the exact covered and uncovered compute tuples.
 
 For the failing cell, the pinned Spike extension's direct-E4M3 activation
 path chooses single-column weights when format and alternate-format bits are
-zero, even if its E4M3 weight LUT is loaded. Nicolas's RTL
+zero, even if its E4M3 weight LUT is loaded. The reference implementation’s RTL
 `ExecuteController.mx_multi_elem` includes `weight_lut_en` in that lane
 decision. Applying the [candidate model patch](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
 in an isolated extension checkout makes the **same compiler ELF** match
 4,096 / 4,096 outputs; the [diagnostic](evidence/nicolas_generated_modes_266c593/e4m3s_e4m3/patch_diagnostic.json)
 records both extension and log hashes. That patch has not been merged into
-Nicolas's Spike branch, and this cell remains unqualified on the pinned model.
+the pinned Spike model branch, and this cell remains unqualified on the pinned model.
 
 ```sh
 # From mx-gemmini-mlir, with an isolated gemmini checkout at 266c593:
@@ -1653,7 +1661,7 @@ python -m tools.qualify_nicolas_asym --generated-mode e2m3_e4m3s \
 
 The source-bound scheduler now derives the operand strides, scale byte counts,
 tile loops, scratchpad layout, and BF16 readout size from the selected recipe.
-Nicolas's direct E4M3 activation × FP4 weight sources at **128×128×128 on
+The reference implementation’s direct E4M3 activation × FP4 weight sources at **128×128×128 on
 DIM16** and **128×128×256 on DIM32** each compile from a fresh model2MLIR
 PyTorch matmul capture to typed MX MLIR, physical commands, and an RV64 RoCC
 ELF. Each generated program matches **16,384 / 16,384 BF16 source outputs**
@@ -1661,7 +1669,7 @@ on the corresponding pinned Spike extension. Two independent builds per
 shape reproduce all recorded artifacts and Spike logs; only path-bearing
 link log hashes differ. The [qualification index](evidence/nicolas_asym_large_direct_266c593/qualification.json)
 links the four receipts, captured and bound MLIR, physical programs, resource
-manifests, and generated C issuers. It pins compiler `64cb454` and Nicolas
+manifests, and generated C issuers. It pins compiler `64cb454` and reference
 RTL `266c593`.
 
 ```sh
@@ -1678,7 +1686,7 @@ For DIM16 use `--source-shape 128x128 --mesh-dim 16` and
 `MxAllAsymGemminiRocketConfig.json`.
 
 The other three checked-in **128×128×256 DIM32** asymmetric source cases also
-compile and match **16,384 / 16,384 BF16 outputs each** on Nicolas's Spike:
+compile and match **16,384 / 16,384 BF16 outputs each** on the pinned Spike model:
 
 | Activation × weight | PE mode | Source LUT banks |
 |---|---:|---|
@@ -1691,7 +1699,7 @@ MLIR, physical commands, resource manifests, generated C, objects, ELFs,
 extensions, and Spike logs. Only path-bearing link log hashes differ. The
 [LUT qualification index](evidence/nicolas_asym_large_lut_266c593/qualification.json)
 links all six receipts and inspectable generated artifacts; it pins compiler
-`563f6eb` and Nicolas RTL `266c593`. Select a row with
+`563f6eb` and reference RTL `266c593`. Select a row with
 `--source-suffix e2m3_e5m2`, `e4m3s_e5m2`, or `fp4_fp6` while retaining
 `--source-shape 128x128x256 --mesh-dim 32` and the DIM32 all-asymmetric
 profile in the command above. All five checked-in larger asymmetric source
@@ -1722,17 +1730,19 @@ profiles; these missing lists are specific to each source shape.
 
 ## Latest complete Radiance MX GEMM roster
 
-### Nicolas's plain MX Rocket profile across FP8, FP4, and FP6
+<a id="nicolass-plain-mx-rocket-profile-across-fp8-fp4-and-fp6"></a>
+
+### Reference plain MX Rocket profile across FP8, FP4, and FP6
 
 The [plain-profile qualifier](../tools/qualify_radiance_mx_base_profile.py)
-rebinds three archived model2MLIR `e9ded36` captures to Nicolas's
+rebinds three archived model2MLIR `e9ded36` captures to the reference implementation’s
 `MxGemminiRocketConfig` at RTL `266c593`. This is the MX-only Rocket
 configuration with three legal compute modes and no VPU. The selected
 Radiance sources are FP8 128×128×512, FP4 64×64×128, and FP6 128×128×2048.
 The qualifier checks each driver and data header against the capture roster,
 binds actual packed codes, E8M0 scales, and, for FP6, all three 64-line LUT
 banks. It lowers the typed contractions to physical commands, builds RV64
-ELFs, and compares every BF16 output on Nicolas's pinned Spike extension.
+ELFs, and compares every BF16 output on the reference implementation’s pinned Spike extension.
 
 Two independent runs from compiler `48fbb89` matched **16,384 FP8**, **4,096
 FP4**, and **16,384 FP6** BF16 outputs, **36,864 total**. A third run used a
@@ -1772,7 +1782,7 @@ changed source bytes or a drifted RTL profile.
 The same qualifier accepts `--profile` and repeatable `--case` arguments.
 It preflights every selected model2MLIR handoff against the target profile
 before writing output, so unsupported format/profile combinations fail closed.
-On Nicolas's pinned Spike, two independent builds of each selected case from
+On the reference implementation’s pinned Spike, two independent builds of each selected case from
 compiler `82a8bae` produced identical bound MLIR, physical commands, C
 issuers, ELFs, and simulator logs. All **147,456 / 147,456 BF16 outputs**
 matched the checked Radiance source goldens:
@@ -1810,7 +1820,7 @@ python -m tools.qualify_radiance_mx_base_profile \
 The source planner and physical command lowerer now derive scratchpad rows,
 operand transfers, tile counts, and BF16 readout from the selected square
 mesh. The standalone compiler builds the matching `gemmini_dim8` or
-`gemmini_dim32` Spike extension from Nicolas's pinned RTL submodule.
+`gemmini_dim32` Spike extension from the reference implementation’s pinned RTL submodule.
 
 Radiance's checked-in `C_out_bf16` bytes come from a DIM16 host model. The
 target meshes have different accumulator schedules, so exact comparison to
@@ -1837,7 +1847,7 @@ and [test](../tests/test_radiance_mesh_fp6_reference_evidence.py) cover
 FP6 128×128×2048 on both meshes, comparing another **32,768 / 32,768 BF16
 outputs per run**. Across the six selected cases, **73,728** target mesh BF16
 outputs match per run. RTL and FPGA execution remain separate gates; the
-earlier Nicolas asymmetric matrices independently exercise FP6 modes on
+earlier reference asymmetric matrices independently exercise FP6 modes on
 DIM8 and DIM32 using his mesh-specific source goldens.
 
 ```sh
@@ -1850,13 +1860,13 @@ python -m tools.qualify_radiance_mx_base_profile \
 ```
 
 The [31-driver evidence archive](evidence/radiance_mx_gemm_latest_e9ded36_ee22/)
-binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, Nicolas's
+binds the `ee22e0b` Radiance MX GEMM drivers to model2MLIR `e9ded36`, the reference implementation’s
 `gemmini-mx-cleanup` RTL `266c593`, and this compiler's `12cb75d` Spike runs.
 model2MLIR captures the PyTorch matmul and its shape; the compiler binds the
 drivers' packed operands, scales, LUTs, and output policy from the source
 headers to that typed contraction before physical lowering.
 All **23 BF16-output** and **8 requantized-output** drivers compiled and matched
-their source goldens on Nicolas's pinned Rocket/RoCC Spike extension. The full
+their source goldens on the reference implementation’s pinned Rocket/RoCC Spike extension. The full
 comparisons cover **376,832 BF16 values**, **73,728 FP8 codes**, **16,384 FP6
 packed bytes**, and **3,328 E8M0 output scales**. The 31 drivers consist of 11
 FP4, 7 FP6, and 13 FP8 cases. FP4/FP8 use the MX+VPU profile; FP6 uses the
@@ -1870,7 +1880,7 @@ The current Radiance `spatter-workloads` revision `80f84ca` has the same 31
 driver and generated/committed header hashes as the `ee22e0b` baseline.
 Using upstream model2MLIR `e9ded36`, the
 [current-source reproduction](evidence/radiance_mx_gemm_80f84ca_upstream_repro_20261010/reproduction.json)
-recaptured all 31 contractions and rebuilt all 31 Rocket ELFs on Nicolas's
+recaptured all 31 contractions and rebuilt all 31 Rocket ELFs on the reference implementation’s
 pinned Spike. The current source generator, source plans, frontend MLIR,
 physical programs, objects, ELFs, and Spike logs match the archived baseline.
 All 23 BF16 and 8 quantized source comparisons pass. The
@@ -1883,7 +1893,7 @@ equivalence is scoped to the 31 byte-identical drivers and headers.
 The newer `ucb-bar/radiance-kernels` main revision `82be2c7` still has those
 same 31 MX GEMM driver, generator, and materialized-header bytes. The
 [new-upstream receipt](evidence/radiance_mx_gemm_upstream_82be2c7_20261010/index.json)
-records a fresh full run with model2MLIR `e9ded36` and Nicolas RTL `266c593`:
+records a fresh full run with model2MLIR `e9ded36` and reference RTL `266c593`:
 all 31 PyTorch captures, physical command programs, RV64 ELFs, and stock
 Spike outputs match the archived baseline. The guard compared each source
 golden, not just the aggregate status. This receipt covers the MX GEMM roster;
@@ -2020,7 +2030,7 @@ path only changes their storage binding.
 
 The [eight-case object roster](evidence/radiance_host_requant_objects_80f84ca/index.json)
 uses the current Radiance `80f84ca` source roster and model2MLIR `e9ded36`
-typed graphs. The native MX verifier accepts all eight graphs. Nicolas's
+typed graphs. The native MX verifier accepts all eight graphs. The reference implementation’s
 pinned Spike matches **90,112 / 90,112 code bytes** and **3,328 / 3,328
 E8M0 scales** against the source goldens. Each object has zero allocated data
 bytes and no unresolved symbols. The archived per-case manifests, objects,
@@ -2046,7 +2056,7 @@ model2MLIR capture, source payload binding, physical command IR, and standalone
 Rocket/RoCC compiler as the GEMM roster. The checked
 [qualification index](evidence/radiance_ws_read_once_1a7bc9c/index.json)
 covers FP8 **256×64×2048** and FP4 down-projection **256×64×5632**. Each ELF
-matches all **16,384 BF16 source outputs** on Nicolas's pinned Spike model.
+matches all **16,384 BF16 source outputs** on the reference implementation’s pinned Spike model.
 Their physical programs use one M=256 output tile and 32 or 88 K waves. The
 checked 16×16-byte weight DMAs cover every packed weight byte exactly once:
 131,072 bytes for FP8 and 180,224 bytes for FP4. This matches the source's
@@ -2119,11 +2129,11 @@ checks all four driver and data hashes.
 
 The [qualification index](evidence/radiance_batched_gemv_552a16b/index.json)
 records model2MLIR capture, typed payload binding, physical command lowering,
-standalone Rocket/RoCC ELF emission, and Nicolas Spike comparison. FP8 M32,
+standalone Rocket/RoCC ELF emission, and the pinned Spike model comparison. FP8 M32,
 M64, and M128 match **4,096**, **8,192**, and **16,384** source BF16 outputs;
 FP4 M128 matches **16,384**. Each one-tile program uses 16 K waves and loads
 each packed weight byte exactly once: 262,144 bytes for FP8 or 131,072 bytes
-for FP4. The test runs on Nicolas's MX+VPU standalone profile; these four
+for FP4. The test runs on the reference implementation’s MX+VPU standalone profile; these four
 matrix programs do not issue VPU operations. The PyTorch capture establishes
 the operation and shape, while the actual quantized input bytes, scales, and
 goldens come from the pinned Radiance generator.
@@ -2149,7 +2159,7 @@ It does not establish mixed MX/Muon scheduling or FPGA cycle counts.
 
 The pinned `flash_attention_mx_gqa` source generator emits FP8 Q and K codes
 for a 64×64×64 first QK tile. Its Python matrix golden uses BF16 product and
-accumulator precision. Nicolas's DIM16 MX path instead uses an E4M3 product
+accumulator precision. The reference implementation’s DIM16 MX path instead uses an E4M3 product
 and a reduced-precision accumulator ramp before applying E8M0 scales. For
 the exact generated header at Radiance `ee22e0b`, **244,154 of 262,144** raw
 Q×K products exceed E4M3's maximum finite magnitude, 448. A direct compiler
@@ -2160,7 +2170,7 @@ golden therefore cannot establish parity for that hardware path.
 The compiler now accepts a **separate, explicitly labeled candidate**: divide
 the source Q and K values by 64 before FP8 encoding, and increase each E8M0
 scale exponent by six. The resulting source-derived QK tile is finite under
-Nicolas's product and accumulator precision. A model2MLIR `matmul` capture
+the reference implementation’s product and accumulator precision. A model2MLIR `matmul` capture
 binds those candidate bytes, and the generated Rocket/RoCC program matches
 all **4,096 BF16 outputs** of the hardware-aware candidate oracle on Spike.
 The [candidate index](evidence/radiance_gqa_qk_candidate_5baebbe/index.json)
@@ -2189,12 +2199,14 @@ Muon handoff, and final attention output remain unqualified. The next source
 step is to revise and verify the Radiance generator's numerical domain before
 claiming exact source parity.
 
-#### Regenerated GQA fixture against Nicolas's Spike model
+<a id="regenerated-gqa-fixture-against-nicolass-spike-model"></a>
+
+#### Regenerated GQA fixture against the pinned Spike model
 
 The [experimental source patch](patches/radiance_gqa_hardware_model.patch)
 adds an explicit `--mx-hardware-shift 6` option to the Radiance GQA data
 generator. It rounds the shifted operands to E4M3, increases the E8M0 scales,
-and computes the full GQA golden with Nicolas's E4M3 product and accumulator
+and computes the full GQA golden with the reference implementation’s E4M3 product and accumulator
 schedule. The ordinary generator invocation retains its old behavior. The
 qualification tool applies this patch to a **copy** of the source files and
 checks the resulting generator, model, header, and patch digests.
@@ -2206,7 +2218,7 @@ BF16 codes are finite and agree between the header and `.npy` export; the full
 golden has **8.33%** relative error against the FP32 reference.
 The first source-generated QK tile is captured from PyTorch `matmul` by
 model2MLIR, bound to those emitted bytes, compiled to physical MX commands and
-a standalone Rocket/RoCC ELF, and checked on Nicolas's pinned Spike extension:
+a standalone Rocket/RoCC ELF, and checked on the reference implementation’s pinned Spike extension:
 **4,096 / 4,096 BF16 outputs match**. A clean `ee22e0b` checkout and the
 current `80f84ca` source produced the same generated header, physical program,
 and ELF hashes; their [indexes](evidence/radiance_gqa_generated_80f84ca/index_prior_source.json)
@@ -2239,7 +2251,7 @@ uses the same regenerated header and model2MLIR capture. It follows the
 source driver's `h / FA_GRP` mapping for **8 query heads × 2 used key blocks**,
 checks each tile against the patched source model, and compiles each contraction
 to a separate standalone RoCC ELF. All **65,536 / 65,536 BF16 outputs** match
-Nicolas's Spike model. Each physical program has 83 steps. The selected source
+the pinned Spike model. Each physical program has 83 steps. The selected source
 arrays contain eight distinct Q tiles and four distinct K tiles, as required
 by the four-query-heads-per-KV-head mapping.
 The archived roster was built from compiler commit `38de229`; its two runs
@@ -2261,14 +2273,14 @@ attention output are separate stages and remain to be qualified together.
 #### Linkable QK object with runtime buffers
 
 The [runtime object receipt](evidence/radiance_gqa_runtime_object_80f84ca/two_payload_spike/index.json)
-binds the typed head 0, block 0 QK program to Nicolas's Rocket profile and
+binds the typed head 0, block 0 QK program to the reference implementation’s Rocket profile and
 emits `mx_issue.o` with six pointer arguments: activation codes and scales,
 BF16 output, scale scratch, and weight codes and scales. The object defines
 only `mx_issue`, imports no symbols, and has zero allocated data-section bytes.
 The head 7, block 1 bound program emits the **same object SHA-256**
 (`1c70015f1b8a7bdd7a53b8a6498e5dfc220fa2046dbead3ea57ec2532f4b26ab`)
 despite distinct Q and K payloads. One RV64 ELF links that object once and
-calls it twice with distinct runtime pointers. Nicolas's stock Spike reports
+calls it twice with distinct runtime pointers. The reference implementation’s stock Spike reports
 **0 / 8,192 BF16 mismatches**, and an independent build matches the receipt's
 ELF, extension, and Spike log hashes. The [object manifest](evidence/radiance_gqa_runtime_object_80f84ca/head0_object/object_manifest.json),
 [generated command issuer](evidence/radiance_gqa_runtime_object_80f84ca/head0_object/mx_issue.c),
@@ -2321,7 +2333,7 @@ fully visible to all query rows. It applies the pinned Muon P scale and E4M3
 encoding formulas, using BF16-rounded Torch `exp` in place of `mu_fexp`, and
 takes V codes and scales from the same generated Radiance header. A fresh
 PyTorch `matmul` capture goes through model2MLIR, typed MX source-resource
-binding, physical command lowering, and RV64 emission. Nicolas's stock Spike
+binding, physical command lowering, and RV64 emission. The reference implementation’s stock Spike
 matches **4,096 / 4,096 BF16 PV outputs** against its reduced-precision MX
 numerical model. Two independent builds have identical qualification indexes.
 The [linkable PV object](evidence/radiance_gqa_pv_proxy_80f84ca/linkable_object/object_manifest.json)
@@ -2364,7 +2376,7 @@ and both built RV32 ELFs are archived with the receipt.
 Muon's tiled scratchpad P yields exactly the same **4,096 E4M3 codes** and
 **128 E8M0 scales** as the compiler's source-derived PV operand after
 untilling. Cyclotron's MX PV result matches **4,096 / 4,096 BF16 values** of
-the compiler's Nicolas-Spike PV golden, byte for byte. The archived
+the compiler's reference-Spike PV golden, byte for byte. The archived
 [P scratch dump](evidence/radiance_gqa_cyclotron_pv_80f84ca/p_scratch.bin.gz),
 [PV tile](evidence/radiance_gqa_cyclotron_pv_80f84ca/pv_bf16.bin), and
 [unmodified final O](evidence/radiance_gqa_cyclotron_pv_80f84ca/baseline_o.bin.gz)
@@ -2384,7 +2396,7 @@ models. It does not establish RTL FPEX parity, FPGA behavior, or final
 attention parity with the generator's `O_gold`. The compiler still needs a
 mixed Muon/MX lowering and runtime buffer handoff to emit the whole attention
 kernel itself. The first-block Q/K fixture also retains its explicit
-headroom correction for Nicolas's reduced-precision MX path.
+headroom correction for the reference implementation’s reduced-precision MX path.
 
 ```sh
 python -m tools.diagnose_radiance_gqa_pv_handoff \
@@ -2397,11 +2409,13 @@ and scales produced by Muon, an ordered Muon-to-MX scratchpad handoff, and a
 source-faithful numerical oracle for the full output. This kernel's softmax
 runs on Muon; a separate MX VPU softmax test cannot stand in for it.
 
-#### All 16 executed GQA PV cutpoints on Nicolas Spike
+<a id="all-16-executed-gqa-pv-cutpoints-on-nicolas-spike"></a>
+
+#### All 16 executed GQA PV cutpoints on the pinned Spike model
 
 The first-block test exposed an accumulation defect in the local Cyclotron MX
 co-model: it added each new matmul to the prior C scratchpad contents even when
-the source command set `ex_accumulate=0`. Nicolas's
+the source command set `ex_accumulate=0`. The reference implementation’s
 `gemmini-mx-cleanup` Spike model explicitly clears C for that command. The
 [isolated Cyclotron correction](evidence/radiance_gqa_pv_roster_80f84ca/cyclotron_overwrite.patch)
 implements the same overwrite rule. It is an evidence patch applied to a
@@ -2413,10 +2427,10 @@ explicit-accumulation check in the
 The [16-tile receipt](evidence/radiance_gqa_pv_roster_80f84ca/index.json)
 builds the pinned Radiance GQA kernel, executes all eight query heads and two
 key blocks with the corrected Cyclotron model, and captures each Muon P tile,
-its scales, and the resulting MX PV tile. Each PV tile agrees with Nicolas's
+its scales, and the resulting MX PV tile. Each PV tile agrees with the reference implementation’s
 reduced-precision numerical model for **4,096 / 4,096 BF16 values**. A single
 compiler emitted RV64 MX object, originally lowered from the model2MLIR PV
-capture, then accepts all 16 distinct runtime P/V payloads on Nicolas's stock
+capture, then accepts all 16 distinct runtime P/V payloads on the reference implementation’s stock
 Rocket/RoCC Spike extension. Spike matches **65,536 / 65,536 BF16 values**.
 The probe leaves the final source O buffer byte identical to the unmodified
 kernel running on the corrected model.
@@ -2482,7 +2496,7 @@ FPEX/FPGA parity remains a separate gate.
 
 ## Isolated weight-LUT Spike correction across all legal modes
 
-Nicolas's pinned MxGen submodule has a
+the reference implementation’s pinned MxGen submodule has a
 [mode-9 Chisel test](evidence/nicolas_e4m3_lut_pe_266c593/receipt.json)
 for E4M3 quad arithmetic. Its harness forces `lut_en` and checks 300
 randomized two-activation × two-weight trials, or 1,200 BF16 lane results.
@@ -2497,13 +2511,13 @@ The [candidate qualification index](evidence/nicolas_spike_weight_lut_candidate_
 records a full rerun with the existing
 [weight-LUT lane patch](evidence/nicolas_generated_modes_266c593/spike_weight_lut_quad_candidate.patch)
 applied only to an isolated `software/libgemmini` worktree. Its parent Gemmini
-RTL and profiles remain at Nicolas's `266c593`, while the source-built Spike
+RTL and profiles remain at the reference implementation’s `266c593`, while the source-built Spike
 extension differs from stock. Latest model2MLIR `e9ded36` captured the
 operations, and compiler `0d7e31b` generated the physical programs and RV64
 ELFs. The archived receipts cover **36 / 36 legal modes on each of DIM8,
 DIM16, and DIM32**, comparing **442,368 / 442,368 BF16 outputs** across 108
-programs. DIM16 combines 35 Nicolas source/generated tests with the Radiance
-direct E4M3×E4M3 driver; DIM8 and DIM32 use 36 Nicolas tests each.
+programs. DIM16 combines 35 reference source/generated tests with the Radiance
+direct E4M3×E4M3 driver; DIM8 and DIM32 use 36 reference tests each.
 
 For **105 modes**, the patched run reproduces a stock-passing ELF and Spike
 output log byte for byte. The remaining **three** are direct E4M3 activation
@@ -2511,17 +2525,19 @@ output log byte for byte. The remaining **three** are direct E4M3 activation
 and passes its full 4,096-value source golden only on the patched extension.
 The [archive command](../tools/archive_spike_lut_candidate.py) checks every
 comparison against a pinned stock receipt and preserves the candidate receipt
-and log. Nicolas's RTL `ExecuteController.mx_multi_elem` includes
+and log. The reference implementation’s RTL `ExecuteController.mx_multi_elem` includes
 `weight_lut_en` in weight-column packing; the isolated patch adds the
 corresponding Spike state check. This experiment does not merge the patch or
 qualify the three cells on stock Spike, RTL simulation, or FPGA.
 
-## Alternating FP6 scale halves on Nicolas's Spike
+<a id="alternating-fp6-scale-halves-on-nicolass-spike"></a>
+
+## Alternating FP6 scale halves on the pinned Spike model
 
 The [reproducible qualifier](../tools/qualify_fp6_alternating_spike.py) compiles
 the source-bound Radiance FP6 128×128×1024 generated-header fixture with K
 tile 512 and
-`rtl_alternating` physical scheduling. It copies Nicolas's pinned
+`rtl_alternating` physical scheduling. It copies the reference implementation’s pinned
 `software/libgemmini` into an isolated directory and applies the
 [two-line selector correction](evidence/fp6_alternating_spike_266c593/spike_fp6_scale_selector.patch)
 only there. The RTL `ExecuteController.scala` takes activation and weight
@@ -2539,7 +2555,7 @@ compiler marks this run `source_golden_matched_on_experimental_spike`; it does
 not make the pinned Spike or RTL path qualified.
 
 A [scoped production RTL module probe](evidence/nicolas_scale_mem_rtl_266c593/README.md)
-now compiles Nicolas's unchanged `ScaleFactorMem.scala` in isolation. It
+now compiles the reference implementation’s unchanged `ScaleFactorMem.scala` in isolation. It
 checks all four activation/weight half combinations at DIM16 with reset
 between cases and complete row-cycle alternation at a four-lane geometry.
 The observed E8M0 sums are 11, 14, 41, and 44, with 11 again after returning
@@ -2548,7 +2564,7 @@ also checks that the compiler's 16-wave FP6 stream encodes alternating
 `CONFIG_SCALE_MEM` selector bits `00` and `11`. ExecuteController, DMA timing,
 the full RTL contraction, and FPGA execution still need separate tests.
 
-Reproduce from a checkout with Nicolas's `266c593` RTL and its pinned
+Reproduce from a checkout with the reference implementation’s `266c593` RTL and its pinned
 `software/libgemmini` and `software/gemmini-rocc-tests` submodules:
 
 ```sh
@@ -2599,7 +2615,7 @@ scales, and BF16 reference come from the pinned Radiance
 `mxgemm.fp8.m256n256k256.tm128tn128tk256.fullout.cpp` driver and its generated
 header at `80f84ca`. Radiance excludes this `tk256` driver from its 128 KiB
 build because the C tile does not fit beside double-buffered operands. The
-selected Nicolas MX+VPU profile has 256 KiB, so this is a compiler execution
+selected reference MX+VPU profile has 256 KiB, so this is a compiler execution
 against a source-generated golden, not parity with a source-built ELF. The
 original source driver describes GEMM alone. The ×2
 epilogue is taken from the captured PyTorch graph; its expected BF16 values
@@ -2618,7 +2634,7 @@ lifetime planner are still needed.
 The [two-run receipt](evidence/radiance_tilewise_vpu_x2_266c593/index.json)
 and [regression test](../tests/test_radiance_tilewise_vpu_x2_evidence.py)
 record four output tiles, four compiler-issued VPU commands, and
-**65,536 / 65,536 matching BF16 values** on Nicolas's pinned Spike. The
+**65,536 / 65,536 matching BF16 values** on the reference implementation’s pinned Spike. The
 [bound MLIR](evidence/radiance_tilewise_vpu_x2_266c593/tilewise_bound.mlir),
 [physical commands](evidence/radiance_tilewise_vpu_x2_266c593/build/physical_program.json.gz),
 and [Spike log](evidence/radiance_tilewise_vpu_x2_266c593/build/spike.log)
@@ -2628,7 +2644,7 @@ the link-log hash because the linker warning embeds the output directory.
 
 A [fresh current-compiler rerun](evidence/radiance_mx_vpu_80f84ca_upstream_repro_20261010/README.md)
 repeated both this FP8 case and the generated FP4 case below with Radiance
-`80f84ca`, upstream model2MLIR `e9ded36`, Nicolas RTL/Spike `266c593`, and
+`80f84ca`, upstream model2MLIR `e9ded36`, reference RTL/Spike `266c593`, and
 compiler `d548fd7`. Each again matched all 65,536 BF16 values. The frontend,
 bound MLIR, physical stream, generated source, ELF, extension, and Spike log
 hashes are identical to the original archives; only compiler provenance and
@@ -2663,12 +2679,12 @@ readout. `tools.qualify_source_mx` exposes the same lowering with
 For scalar **1.5** (`0x3fc0`), the [archived capture and two-run
 receipt](evidence/radiance_tilewise_vpu_scalar_266c593/index.json) use current
 model2MLIR `e9ded36`, Radiance source/header `80f84ca`, compiler `082c47e`,
-and Nicolas RTL/Spike `266c593`. Both runs matched **65,536 / 65,536 BF16
-values** on Nicolas's pinned Spike, including the four VPU commands. The
+and reference RTL/Spike `266c593`. Both runs matched **65,536 / 65,536 BF16
+values** on the reference implementation’s pinned Spike, including the four VPU commands. The
 [regression test](../tests/test_tilewise_vpu_scalar_evidence.py) rechecks the
 captured graph, source bytes, MLIR binding, physical stream, generated C,
 derived reference, and simulator receipts. A host comparison also matched
-Nicolas's `vpu_ref.h` multiplication for all 65,280 finite BF16 inputs for each
+the reference implementation’s `vpu_ref.h` multiplication for all 65,280 finite BF16 inputs for each
 of six scalar values (`0x3f00`, `0x3fc0`, `0x4000`, `0xbf80`, `0x0001`,
 `0x7f7f`). The ×2 path retains its existing bytes and receipts.
 
@@ -2728,10 +2744,10 @@ output tile. It verifies the original `aten.add.Tensor` node, its scalar and
 empty keyword arguments, the model2MLIR handoff digest, and the BF16 immediate
 before binding the typed MX operations. A nondefault `alpha` is rejected.
 The physical lowerer checks the scalar against the VPU command and derives
-the full BF16 output with Nicolas's round-to-nearest-even scalar arithmetic.
+the full BF16 output with the reference implementation’s round-to-nearest-even scalar arithmetic.
 
 For **1.5** (`0x3fc0`), two independent builds of each FP8 and FP4 program
-from compiler `8478ac2` matched **65,536 / 65,536 BF16 outputs** on Nicolas's
+from compiler `8478ac2` matched **65,536 / 65,536 BF16 outputs** on the reference implementation’s
 RTL `266c593` pinned Spike extension. The [FP8 evidence](evidence/radiance_tilewise_vpu_adds_266c593/fp8/index.json),
 [FP4 evidence](evidence/radiance_tilewise_vpu_adds_266c593/fp4/index.json), and
 [regression test](../tests/test_tilewise_vpu_adds_evidence.py) connect the
@@ -2749,7 +2765,7 @@ the addition exists in the captured PyTorch graph, not in that C driver.
 The FP4 256×256 fixture is generated from pinned Radiance code and has no
 committed matching C driver. These results establish source-derived numerical
 parity for this graph pattern, not source ELF parity, arbitrary epilogues,
-or a qualified FPGA bitstream. Nicolas's checked-in FP4+VPU profile includes
+or a qualified FPGA bitstream. The reference implementation’s checked-in FP4+VPU profile includes
 direct FP8 and FP4 modes. His separate FP6 LUT profile has no VPU, so this
 work does not imply an FP6+VPU hardware configuration.
 
@@ -2788,7 +2804,7 @@ PyTorch FP32 intermediate has different numerical semantics.
 For captured `matmul * 2.0 + 1.5`, compiler `3935032` produced eight VPU
 commands across four output tiles for both source-bound FP8 and generated
 FP4. Two independent builds per precision matched **65,536 / 65,536 BF16
-outputs** on Nicolas's RTL `266c593` pinned Spike model. Their bound MLIR,
+outputs** on the reference implementation’s RTL `266c593` pinned Spike model. Their bound MLIR,
 physical commands, generated C, ELF, simulator logs, and full-output receipts
 match between runs. See the [FP8 evidence](evidence/radiance_tilewise_vpu_affine_266c593/fp8/index.json),
 [FP4 evidence](evidence/radiance_tilewise_vpu_affine_266c593/fp4/index.json),
@@ -2863,7 +2879,7 @@ hashes reproduce. The two raw artifact manifests differ only in the linker
 warning's build path.
 
 Reproduce from a checkout of Radiance `80f84ca`, model2MLIR `e9ded36`, and
-Nicolas Gemmini `266c593`:
+reference Gemmini `266c593`:
 
 ```sh
 python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
@@ -2878,7 +2894,7 @@ python -m tools.qualify_radiance_fp4_derived_tilewise_vpu_x2 \
 
 The same derived FP4 fixture now supports a captured finite BF16 scalar MULS
 epilogue. With `--scalar-bits 0x3fc0`, two runs from compiler `c6b41c0`
-matched **65,536 / 65,536 BF16 values** for `matmul * 1.5` on Nicolas's pinned
+matched **65,536 / 65,536 BF16 values** for `matmul * 1.5` on the reference implementation’s pinned
 Spike. The [capture and receipts](evidence/radiance_fp4_generated_tilewise_vpu_scalar_266c593/index.json)
 and [regression test](../tests/test_fp4_tilewise_vpu_scalar_evidence.py)
 cover the generated fixture, original graph, bound MLIR, four physical VPU
@@ -3165,7 +3181,7 @@ links this one object into a driver that calls it twice. The first call uses
 the generated Radiance FP4 fixture. The second swaps its 128-row M halves and
 128-column N halves in both packed operands and scales. Its independent
 expected matrix is the corresponding permutation of the source BF16 golden,
-followed by exact BF16 ×2. Both calls match every output on Nicolas's pinned
+followed by exact BF16 ×2. Both calls match every output on the reference implementation’s pinned
 Spike extension: **131,072 / 131,072 BF16 values**, with the first output
 still intact after the second call. The
 [receipt](evidence/radiance_fp4_runtime_tilewise_object_266c593/index.json),
@@ -3178,7 +3194,7 @@ rebinding and the multi-tile output ABI on the functional Spike model. The
 256×256 FP4 fixture remains source-derived; Radiance has no committed
 256×256 FP4 driver, and this run does not qualify Muon, RTL, or FPGA execution.
 
-Reproduce with Nicolas Gemmini `266c593` and the selected RISC-V toolchain:
+Reproduce with reference Gemmini `266c593` and the selected RISC-V toolchain:
 
 ```sh
 python -m tools.emit_mx_object \
@@ -3205,7 +3221,7 @@ The [qualifier](../tools/qualify_runtime_fp8_source_object.py) calls the same
 object with the original source codes and scales, then with valid M-row and
 N-column half permutations. It permutes the independent source golden in the
 same logical coordinates. Both runs match **32,768 / 32,768 BF16 outputs** on
-Nicolas's pinned stock Spike extension; the first output remains intact after
+the reference implementation’s pinned stock Spike extension; the first output remains intact after
 the second call. The [receipt](evidence/radiance_fp8_runtime_source_object_266c593/index.json)
 matches the [repeat](evidence/radiance_fp8_runtime_source_object_266c593/index_repro.json)
 byte for byte. The [driver](evidence/radiance_fp8_runtime_source_object_266c593/mx_runtime_driver.c),
@@ -3239,7 +3255,7 @@ A/B/C LUT banks**, BF16 output, and scratch. It embeds no operand or golden
 bytes. The [qualifier](../tools/qualify_runtime_fp6_source_object.py) calls
 the same object twice, first with the source fixture and then with a valid
 M-row/N-column permutation of codes, scales, LUT banks, and the independent
-BF16 golden. Both calls match **32,768 / 32,768 BF16 outputs** on Nicolas's
+BF16 golden. Both calls match **32,768 / 32,768 BF16 outputs** on the reference implementation’s
 pinned stock Spike extension; the first output is still intact after the
 second call. The [receipt](evidence/radiance_fp6_runtime_source_object_266c593/index.json)
 matches the [repeat](evidence/radiance_fp6_runtime_source_object_266c593/index_repro.json)
@@ -3282,12 +3298,14 @@ python -m tools.qualify_radiance_fp4_derived_cyclotron_tiles \
   --out-dir /tmp/radiance-fp4-derived-cyclotron-tiles
 ```
 
-### DIM8/DIM32 source roster on Nicolas's Spike
+<a id="dim8dim32-source-roster-on-nicolass-spike"></a>
+
+### DIM8/DIM32 source roster on the pinned Spike model
 
 `tools.qualify_radiance_mx_base_profile --all-fullout` selects all 23
 BF16-output MX GEMM drivers in the pinned model2MLIR `e9ded36` capture. It
 checks each driver and data header byte for byte, rebinds its typed handoff to
-the selected Nicolas Rocket profile, lowers physical MX commands, builds an
+the selected reference Rocket profile, lowers physical MX commands, builds an
 RV64 ELF, and compares every output on the matching `gemmini_dim8` or
 `gemmini_dim32` Spike extension. The eight quantized-output drivers are a
 separate qualification scope.
@@ -3296,9 +3314,9 @@ The checked-in Radiance BF16 goldens use DIM16's accumulator schedule.
 For DIM8/DIM32, the qualifier first recompiles Radiance's pinned host model
 at DIM16 and requires its output to match the source golden. It then changes
 the mesh geometry and accumulator schedule for the target. The full-roster
-reference policy also incorporates Nicolas's `MxFPMul` product floor, which
+reference policy also incorporates the reference implementation’s `MxFPMul` product floor, which
 flushes a product when its exponent is below −16. That rule is present in
-Nicolas's Spike math header but absent from the older Radiance host header.
+the pinned Spike model math header but absent from the older Radiance host header.
 The target golden, source golden, both model digests, the transformed model
 digests, and the product-floor policy are recorded in each bundle. A target
 match is therefore a target-model result, not a claim that the original
@@ -3324,16 +3342,16 @@ DIM32 each matched all **23 / 23 drivers and 376,832 / 376,832 BF16 outputs**
 across FP4, FP6, and FP8. The generated issuer, physical program, RV64 ELF,
 payload provenance, and Spike log are saved per case; repeat receipts agree
 after excluding build logs that embed their output directory. The DIM8
-128×128×5632 FP8 case changes exactly one target-model value when Nicolas's
+128×128×5632 FP8 case changes exactly one target-model value when the reference implementation’s
 product floor is applied; the corrected target golden and the compiler ELF
 then match all 16,384 values. DIM32 target goldens are unchanged by that
 rule across this roster.
 
 These two all-precision profiles do not include the VPU. A separate check
-on Nicolas's `MxE4M3Fp4VpuGemminiRocketConfig` matched the selected FP8 and
+on the reference implementation’s `MxE4M3Fp4VpuGemminiRocketConfig` matched the selected FP8 and
 FP4 source contractions twice, **20,480 / 20,480 BF16 outputs per run**.
 The archive includes those two VPU-profile matrix cases; the vector command
-tests above exercise the VPU instructions themselves. Nicolas's current
+tests above exercise the VPU instructions themselves. The reference implementation’s current
 VPU profile supports FP8 and FP4, while FP6 uses a LUT-capable profile
 without the VPU.
 
@@ -3360,7 +3378,7 @@ DIM32 compare the derived target-mesh reference.
 ### Complete legal source roster on the MX+VPU profile
 
 The `--precision` selector restricts either source roster to the formats
-admitted by one RTL profile. For Nicolas's
+admitted by one RTL profile. For the reference implementation’s
 `MxE4M3Fp4VpuGemminiRocketConfig`, FP8 and FP4 are legal; FP6 LUT compute
 is rejected during handoff binding. The
 [VPU-profile archive](evidence/radiance_mx_vpu_legal_roster_266c593/index.json)
@@ -3373,7 +3391,7 @@ The archive also records the exact FP6 profile rejection.
 These source drivers execute the matrix and optional host requantization
 path under a VPU-capable profile; they contain no VPU instructions. The
 separate VPU command and captured graph qualifications above exercise vector
-execution. FP6+VPU remains a hardware configuration gap in Nicolas's pinned
+execution. FP6+VPU remains a hardware configuration gap in the reference implementation’s pinned
 branch.
 
 ### Direct Spike receipts for the remaining Rocket wrappers
@@ -3385,8 +3403,8 @@ wrappers run E4M3-LUT × E2M3-LUT; the DIM32 base wrapper runs generated
 FP4×FP4; the E2M3, E3M2, and E5M2 single-format wrappers run their matching
 symmetric modes; and the two test wrappers run direct FP4×FP4. Latest pinned
 model2MLIR `e9ded36` captures each contraction. The compiler binds the
-source or Nicolas-generated packed data, emits physical commands and RV64
-ELFs, then compares every output on Nicolas's stock Spike extension. Each of
+source or reference-generated packed data, emits physical commands and RV64
+ELFs, then compares every output on the reference implementation’s stock Spike extension. Each of
 the eight cases passes **4,096 / 4,096 BF16 outputs in two independent runs**,
 or **65,536 checked outputs** in total. The archive keeps the captures,
 bound MLIR, resource manifests, generated issuers, ELFs, logs, and both
@@ -3424,14 +3442,16 @@ full-output Spike receipts separately from the FP8/FP4 GEMM roster, which
 contains no VPU commands. These simulator receipts do not change either
 profile's structural qualification state or establish RTL/FPGA parity.
 
-### The Nicolas requantizer wrapper's three output modes
+<a id="the-nicolas-requantizer-wrappers-three-output-modes"></a>
+
+### The reference requantizer wrapper's three output modes
 
 The [requantizer-wrapper archive](evidence/nicolas_requantizer_wrapper_266c593/index.json)
 exercises `TestRequantizerLutMxGemminiRocketConfig` beyond its BF16 matrix
 receipt. Its FP8 and FP4 cases use the matching Radiance requant drivers,
 captured through model2MLIR `e9ded36`, then bind their original handoff to
 this exact profile. The compiler emits a quantized MX readout, physical RoCC
-commands, and an RV64 ELF. Nicolas's stock Spike reports **4,096 FP8 codes
+commands, and an RV64 ELF. The reference implementation’s stock Spike reports **4,096 FP8 codes
 and 128 E8M0 scales**, then **2,048 packed FP4 bytes and 128 scales**, all
 matching the profile-specific hardware oracle. The source headers use a
 different output convention; the archive records those differences rather
@@ -3441,7 +3461,7 @@ requantizer.
 
 The FP6 case takes the checked-in 128×128×2048 **fullout** driver and
 explicitly derives an E3M2 quantized terminal readout. It checks **8,192
-packed index bytes and 512 scales** against Nicolas's Spike oracle. This is
+packed index bytes and 512 scales** against the pinned Spike model oracle. This is
 direct evidence for the selected profile's FP6 LUT and requantized output
 path, but it is not a captured FP6 Radiance requant source driver. The pinned
 Spike's FP6 scale-selector issue still requires the serial scheduling mode.
@@ -3468,9 +3488,9 @@ uses its scratchpad result. The public `tools.compile_object` command selects
 this graph family and emits a data-free RV64 object.
 
 The [two-operation Spike receipt](evidence/nicolas_connected_scalar_chain_266c593/index.json)
-uses Nicolas's source-qualified MULS ×2 followed by an explicitly derived
+uses the reference implementation’s source-qualified MULS ×2 followed by an explicitly derived
 ADDS +0. The independent BF16 reference is unchanged by the second operation.
-On Nicolas's pinned Spike, the compiler-issued object matches all **4,096 C1
+On the reference implementation’s pinned Spike, the compiler-issued object matches all **4,096 C1
 BF16 values, 4,096 C1 FP8 codes, 128 C1 scales, 2,048 C2 FP8 codes, and 64 C2
 scales**. The BF16 readout is taken before the VPU operations; the quantized
 C1 and C2 readouts are taken after them. This proves the second VPU command
@@ -3482,7 +3502,7 @@ records both compiler revisions and the matching artifact hashes.
 
 The [nonzero ADDS receipt](evidence/nicolas_connected_scalar_chain_nonzero_266c593/index.json)
 replays the same source-bound graph with a derived second VPU operation,
-`ADDS +1.5` (`0x3fc0` BF16). The qualifier first checks that Nicolas's pinned
+`ADDS +1.5` (`0x3fc0` BF16). The qualifier first checks that the reference implementation’s pinned
 FP8 matrix model reproduces the unmodified C2 source golden. It then applies
 the VPU BF16 reference, quantizes C1, and feeds those changed C1 codes and
 scales plus the source B2 operands to the model for fresh C2 references.
@@ -3491,10 +3511,10 @@ Compared with the original source goldens, **4,082 C1 codes, 128 C1 scales,
 `f492142` generated the data-free object and linked ELF; pinned Spike matched
 every C1/C2 value against those derived references. This qualifies one
 nonidentity ordered scalar chain on Spike. The extra ADDS is a derived
-candidate, not an unchanged Nicolas source kernel.
+candidate, not an unchanged reference source kernel.
 
 Reproduce the object build, native dialect verification, link, and Spike run
-from the checked-in Nicolas source capture with:
+from the checked-in reference source capture with:
 
 ```sh
 python -m tools.replay_connected_scalar_chain \
@@ -3505,10 +3525,12 @@ python -m tools.replay_connected_scalar_chain \
 ```
 
 For the nonzero candidate, use a Python environment with PyTorch and add
-`--adds-bf16 0x3fc0`. The replay refuses a changed Nicolas FP8 model and
+`--adds-bf16 0x3fc0`. The replay refuses a changed reference FP8 model and
 records the source, model, profile, object, ELF, and Spike hashes.
 
-### Current portable model2MLIR capture for Nicolas's generic FP6 data
+<a id="current-portable-model2mlir-capture-for-nicolass-generic-fp6-data"></a>
+
+### Current portable model2MLIR capture for the reference implementation’s generic FP6 data
 
 The latest pinned model2MLIR `a042643` emits a standard `linalg.matmul` for
 the PyTorch 128³ operation. It does not expose the older MX external-quantizer
@@ -3516,14 +3538,14 @@ handoff API. The MX out-of-tree
 [`standard_matmul_handoff.py`](../mx_gemmini_support/standard_matmul_handoff.py)
 checks the exact fill→matmul→return data flow and binds an explicit source
 payload and RTL-legal E3M2 LUT mode. It does not claim that the f32 example
-tensors carry Nicolas's quantized operand values.
+tensors carry the reference implementation’s quantized operand values.
 
 The [generic FP6 replay](evidence/nicolas_ws_generic_portable_a042643_266c593/README.md)
 uses the checked-in `matmul_ws_mx_generic.c` header's packed arrays, E8M0
 scales, and full 64-line LUT banks. Its header's BF16, packed-index, and
 output-scale arrays are self-consistent under the declared Radiance FP6 host
 projection. The generated data-free Rocket object matches **16,384 BF16
-values, 8,192 packed bytes, and 512 scales** on Nicolas's pinned Spike. Two
+values, 8,192 packed bytes, and 512 scales** on the reference implementation’s pinned Spike. Two
 clean builds reproduce the frontend capture, bound MLIR, object, ELF, and
 Spike log exactly. The original debug source issues through fixed MMIO; that
 command transport and its performance remain outside this Rocket numerical
@@ -3535,10 +3557,10 @@ The [six-case archive](evidence/nicolas_portable_chains_a042643_266c593/README.m
 starts with fresh PyTorch `C2 = (A @ B1) @ B2` captures from the clean
 model2MLIR `a042643` source closure. The MX handoff verifies both ordered
 `linalg.matmul` sites and their SSA connection, then binds each capture to
-Nicolas's pinned FP8, FP4, or FP6 C source header and RTL-legal profile. The
+the reference implementation’s pinned FP8, FP4, or FP6 C source header and RTL-legal profile. The
 existing resident-pair lowerer and public `tools.compile_object` CLI emit
 data-free RV64 Rocket/RoCC objects. Linked programs match every source-header
-C1/C2 code and E8M0 scale on Nicolas's pinned Spike: **122,880 codes and
+C1/C2 code and E8M0 scale on the reference implementation’s pinned Spike: **122,880 codes and
 3,840 scales** across the 64³ and 128³ precision ladder. The archive pins
 frontend, source, profile, tool, object, ELF, and Spike-log hashes. A second
 run reproduced its suite receipt and 51 selected artifacts byte-for-byte.
@@ -3555,7 +3577,7 @@ python -m tools.qualify_nicolas_portable_chains \
 ```
 
 This is a source-bound numerical result for six named chain programs, which
-were already counted in the Nicolas selected-output roster. The f32 capture
+were already counted in the reference selected-output roster. The f32 capture
 establishes graph structure; the pinned headers supply quantized runtime
 operands and goldens. General graph lifetimes and RTL/FPGA execution remain
 separate qualification gates.
@@ -3575,7 +3597,7 @@ separate qualification gates.
    then requalify unchanged source bytes before claiming attention parity.
 2. Generalize the connected chain's explicit scratchpad lifetimes beyond the
    qualified 64³, source-derived 128³ MX+VPU, and plain MX 16-row prefix ladder of
-   Nicolas's 128³ source and the source-derived 16×96×96 and 64×96×96 plain
+   the reference implementation’s 128³ source and the source-derived 16×96×96 and 64×96×96 plain
    MX cases.
    Two rectangular 64×96×64 → 64×{32,64}×96 pairs are now qualified on
    Spike, including distinct B1/B2 footprints; lower broader rectangular
@@ -3596,7 +3618,9 @@ separate qualification gates.
    [four-model preflight](evidence/full_model_compile_preflight_a042643_748b984/README.md)
    records frontend capture success and MX object compilation refusal.
 
-## Nicolas two-tile MX+VPU scheduling source baseline
+<a id="nicolas-two-tile-mxvpu-scheduling-source-baseline"></a>
+
+## Reference two-tile MX+VPU scheduling source baseline
 
 The public [`tools.compile_object`](../tools/compile_object.py) command now
 selects the full three-site graph as `full_vpu_branch`. It reuses the existing
@@ -3609,7 +3633,7 @@ preload with the captured first matrix; it is not executed by the object.
 The compiler rejects a changed precursor, payload digest, profile, schedule,
 or buffer map before emitting a qualified object.
 
-The replay command below derives the operands from Nicolas's pinned source,
+The replay command below derives the operands from the reference implementation’s pinned source,
 compiles serial and pipelined graphs on both VPU Rocket profiles through the
 public entry point, checks each issuer against the previously qualified object,
 and runs every object against the full source goldens on pinned Spike:
@@ -3622,7 +3646,7 @@ python -m tools.replay_full_vpu_branch_dispatch \
   --out-dir /new/mx-public-branch-replay
 ```
 
-This integration covers Nicolas's 64×64 three-site, two-branch FP8 graph and
+This integration covers the reference implementation’s 64×64 three-site, two-branch FP8 graph and
 the two named VPU profiles. Broader graph shapes and branch structures still
 need the lowerer's scratchpad lifetime rules generalized.
 The [published-checkout replay](evidence/mx_full_vpu_branch_public_3619043/index.json)
@@ -3632,7 +3656,7 @@ comparisons cover **16,384 first-matrix BF16 values, 65,536 FP8 codes, and
 2,048 E8M0 scales**, with no mismatches. The archive includes the actual
 input and golden bytes, objects, physical streams, ELFs, and simulator logs.
 
-Nicolas's `chain_pipelined.c` starts from a preloaded 64×64 BF16 C1 tile,
+The reference implementation’s `chain_pipelined.c` starts from a preloaded 64×64 BF16 C1 tile,
 shares one B2 weight tile, and issues two resident VPU→requant→MM2 chains
 with BF16 scalar factors 2 and 4. Its fenced, program-order, and pipelined
 schedules test the reservation-station issue order. The
@@ -3646,7 +3670,7 @@ uses pinned upstream `e9ded36` and has three FP8 contraction sites with no
 opaque calls. Its [original graph](evidence/nicolas_chain_pipelined_266c593/original_graph.json)
 shows one MM1 feeding distinct ×2 and ×4 branches, with B2 shared by both
 MM2 sites. The capture's profile-bound MLIR is a three-site handoff; it does
-not preserve branch SSA edges. `audit_chain_pipelined` checks Nicolas's exact
+not preserve branch SSA edges. `audit_chain_pipelined` checks the reference implementation’s exact
 tile placement and issue-order markers and independently derives full C1 and
 C2 FP8 codes and E8M0 scales for both factors from the source BF16 goldens.
 The compiler-issued source chain is described below.
@@ -3654,7 +3678,7 @@ The compiler-issued source chain is described below.
 ### Compiler-issued two-tile source chain
 
 The [typed connected graph](evidence/nicolas_chain_pipelined_compiled_266c593/connected.mlir)
-binds Nicolas's BF16 C1 preload to two VPU scalar operations, two resident
+binds the reference implementation’s BF16 C1 preload to two VPU scalar operations, two resident
 requants, and two MM2 sites. The physical lowerer reuses the qualified VPU,
 SPAD_REQUANT, and resident-MM2 command builders and loads B2 only once. It
 issues the branches in program order with dependency fences. The
@@ -3665,7 +3689,7 @@ record the profile, source inputs, command stream, and object hashes.
 
 The [standalone Spike log](evidence/nicolas_chain_pipelined_compiled_266c593/spike.log)
 reports **0 mismatches** across both tiles' **16,384 FP8 codes** and **512
-E8M0 scales**, checked against references derived from Nicolas's header. Two
+E8M0 scales**, checked against references derived from the reference implementation’s header. Two
 independent compiler runs produced identical bound MLIR, physical program,
 issuer, object, ELF, extension, and Spike log hashes. The executable starts
 from the source driver's preloaded C1 BF16 tile; the captured upstream MM1 is
@@ -3677,7 +3701,7 @@ including the compiler source closure, in the
 
 Reproduce the object and Spike check with `python -m
 tools.compile_nicolas_chain_pipelined --capture-dir
-docs/evidence/nicolas_chain_pipelined_266c593 --rtl-root <Nicolas RTL>
+docs/evidence/nicolas_chain_pipelined_266c593 --rtl-root <reference RTL>
 --riscv-root <RISC-V tools> --mx-opt build/tools/mx-gemmini-opt --out-dir
 <new output directory> --run-spike` from this repository.
 
@@ -3685,7 +3709,7 @@ docs/evidence/nicolas_chain_pipelined_266c593 --rtl-root <Nicolas RTL>
 
 `--include-mm1` extends the same compile command to the
 [complete three-site typed graph](evidence/nicolas_chain_pipelined_full_266c593/connected.mlir).
-The compiler issues MM1 from Nicolas's checked packed A1/B1 codes and scales,
+The compiler issues MM1 from the reference implementation’s checked packed A1/B1 codes and scales,
 reads its BF16 C1 tile, keeps tile 0 resident, and reloads that computed BF16
 tile for the ×4 branch. Both branches share one B2 transfer. The source
 driver's BF16 C1 preload is absent from the issuer command stream.
@@ -3695,7 +3719,7 @@ records zero allocated data bytes in the linkable issuer object and the six
 runtime input hashes. The [pinned Spike log](evidence/nicolas_chain_pipelined_full_266c593/spike.log)
 reports **0 mismatches** for all **4,096 MM1 BF16 values**, **16,384 C1/C2
 FP8 codes**, and **512 E8M0 scales** across the two branches. This closes the
-numerical shared-MM1→VPU→requant→MM2 path for Nicolas's 64³ source data. The
+numerical shared-MM1→VPU→requant→MM2 path for the reference implementation’s 64³ source data. The
 default compiler schedule uses dependency fences and program order. The
 compiler's optional pipelined schedule has a separate functional Spike receipt
 below; its RTL timing remains unqualified.
@@ -3712,7 +3736,7 @@ The separate
 repeats the latest-model2MLIR capture, handwritten source oracle, and full
 three-site compiler run under `MxE4M3VpuGemminiRocketConfig`. Its compiler
 program also matches **4,096 C1 BF16 values**, **16,384 FP8 codes**, and
-**512 scales** on Nicolas's pinned Spike. A second build reproduced its
+**512 scales** on the reference implementation’s pinned Spike. A second build reproduced its
 bound graph, commands, object, ELF, and log hashes. The E4M3-only and
 FP4-capable VPU profiles bind different profile hashes, while this FP8
 program's issuer, object, ELF, and log are byte-identical. The
@@ -3729,7 +3753,7 @@ fences between those six VPU, requant, and MM2 stage commands. The
 [FP4-capable VPU receipt](evidence/nicolas_chain_pipelined_full_266c593/pipelined/object_manifest.json)
 and [E4M3-only VPU receipt](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/object_manifest.json)
 each match all **4,096 BF16 values**, **16,384 FP8 codes**, and **512 scales**
-on Nicolas's pinned Spike. The profile catalog indexes the pipelined runs
+on the reference implementation’s pinned Spike. The profile catalog indexes the pipelined runs
 separately from the fenced program-order runs. These are functional Spike
 results; RTL queue overlap and the source's 405-cycle measurement have not
 been reproduced by a compiler-issued RTL run.
@@ -3739,7 +3763,9 @@ ELF, extension, Spike log, and compiler source closure hashes for both the
 and [E4M3-only](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_pipelined/fresh_replay_manifest.json)
 VPU profiles.
 
-### Source-preloaded pipelined issue on Nicolas's Spike
+<a id="source-preloaded-pipelined-issue-on-nicolass-spike"></a>
+
+### Source-preloaded pipelined issue on the pinned Spike model
 
 The source driver starts from a BF16 C1 tile already in host memory. Running
 the compiler with `--issue-schedule pipelined` and without `--include-mm1`
@@ -3751,27 +3777,29 @@ linkable and contains no embedded operands or goldens.
 The [FP4-capable VPU receipt](evidence/nicolas_chain_pipelined_compiled_266c593/preloaded_pipelined/object_manifest.json)
 and [E4M3-only VPU receipt](evidence/nicolas_chain_pipelined_e4m3_only_266c593/compiled_preloaded_pipelined/object_manifest.json)
 each compare **16,384 FP8 codes and 512 E8M0 scales** with zero mismatches on
-Nicolas's pinned Spike. Their profile hashes differ; for this FP8 path their
+the reference implementation’s pinned Spike. Their profile hashes differ; for this FP8 path their
 issuer objects, ELFs, and Spike logs have identical hashes. Fresh checkouts of
 compiler commit `dd39055` reproduced both archives' MLIR, physical programs,
 objects, ELFs, and logs. The profile catalog records these as source-preloaded
 pipeline receipts, distinct from the compiler-issued MM1 receipts. These
 functional runs do not establish RTL queue overlap or a comparable cycle
-count with Nicolas's handwritten source driver.
+count with the reference implementation’s handwritten source driver.
 
 To reproduce either profile, use the compile command above with
 `--issue-schedule pipelined --run-spike` and omit `--include-mm1`. For the
 E4M3-only profile, also select its archived capture and profile JSON as in
 the full-chain command.
 
-### Source FP4 scratchpad requantization on Nicolas's Spike
+<a id="source-fp4-scratchpad-requantization-on-nicolass-spike"></a>
 
-Nicolas's `spad_requant_fp4.c` generates a 64×128 BF16 tile and checks FP4
+### Source FP4 scratchpad requantization on the pinned Spike model
+
+the reference implementation’s `spad_requant_fp4.c` generates a 64×128 BF16 tile and checks FP4
 codes against its own E2M1 reference in both flat and operand-A tiled layouts.
 The compiler now lowers one typed `mx_gemmini.spad_requant` operation for each
 layout from the same SSA input. Its data-free RV64 object issues the BF16
 transfer, both FP4 requant commands, and both packed-image readouts. The
-qualification driver retains Nicolas's input generator and every code and
+qualification driver retains the reference implementation’s input generator and every code and
 scale comparison; a recorded [source patch](evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/compiler_driver.patch)
 replaces the handwritten accelerator issue sites with a call to that object.
 The typed module passes native `mx-gemmini-opt` verification. This is a
@@ -3781,7 +3809,7 @@ model2MLIR source-parity suite.
 The [FP4-capable VPU receipt](evidence/nicolas_spad_requant_fp4_266c593/fp4_capable/receipt.json)
 and [E4M3-only VPU receipt](evidence/nicolas_spad_requant_fp4_266c593/e4m3_only/receipt.json)
 each record zero mismatches for **16,384 FP4 codes and 512 E8M0 scales** in
-both the original source ELF and compiler-issued ELF on Nicolas's pinned
+both the original source ELF and compiler-issued ELF on the reference implementation’s pinned
 Spike. The compiler driver poisons all output buffers before issue, so the
 checks also catch incomplete stores. Both compiler objects contain zero
 allocated data bytes. Fresh checkouts of compiler commit `3117049` reproduced

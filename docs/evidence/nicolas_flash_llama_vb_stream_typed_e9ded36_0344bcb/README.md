@@ -1,6 +1,6 @@
 # Typed streamed flash with uneven key blocks on Spike
 
-Nicolas's unmodified `attn_flash_llama_vb.c` wrapper partitions 2,048 keys
+the reference implementation’s unmodified `attn_flash_llama_vb.c` wrapper partitions 2,048 keys
 into **64 + 7×256 + 192**. It uses the same synthetic operands and
 model2MLIR `e9ded36` QK→scale→softmax→PV capture as the [uniform 256-key
 case](../nicolas_flash_llama_stream_source_baseline_e9ded36_0344bcb/README.md).
@@ -25,7 +25,7 @@ qualification tasks. No FPGA was used.
 
 To replay, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

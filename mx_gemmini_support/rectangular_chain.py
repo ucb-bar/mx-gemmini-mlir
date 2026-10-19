@@ -1,4 +1,4 @@
-"""Bind a captured rectangular PyTorch pair to Nicolas's checked FP8 bytes."""
+"""Bind a captured rectangular PyTorch pair to the reference implementation’s checked FP8 bytes."""
 
 from __future__ import annotations
 

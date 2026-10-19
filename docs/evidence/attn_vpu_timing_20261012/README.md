@@ -1,8 +1,10 @@
-# MX+VPU attention timing on Nicolas's Spike
+<a id="mxvpu-attention-timing-on-nicolass-spike"></a>
+
+# MX+VPU attention timing on the pinned Spike model
 
 The unmodified [handwritten attention program][source]
 and the [typed compiler program][compiled]
-both pass their output checks with Nicolas's functional plus timing model.
+both pass their output checks with the reference implementation’s functional plus timing model.
 Both runs use the `e4m3_vpu` preset, default timing parameters, Spike SHA-256
 `de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9`,
 and `libgemmini.so` SHA-256
@@ -19,7 +21,7 @@ versus 2,304 bytes). The [source log](source_spike.log),
 [source model report](source_perf.txt), [compiled log](compiled_spike.log),
 and [compiled model report](compiled_perf.txt) contain the complete outputs.
 
-The two wrappers do different work in their timed second pass. Nicolas's
+The two wrappers do different work in their timed second pass. The reference implementation’s
 source loads Q/K/V scales once before both passes and reads score,
 probability, and probability codes only in the checking first pass. The
 compiler object currently reloads the scales and reads all three diagnostic

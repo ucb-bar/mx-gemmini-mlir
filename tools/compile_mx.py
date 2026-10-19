@@ -2,7 +2,7 @@
 
 The source specialization bundle contains the quantized operands and golden
 result. This command lowers the typed contraction, emits physical commands,
-builds a Rocket executable, and optionally runs it on Nicolas's pinned Spike.
+builds a Rocket executable, and optionally runs it on the reference implementation’s pinned Spike.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Classify Nicolas MX programs using validated generated-object Spike receipts.
+"""Classify reference MX programs using validated generated-object Spike receipts.
 
 The selected matrix result is narrower than rebuilding every instruction and
 check in the source C program. Other receipt statuses stay separate so a
@@ -377,7 +377,7 @@ def _full_ws_generic_result(entry: dict) -> dict:
 
 
 def _full_vpu_program_result(entry: dict) -> dict:
-    """Validate the single compiler-issued Nicolas VPU test executable."""
+    """Validate the single compiler-issued reference VPU test executable."""
     directory = ROOT / "docs/evidence/nicolas_vpu_ops_program_public_266c593"
     index = json.loads((directory / "index.json").read_text())
     if (index.get("schema") != "mx_gemmini.nicolas_vpu_ops_public_program_archive.v1" or
@@ -462,7 +462,7 @@ def _full_vpu_program_result(entry: dict) -> dict:
 
 
 def _full_resident_vpu_result(entry: dict) -> dict:
-    """Validate the full 64-cubed connected object against Nicolas's chain."""
+    """Validate the full 64-cubed connected object against the reference implementation’s chain."""
     directory = ROOT / "docs/evidence/nicolas_resident_vpu_object_6c9ed40"
     path = directory / "qualification_manifest.json"
     receipt = json.loads(path.read_text())

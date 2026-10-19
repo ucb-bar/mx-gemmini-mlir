@@ -1,6 +1,6 @@
 """Capture BF16 softmax with model2MLIR and run compiler-issued VPU ops on Spike.
 
-The copied Nicolas source retains input generation and its bit-exact reference
+The copied reference source retains input generation and its bit-exact reference
 checker. Configuration, transfers, VPU compute, and readout are emitted from
 one checked physical MX command stream.
 """

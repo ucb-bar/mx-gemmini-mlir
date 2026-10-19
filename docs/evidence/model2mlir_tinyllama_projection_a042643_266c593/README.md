@@ -7,7 +7,7 @@ The selected source contraction is 8×2048×2048. The compiler quantizes all
 2048 K elements, pads the eight token rows to DIM16, and issues one 32-column
 output stripe. The object contains no operands or golden. A standalone RV64
 ELF linked that object and matched the independent MX hardware arithmetic
-model on pinned Nicolas Spike: **512/512 BF16 values**, including **256 real
+model on pinned the pinned Spike model: **512/512 BF16 values**, including **256 real
 model values** and 256 padded-row values. The live PyTorch f32 output for the
 same stripe differs from the MX BF16 result by mean absolute error 0.04424946
 and maximum absolute error 0.21039677; this is a precision observation, not
@@ -24,7 +24,7 @@ or whole-model executable is claimed.
 
 Reproduce with Python containing PyTorch, Transformers, MXQuant, xDSL, and
 model2MLIR. `M2M` must contain the committed model2MLIR `a042643` source
-closure; `MXQ` is MXQuant `b4af543`; `RTL` is Nicolas RTL `266c593` with
+closure; `MXQ` is MXQuant `b4af543`; `RTL` is reference RTL `266c593` with
 its pinned Spike extension; `RADIANCE` contains the pinned host arithmetic
 model. Set `OUT_ROOT` to a new writable output directory:
 

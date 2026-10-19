@@ -1,4 +1,4 @@
-"""Capture the shared-MM1, two-branch PyTorch graph for Nicolas's chain test.
+"""Capture the shared-MM1, two-branch PyTorch graph for the reference implementation’s chain test.
 
 The source performance driver preloads its C1 BF16 tile. This capture includes
 the upstream MM1 so a later compiler program can produce that tile, but source

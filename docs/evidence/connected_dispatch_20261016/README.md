@@ -27,7 +27,7 @@ by half; static command inspection confirms that only the intermediate DMA
 commands disappear. Production selection, using the measured positive
 savings, regenerates the same qualified command stream.
 
-These are small connected VPU regions on Nicolas's `e4m3_vpu` Spike timing
+These are small connected VPU regions on the reference implementation’s `e4m3_vpu` Spike timing
 model, with `GEMMINI_MODE=both` and `mem.host_tracking=0`. They establish an
 executable first integration of the shared pass. They do not measure a full
 model, matrix-to-VPU fusion, regular Gemmini, or FPGA latency. Current full
@@ -40,7 +40,7 @@ python -B docs/evidence/connected_dispatch_20261016/verify.py
 ```
 
 To regenerate a case, use the recorded profile, source-bound RTL checkout,
-RV64 toolchain, Nicolas extension, and a Python environment with PyTorch,
+RV64 toolchain, reference extension, and a Python environment with PyTorch,
 model2MLIR, Merlin, and xDSL 0.65. `STARTUP_DIR` is the matching baremetal
 `riscv-tests/benchmarks/common` directory with its environment headers.
 

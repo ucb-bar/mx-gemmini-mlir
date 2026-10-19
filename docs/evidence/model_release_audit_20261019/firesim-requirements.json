@@ -1,0 +1,110 @@
+{
+  "console_protocol": "SESSION_SHA plus SESSION_PERF and DONE; clocks on hardware are physical cycle CSR values",
+  "dram_base": 2147483648,
+  "elf_bytes": 2439169264,
+  "elf_sha256": "1750d71086f9aec925df1e27fd07019cbd4e86abd5487bc1004232b42ed1e161",
+  "entry": 2147483648,
+  "hardware": {
+    "chipyard_overrides": {
+      "l2_banks": 4,
+      "l2_outer_latency_cycles": 128,
+      "rocket_cores": 1,
+      "serial_tl_sink_bits": 16,
+      "system_bus_width_bits": 512
+    },
+    "configuration": "MxE4M3Fp4VpuGemminiRocketConfig",
+    "gemmini_revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+    "geometry": {
+      "mesh_columns": 16,
+      "mesh_rows": 16,
+      "tile_columns": 1,
+      "tile_rows": 1
+    },
+    "resources": {
+      "accumulator_banks": 2,
+      "accumulator_bytes": 65536,
+      "dma_bus_width_bits": 512,
+      "dma_max_bytes": 64,
+      "execute_queue_entries": 8,
+      "has_loop_retire_counter": false,
+      "has_mx_mmio_requant": false,
+      "load_queue_entries": 8,
+      "lut": false,
+      "lut_config": null,
+      "max_in_flight_mem_reqs": 32,
+      "max_spad_writer_bytes": 64,
+      "mx_mmio_base": 536936448,
+      "performance_counters": 8,
+      "requantizer": true,
+      "requantizer_config": {
+        "base_address": 268435456,
+        "gpu_input_lanes": 16,
+        "input_lanes": 64,
+        "max_output_bits": 8,
+        "min_output_bits": 4,
+        "output_lanes": 32
+      },
+      "scale_block_elements": 32,
+      "scale_mem_config": {
+        "banks": 8,
+        "base_address": 536870912,
+        "size_bytes": 16384,
+        "subbank_line_bytes": 16,
+        "subbanks_per_bank": 2
+      },
+      "scratchpad_banks": 4,
+      "scratchpad_bytes": 262144,
+      "spad_requant": true,
+      "store_queue_entries": 2,
+      "vpu": true,
+      "vpu_config": {
+        "exp_sub": true,
+        "exp_sum": true,
+        "units": 2
+      }
+    }
+  },
+  "link_receipt_sha256": "8d1e7329578664069359651a2c9f9d8bd6f8510d5cf94f06e0a36ff99d04df3e",
+  "load_segments": [
+    {
+      "address": 2147483648,
+      "alignment": 4096,
+      "file_bytes": 1621154,
+      "flags": 5,
+      "memory_bytes": 1621154
+    },
+    {
+      "address": 2149105664,
+      "alignment": 4096,
+      "file_bytes": 22643424,
+      "flags": 6,
+      "memory_bytes": 37334344
+    },
+    {
+      "address": 2186702160,
+      "alignment": 4096,
+      "file_bytes": 2152017520,
+      "flags": 7,
+      "memory_bytes": 2153516784
+    },
+    {
+      "address": 8589934592,
+      "alignment": 4096,
+      "file_bytes": 262512640,
+      "flags": 6,
+      "memory_bytes": 262512640
+    }
+  ],
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "recommended_dram_bytes": 8589934592,
+  "required_memory_span_bytes": 7516192768,
+  "schema": "mx_gemmini.firesim_model_package.v1",
+  "status": "packaged_not_fpga_executed",
+  "validation_required": [
+    "matching FireSim hardware configuration and bitstream",
+    "DRAM covers load segments and runtime arena",
+    "host-target console and exit transport",
+    "complete output/state comparison after execution"
+  ],
+  "workload": "mx-tinyllama-cached.json"
+}

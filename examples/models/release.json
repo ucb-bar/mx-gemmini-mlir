@@ -1,0 +1,310 @@
+{
+  "forward_capture": {
+    "archive": "examples/models/forward_capture.tar.xz",
+    "bytes": 18552692,
+    "members": {
+      "capture/capture_receipt.json": {
+        "bytes": 8309,
+        "sha256": "a32f31f3f8cc8a4657b0e965f8d0bff8e7af5da350c572305eda892f359e224a"
+      },
+      "capture/extra.npz": {
+        "bytes": 103556,
+        "sha256": "74ea74ac9fd72a234b267879c105e79d97ce89eb08917dcc87f9f9dd4b5be309"
+      },
+      "capture/golden.npy": {
+        "bytes": 20480128,
+        "sha256": "400888f4d74ff94d52e2df2c81cb05d5b70365907788ff40738eb1c1b7153066"
+      },
+      "capture/input_order.json": {
+        "bytes": 20,
+        "sha256": "c0396cc1a0040cf9cf5dba8d48e07530a9a372fdebf3429ef97b9c498595a811"
+      },
+      "capture/inputs.npz": {
+        "bytes": 1540,
+        "sha256": "4e81f62550001dee1a5d84c9e3a2348e8b1f14285ca86c84b7f9279368ef14cd"
+      },
+      "capture/model.mlir": {
+        "bytes": 1597315,
+        "sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a"
+      },
+      "capture/weights.safetensors.manifest.json": {
+        "bytes": 32538,
+        "sha256": "0c3026beed1497d275e5acd216205b96fe55132d170df4f8efae454242044c99"
+      }
+    },
+    "sha256": "09ea6b96fb14ccc2e24eb39e9d3acc73673159f2cb08dc468759911bdbbd0a15"
+  },
+  "models": {
+    "smolvla": {
+      "archive": "docs/evidence/smolvla_latest_session_20261019",
+      "checkpoint": {
+        "id": "lerobot/smolvla_base",
+        "revision": "c83c3163b8ca9b7e67c509fffd9121e66cb96205"
+      },
+      "cycles": 73577503143,
+      "elf": {
+        "bytes": 493841984,
+        "sha256": "4e7f6d209582d050d81f2f513022e015723d29199c26e2eb28def329c2849e52"
+      },
+      "instructions": 71650743356,
+      "kind": "flat",
+      "link_directory": "smolvla_latest_optimized_link",
+      "run_directory": "smolvla_latest_optimized_run",
+      "stages": {
+        "action_decode": {
+          "build_directory": "smolvla_action",
+          "capture_model_sha256": "f333ce4655f03d9edc1f1f979a807d721f174dae96b0b9a0b2e85bd0b9c08036",
+          "weights_sha256": null
+        },
+        "flow_denoise": {
+          "build_directory": "smolvla_flow_latest_optimized",
+          "capture_model_sha256": "b54814d4d211cb127a26d960667d97946cc7743b9dd81bf7d273438613341c09",
+          "matrix_bindings": {
+            "mxfp8": 148
+          },
+          "placements": {
+            "add": {
+              "vpu": 93
+            },
+            "elementwise": {
+              "host": 1,
+              "vpu": 317
+            },
+            "reduce": {
+              "vpu": 33
+            },
+            "softmax": {
+              "host": 16
+            },
+            "unary": {
+              "vpu": 107
+            }
+          },
+          "policy": {
+            "path": "examples/models/policies/smolvla-flow_denoise.json",
+            "sha256": "179b5ddfa906d1bff433f53134a737aef0ac235526244073712e6cc556e3a0ca"
+          },
+          "weights_sha256": "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
+        },
+        "prefix_encode": {
+          "build_directory": "smolvla_prefix_latest_optimized",
+          "capture_model_sha256": "7b1a55dd11ebe034d04e442ff85787710628259ab2b322a9c71d7cec4381e911",
+          "matrix_bindings": {
+            "mxfp8": 243
+          },
+          "placements": {
+            "add": {
+              "vpu": 194
+            },
+            "elementwise": {
+              "host": 52,
+              "vpu": 536
+            },
+            "reduce": {
+              "vpu": 95
+            },
+            "softmax": {
+              "host": 28
+            },
+            "unary": {
+              "vpu": 151
+            }
+          },
+          "policy": {
+            "path": "examples/models/policies/smolvla-prefix_encode.json",
+            "sha256": "65c5bac4decb7664b76ee27d4a8081803769217767acb23ae46d0c14447a56f4"
+          },
+          "weights_sha256": "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
+        }
+      }
+    },
+    "tinyllama-cached": {
+      "archive": "docs/evidence/cached_compact_rhs_session_20261019",
+      "checkpoint": {
+        "id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "revision": "fe8a4ea1ffedaf415f4da2f062534de366a451e6"
+      },
+      "cycles": 20262623973,
+      "elf": {
+        "bytes": 2439169264,
+        "sha256": "1750d71086f9aec925df1e27fd07019cbd4e86abd5487bc1004232b42ed1e161"
+      },
+      "instructions": 15175110570,
+      "kind": "session",
+      "link_directory": "cached_session_compact_rhs_guarded_link",
+      "run_directory": "cached_session_compact_rhs_guarded_run",
+      "stages": {
+        "decode": {
+          "build_directory": "cached_decode_compact_rhs_guarded",
+          "capture_model_sha256": "e621e942502c1ed0b8625809e2cd1699d7a0c73cb1310ff68216f105aeaa3001",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "host": 45,
+              "vpu": 88
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 246
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "policy": {
+            "path": "examples/models/policies/tinyllama-cached-decode.json",
+            "sha256": "5404e5cb5fb58a446438092885e3758bff5bce3f3b40a7f0a968f465241bf33c"
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        },
+        "prefill": {
+          "build_directory": "cached_prefill_latest",
+          "capture_model_sha256": "f2bb30ab2289b9c104ad0b095c57d600cd2f3e7fa84e17fbfc30f06239a4b0b5",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "vpu": 133
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 291
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "policy": {
+            "path": "examples/models/policies/tinyllama-cached-prefill.json",
+            "sha256": "7216251bca6159edeb39e2b9054a24fbc852667dae268becc7fecb597a20ae90"
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        }
+      }
+    },
+    "tinyllama-forward": {
+      "archive": "docs/evidence/matched_compact_batch_rhs_forward_20261019",
+      "build_directory": "onepass160_rms_compact_batch_rhs",
+      "checkpoint": {
+        "id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "revision": "fe8a4ea1ffedaf415f4da2f062534de366a451e6"
+      },
+      "cycles": 10326818367,
+      "elf": {
+        "bytes": 1330788912,
+        "sha256": "c5cf0973297764ba67af6f46779305fe0699e556474bcd3546b238d7880e6426"
+      },
+      "kind": "forward",
+      "stages": {
+        "forward": {
+          "build_directory": "onepass160_rms_compact_batch_rhs",
+          "capture_model_sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "vpu": 133
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 291
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "policy": {
+            "path": "examples/models/policies/tinyllama-forward-forward.json",
+            "sha256": "2c81a616115590d661efebe757e9af2854383348411cc0fc0083411f498f9933"
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        }
+      }
+    }
+  },
+  "profile": {
+    "canonical_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "path": "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
+  },
+  "repositories": {
+    "chipyard": {
+      "revision": "d45f86f4cca379715ac0ceb3a9f2369927796794",
+      "scope": "toolchain/startup checkout; requires the pinned Gemmini integration for FPGA use",
+      "url": "https://github.com/ucb-bar/chipyard.git"
+    },
+    "firesim": {
+      "revision": "b084672c2f8cf32e55d78f73a001074c23f8a2b8",
+      "scope": "workload-format validation; no matching FPGA execution recorded",
+      "url": "https://github.com/firesim/firesim.git"
+    },
+    "gemmini": {
+      "revision": "266c593f2cb51d7e3fe83fc0317072b585ac3c52",
+      "url": "https://github.com/ucb-bar/gemmini.git"
+    },
+    "gemmini-rocc-tests": {
+      "revision": "350547f9843f46f485d4d1dd4c20b2f52f4844bf",
+      "url": "https://github.com/ucb-bar/gemmini-rocc-tests.git"
+    },
+    "libgemmini": {
+      "revision": "876631072ecc7cc8197df5dc69c4d26bd4cd5f54",
+      "url": "https://github.com/ucb-bar/libgemmini.git"
+    },
+    "llvm-project": {
+      "revision": "a47bddccec30255619bb8c37fa59700e661d4e66",
+      "url": "https://github.com/llvm/llvm-project.git"
+    },
+    "merlin": {
+      "revision": "5e81a25d27246b490f947c9201fd20fabe27c69e",
+      "url": "https://github.com/ucb-bar/merlin.git"
+    },
+    "model2MLIR": {
+      "revision": "f5e5c674a585bebbc2507dbd028ebf9d26e2afbc",
+      "url": "https://github.com/ucb-bar/model2MLIR.git"
+    },
+    "mx-gemmini-mlir": {
+      "revision": "fd5fff33aea54ee1e175b97bb88496351fda88e9",
+      "url": "https://github.com/ucb-bar/mx-gemmini-mlir.git"
+    },
+    "mxgen": {
+      "revision": "dba3e7e706efa156d96efe595cd9935c825ea14d",
+      "url": "https://github.com/ucb-bar/mxgen.git"
+    },
+    "npu-exploration": {
+      "revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+      "url": "https://github.com/ucb-bar/npu-exploration.git"
+    },
+    "radiance-kernels": {
+      "revision": "b6b9bf44af6d7ba88626b5d17b8b527390aec082",
+      "url": "https://github.com/ucb-bar/radiance-kernels.git"
+    }
+  },
+  "schema": "mx_gemmini.model_release.v1",
+  "tools": {
+    "clang_sha256": "40b44020de84a10b8b613d37b96157e88f8433a000bdeb2ad9bdd79af6785125",
+    "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+    "libm_sha256": "38965f2df6e94d3389596fcf414caf37040294fc0f43f3afa3e4369acb837934",
+    "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9"
+  }
+}

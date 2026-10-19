@@ -1,0 +1,3 @@
+baseline 10433218556 cycles; full words and unchanged quality gate checked
+candidate 10326818367 cycles; full words and unchanged quality gate checked
+PASS: all 5,120,000 compiler words identical; source gate covers 33 retained rows.

@@ -1,6 +1,6 @@
 # Two-V-buffer streamed flash attention on Spike
 
-Nicolas's unmodified `attn_flash_llama_wide.c` wrapper selects the same
+the reference implementation’s unmodified `attn_flash_llama_wide.c` wrapper selects the same
 64×2,048×64 synthetic operands, uniform `BK=256`, and model2MLIR frontend
 as the [three-V-buffer source baseline](../nicolas_flash_llama_stream_source_baseline_e9ded36_0344bcb/README.md).
 It sets `ATTN_V3=0`: K remains double buffered and V uses two scratchpad
@@ -23,7 +23,7 @@ does not qualify performance or a real TinyLlama head. No FPGA was used.
 
 To replay, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

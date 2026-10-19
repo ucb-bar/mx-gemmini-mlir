@@ -1,4 +1,4 @@
-"""Compile Nicolas's legacy FP6 MMIO debug data through current model2MLIR.
+"""Compile the reference implementation’s legacy FP6 MMIO debug data through current model2MLIR.
 
 This qualifies the header's numerical matmul and output projection on Rocket
 Spike. The original C program's fixed MMIO issue path is a separate target.

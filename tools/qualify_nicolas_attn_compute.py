@@ -1,4 +1,4 @@
-"""Replay compiler-issued QK, VPU, requant, and PV compute on Nicolas's Spike.
+"""Replay compiler-issued QK, VPU, requant, and PV compute on the reference implementation’s Spike.
 
 The pinned source driver still loads operands/scales and reads scratchpad
 results. This tool verifies the latest model2MLIR/source binding, builds three

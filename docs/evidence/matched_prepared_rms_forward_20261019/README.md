@@ -7,7 +7,7 @@ words** remains identical, SHA-256
 `d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a`.
 
 The candidate is **17.3241% faster** than the corrected quality-preserving
-compiler baseline (15,984,649,026 cycles) and **3.5503% slower** than Nicolás's
+compiler baseline (15,984,649,026 cycles) and **3.5503% slower** than the reference implementation’s
 matched token-to-logits control (12,762,360,525 cycles). The unchanged quality
 gate passes on the 33 retained full source logit rows: mean KL 0.06379562704,
 worst KL 0.16997975795, and top-token agreement 27/33. The gate retains the

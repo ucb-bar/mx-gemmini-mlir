@@ -63,7 +63,7 @@ def validate_original_branch_trace(trace: dict) -> None:
 def render_chain_pipelined(frontend: str, trace: dict, manifest: dict,
                            profile: dict, resources: dict[str, bytes],
                            facts: dict) -> str:
-    """Bind the captured branches to Nicolas's preloaded BF16 source data."""
+    """Bind the captured branches to the reference implementation’s preloaded BF16 source data."""
     validate_original_branch_trace(trace)
     report = verify_ir(frontend, profile)
     if (report["contracts"], report["vpu_commands"],

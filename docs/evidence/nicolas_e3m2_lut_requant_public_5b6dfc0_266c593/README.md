@@ -1,4 +1,6 @@
-# Nicolas E3M2 LUT-index requantization across meshes
+<a id="nicolas-e3m2-lut-index-requantization-across-meshes"></a>
+
+# Reference E3M2 LUT-index requantization across meshes
 
 Compiler commit `5b6dfc02b0516c5bd5b092686434068bc855ffb4` compiled all
 five pinned E3M2 LUT-index requant source programs from fresh

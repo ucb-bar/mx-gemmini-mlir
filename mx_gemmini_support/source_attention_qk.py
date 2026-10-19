@@ -1,7 +1,7 @@
 """Source-bound GQA QK tile and an explicitly altered MX-safe quantization probe.
 
 The Radiance generator's saved attention golden uses BF16 products and
-accumulation for its matrix model. Nicolas's DIM16 MX model instead has an
+accumulation for its matrix model. the reference implementation’s DIM16 MX model instead has an
 E4M3 product and a reduced-precision accumulator ramp. The emitted Q/K codes
 overflow that path. This module keeps the original bytes and a derived probe
 separate; the probe is not a qualification of the committed attention kernel.
@@ -128,7 +128,7 @@ def decode_e4m3(code: int) -> float:
 
 
 def source_product_overflow_count(tile: QkSourceTile) -> int:
-    """Count source Q/K pairs outside Nicolas's finite E4M3 product range."""
+    """Count source Q/K pairs outside the reference implementation’s finite E4M3 product range."""
     a = [decode_e4m3(code) for code in tile.activation]
     b = [decode_e4m3(code) for code in tile.weight]
     return sum(abs(a[row * 64 + inner] * b[inner * 64 + col]) > 448
@@ -136,7 +136,7 @@ def source_product_overflow_count(tile: QkSourceTile) -> int:
 
 
 def derive_shifted_qk(tile: QkSourceTile, shift: int, *, torch, low_level_model) -> tuple:
-    """Return candidate resources and a BF16 oracle using Nicolas's precision ramp."""
+    """Return candidate resources and a BF16 oracle using the reference implementation’s precision ramp."""
     if type(shift) is not int or not 1 <= shift <= 8:
         raise ValueError("candidate E8M0 shift must be an explicit integer in 1..8")
     if (len(tile.activation) != 4096 or len(tile.weight) != 4096 or
@@ -197,7 +197,7 @@ def derive_shifted_qk(tile: QkSourceTile, shift: int, *, torch, low_level_model)
 
 def derive_generated_hardware_qk(tile: QkSourceTile, *, torch, low_level_model,
                                   patch_sha256: str) -> tuple:
-    """Bind the *emitted* experimental header bytes to Nicolas's QK numerical model."""
+    """Bind the *emitted* experimental header bytes to the reference implementation’s QK numerical model."""
     if _sha(tile.header.read_bytes()) != HARDWARE_HEADER_SHA256:
         raise ValueError("QK header is not the pinned hardware-model generation")
     if (len(tile.activation) != 4096 or len(tile.weight) != 4096 or

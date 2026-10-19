@@ -41,7 +41,7 @@ drift is recorded rather than presented as exact capture parity. The saved
 golden NPZ SHA-256 is
 `d61259c6e424d41767efded955832af1e58b0ed5358b7803854d8d4b0435ac3b`.
 
-This provides real operands and a reference for adapting Nicolas's
+This provides real operands and a reference for adapting the reference implementation’s
 [`attn_flash.c`](https://github.com/ucb-bar/npu-exploration/blob/0344bcba70b899039ccd0ac0801ca5605d46d3eb/baremetal/mxgemmini/src/attn_flash.c)
 to SmolVLA. That source currently implements dense or causal attention, not
 this arbitrary Boolean mask.
@@ -49,13 +49,13 @@ this arbitrary Boolean mask.
 ## One-head source run
 
 The [small source patch](attn_flash_smol.patch) adds a block-major BF16
-additive mask to Nicolas's existing online softmax. The
+additive mask to the reference implementation’s existing online softmax. The
 [generated operand header](smol_head0.h) uses his E4M3 quantizer on the
 captured first head, pads 50→64 query rows and 163→192 keys, and masks
 padded keys before VPU row maximum. Padded query rows are discarded. The
 patch leaves the existing MX/VPU command schedule intact.
 
-With Nicolas's `e4m3_vpu` Spike timing extension and `GEMMINI_MODE=both`,
+With the reference implementation’s `e4m3_vpu` Spike timing extension and `GEMMINI_MODE=both`,
 the [source log](source_spike.log) reports:
 
 | First-head pass | Modeled cycles | Output check |
@@ -118,7 +118,7 @@ first head of each shape. [`build_frontend.py`](build_frontend.py) feeds its
 actual padded Q/K/V and additive mask to model2MLIR. The MX lowerer binds
 that graph to a checked mask DMA, an `mx_gemmini.vpu_execute` mask add before
 each row maximum, FP8 QK/PV contractions, requantization, and BF16 readout.
-It emits a data-free RV64 RoCC object. The same ELF alternates Nicolas's
+It emits a data-free RV64 RoCC object. The same ELF alternates the reference implementation’s
 pipelined source and the compiler's fenced schedule after accelerator
 flushes; every pass matches **all 4,096 BF16 output values**.
 
@@ -140,7 +140,7 @@ passes again match all 4,096 BF16 values. The
 | 163 keys | 22,057 / 22,057 | 24,241 / 24,241 | +9.9% |
 
 The [cross-block pipeline plan](attention_pipeline.schedule.mlir) also moves
-QK and softmax stages ahead of PV, as in Nicolas's source. In a fresh Spike
+QK and softmax stages ahead of PV, as in the reference implementation’s source. In a fresh Spike
 guest the compiler issues first and matches the expected output hash; the
 source runs afterward and confirms every BF16 value. The same guest then
 alternates two warm source/compiler passes. The

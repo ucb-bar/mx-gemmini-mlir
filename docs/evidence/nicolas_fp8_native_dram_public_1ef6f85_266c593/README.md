@@ -1,4 +1,6 @@
-# Nicolas FP8 native DRAM-loop replay
+<a id="nicolas-fp8-native-dram-loop-replay"></a>
+
+# Reference FP8 native DRAM-loop replay
 
 The pinned `matmul_tiled_fp8_128x128_dramloop.c` loads A and B and stores BF16
 C through LoopMatmul's native DRAM path. This compiler replay captures
@@ -6,7 +8,7 @@ C through LoopMatmul's native DRAM path. This compiler replay captures
 arrays to typed MX MLIR, and emits a data-free RV64 object through the public
 object compiler. The original C program and the generated object each pass
 **all 16,384 BF16 output comparisons** against the checked-in golden on
-Nicolas's pinned Spike.
+the reference implementation’s pinned Spike.
 
 The [physical-command audit](native_dram_equivalence.json) checks the loop
 bounds, A/B/C runtime pointers, row strides, scratchpad buffer IDs, and scale

@@ -1,7 +1,9 @@
-# Nicolas FP4 64³ from typed MLIR to a public MX object
+<a id="nicolas-fp4-64³-from-typed-mlir-to-a-public-mx-object"></a>
+
+# Reference FP4 64³ from typed MLIR to a public MX object
 
 Commit `97b0913` captured a 64×64 PyTorch matmul with current model2MLIR
-`e9ded36`, then bound Nicolas's checked-in direct FP4 packed operands, E8M0
+`e9ded36`, then bound the reference implementation’s checked-in direct FP4 packed operands, E8M0
 scales, and BF16 golden from `matmul_tiled_fp4_64x64.c` and its data header.
 The source header uses literal C array dimensions and the hardware's packed
 activation layout. `tools.compile_object` produced a data-free RV64 RoCC

@@ -1,4 +1,4 @@
-"""Compile Nicolas's entire VPU operation schedule into one RV64 object.
+"""Compile the reference implementation’s entire VPU operation schedule into one RV64 object.
 
 The driver reproduces his deterministic inputs and calls his bit-exact
 ``vpu_ref.h`` oracle. All accelerator commands come from typed MLIR.

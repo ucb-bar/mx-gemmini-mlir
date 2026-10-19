@@ -1,9 +1,11 @@
-# Radiance MX quantized outputs on Nicolas's Spike
+<a id="radiance-mx-quantized-outputs-on-nicolass-spike"></a>
+
+# Radiance MX quantized outputs on the pinned Spike model
 
 This archive records all eight quantized-output MX GEMM drivers from the
 pinned Radiance source and model2MLIR capture. The compiler revision is
 `13417df20c73480a51736af38a56141438d9a3a5`; Radiance is
-`80f84caedbabc663a7433c1da4455b936cca41f3`, Nicolas's MX RTL and Spike
+`80f84caedbabc663a7433c1da4455b936cca41f3`, the reference implementation’s MX RTL and Spike
 extension are `266c593f2cb51d7e3fe83fc0317072b585ac3c52`, and
 model2MLIR is `e9ded36eb85abf2d9097ac4dc11457c825853388`.
 
@@ -13,10 +15,10 @@ model2MLIR is `e9ded36eb85abf2d9097ac4dc11457c825853388`.
 | `MxGemminiRocketConfig` (DIM16) | 8 | 90,112 | 3,328 | 2 |
 | `MxDim32AllAsymGemminiRocketConfig` | 8 | 90,112 | 3,328 | 2 |
 
-Every comparison passed on Nicolas's pinned Spike extension. The DIM16 run
+Every comparison passed on the reference implementation’s pinned Spike extension. The DIM16 run
 uses the exact checked-in source BF16, code, and scale goldens. DIM8 and
 DIM32 first require Radiance's pinned host model to reproduce the DIM16 BF16
-golden, then derive target-mesh BF16 with Nicolas's product floor. The
+golden, then derive target-mesh BF16 with the reference implementation’s product floor. The
 Radiance output quantization is recomputed from that target BF16. The
 archive keeps the original source codes and scales beside the target values;
 all eight cases change at least one code on each non-DIM16 mesh.

@@ -1,4 +1,4 @@
-"""Compare typed MX commands with Nicolas's captured SmolVLA attention heads.
+"""Compare typed MX commands with the reference implementation’s captured SmolVLA attention heads.
 
 Both programs run in one Spike guest, alternate after accelerator flushes,
 and check the complete BF16 output after every pass. The source uses its

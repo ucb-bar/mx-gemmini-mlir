@@ -4,11 +4,11 @@ The completed, uninstrumented 160-token, 22-layer forward takes
 **13,735,943,708 modeled cycles**. It uses **4.9552% fewer cycles** than the earlier
 shared-preparation result and **14.0679% fewer cycles** than the numerically corrected
 compiler baseline. All **5,120,000 output words are bit-identical** to both.
-The remaining gap to the independent Nicolás implementation is **7.6286%**.
+The remaining gap to the independent reference implementation is **7.6286%**.
 
 | Same token-to-logits boundary | Modeled cycles | Mean KL, late33 | Worst KL | Top agreement, late33 |
 | --- | ---: | ---: | ---: | ---: |
-| Independent Nicolás source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
+| Independent reference source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
 | Numerically corrected compiler | 15,984,649,026 | 0.0637956 | 0.1699798 | 27/33 |
 | Shared activation preparation | 14,452,067,124 | 0.0637956 | 0.1699798 | 27/33 |
 | Connected sigmoid chains and BF16 handoffs | 13,735,943,708 | 0.0637956 | 0.1699798 | 27/33 |

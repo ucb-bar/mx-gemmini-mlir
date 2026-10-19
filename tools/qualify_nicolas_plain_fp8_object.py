@@ -1,4 +1,4 @@
-"""Compatibility entry point for the pinned Nicolas FP8 128-cubed replay."""
+"""Compatibility entry point for the pinned reference FP8 128-cubed replay."""
 
 from __future__ import annotations
 

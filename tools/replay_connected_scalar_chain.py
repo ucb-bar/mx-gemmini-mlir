@@ -1,8 +1,8 @@
-"""Replay a source-bound two-VPU MX chain on Nicolas's pinned Spike model.
+"""Replay a source-bound two-VPU MX chain on the reference implementation’s pinned Spike model.
 
-The first operation is Nicolas's MULS ×2. A second scalar ADDS is derived from
+The first operation is the reference implementation’s MULS ×2. A second scalar ADDS is derived from
 that graph. The zero case preserves the source goldens; a nonzero case derives
-fresh C1 references and feeds them through Nicolas's pinned MM2 model.
+fresh C1 references and feeds them through the reference implementation’s pinned MM2 model.
 """
 
 from __future__ import annotations

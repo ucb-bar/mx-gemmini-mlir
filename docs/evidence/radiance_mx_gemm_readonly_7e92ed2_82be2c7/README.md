@@ -2,7 +2,7 @@
 
 Compiler commit `7e92ed2` recaptured all **31** Radiance MX GEMM drivers
 from PyTorch through model2MLIR `e9ded36`, emitted compiler-issued RV64
-programs, and ran them on Nicolas's pinned MX Spike extension from RTL
+programs, and ran them on the reference implementation’s pinned MX Spike extension from RTL
 `266c593`. The source checkout was Radiance `82be2c7`; its 31 driver and
 header hashes matched the archived `ee22e0b` baseline despite the newer
 repository revision.

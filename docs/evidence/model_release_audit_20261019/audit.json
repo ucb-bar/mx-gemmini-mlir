@@ -1,0 +1,302 @@
+{
+  "actual_external_images_checked": true,
+  "checks": [
+    {
+      "log_sha256": "2ac1f3f7359a8c4270829098ab50342741d71e35abd04ba71c22079c8f320989",
+      "name": "paired_masked_attention_heads",
+      "source_repository": "npu-exploration",
+      "source_revision": "0344bcba70b899039ccd0ac0801ca5605d46d3eb",
+      "status": "passed"
+    },
+    {
+      "log_sha256": "d906317c294a5d937e09bf003673c60d3d5e8260827d7ea5006b7b812ef3509b",
+      "name": "paired_final_step_attention_heads",
+      "status": "passed"
+    },
+    {
+      "cases": [
+        {
+          "compared_bf16_outputs": 16384,
+          "directory": "gemm_mxgemmini_ws",
+          "physical_program_sha256": "af55684c2c62289a5e207a090a289a76835cdbe703bacd04a7c2d921e8da139e",
+          "traffic": {
+            "k_waves": 32,
+            "weight_bytes_covered_once": 131072,
+            "weight_dma_commands": 512,
+            "weight_tile_reads": 32
+          }
+        },
+        {
+          "compared_bf16_outputs": 16384,
+          "directory": "gemm_mxgemmini_ws_downproj_fp4",
+          "physical_program_sha256": "25edf555b47b8ceb6286b4ec8f483470199523f8bff7e087ee7c52bfc436d339",
+          "traffic": {
+            "k_waves": 88,
+            "weight_bytes_covered_once": 180224,
+            "weight_dma_commands": 704,
+            "weight_tile_reads": 88
+          }
+        },
+        {
+          "compared_bf16_outputs": 16384,
+          "directory": "radiance_restream_1df2c5f",
+          "physical_program_sha256": "89a1bf560d06b08c345e689723e852bed9d62c5df0a8a1d3c11f8d6f8a41f9a1",
+          "traffic": {
+            "k_waves_per_m_tile": 32,
+            "m_tiles": 4,
+            "weight_bytes_per_pass": 131072,
+            "weight_bytes_transferred": 524288,
+            "weight_dma_commands": 2048,
+            "weight_tile_reads": 128
+          }
+        },
+        {
+          "compared_bf16_outputs": 4096,
+          "directory": "gemv_batched_fp8_m32",
+          "physical_program_sha256": "90d5c4ec333866e06b19f8c7b1586c93b329760f335e64ca77be087919fe3a17",
+          "traffic": {
+            "k_waves": 16,
+            "weight_bytes_covered_once": 262144,
+            "weight_dma_commands": 1024,
+            "weight_tile_reads": 16
+          }
+        },
+        {
+          "compared_bf16_outputs": 8192,
+          "directory": "gemv_batched_fp8_m64",
+          "physical_program_sha256": "c390eba2438a171a53e234ad7e842ff69e783c9e83fd2b2a136cad5b8dcd49fe",
+          "traffic": {
+            "k_waves": 16,
+            "weight_bytes_covered_once": 262144,
+            "weight_dma_commands": 1024,
+            "weight_tile_reads": 16
+          }
+        },
+        {
+          "compared_bf16_outputs": 16384,
+          "directory": "gemv_batched_fp8_m128",
+          "physical_program_sha256": "affa5df68c7bbe1e8e21921a7befdbaced812f93b337b3f06655ff7efb8b6b57",
+          "traffic": {
+            "k_waves": 16,
+            "weight_bytes_covered_once": 262144,
+            "weight_dma_commands": 1024,
+            "weight_tile_reads": 16
+          }
+        },
+        {
+          "compared_bf16_outputs": 16384,
+          "directory": "gemv_batched_fp4_m128",
+          "physical_program_sha256": "e244c31193e86d739f0f3ac0cc5b953cd48b4b87596f791963691465beadc1e3",
+          "traffic": {
+            "k_waves": 16,
+            "weight_bytes_covered_once": 131072,
+            "weight_dma_commands": 512,
+            "weight_tile_reads": 16
+          }
+        }
+      ],
+      "name": "radiance_retained_kernel_artifacts",
+      "scope": "frozen command/source bytes, traffic proofs and retained complete-output comparison observations; no new kernel execution",
+      "status": "passed"
+    },
+    {
+      "name": "radiance_kernel_control_scope",
+      "paired_cycles_available": false,
+      "pinned_source_files_reopened": [
+        "kernels/gemm_mxgemmini_ws/kernel.cpp",
+        "kernels/gemm_mxgemmini_ws_downproj_fp4/kernel.cpp",
+        "kernels/gemm_mxgemmini_ws_restream/kernel.cpp",
+        "kernels/gemv_batched_fp8_m32/kernel.cpp",
+        "kernels/gemv_batched_fp8_m64/kernel.cpp",
+        "kernels/gemv_batched_fp8_m128/kernel.cpp",
+        "kernels/gemv_batched_fp4_m128/kernel.cpp"
+      ],
+      "source_check_scope": "driver bytes matched by SHA-256; compatible working-tree files allowed when historical Git objects are absent",
+      "source_revision": "b6b9bf44af6d7ba88626b5d17b8b527390aec082",
+      "status": "passed"
+    }
+  ],
+  "limitations": [
+    "Spike timing uses mem.host_tracking=0; FPGA latency is unmeasured",
+    "Independent full TinyLlama distributions cover 33 positions; all compiler outputs cover 160",
+    "Cached TinyLlama and full SmolVLA have no independent source-session performance baseline",
+    "SmolVLA action errors are diagnostics, without a robot-task acceptance threshold",
+    "Exact historical ELF rebuilding still needs external checkpoint and toolchain inputs"
+  ],
+  "models": {
+    "smolvla": {
+      "cycles": 73577503143,
+      "elf": {
+        "bytes": 493841984,
+        "sha256": "4e7f6d209582d050d81f2f513022e015723d29199c26e2eb28def329c2849e52"
+      },
+      "retained_logs_scanned": 2,
+      "stages": {
+        "action_decode": {
+          "capture_model_sha256": "f333ce4655f03d9edc1f1f979a807d721f174dae96b0b9a0b2e85bd0b9c08036",
+          "execution": "compiled_host"
+        },
+        "flow_denoise": {
+          "capture_model_sha256": "b54814d4d211cb127a26d960667d97946cc7743b9dd81bf7d273438613341c09",
+          "matrix_bindings": {
+            "mxfp8": 148
+          },
+          "placements": {
+            "add": {
+              "vpu": 93
+            },
+            "elementwise": {
+              "host": 1,
+              "vpu": 317
+            },
+            "reduce": {
+              "vpu": 33
+            },
+            "softmax": {
+              "host": 16
+            },
+            "unary": {
+              "vpu": 107
+            }
+          },
+          "weights_sha256": "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
+        },
+        "prefix_encode": {
+          "capture_model_sha256": "7b1a55dd11ebe034d04e442ff85787710628259ab2b322a9c71d7cec4381e911",
+          "matrix_bindings": {
+            "mxfp8": 243
+          },
+          "placements": {
+            "add": {
+              "vpu": 194
+            },
+            "elementwise": {
+              "host": 52,
+              "vpu": 536
+            },
+            "reduce": {
+              "vpu": 95
+            },
+            "softmax": {
+              "host": 28
+            },
+            "unary": {
+              "vpu": 151
+            }
+          },
+          "weights_sha256": "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb"
+        }
+      },
+      "status": "passed",
+      "verification_log_sha256": "161cac256189d2628e6ab6462907dd7ed8827ebc671dc42e662a23644c274ced",
+      "verifier_sha256": "d4cf35b8c6e7e4a8fa7688fb53e4530d2ff585ffb0e4e7e8f8998e26b4f6929c"
+    },
+    "tinyllama-cached": {
+      "cycles": 20262623973,
+      "elf": {
+        "bytes": 2439169264,
+        "sha256": "1750d71086f9aec925df1e27fd07019cbd4e86abd5487bc1004232b42ed1e161"
+      },
+      "retained_logs_scanned": 2,
+      "stages": {
+        "decode": {
+          "capture_model_sha256": "e621e942502c1ed0b8625809e2cd1699d7a0c73cb1310ff68216f105aeaa3001",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "host": 45,
+              "vpu": 88
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 246
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        },
+        "prefill": {
+          "capture_model_sha256": "f2bb30ab2289b9c104ad0b095c57d600cd2f3e7fa84e17fbfc30f06239a4b0b5",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "vpu": 133
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 291
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        }
+      },
+      "status": "passed",
+      "verification_log_sha256": "a52b65fe9cca1ecf6326067ae2bb07516b4ef2d1a2de849d0f7842530ff52995",
+      "verifier_sha256": "d67ab47f413e1b33a5be37f9d3e819de158f5b8c879ee76288c22abddbe43e80"
+    },
+    "tinyllama-forward": {
+      "cycles": 10326818367,
+      "elf": {
+        "bytes": 1330788912,
+        "sha256": "c5cf0973297764ba67af6f46779305fe0699e556474bcd3546b238d7880e6426"
+      },
+      "retained_logs_scanned": 2,
+      "stages": {
+        "forward": {
+          "capture_model_sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a",
+          "matrix_bindings": {
+            "mxfp8": 199
+          },
+          "placements": {
+            "add": {
+              "vpu": 133
+            },
+            "elementwise": {
+              "host": 22,
+              "vpu": 291
+            },
+            "reduce": {
+              "vpu": 45
+            },
+            "softmax": {
+              "host": 22
+            },
+            "unary": {
+              "vpu": 156
+            }
+          },
+          "weights_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57"
+        }
+      },
+      "status": "passed",
+      "verification_log_sha256": "36b1f868023c59145371226537bc7a39f845b8c8e9d7d414e077367664cfb5e2",
+      "verifier_sha256": "faf09d046d1b5853fa28d536c6d9927d2a2d0d03134de0981641e82a3d6c38e6"
+    }
+  },
+  "observed_utc": "2026-10-19T19:02:01.219414+00:00",
+  "release_sha256": "bfcc04cb9b29b9161967698671cc7b9317dbaa72e89c7177861d6160c3536865",
+  "schema": "mx_gemmini.published_model_audit.v1",
+  "scope": "retained completed executions and compiler artifacts; no new FPGA or dataset-accuracy result",
+  "status": "passed_with_documented_scope"
+}

@@ -1,0 +1,12 @@
+{
+  "elf_sha256": "1750d71086f9aec925df1e27fd07019cbd4e86abd5487bc1004232b42ed1e161",
+  "firesim_revision": "b084672c2f8cf32e55d78f73a001074c23f8a2b8",
+  "parser_sha256": "abf85272d6c0f72b26b1d7fd6ead35144c4014727eb7d5d4efbf214dc85ee1be",
+  "recommended_dram_bytes": 8589934592,
+  "rootfs": null,
+  "schema": "mx_gemmini.firesim_package_check.v1",
+  "simulation_outputs": [
+    "uartlog"
+  ],
+  "status": "parser_and_elf_checked_not_fpga_executed"
+}

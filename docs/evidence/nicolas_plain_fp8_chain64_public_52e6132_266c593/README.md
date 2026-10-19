@@ -1,4 +1,6 @@
-# Nicolas's 64³ resident FP8 chain through a public MX object
+<a id="nicolass-64³-resident-fp8-chain-through-a-public-mx-object"></a>
+
+# Reference 64³ resident FP8 chain through a public MX object
 
 Compiler commit `52e6132` lowers the pinned source
 `matmul_tiled_fp8_64x64_chain.c` (SHA-256 `54ecee5e342f8ae62cfb0b64313019a5ab20a740dc6259f77b67808c2fc816bf`)
@@ -9,7 +11,7 @@ B1, B2 and E8M0 scales, places MM1's C1 codes and scales in resident MX
 scratchpad, then consumes them in MM2. The public `mx_issue.o` has a ten-buffer
 ABI and contains no operands or golden outputs.
 
-The original C program exits successfully on Nicolas's pinned Spike. The
+The original C program exits successfully on the reference implementation’s pinned Spike. The
 compiler-linked public object also exits successfully, matching all **4,096
 C1 FP8 codes, 128 C1 scales, 4,096 C2 FP8 codes, and 128 C2 scales**. Its
 issuer C and object are byte-identical to the source-bound reference build.
@@ -20,7 +22,7 @@ Spike. It does not establish FPGA timing or arbitrary C control-flow lowering.
 
 Reproduce with pinned checkouts, a Python environment containing PyTorch,
 model2MLIR, MXQuant and compiler dependencies, native `mx-gemmini-opt`, and
-Nicolas's RISC-V GCC/Spike. Set `PYTHONPATH` to the MXQuant and model2MLIR
+the reference implementation’s RISC-V GCC/Spike. Set `PYTHONPATH` to the MXQuant and model2MLIR
 roots. Each command requires a fresh output directory:
 
 ```sh

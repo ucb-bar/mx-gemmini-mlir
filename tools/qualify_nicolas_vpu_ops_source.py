@@ -1,7 +1,7 @@
-"""Run Nicolas's complete BF16 VPU source oracle on the pinned Spike model.
+"""Run the reference implementation’s complete BF16 VPU source oracle on the pinned Spike model.
 
 This establishes the 29-check source baseline for compiler-issued VPU parity.
-The executable is Nicolas's handwritten vpu_ops.c, not compiler output.
+The executable is the reference implementation’s handwritten vpu_ops.c, not compiler output.
 """
 
 from __future__ import annotations

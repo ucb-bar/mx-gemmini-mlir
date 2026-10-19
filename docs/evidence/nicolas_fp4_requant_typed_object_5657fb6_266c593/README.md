@@ -1,13 +1,15 @@
-# Nicolas packed FP4 requantized output through a public MX object
+<a id="nicolas-packed-fp4-requantized-output-through-a-public-mx-object"></a>
+
+# Reference packed FP4 requantized output through a public MX object
 
 Commit `5657fb6` captured a 64³ PyTorch matmul with model2MLIR `e9ded36`,
-bound Nicolas's checked-in `matmul_tiled_fp4_64x64_requant.c` operands and
+bound the reference implementation’s checked-in `matmul_tiled_fp4_64x64_requant.c` operands and
 `matmul_fp4_64x64.h` golden, selected typed FP4 quantized readout, and compiled
 a data-free RV64 RoCC issuer through `tools.compile_object`. Pinned Spike
 matched the source header's **2,048 packed FP4 output bytes and 128 E8M0
 scales**, with zero mismatches in both arrays.
 
-Nicolas's header stores two FP4 codes per byte, paired across even and odd
+The reference implementation’s header stores two FP4 codes per byte, paired across even and odd
 matrix rows. Its explicit `C_scales_out` is also read from the header. The
 qualifier checks both arrays against an independent BF16-to-FP4 reference
 before compiling. The generated driver supplies source buffers, fences, and

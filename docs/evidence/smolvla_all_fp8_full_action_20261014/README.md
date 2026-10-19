@@ -1,6 +1,6 @@
 # Full all-FP8 SmolVLA action control
 
-This control runs the captured SmolVLA session on Nicolas's MX+VPU Spike:
+This control runs the captured SmolVLA session on the reference implementation’s MX+VPU Spike:
 one prefix encode, ten flow denoising steps, and one action decode. All 243
 prefix and 148 flow matrix sites bind to direct E4M3 × E4M3. The selected
 `MxE4M3Fp4VpuGemminiRocketConfig` has no operand LUT. The VPU and remaining
@@ -29,7 +29,7 @@ final action is byte-identical to the last flow state. Flow-step cosine to
 FP32 starts at 0.999964 and ends at 0.988524; the mixed control starts at
 0.997092 and ends at 0.058102. All-FP8 takes 43.1% fewer modeled cycles
 over these completed session programs, with different output values. The
-timing setting is `e4m3_vpu` with `mem.host_tracking=0` on Nicolas's pinned
+timing setting is `e4m3_vpu` with `mem.host_tracking=0` on the reference implementation’s pinned
 Spike extension. These counts are modeled Spike cycles, not FPGA latency.
 
 The [full-model compilation guide](../../compile_e2e_models.md) describes

@@ -1,7 +1,7 @@
 # Recurrent arena reset crosses the prior failure step
 
 These small logs compare the same two-layer random-weight TinyLlama linked
-session on Nicolas's pinned MX Spike extension. Both ELFs use the same
+session on the reference implementation’s pinned MX Spike extension. Both ELFs use the same
 prefill and decode stage objects and 19 MX calls per graph. The new session
 entry calls `merlin_arena_reset()` before each step; the previous entry did
 not. The [summary](summary.json) binds their ELF and log hashes to the same

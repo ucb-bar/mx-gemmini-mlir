@@ -1,4 +1,6 @@
-# TinyLlama and SmolVLA MX+VPU coverage against Nicolas's kernels
+<a id="tinyllama-and-smolvla-mxvpu-coverage-against-nicolass-kernels"></a>
+
+# TinyLlama and SmolVLA MX+VPU coverage against the reference implementation’s kernels
 
 **Conclusion: neither model routes every plausible MX+VPU operation to the device.**
 The existing catalog's `coverage_complete` means every *selected* contraction
@@ -9,7 +11,7 @@ This audit uses the full TinyLlama prefill/decode captures, the xDSL 0.65
 SmolVLA prefix/flow/action captures, the selected
 `MxE4M3Fp4VpuGemminiRocketConfig` profile (SHA-256
 `e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d`),
-and Nicolas's `npu-exploration` source at commit
+and the reference implementation’s `npu-exploration` source at commit
 `0344bcba70b899039ccd0ac0801ca5605d46d3eb`. TinyLlama's prefill source
 SHA-256 is `8b7e6e709fd12352773b5a7b264916b3f98b9a6b901f329de04446619ef09031`;
 SmolVLA prefix source is `f8f1f15d1aef8adcc630042e9c808880b02129b082a329ccd8b02ec93ecba285`;
@@ -48,7 +50,7 @@ qualification. It remains an explicit host choice, not proven device coverage.
 The VPU gap is separate. The captures have 22 TinyLlama, 28 SmolVLA prefix,
 and 16 SmolVLA flow softmax regions, all host-owned. Their score/probability
 boundaries are f32 rank four, while the current declared direct VPU contract
-is BF16 rank-two row softmax. Nicolas's `attn_vpu.c` and `attn_flash.c` show
+is BF16 rank-two row softmax. The reference implementation’s `attn_vpu.c` and `attn_flash.c` show
 QK, VPU softmax, requantization, and PV on chip; `llama_layer_e2e.c` also
 uses VPU primitives for RMSNorm, RoPE, SwiGLU, and residual arithmetic.
 Those source kernels demonstrate hardware patterns, but the compiler has no
@@ -56,7 +58,7 @@ model-wide legalization, numeric policy, or generated schedule for these
 captured regions. The current profile contract declares only MX matmul and
 direct BF16 row softmax; it does not certify the other VPU sequences.
 
-Even the bound matrix operations are dispatched individually. Nicolas's
+Even the bound matrix operations are dispatched individually. The reference implementation’s
 resident QKV, attention, and MLP chains keep intermediate tiles on chip; the
 current full-model catalog materializes a host boundary between contractions.
 Native `mk` loop scheduling now narrows the per-contraction command gap but

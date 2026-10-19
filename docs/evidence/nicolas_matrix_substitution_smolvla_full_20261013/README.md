@@ -1,14 +1,16 @@
-# Full SmolVLA session: compiler versus Nicolas MX matrix issuers
+<a id="full-smolvla-session-compiler-versus-nicolas-mx-matrix-issuers"></a>
+
+# Full SmolVLA session: compiler versus reference MX matrix issuers
 
 The captured SmolVLA session contains one prefix encode step, ten recurrent
 flow denoise steps, and one action decode step. Both RV64 executables ran on
-the same Nicolas `e4m3_vpu` Spike extension with `mem.host_tracking=0`.
+the same reference `e4m3_vpu` Spike extension with `mem.host_tracking=0`.
 The source variant changes only the MX matrix issuer catalogs for prefix and
 flow. The compiled host graph, state adapters, VPU objects, profile,
 quantization, checkpoint weights, and action stage remain fixed. The source
-issuers call Nicolas's `mx_native.h` at npu-exploration revision `0344bcb`.
+issuers call the reference implementation’s `mx_native.h` at npu-exploration revision `0344bcb`.
 
-| Stage | Compiler cycles | Nicolas issuer cycles | Difference |
+| Stage | Compiler cycles | reference issuer cycles | Difference |
 | --- | ---: | ---: | ---: |
 | Prefix encode | 50,739,160,346 | 50,557,656,572 | +181,503,774 |
 | Flow denoise, ten steps | 21,327,379,772 | 21,318,022,826 | +9,356,946 |
@@ -22,7 +24,7 @@ binary and extension, and the same timing settings. The compiler takes
 completed; independent quantized model accuracy remains unqualified.
 
 The copied [compiler](compiler/mx_session_run.json) and
-[Nicolas issuer](nicolas/mx_session_run.json) run receipts include the
+[reference issuer](nicolas/mx_session_run.json) run receipts include the
 matching raw Spike logs. The [link receipts](compiler_link.json) and
 [source link receipt](nicolas_link.json) record the stage object hashes.
 They retain absolute build paths from the measured task; the small receipts

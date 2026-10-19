@@ -15,7 +15,7 @@ FP4 or FP8 issuer. FP4 covers ordinary matrix work; FP8 covers the selected
 attention matrix work. SmolVLA action decode has no selected MX contraction
 and links through Merlin's host lane. Other operations, including the current
 f32 rank-three softmax regions, remain in the compiled host lane. The chosen
-profile is Nicolas's `MxE4M3Fp4VpuGemminiRocketConfig` at SHA256
+profile is the reference implementation’s `MxE4M3Fp4VpuGemminiRocketConfig` at SHA256
 `e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d`.
 
 The summary preserves each source MLIR digest, the build hash, per-stage MX

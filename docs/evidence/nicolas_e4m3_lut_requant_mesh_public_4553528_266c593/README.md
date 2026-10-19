@@ -1,7 +1,9 @@
-# Nicolas E4M3 LUT-index requantization on DIM8 and DIM32
+<a id="nicolas-e4m3-lut-index-requantization-on-dim8-and-dim32"></a>
+
+# Reference E4M3 LUT-index requantization on DIM8 and DIM32
 
 Compiler commit `45535285f67aa4f5c60e5c05dc810132df74efdf` compiled four
-additional named Nicolas E4M3 LUT-index requant programs. Each run began with
+additional named reference E4M3 LUT-index requant programs. Each run began with
 a fresh PyTorch/model2MLIR matmul capture, selected the checked-in source
 recipe and packed header, emitted a data-free public RV64 object, linked it
 with the source data, and compared the complete output on pinned Spike.

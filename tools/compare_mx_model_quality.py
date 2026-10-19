@@ -1,4 +1,4 @@
-"""Check MX numerical arrays against Nicolas using the same float reference.
+"""Check MX numerical arrays against reference using the same float reference.
 
 The caller must separately establish program, input, and Spike identity.
 """

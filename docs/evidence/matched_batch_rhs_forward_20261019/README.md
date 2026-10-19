@@ -9,9 +9,9 @@ F32 output words is identical.
 |---|---:|
 | Preceding compiler, reverse BF16 transport | 11,008,973,639 |
 | Additional repeated-RHS preparation reuse | 10,433,218,556 |
-| Independent Nicolás source, same logical boundary | 12,762,360,525 |
+| Independent reference source, same logical boundary | 12,762,360,525 |
 
-The candidate uses **18.2501% fewer cycles than Nicolás** and 34.7298% fewer than
+The candidate uses **18.2501% fewer cycles than reference** and 34.7298% fewer than
 the corrected compiler's 15,984,649,026 cycles. The older 15,170,996,572-cycle
 compiler archive has different numerical quality and is not this control.
 

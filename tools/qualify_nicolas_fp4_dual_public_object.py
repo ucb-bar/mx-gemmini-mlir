@@ -1,4 +1,4 @@
-"""Replay Nicolas's flat+tiled FP4 SPAD_REQUANT with the public object CLI."""
+"""Replay the reference implementation’s flat+tiled FP4 SPAD_REQUANT with the public object CLI."""
 
 from __future__ import annotations
 

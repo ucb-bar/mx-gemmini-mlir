@@ -1,15 +1,17 @@
-# Legal Radiance MX GEMM roster on Nicolas's VPU-enabled profile
+<a id="legal-radiance-mx-gemm-roster-on-nicolass-vpu-enabled-profile"></a>
+
+# Legal Radiance MX GEMM roster on the reference implementation’s VPU-enabled profile
 
 This archive uses compiler `e9965937463d412442d957826fe019c6f29e5b88`,
 Radiance source `80f84caedbabc663a7433c1da4455b936cca41f3`, model2MLIR
-`e9ded36eb85abf2d9097ac4dc11457c825853388`, and Nicolas's
+`e9ded36eb85abf2d9097ac4dc11457c825853388`, and the reference implementation’s
 `gemmini-mx-cleanup` RTL/Spike revision
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52`.
 
 The selected `MxE4M3Fp4VpuGemminiRocketConfig` contains the VPU and supports
 direct FP8 and FP4 matrix modes. All source MX GEMM drivers using those
 precisions were compiled from their archived model2MLIR handoffs and checked
-on Nicolas's pinned Spike extension twice:
+on the reference implementation’s pinned Spike extension twice:
 
 | Source roster | Drivers | Comparisons per run | Runs |
 | --- | ---: | ---: | ---: |

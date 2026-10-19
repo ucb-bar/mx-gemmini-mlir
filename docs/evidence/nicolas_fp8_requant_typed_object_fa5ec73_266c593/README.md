@@ -1,7 +1,9 @@
-# Nicolas FP8 requantized output through a public MX object
+<a id="nicolas-fp8-requantized-output-through-a-public-mx-object"></a>
+
+# Reference FP8 requantized output through a public MX object
 
 Commit `fa5ec73` captured a 128³ PyTorch matmul with current model2MLIR
-`e9ded36`, bound Nicolas's checked-in `matmul_tiled_fp8_128x128_requant.c`
+`e9ded36`, bound the reference implementation’s checked-in `matmul_tiled_fp8_128x128_requant.c`
 operands and `matmul_fp8_128x128.h` golden, selected typed FP8 quantized
 readout, and compiled a data-free RV64 RoCC issuer through
 `tools.compile_object`. Pinned Spike matched the source header's **16,384 FP8

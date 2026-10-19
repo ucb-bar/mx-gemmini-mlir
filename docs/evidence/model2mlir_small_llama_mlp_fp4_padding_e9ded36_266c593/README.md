@@ -15,7 +15,7 @@ whole-model executable.
 The compiler zero-pads M to the FP4 mesh tile and N/K to 32-element MX
 groups, quantizes the padded operands with pinned MXQuant, captures the
 isolated padded matmul using the current model2MLIR frontend, and lowers its
-typed MX contract to a data-free RV64 object. Nicolas's pinned MX Spike
+typed MX contract to a data-free RV64 object. The reference implementation’s pinned MX Spike
 extension ran each standalone ELF. Every padded BF16 output matched the
 independent Radiance MX arithmetic reference; output rows and columns outside
 the logical model dimensions are zero. Logical PyTorch f32 versus MX BF16

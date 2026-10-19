@@ -1,7 +1,7 @@
 # Generated MX attention commands through Spike
 
 This extends the [compute-stage replay](../nicolas_attn_vpu_generated_compute_e9ded36_0344bcb/README.md)
-for Nicolas's `attn_vpu.c` at `npu-exploration` `0344bcb`. The selected profile
+for the reference implementation’s `attn_vpu.c` at `npu-exploration` `0344bcb`. The selected profile
 is the DIM16 MX+VPU Rocket config from `gemmini-mx-cleanup` `266c593`, and the
 bound vector middle comes from the model2MLIR `e9ded36` capture.
 
@@ -21,7 +21,7 @@ linkable object with a declared runtime ABI.
 
 From the repo root, set `NPU_ROOT` to the pinned `npu-exploration` checkout,
 `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX extension, and `OUT_DIR` to a fresh directory:
+`SPIKE_EXTENSION` to the reference implementation’s MX extension, and `OUT_DIR` to a fresh directory:
 
 ```sh
 python -m tools.qualify_nicolas_attn_compute \

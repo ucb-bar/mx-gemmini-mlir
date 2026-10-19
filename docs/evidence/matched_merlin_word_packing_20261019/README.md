@@ -3,7 +3,7 @@
 The generic word-group implementation completes the independent 160-token,
 22-layer token-to-logits forward in **11,197,470,681 modeled cycles**:
 
-- **12.2618% fewer cycles** than Nicolás's matched control, 12,762,360,525.
+- **12.2618% fewer cycles** than the reference implementation’s matched control, 12,762,360,525.
 - **29.9486% fewer cycles** than the corrected quality-preserving compiler
   baseline, 15,984,649,026.
 - **15.2699% fewer cycles** than its matched prepared-broadcast control,
@@ -11,7 +11,7 @@ The generic word-group implementation completes the independent 160-token,
 
 All **5,120,000 output words** remain bit-identical to that compiler control,
 SHA-256 `d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a`.
-The unchanged Nicolás-relative gate passes on the **33 archived complete source
+The unchanged reference-relative gate passes on the **33 archived complete source
 logit distributions**: compiler mean KL 0.06379562704, worst KL 0.16997975795,
 and FP32 top-token agreement 27/33. Source values are 0.06417128458,
 0.18960313411 and 27/33. The original 5% KL margins and top-token requirement

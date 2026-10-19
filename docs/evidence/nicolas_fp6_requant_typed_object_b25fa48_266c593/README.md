@@ -1,7 +1,9 @@
-# Nicolas FP6 LUT-index requantized output through a public MX object
+<a id="nicolas-fp6-lut-index-requantized-output-through-a-public-mx-object"></a>
+
+# Reference FP6 LUT-index requantized output through a public MX object
 
 Commit `b25fa48` captured a 128×128×512 PyTorch matmul with model2MLIR
-`e9ded36`, bound Nicolas's checked-in
+`e9ded36`, bound the reference implementation’s checked-in
 `matmul_tiled_fp6_128x128x512_requant.c` operands and
 `matmul_fp6_128x128x512.h` golden, selected typed FP6 quantized readout, and
 compiled a data-free RV64 RoCC issuer through `tools.compile_object`. Pinned

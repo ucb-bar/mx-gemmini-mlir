@@ -1,7 +1,9 @@
-# One-command replay of direct Nicolas matrix object cases
+<a id="one-command-replay-of-direct-nicolas-matrix-object-cases"></a>
+
+# One-command replay of direct reference matrix object cases
 
 Commit `9f3a759` added `tools.qualify_nicolas_plain_matrix_suite`, which ran
-all 11 registered direct Nicolas matrix cases from fresh PyTorch/model2MLIR
+all 11 registered direct reference matrix cases from fresh PyTorch/model2MLIR
 captures through source payload binding, the public `tools.compile_object`
 path, RV64 linking, and pinned Spike. **All 11 passed**. The suite index
 records **111,872 checked items**: BF16 values for plain readout cases, and
@@ -18,7 +20,7 @@ source bundles, typed MLIR, objects, ELFs, and Spike logs remain in the
 object and Spike-log hashes match those archives for every case.
 
 This is a reproducible gate for the named direct matrix cases. It does not
-compile the remaining Nicolas programs, C performance instrumentation, or
+compile the remaining reference programs, C performance instrumentation, or
 arbitrary source control flow. The pinned source roster contains 171 MX test
 programs, so suite success is deliberately narrower than full roster
 coverage.

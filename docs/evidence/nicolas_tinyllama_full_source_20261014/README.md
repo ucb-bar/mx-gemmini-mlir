@@ -16,7 +16,7 @@ host section, and boundary between them on the pinned MX Spike extension.
 
 The compiler's independent 64-token, 22-layer, all-FP8 run reported
 5,369,620,807 **functional Spike stage** cycles. These runs used the extension's
-default `func` mode, so they are not Nicolas `e4m3_vpu` modeled cycles and
+default `func` mode, so they are not reference `e4m3_vpu` modeled cycles and
 cannot be compared with the modeled session rows in the slide deck. This is
 a raw counter, not a paired speedup:
 the source times selected sections, uses scalar host normalization, RoPE,

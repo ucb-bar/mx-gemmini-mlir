@@ -14,7 +14,7 @@ action decode. Every invocation resets temporary guest allocations while
 keeping Merlin's persistent output and state buffers. The summary records
 the exact stage source digests, selected MX call counts, result-record counts,
 ELF SHA256 and size, shared-weight SHA256 and size, and the disjoint Spike
-arena layout. All four use Nicolas's pinned
+arena layout. All four use the reference implementation’s pinned
 `MxE4M3Fp4VpuGemminiRocketConfig` profile.
 
 This is **structural link evidence**. The ELFs were submitted to the pinned

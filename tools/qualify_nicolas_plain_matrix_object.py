@@ -1,7 +1,7 @@
-"""Compile pinned Nicolas plain FP8/FP4/FP6 source data through typed MX MLIR.
+"""Compile pinned reference plain FP8/FP4/FP6 source data through typed MX MLIR.
 
 The structural matmul comes from a fresh PyTorch -> model2MLIR capture. The
-packed operands and BF16 reference come from Nicolas's checked-in C header.
+packed operands and BF16 reference come from the reference implementation’s checked-in C header.
 The driver only calls the data-free compiled issuer object and checks output.
 """
 
@@ -758,7 +758,7 @@ def _audit_native_dram_fp8(object_dir: Path, profile: dict, case: Case) -> dict:
 
 def _audit_native_dram_nc_fp8(object_dir: Path, profile: dict,
                               case: Case) -> dict:
-    """Audit Nicolas's N-column loop sequence and alternating B bank."""
+    """Audit the reference implementation’s N-column loop sequence and alternating B bank."""
     if case.native_dram_k_tiles == 2:
         return _audit_native_dram_kt_fp8(object_dir, profile, case)
     chunks = case.native_dram_chunks
@@ -1005,7 +1005,7 @@ def _run_chunked_fp8_source(rtl_root: Path, riscv_root: Path,
 
 def _run_native_fp8_source(rtl_root: Path, riscv_root: Path,
                            out_dir: Path, source: Path, chunks: int) -> dict:
-    """Run Nicolas's pinned native DRAM-loop program on the same Spike."""
+    """Run the reference implementation’s pinned native DRAM-loop program on the same Spike."""
     from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
 
     software = rtl_root / "software/gemmini-rocc-tests"
@@ -1031,7 +1031,7 @@ def _run_native_fp8_source(rtl_root: Path, riscv_root: Path,
 
 def _run_plain_fp6_source(rtl_root: Path, riscv_root: Path,
                           out_dir: Path, source: Path) -> dict:
-    """Run Nicolas's original FP6 128³ source as an independent oracle."""
+    """Run the reference implementation’s original FP6 128³ source as an independent oracle."""
     from tools.qualify_nicolas_spad_requant_fp4 import _compile_program
 
     software = rtl_root / "software/gemmini-rocc-tests"
@@ -1081,7 +1081,7 @@ def _run_smem_fp8_source(rtl_root: Path, riscv_root: Path,
 
 
 def source_kernel(rtl_root: Path, case: Case) -> SourceGemm:
-    """Admit only a Nicolas test whose header and golden were audited."""
+    """Admit only a reference test whose header and golden were audited."""
     if _revision(rtl_root) != RTL_REVISION:
         raise ValueError("Nicolas FP8 qualifier requires the pinned MX RTL revision")
     for submodule in ("software/gemmini-rocc-tests", "software/libgemmini"):

@@ -1,4 +1,6 @@
-# Nicolas FP8 loop-managed native scales
+<a id="nicolas-fp8-loop-managed-native-scales"></a>
+
+# Reference FP8 loop-managed native scales
 
 The pinned `matmul_tiled_fp8_128x128_dramloop_ls.c` and `...ls4.c` use two
 and four native N-axis LoopMatmul launches. Each launch supplies its own
@@ -7,7 +9,7 @@ commands. The compiler captures `torch.matmul` through model2MLIR, binds the
 exact source arrays to typed MX MLIR, and emits data-free RV64 objects.
 
 For **each** program, the original C executable and generated object
-independently pass **all 16,384 BF16 output comparisons** on Nicolas's pinned
+independently pass **all 16,384 BF16 output comparisons** on the reference implementation’s pinned
 Spike. The [two-loop audit](ls2/native_dram_equivalence.json) and
 [four-loop audit](ls4/native_dram_equivalence.json) check the scale pointer
 commands (`funct` 31/32), loop bounds, operand/output pointer offsets, and

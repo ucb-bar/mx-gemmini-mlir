@@ -1,6 +1,6 @@
 # Typed 64×128×64 MX+VPU attention on Spike
 
-Nicolas's [unmodified mid-shape source](../nicolas_attn_vpu_mid_source_baseline_a042643_0344bcb/README.md)
+the reference implementation’s [unmodified mid-shape source](../nicolas_attn_vpu_mid_source_baseline_a042643_0344bcb/README.md)
 provides the E4M3/E8M0 operand data, mesh score golden, and four stage hashes.
 A clean model2MLIR `a042643` capture supplies QK, scale, softmax, and PV
 dataflow. The [bound vector graph](attention.vector_bound.mlir) and
@@ -27,7 +27,7 @@ digests. This qualifies the 64×128×64 source shape, not a full model.
 
 From the repository root, set `NPU_ROOT` to pinned `npu-exploration`
 `0344bcb`, `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to
-the RV64 toolchain, `SPIKE_EXTENSION` to Nicolas's MX Spike extension,
+the RV64 toolchain, `SPIKE_EXTENSION` to the reference implementation’s MX Spike extension,
 `MX_OPT` to the built `mx-gemmini-opt`, and `OUT_DIR` to a fresh directory:
 
 ```sh

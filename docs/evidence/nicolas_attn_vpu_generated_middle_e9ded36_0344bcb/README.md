@@ -1,4 +1,6 @@
-# Generated VPU and resident requant stage in Nicolas attention
+<a id="generated-vpu-and-resident-requant-stage-in-nicolas-attention"></a>
+
+# Generated VPU and resident requant stage in reference attention
 
 The [source baseline](../nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/README.md)
 runs the unmodified 32×64×64 `attn_vpu.c` on pinned Spike. This replay uses

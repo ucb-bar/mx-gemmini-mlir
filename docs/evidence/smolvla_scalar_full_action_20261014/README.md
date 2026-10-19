@@ -1,6 +1,6 @@
 # SmolVLA full action with FP32 scalar timestep
 
-This archive records one captured SmolVLA session on Nicolas's MX+VPU
+This archive records one captured SmolVLA session on the reference implementation’s MX+VPU
 Spike extension: one prefix stage, ten recurrent flow steps, and one final
 action stage. The flow stage updates its scalar timestep in FP32. The
 checkpoint, target profile, program roster, prefix object, and action object

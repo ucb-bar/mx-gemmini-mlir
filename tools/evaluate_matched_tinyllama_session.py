@@ -1,6 +1,6 @@
 """Evaluate explicit-policy cached execution against its captured FP32 trajectory.
 
-No independent cached Nicolás execution is available. This reports FP32 drift
+No independent cached reference execution is available. This reports FP32 drift
 and preparation-inclusive modeled costs without inventing a relative gate.
 """
 

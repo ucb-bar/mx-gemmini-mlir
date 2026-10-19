@@ -11,10 +11,10 @@ only the candidate selects `--vpu-matrix-transport`.
 |---|---:|
 | Fresh compiler control | 11,094,643,214 |
 | Reverse BF16 transport | 11,008,973,639 |
-| Retained independent Nicolás, same logical boundary | 12,762,360,525 |
+| Retained independent reference, same logical boundary | 12,762,360,525 |
 
 The matched compiler reduction is **0.77217%**. The candidate is **13.7387%
-below Nicolás's cycle count**, and 31.1278% below the corrected compiler's
+below the reference implementation’s cycle count**, and 31.1278% below the corrected compiler's
 15,984,649,026 cycles. The older 15,170,996,572-cycle compiler archive has
 different numerical quality and is not this control. The fresh control differs
 by 3,520 cycles from the earlier native-tile archive because its helper source

@@ -1,4 +1,4 @@
-"""Bind captured two-site PyTorch graphs to Nicolas's FP8 MX/VPU chain."""
+"""Bind captured two-site PyTorch graphs to the reference implementation’s FP8 MX/VPU chain."""
 
 from __future__ import annotations
 

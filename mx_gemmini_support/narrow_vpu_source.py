@@ -1,4 +1,4 @@
-"""Checked 32-column specialization of Nicolas's FP8 MX/VPU source chain."""
+"""Checked 32-column specialization of the reference implementation’s FP8 MX/VPU source chain."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def derive_narrow_vpu_resources(source: Path, header: Path, first_source: Path,
 def derive_wide_vpu_resources(source: Path, header: Path, first_source: Path,
                               profile: dict, *, second_width: int
                               ) -> tuple[dict[str, bytes], dict]:
-    """Derive distinct extra B2 columns from Nicolas's checked 64x64 source.
+    """Derive distinct extra B2 columns from the reference implementation’s checked 64x64 source.
 
     The appended weight columns flip the sign of the source's first columns.
     Their complete MM2 reference comes from the pinned independent mesh model.
@@ -101,7 +101,7 @@ def derive_wide_vpu_resources(source: Path, header: Path, first_source: Path,
 
 def derive_square_128_vpu_resources(source: Path, header: Path, profile: dict
                                    ) -> tuple[dict[str, bytes], dict]:
-    """Bind Nicolas's 128-cubed source operands to a derived VPU ×2 graph.
+    """Bind the reference implementation’s 128-cubed source operands to a derived VPU ×2 graph.
 
     Check the unchanged source's complete MM1/MM2 quantized goldens before
     deriving the VPU C1 and downstream C2 references. The checked source has

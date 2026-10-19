@@ -1,4 +1,6 @@
-# Nicolas FP8 64³ zero-base scratchpad readout
+<a id="nicolas-fp8-64³-zero-base-scratchpad-readout"></a>
+
+# Reference FP8 64³ zero-base scratchpad readout
 
 The pinned `matmul_tiled_fp8_64x64_smem_mvout.c` computes C into scratchpad
 row zero. Its `SPIKE_SIM` source path reads that region through
@@ -8,7 +10,7 @@ The [command audit](smem_readout_equivalence.json) checks the zero-base compute
 destination, 32 readout rows, and their output offsets.
 
 A fresh PyTorch → model2MLIR capture and source-bound typed MX module produce
-an object matching **all 4,096 BF16 source-golden outputs** on Nicolas's pinned
+an object matching **all 4,096 BF16 source-golden outputs** on the reference implementation’s pinned
 Spike. The original C source passes independently. This qualifies numerical
 and scratchpad-address parity. The source's CPU scratchpad read and the
 compiler's RoCC MVOUT are distinct readout transports; no cycle or FPGA

@@ -32,7 +32,7 @@ at row 1024. A target compiler must use the selected profile's address; copying
 the handwritten row constant would corrupt the intended layout. The selected
 VPU profile admits direct E4M3 and FP4 compute; it has no FP6 LUT path, so FP6
 drivers require a different MX profile.
-All 81 configurations exported from Nicolas's current `gemmini-mx-cleanup`
+All 81 configurations exported from the reference implementation’s current `gemmini-mx-cleanup`
 source have 256 KiB scratchpads. None is an exact 128 KiB hardware match for
 the checked-in handwritten library; the trace below applies that library's
 command formulas to a separately selected 256 KiB target layout.
@@ -112,7 +112,7 @@ python -m tools.run_source_fp8_spike \
   --out-dir /tmp/mx-source-fp8-spike
 ```
 
-The runner requires Nicolas's pinned `gemmini-rocc-tests`, `libgemmini`, and
+The runner requires the reference implementation’s pinned `gemmini-rocc-tests`, `libgemmini`, and
 nested `riscv-tests/env` submodules. It builds the extension in the output
 directory, compiles the generated C to RV64, and runs that ELF on Spike. The
 [execution receipt](evidence/source_fp8_128x128x512_spike_20261009.json)
@@ -189,7 +189,7 @@ records **zero mismatches across 16,384 BF16 outputs** against the checked-in
 source golden. The source's own `mx_golden` also reproduced that golden exactly.
 
 The [emitted C](evidence/source_fp6_128x128x2048_20261009.c) serially reloads
-FP6 scales into buffer zero. In Nicolas's pinned Spike extension, the LUT
+FP6 scales into buffer zero. In the reference implementation’s pinned Spike extension, the LUT
 compute branch reads scale offsets without applying the alternate selector;
 the [alternating-buffer trial](evidence/source_fp6_alternating_scales_failed_20261009.json)
 yielded 16,368 mismatches. The direct

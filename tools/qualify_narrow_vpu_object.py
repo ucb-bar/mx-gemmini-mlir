@@ -76,7 +76,7 @@ int main(void) {{
 
 
 def _append_scalar_adds(bound: str, scalar_bf16: int) -> str:
-    """Derive an SSA-linked scalar ADDS after Nicolas's source MULS ×2."""
+    """Derive an SSA-linked scalar ADDS after the reference implementation’s source MULS ×2."""
     if not 0 <= scalar_bf16 <= 0xffff or scalar_bf16 & 0x7f80 == 0x7f80:
         raise ValueError("derived VPU scalar must be finite BF16 bits")
     marker = '    %vpu = "mx_gemmini.vpu_execute"'

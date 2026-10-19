@@ -1,6 +1,8 @@
-# Nicolas generic FP6 debug data through current model2MLIR
+<a id="nicolas-generic-fp6-debug-data-through-current-model2mlir"></a>
 
-Nicolas's pinned `matmul_ws_mx_generic.c` uses a fixed MMIO Gemmini gateway and
+# Reference generic FP6 debug data through current model2MLIR
+
+the reference implementation’s pinned `matmul_ws_mx_generic.c` uses a fixed MMIO Gemmini gateway and
 checks `C_proj_hw` from `matmul_data_mx_lut_hw.h`. That header contains a
 128×128×128 FP6 contraction, 64-line A/B/C LUT banks, BF16 output, packed
 output indices, and E8M0 scales. Its packed indices and scales reproduce
@@ -10,7 +12,7 @@ The qualifier captures a PyTorch matmul through clean model2MLIR `a042643`,
 checks its standard `linalg.matmul` data flow, and binds the header's actual
 packed operands, scales, and LUTs to the legal E3M2 Rocket profile. The
 compiler creates a data-free RV64/RoCC object. A thin C driver passes runtime
-buffers, calls `mx_issue`, and compares all source-header outputs on Nicolas's
+buffers, calls `mx_issue`, and compares all source-header outputs on the reference implementation’s
 pinned Spike: **0 / 16,384 BF16**, **0 / 8,192 packed-byte**, and **0 / 512
 scale** mismatches. Two independent builds have identical frontend MLIR,
 bound MLIR, object, ELF, extension, Spike log, and receipt hashes.

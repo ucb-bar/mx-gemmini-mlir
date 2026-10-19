@@ -13,7 +13,7 @@ the pinned model and capture; they are not committed because they total about
 229 MB.
 
 The final-step [163-key](call14/cutpoint.npz) and
-[113-key](call15/cutpoint.npz) head-0 operands are archived here. Nicolas's
+[113-key](call15/cutpoint.npz) head-0 operands are archived here. The reference implementation’s
 fused MX+VPU flash source, with the same checked Boolean-mask adaptation as
 the first-call qualification, ran both on the pinned Spike extension with
 `e4m3_vpu` timing. Its serial and pipelined outputs match in all 4,096 BF16
@@ -27,12 +27,12 @@ positions per padded head. The source logs and file hashes are checked by
 
 The [paired compiler/source archive](compiled_pair_pipeline/receipt.json)
 uses those same two final-step heads in one Spike guest. It starts with a
-compiler run, then alternates Nicolas's pipelined source and the compiler's
+compiler run, then alternates the reference implementation’s pipelined source and the compiler's
 Merlin-scheduled cross-block issuer after accelerator flushes. All five runs
 per head have the same 4,096 BF16 output values. Both sides use `e4m3_vpu`
 with `mem.host_tracking=0`, matching the full-session timing settings.
 
-| Final flow step, head 0 | Nicolas source cycles | Compiler cycles | Compiler difference |
+| Final flow step, head 0 | Reference source cycles | Compiler cycles | Compiler difference |
 | --- | ---: | ---: | ---: |
 | Call 14, 163 keys | 16,956 | 15,733 | −7.21% |
 | Call 15, 113 keys | 15,165 | 14,132 | −6.81% |

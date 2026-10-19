@@ -1,11 +1,11 @@
 # Current model2MLIR connected MX chain qualification
 
-The [suite receipt](index.json) covers Nicolas's FP8, FP4, and FP6 connected
+The [suite receipt](index.json) covers the reference implementation’s FP8, FP4, and FP6 connected
 matrix programs at both 64³ and 128³. A fresh PyTorch two-matmul graph was
 captured with the clean committed model2MLIR source closure at `a042643`,
 bound to each pinned C driver and header, lowered through the public
 `tools.compile_object` command, linked as a standalone RV64 Rocket/RoCC
-program, and run on Nicolas's pinned Spike. All six generated programs
+program, and run on the reference implementation’s pinned Spike. All six generated programs
 matched every source-header C1 and C2 code and E8M0 scale: **122,880 codes
 and 3,840 scales** across the suite. The generated objects contain no operand
 or golden data.

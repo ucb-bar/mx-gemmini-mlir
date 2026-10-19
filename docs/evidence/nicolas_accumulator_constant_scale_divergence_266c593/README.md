@@ -1,6 +1,8 @@
-# Nicolas accumulator scale-value divergence
+<a id="nicolas-accumulator-scale-value-divergence"></a>
 
-Nicolas's three `*DRAMMvout.c` hardware branches write constant E8M0 byte
+# Reference accumulator scale-value divergence
+
+the reference implementation’s three `*DRAMMvout.c` hardware branches write constant E8M0 byte
 `0x7f` into the MX scale SRAM. Their source headers contain nonconstant A/B
 scales, and the source BF16 goldens correspond to those header values. The
 compiler-generated accumulator objects accept scale buffers at runtime. This
@@ -21,7 +23,7 @@ exactly: **zero mismatches** across the same 24,576 outputs.
 
 This establishes a numerical divergence **under the candidate Spike model**
 when only the scale values change. It does not show actual RTL or FPGA output.
-The constant values match the used scale bytes in Nicolas's hardware source;
+The constant values match the used scale bytes in the reference implementation’s hardware source;
 the compiler still uploads them through RoCC rather than the source's MMIO
 gateway. The source's hardware path also has different scheduling. A source
 golden based on header scales therefore cannot be used as proof that the

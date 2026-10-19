@@ -1,6 +1,6 @@
 # SmolVLA full-session MX+VPU timing
 
-A linked, checkpoint-backed SmolVLA session completed on Nicolas's MX+VPU
+A linked, checkpoint-backed SmolVLA session completed on the reference implementation’s MX+VPU
 functional and timing Spike. The capture uses synthetic inputs and contains
 prefix encode, ten flow denoise steps, and action decode. The guest reported
 `DONE`, zero memref rank mismatches, and all 45 expected session events. The

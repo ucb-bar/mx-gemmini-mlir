@@ -1,4 +1,4 @@
-"""Generate Nicolas's TinyLlama source blob with one captured input and weights.
+"""Generate the reference implementation’s TinyLlama source blob with one captured input and weights.
 
 The pinned source generator expects a directory of per-layer ``.npz`` files.
 This adapter combines checkpoint tensors from a weight capture with the

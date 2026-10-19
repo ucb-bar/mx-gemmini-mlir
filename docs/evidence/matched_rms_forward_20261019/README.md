@@ -9,12 +9,12 @@ Both actual simulator processes completed successfully, with complete dumps,
 accepted structural admissions and uninstrumented stage timers.
 
 The candidate is 15.6727% below the corrected quality-preserving compiler
-baseline of 15,984,649,026 cycles. It remains **5.6185% slower** than Nicolás's
+baseline of 15,984,649,026 cycles. It remains **5.6185% slower** than the reference implementation’s
 matched token-lookup-to-logits control, 12,762,360,525 cycles. This does not
 establish a win over that source implementation. The older 15.171B compiler
 result has different numerical quality and is not an equal-quality control.
 
-The unchanged Nicolás-relative gate passes on the **33 retained full source
+The unchanged reference-relative gate passes on the **33 retained full source
 logit distributions**: compiler mean KL 0.06379562704, worst-row KL
 0.16997975795, and FP32 top-token agreement 27/33. Source values are
 0.06417128458, 0.18960313411 and 27/33. The original 5% KL margin and top-token

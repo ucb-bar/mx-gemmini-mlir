@@ -1,4 +1,4 @@
-"""Replay Nicolas's 64+7×256+192 streamed flash against typed MX on Spike."""
+"""Replay the reference implementation’s 64+7×256+192 streamed flash against typed MX on Spike."""
 
 from __future__ import annotations
 

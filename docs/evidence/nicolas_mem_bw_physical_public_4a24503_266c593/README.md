@@ -1,13 +1,15 @@
-# Nicolas's MX memory benchmark through generated DMA commands
+<a id="nicolass-mx-memory-benchmark-through-generated-dma-commands"></a>
+
+# Reference MX memory benchmark through generated DMA commands
 
 Compiler commit `4a24503` derives four reusable physical command phases from
 the pinned MX-only profile: 64-byte A matrix loads, 16-byte B matrix loads,
 an E8M0 scale load, and a 16-byte scratchpad readout. The compiler emits a
 data-free RV64 RoCC object with setup and phase entry points. A driver derived
-from Nicolas's `mx_mem_bw.c` keeps his counters, phase reporting, and spot
+from the reference implementation’s `mx_mem_bw.c` keeps his counters, phase reporting, and spot
 check while calling the generated object at each accelerator issue site.
 
-The original source and generated driver both pass on Nicolas's pinned Spike.
+The original source and generated driver both pass on the reference implementation’s pinned Spike.
 All seven phases report the source's byte and request counts, and an
 instrumented source run and generated driver produce **identical complete
 16,384-byte readout buffers**. The full buffers are archived as hex in the

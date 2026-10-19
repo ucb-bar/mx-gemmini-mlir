@@ -16,7 +16,7 @@ MODEL_SHA256 = "0750e78eadeaef36ed94857e92168056dd6196e72dafcd09c20b6db287452071
 
 
 def load_nicolas_fp8_model(software: Path):
-    """Use exactly the model matching Nicolas's checked-in chain goldens."""
+    """Use exactly the model matching the reference implementation’s checked-in chain goldens."""
     path = software / "fp8_matmul_model.py"
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if digest != MODEL_SHA256:

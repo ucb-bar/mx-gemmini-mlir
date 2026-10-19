@@ -5,7 +5,7 @@ The completed 128-token prefill plus 32 one-token cached decodes improves from
 against the earlier optimized compiler session. Both real processes terminated
 with exit code zero. All 99 ordered output/state hashes and all 33 complete
 32,000-logit tensors are identical. This preserves the compiler control's
-outputs; no independent Nicolás cached baseline or generation-quality acceptance
+outputs; no independent reference cached baseline or generation-quality acceptance
 threshold has been established.
 
 | Included interval | Earlier optimized control | Newer passes | Reduction |

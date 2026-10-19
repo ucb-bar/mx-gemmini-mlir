@@ -1,131 +1,193 @@
-# Full-model MX+VPU comparisons on Spike
+# Model and kernel comparisons
 
-The full-session matrix-issuer substitutions for TinyLlama and SmolVLA hold
-Merlin's host graph and VPU objects fixed. They measure the MX issuer inside
-each model session. They do not compare an independent Nicolas application
-with a compiled application.
+The completed results measure three workloads on the pinned Rocket-Spike
+`e4m3_vpu` timing model with host tracking disabled. Only the 160-token
+TinyLlama forward has an independent full-program performance baseline.
+Cached TinyLlama and complete SmolVLA compare two compiler builds. There is
+no independently stitched full-model Radiance baseline in these results.
 
-| Captured session | Precision | Compiler cycles | Nicolas issuer cycles | Compiler difference |
-| --- | --- | ---: | ---: | ---: |
-| [TinyLlama, 1 prefill + 32 decodes](evidence/nicolas_matrix_substitution_tinyllama_full_20261014/README.md) | Mixed FP4/FP8 | 83,547,564,353 | 83,544,602,795 | +0.004% |
-| [SmolVLA, 1 prefix + 10 flows + 1 action](evidence/nicolas_matrix_substitution_smolvla_all_fp8_20261014/README.md) | All FP8 | 180,219,637,915 | 179,451,403,096 | +0.428% |
+## Complete models
 
-These are fair **issuer-only** comparisons: both programs execute the same
-captured model graph with equal output digests. The percentages measure only
-the effect of replacing compiler MX command issuance with Nicolas's native
-issuer. They do not measure the cost of the compiler's whole-model schedule
-against an independently written schedule.
-The TinyLlama pair matches all 99 recorded output digests; the SmolVLA pair
-matches all 33. The all-FP8 SmolVLA final action has cosine 0.988524 against
-the captured FP32 trajectory. That accuracy result applies to both sides of
-its issuer pair because their outputs are identical.
+Speedup below is reference cycles divided by compiler cycles. Every row uses
+all-FP8 offloaded matrices and the same inputs within its comparison.
 
-## Independent TinyLlama forward
+| Workload | Reference | Reference cycles | Compiler cycles | Speedup | Cycle reduction |
+| --- | --- | ---: | ---: | ---: | ---: |
+| TinyLlama, all 22 layers + head, 160-token forward | Independent `npu-exploration` program, including embedding lookup | 12,762,360,525 | 10,326,818,367 | 1.236× | 19.08% |
+| TinyLlama, 128-token prefill + 32 cached decodes | Corrected compiler baseline | 74,065,304,284 | 20,262,623,973 | 3.655× | 72.64% |
+| SmolVLA, prefix + ten flow steps + action decode | Previous compiler build | 87,964,575,985 | 73,577,503,143 | 1.196× | 16.36% |
 
-The existing one-pass control runs all 22 decoder layers and the LM head on
-160 token IDs. It uses Nicolas's generated source program and the compiler's
-model2MLIR capture with the same IDs, all 200 FP32 checkpoint tensors, and
-all-FP8 matrix policy. The source program originally began with precomputed
-BF16 embeddings, so its cycle count excluded the token lookup performed by
-the compiler.
+The baseline distinction matters: **3.655× is a compiler improvement, not a
+speedup over independently stitched kernels**. The original 15,170,996,572-cycle
+TinyLlama forward failed the numerical gate and is excluded from accepted
+performance comparisons. The corrected forward baseline is 15,984,649,026
+cycles; its complete output is bit-identical to the latest compiler result.
 
-`tools/prepare_nicolas_tinyllama_lookup.py` adds the checkpoint's full FP32
-embedding table and the 160 token IDs to the source program. It verifies that
-the lookup and BF16 rounding exactly reproduce all 327,680 captured source
-embedding values. The lookup executes after Nicolas's stage timer starts.
-`tools/run_nicolas_tinyllama_lookup.py` builds the adapted source with the
-pinned RV64 toolchain, runs the same `e4m3_vpu` Spike timing model, and binds
-the generated ELF and log to their inputs. The source payload must match the
-archived source-blob hash before the build runs.
+| Current session | Reset cycles | First program, including handoff | Recurrent program, including handoffs | Final action |
+| --- | ---: | ---: | ---: | ---: |
+| TinyLlama cached | 4,505,788 | 8,882,396,857 prefill | 11,375,721,328 for 32 decodes | — |
+| SmolVLA | 1,450,522 | 55,407,282,670 prefix | 18,168,761,303 for ten flow steps | 8,648 |
 
-`tools/compare_fair_tinyllama_onepass.py` checks the new source's 33 late
-BF16 logit rows against the original independent source run and compares its
-cycles with the archived compiler run. It reports both programs' late-token
-and full-forward top-token agreement with the same FP32 capture. The cycle
-ratio covers equal logical input-to-output work; it is **not** an equal-quality
-speedup when those accuracy results differ. The source and compiler use different
-host/VPU policies, which are part of their implementations.
-The comparator also checks all 160 source top tokens against the generated
-BF16 source reference when its payload is available.
+These totals include session reset, cross-program state preparation, and step
+intervals. Console and phase bookkeeping are excluded. Historical step-only
+session totals have a narrower boundary and must not be mixed with these
+inclusive totals. The independent forward times token lookup through logits.
 
-The [equal-boundary one-pass archive](evidence/nicolas_tinyllama_lookup_equal_boundary_20261015/README.md)
-passes those checks. Nicolas's independent source takes **12,762,360,525**
-modeled cycles; the compiler takes **15,170,996,572**, a **+18.873% raw
-compiler cycle difference**. Their top tokens agree at 114/160 positions.
-The source matches the captured FP32 top token at 131/160 positions and the
-compiler at 103/160. The source's full output top-token list matches its
-generated BF16 reference, and all 33 late BF16 logit rows equal the earlier
-source run. The two programs therefore have matched logical inputs and
-outputs to measure, but **not equal numerical quality**. Neither the cycle
-ratio nor the issuer-only controls establish a full-session, equal-quality
-compiler-versus-handwritten speedup.
-Using float64 softmax on the archived 33 late rows, Nicolas's source has
-mean KL **0.0641713** and worst-row KL **0.1896034** nats against the captured
-FP32 logits, with 27/33 top-token matches. The 5% numerical gate therefore
-requires compiler mean KL at most **0.0673798**, worst-row KL at most
-**0.1990836**, and at least 27/33 top-token matches for these same rows.
-The current compiler one-pass log records a full-output digest and top tokens,
-but not all logit values, so its KL gate is not yet measurable from that run.
-The separate compiled **cached** session has all 33 logit dumps. Its tokens
-exactly match Nicolas's 160-token one-pass source, and the FP32 references
-agree within `2.67e-5` per logit. On those aligned rows, the archived
-[numerical comparison](evidence/tinyllama_cached_vs_onepass_quality_20261015/README.md)
-finds compiler mean KL **1.92086** versus source **0.06417**, with 2/33
-versus 27/33 correct top tokens. The source schedule is one-pass, so these
-outputs can diagnose quality but their cycle counts cannot form a paired
-cached-session speedup.
-On the separate archived 64-token prefill, the selected-VPU compiler control
-has last-row KL **0.15506** against Nicolas's **0.07090**. Its
-[quality receipt](evidence/tinyllama_full_safe_vpu_20261014/quality_gate.json)
-fails the 5% gate despite matching the top token. That one-row result does
-not measure the newer per-site policy or a cached session.
-The older paired MX+VPU source and compiler prefill has source KL **0.07090**
-and compiler KL **0.19283**. Its [receipt](evidence/nicolas_tinyllama_full_source_vpu_20261014/quality_gate.json)
-also fails; differences in host algorithms and setup still prevent using
-its cycle ratio as a matched performance result.
+## Numerical comparison
 
-The source-generation input recipe and pinned revisions are in the
-[one-pass evidence](evidence/nicolas_tinyllama_onepass160_same_input_20261014/README.md).
-Keep the generated payload, object files, and ELF in a task scratch directory;
-the repository stores compact receipts and logs.
+TinyLlama's floating-point reference is the same checkpoint and input stream.
+The independent source retains full distributions only at 33 aligned late
+positions; the compiler retains all 160 rows. KL uses float64 log-softmax and
+`KL(reference || quantized)` in nats. The source-relative gate permits at most
+5% higher mean and worst-row KL and requires at least as many matching top
+tokens on those same 33 rows.
 
-## Cached TinyLlama and SmolVLA sessions
+| 160-token TinyLlama forward | Mean KL, 33 rows | Worst KL | Matching reference top tokens |
+| --- | ---: | ---: | ---: |
+| Independent quantized source | 0.0641713 | 0.1896031 | 27/33; 131/160 over all positions |
+| Current compiler | 0.0637956 | 0.1699798 | 27/33; 133/160 over all positions |
 
-The captured TinyLlama session is a 128-token prefill followed by 32 cached
-one-token decodes with mixed FP4/FP8 matrix bindings. Nicolas's existing
-full-model source is a one-pass all-FP8 forward. An independent session
-baseline needs the same cached KV state, one-token source schedule, and
-precision policy before its total cycles can be compared with the compiled
-session.
+The compiler passes this unchanged gate. All **5,120,000 F32 compiler output
+words** are exact against the corrected compiler baseline. This establishes
+numerical preservation for this input and source-relative gate; it is not a
+perplexity or general model-quality evaluation.
 
-The captured SmolVLA session contains one prefix encode, ten flow steps, and
-one action decode. Nicolas's source roster has attention and projection
-kernels, but no complete SmolVLA application. A source session must stitch
-those kernels with the remaining host work, masks, and recurrent state. The
-existing head-level cutpoints and full-session issuer swap remain separate
-controls until that source application completes.
+Cached TinyLlama preserves all **99 output/state digests** and all **33 complete
+logit tensors**, or 1,056,000 F32 words, across the measured transformations.
+Its floating-reference diagnostic is mean KL 0.0709557, worst KL 0.1858635,
+28/33 matching top tokens, and minimum logit cosine 0.972447. There is no
+separate accepted cached-source quality threshold or independent complete
+cached-source run.
 
-For either full session, publish the same captured inputs, checkpoint, target
-profile, timing preset, timed boundaries, output-quality metrics, and
-per-stage cycle totals for both programs. An equal-quality performance claim
-also requires an agreed numerical acceptance criterion.
+SmolVLA preserves all **33 output/state digests** and **11 complete action
+tensors**. Final action cosine is approximately **0.9752** against its original
+floating-point trajectory, whose backbone retains native BF16 arithmetic.
+F32 output files do not make that reference an entirely FP32 model. No
+robot-task success threshold or dataset evaluation is established here.
 
-## Cached-session preparation accounting (2026-10-18)
+## Why the compiler improves
 
-The legacy cached-session `SESSION_TOTAL` sums the timed step intervals. Those
-intervals include per-step state commit, but exclude session reset and the
-cross-program state copies in `merlin_session_prepare_program`. Archived
-cached totals retain that scope; they are not inclusive initialization/handoff
-measurements. The independent 160-token forward timing boundary is unchanged.
+TinyLlama's improvement combines corrected sensitive host placement, immutable
+checkpoint prepacking, pruning unused entry weights, shared activation
+packing, integer-group packing, connected BF16 matrix/VPU boundaries, VPU
+broadcast/RMS preparation, guarded host math, and reuse of repeated attention
+RHS preparation. The network graph exposes private temporary tensors and
+repeated uses that a separately called kernel interface may conceal.
 
-New session links can select `--measure-preparation` to retain the original
-step totals and additionally measure reset and every program handoff. The
-runner reports `execution_total_performance` as the sum of those measured
-segments, with console and phase bookkeeping excluded explicitly. Compare
-matching timing selections; do not compare this larger accounted scope with
-an old step sum as though their boundaries were identical.
+The latest cached step reduces **23,669,399,808 → 20,262,623,973** cycles
+(14.39%) by supplying compact private RHS inputs instead of materializing
+expanded repeated batches. Decode work falls **14,779,875,659 →
+11,375,721,328** cycles. Device command counts and accelerator work counters
+are unchanged; retired instructions fall from 18,581,902,169 to
+15,175,110,570. This supports removal of host preparation work rather than
+less model computation. The prefill objects are identical, but their cycle
+count changes by 2,621,504 in the differently linked image; layout effects
+prevent assigning the entire end-to-end difference to one source rewrite.
 
-The [projected-session fixture](evidence/projected_session_20261018/README.md)
-checks all logits/state words and both timing components through actual linked
-MX execution. It establishes session ABI/storage plumbing, not a full-model
-speedup or an independent cached source baseline.
+SmolVLA's latest comparison combines prepared VPU broadcast operands and
+exact guarded host math with its existing packing/transport path. The output
+checks cover the complete recurrent trajectory. Individual transformations
+are documented in the linked evidence; their isolated percentage reductions
+must not be added together.
+
+Whole-network visibility enables these changes but does not guarantee a
+faster result. Host packing, layout, numerical placement, and synchronization
+still matter. A local kernel win is not automatically a model win. The
+[completed transformation evidence](model_optimization_status_20261019.md)
+records which changes reached full-model measurements.
+
+## Source repositories and what was stitched
+
+Two separate source repositories contribute controls:
+
+- [`radiance-kernels`, `b6b9bf44af6d7ba88626b5d17b8b527390aec082`](https://github.com/ucb-bar/radiance-kernels/tree/b6b9bf44af6d7ba88626b5d17b8b527390aec082): Muon-issued MX GEMM/GEMV and GQA controls. These establish output and traffic properties, with no paired standalone Rocket-Spike cycle ratio.
+- [`npu-exploration`, `0344bcba70b899039ccd0ac0801ca5605d46d3eb`](https://github.com/ucb-bar/npu-exploration/tree/0344bcba70b899039ccd0ac0801ca5605d46d3eb): the independent TinyLlama program, source matrix issuers, and paired MX+VPU attention heads used in timing comparisons.
+
+The historical “stitched” full-session controls linked Merlin's captured
+host graph, VPU objects, and session-state adapter with an alternative native
+matrix-issuer catalog. Both sides kept that compiler graph and checked every
+output digest. This measures **issuer substitution**, not an independently
+written full-model schedule and not a full model assembled from Radiance
+kernels.
+
+| Historical issuer-only control | Compiler issuer cycles | Source issuer cycles | Compiler overhead |
+| --- | ---: | ---: | ---: |
+| TinyLlama, mixed FP4/FP8, prefill + 32 decodes | 83,547,564,353 | 83,544,602,795 | 0.00355% |
+| SmolVLA, FP8, complete session | 180,219,637,915 | 179,451,403,096 | 0.42810% |
+
+These older graphs, precision policies, and timing scopes differ from the
+current builds. Dividing current totals by these old source-issuer totals
+would not be a matched source-versus-compiler speedup.
+
+The independent TinyLlama forward instead runs the full `llama_model.c`
+program with the same token IDs and all 200 learned checkpoint tensors.
+The adaptation supplies captured data/masks and adds the checkpoint embedding
+lookup inside the timer: the original source accepted precomputed BF16
+embeddings. All 327,680 embedding values are unchanged; including lookup
+adds 58,646,741 source cycles. The archived source, patch, objects, log, and
+[boundary receipt](evidence/nicolas_tinyllama_lookup_equal_boundary_20261015/README.md)
+record the actual adaptation. Source and compiler may use different host/VPU
+algorithms; the numerical gate is checked separately from equal logical work.
+
+## Radiance kernel coverage
+
+Each row binds generated packed operands/scales from the pinned source driver
+and compares the compiler's BF16 output with that driver's reference.
+
+| Kernel in `radiance-kernels` | M×N×K | Output comparison | Compiler weight traffic |
+| --- | --- | --- | --- |
+| `gemm_mxgemmini_ws` FP8 read-once | 256×64×2048 | 16,384 BF16 values exact | 32 tile reads; 131,072 bytes |
+| `gemm_mxgemmini_ws_downproj_fp4` FP4 read-once | 256×64×5632 | 16,384 exact | 88 reads; 180,224 bytes |
+| `gemm_mxgemmini_ws_restream` FP8 | 256×64×2048 | 16,384 exact | 128 reads; 524,288 bytes |
+| `gemv_batched_fp8_m32`, `m64`, `m128` | 32/64/128×128×2048 | All BF16 outputs exact | One-read weight schedule checked |
+| `gemv_batched_fp4_m128` | 128×128×2048 | All BF16 outputs exact | One-read weight schedule checked |
+
+The first and third rows have different generated operands. Their 4× traffic
+ratio is a schedule property, not an equal-input runtime speedup. All 16 GQA
+P/V cutpoints are also checked, but source-produced probability tiles are
+inputs to those controls. Muon softmax, online recurrence, finalization, and
+mixed-engine launch are not covered as a complete attention kernel. One
+source generator's `O_gold` also differs from executed source output; the
+[qualification](evidence/radiance_kernel_comparison_20261014/README.md)
+records that distinction.
+
+Radiance's Muon+MX RTL timers and Rocket-Spike MX+VPU timers measure different
+engines and boundaries. In particular, the published 42,364-cycle Radiance
+flash-attention result and the 43,523-cycle standalone compiler control must
+not form a speedup ratio. The audit reopens all seven measured driver files
+and checks their hashes against the pinned receipt; it does not claim that
+an unrelated compatible checkout is the entire historical repository.
+
+## Paired timed attention heads
+
+These source heads are from `npu-exploration`, not `radiance-kernels`.
+Source and compiler run in the same guest with matched operands, arbitrary
+Boolean masks, padded dimensions, timing boundary, and all 4,096 BF16 output
+values exact per head. The compiler uses a checked cross-block QK/PV schedule.
+
+| SmolVLA head-0 cutpoint | Source cycles | Compiler cycles | Speedup | Cycle reduction |
+| --- | ---: | ---: | ---: | ---: |
+| First-step, 113 keys | 16,717 | 16,033 | 1.043× | 4.09% |
+| First-step, 163 keys | 22,057 | 21,382 | 1.032× | 3.06% |
+| Final-step, 113 keys | 15,165 | 14,132 | 1.073× | 6.81% |
+| Final-step, 163 keys | 16,956 | 15,733 | 1.078× | 7.21% |
+
+These are separate head-level qualifications. Their schedule is not claimed
+to be integrated into the current complete SmolVLA executable, and they do
+not establish a whole-attention or full-model speedup.
+
+## Reproduce and audit
+
+Follow the [model guide](compile_e2e_models.md) for capture identities, exact
+policies, stage compilation, session linking, execution, complete output
+checks, and FireSim packaging. Run the portable retained-artifact audit with:
+
+```sh
+python -m tools.audit_published_models --out /path/to/new-audit
+```
+
+Add `--build-root /path/to/retained-builds` to reopen the original large
+executables and objects, and `--radiance-root /path/to/radiance-kernels` to
+reopen source drivers. Without the build root, the audit checks retained
+archives and their hash bindings rather than unavailable executable bytes.
+The [audit report](model_results_audit.md) describes exactly what was reopened.

@@ -1,6 +1,6 @@
-"""Capture Nicolas's two MX contractions, including selected rectangular widths.
+"""Capture the reference implementation’s two MX contractions, including selected rectangular widths.
 
-The PyTorch graph establishes the two contraction sites. Nicolas's checked-in
+The PyTorch graph establishes the two contraction sites. the reference implementation’s checked-in
 packed tensors and scales are separate source specializations. The 96-wide
 case derives its wire bytes from the 128³ source and has model-derived outputs.
 Random PyTorch example inputs do not generate those bytes.

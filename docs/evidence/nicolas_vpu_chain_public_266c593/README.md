@@ -1,13 +1,15 @@
-# Nicolas dependent VPU chain through the public object compiler
+<a id="nicolas-dependent-vpu-chain-through-the-public-object-compiler"></a>
 
-Nicolas's pinned bareMetalC/vpu_ops.c contains an unfenced
+# Reference dependent VPU chain through the public object compiler
+
+the reference implementation’s pinned bareMetalC/vpu_ops.c contains an unfenced
 ADD → MULS(0.5) → RMAX scratchpad chain. The source run checks its final
 16 rows against vpu_ref.h as one of 29 VPU checks. This archive captures
 the corresponding PyTorch graph with upstream model2MLIR e9ded36, binds
 the three operations to typed MX MLIR, and compiles them through
 tools.compile_object to one data-free RV64 RoCC object.
 
-On Nicolas's pinned Spike, the generated object matches all **512 BF16**
+On the reference implementation’s pinned Spike, the generated object matches all **512 BF16**
 values at the intermediate MULS result and all **128 BF16** values at the
 final RMAX result. Both MxE4M3VpuGemminiRocketConfig and
 MxE4M3Fp4VpuGemminiRocketConfig pass. Their profile-bound MLIR differs,

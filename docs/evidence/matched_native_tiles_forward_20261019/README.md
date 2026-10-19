@@ -4,7 +4,7 @@ The explicit native tile policy reduces complete token-ID-to-logits execution
 from **11,105,781,721 to 11,094,646,734 modeled cycles**, a **0.100263%** reduction.
 Both runs execute the same captured 160-token, 22-layer forward and preserve
 all **5,120,000 F32 logit words** exactly. The candidate uses **13.0674% fewer
-cycles** than Nicolás's retained equal-boundary 12,762,360,525-cycle execution
+cycles** than the reference implementation’s retained equal-boundary 12,762,360,525-cycle execution
 and **30.5919% fewer** than the corrected compiler's 15,984,649,026 cycles.
 The older compiler archive with different quality is not this control.
 

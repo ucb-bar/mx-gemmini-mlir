@@ -3,7 +3,7 @@
 The earlier word-group packing prototype completed the same independent
 160-token, 22-layer token-to-logits forward in **11,281,937,006 modeled cycles**,
 versus **13,215,457,143** for its prepared-broadcast control: **14.6307% fewer
-cycles**. It uses **11.5999% fewer cycles** than Nicolás's matched token-to-logits
+cycles**. It uses **11.5999% fewer cycles** than the reference implementation’s matched token-to-logits
 control (12,762,360,525).
 
 This is the **earlier OOT prototype**, not the later generic Merlin word-group
@@ -14,7 +14,7 @@ that is a separate complete-forward experiment.
 
 All **5,120,000 compiler output words** are byte-identical to the matched control,
 SHA-256 `d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a`.
-The unchanged Nicolás-relative quality gate passes on the 33 archived complete
+The unchanged reference-relative quality gate passes on the 33 archived complete
 source distributions: mean KL 0.06379562704, worst KL 0.16997975795, and FP32
 top-token agreement 27/33. The original 5% KL margin and top-token requirement
 remain unchanged. Compiler FP32 top-token agreement across all 160 positions is

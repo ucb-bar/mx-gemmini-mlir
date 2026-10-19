@@ -1,4 +1,4 @@
-"""Compatibility entry points for Nicolas's source-bound dual-layout FP4 case."""
+"""Compatibility entry points for the reference implementation’s source-bound dual-layout FP4 case."""
 
 from __future__ import annotations
 

@@ -6,7 +6,7 @@ reduced random-weight TinyLlama capture: layer-0 `q_proj`, model2MLIR region
 supplied the eight input rows and its projection weight. MXQuant encoded the
 full 2048-element K axis and all 2048 output columns. The DIM16 target padded
 M from 8 to 16. One typed MX contraction lowered through 64 output tiles to
-a data-free RV64 RoCC object, then linked to a standalone ELF. Pinned Nicolas
+a data-free RV64 RoCC object, then linked to a standalone ELF. Pinned reference
 Spike matched the independent hardware arithmetic model on **32,768/32,768
 BF16 values**, including all **16,384 model outputs** and 16,384 padded
 outputs. The f32 PyTorch result differs from the MX BF16 result by mean
@@ -24,7 +24,7 @@ were compiled at GCC `-O1` to keep large immediate constants in instructions.
 
 Use a Python environment with model2MLIR, MXQuant, xDSL, PyTorch, and
 Transformers. `M2M` must have the committed model2MLIR `a042643` source
-closure; `MXQ` is MXQuant `b4af543`; `RTL` is Nicolas RTL `266c593` with
+closure; `MXQ` is MXQuant `b4af543`; `RTL` is reference RTL `266c593` with
 its pinned Spike extension. Set `RADIANCE` to the repository containing the
 pinned `lib/golden/mx_golden.cpp`. Set `OUT_ROOT` to a new writable directory:
 

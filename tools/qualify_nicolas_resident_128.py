@@ -1,4 +1,4 @@
-"""Lower Nicolas's typed plain resident pair and check all outputs on Spike.
+"""Lower the reference implementation’s typed plain resident pair and check all outputs on Spike.
 
 This source-bound stage preloads the checked C1 codes and transposed C1 scales.
 It proves the resident MM2 command lowering, not compilation of MM1. The

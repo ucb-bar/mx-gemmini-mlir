@@ -1,4 +1,4 @@
-"""Compile typed flash QK0 and compare every BF16 score to Nicolas's source on Spike."""
+"""Compile typed flash QK0 and compare every BF16 score to the reference implementation’s source on Spike."""
 
 from __future__ import annotations
 

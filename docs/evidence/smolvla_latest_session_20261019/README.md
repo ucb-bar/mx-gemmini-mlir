@@ -69,7 +69,7 @@ tables, image hashes, object hashes and allocation observations are retained in
 The FP32 diagnostic is unchanged: final cosine 0.9752036640, MAE 0.03336054171,
 RMSE 0.07782276601, normalized RMSE 0.2398155381 and maximum absolute error
 0.4540897161. All ten flow-step diagnostics are retained and recomputed by the
-reader. No independent complete Nicolás SmolVLA baseline or action-quality
+reader. No independent complete reference SmolVLA baseline or action-quality
 acceptance threshold has been established. This result preserves the compiler
 control's complete outputs and numerical behavior.
 

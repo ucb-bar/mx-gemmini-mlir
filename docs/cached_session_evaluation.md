@@ -16,7 +16,7 @@ bookkeeping retain the harness's original exclusion.
 
 The result reports per-row cosine, error, KL divergence and top-token agreement
 against the captured FP32 recurrent trajectory. There is no independent cached
-Nicolás execution, so this tool reports neither a Nicolás-relative numerical
+reference execution, so this tool reports neither a reference-relative numerical
 gate nor an independent-source speedup. The independent 160-token forward has
 its separate source-relative gate and timing boundary.
 

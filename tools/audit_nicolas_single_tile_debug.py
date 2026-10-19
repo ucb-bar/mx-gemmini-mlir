@@ -1,4 +1,4 @@
-"""Audit the one Nicolas MX debug test without an active numerical oracle.
+"""Audit the one reference MX debug test without an active numerical oracle.
 
 This is source analysis, not an accelerator execution receipt. It pins the
 source bytes and records why a printed PASS cannot qualify compiler output.

@@ -1,4 +1,4 @@
-"""Audit Nicolas's two-tile VPU chain and derive both exact source references."""
+"""Audit the reference implementation’s two-tile VPU chain and derive both exact source references."""
 
 from __future__ import annotations
 

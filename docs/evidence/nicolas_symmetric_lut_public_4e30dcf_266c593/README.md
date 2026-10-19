@@ -1,4 +1,6 @@
-# Nicolas same-format LUT matrices through public MX objects
+<a id="nicolas-same-format-lut-matrices-through-public-mx-objects"></a>
+
+# Reference same-format LUT matrices through public MX objects
 
 Compiler commit `4e30dcfafa7c81dfaec0c49e2d056d14e037ba7a` replayed the three
 pinned DIM16 symmetric LUT matrix programs with their dedicated Rocket

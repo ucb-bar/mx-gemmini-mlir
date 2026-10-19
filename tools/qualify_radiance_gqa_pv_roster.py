@@ -1,8 +1,8 @@
 """Run all 16 source Muon GQA PV operands through one compiled MX object.
 
 An isolated Cyclotron model correction implements `ex_accumulate=0` overwrite,
-as Nicolas's Spike does. It executes the original mixed Muon/MX kernel with
-diagnostic stores that snapshot every P operand and PV output. Nicolas's
+as the reference implementation’s Spike does. It executes the original mixed Muon/MX kernel with
+diagnostic stores that snapshot every P operand and PV output. the reference implementation’s
 checked-in numerical model verifies each PV tile independently. The compiler's
 generic 64^3 MX object then consumes those P/V bytes on Rocket/RoCC Spike.
 """

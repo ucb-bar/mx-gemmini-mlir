@@ -1,4 +1,4 @@
-"""Qualify the typed fused EXPSUM flash object against Nicolas's source on Spike."""
+"""Qualify the typed fused EXPSUM flash object against the reference implementation’s source on Spike."""
 
 from __future__ import annotations
 

@@ -1,7 +1,9 @@
-# Nicolas FP8 DIM32 requantized output through a public MX object
+<a id="nicolas-fp8-dim32-requantized-output-through-a-public-mx-object"></a>
+
+# Reference FP8 DIM32 requantized output through a public MX object
 
 Commit `835e5ba` captured a 64³ PyTorch matmul with model2MLIR `e9ded36`,
-bound Nicolas's checked-in `matmul_tiled_fp8_64x64_requant_dim32.c` operands
+bound the reference implementation’s checked-in `matmul_tiled_fp8_64x64_requant_dim32.c` operands
 and `matmul_fp8_64x64_dim32.h` golden, selected typed FP8 quantized readout,
 and compiled a data-free RV64 RoCC issuer through `tools.compile_object`.
 Pinned Spike with the **DIM32 extension** matched all **4,096 FP8 output codes

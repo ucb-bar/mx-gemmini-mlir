@@ -15,7 +15,9 @@ It keeps the BF16 intermediate in scratchpad, removing its host widening,
 renarrowing, store and reload. All intermediate BF16 arithmetic rounding stays.
 A range guard retains the original kernels for nonfinite or extreme inputs.
 
-## Results on Nicolas's Spike model
+<a id="results-on-nicolass-spike-model"></a>
+
+## Results on the pinned Spike model
 
 | Case | Materialized warm cycles | Connected warm cycles | Result |
 | --- | ---: | ---: | --- |
@@ -30,8 +32,8 @@ load bytes decrease by 720,896 per invocation and store puts halve. Host
 packing, the range guard, and final widening are inside the timed function.
 Native `mx-gemmini-opt` also accepts the emitted typed VPU modules.
 
-This compares compiler output before and after optimization, not Nicolas's
-stitched kernels. The clock is Nicolas's `e4m3_vpu` Spike timing model with
+This compares compiler output before and after optimization, not the reference implementation’s
+stitched kernels. The clock is the reference implementation’s `e4m3_vpu` Spike timing model with
 `GEMMINI_MODE=both` and `mem.host_tracking=0`; it is not FPGA timing or a full
 Rocket memory-latency measurement.
 

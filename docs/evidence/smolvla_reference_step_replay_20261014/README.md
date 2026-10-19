@@ -1,6 +1,6 @@
 # SmolVLA flow step on captured FP32 state
 
-This is a one-step numerical diagnostic on Nicolas's `e4m3_vpu` Spike model.
+This is a one-step numerical diagnostic on the reference implementation’s `e4m3_vpu` Spike model.
 It reuses the **same compiled flow-stage object, MX catalog, checkpoint weight
 blob, and profile** as the [full 12-step run](../smolvla_full_action_values_20261014/README.md).
 The input is the captured FP32 step-9 state: the step-8 FP32 flow output,

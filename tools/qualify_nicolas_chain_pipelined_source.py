@@ -1,4 +1,4 @@
-"""Run Nicolas's three-schedule chain_pipelined.c oracle on pinned Spike.
+"""Run the reference implementation’s three-schedule chain_pipelined.c oracle on pinned Spike.
 
 This is a handwritten source baseline. It does not qualify compiler output or
 RTL cycle overlap; those require the typed branch lowering and RTL execution.

@@ -1,7 +1,9 @@
-# Nicolas E4M3 LUT-index requantization through a public MX object
+<a id="nicolas-e4m3-lut-index-requantization-through-a-public-mx-object"></a>
+
+# Reference E4M3 LUT-index requantization through a public MX object
 
 Compiler commit `74bceebfb16b647425de0d322fcfa60118d0d817` captured a
-64×64×64 PyTorch matmul with model2MLIR, specialized it using Nicolas's
+64×64×64 PyTorch matmul with model2MLIR, specialized it using the reference implementation’s
 checked-in `matmul_tiled_fp8_e4m3_lut_64x64_requant.c` and data header, and
 lowered the typed `mx_gemmini.readout_quantized` with `output_projection =
 "lut"` to physical Rocket/RoCC commands. The public object compiler emitted
@@ -13,7 +15,7 @@ The generated executable matched all **2,048 packed output bytes** (4,096
 `C_scales_row`. The object ABI exposes a 2,048-byte packed-index write buffer
 and a 128-byte scale write buffer. This is numerical parity for this named
 source program on Spike; it does not establish FPGA timing parity or complete
-coverage of Nicolas's other requantized LUT programs.
+coverage of the reference implementation’s other requantized LUT programs.
 
 The [receipt](receipt.json), [bound MLIR](asymmetric_bound.mlir),
 [object manifest](object/object_manifest.json), [physical command

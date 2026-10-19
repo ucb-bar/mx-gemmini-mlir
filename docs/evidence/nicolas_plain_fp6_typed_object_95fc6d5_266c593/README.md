@@ -1,12 +1,14 @@
-# Nicolas FP6 128×128×512 from typed MLIR to a public MX object
+<a id="nicolas-fp6-128128512-from-typed-mlir-to-a-public-mx-object"></a>
+
+# Reference FP6 128×128×512 from typed MLIR to a public MX object
 
 Commit `95fc6d5` captured a 128×512 by 512×128 PyTorch matmul with current
-model2MLIR `e9ded36`, then bound Nicolas's checked-in packed FP6 operands,
+model2MLIR `e9ded36`, then bound the reference implementation’s checked-in packed FP6 operands,
 E8M0 scales, and complete 64-line A/B/C LUT banks. The source header's first
 A/B LUT lines select the frontend's structural FP6 codebook; the payload bundle
 supplies every actual hardware LUT line. `tools.compile_object` lowered the
 typed contraction to a data-free RV64 RoCC issuer. A driver that only passes
-source buffers, fences, and checks results linked the object with Nicolas's
+source buffers, fences, and checks results linked the object with the reference implementation’s
 bare-metal support. Pinned Spike matched **all 16,384 BF16 values** in
 `matmul_fp6_128x128x512.h`.
 

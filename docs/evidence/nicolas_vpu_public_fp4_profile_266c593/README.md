@@ -1,14 +1,16 @@
-# Nicolas VPU public objects on the FP4-capable profile
+<a id="nicolas-vpu-public-objects-on-the-fp4-capable-profile"></a>
+
+# Reference VPU public objects on the FP4-capable profile
 
 The fourteen model2MLIR VPU captures from the
 [E4M3-only public-object replay](../nicolas_vpu_public_objects_266c593/README.md)
-were rebound to Nicolas's `MxE4M3Fp4VpuGemminiRocketConfig` profile. The
+were rebound to the reference implementation’s `MxE4M3Fp4VpuGemminiRocketConfig` profile. The
 binding functions reproduced each original bound MLIR byte for byte when
 given the original profile, then emitted profile-specific MLIR for the
 FP4-capable build. Native `mx-gemmini-opt` and the public `tools.compile_object`
 accepted all fourteen rebound modules.
 
-Every generated object ran on pinned Spike and matched Nicolas's `vpu_ref.h`:
+Every generated object ran on pinned Spike and matched the reference implementation’s `vpu_ref.h`:
 **6,016 primary BF16 outputs and 128 EXPSUM outputs**, with no mismatches.
 Two independent builds produced identical report contents. Each case's
 issuer object, linked ELF, and Spike log is byte-identical to the E4M3-only

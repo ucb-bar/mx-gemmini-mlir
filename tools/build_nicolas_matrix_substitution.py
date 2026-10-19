@@ -1,4 +1,4 @@
-"""Relink one compiled stage with Nicolas's native MX matrix issuers.
+"""Relink one compiled stage with the reference implementation’s native MX matrix issuers.
 
 The compiled host graph, quantization, VPU objects, and stage ABI stay in place.
 This is a matrix-issuer comparison, not a fused handwritten model baseline.
@@ -63,7 +63,7 @@ def main() -> None:
     for name, entry in sorted(issuers.items(), key=lambda pair: int(pair[0].split("_")[-1])):
         m, n, k = entry["padded_shape_mnk"]
         fmt = entry["precision"]
-        # Nicolas's FP8 loop accepts DIM16 rows/columns; FP4's packed
+        # the reference implementation’s FP8 loop accepts DIM16 rows/columns; FP4's packed
         # two-lane mesh requires 2*DIM in both output axes.
         output_alignment = 32 if fmt == "mxfp4" else 16
         if (fmt not in {"mxfp4", "mxfp8"} or m % output_alignment

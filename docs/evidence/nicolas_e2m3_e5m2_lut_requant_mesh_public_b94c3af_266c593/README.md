@@ -1,7 +1,9 @@
-# Nicolas E2M3 and E5M2 LUT-index requantization across meshes
+<a id="nicolas-e2m3-and-e5m2-lut-index-requantization-across-meshes"></a>
+
+# Reference E2M3 and E5M2 LUT-index requantization across meshes
 
 Compiler commit `b94c3afb1635094e854794d434b6f4ac35b8d953` compiled ten
-more checked-in Nicolas source programs from fresh PyTorch/model2MLIR captures.
+more checked-in reference source programs from fresh PyTorch/model2MLIR captures.
 The source recipe selects E2M3 or E5M2 from the named C program and header,
 checks the profile's legal compute tuple, binds each LUT bank at its source
 size, and lowers a typed packed-index readout. The public compiler emits a

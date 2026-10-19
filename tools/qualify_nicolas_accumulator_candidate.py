@@ -2,7 +2,7 @@
 
 The patch models BF16 accumulator-tagged MVOUTs from Spike's existing MX
 shadow result. It checks the compiler's output addresses and full BF16 result;
-it does not reproduce Nicolas's MMIO scale initialization, RTL packing,
+it does not reproduce the reference implementation’s MMIO scale initialization, RTL packing,
 queue timing, or FPGA execution.
 """
 

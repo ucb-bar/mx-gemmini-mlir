@@ -1,8 +1,10 @@
-# Full-checkpoint TinyLlama prefill on Nicolas's MX Spike
+<a id="full-checkpoint-tinyllama-prefill-on-nicolass-mx-spike"></a>
+
+# Full-checkpoint TinyLlama prefill on the reference implementation’s MX Spike
 
 The full-checkpoint eager-attention TinyLlama prefill compiled through
 model2MLIR, Merlin, and the MX dense catalog. A manual relink of the same
-stage objects with a 5 GiB model arena ran on Nicolas's pinned Gemmini Spike
+stage objects with a 5 GiB model arena ran on the reference implementation’s pinned Gemmini Spike
 extension and reached guest `DONE` after 5,288.408 seconds (about 88 minutes).
 The [raw console](spike.log) records 374,944,319,266 simulated cycles, build
 hash `845c3a5af7bd`, and zero memref rank mismatches. The process exited zero.
@@ -14,7 +16,7 @@ hash `845c3a5af7bd`, and zero memref rank mismatches. The process exited zero.
 | MX catalog source SHA-256 | `6c1cf88337d770a7865b9d4aa0de2b55903e9892edd6d015fb1640c632e253d4` |
 | MX+VPU profile SHA-256 | `e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d` |
 | Relinked stage ELF SHA-256 | `6bb09b65aabf54e4346a03afcc7481893a53640c02b50dd43f75ebd8bbbf869a` |
-| Nicolas Spike executable SHA-256 | `de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9` |
+| the pinned Spike model executable SHA-256 | `de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9` |
 | Gemmini extension SHA-256 | `5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5` |
 | Raw console SHA-256 | `3d87b79641849bc67f6518f91a77d5985b8c341b526497d095678fcc24b1e3ef` |
 | Routed MX calls | 199 |

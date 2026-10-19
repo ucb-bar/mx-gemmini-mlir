@@ -1,6 +1,6 @@
 # Typed 64×256×128 dense MX+VPU attention on Spike
 
-Nicolas's [unmodified `attn_vpu_fa` source](../nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/README.md)
+the reference implementation’s [unmodified `attn_vpu_fa` source](../nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/README.md)
 provides E4M3/E8M0 operands, a mesh score golden, and four stage hashes.
 A clean model2MLIR `a042643` capture supplies QK, scale by `1/√128`,
 softmax, and PV dataflow. The [bound vector graph](attention.vector_bound.mlir)
@@ -28,7 +28,7 @@ does not qualify the separate blocked `attn_flash.c` family or full models.
 
 From the repository root, set `NPU_ROOT` to pinned `npu-exploration`
 `0344bcb`, `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to
-the RV64 toolchain, `SPIKE_EXTENSION` to Nicolas's MX Spike extension,
+the RV64 toolchain, `SPIKE_EXTENSION` to the reference implementation’s MX Spike extension,
 `MX_OPT` to the built `mx-gemmini-opt`, and `OUT_DIR` to a fresh directory:
 
 ```sh

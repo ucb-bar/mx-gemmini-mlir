@@ -1,4 +1,4 @@
-"""Compile current model2MLIR two-matmul captures for Nicolas FP8/FP4/FP6 chains.
+"""Compile current model2MLIR two-matmul captures for reference FP8/FP4/FP6 chains.
 
 Each case binds the portable graph to the pinned source operands, emits a
 data-free public RV64 object, and checks both source-header outputs on Spike.

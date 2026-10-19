@@ -1,7 +1,9 @@
-# Nicolas FP4 128×128×512 requantized output through a public MX object
+<a id="nicolas-fp4-128128512-requantized-output-through-a-public-mx-object"></a>
+
+# Reference FP4 128×128×512 requantized output through a public MX object
 
 Commit `03490a5` captured a 128×128×512 PyTorch matmul with model2MLIR
-`e9ded36`, bound Nicolas's checked-in
+`e9ded36`, bound the reference implementation’s checked-in
 `matmul_tiled_fp4_128x128x512_requant.c` operands and
 `matmul_fp4_128x128x512.h` golden, selected typed FP4 quantized readout, and
 compiled a data-free RV64 RoCC issuer through `tools.compile_object`. Pinned

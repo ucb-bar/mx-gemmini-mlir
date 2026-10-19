@@ -1,4 +1,4 @@
-"""Replay the public three-site MX/VPU object compiler from Nicolas's source.
+"""Replay the public three-site MX/VPU object compiler from the reference implementation’s source.
 
 Four typed graph/profile/schedule combinations use `compile_object`. Each
 compiled issuer must reproduce the previously qualified source-bound object,

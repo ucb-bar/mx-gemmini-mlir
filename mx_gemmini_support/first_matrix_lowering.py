@@ -1,8 +1,8 @@
-"""Lower Nicolas's first FP8 matrix site to a BF16 scratchpad tile.
+"""Lower the reference implementation’s first FP8 matrix site to a BF16 scratchpad tile.
 
 This is a source-bound DIM16 schedule. The frontend MLIR must contain both
 model2MLIR contraction sites, and the numerical payload is audited against
-Nicolas's checked-in chain header by source_vector_chain.py.
+the reference implementation’s checked-in chain header by source_vector_chain.py.
 """
 
 from __future__ import annotations

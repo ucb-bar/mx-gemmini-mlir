@@ -1,9 +1,9 @@
 """Capture, compile, and qualify a source-derived wider MX/VPU resident pair.
 
-The 64x64 MM1 and VPU use Nicolas's checked source bytes. MM2 extends the
-source B2 matrix with sign-flipped source columns, then uses Nicolas's pinned
+The 64x64 MM1 and VPU use the reference implementation’s checked source bytes. MM2 extends the
+source B2 matrix with sign-flipped source columns, then uses the reference implementation’s pinned
 FP8 mesh model for every new output code and scale. The added width is an
-explicitly derived candidate, not an unchanged Nicolas source kernel.
+explicitly derived candidate, not an unchanged reference source kernel.
 """
 
 from __future__ import annotations

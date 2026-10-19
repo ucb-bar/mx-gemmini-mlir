@@ -1,8 +1,8 @@
 # Radiance MX kernels as compiler controls
 
-The [receipt](receipt.json) binds the current `spatter-workloads` checkout at
-`b6b9bf44` to existing model2MLIR → MX MLIR → Rocket/RoCC → Nicolas Spike
-qualifications. The checked driver hashes are unchanged from the archived
+The [receipt](receipt.json) binds the kernels in
+[`radiance-kernels` at `b6b9bf44af6d7ba88626b5d17b8b527390aec082`](https://github.com/ucb-bar/radiance-kernels/tree/b6b9bf44af6d7ba88626b5d17b8b527390aec082)
+to model2MLIR → MX MLIR → Rocket/RoCC → pinned Spike qualifications. The checked driver hashes are unchanged from the archived
 Radiance source, so a compatible checkout with those same hashes also works.
 The selected profile is
 `MxE4M3Fp4VpuGemminiRocketConfig`; FP6 is outside this profile.
@@ -59,23 +59,23 @@ PV check is therefore **not** a whole-attention correctness claim.
 These are **compiler-on-Spike output and command comparisons**. The original
 Radiance drivers use Muon to issue MX work on the combined SoC; no paired
 Radiance-source versus compiler cycle count exists for these drivers on
-Nicolas's standalone Rocket Spike model. The published Radiance flash-attention
-cycles also include Muon SIMT softmax and overlap, which Nicolas's MX+VPU Spike
+the reference implementation’s standalone Rocket Spike model. The published Radiance flash-attention
+cycles also include Muon SIMT softmax and overlap, which the reference implementation’s MX+VPU Spike
 does not run. They cannot be placed in a speedup ratio with the current model
 cycles. See the [GQA source qualification](../../compiled_mx_pipeline.md#gqa-qk-numerical-domain-and-source-derived-candidate)
 for the separate MX QK/PV numerical controls.
 
 In particular, [Radiance's 64×256×128 flash-attention
-kernel](https://github.com/ucb-bar/radiance-kernels/tree/main/kernels/flash_attention_mx)
+kernel](https://github.com/ucb-bar/radiance-kernels/tree/b6b9bf44af6d7ba88626b5d17b8b527390aec082/kernels/flash_attention_mx)
 reports 42,364 cycles per tile for a steady-state mixed Muon+MX RTL schedule.
-The slide's 43,523 compiler cycles are for one dense MX+VPU attention object
+The separate 43,523 compiler cycles are for one dense MX+VPU attention object
 on Rocket Spike. Equal dimensions do not make those timers, engines, or
 simulators equivalent. The Radiance source also documents schedule-sensitive
 correctness for that peak configuration.
 
 The Radiance `model_chain` full-model programs currently use scalar Muon code;
 their model or FPGA cycles are likewise not an MX+VPU compiler baseline. The
-full TinyLlama and SmolVLA slide rows instead use Nicolas's MX+VPU Spike, and
+full TinyLlama and SmolVLA slide rows instead use the reference implementation’s MX+VPU Spike, and
 their issuer-swap qualifier still applies.
 
 Regenerate this receipt against a prepared Radiance checkout with:

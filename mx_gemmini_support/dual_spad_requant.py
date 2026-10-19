@@ -46,7 +46,7 @@ FP8_SPEC = DualRequantSpec("spad_requant", 32, 64, "fp8_e4m3", 1)
 
 def render_dual_requant(profile: dict, *, source_sha256: str,
                        header_sha256: str, spec: DualRequantSpec) -> str:
-    """Bind the two layouts of Nicolas's requant source to one SSA input."""
+    """Bind the two layouts of the reference implementation’s requant source to one SSA input."""
     m, n = spec.m, spec.n
     digest = profile_sha256(profile)
     policy = {"m": m, "n": n, "source_row": SOURCE_ROW,

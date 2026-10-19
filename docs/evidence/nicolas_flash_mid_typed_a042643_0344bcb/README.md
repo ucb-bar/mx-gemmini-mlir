@@ -1,6 +1,6 @@
 # Typed four-block flash attention on Spike
 
-This archive reproduces Nicolas's `attn_flash_mid.c` output with one
+This archive reproduces the reference implementation’s `attn_flash_mid.c` output with one
 compiler-generated RV64 RoCC object. The kernel has `Sq=64`, `Sk=128`,
 `d=64`, and four `Bk=32` key blocks. A clean model2MLIR `a042643` capture
 provides the QK→scale→softmax→PV dataflow; the pinned `npu-exploration`
@@ -14,10 +14,10 @@ It lowers through the shared [physical command IR](physical_program.json)
 to **156 MX commands and 21 fences**. The [RV64 object](mx_issue.o) carries
 no operands, expected values, or data section; its [manifest](object_manifest.json)
 defines ten runtime buffers. The compiler uses a **fenced serial schedule**
-to establish functional parity. Nicolas's original source uses a faster
+to establish functional parity. The reference implementation’s original source uses a faster
 pipelined schedule; this archive makes no performance equivalence claim.
 
-The [driver](driver.c) runs Nicolas's unmodified pipelined source for the
+The [driver](driver.c) runs the reference implementation’s unmodified pipelined source for the
 reference path and calls only the compiler-generated `mx_issue` for the
 generated path. Both ran twice on the pinned Spike extension. Every one
 of the **4,096 BF16 output values** matches bit for bit across the four
@@ -29,7 +29,7 @@ frontend, toolchain, native verifier, object, ELFs, and logs.
 To reproduce from a clean checkout, build `mx-gemmini-opt`, then set
 `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

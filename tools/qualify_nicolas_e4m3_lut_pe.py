@@ -1,4 +1,4 @@
-"""Run Nicolas's pinned E4M3 LUT-enable PE test and archive its exact scope."""
+"""Run the reference implementation’s pinned E4M3 LUT-enable PE test and archive its exact scope."""
 
 from __future__ import annotations
 

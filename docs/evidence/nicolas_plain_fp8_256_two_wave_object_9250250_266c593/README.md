@@ -1,12 +1,14 @@
-# Nicolas FP8 128×128×256 with compiler-scheduled K waves
+<a id="nicolas-fp8-128128256-with-compiler-scheduled-k-waves"></a>
 
-Commit `9250250` captured Nicolas's 128×128×256 FP8 matrix shape from PyTorch
+# Reference FP8 128×128×256 with compiler-scheduled K waves
+
+Commit `9250250` captured the reference implementation’s 128×128×256 FP8 matrix shape from PyTorch
 using current model2MLIR `e9ded36`, bound the exact packed operands, E8M0
 scales, and BF16 golden from `matmul_tiled_fp8_128x128x256.c` and its checked-in
 header, and compiled a data-free RV64 RoCC object through `tools.compile_object`.
 The physical plan selects **two K waves of 128** and accumulates the second
 wave before reading out. Pinned Spike compared **all 16,384 BF16 outputs**
-against Nicolas's source header and reported zero mismatches.
+against the reference implementation’s source header and reported zero mismatches.
 
 This is numerical parity for the matrix result using a compiler-selected
 two-wave schedule. It does not reproduce the C program's exact instruction

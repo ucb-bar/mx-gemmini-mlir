@@ -36,7 +36,7 @@ def _pick_tiles(profile: dict, shape: tuple[int, int, int], precision: str) -> t
             any(type(x) is not int or x <= 0 for x in shape) or
             m % pe or n % pe or k % 32):
         raise ValueError("MX native schedule needs aligned DIM16 direct FP4/FP8 Rocket shape")
-    # Nicolas mx_native.h: one 256-row accumulator half; two 8192-row
+    # reference mx_native.h: one 256-row accumulator half; two 8192-row
     # scratchpad halves. An FP4 operand uses half the FP8 scratchpad rows.
     half_rows = resources["scratchpad_bytes"] // dim // 2
     if half_rows != 8192 or resources["accumulator_bytes"] != 65536:

@@ -6,7 +6,7 @@ This receipt comes from a new managed worktree at published compiler commit
 source revisions, and the source checkout's unchanged Git status hash.
 
 The read-only one-command replay captured all 31 Radiance MX GEMM drivers
-through model2MLIR `e9ded36`, compiled the RV64 programs, ran them on Nicolas's
+through model2MLIR `e9ded36`, compiled the RV64 programs, ran them on the reference implementation’s
 pinned Spike extension, and compared every output against the source golden.
 It matched all 23 BF16-output and eight requantized-output cases. The
 [reproduction receipt](reproduction.json), [frontend index](frontend/index.json),

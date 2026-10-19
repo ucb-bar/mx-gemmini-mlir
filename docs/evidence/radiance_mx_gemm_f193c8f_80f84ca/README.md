@@ -4,7 +4,7 @@ At compiler `f193c8f`, `python -m tools.reproduce_radiance_roster` regenerated
 all 31 MX GEMM drivers in the Radiance `spatter-workloads` checkout at
 `80f84ca`. It generated missing source headers, recaptured each operation
 through model2MLIR `e9ded36`, compiled a standalone RV64 program, and ran
-Nicolas's pinned Spike extension. All 23 BF16-output and eight quantized-output
+the reference implementation’s pinned Spike extension. All 23 BF16-output and eight quantized-output
 drivers matched their source goldens. The checker compared 466,944 output
 values or packed code bytes and 3,328 E8M0 scales. The command also compared
 frontend, physical, object, ELF, and Spike-log hashes to the earlier pinned

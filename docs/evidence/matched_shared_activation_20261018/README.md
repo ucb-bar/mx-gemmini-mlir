@@ -3,11 +3,11 @@
 Shared activation packing reduces full 160-token, 22-layer TinyLlama execution
 by **9.5878%**, with every one of the 5,120,000 output words bit-identical to
 the earlier numerically corrected compiler run. Both pass the original
-Nicolás-relative numerical gate. The remaining source gap is **13.2398%**.
+reference-relative numerical gate. The remaining source gap is **13.2398%**.
 
 | Same token-to-logits boundary | Modeled cycles | Mean KL, late33 | Worst KL | Top agreement, late33 |
 | --- | ---: | ---: | ---: | ---: |
-| Independent Nicolás source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
+| Independent reference source | 12,762,360,525 | 0.0641713 | 0.1896031 | 27/33 |
 | Earlier corrected compiler | 15,984,649,026 | 0.0637956 | 0.1699798 | 27/33 |
 | Shared activation preparation | 14,452,067,124 | 0.0637956 | 0.1699798 | 27/33 |
 

@@ -23,7 +23,7 @@ complete digest, yielding
 `d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a`,
 the same digest as the earlier quality-qualified shared-preparation forward.
 
-**Do not use this instrumented run for a clean speedup against Nicolás or the
+**Do not use this instrumented run for a clean speedup against reference or the
 earlier uninstrumented compiler.** Marker calls and compilation perturb timing
 and allocation. The verified uninstrumented result remains
 [14,452,067,124 cycles](../matched_shared_activation_20261018/README.md).

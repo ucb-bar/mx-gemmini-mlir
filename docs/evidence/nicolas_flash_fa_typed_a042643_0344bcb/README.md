@@ -1,6 +1,6 @@
 # Typed default flash attention shape on Spike
 
-This archive reproduces Nicolas's default `attn_flash.c` kernel with one
+This archive reproduces the reference implementation’s default `attn_flash.c` kernel with one
 compiler-generated RV64 RoCC object. The kernel has `Sq=64`, `Sk=256`,
 `d=128`, and four `Bk=64` key blocks. The clean model2MLIR `a042643`
 capture binds the QK→scale→softmax→PV dataflow. The selected RTL is
@@ -15,10 +15,10 @@ softmax, resident FP8 requantization, output updates, and BF16 readout.
 The [RV64 object](mx_issue.o) contains no operands, expected values, or
 data section. Its [manifest](object_manifest.json) defines ten runtime
 buffers. The compiler uses a fenced serial schedule for functional parity;
-Nicolas's source runs a pipelined schedule. Performance equivalence is not
+the reference implementation’s source runs a pipelined schedule. Performance equivalence is not
 claimed.
 
-The [driver](driver.c) runs Nicolas's original source for the reference
+The [driver](driver.c) runs the reference implementation’s original source for the reference
 path and calls only the compiler-generated `mx_issue` for the generated
 path. Both ran twice on the pinned Spike extension. Every one of the
 **8,192 BF16 output values** matches bit for bit across the four
@@ -31,7 +31,7 @@ reproduced those files byte for byte.
 To reproduce from a clean checkout, build `mx-gemmini-opt`, then set
 `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

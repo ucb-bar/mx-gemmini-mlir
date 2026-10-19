@@ -1,4 +1,4 @@
-"""Derive 96-wide connected fixtures from Nicolas's 128-cubed wire data.
+"""Derive 96-wide connected fixtures from the reference implementation’s 128-cubed wire data.
 
 The unchanged 128-cubed source goldens first check the pinned mesh model.
 The 96-wide outputs are model-derived references, never described as source

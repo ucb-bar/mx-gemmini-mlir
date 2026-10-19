@@ -1,4 +1,6 @@
-# Live encoded-pointer MX issuer on Nicolas's Spike
+<a id="live-encoded-pointer-mx-issuer-on-nicolass-spike"></a>
+
+# Live encoded-pointer MX issuer on the pinned Spike model
 
 The [receipt](receipt.json) records a source-bound 16×32×2048 FP8 TinyLlama
 projection from the archived model2MLIR graph. `tools.qualify_runtime_issuer_spike`

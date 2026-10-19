@@ -1,0 +1,34 @@
+{
+  "capture_only_compilation_refused": true,
+  "capture_only_export_checked": true,
+  "changed_policy_refused_with_rewritten_local_manifest": true,
+  "complete_capture_bytes_checked_against_archive": true,
+  "models": {
+    "smolvla": {
+      "all_flags_known_to_cli": true,
+      "checkpoint_files_present": true,
+      "checkpoint_storage": "shared_inode",
+      "command_count": 5,
+      "files_checked": 32,
+      "input_manifest_sha256": "2802b95b7c7447a75d0685d398ca7ce94d53be99c677dbb250b3b43739c5e6e7"
+    },
+    "tinyllama-cached": {
+      "all_flags_known_to_cli": true,
+      "checkpoint_files_present": true,
+      "checkpoint_storage": "shared_inode",
+      "command_count": 4,
+      "files_checked": 27,
+      "input_manifest_sha256": "7eb5c6cb6a7a0257b7b1ded60be2a9316382e62b46d6de43ee9831b5a39426f6"
+    },
+    "tinyllama-forward": {
+      "all_flags_known_to_cli": true,
+      "checkpoint_files_present": true,
+      "checkpoint_storage": "shared_inode",
+      "command_count": 1,
+      "files_checked": 10,
+      "input_manifest_sha256": "c4c7aec8a7c635d8ac572b9bdd8edb5a4650102987259a13183e83fe7e42c534"
+    }
+  },
+  "schema": "mx_gemmini.model_release_audit_supplement.v1",
+  "scope": "real input exports and command plans; no new full compilation or simulator execution"
+}

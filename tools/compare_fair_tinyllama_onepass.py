@@ -1,4 +1,4 @@
-"""Compare a token-lookup Nicolas source run with the compiled one-pass model.
+"""Compare a token-lookup reference source run with the compiled one-pass model.
 
 This reports equal-input, token-to-logits cycles and both programs'
 quality against the captured FP32 model. It never labels the ratio an

@@ -1,4 +1,4 @@
-"""Compile Nicolas's unfused VPU op classes from model2MLIR and run on Spike.
+"""Compile the reference implementation’s unfused VPU op classes from model2MLIR and run on Spike.
 
 The C driver generates source inputs and evaluates vpu_ref.h. All accelerator
 configuration, transfers, VPU commands, and readout come from bound MLIR.

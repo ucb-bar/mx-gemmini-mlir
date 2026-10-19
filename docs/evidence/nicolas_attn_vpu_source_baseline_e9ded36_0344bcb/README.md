@@ -1,4 +1,6 @@
-# Nicolas dense MX+VPU attention source baseline
+<a id="nicolas-dense-mxvpu-attention-source-baseline"></a>
+
+# Reference dense MX+VPU attention source baseline
 
 This archive pins `npu-exploration` `0344bcb`'s unmodified `attn_vpu.c`
 and its deterministic default data: `Sq=32`, `Sk=64`, `d=64`, seed `0`.

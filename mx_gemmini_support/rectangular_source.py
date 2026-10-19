@@ -1,4 +1,4 @@
-"""Checked Nicolas wire inputs and output oracle for rectangular FP8 pairs."""
+"""Checked reference wire inputs and output oracle for rectangular FP8 pairs."""
 
 from __future__ import annotations
 

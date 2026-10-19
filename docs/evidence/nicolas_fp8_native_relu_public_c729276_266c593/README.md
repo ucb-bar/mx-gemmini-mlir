@@ -1,4 +1,6 @@
-# Nicolas FP8 native-loop store ReLU
+<a id="nicolas-fp8-native-loop-store-relu"></a>
+
+# Reference FP8 native-loop store ReLU
 
 The pinned `matmul_tiled_fp8_128x128_dramloop_relu.c` runs two N chunks with
 loop-managed scales and enables ReLU in the BF16 store configuration. Its
@@ -7,7 +9,7 @@ replaced by zero.
 
 A fresh PyTorch → model2MLIR contraction, source-bound typed MX module, and
 public data-free RV64 object pass **all 16,384 ReLU-adjusted BF16 output
-comparisons** on Nicolas's pinned Spike. The original C source passes
+comparisons** on the reference implementation’s pinned Spike. The original C source passes
 independently. The [command audit](native_dram_equivalence.json) checks both
 native loops, per-loop scales, and the store configuration's ReLU bit. The
 physical receipt hashes the complete derived expected output; 8,492 source

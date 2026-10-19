@@ -15,12 +15,12 @@ RoCC object, standalone ELF, and Spike log are bound by
 `tests/test_wide_vpu_pair_evidence.py` checks every archived file digest,
 source input lineage, output counts, object ABI, and typed graph re-lowering.
 
-**Numerical scope:** Nicolas's original 64×64 MM1, VPU, and first 64 MM2
+**Numerical scope:** the reference implementation’s original 64×64 MM1, VPU, and first 64 MM2
 columns come from RTL revision `266c593`. Each added B2 column is a
 sign-flipped copy of an original source column. The wider C2 expectations
 come from the pinned `fp8_matmul_model.py` whose digest is recorded in the
 case receipts. These are source-derived compiler cases, not unchanged
-Nicolas source kernels, RTL timing results, or qualification of FP4/FP6 VPU
+reference source kernels, RTL timing results, or qualification of FP4/FP6 VPU
 matrix modes.
 
 To reproduce either row from a checkout of the compiler commit, set

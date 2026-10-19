@@ -1,6 +1,6 @@
 # Typed FP4 flash attention with fused EXPSUM on Spike
 
-This qualification combines two paths in Nicolas's pinned `attn_flash.c`
+This qualification combines two paths in the reference implementation’s pinned `attn_flash.c`
 core (`npu-exploration` `0344bcb`): FP4 E2M1 operands and fused VPU EXPSUM.
 The [wrapper](../../../tools/fixtures/nicolas_flash_mid_fp4_expsum.c)
 selects `BK=32` and `ATTN_EXPSUM=1`. It uses the same [packed source
@@ -27,7 +27,7 @@ and causal masking need their own qualification.
 
 To reproduce, set `NPU_ROOT` to `npu-exploration` `0344bcb`, `RTL_ROOT` to
 `gemmini-mx-cleanup` `266c593`, `RISCV_ROOT` to the RV64 toolchain,
-`SPIKE_EXTENSION` to Nicolas's MX Spike extension, and `OUT_DIR` to a fresh
+`SPIKE_EXTENSION` to the reference implementation’s MX Spike extension, and `OUT_DIR` to a fresh
 directory:
 
 ```sh

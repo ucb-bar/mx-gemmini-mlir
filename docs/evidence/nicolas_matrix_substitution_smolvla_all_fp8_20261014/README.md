@@ -1,14 +1,16 @@
-# SmolVLA all-FP8: compiler versus Nicolas MX matrix issuers
+<a id="smolvla-all-fp8-compiler-versus-nicolas-mx-matrix-issuers"></a>
+
+# SmolVLA all-FP8: compiler versus reference MX matrix issuers
 
 The captured SmolVLA session runs one prefix encode, ten recurrent flow
-denoise steps, and one action decode on Nicolas's MX+VPU Spike. Both linked
+denoise steps, and one action decode on the reference implementation’s MX+VPU Spike. Both linked
 programs use the same captured inputs, checkpoint weights, direct E4M3
 matrix precision, host graph, VPU objects, profile, and timing settings
 (`e4m3_vpu`, `mem.host_tracking=0`). Only the prefix and flow MX catalog
-objects change: the control issues matrix commands through Nicolas's
+objects change: the control issues matrix commands through the reference implementation’s
 `mx_native.h` route.
 
-| Stage | Compiler cycles | Nicolas issuer cycles | Compiler overhead |
+| Stage | Compiler cycles | reference issuer cycles | Compiler overhead |
 | --- | ---: | ---: | ---: |
 | Prefix encode | 72,012,507,511 | 71,273,341,439 | 739,166,072 |
 | Flow denoise, ten steps | 108,207,126,169 | 108,178,057,422 | 29,068,747 |

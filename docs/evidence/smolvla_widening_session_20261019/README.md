@@ -55,7 +55,7 @@ The captured unquantized FP32 action comparison is diagnostic. Final cosine is
 0.9752036640, MAE 0.03336054171, RMSE 0.07782276601, normalized RMSE 0.2398155381,
 and maximum absolute error 0.4540897161. All ten step diagnostics are retained.
 There is no established SmolVLA action-quality threshold or complete independent
-Nicolás session baseline here. The result establishes preservation of the
+reference session baseline here. The result establishes preservation of the
 compiler baseline's full outputs and numerical behavior. It does not establish
 new action-quality acceptance. Older SmolVLA archives use different stage objects
 and numerical choices; their cycle counts are not controls for this experiment.

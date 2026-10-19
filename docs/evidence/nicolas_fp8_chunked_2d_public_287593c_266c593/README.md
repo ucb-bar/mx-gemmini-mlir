@@ -1,10 +1,12 @@
-# Nicolas FP8 two-chunk direct-scale replay
+<a id="nicolas-fp8-two-chunk-direct-scale-replay"></a>
 
-The pinned `matmul_tiled_fp8_128x128_chunked_2d.c` wrapper selects Nicolas's
+# Reference FP8 two-chunk direct-scale replay
+
+The pinned `matmul_tiled_fp8_128x128_chunked_2d.c` wrapper selects the reference implementation’s
 two-I-chunk 128×128×128 FP8 kernel and loads the A/B E8M0 scale arrays directly
 with 2D MX scale commands. A fresh PyTorch → model2MLIR capture, source-bound
 typed MX MLIR module, and public RV64 object reproduce **all 16,384 BF16
-outputs** on Nicolas's pinned Spike. The original source program independently
+outputs** on the reference implementation’s pinned Spike. The original source program independently
 passes its full-output check there.
 
 The [command audit](chunk_equivalence.json) checks every 2D scale upload and

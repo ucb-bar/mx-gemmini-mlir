@@ -1,4 +1,4 @@
-"""Source-bound I-axis MX loop chunking for Nicolas's FP8 experiments."""
+"""Source-bound I-axis MX loop chunking for the reference implementation’s FP8 experiments."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def _parse_module(mlir_text: str):
 
 def bind_i_chunks(mlir_text: str, profile: dict, manifest: dict,
                   chunks: int) -> str:
-    """Record Nicolas's selected chunk schedule on a captured contraction."""
+    """Record the reference implementation’s selected chunk schedule on a captured contraction."""
     from xdsl.dialects.builtin import StringAttr
     from xdsl.printer import Printer
 

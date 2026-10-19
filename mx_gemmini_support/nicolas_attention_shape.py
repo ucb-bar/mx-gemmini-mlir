@@ -1,4 +1,4 @@
-"""Scratchpad and buffer geometry for Nicolas's dense MX attention family."""
+"""Scratchpad and buffer geometry for the reference implementation’s dense MX attention family."""
 
 from __future__ import annotations
 

@@ -149,7 +149,7 @@ def lower_resident_contract(profile: dict, attrs: dict) -> tuple[Command | Fence
         # B2 is row-major in DRAM and operand-B tile-major in bank 3.
         cmd(0, (16 << 16) | (1 << 8) | 1, n // (2 if fp4 else 1)),
     ]
-    # Nicolas's square chain used j-major source traversal. For a rectangular
+    # the reference implementation’s square chain used j-major source traversal. For a rectangular
     # B matrix the model and RTL consume tile (k,j) at k*j+j, so preserve the
     # source's row-major K×N layout when K and N differ.
     tiles = ((tk, tj) for tk in range(kk) for tj in range(j)) if fp4 or n != k else (

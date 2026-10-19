@@ -1,4 +1,4 @@
-"""Replay Nicolas's fourteen VPU classes through the public object compiler."""
+"""Replay the reference implementation’s fourteen VPU classes through the public object compiler."""
 
 from __future__ import annotations
 
@@ -162,7 +162,7 @@ def main() -> None:
             raise ValueError(f"public {kind} should record its narrower broadcast transfer")
         linked_driver = driver
         if kind == "expsub":
-            # Nicolas's fused driver passes an unused fourth pointer. Bind its
+            # the reference implementation’s fused driver passes an unused fourth pointer. Bind its
             # unchanged source oracle to the public object's exact three-slot ABI.
             original = driver.read_text()
             declaration = ("void mx_issue(const void *a, const void *b, "

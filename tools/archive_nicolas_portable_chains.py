@@ -1,4 +1,4 @@
-"""Archive and verify the current-frontend Nicolas connected-chain suite."""
+"""Archive and verify the current-frontend reference connected-chain suite."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Capture and compile EXPSUB/EXPSUM, then compare against Nicolas's BF16 VPU reference.
+"""Capture and compile EXPSUB/EXPSUM, then compare against the reference implementation’s BF16 VPU reference.
 
 The accelerator command is lowered from typed, profile-bound MLIR. The C
 driver supplies the source test's deterministic inputs and bit-exact oracle;

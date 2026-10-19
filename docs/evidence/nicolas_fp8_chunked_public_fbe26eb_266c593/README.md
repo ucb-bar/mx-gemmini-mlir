@@ -1,6 +1,8 @@
-# Nicolas FP8 I-chunk source replays
+<a id="nicolas-fp8-i-chunk-source-replays"></a>
 
-Nicolas's pinned `matmul_tiled_fp8_128x128_chunked.c` and
+# Reference FP8 I-chunk source replays
+
+the reference implementation’s pinned `matmul_tiled_fp8_128x128_chunked.c` and
 `matmul_tiled_fp8_128x128_chunked4.c` split the I axis of the same
 128×128×128 FP8 matrix multiplication into two or four loop launches. The
 compiler captures `torch.matmul` through model2MLIR, binds the checked source
@@ -10,7 +12,7 @@ appear in the linked comparison driver.
 
 For **each** program, the original source executable and the generated object
 match all **16,384 BF16 output values** against the checked-in source golden
-on Nicolas's pinned Spike. The [two-chunk audit](chunk2/chunk_equivalence.json)
+on the reference implementation’s pinned Spike. The [two-chunk audit](chunk2/chunk_equivalence.json)
 and [four-chunk audit](chunk4/chunk_equivalence.json) independently check the
 scale uploads, loop bounds, scratchpad addresses, and `inc_acc_addr` bank
 toggle against the pinned source formulas. The compiler issues consecutive

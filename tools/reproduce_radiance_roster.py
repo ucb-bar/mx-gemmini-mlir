@@ -1,7 +1,7 @@
 """Reproduce all 31 Radiance MX GEMM source goldens from one command.
 
 This invokes the source header materializer, current model2MLIR capture,
-physical MX lowering, RV64 build, and Nicolas Spike comparison. The result
+physical MX lowering, RV64 build, and reference Spike comparison. The result
 must match every archived frontend, physical, and simulator artifact digest.
 """
 

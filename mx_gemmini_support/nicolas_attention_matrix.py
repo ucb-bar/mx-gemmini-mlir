@@ -1,4 +1,4 @@
-"""Physical QK and PV matrix packets for Nicolas's dense MX+VPU attention.
+"""Physical QK and PV matrix packets for the reference implementation’s dense MX+VPU attention.
 
 This is a bounded source-equivalent matrix issuer. The typed connected graph
 will call it after checking the two model2MLIR contraction sites and their

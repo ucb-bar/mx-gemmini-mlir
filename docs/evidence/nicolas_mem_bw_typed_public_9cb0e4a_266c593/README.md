@@ -1,16 +1,18 @@
-# Nicolas's MX memory benchmark from typed MLIR to RV64
+<a id="nicolass-mx-memory-benchmark-from-typed-mlir-to-rv64"></a>
+
+# Reference MX memory benchmark from typed MLIR to RV64
 
 Compiler commit `9cb0e4a` defines typed `mx_gemmini.memory_setup`,
 `dma_matrix`, `load_scales`, and `spad_mvout_linear` operations. The archived
-`typed_memory.mlir` binds Nicolas's source SHA and the pinned MX-only profile.
+`typed_memory.mlir` binds the reference implementation’s source SHA and the pinned MX-only profile.
 Native `mx-gemmini-opt` verifies the operations, then profile-aware lowering
 selects 64-byte A loads, 16-byte B loads, an E8M0 scale load, and a 16-byte
 scratchpad readout. The compiler emits a data-free RV64 RoCC object with setup
-and phase entry points. A driver derived from Nicolas's `mx_mem_bw.c` keeps his
+and phase entry points. A driver derived from the reference implementation’s `mx_mem_bw.c` keeps his
 counters, phase reporting, and spot check while calling the generated object
 at each accelerator issue site.
 
-The original source and generated driver both pass on Nicolas's pinned Spike.
+The original source and generated driver both pass on the reference implementation’s pinned Spike.
 All seven phases report the source's byte and request counts, and an
 instrumented source run and generated driver produce **identical complete
 16,384-byte readout buffers**. The full buffers are archived as hex in the

@@ -1,7 +1,7 @@
 # Current Radiance MX+VPU Spike reproduction
 
 On 2026-10-10, compiler `d548fd7`, upstream model2MLIR `e9ded36`, Radiance
-`80f84ca`, and Nicolas's MX+VPU RTL/Spike revision `266c593` reproduced two
+`80f84ca`, and the reference implementation’s MX+VPU RTL/Spike revision `266c593` reproduced two
 four-output-tile programs on the pinned Spike extension:
 
 | Case | Source basis | BF16 values checked | Result |

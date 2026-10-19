@@ -5,7 +5,7 @@ against its unquantized FP32 logits on fixed synthetic input IDs. All runs
 use the same captured checkpoint weights and input. The completed mixed
 FP4/FP8 full-session compiler run supplies the expected prefill output hash;
 a separate output-tap run supplied its 32,000 values. The separate all-FP8
-compiler prefill completed on Nicolas's `e4m3_vpu` Spike extension. The
+compiler prefill completed on the reference implementation’s `e4m3_vpu` Spike extension. The
 five operand proxies use current model2MLIR revision `9153d34` and do not
 model MX mesh accumulation or VPU arithmetic.
 

@@ -1,7 +1,9 @@
-# Nicolas FP8 96×96×64 from typed MLIR to a public MX object
+<a id="nicolas-fp8-969664-from-typed-mlir-to-a-public-mx-object"></a>
+
+# Reference FP8 96×96×64 from typed MLIR to a public MX object
 
 Commit `52dcc4d` captured this non-square FP8 matrix shape from PyTorch with
-current model2MLIR `e9ded36`, bound Nicolas's checked-in packed operands,
+current model2MLIR `e9ded36`, bound the reference implementation’s checked-in packed operands,
 E8M0 scales, and BF16 golden from `matmul_tiled_fp8_96x96x64.c` and its header,
 then compiled a data-free RV64 RoCC issuer through `tools.compile_object`.
 Pinned Spike matched **all 9,216 BF16 outputs** against the source header.

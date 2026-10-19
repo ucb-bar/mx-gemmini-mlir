@@ -3,13 +3,13 @@
 The explicitly selected guarded host-math route reduces the independent
 160-token, 22-layer token-to-logits forward from **11,197,470,681 to
 11,105,781,721 modeled cycles**, a further **0.8188% reduction**. The candidate
-uses **12.9802% fewer cycles than Nicolás's matched 12,762,360,525-cycle control**
+uses **12.9802% fewer cycles than the reference implementation’s matched 12,762,360,525-cycle control**
 and **30.5222% fewer** than the corrected quality-preserving compiler baseline
 of 15,984,649,026 cycles.
 
 All **5,120,000 compiler logit words** remain byte-identical, SHA-256
 `d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a`.
-The unchanged Nicolás-relative gate passes on the 33 archived full source
+The unchanged reference-relative gate passes on the 33 archived full source
 distributions: mean KL 0.06379562704, worst KL 0.16997975795, and FP32 top-token
 agreement 27/33. The original 5% KL margins and top-token requirement remain
 unchanged. Complete compiler FP32 top-token agreement is 133/160. Full source

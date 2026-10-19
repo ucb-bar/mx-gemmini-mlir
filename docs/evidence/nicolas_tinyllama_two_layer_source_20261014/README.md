@@ -1,6 +1,6 @@
 # Independent TinyLlama source smoke test
 
-Nicolas's pinned `llama_model_m64l2.c` runs two stacked TinyLlama layers on
+the reference implementation’s pinned `llama_model_m64l2.c` runs two stacked TinyLlama layers on
 Spike. This reproduction uses the first 64 token IDs from the model2MLIR
 TinyLlama prefill capture and the 65th ID as the next-token label. The source
 generator reads the same Hugging Face checkpoint and emits FP8 weights,
@@ -23,7 +23,7 @@ with scalar host normalization, RoPE, softmax, SiLU, and residuals. The
 compiler's full TinyLlama session is a 128-token prefill plus 32 decode steps
 through 22 layers, uses mixed FP4/FP8, and lowers selected scalar work to the
 VPU. This run cannot be divided into the compiler's cycle count to claim a
-speedup. Nicolas's `llama_layer_e2e.c` exercises the optimized MX+VPU path for
+speedup. The reference implementation’s `llama_layer_e2e.c` exercises the optimized MX+VPU path for
 one layer; his `llama_model_m64l2.c` exercises stacked depth with host scalar
 work. A matched full MX+VPU source model remains to be measured.
 

@@ -1,4 +1,4 @@
-"""Link a data-free resident-pair object to Nicolas's comparison harness.
+"""Link a data-free resident-pair object to the reference implementation’s comparison harness.
 
 The checked source frontend and packed header build the harness. The linked
 program uses the supplied object as its only MX command issuer, then compares

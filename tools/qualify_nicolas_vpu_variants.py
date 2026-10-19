@@ -1,7 +1,7 @@
-"""Compile Nicolas's VPU broadcast and same-bank cases from model2MLIR.
+"""Compile the reference implementation’s VPU broadcast and same-bank cases from model2MLIR.
 
 This qualifies each source case as an independent Rocket program. The C
-driver retains Nicolas's inputs and BF16 oracle, not accelerator commands.
+driver retains the reference implementation’s inputs and BF16 oracle, not accelerator commands.
 """
 
 from __future__ import annotations

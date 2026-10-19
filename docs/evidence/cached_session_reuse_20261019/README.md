@@ -43,8 +43,8 @@ Complete captured FP32 diagnostics are identical across all three runs: mean KL
 0.07095571052, worst-row KL 0.1858635015, minimum cosine 0.9724467381, and top-token
 agreement 28/33. All per-step metrics are retained. The capture uses fixed tokens;
 these diagnostics do not establish generation quality or a new acceptance
-threshold. There is no independent Nicolás cached-session result for this exact
-capture here. The Nicolás-relative gate for the separate full forward is not
+threshold. There is no independent reference cached-session result for this exact
+capture here. The reference-relative gate for the separate full forward is not
 silently transferred to different session outputs. This session result establishes
 preservation of the compiler control's complete outputs/state and quality.
 

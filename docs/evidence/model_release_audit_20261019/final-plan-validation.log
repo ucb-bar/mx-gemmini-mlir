@@ -1,0 +1,4 @@
+PASS: release identities and complete capture bytes checked; tinyllama-forward 1 planned commands
+PASS: release identities and complete capture bytes checked; tinyllama-cached 4 planned commands
+PASS: release identities and complete capture bytes checked; smolvla 5 planned commands
+PASS: changed policy refused even with a rewritten local checksum manifest

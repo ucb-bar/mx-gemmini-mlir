@@ -1,8 +1,10 @@
-# Nicolas DRAM-mvout accumulator command objects
+<a id="nicolas-dram-mvout-accumulator-command-objects"></a>
+
+# Reference DRAM-mvout accumulator command objects
 
 This archive, generated from compiler commit `ef679cf`, contains data-free
 RV64 Rocket/RoCC issuer objects for the three
-`*DRAMMvout.c` source geometries at Nicolas RTL revision
+`*DRAMMvout.c` source geometries at reference RTL revision
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52`. Each typed BF16 readout
 selects `source_memory = "accumulator"`; the source-bound lowering routes the
 last compute result to address `0x80000000` with flag `0xb8`, then emits
@@ -22,9 +24,9 @@ produced identical bound MLIR, physical program, issuer C, and object hashes
 for all three cases.
 
 **Qualification limit:** These are command-generation results, not numerical
-hardware results. Nicolas's non-`SPIKE_SIM` source writes RoCC commands through
+hardware results. The reference implementation’s non-`SPIKE_SIM` source writes RoCC commands through
 an MMIO gateway and fills the scale SRAM with constant E8M0 byte `0x7f`;
-this Rocket/RoCC compiler path uploads the nonconstant scales from Nicolas's
+this Rocket/RoCC compiler path uploads the nonconstant scales from the reference implementation’s
 source header. The 128×128×256 compiler plan also uses two K waves, where the
 source issues one loop command. The pinned Spike extension cannot execute an
 accumulator output address. The separate [Spike fallback

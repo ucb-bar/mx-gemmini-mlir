@@ -67,7 +67,7 @@ def _run(command: list[str], *, cwd: Path, log: Path,
 
 def replace_source_kernel(source: str, *, variant: str,
                           phased: bool = False) -> str:
-    """Retain Nicolas's data/checker but call one compiler-issued MX object."""
+    """Retain the reference implementation’s data/checker but call one compiler-issued MX object."""
     if variant not in BASELINES:
         raise ValueError("dense attention source variant is unsupported")
     parameters = ", ".join("const void *" + name for name in ATTENTION_BUFFERS)

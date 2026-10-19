@@ -1,8 +1,10 @@
-# Full-checkpoint SmolVLA session on Nicolas's MX Spike
+<a id="full-checkpoint-smolvla-session-on-nicolass-mx-spike"></a>
+
+# Full-checkpoint SmolVLA session on the reference implementation’s MX Spike
 
 The [path-free summary](summary.json) and [raw guest console](spike.log) record
 one prefix encode, ten recurrent flow steps, and one action decode from a
-linked full-checkpoint SmolVLA session. Nicolas's pinned MX Spike extension
+linked full-checkpoint SmolVLA session. The reference implementation’s pinned MX Spike extension
 exited zero, the guest reached `DONE`, and all 45 expected protocol events
 (12 program starts and 33 output/state digests) appeared with zero memref rank
 mismatches. The summary binds the run to the linked session receipt and pinned

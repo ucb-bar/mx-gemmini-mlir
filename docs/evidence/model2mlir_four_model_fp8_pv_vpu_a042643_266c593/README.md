@@ -12,7 +12,7 @@ The compiler pads each K dimension with zero codes to a 32-element E8M0 scale
 group, while preserving the original K in the source contract. Both operands
 use MXFP8 E4M3, with BF16 operand conversion and direct packing. The selected
 `MxE4M3Fp4VpuGemminiRocketConfig` includes the VPU, although these heads use
-only the MX matrix engine. Nicolas's pinned MX Spike model matched every
+only the MX matrix engine. The reference implementation’s pinned MX Spike model matched every
 padded BF16 output against the independent, pinned Radiance `mx_golden.cpp`
 arithmetic reference.
 

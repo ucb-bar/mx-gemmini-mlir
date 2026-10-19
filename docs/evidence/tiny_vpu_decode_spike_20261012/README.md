@@ -1,7 +1,9 @@
-# TinyLlama VPU decode on Nicolas's Spike (2026-10-12)
+<a id="tinyllama-vpu-decode-on-nicolass-spike-2026-10-12"></a>
+
+# TinyLlama VPU decode on the pinned Spike model (2026-10-12)
 
 The full-checkpoint TinyLlama decode stage, compiled from the receipt-bound
-model2MLIR capture, completed as a standalone RV64 program on Nicolas's
+model2MLIR capture, completed as a standalone RV64 program on the reference implementation’s
 pinned MX+VPU Spike extension. It routed 200 source-bound MX contractions,
 emitted guest `DONE`, reported zero memref rank mismatches, and produced
 validated SHA-256 digests for its 32,000 logits, KV cache, and position state.

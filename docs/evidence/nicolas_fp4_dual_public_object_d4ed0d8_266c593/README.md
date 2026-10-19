@@ -1,6 +1,8 @@
-# Nicolas dual-layout FP4 scratchpad requant through the public object compiler
+<a id="nicolas-dual-layout-fp4-scratchpad-requant-through-the-public-object-compiler"></a>
 
-This replay uses Nicolas's pinned `spad_requant_fp4.c` input generator and
+# Reference dual-layout FP4 scratchpad requant through the public object compiler
+
+This replay uses the reference implementation’s pinned `spad_requant_fp4.c` input generator and
 per-element reference checks. The typed MLIR represents one 64×128 BF16 input
 and two `mx_gemmini.spad_requant` operations: flat and operand-A-tiled FP4
 output. `tools.compile_object` selects the physical lowerer and emits a

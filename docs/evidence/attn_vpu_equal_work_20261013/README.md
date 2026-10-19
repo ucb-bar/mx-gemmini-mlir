@@ -1,15 +1,17 @@
-# Equal-work MX+VPU attention on Nicolas's Spike
+<a id="equal-work-mxvpu-attention-on-nicolass-spike"></a>
+
+# Equal-work MX+VPU attention on the pinned Spike model
 
 The [typed source-bound attention graph](../nicolas_attn_vpu_fa_typed_program_a042643_0344bcb/README.md)
 now issues three checked phases: Q/K/V scale setup once, a first pass with
 diagnostic readouts, and a timed second pass with only the output readout.
-This matches the work done by [Nicolas's source](../nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/README.md)
+This matches the work done by [the reference implementation’s source](../nicolas_attn_vpu_fa_source_baseline_a042643_0344bcb/README.md)
 for the 64×256×128 dense attention shape. The captured model2MLIR graph and
 the E4M3 MX+VPU profile remain the inputs to all three typed modules.
 
 | Program | Timed pass, modeled cycles | Whole run, commands | Fences | MX traffic |
 | --- | ---: | ---: | ---: | --- |
-| Nicolas source | 43,641 | 1,079 | 32 | 147,456 load bytes; 7,168 Puts; 2,304 scale bytes |
+| reference source | 43,641 | 1,079 | 32 | 147,456 load bytes; 7,168 Puts; 2,304 scale bytes |
 | Typed compiler | 43,523 | 1,079 | 32 | 147,456 load bytes; 7,168 Puts; 2,304 scale bytes |
 
 The compiler is 118 modeled cycles faster (0.27%) in this paired run. Both
@@ -28,7 +30,7 @@ the source supplies identical operands and checker code to both programs.
 
 To reproduce, use pinned `npu-exploration` `0344bcb`, Gemmini RTL
 `gemmini-mx-cleanup` `266c593` with its checked-out `mxgen` and
-`software/gemmini-rocc-tests` submodules, the RV64 toolchain, Nicolas's
+`software/gemmini-rocc-tests` submodules, the RV64 toolchain, the reference implementation’s
 `libgemmini.so`, and a freshly built `mx-gemmini-opt`:
 
 ```sh

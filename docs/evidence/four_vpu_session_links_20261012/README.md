@@ -20,10 +20,10 @@ The contraction counts are per distinct program graph; recurrent decode and
 flow steps invoke those compiled programs again. Every device stage reports
 zero operations left that match this profile's MX/VPU selectors. The
 [stage coverage archive](../mx_vpu_model_arithmetic_20261011/README.md)
-contains the per-family counts and standalone Nicolas Spike arithmetic tests.
+contains the per-family counts and standalone the pinned Spike model arithmetic tests.
 
 The link receipts have status `linked_experimental_numeric_qualification_pending`.
 A linked ELF establishes compiler and ABI coverage, not a successful inference
-session. New VPU-enabled full-session runs on Nicolas's Spike and an independent
+session. New VPU-enabled full-session runs on the pinned Spike model and an independent
 quantized PyTorch model reference are required before claiming numerical
-correctness or performance parity with Nicolas's handwritten kernels.
+correctness or performance parity with the reference implementation’s handwritten kernels.

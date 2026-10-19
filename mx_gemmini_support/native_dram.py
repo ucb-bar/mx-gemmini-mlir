@@ -1,4 +1,4 @@
-"""Source-bound native DRAM-loop schedule for Nicolas's FP8 MX program."""
+"""Source-bound native DRAM-loop schedule for the reference implementation’s FP8 MX program."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def _check_source(profile: dict, manifest: dict,
 def bind_native_dram(mlir_text: str, profile: dict, manifest: dict,
                      chunks: int = 1, *, scale_mode: str = "preload",
                      k_tiles: int = 1, store_activation: str = "none") -> str:
-    """Select Nicolas's native loop after the typed contraction is source-bound."""
+    """Select the reference implementation’s native loop after the typed contraction is source-bound."""
     from xdsl.dialects.builtin import StringAttr
     from xdsl.printer import Printer
 

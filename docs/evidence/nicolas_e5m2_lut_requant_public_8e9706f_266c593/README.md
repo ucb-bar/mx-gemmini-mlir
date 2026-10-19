@@ -1,7 +1,9 @@
-# Nicolas E5M2 LUT-index requantization through a public MX object
+<a id="nicolas-e5m2-lut-index-requantization-through-a-public-mx-object"></a>
+
+# Reference E5M2 LUT-index requantization through a public MX object
 
 Compiler commit `8e9706fe1c9cc6f16d79700c0a5febe41ac06a7d` captured a
-64×64×64 PyTorch matmul with model2MLIR, bound Nicolas's checked-in
+64×64×64 PyTorch matmul with model2MLIR, bound the reference implementation’s checked-in
 `matmul_tiled_fp8_e5m2_64x64_requant.c` source header, and lowered a typed
 `mx_gemmini.readout_quantized` with `output_format = "fp8_e5m2"` and
 `output_projection = "lut"`. The generated data-free public RV64 object was

@@ -1,7 +1,9 @@
-# Nicolas E2M3 LUT-index requantization through a public MX object
+<a id="nicolas-e2m3-lut-index-requantization-through-a-public-mx-object"></a>
+
+# Reference E2M3 LUT-index requantization through a public MX object
 
 Compiler commit `9df3a5ebe1560a5b1e5913980de53bcc98535e39` captured a
-64×64×64 PyTorch matmul with model2MLIR, bound Nicolas's checked-in
+64×64×64 PyTorch matmul with model2MLIR, bound the reference implementation’s checked-in
 `matmul_tiled_fp6_e2m3_lut_64x64_requant.c` source header, and lowered a
 typed `mx_gemmini.readout_quantized` with `output_format = "fp6_e2m3"` and
 `output_projection = "lut"`. Physical commands set the FP6 output format and

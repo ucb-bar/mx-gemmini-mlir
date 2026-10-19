@@ -1,4 +1,4 @@
-"""Capture Nicolas's 64- or 128-cubed FP6 chain with pinned model2MLIR."""
+"""Capture the reference implementation’s 64- or 128-cubed FP6 chain with pinned model2MLIR."""
 
 from __future__ import annotations
 

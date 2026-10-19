@@ -1,4 +1,4 @@
-"""Compile Nicolas DRAMMvout source geometries to unqualified accumulator objects.
+"""Compile reference DRAMMvout source geometries to unqualified accumulator objects.
 
 This command reuses the archived pinned model2MLIR handoff and source payload.
 It checks the source C hash and audits the generated accumulator command fields.

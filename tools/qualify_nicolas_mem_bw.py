@@ -1,4 +1,4 @@
-"""Replay Nicolas's MX memory benchmark with compiler-issued DMA phases.
+"""Replay the reference implementation’s MX memory benchmark with compiler-issued DMA phases.
 
 The host driver keeps the source's counters, reporting, and spot check. Its
 Gemmini issue sites are replaced by functions emitted from the physical MX

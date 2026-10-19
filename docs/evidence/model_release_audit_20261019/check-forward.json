@@ -1,0 +1,10 @@
+{
+  "complete_f32_words_compared": 5120000,
+  "console_sha256": "9f0b6fd2004ee4307b3d6b93c4194a16e8b97f78ee2cc164e217558ff03fb7af",
+  "cycles": 10326818367,
+  "model": "tinyllama-forward",
+  "published_cycles": 10326818367,
+  "schema": "mx_gemmini.reproduced_model_outputs.v1",
+  "scope": "complete outputs preserve the published numerical result; timing ratio requires separately matched tool and runtime identities",
+  "status": "complete_output_parity"
+}

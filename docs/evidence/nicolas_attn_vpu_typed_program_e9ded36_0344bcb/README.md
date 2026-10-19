@@ -1,6 +1,6 @@
 # Typed MX+VPU dense attention on Spike
 
-This archive qualifies Nicolas's pinned `attn_vpu.c` 32×64×64 kernel from
+This archive qualifies the reference implementation’s pinned `attn_vpu.c` 32×64×64 kernel from
 `npu-exploration` `0344bcb`. The current model2MLIR attention capture and
 checked VPU/requant precursor are archived in the linked
 [source baseline](../nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/README.md)
@@ -30,7 +30,7 @@ inference.
 
 To replay from the repository root, set `NPU_ROOT` to pinned
 `npu-exploration` `0344bcb`, `RTL_ROOT` to `gemmini-mx-cleanup` `266c593`,
-`RISCV_ROOT` to the RV64 toolchain, `SPIKE_EXTENSION` to Nicolas's MX Spike
+`RISCV_ROOT` to the RV64 toolchain, `SPIKE_EXTENSION` to the reference implementation’s MX Spike
 extension, `MX_OPT` to the built `mx-gemmini-opt`, and `OUT_DIR` to a fresh
 directory:
 

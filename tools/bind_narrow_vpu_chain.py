@@ -1,4 +1,4 @@
-"""Bind a captured PyTorch pair to Nicolas's checked MX/VPU 32-column slice."""
+"""Bind a captured PyTorch pair to the reference implementation’s checked MX/VPU 32-column slice."""
 
 from __future__ import annotations
 

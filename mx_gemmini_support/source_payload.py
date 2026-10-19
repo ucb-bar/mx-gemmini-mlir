@@ -285,7 +285,7 @@ def replace_source_golden_with_mesh_reference(directory: Path, target: bytes,
 
 def replace_source_quantized_with_mesh_reference(directory: Path, target: bytes,
                                                  policy: dict) -> dict:
-    """Derive target-mesh BF16 and Radiance/Nicolas quant oracles together."""
+    """Derive target-mesh BF16 and Radiance/reference quant oracles together."""
     manifest, resources = load_bundle(directory)
     m, n, _ = manifest["shape_mnk"]
     precision = manifest["precision"]

@@ -1,6 +1,6 @@
-"""Compile typed flat+tiled FP4 SPAD_REQUANT and compare Nicolas's source oracle.
+"""Compile typed flat+tiled FP4 SPAD_REQUANT and compare the reference implementation’s source oracle.
 
-The diagnostic driver retains Nicolas's input generator and every reference
+The diagnostic driver retains the reference implementation’s input generator and every reference
 comparison. Only its accelerator issue sites are replaced by a call into the
 data-free object emitted from the typed MLIR program.
 """

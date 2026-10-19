@@ -1,6 +1,8 @@
-# Nicolas MX program-level regeneration audit
+<a id="nicolas-mx-program-level-regeneration-audit"></a>
 
-The [index](index.json) classifies every program in Nicolas's pinned
+# Reference MX program-level regeneration audit
+
+The [index](index.json) classifies every program in the reference implementation’s pinned
 171-entry MX Makefile roster at RTL revision
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52`. The report validates the
 archived source binding, generated object or executable evidence, Spike outcome,

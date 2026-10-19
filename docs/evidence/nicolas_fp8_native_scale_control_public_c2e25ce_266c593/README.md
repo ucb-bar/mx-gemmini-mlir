@@ -1,8 +1,10 @@
-# Nicolas FP8 native-loop scale controls
+<a id="nicolas-fp8-native-loop-scale-controls"></a>
+
+# Reference FP8 native-loop scale controls
 
 The pinned `matmul_tiled_fp8_128x128_dramloop_nc_2d.c` and
 `matmul_tiled_fp8_128x128_dramloop_nc_wait.c` are two N-chunk variants of
-Nicolas's 128³ FP8 native DRAM-loop source. Both use two-dimensional scale
+the reference implementation’s 128³ FP8 native DRAM-loop source. Both use two-dimensional scale
 uploads. The latter omits the scale-upload fence and sets the hardware wait bit
 in `CONFIG_SCALE_MEM` (`rs2[16]`).
 

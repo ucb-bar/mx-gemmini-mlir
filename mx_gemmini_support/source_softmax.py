@@ -1,6 +1,6 @@
-"""Bind Nicolas's BF16 VPU softmax to a model2MLIR softmax capture.
+"""Bind the reference implementation’s BF16 VPU softmax to a model2MLIR softmax capture.
 
-The frontend proves the selected tensor operation and shape. Nicolas's source
+The frontend proves the selected tensor operation and shape. the reference implementation’s source
 defines the BF16 scratchpad schedule and the bit-exact VPU oracle. These are
 separate facts: model2MLIR uses f32 intermediates, while the VPU rounds after
 each BF16 operation.
@@ -184,7 +184,7 @@ def lower_softmax_program_from_ir(mlir: str, profile: dict, *,
 
 
 def lower_softmax_program(mlir: str, source: str, profile: dict) -> tuple:
-    """Check Nicolas's source schedule, then lower the typed VPU graph."""
+    """Check the reference implementation’s source schedule, then lower the typed VPU graph."""
     audit_source(source)
     if any(source.count(line) != 1 for line in (
             "gemmini_flush(0);", "gemmini_config_ld(DIM);",
@@ -195,7 +195,7 @@ def lower_softmax_program(mlir: str, source: str, profile: dict) -> tuple:
 
 
 def replace_source_program(source: str) -> str:
-    """Retain Nicolas's data generation and oracle, replacing all MX commands."""
+    """Retain the reference implementation’s data generation and oracle, replacing all MX commands."""
     audit_source(source)
     original = "\n".join((
         "  gemmini_flush(0);",

@@ -1,10 +1,10 @@
 # TinyLlama token-to-logits source control
 
 This archive compares one 160-token causal forward through all 22 TinyLlama
-decoder layers and the LM head. One program is Nicolas's independent MX+VPU
+decoder layers and the LM head. One program is the reference implementation’s independent MX+VPU
 source schedule; the other is the model2MLIR → Merlin → MX+VPU compiler output.
 Both receive the same 160 token IDs, the same 200 FP32 checkpoint tensors,
-and all-FP8 matrix precision on the same Nicolas Spike extension. The
+and all-FP8 matrix precision on the same the pinned Spike model extension. The
 [earlier input archive](../nicolas_tinyllama_onepass160_same_input_20261014/README.md)
 records the capture, revisions, and pinned target profile.
 
@@ -14,13 +14,13 @@ table and gathers those IDs **inside** the original source stage timer. All
 327,680 selected BF16 embedding values equal the previous source input. The
 source generator's payload and header must match the earlier archive byte for
 byte. This gives both programs a token-ID-to-logits logical timing boundary.
-The matrix and host schedule remains Nicolas's patched `llama_model.c` from
+The matrix and host schedule remains the reference implementation’s patched `llama_model.c` from
 that archive; the new source edits are the token lookup and an untimed
 full-output argmax print.
 The source and compiler still use different host/VPU arithmetic and command
 schedules, so their output quality must accompany their raw cycle counts.
 
-| One 160-token forward | Nicolas source | Compiler |
+| One 160-token forward | reference source | Compiler |
 | --- | ---: | ---: |
 | Spike modeled cycles, token IDs to logits | 12,762,360,525 | 15,170,996,572 |
 | Top tokens matching captured FP32 | 131/160 | 103/160 |
@@ -59,7 +59,7 @@ Regenerate the source payload and 160-token capture as described in the
 [earlier input archive](../nicolas_tinyllama_onepass160_same_input_20261014/README.md).
 Apply the same three source patches from that archive before preparing this
 control. Set `SOURCE_DIR` to the patched C file and generated header/blob,
-`ACT_DIR` to the matched Nicolas activation capture, and `BUNDLE` to the
+`ACT_DIR` to the matched reference activation capture, and `BUNDLE` to the
 model2MLIR compiler capture. Run the following from the repository root:
 
 ```sh

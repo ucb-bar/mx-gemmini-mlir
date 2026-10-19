@@ -10,7 +10,7 @@ first vision encoder attention layer.
 Each head uses MXFP8 E4M3 for both operands, E8M0 scales per 32 K elements,
 BF16 operand conversion, and the pinned `MxE4M3Fp4VpuGemminiRocketConfig`.
 The generated RV64 object issues MX commands; the VPU is present in this
-configuration but is unused by these heads. Nicolas's pinned MX Spike model
+configuration but is unused by these heads. The reference implementation’s pinned MX Spike model
 matched all 512 BF16 values in each padded output against the independent,
 pinned Radiance `mx_golden.cpp` arithmetic reference.
 

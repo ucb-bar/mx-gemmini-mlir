@@ -1,7 +1,7 @@
 """Bind a current portable model2MLIR two-matmul graph to MX source bytes.
 
 The f32 graph establishes operation order and tensor shapes. A separate
-checked Nicolas source/header pair supplies quantized operands and goldens.
+checked reference source/header pair supplies quantized operands and goldens.
 No quantized values are inferred from PyTorch example inputs.
 """
 

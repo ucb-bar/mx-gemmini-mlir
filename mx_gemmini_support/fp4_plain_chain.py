@@ -1,4 +1,4 @@
-"""Bind Nicolas's packed FP4 square chains to connected resident pairs."""
+"""Bind the reference implementation’s packed FP4 square chains to connected resident pairs."""
 
 from __future__ import annotations
 

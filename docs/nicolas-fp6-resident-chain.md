@@ -1,6 +1,8 @@
-# Nicolas FP6 resident chain on Spike
+<a id="nicolas-fp6-resident-chain-on-spike"></a>
 
-Nicolas's `gemmini-mx-cleanup` source runs two E3M2 64³ or 128³ matrix
+# Reference FP6 resident chain on Spike
+
+the reference implementation’s `gemmini-mx-cleanup` source runs two E3M2 64³ or 128³ matrix
 contractions under `MxGemminiRocketConfig`. Each 4-bit matrix nibble indexes a
 per-group 16-entry FP6 LUT. MM1 writes packed C1 indices and E8M0 scales to
 scratchpad; MM2 reuses both without a DRAM reload. MM2 loads B2 and its scales,
@@ -10,7 +12,7 @@ The path starts with two PyTorch `matmul` sites captured by pinned model2MLIR
 (`e9ded36`). This establishes the graph shape and site IDs. The frontend's
 reviewed FP6 codebook selects the sites; its random PyTorch tensors and
 codebook are not used as hardware data. The exact A/B/B2 packed bytes, all five
-complete LUT banks, E8M0 scales, and C1/C2 goldens come from Nicolas's checked
+complete LUT banks, E8M0 scales, and C1/C2 goldens come from the reference implementation’s checked
 C header. The source and header hashes bind the typed MLIR module, and the
 runtime input digest covers all eleven input buffers.
 
@@ -25,7 +27,7 @@ explicit fifteen-buffer ABI.
 
 `qualify_nicolas_fp6_resident_chain.py` compiles the unmodified source and a
 diagnostic driver that replaces only the accelerator issue sites. The source's
-C1/C2 nibble and scale comparisons remain. Both ELFs pass on Nicolas's stock
+C1/C2 nibble and scale comparisons remain. Both ELFs pass on the reference implementation’s stock
 `libgemmini` Spike extension at 64³ and 128³. Each size checks 4,096 or 16,384
 FP6 codes and 128 or 512 scale bytes at **each** of C1 and C2. This qualifies
 the named plain MX Spike profile; the MX+VPU configurations have separate

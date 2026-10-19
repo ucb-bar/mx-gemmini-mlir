@@ -1,4 +1,4 @@
-"""Capture Nicolas's VPU→SPAD_REQUANT seam as profile-bound typed MLIR.
+"""Capture the reference implementation’s VPU→SPAD_REQUANT seam as profile-bound typed MLIR.
 
 This is a source audit of the checked-in target reference. It starts from the
 reference BF16 tile, so it does not claim to compile the preceding matmul or
@@ -34,7 +34,7 @@ def capture_nicolas_vpu_requant(source_path: Path, header_path: Path,
                                 profile: dict, *, include_resident_matmul: bool = False,
                                 first_source_path: Path | None = None
                                 ) -> tuple[str, dict[str, bytes], dict]:
-    """Audit Nicolas's chain and check its source-derived output goldens."""
+    """Audit the reference implementation’s chain and check its source-derived output goldens."""
     source_bytes, header_bytes = source_path.read_bytes(), header_path.read_bytes()
     source, header = source_bytes.decode("ascii"), header_bytes.decode("ascii")
     if (source_path.name != "chain_vpu_spad_requant.c" or

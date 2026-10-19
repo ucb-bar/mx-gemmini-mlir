@@ -1,4 +1,6 @@
-# Nicolas FP8 native K-tiled DRAM loop
+<a id="nicolas-fp8-native-k-tiled-dram-loop"></a>
+
+# Reference FP8 native K-tiled DRAM loop
 
 The pinned `matmul_tiled_fp8_128x128_dramloop_kt.c` runs two N-axis chunks,
 each with two K tiles of 64. Its first K loop accumulates without storing C;
@@ -7,7 +9,7 @@ provides its own A/B scale slice through LoopMatmul's scale-pointer commands.
 
 A fresh PyTorch → model2MLIR capture, source-bound typed MX MLIR module, and
 public data-free RV64 object pass **all 16,384 BF16 output comparisons** on
-Nicolas's pinned Spike. The original source executable passes independently.
+the reference implementation’s pinned Spike. The original source executable passes independently.
 The [command audit](native_dram_equivalence.json) checks four loop launches,
 their K-sliced scale and operand pointers, two accumulation flags, the two C
 stores, and alternating B scratchpad IDs. This establishes numerical and

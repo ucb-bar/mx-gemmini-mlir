@@ -1,14 +1,16 @@
-# Radiance host requantization objects on Nicolas's Spike
+<a id="radiance-host-requantization-objects-on-nicolass-spike"></a>
+
+# Radiance host requantization objects on the pinned Spike model
 
 The eight `gemm_mxgemmini/*.requant.cpp` cases in the Radiance `80f84ca`
-source roster were captured with model2MLIR `e9ded36`, bound to Nicolas's
+source roster were captured with model2MLIR `e9ded36`, bound to the reference implementation’s
 MX RTL profiles at `266c593`, and compiled from typed MX MLIR into data-free
 RV64 RoCC objects at compiler revision `ddffa18`. The native MX verifier
 accepted all eight bound graphs. Each object takes runtime input, BF16,
 quantized-output, and scale pointers. The FP6 objects also take the complete
 output LUT through the pointer ABI.
 
-Nicolas's pinned Spike model matched **90,112 quantized code bytes** and
+The reference implementation’s pinned Spike model matched **90,112 quantized code bytes** and
 **3,328 E8M0 scales** against the source goldens. The result repeated from a
 fresh checkout of the published `handwritten-implementation` branch: the
 two [`index.json`](index.json) files and every archived per-case object,

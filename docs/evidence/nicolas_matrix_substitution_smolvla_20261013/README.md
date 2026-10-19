@@ -3,18 +3,18 @@
 The comparison uses the captured SmolVLA flow stage, its checkpoint-backed
 weights, the same host program, and the same compiled VPU kernels. The only
 replacement is each MX matrix issuer: the alternate object calls the native
-loops in Nicolas's `baremetal/mxgemmini/include/mx_native.h` at
+loops in the reference implementation’s `baremetal/mxgemmini/include/mx_native.h` at
 `npu-exploration` commit `0344bcba70b899039ccd0ac0801ca5605d46d3eb`.
 The source header's SHA-256 is
 `98bc0384dbf1917af9427dd30a51770063e56152933259d5fb32e5e04a5505e8`.
 
-Both runs use Nicolas's MX+VPU Spike extension, `GEMMINI_MODE=both`, the
+Both runs use the reference implementation’s MX+VPU Spike extension, `GEMMINI_MODE=both`, the
 `e4m3_vpu` timing preset, and `mem.host_tracking=0`. The replacement uses
 128-row native source tiles. These are modeled Spike cycles, including host
-execution. They are not the standalone RTL mesh cycles in Nicolas's
+execution. They are not the standalone RTL mesh cycles in the reference implementation’s
 `README_PERFORMANCE.md`.
 
-| One flow step | Compiler issuer | Nicolas native issuer |
+| One flow step | Compiler issuer | reference native issuer |
 | --- | ---: | ---: |
 | Modeled cycles | 2,112,653,481 | 2,112,919,925 |
 | MX commands | 555,735 | 555,139 |
@@ -49,7 +49,7 @@ runs and matching output digests. The
 enforces those checks before reporting a ratio.
 
 This experiment isolates matrix issuance. It does not replace the host graph
-with Nicolas's resident QKV, attention, or MLP chains. His existing full
+with the reference implementation’s resident QKV, attention, or MLP chains. His existing full
 TinyLlama layer computes RMSNorm, RoPE, softmax, SwiGLU, and residuals on the
 host. The separate VPU attention kernels use other fixed shapes and data
 layouts. A whole-model handwritten MX+VPU comparison needs those chains

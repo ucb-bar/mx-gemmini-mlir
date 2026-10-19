@@ -1,7 +1,7 @@
 # Live f32 MX projection qualification
 
 Two small-LLaMA FP4 MLP sites captured through model2MLIR were replayed on
-Nicolas's `gemmini-mx-cleanup` Spike extension at RTL revision `266c593`.
+the reference implementation’s `gemmini-mx-cleanup` Spike extension at RTL revision `266c593`.
 The RV64 image reads the archived **f32 source operands**, pads them to legal
 MX geometry, quantizes them at runtime with `runtime_quant.c`, calls the
 data-free compiler-generated MX issuer, and widens the BF16 readout to f32.

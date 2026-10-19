@@ -1,14 +1,16 @@
-# All pinned Nicolas asymmetric sources through public MX objects
+<a id="all-pinned-nicolas-asymmetric-sources-through-public-mx-objects"></a>
+
+# All pinned reference asymmetric sources through public MX objects
 
 Compiler commit `e6923e8a774748f55ea3d065f6d3832d6618022d` replayed every
-`matmul_tiled_asym_*` program in Nicolas's pinned MX Makefile roster:
+`matmul_tiled_asym_*` program in the reference implementation’s pinned MX Makefile roster:
 **74 of 74 named C programs** and **360,960 BF16 output comparisons** passed
 on pinned Spike. The six groups cover DIM8, DIM16, and DIM32 64×64 sources,
 the 16×32 single-tile source, and five larger 128×128 sources. The
 `index.json` checks exact source hashes against `source_inventory_baseline.json`.
 
 Each case captures a PyTorch matmul with pinned model2MLIR, binds the packed
-operand, scale, and LUT arrays from Nicolas's source header, lowers typed MLIR
+operand, scale, and LUT arrays from the reference implementation’s source header, lowers typed MLIR
 to physical MX commands, emits a **data-free RV64 RoCC object** through
 `tools.compile_object`, links it into a generated checker, and compares every
 BF16 output with the checked-in source golden. The public issuer C and physical

@@ -1,7 +1,9 @@
-# Nicolas MX scale-memory selector RTL probe
+<a id="nicolas-mx-scale-memory-selector-rtl-probe"></a>
+
+# Reference MX scale-memory selector RTL probe
 
 The [qualifier](../../../tools/qualify_nicolas_scale_mem_rtl.py) copies
-`ScaleFactorMem.scala` byte-for-byte from Nicolas's `gemmini-mx-cleanup`
+`ScaleFactorMem.scala` byte-for-byte from the reference implementation’s `gemmini-mx-cleanup`
 revision `266c593` into an isolated Chisel 6.6 test project. It pins the
 original module, its interface source, the MxGen Mill launcher, and the two
 test inputs by SHA-256. Minimal bundle declarations replace Chipyard-only

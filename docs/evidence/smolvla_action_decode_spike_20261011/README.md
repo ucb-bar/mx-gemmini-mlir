@@ -3,7 +3,7 @@
 The full-checkpoint model2MLIR `action_decode` stage contains no direct MX
 contraction. The selected MX+VPU stage runner therefore compiled it through
 Merlin's RV64 host path, recorded zero MX selections, and ran the resulting
-ELF on Nicolas's pinned Spike. The [raw console](spike.log) contains all 1,600
+ELF on the reference implementation’s pinned Spike. The [raw console](spike.log) contains all 1,600
 f32 output values, their typed and indexed digests, `DONE`, and zero memref
 rank mismatches. Its complete output matches the capture's saved PyTorch
 `golden.npy` bit for bit.

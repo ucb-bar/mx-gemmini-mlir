@@ -1,4 +1,6 @@
-# Nicolas FP8 native DRAM column chunks
+<a id="nicolas-fp8-native-dram-column-chunks"></a>
+
+# Reference FP8 native DRAM column chunks
 
 The pinned `matmul_tiled_fp8_128x128_dramloop_nc.c` and `...nc4.c` programs
 split a 128×128×128 FP8 matrix multiplication into two and four N-axis loop
@@ -8,7 +10,7 @@ captures `torch.matmul` through model2MLIR, binds the exact source arrays to
 typed MX MLIR, and emits data-free RV64 objects with those loop schedules.
 
 For **each** source program, the original executable and generated object
-independently pass **all 16,384 BF16 output comparisons** on Nicolas's pinned
+independently pass **all 16,384 BF16 output comparisons** on the reference implementation’s pinned
 Spike. The [two-column audit](nc2/native_dram_equivalence.json) and
 [four-column audit](nc4/native_dram_equivalence.json) check loop bounds,
 runtime pointer offsets, B bank IDs, repeated A scales, B scale slices, and

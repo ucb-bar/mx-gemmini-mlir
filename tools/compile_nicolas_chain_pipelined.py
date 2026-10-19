@@ -1,7 +1,7 @@
 """Compile the captured two-tile MX+VPU chain to a linkable RoCC object.
 
 With --run-spike, link source-bound runtime buffers into a standalone program
-and compare both tiles' complete codes and scales on Nicolas's pinned model.
+and compare both tiles' complete codes and scales on the reference implementation’s pinned model.
 """
 
 from __future__ import annotations

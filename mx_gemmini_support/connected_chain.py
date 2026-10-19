@@ -1,4 +1,4 @@
-"""One SSA-connected MLIR chain for Nicolas's qualified MM1/VPU/MM2 mode.
+"""One SSA-connected MLIR chain for the reference implementation’s qualified MM1/VPU/MM2 mode.
 
 The source audit supplies the packed operands and goldens. The model2MLIR
 two-site capture supplies the contraction sites. This module combines their

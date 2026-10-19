@@ -1,0 +1,10 @@
+{
+  "complete_f32_words_compared": 17600,
+  "console_sha256": "10227d4ce68cafa2a9c3c8455f9fcfc27ea2b68630d821c51c1ccd61ec2c874f",
+  "cycles": 73577503143,
+  "model": "smolvla",
+  "published_cycles": 73577503143,
+  "schema": "mx_gemmini.reproduced_model_outputs.v1",
+  "scope": "complete outputs preserve the published numerical result; timing ratio requires separately matched tool and runtime identities",
+  "status": "complete_output_parity"
+}

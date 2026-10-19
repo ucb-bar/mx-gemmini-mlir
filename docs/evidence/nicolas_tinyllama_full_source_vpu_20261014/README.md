@@ -1,6 +1,6 @@
 # Independent TinyLlama source with VPU residual additions
 
-This control adapts Nicolas's pinned `llama_model.c` by copying the VPU
+This control adapts the reference implementation’s pinned `llama_model.c` by copying the VPU
 residual-add command pattern from his `llama_layer_e2e.c`. The rest of the
 source model keeps its own MX mesh and scalar-host schedule. The
 [`vpu_residual.patch`](vpu_residual.patch) also adds an isolated full-stage
@@ -11,7 +11,7 @@ the source program; it does not substitute one MX issuer into a Merlin ELF.
 
 The [full-depth receipt](full_receipt.json) records one **64-token prefill**
 through all 22 pretrained TinyLlama decoder layers, final norm, and head.
-Nicolas's source and the model2MLIR/Merlin compiler capture use the same 64
+The reference implementation’s source and the model2MLIR/Merlin compiler capture use the same 64
 token IDs and all **200 elementwise-identical FP32 checkpoint tensors**. The
 regenerated source blob is byte-identical to the earlier independent source
 control. The timed source computes each layer's activations from its preceding
@@ -27,7 +27,7 @@ scalar-host source run.
 
 Source-versus-compiler final-logit cosine is **0.9816**. The compiler uses
 FP8 for all 200 MX contractions and routes 88 add regions to the VPU. The
-source uses Nicolas's FP8 MX schedule and VPU residual-add pattern in 44
+source uses the reference implementation’s FP8 MX schedule and VPU residual-add pattern in 44
 calls, while its normalization, RoPE, softmax, SiLU, and other host stages
 remain handwritten. The compiler and source timers cover the same model
 prefill but include different setup and host/VPU operations. The compiler's
@@ -70,7 +70,7 @@ both predict token **5056**, and the source has **0.9968 cosine** to the
 captured PyTorch row. These figures are scoped to two layers and one input;
 the receipt intentionally does not declare a full-model speedup ratio.
 These two runs used the extension's default `func` mode, which does not
-activate Nicolas's `e4m3_vpu` timing model. The reproduction script uses
+activate the reference implementation’s `e4m3_vpu` timing model. The reproduction script uses
 `GEMMINI_MODE=both` for the full-depth performance run.
 The source generator's own `grade logits vs torch` line refers to its
 full-depth PyTorch capture; the cosine above uses the separate two-layer

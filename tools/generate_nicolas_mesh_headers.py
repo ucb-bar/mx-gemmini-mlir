@@ -1,6 +1,6 @@
 """Regenerate or create the 15 missing-source MX modes for DIM8 or DIM32.
 
-The pinned Nicolas generator supplies all operand codes, scales, LUTs, and
+The pinned reference generator supplies all operand codes, scales, LUTs, and
 BF16 goldens. Existing headers must reproduce byte for byte. New pair entries
 only select the generator's existing math; they add no replacement kernel.
 Run in an isolated gemmini-mx-cleanup checkout.

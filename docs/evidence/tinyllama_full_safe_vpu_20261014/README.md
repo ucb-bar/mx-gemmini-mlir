@@ -6,7 +6,7 @@ and MX compiler selected 200 MX contractions. The target bound every selected
 contraction to FP8, prepacked checkpoint weights, and offloaded residual add,
 unary, and reduction regions to the VPU. Softmax and other elementwise work
 remained on the compiled host. Spike finished the stage in **4,473,524,179
-functional-mode cycles**. Nicolas's `e4m3_vpu` timing model was not active.
+functional-mode cycles**. The reference implementation’s `e4m3_vpu` timing model was not active.
 This run does not include autoregressive decoding.
 
 The final 32,000 logits have cosine **0.9594** to the captured PyTorch FP32
@@ -16,7 +16,7 @@ predict token **1230** for this one diagnostic input. This improves upon the
 earlier compiler control that offloaded attention softmax and elementwise
 adds; it does not establish language-model accuracy across inputs.
 The [5% numerical gate](quality_gate.json) also fails for this one row:
-Nicolas's source has KL **0.07090** nats to the FP32 logits, while the
+the reference implementation’s source has KL **0.07090** nats to the FP32 logits, while the
 compiler has KL **0.15506**. The allowed compiler KL is **0.07444**.
 Matching the top token does not close this error gap. This control predates
 the per-site execution policy; it is a full-depth diagnostic, not a

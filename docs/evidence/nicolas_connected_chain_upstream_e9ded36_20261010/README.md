@@ -1,9 +1,9 @@
 # Current model2MLIR connected MX/VPU chain
 
-This run recaptured Nicolas's 64³ two-matmul graph with upstream model2MLIR
+This run recaptured the reference implementation’s 64³ two-matmul graph with upstream model2MLIR
 `e9ded36` and MXQuant `b4af543`, then compiled one ordered program for
-MM1 → VPU ×2 → resident requant → MM2 against Nicolas RTL and Spike
-`266c593`. The source bound operands and expected outputs remain Nicolas's
+MM1 → VPU ×2 → resident requant → MM2 against reference RTL and Spike
+`266c593`. The source bound operands and expected outputs remain the reference implementation’s
 checked-in chain header. The capture has two quantized MX sites and no opaque
 calls. The Spike program matched 4,096 C1 BF16 values, 8,192 C1/C2 FP8 codes,
 and 256 C1/C2 E8M0 scales.

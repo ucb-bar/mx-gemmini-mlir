@@ -1,7 +1,7 @@
 # Full TinyLlama logit diagnostic
 
 This archive contains one captured 128-token prefill and 32 decode
-steps on Nicolas's `e4m3_vpu` Spike model. The compiler runs with 155 FP4
+steps on the reference implementation’s `e4m3_vpu` Spike model. The compiler runs with 155 FP4
 and 45 FP8 MX bindings per stage. The output-tap link uses the same compiled
 stage objects and checkpoint weight blob as the completed 33-step compiler
 timing run. It dumps output 0 after each timed step, so all 33 logits can be
@@ -12,7 +12,7 @@ earlier compiler timing run. Both runs record 132 expected and observed
 session events. The tapped program uses the same stage objects and weight
 blob as that run. Its raw modeled count is 83,547,479,772 cycles; the
 previous untapped compiler count is 83,547,564,353 cycles. These counts
-are not an independent Nicolas-source model comparison.
+are not an independent reference-source model comparison.
 
 | Compared with captured unquantized FP32 | Logit cosine | Normalized RMSE | Top-token agreement |
 | --- | ---: | ---: | ---: |

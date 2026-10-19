@@ -1,6 +1,8 @@
-# Nicolas FP6 128³ with repeated LUT codes
+<a id="nicolas-fp6-128³-with-repeated-lut-codes"></a>
 
-Nicolas's pinned `matmul_tiled_fp6_128x128.c` uses 64 spatial LUT lines per
+# Reference FP6 128³ with repeated LUT codes
+
+the reference implementation’s pinned `matmul_tiled_fp6_128x128.c` uses 64 spatial LUT lines per
 operand, with repeated E3M2 codes in every A and B line. Some source nibble
 indices therefore differ from the canonical lowest-index encoding while
 decoding to the same code. The compiler binds the **original** packed source
@@ -14,7 +16,7 @@ source line zero. That witness is **not** the execution LUT. The source payload
 manifest binds the actual checked-in arrays and LUT banks to typed MX MLIR.
 
 The original C source and the generated public data-free RV64 object pass
-independently on Nicolas's pinned Spike. The compiled program matches all
+independently on the reference implementation’s pinned Spike. The compiled program matches all
 **16,384 BF16 source-golden outputs** under the `MxE3M2OnlyGemminiRocketConfig`
 profile. This qualifies the numerical serial schedule, not alternating-buffer
 timing or FPGA performance.

@@ -1,4 +1,4 @@
-"""Replay Nicolas's three same-format LUT matrices through public RV64 objects."""
+"""Replay the reference implementation’s three same-format LUT matrices through public RV64 objects."""
 
 from __future__ import annotations
 

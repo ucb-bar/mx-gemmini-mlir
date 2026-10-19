@@ -8,9 +8,9 @@ on the pinned simulator and preserve all 5,120,000 F32 logit words exactly.
 |---|---:|
 | Ordinary repeated-RHS packing reuse | 10,433,218,556 |
 | Compact source RHS plus packing reuse | 10,326,818,367 |
-| Independent Nicolás source, same logical boundary | 12,762,360,525 |
+| Independent reference source, same logical boundary | 12,762,360,525 |
 
-The candidate is **19.0838% below Nicolás's cycle count**, and 35.3954% below
+The candidate is **19.0838% below the reference implementation’s cycle count**, and 35.3954% below
 the corrected compiler's 15,984,649,026 cycles. The inaccurate older compiler
 archive is not the control. The unchanged source-relative gate passes on 33
 retained full source distributions: mean KL 0.0637956270, worst-row KL

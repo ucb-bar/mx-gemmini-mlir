@@ -1,4 +1,4 @@
-"""Compile the source-audited Nicolas VPU→requant seam and run pinned Spike."""
+"""Compile the source-audited reference VPU→requant seam and run pinned Spike."""
 
 from __future__ import annotations
 

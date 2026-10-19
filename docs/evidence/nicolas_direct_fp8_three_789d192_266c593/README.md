@@ -1,4 +1,6 @@
-# Three additional Nicolas FP8 source programs
+<a id="three-additional-nicolas-fp8-source-programs"></a>
+
+# Three additional reference FP8 source programs
 
 Compiler commit `789d192aadc3ad6efb65ad4c15bf310000fb47ed` compiled these
 three pinned C source programs through fresh PyTorch/model2MLIR capture,

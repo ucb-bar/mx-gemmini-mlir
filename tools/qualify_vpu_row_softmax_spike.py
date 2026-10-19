@@ -1,4 +1,4 @@
-"""Qualify a model-shaped generated MX VPU row softmax on Nicolas's Spike."""
+"""Qualify a model-shaped generated MX VPU row softmax on the reference implementation’s Spike."""
 
 from __future__ import annotations
 

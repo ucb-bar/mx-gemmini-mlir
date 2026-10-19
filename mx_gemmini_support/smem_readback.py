@@ -1,4 +1,4 @@
-"""Source-bound zero-base scratchpad readout for Nicolas's Spike test paths."""
+"""Source-bound zero-base scratchpad readout for the reference implementation’s Spike test paths."""
 
 from __future__ import annotations
 

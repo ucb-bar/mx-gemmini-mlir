@@ -1,9 +1,11 @@
-# Nicolas FP8 128³ from typed MLIR to a public MX object
+<a id="nicolas-fp8-128³-from-typed-mlir-to-a-public-mx-object"></a>
+
+# Reference FP8 128³ from typed MLIR to a public MX object
 
 Commit `7d7a660b8bfe6911904ae9585f47974bc83d814f` captured a
 `torch.matmul` at shape 128×128×128 with model2MLIR
 `e9ded36eb85abf2d9097ac4dc11457c825853388`. It bound the packed FP8
-operands, E8M0 scales, and BF16 reference from Nicolas's checked-in
+operands, E8M0 scales, and BF16 reference from the reference implementation’s checked-in
 `matmul_tiled_fp8_128x128.c` and `matmul_fp8_128x128.h`, then used
 `tools.compile_object` to emit a linkable RV64 RoCC object. The data-free object
 was linked with a driver that only passes the source arrays, fences, and
@@ -12,7 +14,7 @@ reported **zero mismatches**.
 
 This demonstrates numerical regeneration of this one source test's matrix
 operation. It does not compile the C program's performance instrumentation,
-warm-cache experiment, or all 171 Nicolas MX programs. The artifact uses the
+warm-cache experiment, or all 171 reference MX programs. The artifact uses the
 MX-only `MxGemminiRocketConfig`; no VPU is involved. The pinned source revision
 is `266c593f2cb51d7e3fe83fc0317072b585ac3c52` with software gitlink
 `350547f9843f46f485d4d1dd4c20b2f52f4844bf`.

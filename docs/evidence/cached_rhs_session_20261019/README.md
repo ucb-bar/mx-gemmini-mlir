@@ -20,7 +20,7 @@ preparation intervals are unchanged. The original timing boundary includes
 reset, program handoffs and measured step intervals, excluding console output
 and phase bookkeeping. This is a complete cached session, separate from the
 independent 160-token forward and kernel/issuer sections. There is no matched
-independent Nicolás cached baseline.
+independent reference cached baseline.
 
 Merlin proves exact contiguous RHS repetition from source coordinates. The
 target packs one representative per repeated group into private call-local

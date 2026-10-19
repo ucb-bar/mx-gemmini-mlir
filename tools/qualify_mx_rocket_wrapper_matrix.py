@@ -1,8 +1,8 @@
-"""Qualify the eight previously uncovered Nicolas Rocket MX wrappers on Spike.
+"""Qualify the eight previously uncovered reference Rocket MX wrappers on Spike.
 
-Each selected Nicolas source or generated header is captured with model2MLIR,
+Each selected reference source or generated header is captured with model2MLIR,
 lowered to physical MX commands, built as an RV64 ELF, and run twice. Generated
-headers must first be materialized with the pinned Nicolas generator helpers.
+headers must first be materialized with the pinned reference generator helpers.
 The optional compact archive retains both receipts and the first program.
 """
 
