@@ -16,6 +16,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
 
+from .catalog_toolchain import native_catalog_compile_flags
 from .dense_contraction import (
     emit_dense_batch_contraction,
     emit_dense_contraction,
@@ -171,10 +172,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         snapshot.write_bytes(Path(prepared).read_bytes())
         if _sha(snapshot) != plan["source_sha256"]:
             raise ValueError("batch RHS source changed before snapshot binding")
-    flags = ["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2",
-             "-ffreestanding", "-fno-fast-math", "-fno-common",
-             "-fno-tree-loop-distribute-patterns", "-std=gnu11",
-             "-I", str(_SUPPORT)]
+    flags = native_catalog_compile_flags()
     objects: list[Path] = []
     source_hashes = {}
     source_flags = {}

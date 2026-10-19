@@ -53,7 +53,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and private compact inputs with qualified complete forwards | Repeated/compact RHS cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and private compact inputs with qualified complete forwards; explicit cross-stage immutable pooling passes native qualifiers | Repeated/compact RHS cached runs and full pooled link/execution remain pending; no persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -75,6 +75,17 @@ but costs 4,550 → 5,693 section cycles (25.1209% more) despite 18,432 → 12,2
 load bytes. Both use separate actual admitted images and three distinct inputs;
 neither qualifies a general or full-model resident epilogue. Larger shapes,
 broader epilogues and a complete native handoff remain unmeasured.
+
+An explicit cross-stage packed-constant pool now has generic Merlin ownership
+and an MX native reader/relocation contract. The real latest prefill/decode
+catalogs contain 310 byte-identical code/scale blob pairs, totaling 1,066,745,856
+duplicate payload bytes. A full-size proof reconstructs both original catalog
+objects exactly and recompiles all 625 selected reader/issuer objects per stage
+to exact original bytes. Small native qualifiers cover partial tiles, changed
+inputs, complete outputs/canaries, admitted images and matching work counters;
+unknown observers and source/header changes refuse. The new full cached link
+and execution are pending. No new complete-session cycle or final-image-size
+claim follows from payload equality. See [pooling contract](shared_catalog_constants.md).
 
 The completed 128-token prefill plus 32 decodes measures 74,065,304,284 cycles for
 the corrected cached compiler control, 55,871,481,378 for the earlier reuse
@@ -214,6 +225,7 @@ Primary retained evidence and standalone verification:
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete cached session with newer passes](evidence/cached_latest_session_20261019/README.md)
 - [Resident matrix epilogue counterexamples](evidence/native_resident_epilogue_rejections_20261019/README.md)
+- [Immutable constant-pool native qualifiers](evidence/shared_catalog_constants_native_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)

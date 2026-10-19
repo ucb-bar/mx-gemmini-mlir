@@ -239,7 +239,7 @@ def _projected_stage_entry(program, build: Path, receipt: dict):
 
 def _namespace_stage(
     *, index: int, name: str, objects: list[Path], previous: set[str],
-    nm: Path, objcopy: Path, output: Path,
+    nm: Path, objcopy: Path, output: Path, external_symbols: dict[str, str] | None = None,
 ) -> tuple[list[Path], set[str]]:
     from merlin.llvmlower.object_namespace import namespace_object
 
@@ -254,6 +254,14 @@ def _namespace_stage(
                  f"merlin_stage_{index}_{symbol}")
         for symbol in sorted(collisions)
     }
+    all_names = (set().union(*(set(_symbol_names(nm, path)) for path in objects))
+                 if external_symbols else set())
+    for source, destination in (external_symbols or {}).items():
+        if source in symbols:
+            raise ValueError("shared constant unexpectedly remains defined in stage code")
+        if source in renamed or destination in all_names:
+            raise ValueError("shared constant symbol conflicts with stage definitions")
+        renamed[source] = destination
     mapping = output / f"stage_{index}_symbols.txt"
     mapping.write_text("".join(f"{old} {new}\n" for old, new in renamed.items()),
                        encoding="utf-8")
@@ -451,6 +459,7 @@ def link_session(
     pack_program_weights: bool = False,
     guarded_math=None,
     reuse_linked_weights_object: Path | None = None,
+    share_catalog_constants: bool = False,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -594,13 +603,30 @@ def link_session(
 
     all_objects: list[Path] = []
     catalog_objects: list[Path] = []
+    shared_constants = None
+    shared_code, constant_maps = {}, {}
+    if share_catalog_constants:
+        from merlin.llvmlower import toolchain
+
+        from mx_gemmini_support.catalog_constant_pool import (
+            prepare_shared_catalog_constants,
+        )
+        from mx_gemmini_support.target_profile import load_profile
+
+        shared_code, pool_object, constant_maps, shared_constants = prepare_shared_catalog_constants(
+            {name: build for name, build in builds.items() if len(_stage_objects(build)) == 3},
+            profile=load_profile(profile), output=output / "constant_pool",
+            riscv_root=riscv_root, readelf=toolchain.readelf())
     previous: set[str] = set()
     for index, program in enumerate(session.programs):
         stage_objects = _stage_objects(builds[program.name])
-        if index or projections:
+        if program.name in shared_code:
+            stage_objects[-1] = shared_code[program.name]
+        if index or projections or share_catalog_constants:
             stage_objects, symbols = _namespace_stage(
                 index=index, name=program.name, objects=stage_objects,
-                previous=previous, nm=nm, objcopy=objcopy, output=output)
+                previous=previous, nm=nm, objcopy=objcopy, output=output,
+                external_symbols=constant_maps.get(program.name))
         else:
             symbols = set().union(*(_defined(nm, path) for path in stage_objects))
         previous.update(symbols)
@@ -650,6 +676,16 @@ def link_session(
         encoding="utf-8")
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
     all_objects.extend(math_objects)
+    if share_catalog_constants:
+        canonical = set().union(*(set(mapping.values()) for mapping in constant_maps.values()))
+        original_constants = set().union(*(set(mapping) for mapping in constant_maps.values()))
+        if canonical & set().union(*(_defined(nm, obj) for obj in all_objects)):
+            raise ValueError("shared constant exports collide with a nonconstant definition")
+        if any((canonical | original_constants) & set(_symbol_names(nm, obj))
+               for obj in all_objects if obj not in catalog_objects):
+            raise ValueError("shared constants have an observer outside qualified catalog readers")
+        all_objects.append(pool_object)
+        catalog_objects.append(pool_object)
     elf = output / "session.elf"
     linker_script = (_catalog_linker_script(output, catalog_objects)
                      if catalog_objects else bare / "model_link.ld")
@@ -729,6 +765,7 @@ def link_session(
         "object_namespace_storage": {path.name: json.loads(path.read_text())
                                      for path in sorted(output.glob("*.namespace.json"))},
         "stage_object_sha256": source_objects,
+        "shared_catalog_constants": shared_constants,
         "entry_projections": {name: generated["programs"][session.program_names.index(name)]["entry_projection"]
                               for name in projections},
         "linked_elf_admission": admission,
@@ -769,6 +806,8 @@ def main() -> None:
                         help="explicitly bind distinct stage-local constant blobs through a generic aligned pool")
     parser.add_argument("--reuse-linked-weights-object", type=Path,
                         help="share a prior immutable weight object only after a complete freshly assembled byte check")
+    parser.add_argument("--share-catalog-constants", action="store_true",
+                        help="experimental: prove owned readonly native readers and share equal packed constants across stages")
     parser.add_argument("--host-math-guard", type=Path,
                         help="explicit exact guarded library policy for all final-image calls; must match stage guards")
     parser.add_argument("--dump-limit-bytes", type=int,
@@ -790,6 +829,7 @@ def main() -> None:
         measure_preparation=args.measure_preparation,
         pack_program_weights=args.pack_program_weights,
         reuse_linked_weights_object=args.reuse_linked_weights_object,
+        share_catalog_constants=args.share_catalog_constants,
         guarded_math=(GuardedF32Call.from_dict(json.loads(args.host_math_guard.read_text()))
                       if args.host_math_guard is not None else None))
     print(json.dumps(record, sort_keys=True))
