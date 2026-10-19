@@ -125,6 +125,16 @@ refusals. Both real forward/decode graphs admit 44 compact calls, reducing RHS
 batch32 to4. A fresh compact full forward is simulating; no compact full-model
 or cached-session improvement is claimed yet.
 
+A measured live-output counterexample now guards compaction: returning the
+expanded RHS regresses 778,849 → 782,715 cycles if compacted unconditionally.
+Generic fixed-point source-use closure rejects that case, and the target retains
+its separately qualified ordinary packing-reuse endpoint at exactly 778,849
+cycles. The private case retains 731,571 cycles. Complete first-output words and
+independent full-byte/hash checks cover the returned RHS; missing or changed
+additional references refuse. All 44 real forward/decode compact candidates
+remain private under this guard. The fresh guarded compact decoder has compiled
+and its complete cached-session pipeline is linking.
+
 The completed SmolVLA session currently measures 89,671,723,299 → 87,964,565,915
 cycles for equivalent BF16 read-view packing reuse (1.9038%). All 33 output/state
 hashes and 11 full action tensors match. Its diagnostic final cosine is 0.9752;
@@ -153,6 +163,7 @@ Primary retained evidence and standalone verification:
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
 - [Repeated batch RHS native and graph qualification](evidence/repeated_batch_rhs_20261019/README.md)
 - [Compact batch RHS native, complete graph and fallback qualification](evidence/compact_batch_rhs_20261019/README.md)
+- [Measured compaction regression and guarded fallback](evidence/compact_batch_cost_guard_20261019/README.md)
 - [Actual runtime state-copy attribution](evidence/state_copy_attribution_20261019/README.md)
 
 The initial changes came from profiling and inspecting generated IR. Subsequent
