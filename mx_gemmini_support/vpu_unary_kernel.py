@@ -17,6 +17,18 @@ class UnaryKernel:
     operation: str
 
 
+def sigmoid_steps(*, source_row=0, temporary_row=0x1000, result_row=0x2000):
+    """The existing stepwise BF16 sigmoid policy, shared by resident emitters."""
+    return (
+        {"kind": "muls", "src1_row": source_row, "src2_row": 0,
+         "dst_row": temporary_row, "immediate_bf16": 0xbf80},
+        {"kind": "exp", "src1_row": temporary_row, "src2_row": 0, "dst_row": temporary_row},
+        {"kind": "adds", "src1_row": temporary_row, "src2_row": 0,
+         "dst_row": temporary_row, "immediate_bf16": 0x3f80},
+        {"kind": "rcp", "src1_row": temporary_row, "src2_row": 0, "dst_row": result_row},
+    )
+
+
 def _issue(profile: dict, *, elements: int, operation: str,
            symbol: str) -> str:
     rows = (elements + 7) // 8
@@ -27,16 +39,8 @@ def _issue(profile: dict, *, elements: int, operation: str,
         commands.append(_transfer_rect(2, "input", start * 16, start,
                                        rows=min(16, rows - start)))
     if operation == "sigmoid":
-        commands.extend((
-            vpu_command(profile, kind="muls", src1_row=0, src2_row=0,
-                        dst_row=0x1000, rows=rows, immediate_bf16=0xbf80),
-            vpu_command(profile, kind="exp", src1_row=0x1000, src2_row=0,
-                        dst_row=0x1000, rows=rows),
-            vpu_command(profile, kind="adds", src1_row=0x1000, src2_row=0,
-                        dst_row=0x1000, rows=rows, immediate_bf16=0x3f80),
-            vpu_command(profile, kind="rcp", src1_row=0x1000, src2_row=0,
-                        dst_row=0x2000, rows=rows), Fence(),
-        ))
+        commands.extend(vpu_command(profile, rows=rows, **step) for step in sigmoid_steps())
+        commands.append(Fence())
     elif operation == "tanh":
         # tanh(x) = 2 / (1 + exp(-2*x)) - 1; round each VPU step to BF16.
         commands.extend((
