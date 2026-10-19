@@ -94,9 +94,11 @@ class MXBatchRHSReusePostOffload:
         from merlin.frontends.linalg_mlir import parse_mlir_file
         from merlin.llvmlower.repeated_batch_input import (
             RepeatedBatchConsumer,
+            prove_repeated_batch_input,
             rewrite_repeated_batch_consumers,
         )
         from merlin.xdsl_dialects._common import text
+        from xdsl.dialects.func import CallOp
 
         prepared, sidecar, workdir = map(Path, (prepared, sidecar, workdir))
         catalog = json.loads(self.catalog_path.read_text())
@@ -109,15 +111,20 @@ class MXBatchRHSReusePostOffload:
             raise ValueError("batch RHS reuse differs from selected source/catalog/object routing")
         bindings = {binding["region"]: binding for binding in catalog["bindings"]}
         if (len(bindings) != len(catalog["bindings"]) or len(bindings) != len(routing["routed"])
-                or {row["source_region"] for row in routing["routed"]} != set(bindings)
-                or len({row["symbol"] for row in routing["routed"]}) != len(bindings)):
+                or len({row["source_operation_ordinal"] for row in catalog["bindings"]}) != len(bindings)
+                or {row["source_region"] for row in routing["routed"]} != set(bindings)):
             raise ValueError("batch RHS source binding coverage changed")
-        contracts, verified = [], set()
+        contracts, verified, families = [], set(), {}
         for row in routing["routed"]:
             binding = bindings.get(row["source_region"])
             if (binding is None or row["source_operation_ordinal"] != binding["source_operation_ordinal"]
                     or row["tensor_types"] != binding["tensor_types"]):
                 raise ValueError("batch RHS source binding type or ordinal changed")
+            family = families.setdefault(row["symbol"], {
+                "kernel": binding["symbol"], "types": binding["tensor_types"], "source_calls": 0, "alternatives": {}})
+            if family["kernel"] != binding["symbol"] or family["types"] != binding["tensor_types"]:
+                raise ValueError("shared batch declaration binds incompatible native kernel families")
+            family["source_calls"] += 1
             alternative = binding.get("batch_rhs_reuse")
             if alternative is None:
                 continue
@@ -125,6 +132,12 @@ class MXBatchRHSReusePostOffload:
                     or alternative["lifetime"] != "private_serial_batch_call"
                     or alternative["provider_obligation"] != "original_results_rounding_effects_and_partial_refusal"):
                 raise ValueError("batch RHS preparation lifetime or completion changed")
+            repeat = alternative["repeat"]
+            source_proof = alternative["source_proof"]
+            if (type(repeat) is not int or repeat <= 1
+                    or source_proof["contiguous_batch_repeat"] != repeat
+                    or source_proof["shape"][0] % repeat):
+                raise ValueError("batch RHS alternative changed its original source repetition")
             kernel = alternative["kernel_symbol"]
             if not kernel.isascii() or not kernel.isidentifier():
                 raise ValueError("batch RHS compiled kernel binding is invalid")
@@ -132,9 +145,30 @@ class MXBatchRHSReusePostOffload:
                 if _sha(self.catalog_path.parent / (kernel + ".c")) != catalog["compilation"]["source_sha256"][kernel]:
                     raise ValueError("batch RHS compiled kernel source changed")
                 verified.add(kernel)
-            contracts.append(RepeatedBatchConsumer(row["symbol"], alternative["entry_symbol"],
-                                                    1, alternative["repeat"]))
+            previous = family["alternatives"].setdefault(repeat, alternative)
+            if previous["kernel_symbol"] != kernel or previous["workspace_bytes"] != alternative["workspace_bytes"]:
+                raise ValueError("shared batch repetition has inconsistent compiled endpoints")
         result = parse_mlir_file(prepared)
+        for symbol, family in families.items():
+            if not family["alternatives"]:
+                continue
+            calls = [op for op in result.walk() if isinstance(op, CallOp)
+                     and op.callee.root_reference.data == symbol]
+            if len(calls) != family["source_calls"]:
+                raise ValueError("shared batch declaration call coverage changed")
+            grouped = {}
+            for call in calls:
+                if [str(value.type) for value in call.arguments] != family["types"]:
+                    raise ValueError("shared batch call changed its original typed arguments")
+                try:
+                    proof = prove_repeated_batch_input(call.arguments[1])
+                except ValueError:
+                    continue
+                if proof.repeat in family["alternatives"]:
+                    grouped.setdefault(proof.repeat, []).append(call)
+            for repeat, selected in grouped.items():
+                alternative = family["alternatives"][repeat]
+                contracts.append(RepeatedBatchConsumer(symbol, alternative["entry_symbol"], 1, repeat, tuple(selected)))
         report = rewrite_repeated_batch_consumers(result, contracts)
         workdir.mkdir(parents=True, exist_ok=True)
         output = workdir / "mx_batch_rhs_reuse.mlir"
@@ -143,6 +177,6 @@ class MXBatchRHSReusePostOffload:
             "schema": "mx_gemmini.batch_rhs_reuse.v1", "source_sha256": _sha(prepared),
             "output_sha256": _sha(output), "catalog_sha256": _sha(self.catalog_path),
             "sidecar_sha256": _sha(sidecar), "selection": "experimental_source_proof_and_qualified_serial_endpoint",
-            "consumers": report,
+            "consumers": report, "selected_calls": sum(row["calls"] for row in report),
         }, indent=2) + "\n")
         return output

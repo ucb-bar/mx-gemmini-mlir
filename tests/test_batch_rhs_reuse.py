@@ -128,11 +128,12 @@ def post_fixture(tmp_path):
     compiled.write_text("/* separately qualified provider source */")
     metadata = {"entry_symbol": "retained", "kernel_symbol": "compiled", "repeat": 3,
                 "completion": "synchronous_native_issuer", "lifetime": "private_serial_batch_call",
-                "provider_obligation": "original_results_rounding_effects_and_partial_refusal"}
+                "provider_obligation": "original_results_rounding_effects_and_partial_refusal", "workspace_bytes": 512,
+                "source_proof": {"contiguous_batch_repeat": 3, "shape": [6, 4, 5]}}
     types = ["tensor<6x1x4xf32>", "tensor<6x4x5xf32>", "tensor<6x1x5xf32>"]
     catalog = {"source_sha256": "source", "batch_rhs_reuse": "experimental_exact_contiguous_repetition",
                "integer_group_packing": True,
-               "bindings": [{"region": "binding", "source_operation_ordinal": 15,
+               "bindings": [{"region": "binding", "symbol": "native", "source_operation_ordinal": 15,
                              "tensor_types": types, "batch_rhs_reuse": metadata}],
                "compilation": {"object_sha256": hashlib.sha256(obj.read_bytes()).hexdigest(),
                                "source_sha256": {"compiled": hashlib.sha256(compiled.read_bytes()).hexdigest()}}}
@@ -153,6 +154,68 @@ def test_provider_retargets_only_source_proved_serial_rhs(tmp_path):
     assert source.read_bytes() == original and "func.call @retained" in out.read_text()
     record = json.loads((out.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
     assert record["consumers"][0]["input_proofs"][0]["contiguous_batch_repeat"] == 3
+
+
+@pytest.mark.parametrize("unproved", [False, True])
+def test_shared_declaration_selects_each_current_call_independently(tmp_path, unproved):
+    import copy
+
+    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.xdsl_dialects._common import text
+    from xdsl.dialects import func, tensor
+
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, route = post_fixture(tmp_path)
+    module = parse_mlir_file(source)
+    call = next(op for op in module.walk() if isinstance(op, func.CallOp))
+    arguments = list(call.arguments)
+    if unproved:
+        unknown = tensor.EmptyOp([], arguments[1].type)
+        call.parent.insert_op_before(unknown, call)
+        arguments[1] = unknown.tensor
+    other = func.CallOp("original", arguments, [value.type for value in call.results])
+    call.parent.insert_op_before(other, call)
+    source.write_text(text(module))
+    binding = copy.deepcopy(catalog["bindings"][0])
+    binding.update(region="second", source_operation_ordinal=29)
+    binding["batch_rhs_reuse"]["entry_symbol"] = "second_retained"
+    if unproved:
+        binding.pop("batch_rhs_reuse")
+    catalog["bindings"].append(binding)
+    row = copy.deepcopy(route["routed"][0])
+    row.update(source_region="second", source_operation_ordinal=29)
+    route["routed"].append(row)
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    (tmp_path / "route.json").write_text(json.dumps(route))
+    output = MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    rewritten = parse_mlir_file(output)
+    callees = [op.callee.root_reference.data for op in rewritten.walk() if isinstance(op, func.CallOp)]
+    assert callees == (["original", "retained"] if unproved else ["retained", "retained"])
+    report = json.loads((output.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
+    assert report["selected_calls"] == (1 if unproved else 2)
+
+
+@pytest.mark.parametrize("change", ["family", "coverage"])
+def test_shared_declaration_binding_changes_refuse_before_output(tmp_path, change):
+    import copy
+
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, route = post_fixture(tmp_path)
+    binding = copy.deepcopy(catalog["bindings"][0])
+    binding.update(region="second", source_operation_ordinal=29)
+    if change == "family":
+        binding["symbol"] = "different_native_family"
+    catalog["bindings"].append(binding)
+    row = copy.deepcopy(route["routed"][0])
+    row.update(source_region="second", source_operation_ordinal=29)
+    route["routed"].append(row)
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    (tmp_path / "route.json").write_text(json.dumps(route))
+    with pytest.raises(ValueError, match="incompatible native kernel families|call coverage changed"):
+        MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    assert not (tmp_path / "rewrite").exists()
 
 
 @pytest.mark.parametrize("change", ["object", "kernel", "repeat", "completion", "lifetime", "ordinal", "source", "type"])
