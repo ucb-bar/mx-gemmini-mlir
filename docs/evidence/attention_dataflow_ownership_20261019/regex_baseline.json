@@ -1,0 +1,27 @@
+{
+  "scope": "preexisting_full_regex_gate_violations_only",
+  "baseline_revision": "6599207c8af6aa5bc373f041f64a3bcea73e01a5",
+  "unchanged_files": [
+    {
+      "path": "src/merlin/runtime/backends/spike_arena.py",
+      "sha256": "3ff16741cd5b62e9f710788b40c209d909211cfd44a32f2a6919b89d9d061e74",
+      "unchanged_from_head": true
+    },
+    {
+      "path": "packages/merlin-experiments/src/merlin_experiments/phase1/capsule_timing_archive.py",
+      "sha256": "e9ea6fb1fe02b7ecb503572d8a130a37a4d53b9df21ac533be1e56240db47f4a",
+      "unchanged_from_head": true
+    },
+    {
+      "path": "packages/merlin-experiments/src/merlin_experiments/phase1/gemmini_gsim_alignment.py",
+      "sha256": "2a53f985e5342902bd9ad5b1f74dc5c62dcf2589ec8cd681bf0238765b1609f0",
+      "unchanged_from_head": true
+    },
+    {
+      "path": "packages/merlin-experiments/src/merlin_experiments/phase1/brokers/model_check.py",
+      "sha256": "d0fc7cc6a5bf771f0b4439394e9689dfea4cf003124760c474a3b42d6b277b6b",
+      "unchanged_from_head": true
+    }
+  ],
+  "existing_call_sites": 11
+}

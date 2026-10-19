@@ -177,6 +177,7 @@ Primary retained evidence and standalone verification:
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)
 - [Semantic placement and provenance-label regression](evidence/semantic_policy_placement_20261019/README.md)
+- [Generic attention dataflow ownership and source compatibility](evidence/attention_dataflow_ownership_20261019/README.md)
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
@@ -201,3 +202,10 @@ cases reproduce three old failures and pass after the fix; the focused suite
 passes 37 tests. Complete default policies remain identical on four archived
 captures plus the current full TinyLlama and both SmolVLA stage captures. This
 does not rebuild or change any measured or running image.
+
+The target-independent attention relationship analysis has also moved from MX
+into Merlin's frontend layer. The MX compatibility function delegates; physical
+and numerical legality remain separate. The non-docstring analysis AST and all
+ordered relationships on seven retained captures are unchanged. Thirteen generic
+graph tests and 39 target integration tests pass. This is an ownership correction,
+without a new fusion or runtime-performance claim.

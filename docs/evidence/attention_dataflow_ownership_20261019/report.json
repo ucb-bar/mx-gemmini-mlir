@@ -1,0 +1,430 @@
+{
+  "scope": "source_relationship_and_ownership_only_no_new_lowering_or_runtime_claim",
+  "before_revision": "380fc56",
+  "before_sha256": "7ca67424d0cbbb70756a35433fbf5ce9c11f9e21da21343cd2388d9b24637efa",
+  "core_source_sha256": "24cb9c0b6ab78ba22e1b91f2127a7e8d9be62f62aafd263a060a5ba2ff571fe5",
+  "provider_source_sha256": "099dbb4e7f4bdad875b4c779507c0587e2099de809aec983f6d3e0d18ad8dca0",
+  "non_doc_ast_sha256": "809c73252cbd4a70a31daba36e4e254b11c8b478e3b22d96ec0727dbf01837f3",
+  "input_report_sha256": "1538d594e4b7815022b960abc40373665659ec710b9667cddd1a986c4039bd2f",
+  "inputs": [
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz",
+      "source_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+      "pair_count": 2,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_4",
+          "pv_region_id": "matmul_5",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_13",
+          "pv_region_id": "matmul_14",
+          "softmax_region_id": "softmax_1"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/deepseek_r1_distill_qwen_1_5b.mlir.gz",
+      "source_sha256": "91857cfab3105ecd7308b50981b5899a95bb2d2101b81dc6ad338e9c68ceef40",
+      "pair_count": 1,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_4",
+          "pv_region_id": "matmul_5",
+          "softmax_region_id": "softmax_0"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/gemma2_2b.mlir.gz",
+      "source_sha256": "18f2693246b8ec2deb34ba7bafd99825844ad34c39c70e4c3e5694d63899cdd1",
+      "pair_count": 2,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_4",
+          "pv_region_id": "matmul_5",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_13",
+          "pv_region_id": "matmul_14",
+          "softmax_region_id": "softmax_1"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/smolvla.mlir.gz",
+      "source_sha256": "329e4238431e1079d76ee71e23a47f49bff6e48e7651e21b207bff18a51fe119",
+      "pair_count": 14,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_3",
+          "pv_region_id": "matmul_4",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_11",
+          "pv_region_id": "matmul_12",
+          "softmax_region_id": "softmax_1"
+        },
+        {
+          "qk_region_id": "matmul_19",
+          "pv_region_id": "matmul_20",
+          "softmax_region_id": "softmax_2"
+        },
+        {
+          "qk_region_id": "matmul_27",
+          "pv_region_id": "matmul_28",
+          "softmax_region_id": "softmax_3"
+        },
+        {
+          "qk_region_id": "matmul_35",
+          "pv_region_id": "matmul_36",
+          "softmax_region_id": "softmax_4"
+        },
+        {
+          "qk_region_id": "matmul_43",
+          "pv_region_id": "matmul_44",
+          "softmax_region_id": "softmax_5"
+        },
+        {
+          "qk_region_id": "matmul_51",
+          "pv_region_id": "matmul_52",
+          "softmax_region_id": "softmax_6"
+        },
+        {
+          "qk_region_id": "matmul_59",
+          "pv_region_id": "matmul_60",
+          "softmax_region_id": "softmax_7"
+        },
+        {
+          "qk_region_id": "matmul_67",
+          "pv_region_id": "matmul_68",
+          "softmax_region_id": "softmax_8"
+        },
+        {
+          "qk_region_id": "matmul_75",
+          "pv_region_id": "matmul_76",
+          "softmax_region_id": "softmax_9"
+        },
+        {
+          "qk_region_id": "matmul_83",
+          "pv_region_id": "matmul_84",
+          "softmax_region_id": "softmax_10"
+        },
+        {
+          "qk_region_id": "matmul_91",
+          "pv_region_id": "matmul_92",
+          "softmax_region_id": "softmax_11"
+        },
+        {
+          "qk_region_id": "matmul_101",
+          "pv_region_id": "matmul_102",
+          "softmax_region_id": "softmax_12"
+        },
+        {
+          "qk_region_id": "matmul_113",
+          "pv_region_id": "matmul_114",
+          "softmax_region_id": "softmax_13"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/onepass160/capture/model.mlir",
+      "source_sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a",
+      "pair_count": 22,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_4",
+          "pv_region_id": "matmul_5",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_13",
+          "pv_region_id": "matmul_14",
+          "softmax_region_id": "softmax_1"
+        },
+        {
+          "qk_region_id": "matmul_22",
+          "pv_region_id": "matmul_23",
+          "softmax_region_id": "softmax_2"
+        },
+        {
+          "qk_region_id": "matmul_31",
+          "pv_region_id": "matmul_32",
+          "softmax_region_id": "softmax_3"
+        },
+        {
+          "qk_region_id": "matmul_40",
+          "pv_region_id": "matmul_41",
+          "softmax_region_id": "softmax_4"
+        },
+        {
+          "qk_region_id": "matmul_49",
+          "pv_region_id": "matmul_50",
+          "softmax_region_id": "softmax_5"
+        },
+        {
+          "qk_region_id": "matmul_58",
+          "pv_region_id": "matmul_59",
+          "softmax_region_id": "softmax_6"
+        },
+        {
+          "qk_region_id": "matmul_67",
+          "pv_region_id": "matmul_68",
+          "softmax_region_id": "softmax_7"
+        },
+        {
+          "qk_region_id": "matmul_76",
+          "pv_region_id": "matmul_77",
+          "softmax_region_id": "softmax_8"
+        },
+        {
+          "qk_region_id": "matmul_85",
+          "pv_region_id": "matmul_86",
+          "softmax_region_id": "softmax_9"
+        },
+        {
+          "qk_region_id": "matmul_94",
+          "pv_region_id": "matmul_95",
+          "softmax_region_id": "softmax_10"
+        },
+        {
+          "qk_region_id": "matmul_103",
+          "pv_region_id": "matmul_104",
+          "softmax_region_id": "softmax_11"
+        },
+        {
+          "qk_region_id": "matmul_112",
+          "pv_region_id": "matmul_113",
+          "softmax_region_id": "softmax_12"
+        },
+        {
+          "qk_region_id": "matmul_121",
+          "pv_region_id": "matmul_122",
+          "softmax_region_id": "softmax_13"
+        },
+        {
+          "qk_region_id": "matmul_130",
+          "pv_region_id": "matmul_131",
+          "softmax_region_id": "softmax_14"
+        },
+        {
+          "qk_region_id": "matmul_139",
+          "pv_region_id": "matmul_140",
+          "softmax_region_id": "softmax_15"
+        },
+        {
+          "qk_region_id": "matmul_148",
+          "pv_region_id": "matmul_149",
+          "softmax_region_id": "softmax_16"
+        },
+        {
+          "qk_region_id": "matmul_157",
+          "pv_region_id": "matmul_158",
+          "softmax_region_id": "softmax_17"
+        },
+        {
+          "qk_region_id": "matmul_166",
+          "pv_region_id": "matmul_167",
+          "softmax_region_id": "softmax_18"
+        },
+        {
+          "qk_region_id": "matmul_175",
+          "pv_region_id": "matmul_176",
+          "softmax_region_id": "softmax_19"
+        },
+        {
+          "qk_region_id": "matmul_184",
+          "pv_region_id": "matmul_185",
+          "softmax_region_id": "softmax_20"
+        },
+        {
+          "qk_region_id": "matmul_193",
+          "pv_region_id": "matmul_194",
+          "softmax_region_id": "softmax_21"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/smolvla_prefix_latest_optimized/input_read_view/model.generic.mlir",
+      "source_sha256": "2cda8475cdc91b97e48a0383194828465f12c0098c04b4a8c7056f308779a240",
+      "pair_count": 17,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_3",
+          "pv_region_id": "matmul_4",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_101",
+          "pv_region_id": "matmul_102",
+          "softmax_region_id": "softmax_12"
+        },
+        {
+          "qk_region_id": "matmul_110",
+          "pv_region_id": "matmul_111",
+          "softmax_region_id": "softmax_13"
+        },
+        {
+          "qk_region_id": "matmul_119",
+          "pv_region_id": "matmul_120",
+          "softmax_region_id": "softmax_14"
+        },
+        {
+          "qk_region_id": "matmul_128",
+          "pv_region_id": "matmul_129",
+          "softmax_region_id": "softmax_15"
+        },
+        {
+          "qk_region_id": "matmul_137",
+          "pv_region_id": "matmul_138",
+          "softmax_region_id": "softmax_16"
+        },
+        {
+          "qk_region_id": "matmul_146",
+          "pv_region_id": "matmul_147",
+          "softmax_region_id": "softmax_17"
+        },
+        {
+          "qk_region_id": "matmul_155",
+          "pv_region_id": "matmul_156",
+          "softmax_region_id": "softmax_18"
+        },
+        {
+          "qk_region_id": "matmul_164",
+          "pv_region_id": "matmul_165",
+          "softmax_region_id": "softmax_19"
+        },
+        {
+          "qk_region_id": "matmul_173",
+          "pv_region_id": "matmul_174",
+          "softmax_region_id": "softmax_20"
+        },
+        {
+          "qk_region_id": "matmul_182",
+          "pv_region_id": "matmul_183",
+          "softmax_region_id": "softmax_21"
+        },
+        {
+          "qk_region_id": "matmul_191",
+          "pv_region_id": "matmul_192",
+          "softmax_region_id": "softmax_22"
+        },
+        {
+          "qk_region_id": "matmul_200",
+          "pv_region_id": "matmul_201",
+          "softmax_region_id": "softmax_23"
+        },
+        {
+          "qk_region_id": "matmul_209",
+          "pv_region_id": "matmul_210",
+          "softmax_region_id": "softmax_24"
+        },
+        {
+          "qk_region_id": "matmul_218",
+          "pv_region_id": "matmul_219",
+          "softmax_region_id": "softmax_25"
+        },
+        {
+          "qk_region_id": "matmul_227",
+          "pv_region_id": "matmul_228",
+          "softmax_region_id": "softmax_26"
+        },
+        {
+          "qk_region_id": "matmul_236",
+          "pv_region_id": "matmul_237",
+          "softmax_region_id": "softmax_27"
+        }
+      ]
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/smolvla_flow_latest_optimized/input_read_view/model.generic.mlir",
+      "source_sha256": "e239b76243da736995e31dc5c68f75a5f6944963018f5336a3cc132d9d49c80d",
+      "pair_count": 16,
+      "pairs": [
+        {
+          "qk_region_id": "matmul_6",
+          "pv_region_id": "matmul_7",
+          "softmax_region_id": "softmax_0"
+        },
+        {
+          "qk_region_id": "matmul_15",
+          "pv_region_id": "matmul_16",
+          "softmax_region_id": "softmax_1"
+        },
+        {
+          "qk_region_id": "matmul_24",
+          "pv_region_id": "matmul_25",
+          "softmax_region_id": "softmax_2"
+        },
+        {
+          "qk_region_id": "matmul_33",
+          "pv_region_id": "matmul_34",
+          "softmax_region_id": "softmax_3"
+        },
+        {
+          "qk_region_id": "matmul_42",
+          "pv_region_id": "matmul_43",
+          "softmax_region_id": "softmax_4"
+        },
+        {
+          "qk_region_id": "matmul_51",
+          "pv_region_id": "matmul_52",
+          "softmax_region_id": "softmax_5"
+        },
+        {
+          "qk_region_id": "matmul_60",
+          "pv_region_id": "matmul_61",
+          "softmax_region_id": "softmax_6"
+        },
+        {
+          "qk_region_id": "matmul_69",
+          "pv_region_id": "matmul_70",
+          "softmax_region_id": "softmax_7"
+        },
+        {
+          "qk_region_id": "matmul_78",
+          "pv_region_id": "matmul_79",
+          "softmax_region_id": "softmax_8"
+        },
+        {
+          "qk_region_id": "matmul_87",
+          "pv_region_id": "matmul_88",
+          "softmax_region_id": "softmax_9"
+        },
+        {
+          "qk_region_id": "matmul_96",
+          "pv_region_id": "matmul_97",
+          "softmax_region_id": "softmax_10"
+        },
+        {
+          "qk_region_id": "matmul_105",
+          "pv_region_id": "matmul_106",
+          "softmax_region_id": "softmax_11"
+        },
+        {
+          "qk_region_id": "matmul_114",
+          "pv_region_id": "matmul_115",
+          "softmax_region_id": "softmax_12"
+        },
+        {
+          "qk_region_id": "matmul_123",
+          "pv_region_id": "matmul_124",
+          "softmax_region_id": "softmax_13"
+        },
+        {
+          "qk_region_id": "matmul_132",
+          "pv_region_id": "matmul_133",
+          "softmax_region_id": "softmax_14"
+        },
+        {
+          "qk_region_id": "matmul_141",
+          "pv_region_id": "matmul_142",
+          "softmax_region_id": "softmax_15"
+        }
+      ]
+    }
+  ]
+}
