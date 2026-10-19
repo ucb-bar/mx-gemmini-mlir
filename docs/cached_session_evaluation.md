@@ -40,3 +40,11 @@ policy files:
 The link must request `--measure-preparation`, all of `prefill:0` and `decode:0`,
 and `--dump-limit-bytes 128000`. Incomplete runs refuse evaluation. Simulation
 observation timeouts do not justify restarting an engine that remains live.
+
+After evaluating both runs, use `tools.compare_linked_session_cycles` with
+`--reference-link`, `--reference-run`, `--candidate-link`, `--candidate-run`,
+and a fresh `--out`. It requires identical output digests, capture and timing
+settings. For preparation-measured runs it reparses the native session records
+and compares execution totals including reset and handoff, reporting those
+costs separately. Legacy runs retain their step-only boundary; comparisons
+between the two timing selections refuse.

@@ -39,6 +39,30 @@ def _load(link_path: Path, run_path: Path) -> tuple[dict, dict]:
             any(total.get(key) != sum(row[key] for row in steps)
                 for key in ("cycles", "instructions"))):
         raise ValueError("session timing does not reconcile with step records")
+    preparation_schema = link.get("preparation_performance_schema")
+    if preparation_schema is not None:
+        from merlin.llvmlower.session_bundle import load
+
+        from tools.run_linked_merlin_session import observe_preparation_output, observe_session_output
+
+        if (preparation_schema != "spike_rdcycle_rdinstret_reset_prepare.v1"
+                or run.get("preparation_performance_schema") != preparation_schema
+                or link.get("execution_timing_scope") != "reset_plus_program_state_handoff_plus_existing_step_intervals; console_and_phase_bookkeeping_excluded"
+                or run.get("execution_timing_scope") != link.get("execution_timing_scope")):
+            raise ValueError("session preparation timing selection differs")
+        session = load(Path(link["session_root"]))
+        console = (run_path.parent / "spike.log").read_text()
+        observed = observe_session_output(console, session, exit_code=0, require_perf=True)
+        preparation = observe_preparation_output(console, session, observed)
+        if any(run.get(key) != value for key, value in (observed | preparation).items()):
+            raise ValueError("session measured execution differs from the actual console")
+        run["comparison_performance"] = preparation["execution_total_performance"]
+    else:
+        if (run.get("preparation_performance_schema") is not None
+                or run.get("execution_total_performance") is not None
+                or run.get("preparation_performance") or run.get("preparation_total_performance") is not None):
+            raise ValueError("unselected preparation intervals cannot change session timing")
+        run["comparison_performance"] = total
     return link, run
 
 
@@ -48,7 +72,7 @@ def compare_sessions(reference_link: Path, reference_run: Path,
     other_link, other = _load(candidate_link, candidate_run)
     identity = ("session_root", "programs", "bindings", "profile_sha256",
                 "shared_weight_sha256", "shared_weight_bytes", "mem_bytes",
-                "performance_schema")
+                "performance_schema", "preparation_performance_schema", "execution_timing_scope")
     if any(base_link.get(key) != other_link.get(key) for key in identity):
         raise ValueError("linked sessions differ in captured work, weights, or profile")
     timing = ("spike_sha256", "extension_sha256", "timing_mode",
@@ -80,11 +104,18 @@ def compare_sessions(reference_link: Path, reference_run: Path,
     ]
     programs = []
     for index, program in enumerate(base_link["programs"]):
-        base_cycles = sum(row["cycles"] for row in base_steps if row["program"] == index)
-        other_cycles = sum(row["cycles"] for row in other_steps if row["program"] == index)
+        base_step_cycles = sum(row["cycles"] for row in base_steps if row["program"] == index)
+        other_step_cycles = sum(row["cycles"] for row in other_steps if row["program"] == index)
+        base_preparation = sum(row["cycles"] for row in base.get("preparation_performance", []) if row["program"] == index)
+        other_preparation = sum(row["cycles"] for row in other.get("preparation_performance", []) if row["program"] == index)
+        base_cycles, other_cycles = base_step_cycles + base_preparation, other_step_cycles + other_preparation
         programs.append({"name": program["name"], "steps": program["steps"],
                          "reference_cycles": base_cycles,
                          "candidate_cycles": other_cycles,
+                         "reference_step_cycles": base_step_cycles,
+                         "candidate_step_cycles": other_step_cycles,
+                         "reference_preparation_cycles": base_preparation,
+                         "candidate_preparation_cycles": other_preparation,
                          "candidate_over_reference": other_cycles / base_cycles})
     return {
         "schema": "mx_gemmini.equal_input_session_cycles.v1",
@@ -99,10 +130,13 @@ def compare_sessions(reference_link: Path, reference_run: Path,
         "profile_sha256": base_link["profile_sha256"],
         "timing_config": base["timing_config"],
         "timing_overrides": base["timing_overrides"],
-        "reference_cycles": base["total_performance"]["cycles"],
-        "candidate_cycles": other["total_performance"]["cycles"],
-        "candidate_over_reference": (other["total_performance"]["cycles"] /
-                                     base["total_performance"]["cycles"]),
+        "execution_timing_scope": base_link.get("execution_timing_scope", "legacy_step_intervals_only"),
+        "reference_reset_cycles": sum(row["cycles"] for row in base.get("preparation_performance", []) if row["program"] == -1),
+        "candidate_reset_cycles": sum(row["cycles"] for row in other.get("preparation_performance", []) if row["program"] == -1),
+        "reference_cycles": base["comparison_performance"]["cycles"],
+        "candidate_cycles": other["comparison_performance"]["cycles"],
+        "candidate_over_reference": (other["comparison_performance"]["cycles"] /
+                                     base["comparison_performance"]["cycles"]),
         "programs": programs,
     }
 
