@@ -43,6 +43,11 @@ MX revision identifies the compiler baseline; the reproduction helpers and
 capture supplement are supplied by this checkout. Historical build receipts
 remain authoritative for the producers of each measured artifact.
 
+The Merlin revision below is retained under the tag
+`mx-gemmini-measurements-20261019`. Use that revision for the historical
+compiler baseline; later source cleanup does not replace the producer
+revisions recorded in the evidence.
+
 | Repository | Revision used by this release |
 | --- | --- |
 | [mx-gemmini-mlir](https://github.com/ucb-bar/mx-gemmini-mlir) | `fd5fff33aea54ee1e175b97bb88496351fda88e9` compiler baseline |
