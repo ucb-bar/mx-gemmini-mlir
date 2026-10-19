@@ -1,9 +1,9 @@
 # Whole-model optimization checkpoint, 19 October 2026
 
 The optimization goal remains active. The latest completed independent TinyLlama
-forward uses **10,433,218,556 modeled cycles**, versus Nicolás's equal-boundary
-12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 18.2501%
-and 34.7298%, respectively. The older 15,170,996,572-cycle compiler archive had
+forward uses **10,326,818,367 modeled cycles**, versus Nicolás's equal-boundary
+12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 19.0838%
+and 35.3954%, respectively. The older 15,170,996,572-cycle compiler archive had
 different numerical quality and is not the equal-quality compiler control.
 
 Every completed optimized forward preserves all 5,120,000 F32 logit words from
@@ -25,6 +25,7 @@ not be described as bit identity with the independent implementation.
 | Movement-bounded native tile selection | 11,094,646,734 |
 | Reverse connected-VPU/BF16 preparation transport | 11,008,973,639 |
 | Source-proven repeated batch RHS preparation | 10,433,218,556 |
+| Private compact RHS source inputs | 10,326,818,367 |
 
 The last tile change reduces measured load bytes from 4,198,111,552 to
 3,939,506,496 and scale bytes from 115,279,872 to 107,198,464. Commands 3,312,204,
@@ -52,7 +53,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing with a qualified complete forward, and compact source input within a synchronous batch | Compact full-forward and newer cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and private compact inputs with qualified complete forwards | Newer cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -127,8 +128,14 @@ respectively; these are not peak measurements. Equal sample values without a
 source proof select zero calls and preserve the original 1,091,675 cycles.
 Seven native compact-ABI cases qualify tails, repeated calls and partial
 refusals. Both real forward/decode graphs admit 44 compact calls, reducing RHS
-batch32 to4. A fresh compact full forward is simulating; no compact full-model
-or cached-session improvement is claimed yet.
+batch32 to4. The complete compact forward now measures **10,433,218,556 →
+10,326,818,367 cycles** (another 1.01982%), with all words and the unchanged source
+quality gate preserved. It removes 55,379,622 literal allocation bytes across
+23 sites (not peak memory), and shrinks the image by 61,056 bytes. The native
+workspace, arena and device work/transfer counters remain unchanged. This frozen
+image predates the later privacy guard; fresh current source reanalysis proves
+all 44 of its selected uses private, but does not put a guard into that binary.
+The guarded cached-session result remains pending.
 
 A measured live-output counterexample now guards compaction: returning the
 expanded RHS regresses 778,849 → 782,715 cycles if compacted unconditionally.
@@ -178,6 +185,7 @@ Primary retained evidence and standalone verification:
 - [Tile-selection full forward](evidence/matched_native_tiles_forward_20261019/README.md)
 - [Reverse BF16 full forward](evidence/matched_reverse_transport_forward_20261019/README.md)
 - [Repeated RHS preparation full forward](evidence/matched_batch_rhs_forward_20261019/README.md)
+- [Private compact RHS full forward](evidence/matched_compact_batch_rhs_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)

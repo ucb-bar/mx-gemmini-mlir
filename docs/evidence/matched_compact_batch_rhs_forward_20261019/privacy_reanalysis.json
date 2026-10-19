@@ -1,0 +1,9 @@
+{
+  "scope": "current_source_privacy_reanalysis_not_guard_in_original_executable",
+  "source": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/onepass160_rms_compact_batch_rhs/device_host_abi/mx_vpu_matrix_transport.mlir",
+  "source_sha256": "5031b39e5b3d83e08f9766311b727892549fc1d2a2dae178409d0d437db9e6a2",
+  "proof_source_sha256": "6043d939fc87f75c2eb28c365ca56d393aa8639e22ffa0fe02049eeb76398b59",
+  "selected_calls": 44,
+  "private_calls": 44,
+  "all_frozen_selected_calls_remain_private": true
+}
