@@ -1,0 +1,8 @@
+{
+  "encoding": "gzip",
+  "file": "regression_before.log.gz",
+  "bytes": 1015,
+  "sha256": "bbbb71cbb92880ff8ddf132b583163816813293d9afd1add22d7f14eda59fad2",
+  "decoded_bytes": 6720,
+  "decoded_sha256": "460559f976d573c9c8a02d0a164fae6de89bf0c6db37cb183e5fd41f5284390f"
+}
