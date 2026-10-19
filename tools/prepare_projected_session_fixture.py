@@ -13,6 +13,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
+    parser.add_argument("--host-softmax", action="store_true",
+                        help="include host softmax calls for guarded-library session qualification")
     args = parser.parse_args()
     if args.out_dir.exists():
         parser.error("fixture output must be fresh")
@@ -33,6 +35,8 @@ def main():
 
         def forward(self, x, state):
             result = self.linear(x) + state
+            if args.host_softmax:
+                result = torch.softmax(result * 0.125, dim=-1)
             return result, result + 0.5
 
     model = Recurrent().eval()

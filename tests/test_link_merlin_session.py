@@ -6,7 +6,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.link_merlin_session import _selected_output_dumps, _session_main
+from tools.link_merlin_session import (
+    _selected_output_dumps,
+    _session_main,
+    _session_math_contract,
+)
 
 
 def test_bare_metal_session_reclaims_temporary_allocations_per_step() -> None:
@@ -44,3 +48,32 @@ def test_large_logits_dump_requires_explicit_bounded_limit() -> None:
             programs=(session.programs[0],
                       SimpleNamespace(steps=65, outputs=session.programs[1].outputs)),
         ), requests, 128_000)
+
+
+def test_native_session_math_needs_no_selection():
+    assert _session_math_contract({"first": {}, "second": {}}, None) is None
+
+
+def test_guarded_stages_cannot_silently_lose_their_wrapper():
+    from merlin.runtime.host_math import GuardedF32Call
+
+    guard = GuardedF32Call("expf", "body", 0x42A00000, "a" * 64)
+    receipts = {"first": {"host_math_guard": guard.to_dict()}, "identity": {}}
+    with pytest.raises(ValueError, match="explicit session selection"):
+        _session_math_contract(receipts, None)
+    assert _session_math_contract(receipts, guard) == guard
+    other = GuardedF32Call("expf", "body", 0x42000000, "a" * 64)
+    with pytest.raises(ValueError, match="explicit session selection"):
+        _session_math_contract(receipts, other)
+    with pytest.raises(ValueError, match="typed guarded contract"):
+        _session_math_contract(receipts, guard.to_dict())
+
+
+def test_incompatible_stage_math_contracts_refuse_a_global_wrap():
+    from merlin.runtime.host_math import GuardedF32Call
+
+    guard = GuardedF32Call("expf", "body", 0x42A00000, "a" * 64)
+    other = GuardedF32Call("expf", "body", 0x42A00000, "b" * 64)
+    with pytest.raises(ValueError, match="stage second math"):
+        _session_math_contract({"first": {"host_math_guard": guard.to_dict()},
+                                "second": {"host_math_guard": other.to_dict()}}, guard)

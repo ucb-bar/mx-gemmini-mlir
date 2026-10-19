@@ -43,7 +43,10 @@ def _load(link_path: Path, run_path: Path) -> tuple[dict, dict]:
     if preparation_schema is not None:
         from merlin.llvmlower.session_bundle import load
 
-        from tools.run_linked_merlin_session import observe_preparation_output, observe_session_output
+        from tools.run_linked_merlin_session import (
+            observe_preparation_output,
+            observe_session_output,
+        )
 
         if (preparation_schema != "spike_rdcycle_rdinstret_reset_prepare.v1"
                 or run.get("preparation_performance_schema") != preparation_schema
@@ -125,6 +128,10 @@ def compare_sessions(reference_link: Path, reference_run: Path,
         "candidate_run_sha256": _sha(candidate_run),
         "output_digest_parity": True,
         "changed_stage_objects": changed_objects,
+        **({"session_host_math": {
+            "reference": (base_link.get("host_math") or {}).get("contract"),
+            "candidate": (other_link.get("host_math") or {}).get("contract"),
+        }} if base_link.get("host_math") or other_link.get("host_math") else {}),
         "spike_sha256": base["spike_sha256"],
         "extension_sha256": base["extension_sha256"],
         "profile_sha256": base_link["profile_sha256"],

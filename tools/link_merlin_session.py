@@ -181,6 +181,28 @@ def _stage_objects(build: Path) -> list[Path]:
     return objects
 
 
+def _session_math_contract(receipts: dict[str, dict], selected):
+    """Require an explicit session-wide selection for stage-local wrappers.
+
+    GNU symbol wrapping covers the entire final image, including native stages.
+    This is allowed only by the selected exact return/errno/floating-effect
+    contract; precision-changing stage policies cannot be silently discarded.
+    """
+    from merlin.runtime.host_math import GuardedF32Call
+
+    if selected is not None:
+        if type(selected) is not GuardedF32Call:
+            raise ValueError("session math needs a typed guarded contract")
+        selected.validate()
+    for name, receipt in receipts.items():
+        value = receipt.get("host_math_guard")
+        if value is not None:
+            stage = GuardedF32Call.from_dict(value)
+            if stage != selected:
+                raise ValueError(f"stage {name} math differs from the explicit session selection")
+    return selected
+
+
 def _projected_stage_entry(program, build: Path, receipt: dict):
     """Join the actual compiled stage to a fully rederived generic ABI proof."""
     from merlin.llvmlower.session_projection import read_program_entry_projection
@@ -427,6 +449,7 @@ def link_session(
     linked_elf_admission=None,
     measure_preparation: bool = False,
     pack_program_weights: bool = False,
+    guarded_math=None,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -470,6 +493,8 @@ def link_session(
                 or receipt.get("diagnostic_host_vpu") is True):
             raise ValueError(f"stage {program.name} build receipt differs from the session capture/profile")
         objects = _stage_objects(build)
+        if (build / "host_math/host_math.o").exists() and receipt.get("host_math_guard") is None:
+            raise ValueError(f"stage {program.name} has an unsupported unselected host math wrapper")
         if len(objects) != (3 if receipt.get("selected_operations", 0) else 1):
             raise ValueError(f"stage {program.name} device objects differ from its selection count")
         catalog = build / "device_catalog/mx_catalog.json"
@@ -488,6 +513,7 @@ def link_session(
         source_objects[program.name] = {
             str(path.relative_to(build)): _sha(path) for path in objects}
         receipts[program.name] = receipt
+    guarded_math = _session_math_contract(receipts, guarded_math)
     if output.exists():
         raise ValueError("session output directory must not already exist")
     output.mkdir(parents=True)
@@ -523,6 +549,42 @@ def link_session(
     bare = merlin_src.parent / "merlin/runtime/baremetal/spike"
     flags = ["-O2", "-ffreestanding", "-fno-builtin", "-march=rv64gc",
              "-mabi=lp64d", "-mcmodel=medany"]
+    math_objects, math_link_flags, math_record = [], (), None
+    if guarded_math is not None:
+        from merlin.llvmlower.compilation_recipe import CompilationRecipe
+        from merlin.llvmlower.link_supplier_trace import trace_symbol_flags
+        from merlin.runtime.host_math import build_host_math, selected_libm_archive
+
+        def observed_run(argv, **kwargs):
+            return subprocess.run([str(part) for part in argv], capture_output=True,
+                                  text=True, **kwargs)
+
+        math_dir = output / "host_math"
+        math_dir.mkdir()
+        contract = math_dir / "guard.json"
+        contract.write_text(json.dumps(guarded_math.to_dict(), indent=2) + "\n")
+        math_compilation = CompilationRecipe(math_dir, producer=Path(__file__))
+        math_compilation.bind_preparation("guard", contract)
+
+        def compile_math(argv):
+            math_compilation.run(argv, runner=observed_run,
+                                 inputs=[math_dir / "host_math.c"],
+                                 output=math_dir / "host_math.o")
+
+        math_objects, math_link_flags = build_host_math(
+            "guarded_f32", math_dir, cc, flags, compile_math, guarded_math=guarded_math)
+        math_compilation.completed_product(math_objects[0], kind="object")
+        selected_libm, selected_libm_sha, selected_driver_sha = selected_libm_archive(
+            cc, flags, math_link_flags, runner=observed_run)
+        if selected_libm_sha != guarded_math.library_sha256:
+            raise ValueError("session math library differs from the reviewed guarded contract")
+        math_symbols = (guarded_math.source_symbol, guarded_math.body_symbol)
+        supplier_flags = trace_symbol_flags(math_symbols)
+        math_record = {"contract": guarded_math.to_dict(),
+                       "scope": "all final-image calls to the selected source symbol",
+                       "stage_guards": {name: receipt.get("host_math_guard")
+                                        for name, receipt in receipts.items()},
+                       "compile_recipe_sha256": _sha(math_compilation.path)}
 
     def compile_c(source: Path, object_path: Path, *includes: Path) -> Path:
         include_flags = [part for directory in includes for part in ("-I", str(directory))]
@@ -575,21 +637,38 @@ def link_session(
                       measure_preparation=measure_preparation),
         encoding="utf-8")
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
+    all_objects.extend(math_objects)
     elf = output / "session.elf"
     linker_script = (_catalog_linker_script(output, catalog_objects)
                      if catalog_objects else bare / "model_link.ld")
     static_end_symbol = "_merlin_static_end" if catalog_objects else "_stack_top"
     libm = riscv_root / "riscv64-unknown-elf/lib/libm.a"
+    if guarded_math is not None:
+        libm = selected_libm
     for attempt in range(3):
         _run([cc, *flags,
               f"-DMERLIN_ARENA_BASE_ADDR={hex(layout['arena_base'])}ULL",
               f"-DMERLIN_ARENA_SIZE_BYTES={hex(layout['arena_bytes'])}ULL",
               f"-DMERLIN_WEIGHTS_BASE_ADDR={hex(layout['weights_base'])}ULL",
               "-c", malloc_source, "-o", malloc_object])
-        _run([cc, *flags, "-nostdlib", "-nostartfiles",
+        link_command = [cc, *flags, "-nostdlib", "-nostartfiles",
               f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
               "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
-              "-T", linker_script, *all_objects, libm, "-o", elf])
+              "-T", linker_script, *all_objects, *math_link_flags,
+              *(() if guarded_math is None else supplier_flags), libm, "-o", elf]
+        if guarded_math is None:
+            _run(link_command)
+        else:
+            attempt_dir = math_dir / f"link_attempt_{attempt}"
+            attempt_dir.mkdir()
+            link_compilation = CompilationRecipe(attempt_dir, producer=Path(__file__))
+            link_compilation.bind_preparation("guard", contract)
+            link_compilation.bind_preparation("host_math_source", math_dir / "host_math.c")
+            result = link_compilation.run(
+                link_command, runner=observed_run, inputs=[linker_script, *all_objects, libm], output=elf)
+            link_compilation.record_link_suppliers({symbol: libm for symbol in math_symbols}, result)
+            if _sha(cc.resolve(strict=True)) != selected_driver_sha or _sha(libm) != selected_libm_sha:
+                raise ValueError("session math driver or library changed during link")
         static_end = _symbol_address(nm, elf, static_end_symbol)
         checked = spike_session_layout(weights_bytes=weight_bytes,
                                        arena_bytes=arena_bytes,
@@ -603,6 +682,12 @@ def link_session(
     admission = (admit_linked_device_elf(
         admission_route, admission_selection, elf=elf, linked_sha256=_sha(elf), directory=output)
         if catalog_objects else None)
+    if guarded_math is not None:
+        link_compilation.completed(elf)
+        math_record.update(link_recipe=str(link_compilation.path),
+                           link_recipe_sha256=_sha(link_compilation.path),
+                           object_sha256=_sha(math_objects[0]),
+                           source_sha256=_sha(math_dir / "host_math.c"))
     record = {
         "schema": "mx_gemmini.linked_merlin_session.v1",
         "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
@@ -643,6 +728,7 @@ def link_session(
             for name, value in estimates.items()},
         "elf": str(elf), "elf_bytes": elf.stat().st_size,
         "elf_sha256": _sha(elf),
+        **({"host_math": math_record} if math_record is not None else {}),
         "mem_bytes": max(layout["mem_bytes"],
                          *(receipt["mem_bytes"] for receipt in receipts.values())),
     }
@@ -667,12 +753,15 @@ def main() -> None:
                         help="also measure session reset and cross-program state handoffs")
     parser.add_argument("--pack-program-weights", action="store_true",
                         help="explicitly bind distinct stage-local constant blobs through a generic aligned pool")
+    parser.add_argument("--host-math-guard", type=Path,
+                        help="explicit exact guarded library policy for all final-image calls; must match stage guards")
     parser.add_argument("--dump-limit-bytes", type=int,
                         default=DEFAULT_DUMP_LIMIT_BYTES,
                         help="per-output console limit (16–256 KiB; 8 MiB total)")
     args = parser.parse_args()
     sys.path.insert(0, str(args.merlin_src.resolve(strict=True)))
     from merlin.model_check.admission import service as structural_admission
+    from merlin.runtime.host_math import GuardedF32Call
     record = link_session(
         args.session_root.resolve(strict=True), _stage_paths(args.stage_build),
         args.workdir.absolute(), profile=args.profile.resolve(strict=True),
@@ -683,7 +772,9 @@ def main() -> None:
         linked_elf_admission=(structural_admission("mx_gemmini")
                               if args.structural_elf_admission else None),
         measure_preparation=args.measure_preparation,
-        pack_program_weights=args.pack_program_weights)
+        pack_program_weights=args.pack_program_weights,
+        guarded_math=(GuardedF32Call.from_dict(json.loads(args.host_math_guard.read_text()))
+                      if args.host_math_guard is not None else None))
     print(json.dumps(record, sort_keys=True))
 
 

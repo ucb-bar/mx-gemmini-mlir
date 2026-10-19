@@ -50,6 +50,43 @@ def validate_admission_record(link: dict) -> None:
                 raise ValueError("linked session admission policy source changed")
 
 
+def validate_math_record(link: dict, riscv_root: Path) -> None:
+    """Reopen the selected exact wrapper and actual final-link suppliers."""
+    record = link.get("host_math")
+    if record is None:
+        return
+    from merlin.llvmlower.compilation_recipe import verify_completed_recipe
+    from merlin.runtime.host_math import (
+        GuardedF32Call,
+        host_math_recipe,
+        selected_libm_archive,
+    )
+
+    guard = GuardedF32Call.from_dict(record["contract"])
+    recipe = host_math_recipe("guarded_f32", guarded_math=guard)
+    elf = Path(link["elf"]).resolve(strict=True)
+    math_dir = elf.parent / "host_math"
+    source, obj = math_dir / "host_math.c", math_dir / "host_math.o"
+    if (source.read_text() != recipe.source or _sha(source) != record.get("source_sha256")
+            or _sha(obj) != record.get("object_sha256")
+            or json.loads((math_dir / "guard.json").read_text()) != guard.to_dict()
+            or _sha(math_dir / "compilation_recipe.json") != record.get("compile_recipe_sha256")):
+        raise ValueError("linked session math source, object, or contract changed")
+    cc = riscv_root / "bin/riscv64-unknown-elf-gcc"
+    library, digest, _ = selected_libm_archive(
+        cc, ["-march=rv64gc", "-mabi=lp64d"], recipe.link_flags,
+        runner=lambda argv: subprocess.run(argv, capture_output=True, text=True, check=True))
+    if digest != guard.library_sha256:
+        raise ValueError("linked session math library differs from its contract")
+    completed = verify_completed_recipe(
+        Path(record["link_recipe"]), executable=elf,
+        expected_recipe_sha256=record["link_recipe_sha256"],
+        expected_link_suppliers={symbol: library for symbol in (guard.source_symbol, guard.body_symbol)})
+    argv = completed["commands"][-1]["argv"]
+    if argv.count(str(obj)) != 1 or any(argv.count(flag) != 1 for flag in recipe.link_flags):
+        raise ValueError("linked session math wrapper was not selected in the actual link")
+
+
 def observe_preparation_output(log: str, session, observation: dict) -> dict:
     """Account for reset/handoff intervals without changing the original step total."""
     expected = [-1, *range(len(session.programs))]
@@ -296,6 +333,7 @@ def run_session(
     if elf.stat().st_size != link["elf_bytes"] or _sha(elf) != link["elf_sha256"]:
         raise ValueError("linked session ELF changed after its receipt")
     validate_admission_record(link)
+    validate_math_record(link, riscv_root)
     recorded_programs = [(row["name"], row["steps"], row["outputs"])
                          for row in link["programs"]]
     captured_programs = [(row.name, row.steps, len(row.outputs)) for row in session.programs]

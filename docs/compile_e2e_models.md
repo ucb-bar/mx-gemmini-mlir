@@ -196,6 +196,14 @@ the stage roster, source and profile hashes, object hashes, shared checkpoint
 weights, and persistent-state bindings. The receipt status
 `linked_experimental_numeric_qualification_pending` means compilation and
 linking succeeded; it is not a numerical acceptance result.
+For stages built with `--host-math-guard guard.json`, pass that same explicit
+contract to the session linker. The final GNU wrapper applies to all calls in
+the session, including native stages, and therefore requires the reviewed exact
+return-bit, errno and floating-effect contract. Different stage contracts or
+an omitted session selection refuse. The linker rebuilds one common wrapper
+through Merlin, pins the actual library, and retains defining-supplier traces
+from the final link. The runner reopens the wrapper and completed link recipe
+before execution. Native sessions retain their existing link path.
 For large prepacked sessions, the linker places each MX catalog's code and
 constants together so RISC-V PC-relative references stay in range. It records
 `_merlin_static_end` after those catalogs; sessions without catalogs use
