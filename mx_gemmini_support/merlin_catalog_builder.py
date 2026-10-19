@@ -96,6 +96,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          retain_shared_activation_rhs: bool = False,
                          matrix_vpu_transport: bool = False,
                          virtual_zero_padding: bool = False,
+                         integer_group_packing: bool = False,
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
@@ -106,6 +107,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("broadcast preparation requires broadcast connections")
     if type(broadcast_preparation_budget_bytes) is not int or broadcast_preparation_budget_bytes < 0:
         raise ValueError("broadcast preparation requires a nonnegative integer byte budget")
+    if type(integer_group_packing) is not bool:
+        raise ValueError("integer group packing requires an explicit boolean selection")
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
     if connect_sigmoid_multiplies and (not connect_multiplies or enabled_vpu_regions is None
@@ -150,18 +153,28 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
              "-I", str(_SUPPORT)]
     objects: list[Path] = []
     source_hashes = {}
+    source_flags = {}
+    # The same immutable source bytes encode checkpoint operands and build the
+    # runtime object. Retain their complete local header inputs with the catalog.
+    runtime_source = out_dir / "runtime_quant.c"
+    for original in (_QUANTIZER, _QUANTIZER_LUT, _SUPPORT / "runtime_quant.h"):
+        (out_dir / original.name).write_bytes(original.read_bytes())
+    source_hashes["runtime_quant_lut"] = _sha(out_dir / "runtime_quant_lut.h")
+    source_hashes["runtime_quant_header"] = _sha(out_dir / "runtime_quant.h")
 
-    def compile_source(name: str, source: str | Path) -> None:
+    def compile_source(name: str, source: str | Path, *, extra_flags: tuple[str, ...] = ()) -> None:
         path = out_dir / f"{name}.c"
         if isinstance(source, Path):
-            path = source
+            path.write_bytes(source.read_bytes())
         else:
             path.write_text(source, encoding="utf-8")
         obj = out_dir / f"{name}.o"
-        _run([str(cc), *flags, "-c", str(path), "-o", str(obj)],
+        _run([str(cc), *flags, *extra_flags, "-c", str(path), "-o", str(obj)],
              label=f"{name} compilation")
         objects.append(obj)
         source_hashes[name] = _sha(path)
+        if extra_flags:
+            source_flags[name] = list(extra_flags)
 
     kernel_records = []
     max_workspace = 0
@@ -202,7 +215,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             padded = plan_dense_shape(profile, shape, precision=precision).padded_shape_mnk
             codes, scales = pack_weight(
                 values, precision=precision, padded_shape=(padded[2], padded[1]),
-                workdir=out_dir)
+                workdir=out_dir, quantizer_source=runtime_source)
             fixed_symbols = (f"{symbol}_fixed_codes", f"{symbol}_fixed_scales")
             fixed_records[symbol] = {
                 "checkpoint_parameter_name": parameter_name,
@@ -510,8 +523,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         if unit.skipped or set(unit.symbols) != set(prepared_entries):
             raise ValueError("shared activation ABI could not be emitted")
         compile_source("shared_activation_shims", unit.text)
-    compile_source("runtime_quant", _QUANTIZER)
-    source_hashes["runtime_quant_lut"] = _sha(_QUANTIZER_LUT)
+    quant_flags = ()
+    if integer_group_packing:
+        from .runtime_group_preparation import emit_runtime_group_preparation
+
+        group_header = out_dir / "runtime_group_prepare.h"
+        group_header.write_text(emit_runtime_group_preparation(profile["resources"]["scale_block_elements"]))
+        source_hashes["runtime_group_prepare"] = _sha(group_header)
+        quant_flags = ("-DMX_QUANT_GROUP_WORDS", "-DMX_QUANT_INLINE_GROUP", "-I", str(out_dir))
+    compile_source("runtime_quant", runtime_source, extra_flags=quant_flags)
     compile_source("shared_workspace", emit_shared_workspace_definition(
         max_workspace, symbol=_WORKSPACE_SYMBOL))
     packed_object_storage_reuse = None
@@ -636,6 +656,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
         "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
         "virtual_zero_padding": virtual_zero_padding,
+        "integer_group_packing": integer_group_packing,
         "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "connect_broadcast_multiplies": connect_broadcast_multiplies,
         "prepare_broadcast_operands": prepare_broadcast_operands,
@@ -682,6 +703,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "compilation": {
             "object_sha256": _sha(object_path),
             "source_sha256": source_hashes,
+            "source_flags": source_flags,
             "shared_workspace_bytes": max_workspace,
             "issuer_modes": issuer_modes,
             "compiler": str(cc), "flags": flags,
@@ -708,6 +730,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 retain_shared_activation_rhs: bool = False,
                                 matrix_vpu_transport: bool = False,
                                 virtual_zero_padding: bool = False,
+                                integer_group_packing: bool = False,
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
@@ -747,6 +770,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     matrix_vpu_transport=matrix_vpu_transport,
                                     virtual_zero_padding=virtual_zero_padding,
+                                    integer_group_packing=integer_group_packing,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)
 

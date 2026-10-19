@@ -78,6 +78,9 @@ static uint8_t element_code(float normalized, uint32_t format) {
 
 /* Power-of-two scaling preserves a rounded BF16 mantissa. The scale exponent
  * and that mantissa therefore select the same code as the reference search. */
+#if defined(MX_QUANT_GROUP_WORDS)
+__attribute__((unused))
+#endif
 static uint8_t fast_element_code(float rounded, int scale_exponent,
                                  uint32_t format) {
   uint32_t bits = bits_of_float(rounded);
@@ -108,9 +111,66 @@ static int block_scale_exponent(float maximum) {
   return exponent;
 }
 
-static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
+#if defined(MX_QUANT_GROUP_WORDS) && !defined(MX_QUANT_REFERENCE) && !defined(MX_QUANT_LUT_GENERATOR)
+static inline int mx_round_group_word(float value, uint16_t *word) {
+  *word = (uint16_t)(bits_of_float(rounded_bf16(value)) >> 16);
+  return (*word & 0x7f80u) == 0x7f80u ? -1 : 0;
+}
+static inline uint16_t mx_group_word_magnitude(uint16_t word) { return word & 0x7fffu; }
+#include "runtime_group_prepare.h"
+#endif
+
+#if defined(MX_QUANT_INLINE_GROUP)
+static inline __attribute__((always_inline))
+#else
+static
+#endif
+int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
                           uint32_t axis, uint32_t major, uint32_t group,
                           uint32_t format, uint8_t *codes, uint8_t *scales) {
+#if defined(MX_QUANT_GROUP_WORDS) && !defined(MX_QUANT_REFERENCE) && !defined(MX_QUANT_LUT_GENERATOR)
+  uint16_t values[32];
+  uint16_t maximum = 0;
+  const float *start = input + (axis == 1 ? (size_t)major * cols + group * 32u :
+                                         (size_t)group * 32u * cols + major);
+  if (mx_prepare_group_words(start, axis == 1 ? 1u : cols, values, &maximum)) return -1;
+  int exponent = (int)(maximum >> 7) - 127;
+  if (exponent < -23) exponent = -23;
+  uint32_t group_major = axis == 1 ? rows : cols;
+  scales[(size_t)group * group_major + major] = (uint8_t)(exponent + 127);
+  for (uint32_t offset = 0; offset < 32; ++offset) {
+    uint32_t row = axis == 1 ? major : group * 32u + offset;
+    uint32_t col = axis == 1 ? group * 32u + offset : major;
+    uint32_t word = values[offset];
+    uint32_t biased = (word >> 7) & 255u;
+    uint8_t code;
+    /* Every finite member's exponent is at most the group's maximum. The
+     * lower scale clamp can only increase the selected exponent, so delta is
+     * nonnegative. BF16 magnitudes have the same order as their unsigned words.
+     * Subnormals are below the minimum scale's representable code threshold.
+     */
+    uint32_t delta = (uint32_t)(exponent + 127) - biased;
+    if (biased == 0u || delta >= 16u) {
+      code = format == MX_RUNTIME_FP8 ? (uint8_t)((word >> 15) << 7) : 0u;
+    } else {
+      uint32_t mantissa = word & 127u;
+      code = format == MX_RUNTIME_FP4 ? mx_fp4_code_lut[delta][mantissa] : mx_fp8_code_lut[delta][mantissa];
+      if (format == MX_RUNTIME_FP8) code |= (uint8_t)((word >> 15) << 7);
+      else if (code) code |= (uint8_t)((word >> 15) << 3);
+    }
+    if (format == MX_RUNTIME_FP8) {
+      codes[(size_t)row * cols + col] = code;
+    } else if (axis == 1) {
+      size_t index = (size_t)(row / 2u) * cols + col;
+      if (row & 1u) codes[index] |= (uint8_t)(code << 4);
+      else codes[index] = code;
+    } else {
+      size_t index = (size_t)row * (cols / 2u) + col / 2u;
+      if (col & 1u) codes[index] |= (uint8_t)(code << 4);
+      else codes[index] = code;
+    }
+  }
+#else
   float values[32];
   float maximum = 0.0f;
   for (uint32_t offset = 0; offset < 32; ++offset) {
@@ -148,6 +208,7 @@ static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
       else codes[index] = code;
     }
   }
+#endif
   return 0;
 }
 

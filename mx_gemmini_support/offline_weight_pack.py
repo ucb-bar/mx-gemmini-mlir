@@ -9,18 +9,18 @@ from __future__ import annotations
 
 import ctypes
 import hashlib
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import numpy as np
-
 
 _SOURCE = Path(__file__).with_name("runtime_quant.c")
 _LUT = Path(__file__).with_name("runtime_quant_lut.h")
 
 
 def pack_weight(values: np.ndarray, *, precision: str,
-                padded_shape: tuple[int, int], workdir: Path) -> tuple[bytes, bytes]:
+                padded_shape: tuple[int, int], workdir: Path,
+                quantizer_source: Path | None = None) -> tuple[bytes, bytes]:
     """Return MX codes and E8M0 scales, including zero-padded edge tiles."""
     if precision not in {"FP4", "FP8"}:
         raise ValueError("MX offline weight packing needs FP4 or FP8")
@@ -39,12 +39,15 @@ def pack_weight(values: np.ndarray, *, precision: str,
     padded[:values.shape[0], :values.shape[1]] = values
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
-    digest = hashlib.sha256(_SOURCE.read_bytes() + _LUT.read_bytes()).hexdigest()[:16]
+    source = _SOURCE if quantizer_source is None else Path(quantizer_source)
+    lut = _LUT if quantizer_source is None else source.with_name("runtime_quant_lut.h")
+    header = source.with_name("runtime_quant.h")
+    digest = hashlib.sha256(source.read_bytes() + lut.read_bytes() + header.read_bytes()).hexdigest()[:16]
     library = workdir / f"runtime_quant_{digest}.so"
     if not library.exists():
         result = subprocess.run(
             ["cc", "-O2", "-fno-fast-math", "-fno-common", "-fPIC", "-shared",
-             "-o", str(library), str(_SOURCE)], capture_output=True, text=True)
+             "-o", str(library), str(source)], capture_output=True, text=True)
         if result.returncode:
             raise RuntimeError(f"MX host quantizer build failed: {result.stderr[-500:]}")
     pack = ctypes.CDLL(str(library.resolve())).mx_pack_weight_f32

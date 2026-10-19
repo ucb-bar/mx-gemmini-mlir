@@ -32,14 +32,23 @@ REFERENCE = {
 }
 
 
-@pytest.fixture(scope="module")
-def library(tmp_path_factory):
+@pytest.fixture(scope="module", params=((), ("-DMX_QUANT_GROUP_WORDS",),
+                                      ("-DMX_QUANT_INLINE_GROUP",),
+                                      ("-DMX_QUANT_GROUP_WORDS", "-DMX_QUANT_INLINE_GROUP")),
+                ids=("float_groups", "word_groups", "inlined_float_groups", "inlined_word_groups"))
+def library(tmp_path_factory, request):
     cc = shutil.which("cc")
     if cc is None:
         pytest.skip("host C compiler unavailable")
     output = tmp_path_factory.mktemp("mx-runtime-quant") / "libquant.so"
+    if "-DMX_QUANT_GROUP_WORDS" in request.param:
+        from mx_gemmini_support.runtime_group_preparation import (
+            emit_runtime_group_preparation,
+        )
+
+        (output.parent / "runtime_group_prepare.h").write_text(emit_runtime_group_preparation())
     subprocess.run([cc, "-shared", "-fPIC", "-O2", "-std=c11", "-Wall", "-Wextra",
-                    "-Werror", str(SOURCE), "-lm", "-o", str(output)], check=True)
+                    "-Werror", *request.param, "-I", str(output.parent), str(SOURCE), "-lm", "-o", str(output)], check=True)
     lib = ctypes.CDLL(str(output))
     for name in ("mx_pack_activation_f32", "mx_pack_weight_f32"):
         function = getattr(lib, name)
