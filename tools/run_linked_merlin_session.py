@@ -254,39 +254,9 @@ def extract_output_dumps(log: str, session, selected: list[dict],
     """Save bounded guest values only when their bytes match the session digest."""
     if not DEFAULT_DUMP_LIMIT_BYTES <= byte_limit <= MAX_DUMP_LIMIT_BYTES:
         raise ValueError("invalid linked output dump byte limit")
-    wanted = {(row["program"], row["output"]): row for row in selected}
-    expected = {
-        (row["program"], row["step"], row["output"]): row
-        for row in digests if (row["program"], row["output"]) in wanted
-    }
-    if len(expected) != sum(session.programs[program].steps
-                            for program, _output in wanted):
-        raise ValueError("selected output dumps differ from the session ABI")
-    values = {}
-    for line in log.splitlines():
-        if not line.startswith("SESSION_HEX "):
-            continue
-        parts = line.split()
-        if len(parts) != 6:
-            raise ValueError("malformed session output dump")
-        try:
-            program, step, output, byte_count = map(int, parts[1:5])
-        except ValueError as error:
-            raise ValueError("malformed session output dump") from error
-        key = (program, step, output)
-        if (key not in expected or key in values or
-                byte_count != expected[key]["bytes"] or byte_count > byte_limit or
-                len(parts[5]) != byte_count * 2):
-            raise ValueError("session output dump differs from its capture ABI")
-        try:
-            data = bytes.fromhex(parts[5])
-        except ValueError as error:
-            raise ValueError("malformed session output dump") from error
-        if hashlib.sha256(data).hexdigest() != expected[key]["sha256"]:
-            raise ValueError("session output dump differs from its guest digest")
-        values[key] = data
-    if set(values) != set(expected):
-        raise ValueError("complete session lacks a selected output dump")
+    from merlin.llvmlower.session_outputs import observed_output_dump_bytes
+
+    values = observed_output_dump_bytes(log, session, selected, digests, byte_limit=byte_limit)
     if not values:
         return []
     dump_dir = out_dir / "output_dumps"
