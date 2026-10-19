@@ -75,6 +75,8 @@ def compare(stage: Path, builds: dict[str, Path], out: Path):
         arrays[label] = bits
         rewrite = build / "device_host_abi/mx_shared_activation_rewrite.json"
         groups = json.loads(rewrite.read_text())["groups"] if rewrite.exists() else []
+        transport = build / "device_host_abi/mx_matrix_transport_rewrite.json"
+        edges = json.loads(transport.read_text())["edges"] if transport.exists() else []
         records[label] = {
             "cycles": parsed["metrics"]["cycles"], "perf": parse_gemmini_perf(console),
             "build_hash": receipt["build_hash"], "elf_bytes": elf.stat().st_size,
@@ -82,6 +84,7 @@ def compare(stage: Path, builds: dict[str, Path], out: Path):
             "stage_receipt_sha256": sha(receipt_path), "console_sha256": sha(build / "spike.log"),
             "output_sha256": evidence["indexed"][0]["sha256"], "output_elements": count,
             "arena_estimate": receipt["arena_estimate"], "groups": groups,
+            "private_transport_edges": edges,
             "retained_unused_rhs": receipt.get("retain_shared_activation_rhs", False),
         }
     baseline = next(iter(builds))

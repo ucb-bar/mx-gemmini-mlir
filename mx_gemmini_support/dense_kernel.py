@@ -1,4 +1,4 @@
-"""Target-owned dense f32 adapter for a checked MX encoded-pointer issuer.
+"""Target-owned dense adapters for a checked MX encoded-pointer issuer.
 
 The generated entry implements Merlin's three-pointer catalog ABI. Its static
 workspace is deliberately non-reentrant: the selected bare-metal execution
@@ -54,13 +54,19 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           prepacked_weight_symbols: tuple[str, str] | None = None,
                           cache_immutable_weight: bool = False,
                           prepared_activation: bool = False,
-                          retain_prepared_rhs: bool = False) -> DenseKernel:
+                          retain_prepared_rhs: bool = False,
+                          output_dtype: str = "f32") -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
     The issuer must have been checked against its profile. A payload-bound
     issuer has independent source qualification; a shape-planned issuer still
     needs a separate numerical execution gate. Buffer extents are checked
     again before generating the adapter.
+
+    BF16 output is an explicit private-edge transport contract. An exactly
+    sized readout writes directly to the caller's destination; padded output
+    is cropped without widening. Callers must qualify downstream rounding and
+    exceptional behavior before selecting this alternative boundary.
     """
     if not _identifier(symbol) or not _identifier(issuer_symbol) or symbol == issuer_symbol:
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
@@ -77,6 +83,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX prepared activation entry requires immutable prepacked weights")
     if retain_prepared_rhs and not prepared_activation:
         raise ValueError("MX retained prepared RHS is a shared-activation diagnostic only")
+    if output_dtype not in {"f32", "bf16"}:
+        raise ValueError("MX dense readout requires f32 or bf16 output")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -103,12 +111,15 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX dense adapter exceeds the selected 32-bit runtime extent")
     padded_a = (lm, lk) != (m, k)
     padded_b = (lk, ln) != (k, n)
+    direct_bf16 = output_dtype == "bf16" and (lm, ln) == (m, n)
     buffers = []
     if padded_a and not prepared_activation:
         buffers.append(("padded_a", "float", m * k * 4, m * k))
     if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
+        if direct_bf16 and name == "output_bf16":
+            continue
         if prepared_activation and name in {"activation", "activation_scales"}:
             continue
         if (prepacked_weight_symbols is not None or cache_immutable_weight) and name in {
@@ -188,10 +199,11 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         a_prepare = ""
         pack = (f"  const uint8_t *activation = lhs;\n"
                 f"  const uint8_t *activation_scales = lhs + {expected['activation']}u;\n")
-    parameters = ("const uint8_t *lhs, const float *rhs, float *out"
+    out_scalar = "uint16_t" if output_dtype == "bf16" else "float"
+    parameters = (f"const uint8_t *lhs, const float *rhs, {out_scalar} *out"
                   if retain_prepared_rhs else
-                  "const uint8_t *lhs, float *out" if prepared_activation else
-                  "const float *lhs, const float *rhs, float *out")
+                  f"const uint8_t *lhs, {out_scalar} *out" if prepared_activation else
+                  f"const float *lhs, const float *rhs, {out_scalar} *out")
     pointer_check = ("!lhs || !out" if prepared_activation and not retain_prepared_rhs
                      else "!lhs || !rhs || !out")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
@@ -200,6 +212,11 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
       word.bits = (uint32_t)output_bf16[(size_t)row * {n}u + col] << 16;
       out[(size_t)row * {ln}u + col] = word.value;
     }}
+""")
+    if output_dtype == "bf16":
+        copy_output = ("" if direct_bf16 else f"""  for (uint32_t row = 0; row < {lm}u; ++row)
+    for (uint32_t col = 0; col < {ln}u; ++col)
+      out[(size_t)row * {ln}u + col] = output_bf16[(size_t)row * {n}u + col];
 """)
     source = f"""/* MX dense f32 adapter: {issuer.precision}, qualified {m}x{n}x{k} schedule. */
 #include <stddef.h>
@@ -212,7 +229,7 @@ void {issuer_symbol}(const void *, const void *, const void *, const void *,
 void {symbol}({parameters}) {{
   if ({pointer_check}) __builtin_trap();
 {local_buffers}{a_prepare}{b_prepare}{pack}  {issuer_symbol}(activation, activation_scales, {weight_codes}, {weight_scale},
-                  output_bf16, scratch_output_scales);
+                  {"out" if direct_bf16 else "output_bf16"}, scratch_output_scales);
 {copy_output}}}
 """
     persistent = (expected["weight"] + expected["weight_scales"] + 1

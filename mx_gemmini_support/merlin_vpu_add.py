@@ -246,7 +246,8 @@ class MXVPUPostOffload:
                  enabled_site_regions: dict[str, frozenset[str]] | None = None,
                  connect_multiplies: bool = False,
                  share_activation_packing: bool = False,
-                 activation_packing_budget_bytes: int = 1048576):
+                 activation_packing_budget_bytes: int = 1048576,
+                 matrix_vpu_transport: bool = False):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
@@ -287,6 +288,13 @@ class MXVPUPostOffload:
 
             self.shared_activation = MXSharedActivationPostOffload(
                 fixed_weight_catalog, max_live_bytes=activation_packing_budget_bytes)
+        self.matrix_transport = None
+        if matrix_vpu_transport:
+            if fixed_weight_catalog is None:
+                raise ValueError("matrix transport requires a fixed weight catalog")
+            from .merlin_matrix_transport import MXMatrixTransportPostOffload
+
+            self.matrix_transport = MXMatrixTransportPostOffload(fixed_weight_catalog)
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         selected = prepared
@@ -306,4 +314,6 @@ class MXVPUPostOffload:
             selected = self.fixed_weight(selected, sidecar, workdir)
         if self.shared_activation is not None:
             selected = self.shared_activation(selected, sidecar, workdir)
+        if self.matrix_transport is not None:
+            selected = self.matrix_transport(selected, sidecar, workdir)
         return selected

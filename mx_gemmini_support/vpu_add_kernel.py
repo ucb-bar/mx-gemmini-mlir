@@ -89,7 +89,8 @@ def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],
                          lhs_shape: tuple[int, ...] | None = None,
                          lhs_axes: tuple[int, ...] | None = None,
                          lhs_dtype: str | None = None,
-                         rhs_dtype: str | None = None) -> AddKernel:
+                         rhs_dtype: str | None = None,
+                         preserve_f32_nan_refusal: bool = False) -> AddKernel:
     """Emit contiguous BF16 VPU add, sub, mul, or rcp+mul division."""
     if (profile.get("transport") != "rocket_rocc" or
             profile.get("geometry", {}).get("mesh_columns") != 16 or
@@ -132,6 +133,11 @@ def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],
                 if lhs_dtype == "f32" else "uint32_t word = lhs[{lhs_index}];")
     rhs_read = ("{symbol}_narrow(rhs[{rhs_index}])" if rhs_dtype == "f32"
                 else "rhs[{rhs_index}]")
+    lhs_guard = ("if ((word & 0x7f80u) == 0x7f80u && (word & 0x7fu)) __builtin_trap();"
+                 if preserve_f32_nan_refusal and lhs_dtype == "bf16" else "")
+    rhs_guard = (f"if (({symbol}_b[index] & 0x7f80u) == 0x7f80u && "
+                 f"({symbol}_b[index] & 0x7fu)) __builtin_trap();"
+                 if preserve_f32_nan_refusal and rhs_dtype == "bf16" else "")
     out_write = ("{symbol}_widen({symbol}_c[index])" if dtype == "f32"
                  else f"{symbol}_c[index]")
     source = f'''#include <stdint.h>
@@ -163,8 +169,10 @@ void {symbol}(const {lhs_scalar} *lhs, const {rhs_scalar} *rhs, {scalar} *out) {
         continue;
       }}
       {lhs_read.format(symbol=symbol, lhs_index=lhs_index)}
+      {lhs_guard}
       {symbol}_a[index] = (uint16_t)word;
       {symbol}_b[index] = {rhs_read.format(symbol=symbol, rhs_index=rhs_index)};
+      {rhs_guard}
     }}
     const void *a = {symbol}_a, *b = {symbol}_b, *c = {symbol}_c;
     switch (count) {{

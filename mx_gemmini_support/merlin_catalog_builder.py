@@ -87,11 +87,14 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          connect_multiplies: bool = False,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
+                         matrix_vpu_transport: bool = False,
                          reuse_prepacked_data: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
+    if matrix_vpu_transport and not prepack_immutable_weights:
+        raise ValueError("matrix transport requires immutable prepacked weights")
     if retain_shared_activation_rhs and not share_activation_packing:
         raise ValueError("retained shared RHS requires shared activation packing")
     if reuse_prepacked_data is not None:
@@ -222,6 +225,14 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             raise ValueError("MX shared issuer differs across cached source sites")
         compile_source(symbol, generated.kernel.source)
         activation_preparation = None
+        private_bf16_transport = None
+        prepared_private_bf16_transport = None
+        if matrix_vpu_transport and fixed_symbols is not None:
+            from .merlin_matrix_transport import register_matrix_transport
+
+            private_bf16_transport = register_matrix_transport(
+                generated, shape, symbol, issuer_symbol, fixed_symbols,
+                _WORKSPACE_SYMBOL, compile_source, prepared_entries)
         if share_activation_packing and fixed_symbols is not None:
             from merlin.llvmlower.device_shim import LogicalBuffer
             from .dense_kernel import emit_activation_preparation, emit_dense_f32_kernel
@@ -261,6 +272,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 "ownership": "explicit_readonly_ssa_tensor",
                 "completion": "synchronous_native_issuer",
             }
+            if matrix_vpu_transport:
+                prepared_private_bf16_transport = register_matrix_transport(
+                    generated, shape, symbol, issuer_symbol, fixed_symbols,
+                    _WORKSPACE_SYMBOL, compile_source, prepared_entries,
+                    prepared_activation=True, retain_prepared_rhs=retain_shared_activation_rhs)
         if generated.schedule_text is None or generated.schedule_digest is None:
             raise ValueError("MX catalog kernel has no checked schedule IR")
         schedule_path = out_dir / f"{issuer_symbol}.mk"
@@ -287,6 +303,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "prepacked_checkpoint_weight": entry["prepacked_checkpoint_weight"],
             **({"activation_preparation": activation_preparation}
                if activation_preparation is not None else {}),
+            **({"private_bf16_transport": private_bf16_transport}
+               if private_bf16_transport is not None else {}),
+            **({"prepared_private_bf16_transport": prepared_private_bf16_transport}
+               if prepared_private_bf16_transport is not None else {}),
             **fixed_records.get(symbol, {}),
             **({"checkpoint_parameter_arg": entry["checkpoint_parameter_arg"],
                 "checkpoint_parameter_name": entry["checkpoint_parameter_name"],
@@ -336,11 +356,17 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             symbol=site["kernel_symbol"])
         compile_source(site["kernel_symbol"], generated.source)
         compile_source(site["symbol"], emit_memref_add_shim(site))
+        private_bf16_inputs = []
+        if matrix_vpu_transport:
+            from .merlin_matrix_transport import register_add_transports
+
+            private_bf16_inputs = register_add_transports(site, profile, compile_source, prepared_entries)
         add_kernels.append({
             "symbol": site["symbol"], "kernel_symbol": site["kernel_symbol"],
             "shape": list(site["shape"]), "rhs_shape": list(site["rhs_shape"]),
             "dtype": site["dtype"], "broadcast": site["broadcast"],
             "elements_per_chunk": generated.elements_per_chunk,
+            **({"private_bf16_inputs": private_bf16_inputs} if private_bf16_inputs else {}),
         })
     elementwise_sites = routed("elementwise", selected_elementwise_sites(
         prepared_text, profile))
@@ -524,6 +550,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         } if reuse_prepacked_data is not None else None),
         "kernels": kernel_records,
         "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
+        "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
         "resolved_vpu_regions": ({name: sorted(sites) for name, sites in
@@ -585,6 +612,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 connect_multiplies: bool = False,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
+                                matrix_vpu_transport: bool = False,
                                 reuse_prepacked_data: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
@@ -617,6 +645,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     connect_multiplies=connect_multiplies,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
+                                    matrix_vpu_transport=matrix_vpu_transport,
                                     reuse_prepacked_data=reuse_prepacked_data)
 
     return build

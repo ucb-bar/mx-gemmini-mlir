@@ -186,6 +186,9 @@ def main() -> None:
     parser.add_argument("--share-activation-packing", action="store_true",
                         help="experimentally share explicit packed activation tensors; requires "
                              "prepacked weights and an execution policy")
+    parser.add_argument("--matrix-vpu-transport", action="store_true",
+                        help="experimentally preserve BF16 on private matrix-to-VPU add edges; "
+                             "requires prepacked weights and an execution policy")
     parser.add_argument("--activation-packing-budget-bytes", type=int, default=1048576,
                         help="maximum simultaneously live shared packed tensors (default: 1 MiB)")
     parser.add_argument("--retain-shared-activation-rhs", action="store_true",
@@ -210,6 +213,8 @@ def main() -> None:
         parser.error("--share-activation-packing requires prepacked weights and an execution policy")
     if args.activation_packing_budget_bytes <= 0:
         parser.error("--activation-packing-budget-bytes must be positive")
+    if args.matrix_vpu_transport and (not args.prepack_checkpoint_weights or args.execution_policy is None):
+        parser.error("--matrix-vpu-transport requires prepacked weights and an execution policy")
     if args.retain_shared_activation_rhs and not args.share_activation_packing:
         parser.error("--retain-shared-activation-rhs requires --share-activation-packing")
     if args.prune_unused_checkpoint_weights and not args.prepack_checkpoint_weights:
@@ -381,6 +386,7 @@ def main() -> None:
             connect_multiplies=args.connect_vpu_multiplies,
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
+            matrix_vpu_transport=args.matrix_vpu_transport,
             reuse_prepacked_data=args.reuse_prepacked_data),
         post_offload_transform=MXVPUPostOffload(
             profile,
@@ -391,6 +397,7 @@ def main() -> None:
             connect_multiplies=args.connect_vpu_multiplies,
             share_activation_packing=args.share_activation_packing,
             activation_packing_budget_bytes=args.activation_packing_budget_bytes,
+            matrix_vpu_transport=args.matrix_vpu_transport,
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -613,6 +620,10 @@ def main() -> None:
         "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
         "share_activation_packing": args.share_activation_packing,
         "retain_shared_activation_rhs": args.retain_shared_activation_rhs,
+        "matrix_vpu_transport": args.matrix_vpu_transport,
+        "private_matrix_transport_rewrite": (
+            json.loads((work / "device_host_abi/mx_matrix_transport_rewrite.json").read_text())
+            if args.matrix_vpu_transport and device is not None else None),
         "shared_activation_rewrite": (
             json.loads((work / "device_host_abi/mx_shared_activation_rewrite.json").read_text())
             if args.share_activation_packing and device is not None else None),
