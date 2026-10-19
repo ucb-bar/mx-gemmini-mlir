@@ -91,7 +91,27 @@ python docs/evidence/smolvla_widening_session_20261019/verify.py \
 For reproduction with the original built images and captures, unpack the archive
 under a new task-local directory and replay each `reference/job/spec.json` and
 `candidate/job/spec.json` command with a fresh `--out-dir`. The commands reference
-the original external link receipts and toolchain paths. The earlier widening
-archive retains the stage build commands; these full-session jobs use those
-same completed stage objects. Retain the original profile, checkpoint bytes,
-captured inputs, dump selection, arena, timing settings, and numerical policy.
+the original external link receipts and toolchain paths. To relink the retained
+completed stage objects into fresh session images, run from MX:
+
+```sh
+for variant in baseline widening_reuse; do
+  python -m tools.link_merlin_session \
+    --session-root "$TMPDIR/captures/smolvla/smolvla_session" \
+    --stage-build "prefix_encode=$TMPDIR/mx_model_goal_20261018/smolvla_prefix_$variant" \
+    --stage-build "flow_denoise=$TMPDIR/mx_model_goal_20261018/smolvla_flow_$variant" \
+    --stage-build "action_decode=$TMPDIR/mx_model_goal_20261018/smolvla_action" \
+    --workdir "$TMPDIR/smolvla_relinked_$variant" \
+    --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
+    --merlin-src "$PWD/../merlin/src" --riscv-root /path/to/riscv-tools \
+    --structural-elf-admission --measure-preparation --pack-program-weights \
+    --dump-output flow_denoise:0 --dump-output action_decode:0 --dump-limit-bytes 16384
+done
+```
+
+The exact full-stage compilation recipes are retained inside this archive; the
+earlier widening archive also provides independent projection-stage reproduction
+commands. The full-session jobs use the originally completed model stage objects.
+Retain the original profile, checkpoint bytes, captured inputs, dump selection,
+arena, timing settings, and numerical policy. Rebuilding with newer compiler
+sources is a new experiment rather than reproduction of these exact ELF hashes.
