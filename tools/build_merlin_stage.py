@@ -174,6 +174,9 @@ def main() -> None:
                              "after prepacking; sessions must regenerate projection-aware callers")
     parser.add_argument("--reuse-prepacked-data", type=Path,
                         help="hardlink packed data from this catalog after checking freshly quantized bytes")
+    parser.add_argument("--reuse-prepacked-object", type=Path,
+                        help="share an existing immutable data object after checking every freshly "
+                             "packed byte, symbol and fresh target metadata")
     parser.add_argument("--op-profile", action="store_true",
                         help="instrument Merlin's prepared top-level operations for a diagnostic Spike build")
     parser.add_argument("--precision-overrides", type=Path,
@@ -221,6 +224,8 @@ def main() -> None:
         parser.error("--prune-unused-checkpoint-weights requires --prepack-checkpoint-weights")
     if args.reuse_prepacked_data is not None and not args.prepack_checkpoint_weights:
         parser.error("--reuse-prepacked-data requires --prepack-checkpoint-weights")
+    if args.reuse_prepacked_object is not None and not args.prepack_checkpoint_weights:
+        parser.error("--reuse-prepacked-object requires --prepack-checkpoint-weights")
     if args.execution_policy is not None and (
             args.precision_overrides is not None or args.diagnostic_host_vpu or
             args.diagnostic_vpu_classes is not None or
@@ -387,7 +392,8 @@ def main() -> None:
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
             matrix_vpu_transport=args.matrix_vpu_transport,
-            reuse_prepacked_data=args.reuse_prepacked_data),
+            reuse_prepacked_data=args.reuse_prepacked_data,
+            reuse_prepacked_object=args.reuse_prepacked_object),
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
@@ -618,6 +624,7 @@ def main() -> None:
         "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
         "prepack_checkpoint_weights": args.prepack_checkpoint_weights,
         "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
+        "packed_object_storage_reuse": catalog.get("packed_object_storage_reuse"),
         "share_activation_packing": args.share_activation_packing,
         "retain_shared_activation_rhs": args.retain_shared_activation_rhs,
         "matrix_vpu_transport": args.matrix_vpu_transport,

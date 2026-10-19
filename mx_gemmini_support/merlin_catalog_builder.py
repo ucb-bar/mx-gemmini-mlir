@@ -88,13 +88,16 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
                          matrix_vpu_transport: bool = False,
-                         reuse_prepacked_data: Path | None = None
+                         reuse_prepacked_data: Path | None = None,
+                         reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
     if matrix_vpu_transport and not prepack_immutable_weights:
         raise ValueError("matrix transport requires immutable prepacked weights")
+    if reuse_prepacked_object is not None and not prepack_immutable_weights:
+        raise ValueError("constant object reuse requires immutable prepacked weights")
     if retain_shared_activation_rhs and not share_activation_packing:
         raise ValueError("retained shared RHS requires shared activation packing")
     if reuse_prepacked_data is not None:
@@ -455,6 +458,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     source_hashes["runtime_quant_lut"] = _sha(_QUANTIZER_LUT)
     compile_source("shared_workspace", emit_shared_workspace_definition(
         max_workspace, symbol=_WORKSPACE_SYMBOL))
+    packed_object_storage_reuse = None
     if fixed_data:
         lines = [".section .rodata", ".balign 64"]
         for fixed_symbol, path in fixed_data:
@@ -464,8 +468,28 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         assembly = out_dir / "checkpoint_weights.S"
         assembly.write_text("\n".join(lines) + "\n", encoding="utf-8")
         obj = out_dir / "checkpoint_weights.o"
-        _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(assembly),
-              "-o", str(obj)], label="prepacked checkpoint assembly")
+        if reuse_prepacked_object is None:
+            _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(assembly),
+                  "-o", str(obj)], label="prepacked checkpoint assembly")
+        else:
+            from merlin.llvmlower.constant_object import ConstantBlob, reuse_constant_object
+
+            # The fresh selected assembler supplies target metadata. Merlin
+            # checks every data byte, symbol, alignment and padding; a stale
+            # source manifest cannot authorize sharing a different object.
+            reference = out_dir / "constant_object_reference.S"
+            reference.write_text(".section .rodata\n.balign 64\n"
+                                 ".global merlin_constant_probe\nmerlin_constant_probe:\n"
+                                 "  .byte 0\n.balign 64\n", encoding="utf-8")
+            reference_object = reference.with_suffix(".o")
+            _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(reference),
+                  "-o", str(reference_object)], label="constant object target reference")
+            packed_object_storage_reuse = reuse_constant_object(
+                reuse_prepacked_object, obj,
+                tuple(ConstantBlob(symbol, path, 64) for symbol, path in fixed_data),
+                reference_object=reference_object, section=".rodata")
+            (out_dir / "constant_object_reuse.json").write_text(
+                json.dumps(packed_object_storage_reuse, indent=2) + "\n")
         objects.append(obj)
         source_hashes["checkpoint_weights"] = _sha(assembly)
     object_path = out_dir / "mx_catalog.o"
@@ -542,6 +566,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "prepacked_checkpoint_kernels": plan["prepacked_checkpoint_kernels"],
         "checkpoint_weights_sha256": (_sha(Path(checkpoint_weights_path))
                                       if prepack_immutable_weights else None),
+        "packed_object_storage_reuse": packed_object_storage_reuse,
         "packed_data_storage_reuse": ({
             "source_directory": str(reuse_prepacked_data.resolve()),
             "verification": "fresh_quantization_full_byte_hash_then_hardlink",
@@ -613,7 +638,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
                                 matrix_vpu_transport: bool = False,
-                                reuse_prepacked_data: Path | None = None
+                                reuse_prepacked_data: Path | None = None,
+                                reuse_prepacked_object: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
@@ -646,6 +672,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     matrix_vpu_transport=matrix_vpu_transport,
-                                    reuse_prepacked_data=reuse_prepacked_data)
+                                    reuse_prepacked_data=reuse_prepacked_data,
+                                    reuse_prepacked_object=reuse_prepacked_object)
 
     return build
