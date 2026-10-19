@@ -1,0 +1,139 @@
+{
+  "schema": "merlin.entry_weight_projection.v1",
+  "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/device_host_abi/mx_fixed_rhs.mlir",
+  "source_file_sha256": "38507c35b40f88046f280e9160b4628b237ee1faf057a8358a38b487410273bf",
+  "contract": {
+    "entry_symbol": "forward",
+    "compiler_generated_dispatch_only": true,
+    "entry_address_unobserved": true,
+    "nontrapping_arithmetic": true,
+    "arithmetic_flags_unobserved": true,
+    "generated_weight_storage_readonly": true,
+    "weight_addresses_unobserved": true
+  },
+  "argument_table": {
+    "entries": [
+      {
+        "original_index": 0,
+        "kind": "immutable_stored_weight",
+        "shape": [
+          32,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": "linear.weight"
+      },
+      {
+        "original_index": 1,
+        "kind": "immutable_stored_weight",
+        "shape": [
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": "linear.bias"
+      },
+      {
+        "original_index": 2,
+        "kind": "retained_capture",
+        "shape": [
+          16,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": null
+      },
+      {
+        "original_index": 3,
+        "kind": "retained_capture",
+        "shape": [
+          16,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": null
+      }
+    ],
+    "captured_arguments": 4,
+    "source_files": [
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/model.mlir",
+        "bytes": 3554,
+        "sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/weights.safetensors.manifest.json",
+        "bytes": 356,
+        "sha256": "ccb5f0d211abe358c402125eb5897169c578634bcabc5134eaae576cfa589b49"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/session_contract.yaml",
+        "bytes": 305,
+        "sha256": "cf31ea54d70e1ce99b583c350521cad9dab104091d489b931976ef4ccca5a51c"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/weights.safetensors",
+        "bytes": 4376,
+        "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6"
+      }
+    ],
+    "result_types": [
+      "tensor<16x32xf32>",
+      "tensor<16x32xf32>"
+    ],
+    "optional_source_files": [
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/session_contract.yaml",
+        "present": true,
+        "bytes": 305,
+        "sha256": "cf31ea54d70e1ce99b583c350521cad9dab104091d489b931976ef4ccca5a51c"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/decode/weights.safetensors",
+        "present": true,
+        "bytes": 4376,
+        "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/quant_hoist_args.json",
+        "present": false,
+        "bytes": null,
+        "sha256": null
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/quant_hoist_values.npz",
+        "present": false,
+        "bytes": null,
+        "sha256": null
+      }
+    ]
+  },
+  "input_module_sha256": "421505ee3667d94340e113a65b0e698da05e26dbd0fec51359c8857abfb8882e",
+  "original_function_type": "(tensor<32x32xf32>, tensor<32xf32>, tensor<16x32xf32>, tensor<16x32xf32>) -> (tensor<16x32xf32>, tensor<16x32xf32>)",
+  "dce_module_sha256": "2179e040d73fdbfbe3fc7a5b31e3f27affdffbb3ed2eee367f23f61a2a9b4666",
+  "projected_module_sha256": "8a5f80e4a687f8ba11a1bbccd15f66eece8acd1d9f9b7191505eb1d6fcc83909",
+  "removed_original_indices": [
+    0
+  ],
+  "retained_original_indices": [
+    1,
+    2,
+    3
+  ],
+  "original_to_projected": [
+    null,
+    0,
+    1,
+    2
+  ],
+  "erased_operations": [
+    [
+      "tensor.empty",
+      3
+    ]
+  ],
+  "direct_calls_rewritten": 0,
+  "argument_table_sha256": "ba0f85045161d846de18bae28d96602d638a0109ecadc7a2180da81879265721",
+  "selected_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/entry_weight_projection/projected.mlir",
+  "selected_file_sha256": "8a5f80e4a687f8ba11a1bbccd15f66eece8acd1d9f9b7191505eb1d6fcc83909",
+  "performance_claim": "UNMEASURED"
+}

@@ -1,0 +1,108 @@
+{
+  "all_output_sha256_enabled": true,
+  "arena_estimate": {
+    "callsites": 11,
+    "dynamic_sites": 0,
+    "literal_bytes": 14820
+  },
+  "arena_mb": 2048,
+  "arena_selection": "llvm_site_estimate",
+  "build_hash": "de1900e49be1",
+  "cache_checkpoint_weights": false,
+  "cached_checkpoint_kernels": 0,
+  "capture_model_sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c",
+  "catalog_manifest": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/device_catalog/mx_catalog.json",
+  "checkpoint_weights_sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6",
+  "compile_timeout_s": 3600,
+  "connect_vpu_multiplies": false,
+  "connected_vpu_multiply_pairs": [],
+  "diagnostic_host_vpu": false,
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_decode/model.elf",
+  "elf_admission_selection": "structural_digest_and_declared_isa",
+  "elf_bytes": 46184,
+  "enabled_vpu_classes": [
+    "add",
+    "elementwise",
+    "reduce",
+    "softmax",
+    "unary"
+  ],
+  "enabled_vpu_elementwise_operations": null,
+  "enabled_vpu_elementwise_regions": null,
+  "entry_weight_projection_receipt_sha256": "f673e000348cf6ccd7ca0db386ffcfb8fdd206b074654aa00794a8d068eca929",
+  "execution_policy": {
+    "matrix_formats": {
+      "matmul_0": "mxfp8"
+    },
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "schema": "mx_gemmini.execution_policy.v1",
+    "source_mlir_sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c",
+    "vpu_placements": {
+      "add": {
+        "add_0": "vpu",
+        "add_1": "vpu",
+        "add_2": "vpu"
+      },
+      "elementwise": {},
+      "reduce": {},
+      "softmax": {},
+      "unary": {}
+    }
+  },
+  "execution_policy_sha256": "3e212db2893a8c68ac0734a325a1fd13f3bd31bdf3bc016fa210d9e177fae92b",
+  "execution_route": "mx_gemmini_per_site_policy",
+  "expected_selected_operations": 1,
+  "first_output_sha256_enabled": true,
+  "host_singleton_matrix_regions": [],
+  "host_singleton_preparation": null,
+  "host_singleton_receipt_sha256": null,
+  "mem_bytes": 7516192768,
+  "op_profile": false,
+  "op_profile_capacity": null,
+  "op_profile_operations": null,
+  "op_profile_table": null,
+  "op_profile_table_sha256": null,
+  "packed_data_storage_reuse": null,
+  "precision_overrides": {
+    "matmul_0": "mxfp8"
+  },
+  "precision_overrides_sha256": null,
+  "prepack_checkpoint_weights": true,
+  "prepacked_checkpoint_kernels": 1,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "prune_unused_checkpoint_weights": true,
+  "raw_matrix_operations_accounted": 1,
+  "raw_selected_source_coverage_complete": true,
+  "schema": "mx_gemmini.merlin_stage_probe.v1",
+  "selected_operations": 1,
+  "spike_arena_base": 3489660928,
+  "spike_isa": "rv64gc_zicntr",
+  "status": "linked_policy_numeric_qualification_pending",
+  "unbound_precision_proposals": 0,
+  "unique_kernels": 1,
+  "vpu_add_lowered_regions": 2,
+  "vpu_elementwise_lowered_regions": 1,
+  "vpu_reduce_lowered_regions": 0,
+  "vpu_residual_eligible": {
+    "add": 0,
+    "elementwise": 0,
+    "reduce": 0,
+    "softmax": 0,
+    "unary": 0
+  },
+  "vpu_softmax_host_regions": 0,
+  "vpu_softmax_inventory": {
+    "direct_profile_matches_unlowered": 0,
+    "host_owned_regions": 0,
+    "inventory_phase": "reconciled_after_link",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "regions": [],
+    "schema": "mx_gemmini.merlin_vpu_softmax_inventory.v1",
+    "softmax_regions": 0,
+    "source_sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c"
+  },
+  "vpu_softmax_lowered_regions": 0,
+  "vpu_softmax_selected_regions": 0,
+  "vpu_unary_lowered_regions": 0,
+  "widened_bf16_contractions": 0
+}

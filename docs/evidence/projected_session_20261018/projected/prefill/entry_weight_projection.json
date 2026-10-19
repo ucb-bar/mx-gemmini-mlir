@@ -1,0 +1,134 @@
+{
+  "schema": "merlin.entry_weight_projection.v1",
+  "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_prefill/device_host_abi/mx_fixed_rhs.mlir",
+  "source_file_sha256": "ee978f43a2bf4d8e34704a5ed501b9c2c72f94d76239c26159ade72875218044",
+  "contract": {
+    "entry_symbol": "forward",
+    "compiler_generated_dispatch_only": true,
+    "entry_address_unobserved": true,
+    "nontrapping_arithmetic": true,
+    "arithmetic_flags_unobserved": true,
+    "generated_weight_storage_readonly": true,
+    "weight_addresses_unobserved": true
+  },
+  "argument_table": {
+    "entries": [
+      {
+        "original_index": 0,
+        "kind": "immutable_stored_weight",
+        "shape": [
+          32,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": "linear.weight"
+      },
+      {
+        "original_index": 1,
+        "kind": "immutable_stored_weight",
+        "shape": [
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": "linear.bias"
+      },
+      {
+        "original_index": 2,
+        "kind": "retained_capture",
+        "shape": [
+          16,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": null
+      },
+      {
+        "original_index": 3,
+        "kind": "retained_capture",
+        "shape": [
+          16,
+          32
+        ],
+        "dtype": "f32",
+        "weight_name": null
+      }
+    ],
+    "captured_arguments": 4,
+    "source_files": [
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/prefill/model.mlir",
+        "bytes": 3555,
+        "sha256": "2d92b28fd995c7661755daf18608520ce167cc03970d832a871674c4213d09b1"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/prefill/weights.safetensors.manifest.json",
+        "bytes": 356,
+        "sha256": "ccb5f0d211abe358c402125eb5897169c578634bcabc5134eaae576cfa589b49"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/prefill/weights.safetensors",
+        "bytes": 4376,
+        "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6"
+      }
+    ],
+    "result_types": [
+      "tensor<16x32xf32>",
+      "tensor<16x32xf32>"
+    ],
+    "optional_source_files": [
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/prefill/session_contract.yaml",
+        "present": false,
+        "bytes": null,
+        "sha256": null
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture/stages/prefill/weights.safetensors",
+        "present": true,
+        "bytes": 4376,
+        "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6"
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_prefill/quant_hoist_args.json",
+        "present": false,
+        "bytes": null,
+        "sha256": null
+      },
+      {
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_prefill/quant_hoist_values.npz",
+        "present": false,
+        "bytes": null,
+        "sha256": null
+      }
+    ]
+  },
+  "input_module_sha256": "6e60931f9d8e364ce1f3bab2ae7d2052db0a34921902e2fde838303d694aa298",
+  "original_function_type": "(tensor<32x32xf32>, tensor<32xf32>, tensor<16x32xf32>, tensor<16x32xf32>) -> (tensor<16x32xf32>, tensor<16x32xf32>)",
+  "dce_module_sha256": "e214bfd8dd040fb60200c702ea65a32d550857ca0c413da8048e062cd2342b6e",
+  "projected_module_sha256": "29359550c97bdb407d4816041d99c0f87a4e4329be61a445398d5cf7afb3e92a",
+  "removed_original_indices": [
+    0
+  ],
+  "retained_original_indices": [
+    1,
+    2,
+    3
+  ],
+  "original_to_projected": [
+    null,
+    0,
+    1,
+    2
+  ],
+  "erased_operations": [
+    [
+      "tensor.empty",
+      3
+    ]
+  ],
+  "direct_calls_rewritten": 0,
+  "argument_table_sha256": "edff808f1a1d7e4e907d6b12b3b875b08270f69f4b01abe873f16c2892988ed4",
+  "selected_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_prefill/entry_weight_projection/projected.mlir",
+  "selected_file_sha256": "29359550c97bdb407d4816041d99c0f87a4e4329be61a445398d5cf7afb3e92a",
+  "performance_claim": "UNMEASURED"
+}

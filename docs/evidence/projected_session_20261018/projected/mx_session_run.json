@@ -1,0 +1,224 @@
+{
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/physical/libgemmini.so",
+    "--extension=gemmini",
+    "-m0x80000000:0x1c0000000",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/projected_linked/session.elf"
+  ],
+  "complete": true,
+  "elapsed_wall_s": 0.03195510199293494,
+  "execution_timing_scope": "reset_plus_program_state_handoff_plus_existing_step_intervals; console_and_phase_bookkeeping_excluded",
+  "execution_total_performance": {
+    "cycles": 394526,
+    "instructions": 387591
+  },
+  "exit_code": 0,
+  "expected_events": 12,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "link_receipt_sha256": "79ca3f90aded3784c2cbc8c5b66fe08fe7953556fea1dee68d0506928a164387",
+  "log_sha256": "4f813bb06265bb2b6f9ed2d1e361a162582060d0d09dddf0cfe899d65886f591",
+  "observed_events": 12,
+  "output_digests": [
+    {
+      "bytes": 2048,
+      "output": 0,
+      "program": 0,
+      "sha256": "89398ffd3d38d135d3e3c4afe6ecdd0f09ea8c9579bbdf4b43a3dbbe1a8e0ea2",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "program": 0,
+      "sha256": "e1565ca4fb34bd49652045d5141a801eacde5d58be487a411350e4362b26cf16",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "program": 1,
+      "sha256": "58d312265039cab957e9714c89fe4c7e046bd8394bb71f30460e120340e64729",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "program": 1,
+      "sha256": "92dc919160de0f0ee948b15c94d2fcafee0b9cb74fc41cf535b89eb9feb8b924",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "program": 1,
+      "sha256": "745bc3c10cf4eae44ef49df704f12be8892fd42e7ed21fd3a8d29f6bab440672",
+      "step": 1
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "program": 1,
+      "sha256": "70ce82fc7569fe5280d58bbd70eee420bd38bb17a9193e3ca4f259027d619d0c",
+      "step": 1
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "program": 1,
+      "sha256": "726004c1908de2f8b5a3b5b6b409d46476e62dfd17da2d18459e585b01bc1e1b",
+      "step": 2
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "program": 1,
+      "sha256": "5ddd4508f1ffe79cf65ea1773848e018e65b32ea0c0d3507aeb4191a0fc9c338",
+      "step": 2
+    }
+  ],
+  "output_dumps": [
+    {
+      "bytes": 2048,
+      "output": 0,
+      "path": "output_dumps/p0_s0_o0.bin",
+      "program": 0,
+      "sha256": "89398ffd3d38d135d3e3c4afe6ecdd0f09ea8c9579bbdf4b43a3dbbe1a8e0ea2",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "path": "output_dumps/p0_s0_o1.bin",
+      "program": 0,
+      "sha256": "e1565ca4fb34bd49652045d5141a801eacde5d58be487a411350e4362b26cf16",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "path": "output_dumps/p1_s0_o0.bin",
+      "program": 1,
+      "sha256": "58d312265039cab957e9714c89fe4c7e046bd8394bb71f30460e120340e64729",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "path": "output_dumps/p1_s0_o1.bin",
+      "program": 1,
+      "sha256": "92dc919160de0f0ee948b15c94d2fcafee0b9cb74fc41cf535b89eb9feb8b924",
+      "step": 0
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "path": "output_dumps/p1_s1_o0.bin",
+      "program": 1,
+      "sha256": "745bc3c10cf4eae44ef49df704f12be8892fd42e7ed21fd3a8d29f6bab440672",
+      "step": 1
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "path": "output_dumps/p1_s1_o1.bin",
+      "program": 1,
+      "sha256": "70ce82fc7569fe5280d58bbd70eee420bd38bb17a9193e3ca4f259027d619d0c",
+      "step": 1
+    },
+    {
+      "bytes": 2048,
+      "output": 0,
+      "path": "output_dumps/p1_s2_o0.bin",
+      "program": 1,
+      "sha256": "726004c1908de2f8b5a3b5b6b409d46476e62dfd17da2d18459e585b01bc1e1b",
+      "step": 2
+    },
+    {
+      "bytes": 2048,
+      "output": 1,
+      "path": "output_dumps/p1_s2_o1.bin",
+      "program": 1,
+      "sha256": "5ddd4508f1ffe79cf65ea1773848e018e65b32ea0c0d3507aeb4191a0fc9c338",
+      "step": 2
+    }
+  ],
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "preparation_performance": [
+    {
+      "cycles": 1330,
+      "instructions": 1327,
+      "program": -1
+    },
+    {
+      "cycles": 23,
+      "instructions": 20,
+      "program": 0
+    },
+    {
+      "cycles": 1466,
+      "instructions": 1463,
+      "program": 1
+    }
+  ],
+  "preparation_performance_schema": "spike_rdcycle_rdinstret_reset_prepare.v1",
+  "preparation_total_performance": {
+    "cycles": 2819,
+    "instructions": 2810
+  },
+  "program_performance": [
+    {
+      "cycles": 97466,
+      "instructions": 95121,
+      "measured_steps": 1,
+      "name": "prefill",
+      "program": 0
+    },
+    {
+      "cycles": 294241,
+      "instructions": 289660,
+      "measured_steps": 3,
+      "name": "decode",
+      "program": 1
+    }
+  ],
+  "schema": "mx_gemmini.merlin_session_spike_run.v1",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "status": "complete_numeric_qualification_pending",
+  "step_performance": [
+    {
+      "cycles": 97466,
+      "instructions": 95121,
+      "program": 0,
+      "step": 0
+    },
+    {
+      "cycles": 98925,
+      "instructions": 96580,
+      "program": 1,
+      "step": 0
+    },
+    {
+      "cycles": 97650,
+      "instructions": 96532,
+      "program": 1,
+      "step": 1
+    },
+    {
+      "cycles": 97666,
+      "instructions": 96548,
+      "program": 1,
+      "step": 2
+    }
+  ],
+  "timing_config": "e4m3_vpu",
+  "timing_mode": "both",
+  "timing_model_active": true,
+  "timing_overrides": "mem.host_tracking=0",
+  "timing_report_sha256": "c1fbfc32daaff023a11bdb28a8c7787386c1168fa82cb3cc6413fc7f4e341ab5",
+  "total_performance": {
+    "cycles": 391707,
+    "instructions": 384781
+  }
+}

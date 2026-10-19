@@ -109,3 +109,23 @@ For either full session, publish the same captured inputs, checkpoint, target
 profile, timing preset, timed boundaries, output-quality metrics, and
 per-stage cycle totals for both programs. An equal-quality performance claim
 also requires an agreed numerical acceptance criterion.
+
+## Cached-session preparation accounting (2026-10-18)
+
+The legacy cached-session `SESSION_TOTAL` sums the timed step intervals. Those
+intervals include per-step state commit, but exclude session reset and the
+cross-program state copies in `merlin_session_prepare_program`. Archived
+cached totals retain that scope; they are not inclusive initialization/handoff
+measurements. The independent 160-token forward timing boundary is unchanged.
+
+New session links can select `--measure-preparation` to retain the original
+step totals and additionally measure reset and every program handoff. The
+runner reports `execution_total_performance` as the sum of those measured
+segments, with console and phase bookkeeping excluded explicitly. Compare
+matching timing selections; do not compare this larger accounted scope with
+an old step sum as though their boundaries were identical.
+
+The [projected-session fixture](evidence/projected_session_20261018/README.md)
+checks all logits/state words and both timing components through actual linked
+MX execution. It establishes session ABI/storage plumbing, not a full-model
+speedup or an independent cached source baseline.

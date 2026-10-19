@@ -1,0 +1,120 @@
+{
+  "artifacts": {
+    "extra.npz": {
+      "bytes": 22,
+      "sha256": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85"
+    },
+    "golden.npy": {
+      "bytes": 2176,
+      "sha256": "668a6e9f4d9836cb7a91cee52d1a3c0376a706ad48481cb80a5b893be0754ebc"
+    },
+    "input_order.json": {
+      "bytes": 26,
+      "sha256": "9e23b90731653ff19c86b3de65de4e65dbf4d05a4a6b7ebb3be1ebc7b446dd0a"
+    },
+    "inputs.npz": {
+      "bytes": 4594,
+      "sha256": "951de3d82eb18b6c48d6494a98b31627273133536c95d3f8a8b43788e9a0cae7"
+    },
+    "model.mlir": {
+      "bytes": 3554,
+      "sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c"
+    },
+    "weights.safetensors": {
+      "bytes": 4376,
+      "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6"
+    },
+    "weights.safetensors.manifest.json": {
+      "bytes": 356,
+      "sha256": "ccb5f0d211abe358c402125eb5897169c578634bcabc5134eaae576cfa589b49"
+    }
+  },
+  "framework": {
+    "torch": "2.10.0+cu128",
+    "torchao": "0.16.0"
+  },
+  "lifted_constants": {},
+  "materialized_abi": {
+    "complete": true,
+    "inputs": 2,
+    "lifted_constants": []
+  },
+  "schema": "m2m.capture-receipt.v1",
+  "source": null,
+  "source_closure_verified": false,
+  "tool": {
+    "commit": "f5e5c674a585bebbc2507dbd028ebf9d26e2afbc",
+    "executed_entrypoint": {
+      "bytes": 4601,
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/prepare_projected_session_fixture.py",
+      "sha256": "75993e82697f16f21bf4a30e9ed2e3c50be24065685dbb6eef2f0dd41497cb3a"
+    },
+    "source_inventory_scope": "m2m_package_python_sources_only",
+    "source_inventory_status": "complete",
+    "source_sha256": {
+      "m2m/__init__.py": "00e5e498718bf8aedd693b9c570bef3fb5a245e1cb97eea69c75a40487742087",
+      "m2m/api.py": "5195c9860daf95d9bea6c9999c8e8506e70a3f5bf0bb7a98cfa7400d7b785939",
+      "m2m/capture/__init__.py": "c8563e072551ea2f55c74ccb6923cb2c524487e8b2cca3011fe8098f4b483c54",
+      "m2m/capture/bundle.py": "c0c63f927010d591ace115193a97ac8cf9f53420678fb9c591e51e4a8283cb8b",
+      "m2m/capture/bundle_integrity.py": "0e1b8d1b3f25482999a1056fcd02769f4d399252cc54e71259165a115098f88b",
+      "m2m/capture/causal_session.py": "dedf08034db5b30b5f93b648caa97e192c28c9dcc1291d9ac616d2f69ac8ec25",
+      "m2m/capture/dynamo_baseline.py": "fa21541b8675e3881fc39dc8bb6ab23b322b1b4ff00b152e38554928d90ab472",
+      "m2m/capture/external_quantization.py": "2c93894006a57dd7b09d53302202ec12baf44190345776d7bf7dd4c4e6dbcdfd",
+      "m2m/capture/external_runtime.py": "58593f7cab706ab51a0cd4d7125ad043f10beccf181c82fe3cb650f09755ae41",
+      "m2m/capture/outlier_split.py": "35d70fa1230a634746179b9400d012e7d910bb08a95c3c9e4ac32d830c7300f1",
+      "m2m/capture/provenance.py": "57b68435f0b6eb102eda48969e808e9aaa38d642a592bc2f075829d22e1593cc",
+      "m2m/capture/pt2e_integer_reference.py": "87f2d1bfba4ecf9d9a2668f5bdf8daac5c2bbea8a9cc9e68bde37f01a2610c24",
+      "m2m/capture/pt2e_integerize.py": "5b58bc67703679454a212df3b2234269a3baeab808e2a3d0b7b854c88af96078",
+      "m2m/capture/pt2e_padding.py": "e262574df9fa04347dc08ea2b49ae18bba087598159b055d0ef1bbd6003485f5",
+      "m2m/capture/quantization_quality.py": "ec476c0d39a93c0871ef4413926ecf67a707d4799e82a36de52d1b4f0f8dc501",
+      "m2m/capture/smoothing.py": "743f71cb8215eedddea23b43606610e3f566fc2bffb468aae8dd2967a0481ee4",
+      "m2m/capture/source_closure.py": "1cd0b76db29afe19aada158bd2ec3b5ea19efa884d2894cdd8b68271ddc375f7",
+      "m2m/capture/stagewise_pt2e.py": "abc455756f339b83410bbb408e4c4d3d7e3e7bedb8070f7aa09da5afaf42df4b",
+      "m2m/capture/torch_export.py": "9300b7b96253400a1aaaac6cc8f2f948035a20311750f536baff20f71214e2da",
+      "m2m/capture/torch_mlir_bridge.py": "2e94a33069bf71f2f18242e4056b8b0470049a932c3f71b80202b3b86ef79ad3",
+      "m2m/capture/torchao_pipeline.py": "7407e8a00bb817135700e497ca793bae9e966927475feb0981720412dccb5e7e",
+      "m2m/capture/torchao_schemes.py": "eac35e63ba859d0b155eaec055838d1045f98ea6af300c0e4116c74c70d35692",
+      "m2m/capture/trace.py": "64aee1ba33d17691f1b1df5ccb9cc710bbb0e26aad250f53e69bea59c20404d8",
+      "m2m/capture/unsupported/__init__.py": "5bac4ffda79f6ff79373c8ca65e1aefd7065253cc6af9fd5c1088d9f0b1862be",
+      "m2m/capture/unsupported/classify.py": "102385c9066cf33994cfb91e701fbc37c0bd10d3c3687beff7b8d2edbfb67c71",
+      "m2m/capture/unsupported/detect.py": "d66767f47678bf9f10ba34d07a4fd42112b673ae6e827109d4e34d3fee6c2896",
+      "m2m/capture/unsupported/introspect.py": "a787466a9de8b2a2c35f54cc4de50bf64fcae9beab907dba77ed866971774357",
+      "m2m/capture/unsupported/promote.py": "e592bad7a7db4745ec8fc59d2d84128d3ada95c0df26d54d49fda93caaf17bbb",
+      "m2m/capture/unsupported/synthesize_decomp.py": "374a28af41dbe4a7a3b46de4b1681a5344d7296b057dd2dde4400aea8aee54fc",
+      "m2m/capture/unsupported/synthesize_fake.py": "d552ae659f140e7530427a8745efcb8904b36833f265e8d8b2b71a97cacff938",
+      "m2m/capture/unsupported/synthesize_translation.py": "7a2d544bf9f9a5f97771841c541614024a0852d0e2d5c90f752f92dc3849f6a6",
+      "m2m/capture/unsupported/verify.py": "6dafb57fa4e89d7e438950f33e9b37d7c8ccd72359b2288acbac1d279a4e4479",
+      "m2m/capture/view_trace.py": "672896ca45903ef6c0f2a3725354a7d7d96e3be0c192e103f84839b39e1a9c36",
+      "m2m/cli.py": "4f785afd6373951939a1b8c3fbc425ae52e6cba686cfd0ce806301b82375122b",
+      "m2m/coverage.py": "e5780b3966ee708164127569ae9bf5d7484511d3b39b40208fdd76a31a73f89a",
+      "m2m/frontends/__init__.py": "fce8be75033d24b834af29bd05d9ecba5753f65b0edebc4e0a09ffbcb0414ba7",
+      "m2m/frontends/gguf.py": "795b35e1bfa4fdb1d021a43e95e367b4270910caaa3191a9d84055d9843bb5d0",
+      "m2m/frontends/jax.py": "cac5b45552fb7904c6bf9bf3dd60eb64578a7cb632f2b69caaef6f460de15a81",
+      "m2m/ir/__init__.py": "1ebd63c70b6cdce3aab9a69b2e5d34cd6f154ab2771ad8ca379b8d772e59e2de",
+      "m2m/ir/decompositions.py": "de7d5d90370bcfc0ec3f3b8d624d4210fd0b3440b8b96e26ab772df9537ba30a",
+      "m2m/ir/import_fx.py": "bdaf03969b71588caa58fffa455c26051b9d9571a793c87cdf83beb831dcd452",
+      "m2m/ir/linalg_ext/__init__.py": "007036e31b8cf692c350d0fc0832cc200c97d9bf2b8a7e50f2c202523c014f11",
+      "m2m/ir/linalg_ext/dialect.py": "972228611a8d185de1abdd1d4fb0777ea7c32556e3ccbbbc4e876de944990dbb",
+      "m2m/ir/linalg_ext/ops.py": "ca8d269f23a1f1ccc5a26efe8e675377ed25125032c8a53eb54ba922e9582b11",
+      "m2m/ir/quant/__init__.py": "5d63e2dc80066af5b8d9b0dd7edc9e5a566be39376e3c66acf1415e0c7af1632",
+      "m2m/ir/quant/dialect.py": "6dbdd5d075295ad1b51d16a5bbea827d4845b9b94810815c507d63a650e5ee27",
+      "m2m/ir/quant/ops.py": "7107f3ced4e022f21a3454380164a57a9a8603dc52a6c63e78719f54253d5c79",
+      "m2m/ir/quant/types.py": "d463c72331a6e9462395c16010b2f67b5f1329e2b036b53436c263a5f54c282a",
+      "m2m/ir/tensor_ext/__init__.py": "f057565618dcda18f0dbdd5728bb8ae99512194f6525453574a21879930b5ba0",
+      "m2m/ir/tensor_ext/dialect.py": "477a6c9ab4d2538492bc40d90a5deb735b3b870ced1db416dc542c18867d6bc5",
+      "m2m/ir/tensor_ext/ops.py": "437a4d6ac8a927217f1f27909f710a4ad2b5628f91ca95e7db32a0c0bf6b5ad0",
+      "m2m/ir/torchmlir_decomps.py": "a7cd37405d332242807db1db34aa1a8f480af0c26d7b284f161ab9a46d711b95",
+      "m2m/ir/types/__init__.py": "370e35d4d0ba7175af7401e7994df5454524415eaf8cc722026a8dca15032df6",
+      "m2m/ir/types/float8.py": "f55ff99fedecb3d19bf0815563609a2f92873e74701ec369e78adab7eee0e0aa",
+      "m2m/models.py": "ed2edc375e95242aaaa9b4987c64d7bfddf8eca86fb591f664d67b8b2c41384c",
+      "m2m/transforms/__init__.py": "df5455a63f14d8da142a001113e0cd4639d49105ec1a71a7cee7cfb9c9f8d5ad",
+      "m2m/transforms/expand_ext.py": "8ac01298156f1d6bee3e76d0e77ad745318da2cbd4c48cfc67a84cf8478a6eef",
+      "m2m/transforms/expand_quant.py": "1ff0b04b8cb4b3003bade9b190c3fe573abbcb423fbb1b48c2151edcbfa6b65e",
+      "m2m/transforms/externalize.py": "03e0635d69355c6146ba2e70892809baff2cf0497dad077376bc3ca67326abf5",
+      "m2m/transforms/fuse_int2_unpack.py": "58d8b833f476f74a56359e39db1324dec74412c4e63256df0e7cc133fee9017d",
+      "m2m/transforms/fuse_qdq.py": "06b73c6a8ff334c1cb914b2e9a26baa9b2604adc4b6e53a50ba522d9d0689407",
+      "m2m/transforms/sections.py": "c959ccc5a8ee8cdcbf72ff6a33262c2f99f8adbdea9a5a59851419131c70643d"
+    },
+    "unavailable_sources": []
+  }
+}

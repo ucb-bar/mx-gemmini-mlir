@@ -1,0 +1,21 @@
+{
+ "schema": "merlin.model_check.elf_admission.v1",
+ "status": "accepted",
+ "elf_sha256": "c925ca0477cfc5956698b3edd5e7abf91d76ff6d88f136377bd2eeaed9af3b00",
+ "arch_extensions": [
+  "rv64i",
+  "m",
+  "a",
+  "f",
+  "d",
+  "c",
+  "zicsr",
+  "zifencei",
+  "zmmul",
+  "zaamo",
+  "zalrsc",
+  "zca",
+  "zcd"
+ ],
+ "scope": "structural: digest and declared ISA; no instruction policy"
+}

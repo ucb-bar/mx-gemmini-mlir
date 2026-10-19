@@ -1,0 +1,20 @@
+inputs: session_inputs.npz
+kind: autoregressive_decode
+paper_ready: false
+quality:
+  golden: session_goldens.npz
+  key: logits
+  output_index: 0
+  scope: trajectory
+stages:
+- decode
+states:
+- input_arg: 3
+  name: state
+  output_index: 1
+steps: 3
+streams:
+- input_arg: 2
+  key: frames
+  name: x
+version: 1

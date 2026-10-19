@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from types import SimpleNamespace
 
 import pytest
 
 from tools.run_linked_merlin_session import (
-    extract_output_dumps, observe_session_output, session_progress,
+    extract_output_dumps,
+    observe_preparation_output,
+    observe_session_output,
+    session_progress,
+    validate_admission_record,
     validate_linked_layout,
 )
 
@@ -96,6 +101,55 @@ def test_per_step_cycles_and_instructions_cover_the_whole_session() -> None:
                                _session(), exit_code=0, require_perf=True)
     with pytest.raises(ValueError, match="complete valid session"):
         observe_session_output(_log(), _session(), exit_code=0, require_perf=True)
+
+
+def _preparation_log():
+    log = _log().replace("SESSION_SHA 0 0 0", "SESSION_PERF 0 0 100 90\nSESSION_SHA 0 0 0")
+    log = log.replace("SESSION_SHA 1 0 0", "SESSION_PERF 1 0 40 35\nSESSION_SHA 1 0 0")
+    log = log.replace("SESSION_SHA 1 1 0", "SESSION_PERF 1 1 50 45\nSESSION_SHA 1 1 0")
+    log = "SESSION_PREP_PERF -1 10 1\nSESSION_PREP_PERF 0 20 2\n" + log
+    log = log.replace("SESSION_BEGIN 1 0", "SESSION_PREP_PERF 1 30 3\nSESSION_BEGIN 1 0")
+    return log.replace("METRIC memref", "SESSION_TOTAL 190 170\nSESSION_EXECUTION_TOTAL 250 176\nMETRIC memref")
+
+
+def test_preparation_accounting_adds_real_work_without_replacing_step_intervals():
+    log = _preparation_log()
+    original = observe_session_output(log, _session(), exit_code=0, require_perf=True)
+    measured = observe_preparation_output(log, _session(), original)
+    assert original["total_performance"] == {"cycles": 190, "instructions": 170}
+    assert measured["preparation_total_performance"] == {"cycles": 60, "instructions": 6}
+    assert measured["execution_total_performance"] == {"cycles": 250, "instructions": 176}
+
+
+@pytest.mark.parametrize("change", [
+    lambda log: log.replace("SESSION_PREP_PERF 1 30 3\n", ""),
+    lambda log: log.replace("SESSION_EXECUTION_TOTAL 250", "SESSION_EXECUTION_TOTAL 190"),
+    lambda log: "SESSION_PREP_PERF -1 10 1\n" + log,
+    lambda log: log.replace("SESSION_PREP_PERF 0 20 2", "SESSION_PREP_PERF 0 20 0"),
+    lambda log: log.replace("SESSION_EXECUTION_TOTAL 250 176\n", ""),
+    lambda log: log.replace("SESSION_PREP_PERF 1 30 3\n", "").replace(
+        "SESSION_BEGIN 0 0", "SESSION_PREP_PERF 1 30 3\nSESSION_BEGIN 0 0"),
+])
+def test_preparation_metrics_refuse_missing_or_misplaced_costs(change):
+    log = change(_preparation_log())
+    original = observe_session_output(log, _session(), exit_code=0, require_perf=True)
+    with pytest.raises(ValueError):
+        observe_preparation_output(log, _session(), original)
+
+
+def test_required_final_admission_reopens_the_actual_policy_report(tmp_path):
+    report = tmp_path / "admission.json"
+    stored = {"status": "accepted", "elf_sha256": "a" * 64}
+    report.write_text(json.dumps(stored))
+    record = {"elf_sha256": "a" * 64, "linked_elf_admission_required": True,
+              "linked_elf_admission": {**stored, "report_path": str(report),
+                                       "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest()}}
+    validate_admission_record(record)
+    report.write_text(json.dumps({**stored, "status": "refused"}))
+    with pytest.raises(ValueError, match="report changed"):
+        validate_admission_record(record)
+    with pytest.raises(ValueError, match="required final ELF admission"):
+        validate_admission_record({"linked_elf_admission_required": True})
 
 
 def test_selected_output_dump_is_bound_to_guest_digest(tmp_path) -> None:

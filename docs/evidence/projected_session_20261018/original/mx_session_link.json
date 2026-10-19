@@ -1,0 +1,134 @@
+{
+  "arena_layout": {
+    "arena_base": 3221225472,
+    "arena_bytes": 2147483648,
+    "mem_bytes": 7516192768,
+    "static_end": 2147849600,
+    "weights_base": 8589934592
+  },
+  "bindings": [
+    {
+      "name": "state",
+      "source_output": 1,
+      "source_program": "prefill",
+      "target_input": 3,
+      "target_program": "decode"
+    }
+  ],
+  "dump_limit_bytes": 16384,
+  "dump_outputs": [
+    {
+      "bytes": 2048,
+      "name": "prefill",
+      "output": 0,
+      "program": 0
+    },
+    {
+      "bytes": 2048,
+      "name": "prefill",
+      "output": 1,
+      "program": 0
+    },
+    {
+      "bytes": 2048,
+      "name": "decode",
+      "output": 0,
+      "program": 1
+    },
+    {
+      "bytes": 2048,
+      "name": "decode",
+      "output": 1,
+      "program": 1
+    }
+  ],
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/mx_model_goal_20261018/projected_session_varied/original_linked/session.elf",
+  "elf_bytes": 109752,
+  "elf_sha256": "c925ca0477cfc5956698b3edd5e7abf91d76ff6d88f136377bd2eeaed9af3b00",
+  "entry_projections": {},
+  "execution_timing_scope": "reset_plus_program_state_handoff_plus_existing_step_intervals; console_and_phase_bookkeeping_excluded",
+  "linked_elf_admission": {
+    "arch_extensions": [
+      "rv64i",
+      "m",
+      "a",
+      "f",
+      "d",
+      "c",
+      "zicsr",
+      "zifencei",
+      "zmmul",
+      "zaamo",
+      "zalrsc",
+      "zca",
+      "zcd"
+    ],
+    "elf_sha256": "c925ca0477cfc5956698b3edd5e7abf91d76ff6d88f136377bd2eeaed9af3b00",
+    "report_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_linked/invocations/78515a6a845a4f648859ba81cef6b90f/policy/admission.json",
+    "report_sha256": "5e0bf17676b6f01efedb37a58312432a2a09f478dd22f21ab4ad60b080cd8fd3",
+    "schema": "merlin.model_check.elf_admission.v1",
+    "scope": "structural: digest and declared ISA; no instruction policy",
+    "status": "accepted"
+  },
+  "linked_elf_admission_required": true,
+  "linked_elf_admission_selection": {
+    "source_pins": [
+      [
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/model_check/admission.py",
+        "c987227d43a1c60a13b49ea9fd67e3b9d46f2422cc5f487721d5aeb3edfdde53"
+      ]
+    ],
+    "target": "mx_gemmini"
+  },
+  "mem_bytes": 7516192768,
+  "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+  "preparation_performance_schema": "spike_rdcycle_rdinstret_reset_prepare.v1",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "programs": [
+    {
+      "capture_model_sha256": "2d92b28fd995c7661755daf18608520ce167cc03970d832a871674c4213d09b1",
+      "name": "prefill",
+      "outputs": 2,
+      "selected_operations": 1,
+      "steps": 1
+    },
+    {
+      "capture_model_sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c",
+      "name": "decode",
+      "outputs": 2,
+      "selected_operations": 1,
+      "steps": 3
+    }
+  ],
+  "schema": "mx_gemmini.linked_merlin_session.v1",
+  "session_root": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/capture",
+  "shared_weight_bytes": 4224,
+  "shared_weight_sha256": "d55d785b2cf0a21ff5b99c9628b89e6d50b4e34a03bb6fdbf8c9bdf8ca7a8d25",
+  "shared_weight_stage": "prefill",
+  "stage_object_sha256": {
+    "decode": {
+      "device/device_catalog_shim.o": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "device_catalog/mx_catalog.o": "540cf57ddf3706edb37cc6d59492649ca5859ee44d07ab2684ef995ae6594fb3",
+      "model.o": "3773911ee5450b4055015642984d3c281142382935b9a440d2b69663a7b91fa8"
+    },
+    "prefill": {
+      "device/device_catalog_shim.o": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "device_catalog/mx_catalog.o": "540cf57ddf3706edb37cc6d59492649ca5859ee44d07ab2684ef995ae6594fb3",
+      "model.o": "3773911ee5450b4055015642984d3c281142382935b9a440d2b69663a7b91fa8"
+    }
+  },
+  "static_end_symbol": "_merlin_static_end",
+  "static_malloc_estimates": {
+    "decode": {
+      "callsites": 11,
+      "dynamic_sites": 0,
+      "literal_bytes": 14820
+    },
+    "prefill": {
+      "callsites": 11,
+      "dynamic_sites": 0,
+      "literal_bytes": 14820
+    }
+  },
+  "status": "linked_experimental_numeric_qualification_pending"
+}

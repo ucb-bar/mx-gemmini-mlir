@@ -171,7 +171,7 @@ def main() -> None:
                         help="embed source-proven packed checkpoint RHS values at build time")
     parser.add_argument("--prune-unused-checkpoint-weights", action="store_true",
                         help="remove unused immutable weights from the generated entry ABI "
-                             "after prepacking; standalone stage builds only")
+                             "after prepacking; sessions must regenerate projection-aware callers")
     parser.add_argument("--reuse-prepacked-data", type=Path,
                         help="hardlink packed data from this catalog after checking freshly quantized bytes")
     parser.add_argument("--op-profile", action="store_true",

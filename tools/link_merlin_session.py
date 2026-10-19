@@ -11,11 +11,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import re
 import subprocess
 import sys
-
+from pathlib import Path
 
 DEFAULT_DUMP_LIMIT_BYTES = 16_384
 MAX_DUMP_LIMIT_BYTES = 262_144
@@ -172,6 +171,40 @@ def _stage_objects(build: Path) -> list[Path]:
     return objects
 
 
+def _projected_stage_entry(program, build: Path, receipt: dict):
+    """Join the actual compiled stage to a fully rederived generic ABI proof."""
+    from merlin.llvmlower.session_projection import read_program_entry_projection
+
+    path = build / "entry_weight_projection/entry_weight_projection.json"
+    if not receipt.get("prune_unused_checkpoint_weights"):
+        if path.exists():
+            raise ValueError("unselected stage entry projection cannot alter a session ABI")
+        return None
+    if (not path.is_file() or path.is_symlink() or
+            _sha(path) != receipt.get("entry_weight_projection_receipt_sha256")):
+        raise ValueError("stage entry projection differs from its build receipt")
+    recipe = json.loads((build / "compilation_recipe.json").read_text())
+    preparation = recipe.get("preparation", {}).get("entry_weight_projection", {})
+    outputs = [row.get("output", {}) for row in recipe.get("commands", [])
+               if Path(row.get("output", {}).get("path", "")).resolve() == (build / "model.o").resolve()]
+    if (recipe.get("status") != "completed" or preparation.get("sha256") != _sha(path) or
+            Path(preparation.get("path", "")).resolve() != path.resolve() or
+            len(outputs) != 1 or outputs[0].get("sha256") != _sha(build / "model.o")):
+        raise ValueError("projected session stage is not bound to its compiled model object")
+    projection = json.loads(path.read_text())
+    if "source_path" in projection:
+        source = Path(projection["source_path"])
+    else:
+        # Older receipts lack an input filename. Reopen the checked original
+        # post-offload selection, then reprove its canonical module identity.
+        original = json.loads((build / "device_host_abi/post_offload_transform.json").read_text())
+        source = Path(original["selected_path"])
+        if _sha(source) != original["selected_sha256"]:
+            raise ValueError("stage post-offload source differs from its original selection")
+    return read_program_entry_projection(model_dir=program.bundle, prepared_dir=build,
+                                          source=source, receipt=path)
+
+
 def _namespace_stage(
     *, index: int, name: str, objects: list[Path], previous: set[str],
     nm: Path, objcopy: Path, output: Path,
@@ -202,7 +235,10 @@ def _namespace_stage(
 
 
 def _session_main(output_counts: list[int], *, weights_base: int,
-                  dump_outputs: tuple[tuple[int, int], ...] = ()) -> str:
+                  dump_outputs: tuple[tuple[int, int], ...] = (),
+                  measure_preparation: bool = False) -> str:
+    if type(measure_preparation) is not bool:
+        raise ValueError("session preparation timing requires an explicit boolean selection")
     declarations = "\n".join(
         f"void *merlin_stage_{index}_output(int);\n"
         f"size_t merlin_stage_{index}_output_bytes(int);"
@@ -220,6 +256,39 @@ def _session_main(output_counts: list[int], *, weights_base: int,
     dump_condition = " || ".join(
         f"(program == {program} && output == {output})"
         for program, output in dump_outputs) or "0"
+    preparation_helper, preparation_total = "", ""
+    reset = "merlin_session_reset();"
+    prepare = "merlin_session_prepare_program(program)"
+    preparation_call = ""
+    counter_barrier = ""
+    if measure_preparation:
+        counter_barrier = ' : : "memory"'
+        preparation_helper = r'''
+static void report_preparation(int program, uint64_t start_cycles, uint64_t start_instructions,
+                               uint64_t *total_cycles, uint64_t *total_instructions) {
+  uint64_t instructions = read_instret() - start_instructions;
+  uint64_t cycles = read_cycle() - start_cycles;
+  *total_cycles += cycles; *total_instructions += instructions;
+  htif_puts("SESSION_PREP_PERF "); htif_putd(program); htif_putc(' ');
+  htif_putd((long)cycles); htif_putc(' '); htif_putd((long)instructions); htif_putc('\n');
+}
+'''
+        reset = '''uint64_t preparation_total_cycles = 0, preparation_total_instructions = 0;
+  uint64_t preparation_start_cycles = read_cycle(), preparation_start_instructions = read_instret();
+  merlin_session_reset();
+  report_preparation(-1, preparation_start_cycles, preparation_start_instructions,
+                      &preparation_total_cycles, &preparation_total_instructions);'''
+        preparation_call = '''preparation_start_cycles = read_cycle();
+    preparation_start_instructions = read_instret();
+    int preparation_status = merlin_session_prepare_program(program);
+    report_preparation(program, preparation_start_cycles, preparation_start_instructions,
+                        &preparation_total_cycles, &preparation_total_instructions);
+    '''
+        prepare = "preparation_status"
+        preparation_total = r'''htif_puts("SESSION_EXECUTION_TOTAL ");
+  htif_putd((long)(total_cycles + preparation_total_cycles)); htif_putc(' ');
+  htif_putd((long)(total_instructions + preparation_total_instructions)); htif_putc('\n');
+  '''
     return f'''/* MX target's Spike entry; state scheduling is Merlin-generated. */
 #include <stddef.h>
 #include <stdint.h>
@@ -236,14 +305,15 @@ unsigned long long merlin_memref_rank_mismatches(void);
 {declarations}
 static uint64_t read_cycle(void) {{
   uint64_t value;
-  __asm__ volatile ("rdcycle %0" : "=r" (value));
+  __asm__ volatile ("rdcycle %0" : "=r" (value){counter_barrier});
   return value;
 }}
 static uint64_t read_instret(void) {{
   uint64_t value;
-  __asm__ volatile ("rdinstret %0" : "=r" (value));
+  __asm__ volatile ("rdinstret %0" : "=r" (value){counter_barrier});
   return value;
 }}
+{preparation_helper}
 static const int OUTPUT_COUNTS[MERLIN_SESSION_N_PROGRAMS] = {{{counts}}};
 static void *output_pointer(int program, int output) {{
   switch (program) {{
@@ -285,10 +355,10 @@ int main(int hart) {{
   if (hart != 0) for (;;) ;
   console_init();
   const void *weights = (const void *){hex(weights_base)}ULL;
-  merlin_session_reset();
+  {reset}
   uint64_t total_cycles = 0, total_instructions = 0;
   for (int program = 0; program < MERLIN_SESSION_N_PROGRAMS; ++program) {{
-    if (merlin_session_prepare_program(program) != 0) {{
+    {preparation_call}if ({prepare} != 0) {{
       htif_puts("FAIL session binding\\n"); htif_exit(1); return 1;
     }}
     long steps = merlin_session_program_steps(program);
@@ -326,7 +396,7 @@ int main(int hart) {{
   }}
   htif_puts("SESSION_TOTAL "); htif_putd((long)total_cycles);
   htif_putc(' '); htif_putd((long)total_instructions); htif_putc('\\n');
-  htif_puts("METRIC memref_rank_mismatch ");
+  {preparation_total}htif_puts("METRIC memref_rank_mismatch ");
   htif_putd((long)merlin_memref_rank_mismatches()); htif_putc('\\n');
   htif_puts("DONE\\n"); htif_exit(0); return 0;
 }}
@@ -338,13 +408,30 @@ def link_session(
     profile: Path, merlin_src: Path, riscv_root: Path,
     dump_outputs: tuple[str, ...] = (),
     dump_limit_bytes: int = DEFAULT_DUMP_LIMIT_BYTES,
+    linked_elf_admission=None,
+    measure_preparation: bool = False,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
-    from merlin.runtime.backends.spike_arena import (
-        estimate_llvm_malloc, recommended_arena_bytes, spike_session_layout,
+    from merlin.llvmlower.device_build import (
+        DeviceRouting,
+        admit_linked_device_elf,
+        freeze_device_elf_admission,
+        require_device_elf_admission,
     )
+    from merlin.runtime.backends.spike_arena import (
+        estimate_llvm_malloc,
+        recommended_arena_bytes,
+        spike_session_layout,
+    )
+
     from mx_gemmini_support.target_profile import load_profile, profile_sha256
+
+    admission_route = DeviceRouting(
+        device="mx_gemmini", package_dir=Path(__file__).resolve().parents[1],
+        operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
+        linked_elf_admission=linked_elf_admission)
+    admission_selection = freeze_device_elf_admission(admission_route)
 
     session = session_bundle.load(session_root)
     names = set(session.program_names)
@@ -355,11 +442,10 @@ def link_session(
     expected_profile = profile_sha256(load_profile(profile))
     receipts = {}
     source_objects = {}
+    projections = {}
     for program in session.programs:
         build = builds[program.name]
         receipt = json.loads((build / "mx_stage_probe.json").read_text(encoding="utf-8"))
-        if receipt.get("prune_unused_checkpoint_weights"):
-            raise ValueError("projected stage entry ABI requires a projection-aware session linker")
         if (receipt.get("schema") != "mx_gemmini.merlin_stage_probe.v1"
                 or receipt.get("profile_sha256") != expected_profile
                 or receipt.get("capture_model_sha256") != _sha(program.bundle / "model.mlir")
@@ -371,11 +457,17 @@ def link_session(
             raise ValueError(f"stage {program.name} device objects differ from its selection count")
         catalog = build / "device_catalog/mx_catalog.json"
         if len(objects) == 3:
+            require_device_elf_admission(admission_route, admission_selection)
             details = json.loads(catalog.read_text(encoding="utf-8"))
             if (details.get("coverage_complete") is not True
                     or details.get("covered_contractions") != receipt["selected_operations"]
-                    or details.get("unbound_precision_proposals")):
+                    or details.get("unbound_precision_proposals") or
+                    details.get("profile_sha256") != expected_profile or
+                    details.get("compilation", {}).get("object_sha256") != _sha(objects[-1])):
                 raise ValueError(f"stage {program.name} catalog has incomplete MX coverage")
+        projection = _projected_stage_entry(program, build, receipt)
+        if projection is not None:
+            projections[program.name] = projection
         source_objects[program.name] = {
             str(path.relative_to(build)): _sha(path) for path in objects}
         receipts[program.name] = receipt
@@ -383,9 +475,10 @@ def link_session(
         raise ValueError("session output directory must not already exist")
     output.mkdir(parents=True)
     generated = session_bundle.generate(
-        session_root, output / "generated", materialize_weights=False)
+        session_root, output / "generated", materialize_weights=False,
+        entry_projections=projections or None)
     shared_weights = session_bundle.materialize_shared_weights(
-        session, generated, output / "shared_weights")
+        session, generated, output / "shared_weights", entry_projections=projections or None)
     weight_name = shared_weights["program"]
     estimates = {program.name: estimate_llvm_malloc(
         builds[program.name] / "lower/model.ll") for program in session.programs}
@@ -413,7 +506,7 @@ def link_session(
     previous: set[str] = set()
     for index, program in enumerate(session.programs):
         stage_objects = _stage_objects(builds[program.name])
-        if index:
+        if index or projections:
             stage_objects, symbols = _namespace_stage(
                 index=index, name=program.name, objects=stage_objects,
                 previous=previous, nm=nm, objcopy=objcopy, output=output)
@@ -424,8 +517,10 @@ def link_session(
         if len(stage_objects) == 3:
             catalog_objects.append(stage_objects[-1])
     first = builds[session.programs[0].name]
-    all_objects.extend(first / f"{name}.o" for name in (
-        "model_call", "merlin_model", "mlir_rt", "crt", "console", "libc_min"))
+    runtime_names = ("merlin_model", "mlir_rt", "crt", "console", "libc_min")
+    if not projections:
+        runtime_names = ("model_call", *runtime_names)
+    all_objects.extend(first / f"{name}.o" for name in runtime_names)
     malloc_source = bare / "merlin_malloc.c"
     malloc_object = output / "session_malloc.o"
     all_objects.append(malloc_object)
@@ -438,7 +533,7 @@ def link_session(
         stage_dir = generated_root / f"stage_{index}_{program.name}"
         all_objects.append(compile_c(
             stage_dir / "stage_adapter.c", output / f"adapter_{index}.o", runtime_c, stage_dir))
-        if index:
+        if index or projections:
             all_objects.append(compile_c(
                 stage_dir / "model_call.c", output / f"call_{index}.o", runtime_c, stage_dir))
     all_objects.append(compile_c(
@@ -448,7 +543,8 @@ def link_session(
         _session_main([len(program.outputs) for program in session.programs],
                       weights_base=layout["weights_base"],
                       dump_outputs=tuple((row["program"], row["output"])
-                                         for row in selected_dumps)),
+                                         for row in selected_dumps),
+                      measure_preparation=measure_preparation),
         encoding="utf-8")
     all_objects.append(compile_c(main_source, output / "session_main.o", generated_root, bare))
     elf = output / "session.elf"
@@ -476,9 +572,17 @@ def link_session(
         layout = checked
     else:
         raise ValueError("linked static extent did not stabilize below the arena")
+    admission = (admit_linked_device_elf(
+        admission_route, admission_selection, elf=elf, linked_sha256=_sha(elf), directory=output)
+        if catalog_objects else None)
     record = {
         "schema": "mx_gemmini.linked_merlin_session.v1",
         "performance_schema": "spike_rdcycle_rdinstret_per_step.v1",
+        "preparation_performance_schema": (
+            "spike_rdcycle_rdinstret_reset_prepare.v1" if measure_preparation else None),
+        "execution_timing_scope": ("reset_plus_program_state_handoff_plus_existing_step_intervals; "
+                                   "console_and_phase_bookkeeping_excluded" if measure_preparation else
+                                   "existing_step_intervals_only; reset_and_program_state_handoff_excluded"),
         "dump_outputs": selected_dumps,
         "dump_limit_bytes": dump_limit_bytes,
         "status": "linked_experimental_numeric_qualification_pending",
@@ -494,6 +598,11 @@ def link_session(
         "shared_weight_bytes": weight_bytes,
         "shared_weight_sha256": shared_weights["sha256"],
         "stage_object_sha256": source_objects,
+        "entry_projections": {name: generated["programs"][session.program_names.index(name)]["entry_projection"]
+                              for name in projections},
+        "linked_elf_admission": admission,
+        "linked_elf_admission_required": bool(catalog_objects),
+        "linked_elf_admission_selection": admission_selection[2] if admission is not None else None,
         "arena_layout": layout,
         "static_end_symbol": static_end_symbol,
         "static_malloc_estimates": {
@@ -520,17 +629,26 @@ def main() -> None:
     parser.add_argument("--riscv-root", required=True, type=Path)
     parser.add_argument("--dump-output", action="append", default=[],
                         help="program:output-index; record selected result bytes")
+    parser.add_argument("--structural-elf-admission", action="store_true",
+                        help="explicitly select digest/declared-ISA final session ELF admission")
+    parser.add_argument("--measure-preparation", action="store_true",
+                        help="also measure session reset and cross-program state handoffs")
     parser.add_argument("--dump-limit-bytes", type=int,
                         default=DEFAULT_DUMP_LIMIT_BYTES,
                         help="per-output console limit (16–256 KiB; 8 MiB total)")
     args = parser.parse_args()
+    sys.path.insert(0, str(args.merlin_src.resolve(strict=True)))
+    from merlin.model_check.admission import service as structural_admission
     record = link_session(
         args.session_root.resolve(strict=True), _stage_paths(args.stage_build),
         args.workdir.absolute(), profile=args.profile.resolve(strict=True),
         merlin_src=args.merlin_src.resolve(strict=True),
         riscv_root=args.riscv_root.resolve(strict=True),
         dump_outputs=tuple(args.dump_output),
-        dump_limit_bytes=args.dump_limit_bytes)
+        dump_limit_bytes=args.dump_limit_bytes,
+        linked_elf_admission=(structural_admission("mx_gemmini")
+                              if args.structural_elf_admission else None),
+        measure_preparation=args.measure_preparation)
     print(json.dumps(record, sort_keys=True))
 
 

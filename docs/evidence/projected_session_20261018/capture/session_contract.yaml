@@ -1,0 +1,36 @@
+bindings:
+- from:
+    output_index: 1
+    program: prefill
+  name: state
+  to:
+    input_arg: 3
+    program: decode
+kind: autoregressive_decode
+paper_ready: false
+programs:
+- bundle: stages/prefill
+  name: prefill
+  steps: 1
+- bundle: stages/decode
+  name: decode
+  steps: 3
+quality:
+  program: decode
+  scope: trajectory
+stage_schedule:
+- execution: compiled
+  name: prefill
+  steps: 1
+  timed: true
+- execution: compiled
+  name: decode
+  steps: 3
+  timed: true
+stages:
+- prefill
+- decode
+states:
+- name: state
+streams: []
+version: 2

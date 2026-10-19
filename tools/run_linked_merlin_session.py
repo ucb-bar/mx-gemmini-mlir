@@ -6,16 +6,17 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 from .link_merlin_session import (
-    DEFAULT_DUMP_LIMIT_BYTES, MAX_DUMP_LIMIT_BYTES, _symbol_address,
+    DEFAULT_DUMP_LIMIT_BYTES,
+    MAX_DUMP_LIMIT_BYTES,
+    _symbol_address,
 )
-
 
 _BYTES = {"f32": 4, "i64": 8, "i1": 1, "bf16": 2, "f16": 2, "i32": 4}
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -24,6 +25,76 @@ _SHA = re.compile(r"[0-9a-f]{64}\Z")
 def _sha(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def validate_admission_record(link: dict) -> None:
+    """Reopen actual selected policy evidence; old receipts make no such claim."""
+    result = link.get("linked_elf_admission")
+    if result is None:
+        if link.get("linked_elf_admission_required"):
+            raise ValueError("linked session lacks its required final ELF admission")
+        return
+    if result.get("status") != "accepted" or result.get("elf_sha256") != link["elf_sha256"]:
+        raise ValueError("linked session final ELF admission disagrees with its image")
+    report = Path(result.get("report_path", ""))
+    if (not report.is_absolute() or report.is_symlink() or not report.is_file() or
+            _sha(report) != result.get("report_sha256")):
+        raise ValueError("linked session final ELF admission report changed")
+    stored = json.loads(report.read_text())
+    if any(stored.get(key) != result.get(key) for key in ("status", "elf_sha256")):
+        raise ValueError("linked session final ELF admission report differs")
+    selection = link.get("linked_elf_admission_selection")
+    if selection is not None:
+        for path, digest in selection["source_pins"]:
+            if _sha(Path(path)) != digest:
+                raise ValueError("linked session admission policy source changed")
+
+
+def observe_preparation_output(log: str, session, observation: dict) -> dict:
+    """Account for reset/handoff intervals without changing the original step total."""
+    expected = [-1, *range(len(session.programs))]
+    records, closed, begun = [], set(), set()
+    execution = None
+    saw_step_total = False
+    for raw in log.splitlines(keepends=True):
+        if not observation["complete"] and not raw.endswith("\n"):
+            break
+        parts = raw.split()
+        if not parts:
+            continue
+        if parts[0] == "SESSION_PREP_PERF":
+            if len(parts) != 4:
+                raise ValueError("malformed session preparation performance")
+            program, cycles, instructions = map(int, parts[1:])
+            if (len(records) >= len(expected) or program != expected[len(records)] or
+                    min(cycles, instructions) <= 0 or program in begun or
+                    (program > 0 and program - 1 not in closed)):
+                raise ValueError("session preparation performance order differs from the program schedule")
+            records.append({"program": program, "cycles": cycles, "instructions": instructions})
+        elif parts[0] == "SESSION_BEGIN":
+            program = int(parts[1])
+            if program not in begun and [row["program"] for row in records] != expected[:program + 2]:
+                raise ValueError("session program began without its measured preparation")
+            begun.add(program)
+        elif parts[0] == "SESSION_SHA":
+            program, step, output = map(int, parts[1:4])
+            if (step == session.programs[program].steps - 1 and
+                    output == len(session.programs[program].outputs) - 1):
+                closed.add(program)
+        elif parts[0] == "SESSION_TOTAL":
+            saw_step_total = True
+        elif parts[0] == "SESSION_EXECUTION_TOTAL":
+            if len(parts) != 3 or execution is not None or not saw_step_total or len(records) != len(expected):
+                raise ValueError("session execution total is incomplete or out of order")
+            execution = dict(zip(("cycles", "instructions"), map(int, parts[1:]), strict=True))
+    if observation["complete"] and (len(records) != len(expected) or execution is None):
+        raise ValueError("completed session lacks measured initialization or state handoff")
+    preparation = {key: sum(row[key] for row in records) for key in ("cycles", "instructions")}
+    if execution is not None and any(
+            execution[key] != observation["total_performance"][key] + preparation[key] for key in preparation):
+        raise ValueError("session execution total excludes measured preparation or differs from its steps")
+    return {"preparation_performance": records, "preparation_total_performance": preparation,
+            "execution_total_performance": execution}
 
 
 def validate_linked_layout(layout: dict, *, mem_bytes: int,
@@ -254,6 +325,7 @@ def run_session(
     elf = Path(link["elf"]).resolve(strict=True)
     if elf.stat().st_size != link["elf_bytes"] or _sha(elf) != link["elf_sha256"]:
         raise ValueError("linked session ELF changed after its receipt")
+    validate_admission_record(link)
     recorded_programs = [(row["name"], row["steps"], row["outputs"])
                          for row in link["programs"]]
     captured_programs = [(row.name, row.steps, len(row.outputs)) for row in session.programs]
@@ -337,6 +409,11 @@ def run_session(
     observation = observe_session_output(
         log, session, exit_code=exit_code,
         require_perf=link.get("performance_schema") == "spike_rdcycle_rdinstret_per_step.v1")
+    preparation = {}
+    if link.get("preparation_performance_schema") is not None:
+        if link["preparation_performance_schema"] != "spike_rdcycle_rdinstret_reset_prepare.v1":
+            raise ValueError("unknown selected session preparation performance schema")
+        preparation = observe_preparation_output(log, session, observation)
     output_dumps = (extract_output_dumps(
         log, session, link.get("dump_outputs", []), observation["output_digests"],
         out_dir, link.get("dump_limit_bytes", DEFAULT_DUMP_LIMIT_BYTES))
@@ -357,6 +434,8 @@ def run_session(
         "extension_sha256": _sha(spike_extlib) if spike_extlib else None,
         "command": command, "exit_code": exit_code,
         "performance_schema": link.get("performance_schema"),
+        "preparation_performance_schema": link.get("preparation_performance_schema"),
+        "execution_timing_scope": link.get("execution_timing_scope"),
         "timing_mode": environment["GEMMINI_MODE"],
         "timing_config": perf_config,
         "timing_overrides": perf_set,
@@ -364,7 +443,7 @@ def run_session(
         "timing_report_sha256": _sha(perf_path) if perf_path.is_file() else None,
         "elapsed_wall_s": elapsed_wall_s,
         "log_sha256": _sha(log_path), **observation,
-        "output_dumps": output_dumps,
+        "output_dumps": output_dumps, **preparation,
     }
     (out_dir / "mx_session_run.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")

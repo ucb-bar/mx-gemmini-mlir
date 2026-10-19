@@ -1,0 +1,27 @@
+{
+  "0": {
+    "weight": "linear.weight",
+    "kind": "param",
+    "dtype": "float32",
+    "shape": [
+      32,
+      32
+    ]
+  },
+  "1": {
+    "weight": "linear.bias",
+    "kind": "param",
+    "dtype": "float32",
+    "shape": [
+      32
+    ]
+  },
+  "2": {
+    "kind": "input",
+    "name": "x"
+  },
+  "3": {
+    "kind": "input",
+    "name": "state"
+  }
+}

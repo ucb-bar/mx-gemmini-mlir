@@ -1,0 +1,19 @@
+{
+  "schema": "mx_gemmini.execution_policy.v1",
+  "source_mlir_sha256": "0dd348700f1b8a9e79e899f625df63cdd4651be723aec0217c735e65ab29176c",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "matrix_formats": {
+    "matmul_0": "mxfp8"
+  },
+  "vpu_placements": {
+    "softmax": {},
+    "add": {
+      "add_0": "vpu",
+      "add_1": "vpu",
+      "add_2": "vpu"
+    },
+    "elementwise": {},
+    "unary": {},
+    "reduce": {}
+  }
+}

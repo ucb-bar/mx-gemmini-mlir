@@ -1,0 +1,615 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang-23",
+        "--target=riscv64-unknown-elf",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-O2",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/lower/model.ll",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 196000032,
+        "path": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang-23",
+        "sha256": "40b44020de84a10b8b613d37b96157e88f8433a000bdeb2ad9bdd79af6785125"
+      },
+      "inputs": [
+        {
+          "bytes": 29766,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/lower/model.ll",
+          "sha256": "2661374cac7a9e253e46fa3beb7a88a3514c79c64040c46bcc6183503b8a997d"
+        }
+      ],
+      "output": {
+        "bytes": 6968,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.o",
+        "sha256": "3773911ee5450b4055015642984d3c281142382935b9a440d2b69663a7b91fa8"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-ld",
+        "-r",
+        "-b",
+        "binary",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/weights_blob.o",
+        "weights.bin"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2022040,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-ld",
+        "sha256": "d70bbf2f4101d9fd02fa0d199e0ea597d1a2c516f6e4305bd344900352545d65"
+      },
+      "inputs": [
+        {
+          "bytes": 4224,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen/weights.bin",
+          "sha256": "d55d785b2cf0a21ff5b99c9628b89e6d50b4e34a03bb6fdbf8c9bdf8ca7a8d25"
+        }
+      ],
+      "output": {
+        "bytes": 4840,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/weights_blob.o",
+        "sha256": "f6009b26e3d4db35b79ddeb1aaf18ca79173618770d4fe5c04651a172ccf197f"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/weights_blob.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang-23",
+        "--target=riscv64-unknown-elf",
+        "--sysroot=/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/riscv64-unknown-elf",
+        "-isystem",
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/riscv64-unknown-elf/include",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/abi/mlir_runtime.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/mlir_rt.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 196000032,
+        "path": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang-23",
+        "sha256": "40b44020de84a10b8b613d37b96157e88f8433a000bdeb2ad9bdd79af6785125"
+      },
+      "inputs": [
+        {
+          "bytes": 12943,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/abi/mlir_runtime.c",
+          "sha256": "6d6d095c8b7dd2798ec1bda17230586e5744ded62daa9cdd500b64a25e0803c3"
+        }
+      ],
+      "output": {
+        "bytes": 6680,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/mlir_rt.o",
+        "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/mlir_rt.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/c",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen/model_call.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_call.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 174,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen/model_call.c",
+          "sha256": "f1fbb1f8d9af24e2f4ba676c4930ad2d198c58196b4aca8d2f0ecd3daa6cc040"
+        }
+      ],
+      "output": {
+        "bytes": 1328,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_call.o",
+        "sha256": "458a1188bf997ddd4a86eb50d2d2bd592b5449d5f4cc3a295f14e578d42e8533"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_call.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/c",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/c/merlin_model.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/merlin_model.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 5656,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/c/merlin_model.c",
+          "sha256": "c98a0fd790c1e220b0171453948881c61cd60612e8825775f1da783eaacf23a4"
+        }
+      ],
+      "output": {
+        "bytes": 3776,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/merlin_model.o",
+        "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/merlin_model.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/c",
+        "-I",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/cgen",
+        "-DMERLIN_ARENA_BASE_ADDR=0xd0000000ULL",
+        "-DMERLIN_ARENA_SIZE_BYTES=0x80000000ULL",
+        "-DMERLIN_WEIGHTS_BASE_ADDR=0x200000000ULL",
+        "-DMERLIN_BUILD_HASH=\"6c6a2372af34\"",
+        "-DMERLIN_DUMP_CAP=1",
+        "-DMERLIN_OUTPUT_SHA256",
+        "-DMERLIN_ALL_OUTPUT_SHA256",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/model_main.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_main.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 12585,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/model_main.c",
+          "sha256": "67fa6a2ea54ca58ebd91a49ee53c3a3a3add0997770974ceeab7f02beb01ebb2"
+        }
+      ],
+      "output": {
+        "bytes": 24680,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_main.o",
+        "sha256": "6427ef89f8200f31125554d17ddc5fdc7cefc5a1c8e7772893c2dc01d54cd233"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_main.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/crt.S",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/crt.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 4066,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/crt.S",
+          "sha256": "a437e507cdb0e02f11f2e4ae4e08cfbc83a41c4ccbec12c26574ff687da2ba46"
+        }
+      ],
+      "output": {
+        "bytes": 4344,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/crt.o",
+        "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/crt.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/htif.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/console.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 5404,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/htif.c",
+          "sha256": "2f08e9fdd08f346026cbefb897b7496d862ad02ec26d753b065e71f9ff5337a4"
+        }
+      ],
+      "output": {
+        "bytes": 10288,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/console.o",
+        "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/console.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/libc_min.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/libc_min.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 3949,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/libc_min.c",
+          "sha256": "6326f21c6914f3cd0ac4351d5ca2ac2158cd38305168638e4c512bff84e1be7a"
+        }
+      ],
+      "output": {
+        "bytes": 3864,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/libc_min.o",
+        "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/libc_min.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-DMERLIN_ARENA_BASE_ADDR=0xd0000000ULL",
+        "-DMERLIN_ARENA_SIZE_BYTES=0x80000000ULL",
+        "-DMERLIN_WEIGHTS_BASE_ADDR=0x200000000ULL",
+        "-c",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/merlin_malloc.c",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/malloc.o"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 6368,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/merlin_malloc.c",
+          "sha256": "9654964e1709e44039119cf4edc4395f2d0e0fd856a1c3dcc2f0a1ed18be0c52"
+        }
+      ],
+      "output": {
+        "bytes": 15968,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/malloc.o",
+        "sha256": "0f22b5a51f01efdc9597f700b086ae0853f03934b0f2159dbcd38c11dc090735"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/malloc.o",
+      "status": "returned"
+    },
+    {
+      "argv": [
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "-O2",
+        "-ffreestanding",
+        "-fno-builtin",
+        "-march=rv64gc",
+        "-mabi=lp64d",
+        "-mcmodel=medany",
+        "-nostdlib",
+        "-nostartfiles",
+        "-Wl,--defsym,MERLIN_WEIGHTS_BASE=0x200000000",
+        "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
+        "-T",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/model_link.ld",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_call.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/merlin_model.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_main.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/mlir_rt.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/crt.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/console.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/libc_min.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/malloc.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/weights_blob.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/device_catalog/mx_catalog.o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/device/device_catalog_shim.o",
+        "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/riscv64-unknown-elf/lib/libm.a",
+        "-o",
+        "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.elf"
+      ],
+      "cwd": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir",
+      "environment": {
+        "MERLIN_CLANG": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install/bin/clang",
+        "MERLIN_COMPILER_PYTHON": "/scratch/agustin/projects/model2MLIR/.venv/bin/python",
+        "MERLIN_COMPILE_TIMEOUT_S": "3600",
+        "MERLIN_MLIR_INSTALL": "/scratch/agustin/projects/oscar-merlin/third_party/llvm-install",
+        "MERLIN_RISCV_GCC": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "MERLIN_SPIKE": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+        "MERLIN_TARGET_PATH": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir"
+      },
+      "environment_digest": "8767cbd31327e354",
+      "executable": {
+        "bytes": 2096408,
+        "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+        "sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4"
+      },
+      "inputs": [
+        {
+          "bytes": 2127,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/merlin/runtime/baremetal/spike/model_link.ld",
+          "sha256": "b6d15373e02269e65c5c1d0692bd989623736d3b550574638de7569623b25ee7"
+        },
+        {
+          "bytes": 1328,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_call.o",
+          "sha256": "458a1188bf997ddd4a86eb50d2d2bd592b5449d5f4cc3a295f14e578d42e8533"
+        },
+        {
+          "bytes": 3776,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/merlin_model.o",
+          "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c"
+        },
+        {
+          "bytes": 24680,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model_main.o",
+          "sha256": "6427ef89f8200f31125554d17ddc5fdc7cefc5a1c8e7772893c2dc01d54cd233"
+        },
+        {
+          "bytes": 6680,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/mlir_rt.o",
+          "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e"
+        },
+        {
+          "bytes": 4344,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/crt.o",
+          "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e"
+        },
+        {
+          "bytes": 10288,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/console.o",
+          "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec"
+        },
+        {
+          "bytes": 3864,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/libc_min.o",
+          "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e"
+        },
+        {
+          "bytes": 15968,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/malloc.o",
+          "sha256": "0f22b5a51f01efdc9597f700b086ae0853f03934b0f2159dbcd38c11dc090735"
+        },
+        {
+          "bytes": 6968,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.o",
+          "sha256": "3773911ee5450b4055015642984d3c281142382935b9a440d2b69663a7b91fa8"
+        },
+        {
+          "bytes": 4840,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/weights_blob.o",
+          "sha256": "f6009b26e3d4db35b79ddeb1aaf18ca79173618770d4fe5c04651a172ccf197f"
+        },
+        {
+          "bytes": 29416,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/device_catalog/mx_catalog.o",
+          "sha256": "540cf57ddf3706edb37cc6d59492649ca5859ee44d07ab2684ef995ae6594fb3"
+        },
+        {
+          "bytes": 3032,
+          "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/device/device_catalog_shim.o",
+          "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4"
+        },
+        {
+          "bytes": 1074298,
+          "path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/riscv64-unknown-elf/lib/libm.a",
+          "sha256": "38965f2df6e94d3389596fcf414caf37040294fc0f43f3afa3e4369acb837934"
+        }
+      ],
+      "output": {
+        "bytes": 50280,
+        "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.elf",
+        "sha256": "d987fe890da243b1caefb28c613e046a62a786da0f407ca26998b78e899beae5"
+      },
+      "requested_output": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.elf",
+      "status": "returned"
+    }
+  ],
+  "executable": {
+    "bytes": 50280,
+    "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/projected_session_varied/original_decode/model.elf",
+    "sha256": "d987fe890da243b1caefb28c613e046a62a786da0f407ca26998b78e899beae5"
+  },
+  "producer": {
+    "bytes": 76885,
+    "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/runtime/backends/spike_model.py",
+    "sha256": "3ebee40ba9b1f341ee2a05c5b37a6b0e1c61d2b83e8cb94d39347e321a52abee"
+  },
+  "schema": "merlin.compilation_recipe.v1",
+  "scope": "caller-owned compilation and link; provider compilation and toolchain dependency closure unknown",
+  "status": "completed"
+}
