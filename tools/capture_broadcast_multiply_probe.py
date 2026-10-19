@@ -49,10 +49,16 @@ def main():
     parser.add_argument("--middle-index", type=int, choices=(0, 1), default=1)
     parser.add_argument("--first-swapped", action="store_true")
     parser.add_argument("--fallback", action="store_true")
+    parser.add_argument("--fallback-input", choices=("weight", "activation"), default="weight")
+    parser.add_argument("--finite-overflow", action="store_true")
+    parser.add_argument("--infinite-input", action="store_true")
+    parser.add_argument("--nan-input", choices=("activation", "weight"))
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.out_dir.exists() or args.rows <= 0 or args.width <= 0:
         parser.error("capture needs positive extents and a fresh output directory")
+    if sum((args.fallback, args.finite_overflow, args.infinite_input, args.nan_input is not None)) > 1:
+        parser.error("select one exceptional-value fixture")
     import numpy as np
     import torch
 
@@ -66,7 +72,22 @@ def main():
                       0x3f808000, 0x3f818000, 0xbf808000], dtype=np.uint32)
     x.reshape(-1)[:min(x.size, words.size)] = words[:min(x.size, words.size)].view(np.float32)
     if args.fallback:
-        weight[-1] = np.float32(2.0 ** 62)
+        if args.fallback_input == "weight":
+            weight[-1] = np.float32(2.0 ** 62)
+        else:
+            x.reshape(-1)[-1] = np.float32(2.0 ** 62)
+    if args.finite_overflow:
+        scale[0, 0, 0] = np.float32(2.0 ** 61)
+        weight[-1] = np.float32(2.0 ** 61)
+        x[0, 0, -1] = np.float32(2.0 ** 61)
+    if args.infinite_input:
+        x.reshape(-1)[-1] = np.float32(float("inf"))
+        scale.reshape(-1)[-1] = np.float32(1.0)
+        weight[-1] = np.float32(1.0)
+    if args.nan_input == "activation":
+        x.reshape(-1).view(np.uint32)[-1] = 0x7fc01234
+    if args.nan_input == "weight":
+        weight.view(np.uint32)[-1] = 0x7fc05678
     tx, ts, tw = (torch.from_numpy(v).to(torch.bfloat16).float() for v in (x, scale, weight))
     first = (tx * ts).to(torch.bfloat16).float()
     golden = (first * tw).to(torch.bfloat16).float().numpy()
@@ -84,6 +105,9 @@ def main():
                "shape": list(x.shape), "input_shapes": [list(v.shape) for v in inputs],
                "middle_index": args.middle_index, "first_swapped": args.first_swapped,
                "fallback": args.fallback,
+               "fallback_input": args.fallback_input,
+               "finite_overflow": args.finite_overflow, "infinite_input": args.infinite_input,
+               "nan_input": args.nan_input,
                "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                "files_sha256": {name: hashlib.sha256((out / name).read_bytes()).hexdigest() for name in
                                 ("source.mlir", "inputs.npz", "bf16_policy_golden.npy")}}

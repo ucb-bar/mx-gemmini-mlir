@@ -83,7 +83,8 @@ def multiply_pairs(module, sites, *, include_broadcasts: bool = False):
     return result
 
 
-def chain_adapter(pair, profile):
+def chain_adapter(pair, profile, *, prepare_broadcasts: bool = False,
+                  broadcast_preparation_budget_bytes: int = 1048576):
     """Outline the verified source operations into the existing handoff adapter."""
     from merlin.xdsl_dialects.lowering.dispatch_program import (
         Buffer,
@@ -113,16 +114,20 @@ def chain_adapter(pair, profile):
             Node("dispatch", "multiply1", ["m", "c"] if pair["middle_index"] == 0 else ["c", "m"],
                  ["o"])], ["o"])
     return program, F32MultiplyAdapter(ModuleOp(functions), program.to_dict(), profile,
-                                       boundary_policy="bf16_rne_each_vpu_call")
+                                       boundary_policy="bf16_rne_each_vpu_call",
+                                       prepare_broadcasts=prepare_broadcasts,
+                                       broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes)
 
 
-def emit_chain_kernel(pair, profile):
+def emit_chain_kernel(pair, profile, *, prepare_broadcasts: bool = False,
+                      broadcast_preparation_budget_bytes: int = 1048576):
     """Emit a legal experimental handoff; do not assert unmeasured profitability."""
     from merlin.xdsl_dialects.lowering.connected_dispatch import (
         lower_connected_dispatches,
     )
 
-    program, adapter = chain_adapter(pair, profile)
+    program, adapter = chain_adapter(pair, profile, prepare_broadcasts=prepare_broadcasts,
+                                     broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes)
     plan, lowered = lower_connected_dispatches(program, adapter, require_profitable=False)
     if len(plan.handoffs) != 1:
         raise ValueError("multiply pair lost its private handoff")

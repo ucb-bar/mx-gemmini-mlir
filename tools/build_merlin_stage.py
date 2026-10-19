@@ -193,6 +193,11 @@ def main() -> None:
     parser.add_argument("--connect-vpu-broadcast-multiplies", action="store_true",
                         help="experimentally connect projected multiply pairs and either consumer operand order; "
                              "requires connected multiplies; measure profitability separately")
+    parser.add_argument("--prepare-vpu-broadcast-operands", action="store_true",
+                        help="experimentally prepare repeated BF16 broadcast inputs once per call; "
+                             "requires broadcast multiply connections")
+    parser.add_argument("--vpu-broadcast-preparation-budget-bytes", type=int, default=1048576,
+                        help="aggregate aligned private broadcast preparation budget (default: 1 MiB)")
     parser.add_argument("--share-activation-packing", action="store_true",
                         help="experimentally share explicit packed activation tensors; requires "
                              "prepacked weights and an execution policy")
@@ -222,6 +227,10 @@ def main() -> None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
     if args.connect_vpu_broadcast_multiplies and not args.connect_vpu_multiplies:
         parser.error("--connect-vpu-broadcast-multiplies requires --connect-vpu-multiplies")
+    if args.prepare_vpu_broadcast_operands and not args.connect_vpu_broadcast_multiplies:
+        parser.error("--prepare-vpu-broadcast-operands requires --connect-vpu-broadcast-multiplies")
+    if args.vpu_broadcast_preparation_budget_bytes < 0:
+        parser.error("broadcast preparation budget cannot be negative")
     if args.connect_vpu_sigmoid_multiplies and (not args.connect_vpu_multiplies
             or not args.prepack_checkpoint_weights or args.execution_policy is None):
         parser.error("--connect-vpu-sigmoid-multiplies requires connected multiplies, prepacking and a policy")
@@ -420,6 +429,8 @@ def main() -> None:
             enabled_vpu_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
             connect_broadcast_multiplies=args.connect_vpu_broadcast_multiplies,
+            prepare_broadcast_operands=args.prepare_vpu_broadcast_operands,
+            broadcast_preparation_budget_bytes=args.vpu_broadcast_preparation_budget_bytes,
             connect_sigmoid_multiplies=args.connect_vpu_sigmoid_multiplies,
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
@@ -652,6 +663,8 @@ def main() -> None:
         "execution_policy": execution_policy,
         "connect_vpu_multiplies": args.connect_vpu_multiplies,
         "connect_vpu_broadcast_multiplies": args.connect_vpu_broadcast_multiplies,
+        "prepare_vpu_broadcast_operands": args.prepare_vpu_broadcast_operands,
+        "vpu_broadcast_preparation_budget_bytes": args.vpu_broadcast_preparation_budget_bytes,
         "connect_vpu_sigmoid_multiplies": args.connect_vpu_sigmoid_multiplies,
         "elf_admission_selection": ("structural_digest_and_declared_isa"
                                     if args.structural_elf_admission and device is not None else None),

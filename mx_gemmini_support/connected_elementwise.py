@@ -19,6 +19,8 @@ class ConnectedElementwise:
     source: str
     realized: frozenset[tuple[int, int, str]]
     removed_transfer_bytes: int
+    prepared_input_bytes: int = 0
+    repeated_preparations_removed: int = 0
 
 
 def multiply_projection(op):
@@ -86,7 +88,8 @@ class F32MultiplyAdapter:
     """
 
     def __init__(self, module, program: dict, profile: dict, *, boundary_policy: str,
-                 measured_savings: dict | None = None):
+                 measured_savings: dict | None = None, prepare_broadcasts: bool = False,
+                 broadcast_preparation_budget_bytes: int = 1048576):
         if boundary_policy != "bf16_rne_each_vpu_call":
             raise ValueError("multiply chain requires the explicitly selected BF16 boundary policy")
         self.shape = check_multiply_regions(module, program)
@@ -106,6 +109,18 @@ class F32MultiplyAdapter:
         self.profile = deepcopy(profile)
         self.measured_savings = dict(measured_savings or {})
         self.elements = prod(self.shape)
+        self.broadcast_preparations = ()
+        if prepare_broadcasts:
+            from merlin.llvmlower.broadcast_preparation import (
+                plan_broadcast_preparation,
+            )
+
+            nodes = program["nodes"]
+            external_inputs = [*nodes[0]["inputs"], nodes[1]["inputs"][1 - self.middle_index]]
+            self.broadcast_preparations = plan_broadcast_preparation(
+                self.shape, tuple(tuple(program["buffers"][name]["shape"]) for name in external_inputs),
+                (*self.node_axes[0], self.node_axes[1][1 - self.middle_index]),
+                element_bytes=2, byte_budget=broadcast_preparation_budget_bytes, alignment_bytes=64)
         self.chunk = min(self.elements, 8192)
         self.sizes = tuple(dict.fromkeys((self.chunk, self.elements % self.chunk)))
         self.sizes = tuple(count for count in self.sizes if count)
@@ -204,7 +219,29 @@ class F32MultiplyAdapter:
                                          axes, index="i")
                    for name, axes in zip(pointers[:3], external_axes, strict=True)]
         indices = ["base+i" if expr == "(base + i)" else expr for expr in indices]
-        source = baseline + "\n".join(issuers) + f'''
+        declarations, preparation, reads = [], [], []
+        prepared = {plan.input_index: plan for plan in self.broadcast_preparations}
+        if prepared:
+            from merlin.llvmlower.broadcast_preparation import (
+                emit_broadcast_preparation,
+            )
+
+            declarations.append("#include <stddef.h>\n")
+            preparation.append("unsigned prepared_safe=1;\n")
+        for index, (name, expression) in enumerate(zip("abc", indices, strict=True)):
+            plan = prepared.get(index)
+            if plan is None:
+                reads.append(f"chain_pack({name}[{expression}],&safe)")
+            else:
+                cache = f"prepared_{name}"
+                declarations.append(f"static uint16_t {cache}[{plan.elements}] __attribute__((aligned(64)));\n")
+                preparation.append(emit_broadcast_preparation(
+                    plan, source=name, destination=cache, conversion="chain_pack", status="prepared_safe"))
+                reads.append(f"{cache}[{expression}]")
+        if prepared:
+            preparation.append("if(!prepared_safe) { materialized_chain(a,b,c,middle,output); return; }\n")
+        preparation_text = "          " + "".join(preparation) if prepared else ""
+        source = baseline + "\n".join(issuers) + "".join(declarations) + f'''
         static uint16_t aa[{size}] __attribute__((aligned(64)));
         static uint16_t bb[{size}] __attribute__((aligned(64)));
         static uint16_t cc[{size}] __attribute__((aligned(64)));
@@ -216,14 +253,14 @@ class F32MultiplyAdapter:
         }}
         void run_chain(const float *a,const float *b,const float *c,float *middle,float *output) {{
           if(!a || !b || !c || !middle || !output) __builtin_trap();
-          for(uint32_t base=0;base<{self.elements};base+={self.chunk}) {{
+{preparation_text}          for(uint32_t base=0;base<{self.elements};base+={self.chunk}) {{
             uint32_t count={self.elements}-base;
             if(count>{self.chunk}) count={self.chunk};
             unsigned safe=1;
             for(uint32_t i=0;i<(count+7u)/8u*8u;++i) {{
-              aa[i]=i<count ? chain_pack(a[{indices[0]}],&safe) : 0;
-              bb[i]=i<count ? chain_pack(b[{indices[1]}],&safe) : 0;
-              cc[i]=i<count ? chain_pack(c[{indices[2]}],&safe) : 0;
+              aa[i]=i<count ? {reads[0]} : 0;
+              bb[i]=i<count ? {reads[1]} : 0;
+              cc[i]=i<count ? {reads[2]} : 0;
             }}
             if(!safe) {{ materialized_chain(a,b,c,middle,output); return; }}
             switch(count) {{ {''.join(dispatch)} default: __builtin_trap(); }}
@@ -237,4 +274,6 @@ class F32MultiplyAdapter:
         removed = full * self.adapters[self.chunk].lower(selected).removed_transfer_bytes
         if tail:
             removed += self.adapters[tail].lower(selected).removed_transfer_bytes
-        return ConnectedElementwise(source, frozenset(selected), removed)
+        return ConnectedElementwise(source, frozenset(selected), removed,
+                                    sum(plan.bytes for plan in self.broadcast_preparations),
+                                    sum(plan.repeated_preparations_removed for plan in self.broadcast_preparations))

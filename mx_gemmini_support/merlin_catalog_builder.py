@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 
 from .dense_contraction import (
@@ -88,6 +89,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                          connect_multiplies: bool = False,
                          connect_broadcast_multiplies: bool = False,
+                         prepare_broadcast_operands: bool = False,
+                         broadcast_preparation_budget_bytes: int = 1048576,
                          connect_sigmoid_multiplies: bool = False,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
@@ -99,6 +102,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     """Compile selected source sites through checked MX native schedules."""
     if connect_broadcast_multiplies and not connect_multiplies:
         raise ValueError("broadcast connections require connected multiplies")
+    if prepare_broadcast_operands and not connect_broadcast_multiplies:
+        raise ValueError("broadcast preparation requires broadcast connections")
+    if type(broadcast_preparation_budget_bytes) is not int or broadcast_preparation_budget_bytes < 0:
+        raise ValueError("broadcast preparation requires a nonnegative integer byte budget")
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
     if connect_sigmoid_multiplies and (not connect_multiplies or enabled_vpu_regions is None
@@ -412,6 +419,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         from merlin.frontends.linalg_mlir import parse_mlir_file
 
         from .merlin_connected_multiply import (
+            chain_adapter,
             emit_chain_kernel,
             emit_chain_shim,
             multiply_pairs,
@@ -424,14 +432,20 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             if fused_regions.intersection(pair["regions"]):
                 continue
             if pair["symbol"] not in compiled:
-                source, removed = emit_chain_kernel(pair, profile)
+                selection = {"prepare_broadcasts": prepare_broadcast_operands,
+                             "broadcast_preparation_budget_bytes": broadcast_preparation_budget_bytes}
+                source, removed = emit_chain_kernel(pair, profile, **selection)
                 compile_source(pair["kernel_symbol"], source)
                 compile_source(pair["symbol"], emit_chain_shim(pair))
-                compiled[pair["symbol"]] = removed
+                _, adapter = chain_adapter(pair, profile, **selection)
+                compiled[pair["symbol"]] = {
+                    "removed_transfer_bytes": removed,
+                    "prepared_input_bytes": sum(plan.bytes for plan in adapter.broadcast_preparations),
+                    "broadcast_preparations": [asdict(plan) for plan in adapter.broadcast_preparations]}
             connected_multiplies.append({key: pair[key] for key in
                                          ("regions", "shape", "input_shapes", "input_axes", "middle_index",
                                           "symbol", "kernel_symbol")} |
-                                        {"removed_transfer_bytes": compiled[pair["symbol"]]})
+                                        compiled[pair["symbol"]])
     elementwise_shapes = {site["symbol"]: site for site in elementwise_sites}
     elementwise_kernels = []
     for site in elementwise_shapes.values():
@@ -624,6 +638,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "virtual_zero_padding": virtual_zero_padding,
         "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "connect_broadcast_multiplies": connect_broadcast_multiplies,
+        "prepare_broadcast_operands": prepare_broadcast_operands,
+        "broadcast_preparation_budget_bytes": broadcast_preparation_budget_bytes,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
         "resolved_vpu_regions": ({name: sorted(sites) for name, sites in
@@ -685,6 +701,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                                 connect_multiplies: bool = False,
                                 connect_broadcast_multiplies: bool = False,
+                                prepare_broadcast_operands: bool = False,
+                                broadcast_preparation_budget_bytes: int = 1048576,
                                 connect_sigmoid_multiplies: bool = False,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
@@ -722,6 +740,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     enabled_vpu_regions=enabled_vpu_regions,
                                     connect_multiplies=connect_multiplies,
                                     connect_broadcast_multiplies=connect_broadcast_multiplies,
+                                    prepare_broadcast_operands=prepare_broadcast_operands,
+                                    broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes,
                                     connect_sigmoid_multiplies=connect_sigmoid_multiplies,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,

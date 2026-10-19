@@ -176,3 +176,37 @@ def test_broadcast_selection_is_separate_and_requires_the_original_connection_op
     sidecar.write_text("{}")
     result = MXVPUElementwisePostOffload(PROFILE, connect_multiplies=True)(source, sidecar, tmp_path / "out")
     assert len([op for op in parse_mlir_file(result).walk() if op.name == "func.call"]) == 2
+
+
+def test_preparing_broadcasts_once_is_bounded_and_retains_the_original_fallback():
+    from mx_gemmini_support.merlin_connected_multiply import chain_adapter
+
+    pair, = pairs(broadcast_source())
+    graph, original = chain_adapter(pair, PROFILE)
+    _, prepared = chain_adapter(pair, PROFILE, prepare_broadcasts=True)
+    _, refused = chain_adapter(pair, PROFILE, prepare_broadcasts=True, broadcast_preparation_budget_bytes=0)
+    edge = {(0, 1, "m")}
+    assert refused.lower(edge) == original.lower(edge)
+    assert prepared.lower(set()) == original.lower(set())
+    result = prepared.lower(edge)
+    assert result.prepared_input_bytes == 64 + 320
+    assert result.repeated_preparations_removed == (411 - 3) + (411 - 137)
+    assert "prepared_b[prepared_index] = chain_pack(b[prepared_index], &prepared_safe)" in result.source
+    assert "prepared_c[prepared_index] = chain_pack(c[prepared_index], &prepared_safe)" in result.source
+    assert "chain_pack(a[base+i],&safe)" in result.source
+    assert "if(!prepared_safe) { materialized_chain" in result.source
+    assert result.source.index("if(!prepared_safe)") < result.source.index("for(uint32_t base=")
+    assert graph.to_dict() == prepared.program
+
+
+def test_catalog_preparation_requires_broadcast_selection_and_a_valid_budget(tmp_path):
+    from mx_gemmini_support.merlin_catalog_builder import build_merlin_catalog
+
+    with pytest.raises(ValueError, match="preparation requires broadcast connections"):
+        build_merlin_catalog(tmp_path / "unread.mlir", tmp_path / "out", profile=PROFILE,
+                             riscv_root=tmp_path, prepare_broadcast_operands=True)
+    for budget in (-1, True):
+        with pytest.raises(ValueError, match="nonnegative integer byte budget"):
+            build_merlin_catalog(tmp_path / "unread.mlir", tmp_path / "out", profile=PROFILE,
+                                 riscv_root=tmp_path, broadcast_preparation_budget_bytes=budget)
+    assert not (tmp_path / "out").exists()

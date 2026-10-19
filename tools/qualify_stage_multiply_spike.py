@@ -30,22 +30,46 @@ def _sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def refusal_driver(elements, counts):
+    return f'''#include <stdint.h>
+      #include <stdio.h>
+      extern const unsigned char payload[];
+      void run_chain(const float *,const float *,const float *,float *,float *);
+      void __attribute__((noreturn)) tohost_exit(uintptr_t);
+      static float middle[{elements}] __attribute__((aligned(64)));
+      static float output[{elements}] __attribute__((aligned(64)));
+      uintptr_t handle_trap(uintptr_t cause,uintptr_t pc,uintptr_t regs[32]) {{
+        (void)regs; printf("REFUSAL_TRAP cause=%lu pc=%lu\\n",(unsigned long)cause,(unsigned long)pc);
+        tohost_exit(77);
+      }}
+      int main(void) {{
+        const float *a=(const float *)payload,*b=a+{counts[0]},*c=b+{counts[1]};
+        printf("REFUSAL_BEGIN\\n"); run_chain(a,b,c,middle,output);
+        printf("REFUSAL_RETURNED\\n");return 3;
+      }}\n'''
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("capture", "profile", "riscv-root", "extlib", "startup-dir", "out-dir"):
         parser.add_argument(f"--{name}", required=True, type=Path)
     parser.add_argument("--expect-fallback", action="store_true")
+    parser.add_argument("--expect-refusal", action="store_true")
+    parser.add_argument("--prepare-broadcasts", action="store_true")
+    parser.add_argument("--broadcast-preparation-budget-bytes", type=int, default=1048576)
     parser.add_argument("--expect-fallback-after-chunks", type=int, default=0,
                         help="completed connected chunks before the original whole-tensor fallback")
     args = parser.parse_args()
     if args.expect_fallback_after_chunks < 0 or (args.expect_fallback_after_chunks and not args.expect_fallback):
         parser.error("completed fallback chunks require --expect-fallback and a nonnegative count")
+    if args.expect_refusal and args.expect_fallback:
+        parser.error("refusal has a separate protocol and cannot be a completed-output fallback")
     if args.out_dir.exists():
         parser.error("output directory must be fresh")
     import numpy as np
     from merlin.frontends import linalg_patterns
     from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.llvmlower import device_shim, tensor_broadcast
+    from merlin.llvmlower import broadcast_preparation, device_shim, tensor_broadcast
     from merlin.xdsl_dialects.lowering import connected_dispatch, tensor_chains
 
     capture = args.capture.resolve(strict=True)
@@ -57,12 +81,15 @@ def main():
     source = capture / "source.mlir"
     pair, = multiply_pairs(parse_mlir_file(source), selected_elementwise_sites(source.read_text(), profile),
                            include_broadcasts=True)
-    _, adapter = chain_adapter(pair, profile)
-    code, removed = emit_chain_kernel(pair, profile)
+    selection = {"prepare_broadcasts": args.prepare_broadcasts,
+                 "broadcast_preparation_budget_bytes": args.broadcast_preparation_budget_bytes}
+    _, adapter = chain_adapter(pair, profile, **selection)
+    code, removed = emit_chain_kernel(pair, profile, **selection)
     out = args.out_dir.resolve()
     out.mkdir(parents=True)
     implementation = [Path(__file__).resolve(), Path(tensor_chains.__file__), Path(connected_dispatch.__file__),
-                      Path(linalg_patterns.__file__), Path(tensor_broadcast.__file__), Path(device_shim.__file__)]
+                      Path(linalg_patterns.__file__), Path(tensor_broadcast.__file__), Path(device_shim.__file__),
+                      Path(broadcast_preparation.__file__)]
     support = Path(__file__).resolve().parents[1] / "mx_gemmini_support"
     implementation += [support / name for name in ("merlin_connected_multiply.py", "merlin_vpu_elementwise.py",
                                                    "connected_elementwise.py", "connected_vpu.py",
@@ -84,13 +111,16 @@ def main():
     with np.load(capture / "inputs.npz", allow_pickle=False) as stored:
         arrays = [stored[f"in{i}"] for i in range(3)]
     arrays.append(np.load(capture / "bf16_policy_golden.npy", allow_pickle=False))
+    if args.expect_refusal and not any(np.isnan(array).any() for array in arrays[:3]):
+        raise ValueError("refusal fixture must contain an actual NaN input")
     shapes = [*pair["input_shapes"], pair["shape"]]
     if any(list(a.shape) != shape or a.dtype != np.float32 for a, shape in zip(arrays, shapes, strict=True)):
         raise ValueError("capture arrays differ from source signatures")
     (out / "payload.bin").write_bytes(b"".join(a.astype("<f4").tobytes() for a in arrays))
     (out / "payload.S").write_text('.section .rodata\n.balign 64\n.global payload\npayload:\n.incbin "payload.bin"\n')
-    (out / "driver.c").write_text(driver(adapter.elements,
-                                        input_elements=tuple(prod(shape) for shape in shapes[:3])))
+    counts = tuple(prod(shape) for shape in shapes[:3])
+    (out / "driver.c").write_text(refusal_driver(adapter.elements, counts) if args.expect_refusal else
+                                  driver(adapter.elements, input_elements=counts))
     cc = args.riscv_root.resolve() / "bin/riscv64-unknown-elf-gcc"
     bench = args.startup_dir.resolve()
     flags = [str(cc), "-DPREALLOCATE=1", "-DMULTITHREAD=1", "-DBAREMETAL=1",
@@ -146,13 +176,48 @@ def main():
                                  stderr=subprocess.STDOUT, timeout=600, check=False)
         rows = [dict(word.split("=", 1) for word in line.split()[1:])
                 for line in log.read_text().splitlines() if line.startswith("SECTION ")]
-        if run.returncode or len(rows) != 3 or any(int(row["mismatches"]) for row in rows):
+        if args.expect_refusal:
+            lines = log.read_text().splitlines()
+            traps = [dict(word.split("=", 1) for word in line.split()[1:]) for line in lines
+                     if line.startswith("REFUSAL_TRAP ")]
+            if (run.returncode != 77 or lines.count("REFUSAL_BEGIN") != 1 or "REFUSAL_RETURNED" in lines
+                    or rows or len(traps) != 1 or traps[0]["cause"] != "3" or int(traps[0]["pc"]) <= 0):
+                raise ValueError("input refusal protocol failed: " + str(log))
+            pc = int(traps[0]["pc"])
+            objdump = args.riscv_root.resolve() / "bin/riscv64-unknown-elf-objdump"
+            disassembly = subprocess.check_output([str(objdump), "-d", f"--start-address={pc}",
+                                                   f"--stop-address={pc + 4}", str(elf)], text=True)
+            decoded = [line.split() for line in disassembly.splitlines() if line.split()
+                       and line.split()[0] == f"{pc:x}:"]
+            if len(decoded) != 1 or len(decoded[0]) != 3 or decoded[0][2] != "ebreak":
+                raise ValueError("refusal trap does not point to the compiled explicit ebreak")
+            (directory / "refusal_disassembly.log").write_text(disassembly)
+        elif run.returncode or len(rows) != 3 or any(int(row["mismatches"]) for row in rows):
             raise ValueError("output qualification failed: " + str(log))
         retained = [issuer, obj, elf, log, directory / "perf.txt"]
         if name == "connected":
             retained += [shim, shim_obj]
+        if args.expect_refusal:
+            retained.append(directory / "refusal_disassembly.log")
         results[name] = {"checks": rows, "counters": _perf_counters((directory / "perf.txt").read_text()),
                              "files_sha256": {p.name: _sha(p) for p in retained}}
+        if args.expect_refusal:
+            results[name].update(exit_code=run.returncode, refusal_trap=traps[0])
+    if args.expect_refusal:
+        if implementation_sha != {str(path): _sha(path) for path in implementation}:
+            raise ValueError("implementation changed during the selected refusal execution")
+        report = {"schema": "mx_gemmini.stage_multiply_refusal.v1",
+                  "scope": "original_nan_refusal_only_no_output_quality_or_timing_claim",
+                  "shape": shape, "input_shapes": pair["input_shapes"], "capture_receipt": receipt,
+                  "prepare_broadcasts": args.prepare_broadcasts, "results": results,
+                  "profile_sha256": profile_sha256(profile), "extension_sha256": _sha(args.extlib),
+                  "gcc_sha256": _sha(cc), "spike_sha256": _sha(args.riscv_root / "bin/spike"),
+                  "objdump_sha256": _sha(objdump),
+                  "implementation_sha256": implementation_sha,
+                  "source_files_sha256": {name: _sha(out / name) for name in ("driver.c", "payload.S", "payload.bin")}}
+        (out / "receipt.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return
     if len({row["hash"] for r in results.values() for row in r["checks"]}) != 1:
         raise ValueError("paired output hashes differ")
     a, b = results["materialized"], results["connected"]
@@ -165,6 +230,12 @@ def main():
     report = {"schema": "mx_gemmini.stage_multiply_spike.v1", "shape": shape,
                   "input_shapes": pair["input_shapes"], "input_axes": pair["input_axes"],
                   "middle_index": pair["middle_index"], "results": results,
+                  "prepare_broadcasts": args.prepare_broadcasts,
+                  "broadcast_preparation_budget_bytes": args.broadcast_preparation_budget_bytes,
+                  "prepared_input_bytes": sum(plan.bytes for plan in adapter.broadcast_preparations),
+                  "prepared_input_bytes_kind": "sum_of_64byte_aligned_prepared_spans",
+                  "repeated_preparations_removed": sum(plan.repeated_preparations_removed
+                                                       for plan in adapter.broadcast_preparations),
                   "expected_fallback": args.expect_fallback, "boundary_policy": "bf16_rne_each_vpu_call",
                   "expected_fallback_after_chunks": args.expect_fallback_after_chunks,
                   "fallback_prefix_load_bytes_per_call": prefix_load,
