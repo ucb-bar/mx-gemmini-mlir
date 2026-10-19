@@ -14,9 +14,9 @@ from .target_profile import profile_sha256
 _CLASSES = ("softmax", "add", "elementwise", "unary", "reduce")
 
 
-def eligible_sites(source: str, profile: dict) -> tuple[
-        dict[str, str], dict[str, set[str]], set[str]]:
-    """Return exact executable MX and VPU site IDs in an imported graph."""
+def _eligible_policy_sites(source: str, profile: dict) -> tuple[
+        dict[str, str], dict[str, set[str]], set[str], set[str]]:
+    """Bind executable sites and semantic placement classes to the same analysis."""
     from .merlin_vpu_softmax import selected_softmax_sites
     from .merlin_vpu_add import selected_add_sites
     from .merlin_vpu_elementwise import selected_elementwise_sites
@@ -47,6 +47,15 @@ def eligible_sites(source: str, profile: dict) -> tuple[
     # It remains an identified source site, but has no useful VPU route.
     singleton_adds = {site["region"] for site in selected["add"]
                       if site["elements"] == 1}
+    elementwise_adds = {site["region"] for site in selected["elementwise"]
+                       if site["operation"] == "add"}
+    return matrix, vpu, singleton_adds, elementwise_adds
+
+
+def eligible_sites(source: str, profile: dict) -> tuple[
+        dict[str, str], dict[str, set[str]], set[str]]:
+    """Return exact executable MX and VPU site IDs in an imported graph."""
+    matrix, vpu, singleton_adds, _ = _eligible_policy_sites(source, profile)
     return matrix, vpu, singleton_adds
 
 
@@ -68,7 +77,7 @@ def singleton_matrix_regions(source: str, matrix_regions) -> frozenset[str]:
 
 def make_policy(source: str, profile: dict, *, preserve_singleton_reductions=False) -> dict:
     """Start from all FP8 and retain VPU except sensitive float paths."""
-    matrix, vpu, singleton_adds = eligible_sites(source, profile)
+    matrix, vpu, singleton_adds, elementwise_adds = _eligible_policy_sites(source, profile)
     host = singleton_matrix_regions(source, matrix) if preserve_singleton_reductions else ()
     return {
         "schema": ("mx_gemmini.execution_policy.v2" if preserve_singleton_reductions
@@ -80,7 +89,7 @@ def make_policy(source: str, profile: dict, *, preserve_singleton_reductions=Fal
         "vpu_placements": {
             name: {region: ("host" if name == "softmax" or
                             (name == "add" and region in singleton_adds) or
-                            (name == "elementwise" and "#add" in region)
+                            (name == "elementwise" and region in elementwise_adds)
                             else "vpu") for region in sorted(sites)}
             for name, sites in vpu.items()},
     }

@@ -1,0 +1,124 @@
+.F..F..F....                                                             [100%]
+=================================== FAILURES ===================================
+_ test_default_elementwise_placement_uses_arithmetic_not_region_label[mul-arith.mulf-vpu-opaque#add_metadata] _
+
+region = 'opaque#add_metadata', operation = 'mul', primitive = 'arith.mulf'
+placement = 'vpu'
+
+    @pytest.mark.parametrize("region", ("opaque", "opaque#add_metadata", "opaque#mul_metadata"))
+    @pytest.mark.parametrize("operation,primitive,placement", (
+        ("mul", "arith.mulf", "vpu"),
+        ("sub", "arith.subf", "vpu"),
+        ("div", "arith.divf", "vpu"),
+        ("add", "arith.addf", "host"),
+    ))
+    def test_default_elementwise_placement_uses_arithmetic_not_region_label(
+            region, operation, primitive, placement):
+        source = f'''module attributes {{prov.level = "linalg-on-tensors"}} {{
+          func.func @forward(%a:tensor<1x2x1xf32>,%b:tensor<1x1x3xf32>)->tensor<1x2x3xf32> {{
+            %e=tensor.empty():tensor<1x2x3xf32>
+            %r=linalg.generic {{
+              indexing_maps=[affine_map<(a,b,c)->(a,b,0)>,affine_map<(a,b,c)->(a,0,c)>,affine_map<(a,b,c)->(a,b,c)>],
+              iterator_types=["parallel","parallel","parallel"]
+            }} ins(%a,%b:tensor<1x2x1xf32>,tensor<1x1x3xf32>) outs(%e:tensor<1x2x3xf32>)
+            attrs = {{prov.region_id="{region}",prov.op="{operation}",prov.aten="aten.{operation}.Tensor"}} {{
+              ^bb0(%x:f32,%y:f32,%out:f32):
+                %v={primitive} %x,%y:f32
+                linalg.yield %v:f32
+            }}->tensor<1x2x3xf32>
+            func.return %r:tensor<1x2x3xf32>
+          }}
+        }}'''
+        policy = make_policy(source, PROFILE)
+        selected = f"{region}#{operation}0"
+>       assert policy["vpu_placements"]["elementwise"] == {selected: placement}
+E       AssertionError: assert {'opaque#add_...mul0': 'host'} == {'opaque#add_...#mul0': 'vpu'}
+E         
+E         Differing items:
+E         {'opaque#add_metadata#mul0': 'host'} != {'opaque#add_metadata#mul0': 'vpu'}
+E         Use -v to get more diff
+
+tests/test_execution_policy.py:80: AssertionError
+_ test_default_elementwise_placement_uses_arithmetic_not_region_label[sub-arith.subf-vpu-opaque#add_metadata] _
+
+region = 'opaque#add_metadata', operation = 'sub', primitive = 'arith.subf'
+placement = 'vpu'
+
+    @pytest.mark.parametrize("region", ("opaque", "opaque#add_metadata", "opaque#mul_metadata"))
+    @pytest.mark.parametrize("operation,primitive,placement", (
+        ("mul", "arith.mulf", "vpu"),
+        ("sub", "arith.subf", "vpu"),
+        ("div", "arith.divf", "vpu"),
+        ("add", "arith.addf", "host"),
+    ))
+    def test_default_elementwise_placement_uses_arithmetic_not_region_label(
+            region, operation, primitive, placement):
+        source = f'''module attributes {{prov.level = "linalg-on-tensors"}} {{
+          func.func @forward(%a:tensor<1x2x1xf32>,%b:tensor<1x1x3xf32>)->tensor<1x2x3xf32> {{
+            %e=tensor.empty():tensor<1x2x3xf32>
+            %r=linalg.generic {{
+              indexing_maps=[affine_map<(a,b,c)->(a,b,0)>,affine_map<(a,b,c)->(a,0,c)>,affine_map<(a,b,c)->(a,b,c)>],
+              iterator_types=["parallel","parallel","parallel"]
+            }} ins(%a,%b:tensor<1x2x1xf32>,tensor<1x1x3xf32>) outs(%e:tensor<1x2x3xf32>)
+            attrs = {{prov.region_id="{region}",prov.op="{operation}",prov.aten="aten.{operation}.Tensor"}} {{
+              ^bb0(%x:f32,%y:f32,%out:f32):
+                %v={primitive} %x,%y:f32
+                linalg.yield %v:f32
+            }}->tensor<1x2x3xf32>
+            func.return %r:tensor<1x2x3xf32>
+          }}
+        }}'''
+        policy = make_policy(source, PROFILE)
+        selected = f"{region}#{operation}0"
+>       assert policy["vpu_placements"]["elementwise"] == {selected: placement}
+E       AssertionError: assert {'opaque#add_...sub0': 'host'} == {'opaque#add_...#sub0': 'vpu'}
+E         
+E         Differing items:
+E         {'opaque#add_metadata#sub0': 'host'} != {'opaque#add_metadata#sub0': 'vpu'}
+E         Use -v to get more diff
+
+tests/test_execution_policy.py:80: AssertionError
+_ test_default_elementwise_placement_uses_arithmetic_not_region_label[div-arith.divf-vpu-opaque#add_metadata] _
+
+region = 'opaque#add_metadata', operation = 'div', primitive = 'arith.divf'
+placement = 'vpu'
+
+    @pytest.mark.parametrize("region", ("opaque", "opaque#add_metadata", "opaque#mul_metadata"))
+    @pytest.mark.parametrize("operation,primitive,placement", (
+        ("mul", "arith.mulf", "vpu"),
+        ("sub", "arith.subf", "vpu"),
+        ("div", "arith.divf", "vpu"),
+        ("add", "arith.addf", "host"),
+    ))
+    def test_default_elementwise_placement_uses_arithmetic_not_region_label(
+            region, operation, primitive, placement):
+        source = f'''module attributes {{prov.level = "linalg-on-tensors"}} {{
+          func.func @forward(%a:tensor<1x2x1xf32>,%b:tensor<1x1x3xf32>)->tensor<1x2x3xf32> {{
+            %e=tensor.empty():tensor<1x2x3xf32>
+            %r=linalg.generic {{
+              indexing_maps=[affine_map<(a,b,c)->(a,b,0)>,affine_map<(a,b,c)->(a,0,c)>,affine_map<(a,b,c)->(a,b,c)>],
+              iterator_types=["parallel","parallel","parallel"]
+            }} ins(%a,%b:tensor<1x2x1xf32>,tensor<1x1x3xf32>) outs(%e:tensor<1x2x3xf32>)
+            attrs = {{prov.region_id="{region}",prov.op="{operation}",prov.aten="aten.{operation}.Tensor"}} {{
+              ^bb0(%x:f32,%y:f32,%out:f32):
+                %v={primitive} %x,%y:f32
+                linalg.yield %v:f32
+            }}->tensor<1x2x3xf32>
+            func.return %r:tensor<1x2x3xf32>
+          }}
+        }}'''
+        policy = make_policy(source, PROFILE)
+        selected = f"{region}#{operation}0"
+>       assert policy["vpu_placements"]["elementwise"] == {selected: placement}
+E       AssertionError: assert {'opaque#add_...div0': 'host'} == {'opaque#add_...#div0': 'vpu'}
+E         
+E         Differing items:
+E         {'opaque#add_metadata#div0': 'host'} != {'opaque#add_metadata#div0': 'vpu'}
+E         Use -v to get more diff
+
+tests/test_execution_policy.py:80: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_execution_policy.py::test_default_elementwise_placement_uses_arithmetic_not_region_label[mul-arith.mulf-vpu-opaque#add_metadata]
+FAILED tests/test_execution_policy.py::test_default_elementwise_placement_uses_arithmetic_not_region_label[sub-arith.subf-vpu-opaque#add_metadata]
+FAILED tests/test_execution_policy.py::test_default_elementwise_placement_uses_arithmetic_not_region_label[div-arith.divf-vpu-opaque#add_metadata]
+3 failed, 9 passed, 10 deselected in 0.56s

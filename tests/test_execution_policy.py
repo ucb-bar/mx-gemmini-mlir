@@ -51,6 +51,38 @@ def test_policy_binds_all_matrix_and_vpu_sites(monkeypatch) -> None:
         validate_policy(changed, SOURCE, PROFILE)
 
 
+@pytest.mark.parametrize("region", ("opaque", "opaque#add_metadata", "opaque#mul_metadata"))
+@pytest.mark.parametrize("operation,primitive,placement", (
+    ("mul", "arith.mulf", "vpu"),
+    ("sub", "arith.subf", "vpu"),
+    ("div", "arith.divf", "vpu"),
+    ("add", "arith.addf", "host"),
+))
+def test_default_elementwise_placement_uses_arithmetic_not_region_label(
+        region, operation, primitive, placement):
+    source = f'''module attributes {{prov.level = "linalg-on-tensors"}} {{
+      func.func @forward(%a:tensor<1x2x1xf32>,%b:tensor<1x1x3xf32>)->tensor<1x2x3xf32> {{
+        %e=tensor.empty():tensor<1x2x3xf32>
+        %r=linalg.generic {{
+          indexing_maps=[affine_map<(a,b,c)->(a,b,0)>,affine_map<(a,b,c)->(a,0,c)>,affine_map<(a,b,c)->(a,b,c)>],
+          iterator_types=["parallel","parallel","parallel"]
+        }} ins(%a,%b:tensor<1x2x1xf32>,tensor<1x1x3xf32>) outs(%e:tensor<1x2x3xf32>)
+        attrs = {{prov.region_id="{region}",prov.op="{operation}",prov.aten="aten.{operation}.Tensor"}} {{
+          ^bb0(%x:f32,%y:f32,%out:f32):
+            %v={primitive} %x,%y:f32
+            linalg.yield %v:f32
+        }}->tensor<1x2x3xf32>
+        func.return %r:tensor<1x2x3xf32>
+      }}
+    }}'''
+    policy = make_policy(source, PROFILE)
+    selected = f"{region}#{operation}0"
+    assert policy["vpu_placements"]["elementwise"] == {selected: placement}
+    resolved = validate_policy(policy, source, PROFILE)
+    assert resolved["enabled_vpu_regions"]["elementwise"] == (
+        {selected} if placement == "vpu" else set())
+
+
 def test_add_rewriter_obeys_exact_site_selection(tmp_path: Path) -> None:
     from mx_gemmini_support.merlin_vpu_add import selected_add_sites
 

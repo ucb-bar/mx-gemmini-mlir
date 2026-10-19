@@ -1,0 +1,7 @@
+tinyllama.mlir.gz 20 {'softmax': 2, 'add': 13, 'elementwise': 31, 'unary': 16, 'reduce': 5}
+deepseek_r1_distill_qwen_1_5b.mlir.gz 11 {'softmax': 1, 'add': 10, 'elementwise': 18, 'unary': 9, 'reduce': 3}
+gemma2_2b.mlir.gz 20 {'softmax': 2, 'add': 17, 'elementwise': 53, 'unary': 23, 'reduce': 9}
+smolvla.mlir.gz 120 {'softmax': 14, 'add': 114, 'elementwise': 271, 'unary': 44, 'reduce': 56}
+model.mlir 200 {'softmax': 22, 'add': 133, 'elementwise': 313, 'unary': 156, 'reduce': 45}
+model.generic.mlir 243 {'softmax': 28, 'add': 194, 'elementwise': 588, 'unary': 151, 'reduce': 95}
+model.generic.mlir 148 {'softmax': 16, 'add': 93, 'elementwise': 318, 'unary': 107, 'reduce': 33}

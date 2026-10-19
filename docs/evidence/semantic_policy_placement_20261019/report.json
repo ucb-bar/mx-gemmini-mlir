@@ -1,0 +1,114 @@
+{
+  "scope": "default_policy_preservation_only_no_recompiled_or_new_runtime_claim",
+  "before_revision": "3662440",
+  "before_source_sha256": "31ce63493b9063f6ee54968fca92be477114cf43782f2ddee4573bfe3e42438d",
+  "policy_source_sha256": "078a569f5b65ad5e3a806139c13dd8f0f19f6d779f6c435f631ebc27ba8ba5a8",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "inputs": [
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/tinyllama.mlir.gz",
+      "file_sha256": "4c3c0778f69131d0e483915f1559e3ef4eba73a2fae4b648eecdba17bdc1810e",
+      "source_sha256": "58125e339481d6c2710d2d469d4c7f4a1da236507b405d60ec3d5208eb9ac43b",
+      "policy_sha256": "ac82bf31855078a611a63c0de59eaee7d7f02252bf6e51923b0734286f14b143",
+      "matrix_sites": 20,
+      "vpu_site_counts": {
+        "softmax": 2,
+        "add": 13,
+        "elementwise": 31,
+        "unary": 16,
+        "reduce": 5
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/deepseek_r1_distill_qwen_1_5b.mlir.gz",
+      "file_sha256": "8459f4bafe143a20c587d6e5d0bf309c0649c2ae604a8111daf5b35d9bea81db",
+      "source_sha256": "91857cfab3105ecd7308b50981b5899a95bb2d2101b81dc6ad338e9c68ceef40",
+      "policy_sha256": "d9afed56d022b75531a354a6c82886027f4052e994851f89529c7edeb0030de6",
+      "matrix_sites": 11,
+      "vpu_site_counts": {
+        "softmax": 1,
+        "add": 10,
+        "elementwise": 18,
+        "unary": 9,
+        "reduce": 3
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/gemma2_2b.mlir.gz",
+      "file_sha256": "1c9af325e58e1200d29f77add1c4bf877fce5b648cd019840b873b7a11a27777",
+      "source_sha256": "18f2693246b8ec2deb34ba7bafd99825844ad34c39c70e4c3e5694d63899cdd1",
+      "policy_sha256": "7a228bd175bb05ceaaad86e50771c993c599e38e54b318c8b7cf4e2cb5eb9365",
+      "matrix_sites": 20,
+      "vpu_site_counts": {
+        "softmax": 2,
+        "add": 17,
+        "elementwise": 53,
+        "unary": 23,
+        "reduce": 9
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/full_model_compile_preflight_a042643_748b984/smolvla.mlir.gz",
+      "file_sha256": "4272cd7b544be1fce3895273bc275f7dff8f2c4c6bf6e6901dd677f89c0fdae8",
+      "source_sha256": "329e4238431e1079d76ee71e23a47f49bff6e48e7651e21b207bff18a51fe119",
+      "policy_sha256": "42a5ed2970c338a7e50201df4dca5038619e5054b61270eb72d2657b651a3184",
+      "matrix_sites": 120,
+      "vpu_site_counts": {
+        "softmax": 14,
+        "add": 114,
+        "elementwise": 271,
+        "unary": 44,
+        "reduce": 56
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/onepass160/capture/model.mlir",
+      "file_sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a",
+      "source_sha256": "5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a",
+      "policy_sha256": "dc3c83297c1139a1aeec142622dc8840dd99ca15efc4d8b51aab7a1a1d8e6260",
+      "matrix_sites": 200,
+      "vpu_site_counts": {
+        "softmax": 22,
+        "add": 133,
+        "elementwise": 313,
+        "unary": 156,
+        "reduce": 45
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/smolvla_prefix_latest_optimized/input_read_view/model.generic.mlir",
+      "file_sha256": "2cda8475cdc91b97e48a0383194828465f12c0098c04b4a8c7056f308779a240",
+      "source_sha256": "2cda8475cdc91b97e48a0383194828465f12c0098c04b4a8c7056f308779a240",
+      "policy_sha256": "6644f1d42f3da000e52b09a55e096ce1a158da3f79bdc6bc6e5ccb3f93978922",
+      "matrix_sites": 243,
+      "vpu_site_counts": {
+        "softmax": 28,
+        "add": 194,
+        "elementwise": 588,
+        "unary": 151,
+        "reduce": 95
+      },
+      "changed_placements": []
+    },
+    {
+      "path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/smolvla_flow_latest_optimized/input_read_view/model.generic.mlir",
+      "file_sha256": "e239b76243da736995e31dc5c68f75a5f6944963018f5336a3cc132d9d49c80d",
+      "source_sha256": "e239b76243da736995e31dc5c68f75a5f6944963018f5336a3cc132d9d49c80d",
+      "policy_sha256": "8e96446962234c812fd099bc82121e1edf394699a97b5ee94cb97ba7448e8190",
+      "matrix_sites": 148,
+      "vpu_site_counts": {
+        "softmax": 16,
+        "add": 93,
+        "elementwise": 318,
+        "unary": 107,
+        "reduce": 33
+      },
+      "changed_placements": []
+    }
+  ]
+}

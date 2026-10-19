@@ -176,6 +176,7 @@ Primary retained evidence and standalone verification:
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)
+- [Semantic placement and provenance-label regression](evidence/semantic_policy_placement_20261019/README.md)
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
@@ -192,3 +193,11 @@ producer-consumer fusion, representation propagation, preparation hoisting and
 explicit dependency/lifetime handling. No pass was ported, and XLA's
 priority-fusion implementation was not reviewed. Generic transformations live
 in Merlin; target encodings, layouts, capabilities and endpoint ABI live in MX.
+
+An architecture audit found and corrected a default-placement label heuristic:
+elementwise adds were identified by `#add` in a provenance label. Placement now
+uses the selector's verified arithmetic kind. Twelve renamed/misleading-label
+cases reproduce three old failures and pass after the fix; the focused suite
+passes 37 tests. Complete default policies remain identical on four archived
+captures plus the current full TinyLlama and both SmolVLA stage captures. This
+does not rebuild or change any measured or running image.
