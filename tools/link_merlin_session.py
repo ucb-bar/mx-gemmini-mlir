@@ -450,6 +450,7 @@ def link_session(
     measure_preparation: bool = False,
     pack_program_weights: bool = False,
     guarded_math=None,
+    reuse_linked_weights_object: Path | None = None,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -615,8 +616,19 @@ def link_session(
     malloc_object = output / "session_malloc.o"
     all_objects.append(malloc_object)
     weight_object = output / "weights_blob.o"
-    _run([ld, "-r", "-b", "binary", "-o", weight_object, "weights.bin"],
-         cwd=Path(shared_weights["path"]).parent)
+    weight_command = [ld, "-r", "-b", "binary", "-o", weight_object, "weights.bin"]
+    _run(weight_command, cwd=Path(shared_weights["path"]).parent)
+    linked_weight_storage_reuse = None
+    if reuse_linked_weights_object is not None:
+        from merlin.llvmlower.artifact_storage import share_identical_artifact
+
+        linked_weight_storage_reuse = share_identical_artifact(reuse_linked_weights_object, weight_object)
+        linked_weight_storage_reuse.update(
+            fresh_producer_command=list(map(str, weight_command)), fresh_producer_sha256=_sha(ld),
+            fresh_producer_exit_code=0, fresh_source=str(shared_weights["path"]),
+            fresh_source_sha256=shared_weights["sha256"])
+        (output / "linked_weight_object_storage_reuse.json").write_text(
+            json.dumps(linked_weight_storage_reuse, indent=2) + "\n")
     all_objects.append(weight_object)
     generated_root = output / "generated"
     for index, program in enumerate(session.programs):
@@ -711,6 +723,8 @@ def link_session(
         "shared_weight_bytes": weight_bytes,
         "shared_weight_sha256": shared_weights["sha256"],
         "shared_weight_storage_source": shared_weights["storage_source"],
+        **({"linked_weight_object_storage_reuse": linked_weight_storage_reuse}
+           if linked_weight_storage_reuse is not None else {}),
         "program_weight_pool": shared_weights.get("program_weight_pool"),
         "object_namespace_storage": {path.name: json.loads(path.read_text())
                                      for path in sorted(output.glob("*.namespace.json"))},
@@ -753,6 +767,8 @@ def main() -> None:
                         help="also measure session reset and cross-program state handoffs")
     parser.add_argument("--pack-program-weights", action="store_true",
                         help="explicitly bind distinct stage-local constant blobs through a generic aligned pool")
+    parser.add_argument("--reuse-linked-weights-object", type=Path,
+                        help="share a prior immutable weight object only after a complete freshly assembled byte check")
     parser.add_argument("--host-math-guard", type=Path,
                         help="explicit exact guarded library policy for all final-image calls; must match stage guards")
     parser.add_argument("--dump-limit-bytes", type=int,
@@ -773,6 +789,7 @@ def main() -> None:
                               if args.structural_elf_admission else None),
         measure_preparation=args.measure_preparation,
         pack_program_weights=args.pack_program_weights,
+        reuse_linked_weights_object=args.reuse_linked_weights_object,
         guarded_math=(GuardedF32Call.from_dict(json.loads(args.host_math_guard.read_text()))
                       if args.host_math_guard is not None else None))
     print(json.dumps(record, sort_keys=True))
