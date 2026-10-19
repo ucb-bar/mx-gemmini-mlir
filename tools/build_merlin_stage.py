@@ -208,6 +208,8 @@ def main() -> None:
                         help="experimentally encode known zero activation rows without materializing them")
     parser.add_argument("--integer-quant-groups", action="store_true",
                         help="experimentally use BF16-word group preparation and inline its fixed-axis loops")
+    parser.add_argument("--host-math-guard", type=Path,
+                        help="explicit reviewed guarded-f32 library contract; requires pinned endpoint suppliers")
     parser.add_argument("--activation-packing-budget-bytes", type=int, default=1048576,
                         help="maximum simultaneously live shared packed tensors (default: 1 MiB)")
     parser.add_argument("--retain-shared-activation-rhs", action="store_true",
@@ -456,6 +458,11 @@ def main() -> None:
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
+    guarded_math = None
+    if args.host_math_guard is not None:
+        from merlin.runtime.host_math import GuardedF32Call
+
+        guarded_math = GuardedF32Call.from_dict(json.loads(args.host_math_guard.read_text()))
     result = spike_model.build(
         stage, work, arena_mb=args.arena_mb if args.arena_mb is not None else 2048,
         auto_arena=args.arena_mb is None, backend="scalar", device=device,
@@ -465,6 +472,8 @@ def main() -> None:
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
         output_all_sha256=True, op_profile=args.op_profile,
         prepared_model_transform=host_preparation,
+        host_math_policy="guarded_f32" if guarded_math is not None else "native",
+        guarded_math=guarded_math,
         entry_weight_projection=(
             _generated_weight_projection() if args.prune_unused_checkpoint_weights else None),
     )
@@ -741,6 +750,7 @@ def main() -> None:
         "all_output_sha256_enabled": True,
         "virtual_zero_padding": args.virtual_zero_padding,
         "integer_quant_groups": args.integer_quant_groups,
+        **({"host_math_guard": guarded_math.to_dict()} if guarded_math is not None else {}),
         "spike_isa": args.spike_isa,
     }
     if args.spike_extlib is not None:
