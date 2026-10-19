@@ -1,9 +1,9 @@
 """Link receipt-bound MX stage builds into one Merlin multi-program Spike ELF.
 
 Merlin generates the session ABI and state handoff. This target tool supplies
-MX stage objects, a shared weight blob, and the pinned RV64 runtime. It refuses
-stages with different nonempty weight layouts; silently sharing their pointers
-would corrupt inference.
+MX stage objects, explicit immutable weight storage, and the pinned RV64 runtime.
+Different stage-local layouts require an explicitly selected generic program
+weight pool; otherwise the original shared-layout check remains in force.
 """
 
 from __future__ import annotations
@@ -124,12 +124,12 @@ def _catalog_linker_script(output: Path, catalogs: list[Path]) -> Path:
         pattern = f"*{name}"
         groups.extend((
             f"  .mx_catalog_{index}_text : {{ {pattern}(.text .text.*) }}",
-            f"  .mx_catalog_{index}_rodata : {{ {pattern}(.rodata .rodata.* "
-            ".srodata .srodata.*) }",
-            f"  .mx_catalog_{index}_data : {{ {pattern}(.data .data.* "
-            ".sdata .sdata.*) }",
-            f"  .mx_catalog_{index}_bss (NOLOAD) : {{ {pattern}(.bss .bss.* "
-            ".sbss .sbss.*) }",
+            (f"  .mx_catalog_{index}_rodata : {{ {pattern}(.rodata .rodata.* "
+             ".srodata .srodata.*) }"),
+            (f"  .mx_catalog_{index}_data : {{ {pattern}(.data .data.* "
+             ".sdata .sdata.*) }"),
+            (f"  .mx_catalog_{index}_bss (NOLOAD) : {{ {pattern}(.bss .bss.* "
+             ".sbss .sbss.*) }"),
         ))
     group_text = "\n".join(groups)
     source = f'''/* MX multi-stage layout; common code, then nearby catalog islands. */
@@ -426,6 +426,7 @@ def link_session(
     dump_limit_bytes: int = DEFAULT_DUMP_LIMIT_BYTES,
     linked_elf_admission=None,
     measure_preparation: bool = False,
+    pack_program_weights: bool = False,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower import session_bundle
@@ -492,12 +493,20 @@ def link_session(
     output.mkdir(parents=True)
     generated = session_bundle.generate(
         session_root, output / "generated", materialize_weights=False,
-        entry_projections=projections or None)
+        entry_projections=projections or None, pack_program_weights=pack_program_weights)
     weight_sources = [builds[row["name"]] / "cgen/weights.bin" for row in generated["programs"]
                       if row["weights_bytes"]]
-    shared_weights = session_bundle.materialize_shared_weights(
-        session, generated, output / "shared_weights", entry_projections=projections or None,
-        weights_source=next((path for path in weight_sources if path.is_file()), None))
+    if pack_program_weights:
+        from merlin.llvmlower.session_weight_pool import materialize_program_weight_pool
+
+        shared_weights = materialize_program_weight_pool(
+            session, generated, output / "shared_weights", entry_projections=projections or None,
+            weights_sources={row["name"]: builds[row["name"]] / "cgen/weights.bin"
+                             for row in generated["programs"]})
+    else:
+        shared_weights = session_bundle.materialize_shared_weights(
+            session, generated, output / "shared_weights", entry_projections=projections or None,
+            weights_source=next((path for path in weight_sources if path.is_file()), None))
     weight_name = shared_weights["program"]
     estimates = {program.name: estimate_llvm_malloc(
         builds[program.name] / "lower/model.ll") for program in session.programs}
@@ -617,6 +626,7 @@ def link_session(
         "shared_weight_bytes": weight_bytes,
         "shared_weight_sha256": shared_weights["sha256"],
         "shared_weight_storage_source": shared_weights["storage_source"],
+        "program_weight_pool": shared_weights.get("program_weight_pool"),
         "object_namespace_storage": {path.name: json.loads(path.read_text())
                                      for path in sorted(output.glob("*.namespace.json"))},
         "stage_object_sha256": source_objects,
@@ -655,6 +665,8 @@ def main() -> None:
                         help="explicitly select digest/declared-ISA final session ELF admission")
     parser.add_argument("--measure-preparation", action="store_true",
                         help="also measure session reset and cross-program state handoffs")
+    parser.add_argument("--pack-program-weights", action="store_true",
+                        help="explicitly bind distinct stage-local constant blobs through a generic aligned pool")
     parser.add_argument("--dump-limit-bytes", type=int,
                         default=DEFAULT_DUMP_LIMIT_BYTES,
                         help="per-output console limit (16–256 KiB; 8 MiB total)")
@@ -670,7 +682,8 @@ def main() -> None:
         dump_limit_bytes=args.dump_limit_bytes,
         linked_elf_admission=(structural_admission("mx_gemmini")
                               if args.structural_elf_admission else None),
-        measure_preparation=args.measure_preparation)
+        measure_preparation=args.measure_preparation,
+        pack_program_weights=args.pack_program_weights)
     print(json.dumps(record, sort_keys=True))
 
 
