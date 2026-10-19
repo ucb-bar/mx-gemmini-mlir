@@ -89,9 +89,12 @@ class F32MultiplyAdapter:
 
     def __init__(self, module, program: dict, profile: dict, *, boundary_policy: str,
                  measured_savings: dict | None = None, prepare_broadcasts: bool = False,
-                 broadcast_preparation_budget_bytes: int = 1048576):
+                 broadcast_preparation_budget_bytes: int = 1048576, output_dtype: str = "f32"):
         if boundary_policy != "bf16_rne_each_vpu_call":
             raise ValueError("multiply chain requires the explicitly selected BF16 boundary policy")
+        if output_dtype not in {"f32", "bf16"}:
+            raise ValueError("multiply chain output must retain its BF16 boundary representation")
+        self.output_dtype = output_dtype
         self.shape = check_multiply_regions(module, program)
         self.program = deepcopy(program)
         functions = {op.sym_name.data: op for op in module.walk() if op.name == "func.func"}
@@ -185,19 +188,23 @@ class F32MultiplyAdapter:
                 axes.reverse()
             baseline.append(emit_vpu_elementwise(
                 self.profile, result_shape=self.shape, lhs_shape=shapes[0], rhs_shape=shapes[1],
-                lhs_axes=axes[0], rhs_axes=axes[1], dtype="f32", operation="mul",
+                lhs_axes=axes[0], rhs_axes=axes[1],
+                dtype=self.output_dtype if index == len(nodes) - 1 else "f32",
+                lhs_dtype="f32", rhs_dtype="f32", operation="mul",
                 symbol=f"chain_mul_{index}").source)
             calls.append(f"chain_mul_{index}({','.join(names[name] for name in inputs)},"
                          f"{names[node['outputs'][0]]});")
-        baseline = "\n".join(baseline) + '''\nvoid materialized_chain(const float *a, const float *b, const float *c,
-            float *middle, float *output) {
+        out_scalar = "uint16_t" if self.output_dtype == "bf16" else "float"
+        baseline = "\n".join(baseline) + f'''\nvoid materialized_chain(const float *a, const float *b, const float *c,
+            float *middle, {out_scalar} *output) {{
           ''' + " ".join(calls) + '''
         }\n'''
         if not selected:
-            return ConnectedElementwise(baseline + '''
-              void run_chain(const float *a,const float *b,const float *c,float *m,float *o) {
+            source = baseline + f'''
+              void run_chain(const float *a,const float *b,const float *c,float *m,{out_scalar} *o) {{
                 materialized_chain(a,b,c,m,o);
-              }\n''', frozenset(), 0)
+              }}\n'''
+            return ConnectedElementwise(source, frozenset(), 0)
         if len(set(pointers)) != 5:
             raise ValueError("connected multiply chain requires independent external operands")
         issuers, dispatch = [], []
@@ -241,6 +248,8 @@ class F32MultiplyAdapter:
         if prepared:
             preparation.append("if(!prepared_safe) { materialized_chain(a,b,c,middle,output); return; }\n")
         preparation_text = "          " + "".join(preparation) if prepared else ""
+        output_write = '''union {float f; uint32_t u;} word; word.u=(uint32_t)rr[i]<<16;
+              output[base+i]=word.f;''' if self.output_dtype == "f32" else "output[base+i]=rr[i];"
         source = baseline + "\n".join(issuers) + "".join(declarations) + f'''
         static uint16_t aa[{size}] __attribute__((aligned(64)));
         static uint16_t bb[{size}] __attribute__((aligned(64)));
@@ -251,7 +260,7 @@ class F32MultiplyAdapter:
           *safe &= (word.u & 0x7fffffffu) <= {limit_bits}u;
           word.u+=0x7fffu+((word.u>>16)&1u); return word.u>>16;
         }}
-        void run_chain(const float *a,const float *b,const float *c,float *middle,float *output) {{
+        void run_chain(const float *a,const float *b,const float *c,float *middle,{out_scalar} *output) {{
           if(!a || !b || !c || !middle || !output) __builtin_trap();
 {preparation_text}          for(uint32_t base=0;base<{self.elements};base+={self.chunk}) {{
             uint32_t count={self.elements}-base;
@@ -265,8 +274,7 @@ class F32MultiplyAdapter:
             if(!safe) {{ materialized_chain(a,b,c,middle,output); return; }}
             switch(count) {{ {''.join(dispatch)} default: __builtin_trap(); }}
             for(uint32_t i=0;i<count;++i) {{
-              union {{float f; uint32_t u;}} word; word.u=(uint32_t)rr[i]<<16;
-              output[base+i]=word.f;
+              {output_write}
             }}
           }}
         }}\n'''

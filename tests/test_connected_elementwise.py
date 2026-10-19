@@ -4,11 +4,10 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from test_connected_vpu import _captured_module
 
 from mx_gemmini_support.connected_elementwise import F32MultiplyAdapter
 from mx_gemmini_support.target_profile import load_profile
-from test_connected_vpu import _captured_module
-
 
 PROFILE = load_profile(Path(__file__).parents[1] /
                        "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json")
@@ -61,6 +60,27 @@ def test_unselected_f32_policy_cannot_claim_lossless_bf16_lowering():
     module, graph = case()
     with pytest.raises(ValueError, match="explicitly selected"):
         F32MultiplyAdapter(module, graph, PROFILE, boundary_policy="strict_f32")
+
+
+@pytest.mark.parametrize("elements", [137, 8193])
+@pytest.mark.parametrize("selected", [False, True])
+def test_compact_output_keeps_f32_inputs_middle_and_original_fallback(elements, selected):
+    module, graph = case(elements)
+    compact = adapter(module, graph, output_dtype="bf16").lower({(0, 1, "m")} if selected else set())
+    assert "float *middle, uint16_t *output" in compact.source
+    assert "const float *lhs, const float *rhs, uint16_t *out" in compact.source
+    assert "materialized_chain(a,b,c," in compact.source
+    if selected:
+        assert "output[base+i]=rr[i];" in compact.source
+    # Public/default source still produces the original f32 endpoint.
+    ordinary = adapter(module, graph).lower(set())
+    assert "float *middle, float *output" in ordinary.source
+
+
+def test_unknown_output_representation_refuses():
+    module, graph = case()
+    with pytest.raises(ValueError, match="output"):
+        adapter(module, graph, output_dtype="f16")
 
 
 @pytest.mark.parametrize("change", ["fanout", "live_out", "argument"])

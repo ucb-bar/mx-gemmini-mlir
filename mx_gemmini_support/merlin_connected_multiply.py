@@ -84,7 +84,7 @@ def multiply_pairs(module, sites, *, include_broadcasts: bool = False):
 
 
 def chain_adapter(pair, profile, *, prepare_broadcasts: bool = False,
-                  broadcast_preparation_budget_bytes: int = 1048576):
+                  broadcast_preparation_budget_bytes: int = 1048576, output_dtype: str = "f32"):
     """Outline the verified source operations into the existing handoff adapter."""
     from merlin.xdsl_dialects.lowering.dispatch_program import (
         Buffer,
@@ -116,18 +116,20 @@ def chain_adapter(pair, profile, *, prepare_broadcasts: bool = False,
     return program, F32MultiplyAdapter(ModuleOp(functions), program.to_dict(), profile,
                                        boundary_policy="bf16_rne_each_vpu_call",
                                        prepare_broadcasts=prepare_broadcasts,
-                                       broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes)
+                                       broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes,
+                                       output_dtype=output_dtype)
 
 
 def emit_chain_kernel(pair, profile, *, prepare_broadcasts: bool = False,
-                      broadcast_preparation_budget_bytes: int = 1048576):
+                      broadcast_preparation_budget_bytes: int = 1048576, output_dtype: str = "f32"):
     """Emit a legal experimental handoff; do not assert unmeasured profitability."""
     from merlin.xdsl_dialects.lowering.connected_dispatch import (
         lower_connected_dispatches,
     )
 
     program, adapter = chain_adapter(pair, profile, prepare_broadcasts=prepare_broadcasts,
-                                     broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes)
+                                     broadcast_preparation_budget_bytes=broadcast_preparation_budget_bytes,
+                                     output_dtype=output_dtype)
     plan, lowered = lower_connected_dispatches(program, adapter, require_profitable=False)
     if len(plan.handoffs) != 1:
         raise ValueError("multiply pair lost its private handoff")
@@ -136,7 +138,8 @@ def emit_chain_kernel(pair, profile, *, prepare_broadcasts: bool = False,
     for old, suffix in (("run_chain", "run"), ("materialized_chain", "materialized"),
                         ("chain_mul_0", "mul0"), ("chain_mul_1", "mul1")):
         source = source.replace(old, prefix + "_" + suffix)
-    source += f'''\nvoid {prefix}(const float *a, const float *b, const float *c, float *o) {{
+    scalar = "uint16_t" if output_dtype == "bf16" else "float"
+    source += f'''\nvoid {prefix}(const float *a, const float *b, const float *c, {scalar} *o) {{
       static float middle[{prod(pair['shape'])}] __attribute__((aligned(64)));
       {prefix}_run(a,b,c,middle,o);
     }}\n'''
