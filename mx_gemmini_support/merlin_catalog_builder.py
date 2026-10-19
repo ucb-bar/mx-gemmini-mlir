@@ -85,6 +85,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          precision_overrides: dict[str, str] | None = None,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                          connect_multiplies: bool = False,
+                         connect_sigmoid_multiplies: bool = False,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
                          matrix_vpu_transport: bool = False,
@@ -94,6 +95,9 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     """Compile selected source sites through checked MX native schedules."""
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
+    if connect_sigmoid_multiplies and (not connect_multiplies or enabled_vpu_regions is None
+                                      or not prepack_immutable_weights):
+        raise ValueError("sigmoid chains require connected multiplies, prepacking and explicit site policy")
     if matrix_vpu_transport and not prepack_immutable_weights:
         raise ValueError("matrix transport requires immutable prepacked weights")
     if reuse_prepacked_object is not None and not prepack_immutable_weights:
@@ -373,6 +377,21 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         })
     elementwise_sites = routed("elementwise", selected_elementwise_sites(
         prepared_text, profile))
+    unary_sites = routed("unary", selected_unary_sites(prepared_text, profile))
+    connected_sigmoid_multiplies = []
+    fused_regions = set()
+    if connect_sigmoid_multiplies:
+        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from .merlin_connected_sigmoid import chain_record, register_chain, sigmoid_chains
+
+        chains = sigmoid_chains(parse_mlir_file(prepared), elementwise_sites, unary_sites)
+        compiled_chains = {}
+        for chain in chains:
+            if chain["symbol"] not in compiled_chains:
+                compiled_chains[chain["symbol"]] = register_chain(
+                    chain, profile, compile_source, prepared_entries)
+            connected_sigmoid_multiplies.append(chain_record(chain) | compiled_chains[chain["symbol"]])
+            fused_regions.update(chain["regions"])
     connected_multiplies = []
     if connect_multiplies:
         from merlin.frontends.linalg_mlir import parse_mlir_file
@@ -381,6 +400,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         pairs = multiply_pairs(parse_mlir_file(prepared), elementwise_sites)
         compiled = {}
         for pair in pairs:
+            if fused_regions.intersection(pair["regions"]):
+                continue
             if pair["symbol"] not in compiled:
                 source, removed = emit_chain_kernel(pair, profile)
                 compile_source(pair["kernel_symbol"], source)
@@ -412,7 +433,6 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "rhs_axes": list(site["rhs_axes"]),
             "elements_per_chunk": generated.elements_per_chunk,
         })
-    unary_sites = routed("unary", selected_unary_sites(prepared_text, profile))
     unary_shapes = {site["symbol"]: site for site in unary_sites}
     unary_kernels = []
     for site in unary_shapes.values():
@@ -576,6 +596,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "kernels": kernel_records,
         "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
         "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
+        "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
         "resolved_vpu_regions": ({name: sorted(sites) for name, sites in
@@ -600,6 +621,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "source_regions": [site["region"] for site in elementwise_sites],
             "kernels": elementwise_kernels,
             "connected_multiplies": connected_multiplies,
+            "connected_sigmoid_multiplies": connected_sigmoid_multiplies,
             "connected_selection": "experimental_legality_only" if connect_multiplies else "disabled",
         },
         "vpu_unary": {
@@ -635,6 +657,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 precision_overrides: dict[str, str] | None = None,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                                 connect_multiplies: bool = False,
+                                connect_sigmoid_multiplies: bool = False,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
                                 matrix_vpu_transport: bool = False,
@@ -669,6 +692,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     precision_overrides=precision_overrides,
                                     enabled_vpu_regions=enabled_vpu_regions,
                                     connect_multiplies=connect_multiplies,
+                                    connect_sigmoid_multiplies=connect_sigmoid_multiplies,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     matrix_vpu_transport=matrix_vpu_transport,

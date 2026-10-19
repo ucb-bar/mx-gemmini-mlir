@@ -245,6 +245,7 @@ class MXVPUPostOffload:
                  enabled_elementwise_regions: frozenset[str] | None = None,
                  enabled_site_regions: dict[str, frozenset[str]] | None = None,
                  connect_multiplies: bool = False,
+                 connect_sigmoid_multiplies: bool = False,
                  share_activation_packing: bool = False,
                  activation_packing_budget_bytes: int = 1048576,
                  matrix_vpu_transport: bool = False):
@@ -274,6 +275,15 @@ class MXVPUPostOffload:
         self.enabled_classes = valid if enabled_classes is None else frozenset(enabled_classes)
         if not self.enabled_classes <= valid:
             raise ValueError(f"unknown MX VPU classes: {sorted(self.enabled_classes - valid)}")
+        self.connected_sigmoid = None
+        if connect_sigmoid_multiplies:
+            if (fixed_weight_catalog is None or not connect_multiplies
+                    or not {"elementwise", "unary"} <= self.enabled_classes
+                    or not self.enabled_site_regions):
+                raise ValueError("sigmoid connections need a catalog, site policy and both VPU classes")
+            from .merlin_connected_sigmoid import MXConnectedSigmoidPostOffload
+
+            self.connected_sigmoid = MXConnectedSigmoidPostOffload(fixed_weight_catalog, profile)
         if fixed_weight_catalog is not None:
             from .merlin_fixed_weight import MXFixedWeightPostOffload
 
@@ -308,7 +318,14 @@ class MXVPUPostOffload:
             for name in ("softmax", "add", "elementwise", "unary", "reduce"):
                 getattr(self, name).enabled_regions = resolved[name]
         for name in ("softmax", "add", "elementwise", "unary", "reduce"):
-            if name in self.enabled_classes and self.enabled_site_regions.get(name) != frozenset():
+            if name == "elementwise" and self.connected_sigmoid is not None:
+                selected, chains = self.connected_sigmoid(selected, sidecar, workdir)
+                fused_elements = {region for chain in chains for region in chain["regions"]}
+                fused_unary = {chain["unary_region"] for chain in chains}
+                self.elementwise.enabled_regions = self.enabled_site_regions["elementwise"] - fused_elements
+                self.unary.enabled_regions = self.enabled_site_regions["unary"] - fused_unary
+            if (name in self.enabled_classes and self.enabled_site_regions.get(name) != frozenset()
+                    and getattr(self, name).enabled_regions != frozenset()):
                 selected = getattr(self, name)(selected, sidecar, workdir)
         if self.fixed_weight is not None:
             selected = self.fixed_weight(selected, sidecar, workdir)

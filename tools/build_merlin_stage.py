@@ -186,6 +186,9 @@ def main() -> None:
     parser.add_argument("--connect-vpu-multiplies", action="store_true",
                         help="experimentally retain private BF16 multiply intermediates; "
                              "requires --execution-policy; measure profitability separately")
+    parser.add_argument("--connect-vpu-sigmoid-multiplies", action="store_true",
+                        help="experimentally keep selected sigmoid and two multiplies resident; "
+                             "requires connected multiplies, prepacking and a site policy")
     parser.add_argument("--share-activation-packing", action="store_true",
                         help="experimentally share explicit packed activation tensors; requires "
                              "prepacked weights and an execution policy")
@@ -211,6 +214,9 @@ def main() -> None:
     args = parser.parse_args()
     if args.connect_vpu_multiplies and args.execution_policy is None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
+    if args.connect_vpu_sigmoid_multiplies and (not args.connect_vpu_multiplies
+            or not args.prepack_checkpoint_weights or args.execution_policy is None):
+        parser.error("--connect-vpu-sigmoid-multiplies requires connected multiplies, prepacking and a policy")
     if args.share_activation_packing and (not args.prepack_checkpoint_weights
                                          or args.execution_policy is None):
         parser.error("--share-activation-packing requires prepacked weights and an execution policy")
@@ -389,6 +395,7 @@ def main() -> None:
             precision_overrides=overrides,
             enabled_vpu_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            connect_sigmoid_multiplies=args.connect_vpu_sigmoid_multiplies,
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
             matrix_vpu_transport=args.matrix_vpu_transport,
@@ -401,6 +408,7 @@ def main() -> None:
             enabled_elementwise_regions=enabled_elementwise_regions,
             enabled_site_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            connect_sigmoid_multiplies=args.connect_vpu_sigmoid_multiplies,
             share_activation_packing=args.share_activation_packing,
             activation_packing_budget_bytes=args.activation_packing_budget_bytes,
             matrix_vpu_transport=args.matrix_vpu_transport,
@@ -505,8 +513,25 @@ def main() -> None:
             not {row["region"] for row in lowered_add} <= catalog_add_regions):
         raise RuntimeError("MX VPU add rewrite exceeds its source-bound catalog")
     elementwise_rewrite_path = work / "device_host_abi/mx_vpu_elementwise_rewrite.json"
+    sigmoid_path = work / "device_host_abi/mx_connected_sigmoid_rewrite.json"
+    sigmoid_chains = []
+    if args.connect_vpu_sigmoid_multiplies and device is not None:
+        fused = json.loads(sigmoid_path.read_text())
+        sigmoid_chains = fused["chains"]
+        keys = ("regions", "unary_region", "shape", "symbol", "kernel_symbol")
+        expected = [{key: row[key] for key in keys} for row in
+                    catalog["vpu_elementwise"]["connected_sigmoid_multiplies"]]
+        if (sigmoid_chains != expected or fused["catalog_sha256"] != _sha(catalog_path)
+                or fused["sidecar_sha256"] != _sha(work / "device_signatures.json")
+                or fused["output_sha256"] != _sha(sigmoid_path.with_name("mx_connected_sigmoid.mlir"))):
+            raise RuntimeError("MX sigmoid chain source obligations differ from compiled routing")
+    elif sigmoid_path.exists():
+        raise RuntimeError("unselected sigmoid chain rewrite cannot alter source coverage")
     lowered_elementwise = (json.loads(elementwise_rewrite_path.read_text(encoding="utf-8"))["regions"]
                            if elementwise_rewrite_path.is_file() else [])
+    lowered_elementwise.extend({"region": region, "symbol": chain["symbol"], "operation": "mul",
+                                "fused_into": "sigmoid_multiply_chain"}
+                               for chain in sigmoid_chains for region in chain["regions"])
     catalog_elementwise_regions = set(catalog.get("vpu_elementwise", {}).get("source_regions", ()))
     if (len({row["region"] for row in lowered_elementwise}) != len(lowered_elementwise) or
             not {row["region"] for row in lowered_elementwise} <= catalog_elementwise_regions):
@@ -520,6 +545,9 @@ def main() -> None:
     unary_rewrite_path = work / "device_host_abi/mx_vpu_unary_rewrite.json"
     lowered_unary = (json.loads(unary_rewrite_path.read_text(encoding="utf-8"))["regions"]
                      if unary_rewrite_path.is_file() else [])
+    lowered_unary.extend({"region": chain["unary_region"], "symbol": chain["symbol"],
+                          "operation": "sigmoid", "fused_into": "sigmoid_multiply_chain"}
+                         for chain in sigmoid_chains)
     catalog_unary_regions = set(catalog.get("vpu_unary", {}).get("source_regions", ()))
     if (len({row["region"] for row in lowered_unary}) != len(lowered_unary) or
             not {row["region"] for row in lowered_unary} <= catalog_unary_regions):
@@ -587,9 +615,11 @@ def main() -> None:
         "execution_policy_sha256": policy_sha,
         "execution_policy": execution_policy,
         "connect_vpu_multiplies": args.connect_vpu_multiplies,
+        "connect_vpu_sigmoid_multiplies": args.connect_vpu_sigmoid_multiplies,
         "elf_admission_selection": ("structural_digest_and_declared_isa"
                                     if args.structural_elf_admission and device is not None else None),
         "connected_vpu_multiply_pairs": connected_multiplies,
+        "connected_vpu_sigmoid_multiply_chains": sigmoid_chains,
         "precision_overrides": overrides or {},
         "catalog_manifest": str(catalog_path) if device is not None else None,
         "execution_route": route,
