@@ -159,6 +159,10 @@ def main():
         assert abs(summary["mean_kl_nats"] - np.mean([r["kl_nats"] for r in measured])) < 1e-10
         assert abs(summary["worst_kl_nats"] - max(r["kl_nats"] for r in measured)) < 1e-10
         assert summary["top_token_matches"] == sum(r["top_token_equal"] for r in measured)
+        assert summary["positions"] == 33
+        assert abs(summary["cosine_min"] - min(r["cosine"] for r in measured)) < 1e-10
+        for stage in ["prefill", "decode"]:
+            assert sha(data[f"{role}/stages/{stage}/model.o"]) == link["stage_object_sha256"][stage]["model.o"]
         assert sha(data[rp + "gemmini_perf.txt"]) == run["timing_report_sha256"]
         perf = data[rp + "gemmini_perf.txt"].decode().splitlines()
         first, mesh, traffic = [line.split() for line in perf[:3]]
@@ -198,6 +202,7 @@ def main():
         + counters["baseline"]["host_stalled"] - counters["virtual"]["host_stalled"])
     for name, first, second in [("optimized_comparison.json", "baseline", "optimized"), ("virtual_comparison.json", "optimized", "virtual")]:
         report = load(name)
+        assert report["output_digest_parity"] is True and report["execution_timing_scope"] == SCOPE
         for field, role in [("reference", first), ("candidate", second)]:
             run = runs[role]
             assert report[field + "_cycles"] == run["execution_total_performance"]["cycles"]
