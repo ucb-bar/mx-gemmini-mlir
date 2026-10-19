@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -281,3 +282,48 @@ int main(void){unsigned errors=0;
         first, mesh, traffic = [line.split() for line in (directory / "perf.txt").read_text().splitlines()[:3]]
         assert (int(first[5]), int(mesh[1]), int(mesh[3]), int(mesh[7])) == (6, 48, 768, 0)
         assert int(traffic[1]) == 18432 and int(traffic[traffic.index("scales:") + 1]) == 576
+
+
+def test_complete_session_materializes_allocator_before_observer_admission(tmp_path):
+    fixture = os.environ.get("MERLIN_TEST_POOL_SESSION_FIXTURE")
+    if not fixture:
+        pytest.skip("explicit previously qualified two-program session fixture required")
+    fixture = Path(fixture)
+    linked, executed = tmp_path / "link", tmp_path / "run"
+
+    def invoke(command, label):
+        (tmp_path / (label + ".command.json")).write_text(json.dumps(command, indent=2) + "\n")
+        result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, timeout=180)
+        (tmp_path / (label + ".log")).write_text(result.stdout + result.stderr)
+        assert result.returncode == 0, result.stderr[-3000:]
+
+    command = json.loads((fixture / "guarded_link.command.json").read_text())
+    command[0] = sys.executable
+    command[command.index("--workdir") + 1] = str(linked)
+    command.append("--share-catalog-constants")
+    invoke(command, "link")
+    link = json.loads((linked / "mx_session_link.json").read_text())
+    assert link["linked_elf_admission"]["status"] == "accepted"
+    assert link["shared_catalog_constants"]["pool"]["pooled_bytes"] < link["shared_catalog_constants"]["pool"]["original_bytes"]
+    command = json.loads((fixture / "guarded_run.command.json").read_text())
+    command[0] = sys.executable
+    command[command.index("--link-receipt") + 1] = str(linked / "mx_session_link.json")
+    command[command.index("--out-dir") + 1] = str(executed)
+    invoke(command, "run")
+    invoke([sys.executable, "-m", "tools.compare_linked_session_cycles",
+            "--reference-link", str(fixture / "guarded_link/mx_session_link.json"),
+            "--reference-run", str(fixture / "guarded_run/mx_session_run.json"),
+            "--candidate-link", str(linked / "mx_session_link.json"),
+            "--candidate-run", str(executed / "mx_session_run.json"),
+            "--out", str(tmp_path / "comparison.json")], "compare")
+    reference = json.loads((fixture / "guarded_run/mx_session_run.json").read_text())
+    candidate = json.loads((executed / "mx_session_run.json").read_text())
+    assert candidate["complete"] is True and candidate["exit_code"] == 0
+    assert len(candidate["output_digests"]) == 8 and candidate["output_digests"] == reference["output_digests"]
+    assert len(candidate["output_dumps"]) == len(reference["output_dumps"]) == 4
+    for old, new in zip(reference["output_dumps"], candidate["output_dumps"], strict=True):
+        assert (old["program"], old["step"], old["output"]) == (new["program"], new["step"], new["output"])
+        before = (fixture / "guarded_run" / old["path"]).read_bytes()
+        after = (executed / new["path"]).read_bytes()
+        assert before == after and len(after) == 2048
+        assert hashlib.sha256(after).hexdigest() == old["sha256"] == new["sha256"]

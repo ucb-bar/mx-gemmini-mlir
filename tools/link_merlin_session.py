@@ -679,11 +679,6 @@ def link_session(
     if share_catalog_constants:
         canonical = set().union(*(set(mapping.values()) for mapping in constant_maps.values()))
         original_constants = set().union(*(set(mapping) for mapping in constant_maps.values()))
-        if canonical & set().union(*(_defined(nm, obj) for obj in all_objects)):
-            raise ValueError("shared constant exports collide with a nonconstant definition")
-        if any((canonical | original_constants) & set(_symbol_names(nm, obj))
-               for obj in all_objects if obj not in catalog_objects):
-            raise ValueError("shared constants have an observer outside qualified catalog readers")
         all_objects.append(pool_object)
         catalog_objects.append(pool_object)
     elf = output / "session.elf"
@@ -699,6 +694,14 @@ def link_session(
               f"-DMERLIN_ARENA_SIZE_BYTES={hex(layout['arena_bytes'])}ULL",
               f"-DMERLIN_WEIGHTS_BASE_ADDR={hex(layout['weights_base'])}ULL",
               "-c", malloc_source, "-o", malloc_object])
+        if share_catalog_constants:
+            # The arena allocator is produced only after the candidate layout
+            # is known. Inspect the complete inputs after that producer returns.
+            if canonical & set().union(*(_defined(nm, obj) for obj in all_objects if obj != pool_object)):
+                raise ValueError("shared constant exports collide with a nonconstant definition")
+            if any((canonical | original_constants) & set(_symbol_names(nm, obj))
+                   for obj in all_objects if obj not in catalog_objects):
+                raise ValueError("shared constants have an observer outside qualified catalog readers")
         link_command = [cc, *flags, "-nostdlib", "-nostartfiles",
               f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
               "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
