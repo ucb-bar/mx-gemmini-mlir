@@ -160,6 +160,19 @@ def test_provider_retargets_only_source_proved_serial_rhs(tmp_path):
     assert record["consumers"][0]["input_proofs"][0]["contiguous_batch_repeat"] == 3
 
 
+def enable_compact_fixture(catalog, tmp_path):
+    import copy
+
+    catalog.update(compact_batch_rhs=True, compact_profitability_guard="private_materialization")
+    for binding in catalog["bindings"]:
+        endpoint = copy.deepcopy(binding["batch_rhs_reuse"])
+        endpoint.update(compact_input=True, entry_symbol="compact_retained", kernel_symbol="compact_compiled")
+        binding["batch_rhs_compact"] = endpoint
+    source = tmp_path / "compact_compiled.c"
+    source.write_text("/* separately qualified compact provider source */")
+    catalog["compilation"]["source_sha256"]["compact_compiled"] = hashlib.sha256(source.read_bytes()).hexdigest()
+
+
 def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
     from merlin.frontends.linalg_mlir import parse_mlir_file
     from xdsl.dialects.func import CallOp
@@ -167,8 +180,7 @@ def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
     from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
 
     source, catalog, _ = post_fixture(tmp_path)
-    catalog["compact_batch_rhs"] = True
-    catalog["bindings"][0]["batch_rhs_reuse"]["compact_input"] = True
+    enable_compact_fixture(catalog, tmp_path)
     (tmp_path / "catalog.json").write_text(json.dumps(catalog))
     output = MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
     module = parse_mlir_file(output)
@@ -178,6 +190,50 @@ def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
         "tensor<6x1x4xf32>", "tensor<2x4x5xf32>", "tensor<6x1x5xf32>"]
     report = json.loads((output.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
     assert report["selected_calls"] == 1 and report["consumers"][0]["compact_input"]
+    assert report["compact_calls"] == 1 and report["ordinary_reuse_fallback_calls"] == 0
+
+
+def test_live_expansion_uses_qualified_ordinary_packing_without_compact_views(tmp_path):
+    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.xdsl_dialects._common import text
+    from xdsl.dialects import builtin, func
+
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, _ = post_fixture(tmp_path)
+    enable_compact_fixture(catalog, tmp_path)
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    module = parse_mlir_file(source)
+    call, = [op for op in module.walk() if isinstance(op, func.CallOp)]
+    rhs = call.arguments[1]
+    returned = call.parent.last_op
+    returned.operands = [*returned.operands, rhs]
+    function = call.parent.parent_op()
+    function.properties["function_type"] = builtin.FunctionType.from_lists(
+        function.function_type.inputs, [value.type for value in returned.operands])
+    module.verify()
+    source.write_text(text(module))
+    view_count = sum(op.name in {"tensor.expand_shape", "linalg.transpose"} for op in module.walk())
+    output = MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    rewritten = parse_mlir_file(output)
+    selected, = [op for op in rewritten.walk() if isinstance(op, func.CallOp)]
+    assert selected.callee.root_reference.data == "retained"
+    assert str(selected.arguments[1].type) == "tensor<6x4x5xf32>"
+    assert sum(op.name in {"tensor.expand_shape", "linalg.transpose"} for op in rewritten.walk()) == view_count
+    report = json.loads((output.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
+    assert report["compact_calls"] == 0 and report["ordinary_reuse_fallback_calls"] == 1
+
+
+def test_compact_fallback_source_is_revalidated_even_when_private_case_can_compact(tmp_path):
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, _ = post_fixture(tmp_path)
+    enable_compact_fixture(catalog, tmp_path)
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    (tmp_path / "compiled.c").write_text("changed ordinary fallback")
+    with pytest.raises(ValueError, match="compiled kernel source changed"):
+        MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    assert not (tmp_path / "rewrite").exists()
 
 
 def test_compact_endpoint_requires_matching_catalog_abi(tmp_path):
@@ -204,8 +260,7 @@ def test_shared_declaration_selects_each_current_call_independently(tmp_path, un
 
     source, catalog, route = post_fixture(tmp_path)
     if compact:
-        catalog["compact_batch_rhs"] = True
-        catalog["bindings"][0]["batch_rhs_reuse"]["compact_input"] = True
+        enable_compact_fixture(catalog, tmp_path)
     module = parse_mlir_file(source)
     call = next(op for op in module.walk() if isinstance(op, func.CallOp))
     arguments = list(call.arguments)
@@ -221,6 +276,7 @@ def test_shared_declaration_selects_each_current_call_independently(tmp_path, un
     binding["batch_rhs_reuse"]["entry_symbol"] = "second_retained"
     if unproved:
         binding.pop("batch_rhs_reuse")
+        binding.pop("batch_rhs_compact", None)
     catalog["bindings"].append(binding)
     row = copy.deepcopy(route["routed"][0])
     row.update(source_region="second", source_operation_ordinal=29)
@@ -230,7 +286,8 @@ def test_shared_declaration_selects_each_current_call_independently(tmp_path, un
     output = MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
     rewritten = parse_mlir_file(output)
     callees = [op.callee.root_reference.data for op in rewritten.walk() if isinstance(op, func.CallOp)]
-    assert callees == (["original", "retained"] if unproved else ["retained", "retained"])
+    endpoint = "compact_retained" if compact else "retained"
+    assert callees == (["original", endpoint] if unproved else [endpoint, endpoint])
     report = json.loads((output.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
     assert report["selected_calls"] == (1 if unproved else 2)
 

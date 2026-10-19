@@ -710,6 +710,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "integer_group_packing": integer_group_packing,
         **({"batch_rhs_reuse": "experimental_exact_contiguous_repetition"} if reuse_batch_rhs else {}),
         **({"compact_batch_rhs": True} if compact_batch_rhs else {}),
+        **({"compact_profitability_guard": "private_materialization"} if compact_batch_rhs else {}),
         **({"batch_rhs_source": {"file": "batch_rhs_source.mlir", "sha256": plan["source_sha256"]}}
            if reuse_batch_rhs else {}),
         "native_tile_policy": native_tile_policy,

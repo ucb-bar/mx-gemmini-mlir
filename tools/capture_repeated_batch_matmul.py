@@ -14,6 +14,8 @@ def main():
     parser.add_argument("--transpose-rhs", action="store_true")
     parser.add_argument("--materialized-rhs", action="store_true",
                         help="Supply repeated sample values as an ordinary input, without an IR repetition proof")
+    parser.add_argument("--return-rhs", action="store_true",
+                        help="Keep the expanded RHS observable as a second model output")
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--profile", required=True, type=Path)
     args = parser.parse_args()
@@ -33,7 +35,8 @@ def main():
                 rhs = rhs.reshape(args.groups * args.repeat, rows, cols)
             if args.transpose_rhs:
                 rhs = rhs.transpose(-1, -2)
-            return torch.bmm(lhs, rhs)
+            result = torch.bmm(lhs, rhs)
+            return (result, rhs) if args.return_rhs else result
 
     torch.manual_seed(3182)
     lhs = torch.randn(args.groups * args.repeat, args.m, args.k)
@@ -47,7 +50,7 @@ def main():
     (out / "policy.json").write_text(json.dumps(policy, indent=2) + "\n")
     print(json.dumps({"out": str(out), "shape_bmnk": [args.groups * args.repeat, args.m, args.n, args.k],
                       "repeat": args.repeat, "transpose": args.transpose_rhs,
-                      "materialized_rhs": args.materialized_rhs}))
+                      "materialized_rhs": args.materialized_rhs, "return_rhs": args.return_rhs}))
 
 
 if __name__ == "__main__":
