@@ -46,7 +46,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks | Reverse full-model pair is running; broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse | No cross-stage deduplication of encoded matrix constants or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing within a synchronous batch | RHS reuse has native/small-graph qualification with full-model retries running; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -73,10 +73,35 @@ calls `merlin_commit_state` before returning. That runtime copies the entire
 7,208,960-byte KV state and 176-byte length state into separate static input
 arrays. The prefill-to-decode handoff also copies these tensors once. These
 copies are inside the measured step/preparation boundaries. Their isolated cost
-has not been measured. A future pointer-rotation change needs a generic lifetime
+is now measured using the actual compiled runtime on synthetic full-size bytes:
+4,506,607 cycles per call, and 144,210,804 cycles for 32 calls (approximately
+0.2581% of the completed 55.871-billion-cycle cached session). This is attribution,
+not an exact subtraction from session time. A future pointer-rotation change needs a generic lifetime
 contract preserving output observation, reset, next-step input/output separation
 and alias semantics. Pointer/shape/length alone cannot validate an encoded KV
 cache for arbitrary input calls.
+
+Repeated batch RHS packing is the larger measured opportunity. A generic Merlin
+coordinate proof recognizes equal adjacent matrices through pure singleton
+broadcasts, linear views and matrix-axis transposes. The target retains private
+packing within one synchronous call and refreshes every group on each invocation.
+It does not remove source broadcasts or device transfers. QK/PV native sections
+reduce cold cycles from 15,111,468 to 2,275,500 and 15,376,044 to 2,537,777,
+respectively, with unchanged workspace and device counters. FP4/FP8 tails,
+changed groups across calls and complete partial-output refusal cases qualify.
+A complete random-F32 broadcast/transpose graph measures 1,118,895 → 765,994
+cycles, all 2,622 output words exact, with 40 additional literal allocation bytes
+and unchanged native workspace. This is not a whole-model speedup.
+
+Both the real forward and cached decoder prove 44 eligible current calls across
+two shared declarations. Their initial new-pass builds stopped before simulation
+because the adapter incorrectly required one declaration per source call. The
+corrected generic and target binders independently prove selected calls, validate
+each shared native kernel family and retain original unproved users. Fresh
+full-model builds are running in new directories; failed attempts are preserved.
+The cached candidate reuses the exact latest prefill stage and adds RHS reuse
+only to its decoder. A separate latest cached control includes the newer packing,
+broadcast, guarded-math and reverse-transport passes and is still executing.
 
 The completed SmolVLA session currently measures 89,671,723,299 → 87,964,565,915
 cycles for equivalent BF16 read-view packing reuse (1.9038%). All 33 output/state
@@ -103,6 +128,8 @@ Primary retained evidence and standalone verification:
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
+- [Repeated batch RHS native and graph qualification](evidence/repeated_batch_rhs_20261019/README.md)
+- [Actual runtime state-copy attribution](evidence/state_copy_attribution_20261019/README.md)
 
 The initial changes came from profiling and inspecting generated IR. Subsequent
 reference study covered the OpenXLA GPU architecture, IREE Stream/data tiling,

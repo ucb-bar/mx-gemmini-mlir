@@ -1,0 +1,113 @@
+{
+  "schema": "mx_gemmini.retained_execution_bundle.v1",
+  "archive": "executions.tar.xz",
+  "archive_sha256": "8a49163d829369feb64268c04686759c66812c502ebd64798da0bcee833333a0",
+  "archive_bytes": 28812,
+  "members": {
+    "measurement/compile0.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "measurement/compile1.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "measurement/console.o": {
+      "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec",
+      "bytes": 10288
+    },
+    "measurement/crt.o": {
+      "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e",
+      "bytes": 4344
+    },
+    "measurement/driver.c": {
+      "sha256": "9f4f152cc3e2056e65104888d67b8f27f378fb5c7cdf43ab0a441a65f27b7d3a",
+      "bytes": 1891
+    },
+    "measurement/driver.o": {
+      "sha256": "edee38b2dc73f3c8257ab115f99e702be1a8d8e115e18b4bcace74ea6401801f",
+      "bytes": 13840
+    },
+    "measurement/invocations/5a94739573894f9ab10d8e7081d6c234/invocation.json": {
+      "sha256": "16779ec46ec5cd82cf76e5df0244db897a914ad49f0c057c19d14b97019c99bb",
+      "bytes": 2483
+    },
+    "measurement/invocations/5a94739573894f9ab10d8e7081d6c234/policy/admission.json": {
+      "sha256": "330040a90a92ab1d0e093f29dca3fa9824a83a06e8066c4314ba43f2a103be8a",
+      "bytes": 338
+    },
+    "measurement/invocations/5a94739573894f9ab10d8e7081d6c234/stderr.bin": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "measurement/invocations/5a94739573894f9ab10d8e7081d6c234/stdout.bin": {
+      "sha256": "f87eb1842723771441df84da67fb36b0389dc6fc4e0492cd904f85a45065f0a2",
+      "bytes": 598
+    },
+    "measurement/libc_min.o": {
+      "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e",
+      "bytes": 3864
+    },
+    "measurement/measure_session_state_copy_spike.py": {
+      "sha256": "67df18c88b3db4a24a41e8e0620c1574ce1db87213e853e3525713a725561766",
+      "bytes": 9580
+    },
+    "measurement/merlin_model.h": {
+      "sha256": "10e8d78fd4c9fbd22185d786e5ecd3a3b107dc115bc451219837a295f76d0df9",
+      "bytes": 3423
+    },
+    "measurement/merlin_model.o": {
+      "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c",
+      "bytes": 3776
+    },
+    "measurement/model_gen.h": {
+      "sha256": "72492dd0638d983aae184f41a572b7be38a744199b93ae2dc4b8e09720d8251a",
+      "bytes": 2934
+    },
+    "measurement/original_compilation_recipe.json": {
+      "sha256": "4ca364c6c6c4512c49188cde92f26a45bccfcafdb8e35273a49c71cd75e6fa70",
+      "bytes": 34259
+    },
+    "measurement/perf.txt": {
+      "sha256": "d2ed44e72319c5ec1522d0af09f3b71cb4a623f03842c18ba7bec601dbc163c8",
+      "bytes": 489
+    },
+    "measurement/projection.json": {
+      "sha256": "918d40cf156be3baae32852f25efe46f8867f46636bca42d5f528f285d345b39",
+      "bytes": 61383
+    },
+    "measurement/receipt.json": {
+      "sha256": "0bd5d76dfc5edd169d7a9e66fe5004745cd7bfa84bf4eea31186523365d928fa",
+      "bytes": 6419
+    },
+    "measurement/section.elf": {
+      "sha256": "8b047b297e0d1fe213ed99ba0b644023d7a3090a638b95f373799388389b27c8",
+      "bytes": 16704
+    },
+    "measurement/spike.log": {
+      "sha256": "3afe6fce9542c4638d7b0e56cfed0a9a6a6f2aefd74ff847e2758d702ef14f1a",
+      "bytes": 219
+    },
+    "profile.json": {
+      "sha256": "18c0c934356fc1d4c2f1d3efa6a607b83bc34471d5a01d0dbe160cfe39ef5d95",
+      "bytes": 3585
+    },
+    "runtime_inputs/crt.S": {
+      "sha256": "a437e507cdb0e02f11f2e4ae4e08cfbc83a41c4ccbec12c26574ff687da2ba46",
+      "bytes": 4066
+    },
+    "runtime_inputs/htif.c": {
+      "sha256": "2f08e9fdd08f346026cbefb897b7496d862ad02ec26d753b065e71f9ff5337a4",
+      "bytes": 5404
+    },
+    "runtime_inputs/libc_min.c": {
+      "sha256": "6326f21c6914f3cd0ac4351d5ca2ac2158cd38305168638e4c512bff84e1be7a",
+      "bytes": 3949
+    },
+    "runtime_inputs/merlin_model.c": {
+      "sha256": "c98a0fd790c1e220b0171453948881c61cd60612e8825775f1da783eaacf23a4",
+      "bytes": 5656
+    }
+  },
+  "reference_cached_cycles": 55871481378
+}
