@@ -7,14 +7,15 @@ This is a structural audit, never an executable placement or Spike result.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections import Counter
 from pathlib import Path
 
 import yaml
 
-from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
 from mx_gemmini_support.dense_contraction import MAX_UNROLLED_COMMANDS, plan_dense_shape
+from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
 from mx_gemmini_support.model_precision_plan import build_model_precision_plan
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
@@ -64,14 +65,56 @@ def summarize_dense_shape_plans(proposal: dict, profile: dict) -> dict:
     }
 
 
-def audit_session(root: Path, profile: dict) -> dict:
+def read_inventory_source(source: Path, profile: dict, parse_workdir: Path | None = None):
+    """Use an explicit printer work directory without changing capture bytes."""
+    from merlin.targetgen.contract.linalg_iface import (
+        LinalgParseError,
+        parse_linalg_mlir,
+    )
+
+    original = source.read_bytes()
+    text = original.decode()
+    view = None
+    record = None
+    try:
+        inventory = parse_linalg_mlir(text)
+    except LinalgParseError:
+        if parse_workdir is None:
+            raise
+        from merlin.llvmlower.generic_form import (
+            create_generic_read_view,
+            recheck_generic_read_view,
+        )
+
+        record = create_generic_read_view(source, parse_workdir)
+        generic = recheck_generic_read_view(record)
+        text = generic.read_text()
+        inventory = parse_linalg_mlir(text)
+        view = {"kind": "generic_printer_view_no_transform", "path": str(generic.resolve()),
+                "source_sha256": hashlib.sha256(original).hexdigest(),
+                "view_sha256": hashlib.sha256(generic.read_bytes()).hexdigest(), "read_view": record}
+    if source.read_bytes() != original:
+        raise ValueError("captured source changed during inventory parsing")
+    worklist = build_mx_worklist_from_merlin(text, profile)
+    if record is not None:
+        recheck_generic_read_view(record)
+        if worklist["source_mlir_sha256"] != record["view"]["sha256"]:
+            raise ValueError("inventory differs from its selected printer view")
+    return inventory, worklist, view
+
+
+def audit_session(root: Path, profile: dict, *, parse_workdir: Path | None = None) -> dict:
     from m2m.capture.bundle_integrity import verify_bundle_integrity
-    from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
 
     if root.is_symlink() or not root.is_dir():
         raise ValueError("session must be a plain directory")
     root = root.resolve(strict=True)
     verify_bundle_integrity(root)
+    if parse_workdir is not None:
+        parse_workdir = parse_workdir.absolute()
+        if parse_workdir.resolve().is_relative_to(root):
+            raise ValueError("inventory printer work must be outside the captured bundle")
+        parse_workdir.mkdir(parents=True, exist_ok=False)
     contract = yaml.safe_load((root / "session_contract.yaml").read_text())
     programs = contract.get("programs") if isinstance(contract, dict) else None
     if not isinstance(programs, list) or not programs:
@@ -79,21 +122,23 @@ def audit_session(root: Path, profile: dict) -> dict:
     if [row.get("name") for row in programs] != contract.get("stages"):
         raise ValueError("captured session has inconsistent stage order")
     stages = []
-    for row in programs:
+    for index, row in enumerate(programs):
         relative = Path(str(row.get("bundle", "")))
         if relative.is_absolute() or ".." in relative.parts or not relative.parts:
             raise ValueError("stage bundle path escapes the session")
         stage = root / relative
         if stage.is_symlink() or not stage.is_dir():
             raise ValueError("stage bundle is not a plain directory")
-        mlir = (stage / "model.mlir").read_text()
-        inventory = parse_linalg_mlir(mlir)
-        worklist = build_mx_worklist_from_merlin(mlir, profile)
+        inventory, worklist, view = read_inventory_source(
+            stage / "model.mlir", profile,
+            parse_workdir / f"stage_{index}" if parse_workdir is not None else None)
         proposal = build_model_precision_plan(worklist, profile)
         families = Counter((op.get("prov") or {}).get("family") or "unattributed"
                            for op in inventory["ops"])
         stages.append({
-            "name": row["name"], "source_mlir_sha256": worklist["source_mlir_sha256"],
+            "name": row["name"],
+            "source_mlir_sha256": hashlib.sha256((stage / "model.mlir").read_bytes()).hexdigest(),
+            "inventory_input_sha256": worklist["source_mlir_sha256"], "serialization_view": view,
             "operation_count": len(inventory["ops"]),
             "operation_families": dict(sorted(families.items())),
             "contraction_regions": worklist["contraction_region_count"],
@@ -101,6 +146,7 @@ def audit_session(root: Path, profile: dict) -> dict:
             "dense_shape_plans": summarize_dense_shape_plans(proposal, profile),
             "unlowered_operation_count": len(inventory["ops"]),
         })
+    verify_bundle_integrity(root)
     return {
         "schema": "mx_gemmini.session_structural_audit.v1",
         "status": "capture_inventory_only_no_executable_placement",
@@ -117,10 +163,12 @@ def main() -> None:
     parser.add_argument("--session", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--parse-workdir", type=Path,
+                        help="fresh directory outside the capture for an optional generic printer view")
     args = parser.parse_args()
     if args.out.exists():
         parser.error(f"refusing to overwrite {args.out}")
-    audit = audit_session(args.session, load_profile(args.profile))
+    audit = audit_session(args.session, load_profile(args.profile), parse_workdir=args.parse_workdir)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"session": audit["session"], "full_checkpoint": audit["full_checkpoint"],

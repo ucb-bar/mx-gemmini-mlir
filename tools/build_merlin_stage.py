@@ -10,12 +10,11 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -183,6 +182,8 @@ def main() -> None:
                         help="receipt-bound FP8 overrides for sensitive FP4 source regions")
     parser.add_argument("--execution-policy", type=Path,
                         help="capture-bound MX matrix precision and per-site VPU routing")
+    parser.add_argument("--generic-input-view", action="store_true",
+                        help="explicitly use a byte-bound native generic printer view for source inventories")
     parser.add_argument("--connect-vpu-multiplies", action="store_true",
                         help="experimentally retain private BF16 multiply intermediates; "
                              "requires --execution-policy; measure profitability separately")
@@ -298,6 +299,19 @@ def main() -> None:
 
     profile = load_profile(profile_path, rtl_root=args.rtl_root)
     profile_sha = profile_sha256(profile)
+    input_read_view = None
+    input_read_view_receipt_sha = None
+    inventory_source = source
+    if args.generic_input_view:
+        from merlin.llvmlower.generic_form import (
+            create_generic_read_view,
+            recheck_generic_read_view,
+        )
+
+        input_read_view = create_generic_read_view(source, work / "input_read_view")
+        inventory_source = recheck_generic_read_view(input_read_view)
+        input_read_view_receipt_sha = _sha(work / "input_read_view/generic_read_view.json")
+    source_text = inventory_source.read_text(encoding="utf-8")
     policy_path = None
     execution_policy = None
     enabled_site_regions = None
@@ -309,7 +323,7 @@ def main() -> None:
             parser.error("--execution-policy must be a regular file")
         policy_path = args.execution_policy.resolve(strict=True)
         execution_policy, resolved_policy = load_policy(
-            policy_path, source.read_text(encoding="utf-8"), profile)
+            policy_path, source_text, profile)
         enabled_site_regions = resolved_policy["enabled_vpu_regions"]
         host_singleton_regions = resolved_policy["host_singleton_regions"]
     if args.precision_overrides is not None and args.precision_overrides.is_symlink():
@@ -331,23 +345,24 @@ def main() -> None:
     os.environ["MERLIN_COMPILE_TIMEOUT_S"] = str(args.compile_timeout_s)
     sys.path.insert(0, str(merlin_src))
     from merlin.llvmlower.device_build import DeviceRouting
+    from merlin.model_check.admission import service as structural_admission
     from merlin.runtime.backends import spike_model
+
     from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
-    from mx_gemmini_support.merlin_vpu_inventory import audit_softmax_boundaries
-    from merlin.model_check.admission import service as structural_admission
-    from mx_gemmini_support.merlin_vpu_softmax import selected_softmax_sites
     from mx_gemmini_support.merlin_vpu_add import MXVPUPostOffload, selected_add_sites
     from mx_gemmini_support.merlin_vpu_elementwise import selected_elementwise_sites
-    from mx_gemmini_support.merlin_vpu_unary import selected_unary_sites
+    from mx_gemmini_support.merlin_vpu_inventory import audit_softmax_boundaries
     from mx_gemmini_support.merlin_vpu_reduce import selected_row_reduce_sites
+    from mx_gemmini_support.merlin_vpu_softmax import selected_softmax_sites
+    from mx_gemmini_support.merlin_vpu_unary import selected_unary_sites
 
-    vpu_inventory = audit_softmax_boundaries(source.read_text(encoding="utf-8"), profile)
-    vpu_selected = selected_softmax_sites(source.read_text(encoding="utf-8"), profile)
+    vpu_inventory = audit_softmax_boundaries(source_text, profile)
+    vpu_selected = selected_softmax_sites(source_text, profile)
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(
-        source, profile, precision_overrides=overrides)
+        inventory_source, profile, precision_overrides=overrides)
     if not host_singleton_regions <= expected_regions:
         raise RuntimeError("host singleton policy differs from raw matrix coverage")
     expected_regions -= host_singleton_regions
@@ -375,7 +390,9 @@ def main() -> None:
     preparation = MXBF16CatalogPreparation(profile, precision_overrides=overrides)
     host_preparation = None
     if host_singleton_regions:
-        from mx_gemmini_support.merlin_singleton_prepare import MXSingletonReductionPreparation
+        from mx_gemmini_support.merlin_singleton_prepare import (
+            MXSingletonReductionPreparation,
+        )
 
         if expected_regions:
             preparation = MXSingletonReductionPreparation(
@@ -606,10 +623,19 @@ def main() -> None:
              "mx_gemmini_and_host_vpu_control" if args.diagnostic_host_vpu else
              "mx_gemmini_and_partial_vpu_control" if diagnostic_vpu else
              "mx_gemmini_and_host" if device is not None else "host_only")
+    if input_read_view is not None:
+        recheck_generic_read_view(input_read_view)
+        view_receipt = work / "input_read_view/generic_read_view.json"
+        if (_sha(view_receipt) != input_read_view_receipt_sha
+                or json.loads(view_receipt.read_text()) != input_read_view):
+            raise RuntimeError("selected input printer receipt changed during compilation or execution")
     receipt = {
         "schema": "mx_gemmini.merlin_stage_probe.v1",
         "status": status,
         "capture_model_sha256": capture_sha,
+        "generic_input_read_view": input_read_view,
+        "generic_input_read_view_receipt_sha256": input_read_view_receipt_sha,
+        "inventory_source_sha256": _sha(inventory_source),
         "profile_sha256": profile_sha256(profile),
         "precision_overrides_sha256": override_sha,
         "execution_policy_sha256": policy_sha,
