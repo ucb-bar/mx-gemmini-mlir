@@ -1,0 +1,58 @@
+{
+  "changed_catalog_sources": [
+    "checkpoint_weights",
+    "mx_issue_0",
+    "mx_issue_1",
+    "mx_issue_2",
+    "mx_issue_3",
+    "mx_issue_4"
+  ],
+  "changed_c_sources": [
+    "mx_issue_0",
+    "mx_issue_1",
+    "mx_issue_2",
+    "mx_issue_3",
+    "mx_issue_4"
+  ],
+  "checkpoint_assembly_path_only_difference": true,
+  "files": {
+    "model.o": {
+      "baseline_sha256": "8995a74ded3b69a5b741a67f28f1b5e244e25094d77727bce0082f2a39b68b0f",
+      "candidate_sha256": "8995a74ded3b69a5b741a67f28f1b5e244e25094d77727bce0082f2a39b68b0f",
+      "identical": true,
+      "shared_inode": false
+    },
+    "host_math/host_math.c": {
+      "baseline_sha256": "1d7fc0f93ec62db79a94eea0c3546c304e43028ee8b3af20a2e3d2a6be3c4ed7",
+      "candidate_sha256": "1d7fc0f93ec62db79a94eea0c3546c304e43028ee8b3af20a2e3d2a6be3c4ed7",
+      "identical": true,
+      "shared_inode": false
+    },
+    "host_math/host_math.o": {
+      "baseline_sha256": "35060115df6791c39d97ca35a3668692f92d41e303f287a24e6b53ac47e03ad6",
+      "candidate_sha256": "35060115df6791c39d97ca35a3668692f92d41e303f287a24e6b53ac47e03ad6",
+      "identical": true,
+      "shared_inode": false
+    },
+    "device_catalog/runtime_quant.c": {
+      "baseline_sha256": "a6e73983348ed9a8d1348cc6c656cd4cb813ef378c7c1b7a5bc97f486ce29c2e",
+      "candidate_sha256": "a6e73983348ed9a8d1348cc6c656cd4cb813ef378c7c1b7a5bc97f486ce29c2e",
+      "identical": true,
+      "shared_inode": false
+    },
+    "device_catalog/runtime_quant.o": {
+      "baseline_sha256": "edc9fd2f4a600078d02d7ccd5dd553042b7cdda91094cedfd692bd424fc1cda8",
+      "candidate_sha256": "edc9fd2f4a600078d02d7ccd5dd553042b7cdda91094cedfd692bd424fc1cda8",
+      "identical": true,
+      "shared_inode": false
+    },
+    "device_catalog/checkpoint_weights.o": {
+      "baseline_sha256": "6c62b70381bda17504a9d04bcc5d40ad52354b46bccb977d9d342a8e553113a6",
+      "candidate_sha256": "6c62b70381bda17504a9d04bcc5d40ad52354b46bccb977d9d342a8e553113a6",
+      "identical": true,
+      "shared_inode": true
+    }
+  },
+  "matrix_kernels": 157,
+  "other_catalog_c_source_hashes_identical": true
+}
