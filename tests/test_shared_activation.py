@@ -25,7 +25,8 @@ PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketC
 
 @pytest.mark.parametrize("precision", ["FP4", "FP8"])
 @pytest.mark.parametrize("logical", [(1, 17, 37), (19, 23, 37), (32, 32, 64)])
-def test_prepared_bytes_readout_and_changed_inputs(tmp_path, tmp_path_factory, precision, logical):
+@pytest.mark.parametrize("virtual_zero_padding", [False, True])
+def test_prepared_bytes_readout_and_changed_inputs(tmp_path, tmp_path_factory, precision, logical, virtual_zero_padding):
     cc = shutil.which("cc")
     if cc is None:
         pytest.skip("host C compiler unavailable")
@@ -38,10 +39,18 @@ def test_prepared_bytes_readout_and_changed_inputs(tmp_path, tmp_path_factory, p
     regular = emit_dense_f32_kernel(issuer, logical, symbol="regular", **kwargs)
     prepared = emit_dense_f32_kernel(issuer, logical, symbol="prepared",
                                      prepared_activation=True, **kwargs)
-    packing, size, scratch = emit_activation_preparation(issuer, logical, symbol="prepare")
+    packing, size, scratch = emit_activation_preparation(issuer, logical, symbol="prepare",
+                                                        virtual_zero_padding=virtual_zero_padding)
+    virtual = emit_dense_f32_kernel(issuer, logical, symbol="virtual", **kwargs,
+                                    virtual_zero_padding=virtual_zero_padding)
+    if logical[0] == issuer.shape_mnk[0]:
+        unchanged = emit_dense_f32_kernel(issuer, logical, symbol="regular", **kwargs,
+                                          virtual_zero_padding=True)
+        assert unchanged.source == regular.source and unchanged.workspace_bytes == regular.workspace_bytes
     assert prepared.workspace_bytes < regular.workspace_bytes
-    assert scratch == (0 if logical[0] == issuer.shape_mnk[0] and logical[2] == issuer.shape_mnk[2]
-                       else issuer.shape_mnk[0] * issuer.shape_mnk[2] * 4)
+    materialized_rows = logical[0] if virtual_zero_padding else issuer.shape_mnk[0]
+    assert scratch == (0 if logical[0] == materialized_rows and logical[2] == issuer.shape_mnk[2]
+                       else materialized_rows * issuer.shape_mnk[2] * 4)
     assert "mx_pack_activation_f32" not in prepared.source
     codes, scales = issuer.buffer_bytes["activation"], issuer.buffer_bytes["activation_scales"]
     m, n, _ = issuer.shape_mnk
@@ -59,7 +68,8 @@ void mx_issue_encoded(const void *a,const void *as,const void *b,const void *bs,
   for(unsigned i=0;i<{m*n};++i) ((uint16_t *)out)[i]=(uint16_t)(0x3f00+(hash%128)+(i%32));
 }}
 '''
-    sources = {"regular": regular.source, "prepared": prepared.source, "packing": packing,
+    sources = {"regular": regular.source, "virtual": virtual.source,
+               "prepared": prepared.source, "packing": packing,
                "stub": stub, "workspace": emit_shared_workspace_definition(
                    regular.workspace_bytes, symbol="workspace")}
     paths = []
@@ -76,6 +86,7 @@ void mx_issue_encoded(const void *a,const void *as,const void *b,const void *bs,
     loaded = ctypes.CDLL(str(library))
     pointer = ctypes.c_void_p
     loaded.regular.argtypes = [pointer, pointer, pointer]
+    loaded.virtual.argtypes = [pointer, pointer, pointer]
     loaded.prepare.argtypes = [pointer, pointer]
     loaded.prepared.argtypes = [pointer, pointer]
     rng = np.random.default_rng(937)
@@ -89,6 +100,10 @@ void mx_issue_encoded(const void *a,const void *as,const void *b,const void *bs,
         expected = np.empty(logical[:2], dtype=np.float32)
         loaded.regular(lhs.ctypes.data, dummy.ctypes.data, expected.ctypes.data)
         observed = bytes((ctypes.c_uint8 * size).in_dll(loaded, "observed"))
+        virtual_output = np.empty_like(expected)
+        loaded.virtual(lhs.ctypes.data, dummy.ctypes.data, virtual_output.ctypes.data)
+        np.testing.assert_array_equal(virtual_output.view(np.uint32), expected.view(np.uint32))
+        assert bytes((ctypes.c_uint8 * size).in_dll(loaded, "observed")) == observed
         loaded.prepare(lhs.ctypes.data, packed.ctypes.data)
         assert packed.tobytes() == observed
         frozen = packed.copy()

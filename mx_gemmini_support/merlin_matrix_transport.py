@@ -9,7 +9,8 @@ from pathlib import Path
 
 def register_matrix_transport(generated, shape, symbol, issuer_symbol, fixed_symbols,
                               workspace_symbol, compile_source, abi_entries, *,
-                              prepared_activation=False, retain_prepared_rhs=False):
+                              prepared_activation=False, retain_prepared_rhs=False,
+                              virtual_zero_padding=False):
     from merlin.llvmlower.device_shim import LogicalBuffer
 
     from .dense_kernel import emit_dense_f32_kernel
@@ -20,7 +21,7 @@ def register_matrix_transport(generated, shape, symbol, issuer_symbol, fixed_sym
         generated.issuer, shape, symbol=kernel, issuer_symbol=issuer_symbol,
         shared_workspace_symbol=workspace_symbol, prepacked_weight_symbols=fixed_symbols,
         output_dtype="bf16", prepared_activation=prepared_activation,
-        retain_prepared_rhs=retain_prepared_rhs)
+        retain_prepared_rhs=retain_prepared_rhs, virtual_zero_padding=virtual_zero_padding)
     compile_source(kernel, adapter.source)
     m, n, k = shape
     packed = generated.issuer.buffer_bytes["activation"] + generated.issuer.buffer_bytes["activation_scales"]

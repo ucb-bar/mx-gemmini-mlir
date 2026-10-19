@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from .dense_kernel import (DenseBatchKernel, DenseKernel, emit_dense_f32_batch_kernel,
-                           emit_dense_f32_kernel)
 from .compact_runtime_issuer import emit_compact_runtime_issuer
+from .dense_kernel import (
+    DenseBatchKernel,
+    DenseKernel,
+    emit_dense_f32_batch_kernel,
+    emit_dense_f32_kernel,
+)
 from .planned_runtime_issuer import PlannedRuntimeIssuer, emit_planned_runtime_issuer
-from .source_gemm import plan_mx_gemm
 from .scheduled_native_issuer import NativeSchedule, emit_scheduled_native_issuer
-
+from .source_gemm import plan_mx_gemm
 
 MAX_UNROLLED_COMMANDS = 4_096
 
@@ -133,6 +136,7 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
                            shared_workspace_symbol: str | None = None,
                            cache_immutable_weight: bool = False,
                            prepacked_weight_symbols: tuple[str, str] | None = None,
+                           virtual_zero_padding: bool = False,
                            schedule: str = "serial") -> DenseContraction:
     """Emit both halves of one source-independent dense MX catalog candidate."""
     shape = plan_dense_shape(profile, logical_shape_mnk, precision=precision)
@@ -143,7 +147,8 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
         issuer, logical_shape_mnk, symbol=symbol, issuer_symbol=issuer_symbol,
         shared_workspace_symbol=shared_workspace_symbol,
         cache_immutable_weight=cache_immutable_weight,
-        prepacked_weight_symbols=prepacked_weight_symbols)
+        prepacked_weight_symbols=prepacked_weight_symbols,
+        virtual_zero_padding=virtual_zero_padding)
     return DenseContraction(shape, issuer, kernel, mode,
                             native.text if native else None,
                             native.digest if native else None,
@@ -155,6 +160,7 @@ def emit_dense_batch_contraction(profile: dict,
                                  precision: str, symbol: str,
                                  issuer_symbol: str,
                                  shared_workspace_symbol: str | None = None,
+                                 virtual_zero_padding: bool = False,
                                  schedule: str = "serial") -> DenseBatchContraction:
     """Emit a whole-batch entry over a shared per-slice MX workspace."""
     if (len(logical_shape_bmnk) != 4 or
@@ -167,7 +173,7 @@ def emit_dense_batch_contraction(profile: dict,
         schedule=schedule)
     kernel = emit_dense_f32_batch_kernel(
         issuer, logical_shape_bmnk, symbol=symbol, issuer_symbol=issuer_symbol,
-        shared_workspace_symbol=shared_workspace_symbol)
+        shared_workspace_symbol=shared_workspace_symbol, virtual_zero_padding=virtual_zero_padding)
     return DenseBatchContraction(shape, batch, issuer, kernel, mode,
                                  native.text if native else None,
                                  native.digest if native else None,

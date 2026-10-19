@@ -11,27 +11,29 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
-from typing import Callable
+from collections.abc import Callable
+from pathlib import Path
 
-from .dense_contraction import (emit_dense_batch_contraction, emit_dense_contraction,
-                                plan_dense_shape)
+from .dense_contraction import (
+    emit_dense_batch_contraction,
+    emit_dense_contraction,
+    plan_dense_shape,
+)
 from .dense_kernel import emit_shared_workspace_definition
 from .merlin_catalog_plan import plan_merlin_catalog
 from .merlin_schedule_policy import build_policy_plan, selected_policy
-from .offline_weight_pack import pack_weight
 from .merlin_vpu_add import emit_memref_add_shim, selected_add_sites
 from .merlin_vpu_elementwise import selected_elementwise_sites
+from .merlin_vpu_reduce import emit_memref_reduce_shim, selected_row_reduce_sites
 from .merlin_vpu_softmax import emit_memref_softmax_shim, selected_softmax_sites
 from .merlin_vpu_unary import emit_memref_unary_shim, selected_unary_sites
-from .merlin_vpu_reduce import emit_memref_reduce_shim, selected_row_reduce_sites
+from .offline_weight_pack import pack_weight
 from .target_profile import load_profile, profile_sha256
 from .vpu_add_kernel import emit_vpu_add, emit_vpu_elementwise
+from .vpu_row_reduce import emit_vpu_row_reduce
 from .vpu_row_softmax import emit_vpu_row_softmax
 from .vpu_unary_kernel import emit_vpu_unary
-from .vpu_row_reduce import emit_vpu_row_reduce
-
 
 _WORKSPACE_SYMBOL = "mx_catalog_workspace"
 _SUPPORT = Path(__file__).resolve().parent
@@ -45,7 +47,7 @@ def _sha(path: Path) -> str:
 
 
 def _run(command: list[str], *, label: str) -> None:
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
     if result.returncode:
         raise RuntimeError(f"MX {label} failed: {result.stderr[-1200:]}")
 
@@ -89,6 +91,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
                          matrix_vpu_transport: bool = False,
+                         virtual_zero_padding: bool = False,
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
@@ -173,7 +176,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         if entry["prepacked_checkpoint_weight"]:
             assert checkpoint is not None
             parameter_name = entry["checkpoint_parameter_name"]
-            if parameter_name not in checkpoint.keys():
+            if parameter_name not in checkpoint.keys():  # noqa: SIM118 -- safe_open exposes keys, not membership
                 raise ValueError(f"MX checkpoint is missing {parameter_name}")
             tensor = checkpoint.get_tensor(parameter_name)
             if list(tensor.shape) != entry["checkpoint_parameter_shape"]:
@@ -213,6 +216,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 shared_workspace_symbol=_WORKSPACE_SYMBOL,
                 cache_immutable_weight=entry["cache_immutable_weight"],
                 prepacked_weight_symbols=fixed_symbols,
+                virtual_zero_padding=virtual_zero_padding,
                 schedule=selected)
             batch, m, n, k = 1, *shape
         elif entry["rank"] == 3:
@@ -220,6 +224,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 profile, shape, precision=precision, symbol=symbol,
                 issuer_symbol=issuer_symbol,
                 shared_workspace_symbol=_WORKSPACE_SYMBOL,
+                virtual_zero_padding=virtual_zero_padding,
                 schedule=selected)
             batch, m, n, k = shape
         else:
@@ -239,16 +244,18 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
             private_bf16_transport = register_matrix_transport(
                 generated, shape, symbol, issuer_symbol, fixed_symbols,
-                _WORKSPACE_SYMBOL, compile_source, prepared_entries)
+                _WORKSPACE_SYMBOL, compile_source, prepared_entries,
+                virtual_zero_padding=virtual_zero_padding)
         if share_activation_packing and fixed_symbols is not None:
             from merlin.llvmlower.device_shim import LogicalBuffer
+
             from .dense_kernel import emit_activation_preparation, emit_dense_f32_kernel
 
             pm, _, pk = generated.issuer.shape_mnk
             prepare_entry = f"mx_prepare_a_{precision.lower()}_m{m}_k{k}_pm{pm}_pk{pk}"
             prepare_kernel = prepare_entry + "_kernel"
             source, packed_bytes, padding_bytes = emit_activation_preparation(
-                generated.issuer, shape, symbol=prepare_kernel)
+                generated.issuer, shape, symbol=prepare_kernel, virtual_zero_padding=virtual_zero_padding)
             previous = preparation_sources.get(prepare_entry)
             if previous is None:
                 compile_source(prepare_kernel, source)
@@ -382,7 +389,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     fused_regions = set()
     if connect_sigmoid_multiplies:
         from merlin.frontends.linalg_mlir import parse_mlir_file
-        from .merlin_connected_sigmoid import chain_record, register_chain, sigmoid_chains
+
+        from .merlin_connected_sigmoid import (
+            chain_record,
+            register_chain,
+            sigmoid_chains,
+        )
 
         chains = sigmoid_chains(parse_mlir_file(prepared), elementwise_sites, unary_sites)
         compiled_chains = {}
@@ -395,7 +407,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     connected_multiplies = []
     if connect_multiplies:
         from merlin.frontends.linalg_mlir import parse_mlir_file
-        from .merlin_connected_multiply import emit_chain_kernel, emit_chain_shim, multiply_pairs
+
+        from .merlin_connected_multiply import (
+            emit_chain_kernel,
+            emit_chain_shim,
+            multiply_pairs,
+        )
 
         pairs = multiply_pairs(parse_mlir_file(prepared), elementwise_sites)
         compiled = {}
@@ -492,7 +509,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(assembly),
                   "-o", str(obj)], label="prepacked checkpoint assembly")
         else:
-            from merlin.llvmlower.constant_object import ConstantBlob, reuse_constant_object
+            from merlin.llvmlower.constant_object import (
+                ConstantBlob,
+                reuse_constant_object,
+            )
 
             # The fresh selected assembler supplies target metadata. Merlin
             # checks every data byte, symbol, alignment and padding; a stale
@@ -596,6 +616,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "kernels": kernel_records,
         "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
         "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
+        "virtual_zero_padding": virtual_zero_padding,
         "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
@@ -661,6 +682,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
                                 matrix_vpu_transport: bool = False,
+                                virtual_zero_padding: bool = False,
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
@@ -696,6 +718,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     matrix_vpu_transport=matrix_vpu_transport,
+                                    virtual_zero_padding=virtual_zero_padding,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)
 

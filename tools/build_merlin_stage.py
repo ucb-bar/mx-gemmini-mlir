@@ -196,6 +196,8 @@ def main() -> None:
     parser.add_argument("--matrix-vpu-transport", action="store_true",
                         help="experimentally preserve BF16 on private matrix-to-VPU add edges; "
                              "requires prepacked weights and an execution policy")
+    parser.add_argument("--virtual-zero-padding", action="store_true",
+                        help="experimentally encode known zero activation rows without materializing them")
     parser.add_argument("--activation-packing-budget-bytes", type=int, default=1048576,
                         help="maximum simultaneously live shared packed tensors (default: 1 MiB)")
     parser.add_argument("--retain-shared-activation-rhs", action="store_true",
@@ -416,6 +418,7 @@ def main() -> None:
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
             matrix_vpu_transport=args.matrix_vpu_transport,
+            virtual_zero_padding=args.virtual_zero_padding,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
         post_offload_transform=MXVPUPostOffload(
@@ -712,6 +715,7 @@ def main() -> None:
         "compile_timeout_s": args.compile_timeout_s,
         "first_output_sha256_enabled": output_sha256,
         "all_output_sha256_enabled": True,
+        "virtual_zero_padding": args.virtual_zero_padding,
         "spike_isa": args.spike_isa,
     }
     if args.spike_extlib is not None:

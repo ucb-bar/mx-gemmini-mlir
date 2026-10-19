@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .runtime_issuer import RuntimeIssuer
 from .planned_runtime_issuer import PlannedRuntimeIssuer
+from .runtime_issuer import RuntimeIssuer
 
 
 @dataclass(frozen=True)
@@ -55,6 +55,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           cache_immutable_weight: bool = False,
                           prepared_activation: bool = False,
                           retain_prepared_rhs: bool = False,
+                          virtual_zero_padding: bool = False,
                           output_dtype: str = "f32") -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
@@ -68,6 +69,10 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     is cropped without widening. Callers must qualify downstream rounding and
     exceptional behavior before selecting this alternative boundary.
     """
+    from merlin.llvmlower.dense_padding import DenseZeroPadding, emit_dense_zero_padding
+
+    if type(virtual_zero_padding) is not bool:
+        raise ValueError("MX virtual zero padding needs an explicit boolean selection")
     if not _identifier(symbol) or not _identifier(issuer_symbol) or symbol == issuer_symbol:
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
     if shared_workspace_symbol is not None and not _identifier(shared_workspace_symbol):
@@ -109,12 +114,14 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     if any(value > 0x7fffffff for value in
            (m, n, k, lm, ln, lk, m * n, m * k, k * n)):
         raise ValueError("MX dense adapter exceeds the selected 32-bit runtime extent")
-    padded_a = (lm, lk) != (m, k)
-    padded_b = (lk, ln) != (k, n)
+    zero_rows = virtual_zero_padding and lm < m
+    a_padding = DenseZeroPadding((lm, lk), (m, k), (0,) if zero_rows else ())
+    b_padding = DenseZeroPadding((lk, ln), (k, n))
+    padded_a, padded_b = a_padding.needs_copy, b_padding.needs_copy
     direct_bf16 = output_dtype == "bf16" and (lm, ln) == (m, n)
     buffers = []
     if padded_a and not prepared_activation:
-        buffers.append(("padded_a", "float", m * k * 4, m * k))
+        buffers.append(("padded_a", "float", a_padding.elements * 4, a_padding.elements))
     if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
@@ -148,18 +155,13 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         local_buffers = "".join(lines)
     if workspace > 0x7fffffff:
         raise ValueError("MX dense adapter workspace exceeds the selected runtime extent")
-    a_prepare = (f"""  for (uint32_t i = 0; i < {m}u * {k}u; ++i) padded_a[i] = 0.0f;
-  for (uint32_t row = 0; row < {lm}u; ++row)
-    for (uint32_t col = 0; col < {lk}u; ++col)
-      padded_a[(size_t)row * {k}u + col] = lhs[(size_t)row * {lk}u + col];
-""" if padded_a else "")
-    b_prepare = (f"""  for (uint32_t i = 0; i < {k}u * {n}u; ++i) padded_b[i] = 0.0f;
-  for (uint32_t row = 0; row < {lk}u; ++row)
-    for (uint32_t col = 0; col < {ln}u; ++col)
-      padded_b[(size_t)row * {n}u + col] = rhs[(size_t)row * {ln}u + col];
-""" if padded_b and prepacked_weight_symbols is None else "")
+    a_prepare = emit_dense_zero_padding(a_padding, source="lhs", destination="padded_a")
+    b_prepare = (emit_dense_zero_padding(b_padding, source="rhs", destination="padded_b")
+                 if prepacked_weight_symbols is None else "")
     a_source = "padded_a" if padded_a else "lhs"
     b_source = "padded_b" if padded_b else "rhs"
+    activation_call = (f"mx_pack_activation_zero_rows_f32({a_source}, {lm}u, {m}u, {k}u"
+                       if zero_rows else f"mx_pack_activation_f32({a_source}, {m}u, {k}u")
     if prepacked_weight_symbols is None:
         if cache_immutable_weight:
             weight_codes = f"{symbol}_weight_cache"
@@ -175,13 +177,13 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
   {symbol}_weight_ready = 1;
 """)
             b_prepare = ""
-            pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+            pack = (f"""  if ({activation_call}, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales)) __builtin_trap();
   if (!{symbol}_weight_ready) {{
 {init}  }}
 """)
         else:
-            pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+            pack = (f"""  if ({activation_call}, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales) ||
       mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
                          weight, weight_scales)) __builtin_trap();
@@ -192,7 +194,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         weight_codes, weight_scale = prepacked_weight_symbols
         external_weight = (f"extern const uint8_t {weight_codes}[];\n"
                            f"extern const uint8_t {weight_scale}[];\n")
-        pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
+        pack = (f"""  if ({activation_call}, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales)) __builtin_trap();
 """)
     if prepared_activation:
@@ -240,7 +242,7 @@ void {symbol}({parameters}) {{
 
 def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                                 logical_shape_mnk: tuple[int, int, int], *,
-                                symbol: str) -> tuple[str, int, int]:
+                                symbol: str, virtual_zero_padding: bool = False) -> tuple[str, int, int]:
     """Emit deterministic packing into a caller-owned contiguous byte tensor.
 
     Codes precede scales with the exact extents consumed by the checked issuer.
@@ -248,39 +250,43 @@ def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     survives independently of every matrix adapter's shared workspace.
     """
     # Reuse the adapter's full shape/format/extent validation.
-    emit_dense_f32_kernel(issuer, logical_shape_mnk, symbol=symbol + "_check")
+    emit_dense_f32_kernel(issuer, logical_shape_mnk, symbol=symbol + "_check",
+                          virtual_zero_padding=virtual_zero_padding)
+    from merlin.llvmlower.dense_padding import DenseZeroPadding, emit_dense_zero_padding
     if not _identifier(symbol):
         raise ValueError("MX activation preparation needs a safe symbol")
     lm, _, lk = logical_shape_mnk
     m, _, k = issuer.shape_mnk
     codes = issuer.buffer_bytes["activation"]
     size = codes + issuer.buffer_bytes["activation_scales"]
-    padded = (lm, lk) != (m, k)
-    declaration = (f"static float padded[{m * k}] __attribute__((aligned(64)));\n"
+    zero_rows = virtual_zero_padding and lm < m
+    plan = DenseZeroPadding((lm, lk), (m, k), (0,) if zero_rows else ())
+    padded = plan.needs_copy
+    declaration = (f"static float padded[{plan.elements}] __attribute__((aligned(64)));\n"
                    if padded else "")
-    padding = (f"""  for (uint32_t i=0; i<{m * k}u; ++i) padded[i]=0.0f;
-  for (uint32_t row=0; row<{lm}u; ++row)
-    for (uint32_t col=0; col<{lk}u; ++col)
-      padded[(size_t)row*{k}u+col]=lhs[(size_t)row*{lk}u+col];
-""" if padded else "")
+    padding = emit_dense_zero_padding(plan, source="lhs", destination="padded")
+    a_source = "padded" if padded else "lhs"
+    call = (f"mx_pack_activation_zero_rows_f32({a_source}, {lm}u, {m}u, {k}u"
+            if zero_rows else f"mx_pack_activation_f32({a_source}, {m}u, {k}u")
     source = f'''#include <stddef.h>
 #include <stdint.h>
 #include "runtime_quant.h"
 {declaration}
 void {symbol}(const float *lhs, uint8_t *out) {{
   if (!lhs || !out) __builtin_trap();
-{padding}  if (mx_pack_activation_f32({"padded" if padded else "lhs"}, {m}u, {k}u,
+{padding}  if ({call},
       MX_RUNTIME_{issuer.precision}, out, out+{codes}u)) __builtin_trap();
 }}
 '''
-    return source, size, m * k * 4 if padded else 0
+    return source, size, plan.elements * 4
 
 
 def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                                 logical_shape_bmnk: tuple[int, int, int, int], *,
                                 symbol: str,
                                 issuer_symbol: str = "mx_issue_encoded",
-                                shared_workspace_symbol: str | None = None) -> DenseBatchKernel:
+                                shared_workspace_symbol: str | None = None,
+                                virtual_zero_padding: bool = False) -> DenseBatchKernel:
     """Call one checked matrix kernel for each disjoint dense batch slice."""
     if (len(logical_shape_bmnk) != 4 or
             any(type(value) is not int or value <= 0 for value in logical_shape_bmnk)):
@@ -292,7 +298,7 @@ def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     slice_symbol = f"{symbol}_slice"
     slice_kernel = emit_dense_f32_kernel(
         issuer, (m, n, k), symbol=slice_symbol, issuer_symbol=issuer_symbol,
-        shared_workspace_symbol=shared_workspace_symbol)
+        shared_workspace_symbol=shared_workspace_symbol, virtual_zero_padding=virtual_zero_padding)
     source = slice_kernel.source + f"""
 /* Whole-batch Merlin ABI: each slice has independent dense row-major storage. */
 void {symbol}(const float *lhs, const float *rhs, float *out) {{

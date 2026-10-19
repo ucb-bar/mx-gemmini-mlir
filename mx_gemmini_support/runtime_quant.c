@@ -100,6 +100,14 @@ static uint8_t fast_element_code(float rounded, int scale_exponent,
 }
 #endif
 
+static int block_scale_exponent(float maximum) {
+  if (maximum < 0x1p-23f) maximum = 0x1p-23f;
+  int exponent = (int)((bits_of_float(maximum) >> 23) & 255u) - 127;
+  if (exponent < -23) exponent = -23;
+  if (exponent > 127) exponent = 127;
+  return exponent;
+}
+
 static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
                           uint32_t axis, uint32_t major, uint32_t group,
                           uint32_t format, uint8_t *codes, uint8_t *scales) {
@@ -114,10 +122,7 @@ static int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
     float magnitude = float_of_bits(bits_of_float(value) & 0x7fffffffu);
     if (magnitude > maximum) maximum = magnitude;
   }
-  if (maximum < 0x1p-23f) maximum = 0x1p-23f;
-  int exponent = (int)((bits_of_float(maximum) >> 23) & 255u) - 127;
-  if (exponent < -23) exponent = -23;
-  if (exponent > 127) exponent = 127;
+  int exponent = block_scale_exponent(maximum);
   uint32_t group_major = axis == 1 ? rows : cols;
   scales[(size_t)group * group_major + major] = (uint8_t)(exponent + 127);
 #if defined(MX_QUANT_LUT_GENERATOR) || defined(MX_QUANT_REFERENCE)
@@ -163,6 +168,31 @@ int mx_pack_activation_f32(const float *input, uint32_t m, uint32_t k,
   for (uint32_t group = 0; group < k / 32u; ++group)
     for (uint32_t row = 0; row < m; ++row)
       if (pack_one_group(input, m, k, 1, row, group, format, codes, scales)) return -1;
+  return 0;
+}
+
+int mx_pack_activation_zero_rows_f32(const float *input, uint32_t live_rows,
+                                    uint32_t m, uint32_t k, uint32_t format,
+                                    uint8_t *codes, uint8_t *scales) {
+  if (!valid_shape(input, m, k, 1, format, codes, scales) ||
+      !live_rows || live_rows > m) return -1;
+  uint8_t zero_scale = (uint8_t)(block_scale_exponent(0.0f) + 127);
+  for (uint32_t group = 0; group < k / 32u; ++group) {
+    for (uint32_t row = 0; row < m; ++row) {
+      if (row < live_rows) {
+        if (pack_one_group(input, m, k, 1, row, group, format, codes, scales)) return -1;
+      } else {
+        scales[(size_t)group * m + row] = zero_scale;
+        /* An FP4 even row writes the whole byte and clears the high nibble;
+         * the following zero odd row therefore needs no code writes.
+         */
+        if (format == MX_RUNTIME_FP8 || !(row & 1u)) {
+          size_t start = (size_t)(format == MX_RUNTIME_FP8 ? row : row / 2u) * k + group * 32u;
+          for (uint32_t col = 0; col < 32u; ++col) codes[start + col] = 0;
+        }
+      }
+    }
+  }
   return 0;
 }
 

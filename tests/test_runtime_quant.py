@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import ctypes
 import hashlib
-from pathlib import Path
 import shutil
 import struct
 import subprocess
+from pathlib import Path
 
 import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "mx_gemmini_support/runtime_quant.c"
@@ -48,6 +47,10 @@ def library(tmp_path_factory):
                              ctypes.c_uint32, ctypes.c_uint32,
                              ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_uint8)]
         function.restype = ctypes.c_int
+    lib.mx_pack_activation_zero_rows_f32.argtypes = [ctypes.POINTER(ctypes.c_float),
+        ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32,
+        ctypes.POINTER(ctypes.c_uint8), ctypes.POINTER(ctypes.c_uint8)]
+    lib.mx_pack_activation_zero_rows_f32.restype = ctypes.c_int
     lib.mx_widen_bf16_f32.argtypes = [ctypes.POINTER(ctypes.c_uint16),
                                      ctypes.c_uint32, ctypes.POINTER(ctypes.c_float)]
     lib.mx_widen_bf16_f32.restype = ctypes.c_int
@@ -103,6 +106,70 @@ def test_bf16_output_widens_without_changing_bits(library) -> None:
         b"\x00\x00\x80\x3f", b"\x00\x00\x80\xbf",
         b"\x00\x00\x00\x00", b"\x00\x00\x00\x80",
     ]
+
+
+@pytest.mark.parametrize("format_bits", [4, 8])
+@pytest.mark.parametrize("live_rows,k", [(1, 32), (1, 96), (2, 64), (3, 64), (15, 32),
+                                       (17, 96), (19, 64), (31, 32), (32, 32), (33, 64)])
+def test_implicit_zero_rows_match_explicit_padding_in_every_byte(library, format_bits, live_rows, k):
+    import numpy as np
+
+    tile = 16 if format_bits == 8 else 32
+    m = (live_rows + tile - 1) // tile * tile
+    values = np.random.default_rng(7123 + live_rows).normal(size=(live_rows, k)).astype(np.float32)
+    values.flat[:8] = [0.0, -0.0, 1e-38, -1e-38, 1e30, -1e30, 3.3895314e38, -3.3895314e38]
+    # The implicit input is exactly the live allocation, with no ghost rows.
+    explicit = np.zeros((m, k), dtype=np.float32)
+    explicit[:live_rows] = values
+    size, scales_size = m * k * format_bits // 8, m * k // 32
+    expected_codes = (ctypes.c_uint8 * size)(*([0xA5] * size))
+    expected_scales = (ctypes.c_uint8 * scales_size)(*([0xA5] * scales_size))
+    code_storage = (ctypes.c_uint8 * (size + 2))(*([0xA5] * (size + 2)))
+    scale_storage = (ctypes.c_uint8 * (scales_size + 2))(*([0xA5] * (scales_size + 2)))
+    codes = ctypes.cast(ctypes.byref(code_storage, 1), ctypes.POINTER(ctypes.c_uint8))
+    scales = ctypes.cast(ctypes.byref(scale_storage, 1), ctypes.POINTER(ctypes.c_uint8))
+    pointer = ctypes.POINTER(ctypes.c_float)
+    assert library.mx_pack_activation_f32(explicit.ctypes.data_as(pointer), m, k, format_bits,
+                                          expected_codes, expected_scales) == 0
+    assert library.mx_pack_activation_zero_rows_f32(values.ctypes.data_as(pointer), live_rows, m, k,
+                                                    format_bits, codes, scales) == 0
+    assert bytes(code_storage)[1:-1] == bytes(expected_codes)
+    assert bytes(scale_storage)[1:-1] == bytes(expected_scales)
+    assert (code_storage[0], code_storage[-1], scale_storage[0], scale_storage[-1]) == (0xA5,) * 4
+
+
+@pytest.mark.parametrize("format_bits", [4, 8])
+@pytest.mark.parametrize("word", [0x7F800000, 0xFF800000, 0x7FC01234, 0x7F800001, 0x7F7FFFFF])
+def test_implicit_zero_rows_preserve_refusal_and_partial_writes(library, format_bits, word):
+    import numpy as np
+
+    live_rows, m, k = 3, 32, 96
+    values = np.ones((live_rows, k), dtype=np.float32)
+    values.view(np.uint32)[2, 67] = word  # later group, after earlier ghost rows were written
+    explicit = np.zeros((m, k), dtype=np.float32)
+    explicit[:live_rows] = values
+    results = []
+    for implicit in (False, True):
+        codes = (ctypes.c_uint8 * (m * k * format_bits // 8))(*([0xA5] * (m * k * format_bits // 8)))
+        scales = (ctypes.c_uint8 * (m * k // 32))(*([0xA5] * (m * k // 32)))
+        pointer = ctypes.POINTER(ctypes.c_float)
+        if implicit:
+            status = library.mx_pack_activation_zero_rows_f32(values.ctypes.data_as(pointer), live_rows,
+                                                               m, k, format_bits, codes, scales)
+        else:
+            status = library.mx_pack_activation_f32(explicit.ctypes.data_as(pointer), m, k,
+                                                    format_bits, codes, scales)
+        results.append((status, bytes(codes), bytes(scales)))
+    assert results[0][0] == -1 and results[0] == results[1]
+
+
+@pytest.mark.parametrize("live_rows,m,k,format_bits", [(0, 32, 32, 8), (33, 32, 32, 8),
+    (1, 15, 32, 8), (1, 32, 31, 4), (1, 32, 32, 7)])
+def test_invalid_implicit_zero_extents_do_not_publish_bytes(library, live_rows, m, k, format_bits):
+    values = (ctypes.c_float * 32)()
+    codes, scales = (ctypes.c_uint8 * 4096)(*([0xA5] * 4096)), (ctypes.c_uint8 * 128)(*([0xA5] * 128))
+    assert library.mx_pack_activation_zero_rows_f32(values, live_rows, m, k, format_bits, codes, scales) == -1
+    assert bytes(codes) == bytes([0xA5]) * 4096 and bytes(scales) == bytes([0xA5]) * 128
 
 
 @pytest.mark.parametrize("site,shape", [("g", (32, 352, 128)), ("dn", (32, 128, 352))])

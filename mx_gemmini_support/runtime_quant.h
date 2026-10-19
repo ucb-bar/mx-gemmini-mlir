@@ -10,6 +10,14 @@
 /* Return zero on success. Dimensions must already be padded to the MX tile. */
 int mx_pack_activation_f32(const float *input, uint32_t m, uint32_t k,
                            uint32_t format, uint8_t *codes, uint8_t *scales);
+/* Pack live_rows dense rows of stride k, then positive-zero extend to m rows.
+ * Only live_rows*k input floats are accessed. Column padding, when needed,
+ * must already be materialized. Codes/scales cover the full physical shape.
+ * Group-major refusal and partial-write order match explicit zero padding.
+ */
+int mx_pack_activation_zero_rows_f32(const float *input, uint32_t live_rows,
+                                    uint32_t m, uint32_t k, uint32_t format,
+                                    uint8_t *codes, uint8_t *scales);
 int mx_pack_weight_f32(const float *input, uint32_t k, uint32_t n,
                        uint32_t format, uint8_t *codes, uint8_t *scales);
 
