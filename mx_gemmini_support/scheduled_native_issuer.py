@@ -58,8 +58,70 @@ def _pick_tiles(profile: dict, shape: tuple[int, int, int], precision: str) -> t
     raise ValueError("MX native schedule has no legal M/N/K tile")
 
 
+def validate_native_tiles(profile: dict, shape: tuple[int, int, int], precision: str,
+                          tiles: tuple[int, int, int]) -> None:
+    """Check an explicit native partition; this grants no numerical equivalence."""
+    _pick_tiles(profile, shape, precision)  # Keep the original profile/mode admission.
+    if (type(tiles) is not tuple or len(tiles) != 3
+            or any(type(value) is not int or value <= 0 for value in tiles)):
+        raise ValueError("native tiles require three positive integer extents")
+    tm, nc, kt = tiles
+    dim = profile["geometry"]["mesh_columns"]
+    pe = dim * (2 if precision == "FP4" else 1)
+    resources = profile["resources"]
+    if (any(extent % tile for extent, tile in zip(shape, tiles))
+            or tm % pe or nc % pe or kt % resources["scale_block_elements"]):
+        raise ValueError("native tiles must divide complete mesh and scale groups")
+    bits = 4 if precision == "FP4" else 8
+    if ((tm + nc) * kt * bits // 8 > resources["scratchpad_bytes"] // 2
+            or tm * nc * 2 > resources["accumulator_bytes"] // resources["accumulator_banks"]
+            or max(tm, nc) * (kt // resources["scale_block_elements"])
+               > resources["scale_mem_config"]["size_bytes"] // 4):
+        raise ValueError("native tiles exceed scratchpad, accumulator or scale capacity")
+
+
+def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: str):
+    """Search a structural movement proxy while retaining the original K partition.
+
+    Byte counts describe encoded input/scale traffic, not cache misses or cycles.
+    The selected schedule remains experimental and needs native qualification.
+    """
+    from dataclasses import asdict
+
+    from merlin.sched.tile_search import select_divisor_tiles
+
+    original = _pick_tiles(profile, shape, precision)
+    if precision != "FP8":
+        return original, {"selection": "legacy_unqualified_precision", "performance": "UNMEASURED"}
+    m, n, k = shape
+    dim = profile["geometry"]["mesh_columns"]
+    group = profile["resources"]["scale_block_elements"]
+
+    def admit(tile):
+        try:
+            validate_native_tiles(profile, shape, precision, tile)
+        except ValueError:
+            return False
+        return True
+
+    def work(tile):
+        tm, nc, kt = tile
+        loops = (m // tm) * (n // nc) * (k // kt)
+        data = loops * (tm + nc) * kt
+        scales = loops * (tm + nc) * (kt // group)
+        return data + scales, 5 + 8 * loops, (tm + nc) * (kt + kt // group), tm * nc * 2
+
+    result = select_divisor_tiles(shape, (dim, dim, group), original, admit=admit, work=work, frozen_axes=(2,))
+    return result.selected, {"selection": "experimental_nonincreasing_input_bytes_and_commands",
+                             "axes": ["encoded_input_and_scale_bytes", "issued_commands",
+                                      "max_single_launch_input_and_scale_bytes", "live_accumulator_bytes"],
+                             "frozen_axes": [2], "performance": "UNMEASURED", **asdict(result)}
+
+
 def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int], *,
-                                 precision: str, symbol: str = "mx_issue_encoded") -> NativeSchedule:
+                                 precision: str, symbol: str = "mx_issue_encoded",
+                                 tile_mnk: tuple[int, int, int] | None = None,
+                                 tile_policy: str = "legacy") -> NativeSchedule:
     """Lower one padded dense shape to checked native DRAM-loop commands."""
     from merlin.sched.check.static import check_kernel
     from merlin.sched.codegen import emit_c_function
@@ -71,7 +133,15 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
     if not symbol.isidentifier():
         raise ValueError("MX native issuer needs a C identifier")
     m, n, k = shape_mnk
-    tm, nc, kt = _pick_tiles(profile, shape_mnk, precision)
+    if tile_policy not in {"legacy", "movement"} or (tile_policy != "legacy" and tile_mnk is not None):
+        raise ValueError("native tile policy must be legacy or movement, without an override conflict")
+    selection = None
+    if tile_policy == "movement":
+        tiles, selection = select_native_tiles(profile, shape_mnk, precision)
+    else:
+        tiles = _pick_tiles(profile, shape_mnk, precision) if tile_mnk is None else tile_mnk
+    validate_native_tiles(profile, shape_mnk, precision, tiles)
+    tm, nc, kt = tiles
     fp4 = precision == "FP4"
     pe = 32 if fp4 else 16
     kts, chunks, rows = k // kt, n // nc, m // tm
@@ -205,6 +275,8 @@ extern void mx_trace_fence(void);
     plan = {"execution_transport": "native_dram_loop", "m_tile": tm,
             "n_chunk": nc, "k_tile": kt,
             "output_layout": "row_major_bf16", "schedule_ir": "merlin.mk"}
+    if selection is not None:
+        plan["tile_selection"] = selection
     issuer = PlannedRuntimeIssuer(preamble + inner + wrapper, shape_mnk,
                                   (tm, nc, kt), precision, profile_sha256(profile),
                                   lengths, plan)

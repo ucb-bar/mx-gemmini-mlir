@@ -97,6 +97,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          matrix_vpu_transport: bool = False,
                          virtual_zero_padding: bool = False,
                          integer_group_packing: bool = False,
+                         native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
@@ -109,6 +110,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("broadcast preparation requires a nonnegative integer byte budget")
     if type(integer_group_packing) is not bool:
         raise ValueError("integer group packing requires an explicit boolean selection")
+    if native_tile_policy not in {"legacy", "movement"}:
+        raise ValueError("native tile policy must be legacy or movement")
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
     if connect_sigmoid_multiplies and (not connect_multiplies or enabled_vpu_regions is None
@@ -228,7 +231,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 path = out_dir / f"{symbol}_{suffix}.bin"
                 _write_packed_data(path, payload, reuse_prepacked_data)
                 fixed_data.append((fixed_symbol, path))
-        policy_text = build_policy_plan(symbol, schedule="native")
+        policy_text = build_policy_plan(symbol, schedule="native" if native_tile_policy == "legacy" else "movement")
         selected = selected_policy(policy_text, symbol=symbol)
         policy_path = out_dir / f"{symbol}.schedule.mlir"
         policy_path.write_text(policy_text, encoding="utf-8")
@@ -353,6 +356,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                    entry["prepacked_checkpoint_weight"]) else {}),
             "padded_shape_mnk": list(generated.shape_plan.padded_shape_mnk),
             "tile_mnk": list(generated.shape_plan.tile_mnk),
+            **({"native_tile_selection": generated.issuer.plan["tile_selection"]}
+               if "tile_selection" in generated.issuer.plan else {}),
         })
     prepared_text = Path(prepared).read_text()
     route_aliases = {}
@@ -657,6 +662,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
+        "native_tile_policy": native_tile_policy,
         "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "connect_broadcast_multiplies": connect_broadcast_multiplies,
         "prepare_broadcast_operands": prepare_broadcast_operands,
@@ -731,6 +737,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 matrix_vpu_transport: bool = False,
                                 virtual_zero_padding: bool = False,
                                 integer_group_packing: bool = False,
+                                native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
@@ -771,6 +778,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     matrix_vpu_transport=matrix_vpu_transport,
                                     virtual_zero_padding=virtual_zero_padding,
                                     integer_group_packing=integer_group_packing,
+                                    native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)
 

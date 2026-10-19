@@ -115,10 +115,11 @@ def _emit_dense_issuer(profile: dict, shape: DenseShapePlan, *, precision: str,
             profile, shape.padded_shape_mnk, shape.tile_mnk, precision=precision,
             symbol=issuer_symbol)
         return shape, issuer, "compact_loop" if compact else "unrolled", None
-    if schedule != "native":
+    if schedule not in {"native", "movement"}:
         raise ValueError("unknown MX dense schedule")
     native = emit_scheduled_native_issuer(
-        profile, shape.padded_shape_mnk, precision=precision, symbol=issuer_symbol)
+        profile, shape.padded_shape_mnk, precision=precision, symbol=issuer_symbol,
+        tile_policy="movement" if schedule == "movement" else "legacy")
     issuer = native.issuer
     tm, tn, tk = issuer.tile_mnk
     pm, pn, pk = shape.padded_shape_mnk

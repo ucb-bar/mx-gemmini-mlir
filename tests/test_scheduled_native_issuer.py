@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
-
 from merlin.sched.ir import parse_kernel
-from mx_gemmini_support.dense_contraction import emit_dense_batch_contraction, emit_dense_contraction
+
+from mx_gemmini_support.dense_contraction import (
+    emit_dense_batch_contraction,
+    emit_dense_contraction,
+)
 from mx_gemmini_support.merlin_schedule_policy import build_policy_plan, selected_policy
 from mx_gemmini_support.scheduled_native_issuer import emit_scheduled_native_issuer
 from mx_gemmini_support.target_profile import load_profile
-
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = load_profile(
@@ -50,6 +52,45 @@ def test_tiling_changes_schedule_digest_and_generated_c():
     b = emit_scheduled_native_issuer(PROFILE, (128, 256, 512), precision="FP4")
     assert a.digest != b.digest
     assert a.issuer.source != b.issuer.source
+
+
+def test_explicit_non_power_of_two_row_partition_reaches_actual_schedule():
+    legacy = emit_scheduled_native_issuer(PROFILE, (160, 2048, 2048), precision="FP8")
+    selected = emit_scheduled_native_issuer(PROFILE, (160, 2048, 2048), precision="FP8", tile_mnk=(80, 128, 512))
+    assert legacy.chunks == (160, 64, 512)
+    assert selected.chunks == (80, 128, 512)
+    assert parse_kernel(selected.text).digest() == selected.digest != legacy.digest
+    assert "for row in 0..2" in selected.text and "for chunk in 0..16" in selected.text
+
+
+@pytest.mark.parametrize("tiles", [(80, 128, 512), (160, 128, 512), (160, 64, 1024),
+                                  (32, 512, 512), (32, 32, 96), (True, 64, 512), (0, 64, 512)])
+def test_explicit_native_partition_cannot_bypass_capacity_or_alignment(tiles):
+    # FP4 rejects 80 rows (not a full 32-row mesh tile); other cases exceed
+    # accumulator/scale capacity, fail divisibility, or have invalid extents.
+    with pytest.raises(ValueError, match="native tiles"):
+        emit_scheduled_native_issuer(PROFILE, (160, 2048, 2048), precision="FP4", tile_mnk=tiles)
+
+
+@pytest.mark.parametrize("shape,tiles", [((160, 2048, 2048), (80, 128, 512)),
+                                        ((160, 160, 64), (160, 32, 64)),
+                                        ((192, 384, 1024), (96, 128, 512)),
+                                        ((128, 2048, 2048), (128, 128, 512))])
+def test_movement_search_uses_source_divisors_and_preserves_accumulation_partition(shape, tiles):
+    result = emit_scheduled_native_issuer(PROFILE, shape, precision="FP8", tile_policy="movement")
+    selected = result.issuer.plan["tile_selection"]
+    assert result.chunks == tiles and result.chunks[2] == selected["baseline"][2]
+    assert selected["complete"]
+    assert all(a <= b for a, b in zip(selected["selected_work"], selected["baseline_work"]))
+    explicit = emit_scheduled_native_issuer(PROFILE, shape, precision="FP8", tile_mnk=tiles)
+    assert result.issuer.source == explicit.issuer.source and result.digest == explicit.digest
+
+
+def test_movement_search_does_not_promote_unqualified_precision():
+    legacy = emit_scheduled_native_issuer(PROFILE, (160, 5632, 2048), precision="FP4")
+    selected = emit_scheduled_native_issuer(PROFILE, (160, 5632, 2048), precision="FP4", tile_policy="movement")
+    assert legacy.issuer.source == selected.issuer.source and legacy.digest == selected.digest
+    assert selected.issuer.plan["tile_selection"]["selection"] == "legacy_unqualified_precision"
 
 
 def test_dense_and_batch_catalog_entries_select_checked_schedule():
@@ -96,6 +137,18 @@ def test_schedule_dialect_policy_is_consumed_by_issuer_selection():
         selected_policy(native, symbol="other")
     with pytest.raises(ValueError, match="unsupported policy"):
         selected_policy(native.replace("mx_native_dram_loop", "invented"), symbol="dense")
+
+
+def test_movement_policy_dialect_reaches_dense_and_batched_catalog_lowering():
+    policy = build_policy_plan("dense", schedule="movement")
+    selected = selected_policy(policy, symbol="dense")
+    dense = emit_dense_contraction(PROFILE, (160, 2048, 2048), precision="FP8", symbol="dense",
+                                   issuer_symbol="issue", schedule=selected)
+    assert dense.shape_plan.tile_mnk == (80, 128, 512)
+    batch = emit_dense_batch_contraction(PROFILE, (2, 160, 160, 64), precision="FP8", symbol="dense",
+                                         issuer_symbol="issue", schedule=selected)
+    assert batch.shape_plan.tile_mnk == (160, 32, 64)
+    assert batch.issuer.plan["tile_selection"]["selected"] == batch.issuer.plan["tile_selection"]["baseline"]
 
 
 def test_archived_native_model_sites_retain_spike_goldens():
