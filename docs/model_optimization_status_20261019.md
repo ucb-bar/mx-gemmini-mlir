@@ -133,22 +133,30 @@ cycles. The private case retains 731,571 cycles. Complete first-output words and
 independent full-byte/hash checks cover the returned RHS; missing or changed
 additional references refuse. All 44 real forward/decode compact candidates
 remain private under this guard. The fresh guarded compact decoder has compiled
-and its complete cached-session pipeline is linking.
+and its complete cached session is simulating. Its actual final image passed
+admission. Identical immutable linked checkpoint-object storage is shared only
+after fresh production and complete byte verification; a small complete recurrent
+qualifier preserves the exact image, outputs and 640,228 inclusive cycles. This
+storage optimization enables the full run without changing execution semantics.
 
-The completed SmolVLA session currently measures 89,671,723,299 → 87,964,565,915
-cycles for equivalent BF16 read-view packing reuse (1.9038%). All 33 output/state
-hashes and 11 full action tensors match. Its diagnostic final cosine is 0.9752;
-there is no independently established full Nicolás SmolVLA baseline or action
-acceptance threshold. Fresh controls and candidates for the newer passes have
-compiled and are linking/executing. The new prefix selects 25 connected multiply
-pairs, and the flow selects none. Both have zero eligible matrix/VPU transport
-edges; selected flags alone must not be counted as applied transformations.
+The newest complete SmolVLA matched pair measures **87,964,575,985 → 73,577,503,143
+cycles (16.3555% fewer)**. Both already use the earlier BF16 read-view packing
+reuse. The candidate adds word-group preparation/inlining, broadcast connections
+and exact guarded host math. All 33 output/state hashes and 11 complete action
+tensors match. The prefix selects 25 connected multiply pairs, and flow selects
+none; both have zero connected sigmoid or matrix/VPU transport edges. The bundle
+removes 307,200 commands, 4,800 fences and 39,321,600 load bytes with unchanged
+mesh/VPU arithmetic work. The image grows by 8,366,768 bytes, while prefix literal
+allocation sums fall by 78,645,300 bytes; these sums are not peak memory. Its
+diagnostic final cosine remains 0.9752. There is no independently established
+full Nicolás SmolVLA baseline or action acceptance threshold. The earlier
+89,671,723,299 → 87,964,565,915 widening-only pair remains separate evidence.
 
 The session linker now carries an explicit exact guarded-math selection into
 the final image and verifies its original library suppliers. A complete small
 recurrent qualifier preserves every state/output hash and dumped word while
 using 679,140 → 640,228 inclusive cycles. This is section/session integration
-evidence, not the pending full SmolVLA result.
+evidence; the full SmolVLA bundle result is reported separately above.
 
 Primary retained evidence and standalone verification:
 
@@ -158,12 +166,14 @@ Primary retained evidence and standalone verification:
 - [Reverse BF16 full forward](evidence/matched_reverse_transport_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
+- [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
 - [Repeated batch RHS native and graph qualification](evidence/repeated_batch_rhs_20261019/README.md)
 - [Compact batch RHS native, complete graph and fallback qualification](evidence/compact_batch_rhs_20261019/README.md)
 - [Measured compaction regression and guarded fallback](evidence/compact_batch_cost_guard_20261019/README.md)
+- [Verified linked-weight storage and full cached admission](evidence/linked_weight_storage_20261019/README.md)
 - [Actual runtime state-copy attribution](evidence/state_copy_attribution_20261019/README.md)
 
 The initial changes came from profiling and inspecting generated IR. Subsequent
