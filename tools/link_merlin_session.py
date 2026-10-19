@@ -82,6 +82,16 @@ def _defined(nm: Path, object_path: Path) -> set[str]:
     return {row.split()[0] for row in result.stdout.splitlines() if len(row.split()) >= 2}
 
 
+def _symbol_names(nm: Path, object_path: Path) -> tuple[str, ...]:
+    """Observe local/undefined names too: objcopy may rewrite either kind."""
+    result = subprocess.run([str(nm), "--format=posix", str(object_path)],
+                            check=True, capture_output=True, text=True)
+    rows = [line.split() for line in result.stdout.splitlines() if line.strip()]
+    if any(len(row) < 2 for row in rows):
+        raise ValueError("namespace inspector returned an incomplete symbol record")
+    return tuple(row[0] for row in rows)
+
+
 def _symbol_address(nm: Path, elf: Path, symbol: str) -> int:
     result = subprocess.run(
         [str(nm), "--defined-only", "--format=posix", str(elf)],
@@ -209,6 +219,8 @@ def _namespace_stage(
     *, index: int, name: str, objects: list[Path], previous: set[str],
     nm: Path, objcopy: Path, output: Path,
 ) -> tuple[list[Path], set[str]]:
+    from merlin.llvmlower.object_namespace import namespace_object
+
     symbols = set().union(*(_defined(nm, path) for path in objects))
     if "forward" not in symbols or "_mlir_ciface_forward" not in symbols:
         raise ValueError(f"stage {name} has no compiled forward ABI")
@@ -226,7 +238,11 @@ def _namespace_stage(
     result = []
     for object_index, path in enumerate(objects):
         destination = output / f"stage_{index}_{object_index}.o"
-        _run([objcopy, "--redefine-syms", mapping, path, destination])
+        receipt = namespace_object(
+            path, destination, renamed, inspect_symbols=lambda obj: _symbol_names(nm, obj),
+            rewrite=lambda source, target, selected: _run(
+                [objcopy, "--redefine-syms", mapping, source, target]))
+        destination.with_suffix(".namespace.json").write_text(json.dumps(receipt, indent=2) + "\n")
         result.append(destination)
     renamed_symbols = {renamed.get(symbol, symbol) for symbol in symbols}
     if renamed_symbols & previous:
@@ -477,8 +493,11 @@ def link_session(
     generated = session_bundle.generate(
         session_root, output / "generated", materialize_weights=False,
         entry_projections=projections or None)
+    weight_sources = [builds[row["name"]] / "cgen/weights.bin" for row in generated["programs"]
+                      if row["weights_bytes"]]
     shared_weights = session_bundle.materialize_shared_weights(
-        session, generated, output / "shared_weights", entry_projections=projections or None)
+        session, generated, output / "shared_weights", entry_projections=projections or None,
+        weights_source=next((path for path in weight_sources if path.is_file()), None))
     weight_name = shared_weights["program"]
     estimates = {program.name: estimate_llvm_malloc(
         builds[program.name] / "lower/model.ll") for program in session.programs}
@@ -597,6 +616,9 @@ def link_session(
         "shared_weight_stage": weight_name,
         "shared_weight_bytes": weight_bytes,
         "shared_weight_sha256": shared_weights["sha256"],
+        "shared_weight_storage_source": shared_weights["storage_source"],
+        "object_namespace_storage": {path.name: json.loads(path.read_text())
+                                     for path in sorted(output.glob("*.namespace.json"))},
         "stage_object_sha256": source_objects,
         "entry_projections": {name: generated["programs"][session.program_names.index(name)]["entry_projection"]
                               for name in projections},
