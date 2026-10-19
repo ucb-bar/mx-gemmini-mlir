@@ -83,3 +83,20 @@ M19/N23/K37 and `--transpose-rhs`. Build twice with the same generated policy,
 `--integer-quant-groups`, prepacked checkpoint selection, structural admission
 and output dump cap2622; add `--reuse-batch-rhs` to the candidate. Exact original
 command arrays are archived under `graph/commands/`.
+
+An additional complete graph supplies the same repeated RHS sample values as an
+ordinary materialized input, with no source broadcast. Enabling the pass selects
+zero calls: the source and output IR hashes are identical, and original native
+objects, all 2,622 output words, resource records and 1,091,675 cycles match.
+Both actual images are 66,352 bytes. This checks fallback through the full
+compiler/runtime path and shows that captured value equality does not grant
+reuse. Capture it with the same dimensions and `--materialized-rhs`.
+
+```sh
+python docs/evidence/repeated_batch_rhs_20261019/verify_fallback.py
+```
+
+The separate 186,760-byte fallback archive retains 118 files and both actual
+ELFs. The standalone stdlib/NumPy verifier reopens complete words, equal sample
+inputs, unchanged IR/native objects, original timers, recipes and admissions.
+It supplements the frozen original section/graph archive without amending it.
