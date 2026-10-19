@@ -248,7 +248,8 @@ class MXVPUPostOffload:
                  connect_sigmoid_multiplies: bool = False,
                  share_activation_packing: bool = False,
                  activation_packing_budget_bytes: int = 1048576,
-                 matrix_vpu_transport: bool = False):
+                 matrix_vpu_transport: bool = False,
+                 vpu_matrix_transport: bool = False):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
@@ -306,6 +307,13 @@ class MXVPUPostOffload:
             from .merlin_matrix_transport import MXMatrixTransportPostOffload
 
             self.matrix_transport = MXMatrixTransportPostOffload(fixed_weight_catalog)
+        self.vpu_matrix_transport = None
+        if vpu_matrix_transport:
+            if fixed_weight_catalog is None or not share_activation_packing or not connect_multiplies:
+                raise ValueError("VPU matrix transport needs a catalog, shared packing and connected multiplies")
+            from .merlin_vpu_matrix_transport import MXVPUMatrixTransportPostOffload
+
+            self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         selected = prepared
@@ -334,4 +342,6 @@ class MXVPUPostOffload:
             selected = self.shared_activation(selected, sidecar, workdir)
         if self.matrix_transport is not None:
             selected = self.matrix_transport(selected, sidecar, workdir)
+        if self.vpu_matrix_transport is not None:
+            selected = self.vpu_matrix_transport(selected, sidecar, workdir)
         return selected

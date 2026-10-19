@@ -95,6 +95,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          share_activation_packing: bool = False,
                          retain_shared_activation_rhs: bool = False,
                          matrix_vpu_transport: bool = False,
+                         vpu_matrix_transport: bool = False,
                          virtual_zero_padding: bool = False,
                          integer_group_packing: bool = False,
                          native_tile_policy: str = "legacy",
@@ -110,6 +111,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("broadcast preparation requires a nonnegative integer byte budget")
     if type(integer_group_packing) is not bool:
         raise ValueError("integer group packing requires an explicit boolean selection")
+    if type(vpu_matrix_transport) is not bool:
+        raise ValueError("VPU matrix transport requires an explicit boolean selection")
+    if vpu_matrix_transport and not (share_activation_packing and connect_multiplies and integer_group_packing):
+        raise ValueError("VPU matrix transport requires shared packing, connected multiplies and integer groups")
     if native_tile_policy not in {"legacy", "movement"}:
         raise ValueError("native tile policy must be legacy or movement")
     if share_activation_packing and not prepack_immutable_weights:
@@ -188,6 +193,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     checkpoint = None
     preparation_sources = {}
     prepared_entries = {}
+    compact_preparation_selected = False
     if prepack_immutable_weights:
         import torch
         from safetensors import safe_open
@@ -312,6 +318,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 "ownership": "explicit_readonly_ssa_tensor",
                 "completion": "synchronous_native_issuer",
             }
+            if vpu_matrix_transport and not (virtual_zero_padding and m < pm):
+                from .merlin_vpu_matrix_transport import register_preparation
+
+                compact = register_preparation(generated, shape, prepare_entry, compile_source,
+                                                prepared_entries, preparation_sources)
+                if compact["padding_workspace_bytes"] > padding_bytes:
+                    raise ValueError("compact preparation increased padding scratch")
+                activation_preparation["private_bf16_input"] = compact
+                compact_preparation_selected = True
             if matrix_vpu_transport:
                 prepared_private_bf16_transport = register_matrix_transport(
                     generated, shape, symbol, issuer_symbol, fixed_symbols,
@@ -460,6 +475,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                     "removed_transfer_bytes": removed,
                     "prepared_input_bytes": sum(plan.bytes for plan in adapter.broadcast_preparations),
                     "broadcast_preparations": [asdict(plan) for plan in adapter.broadcast_preparations]}
+                if vpu_matrix_transport and compact_preparation_selected:
+                    from .merlin_vpu_matrix_transport import register_producer
+
+                    compiled[pair["symbol"]]["private_bf16_output"] = register_producer(
+                        pair, profile, selection, compile_source, prepared_entries)
             connected_multiplies.append({key: pair[key] for key in
                                          ("regions", "shape", "input_shapes", "input_axes", "middle_index",
                                           "symbol", "kernel_symbol")} |
@@ -533,9 +553,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         from .runtime_group_preparation import emit_runtime_group_preparation
 
         group_header = out_dir / "runtime_group_prepare.h"
-        group_header.write_text(emit_runtime_group_preparation(profile["resources"]["scale_block_elements"]))
+        group_header.write_text(emit_runtime_group_preparation(
+            profile["resources"]["scale_block_elements"], bf16_input=compact_preparation_selected))
         source_hashes["runtime_group_prepare"] = _sha(group_header)
         quant_flags = ("-DMX_QUANT_GROUP_WORDS", "-DMX_QUANT_INLINE_GROUP", "-I", str(out_dir))
+        if compact_preparation_selected:
+            quant_flags += ("-DMX_QUANT_BF16_INPUT",)
     compile_source("runtime_quant", runtime_source, extra_flags=quant_flags)
     compile_source("shared_workspace", emit_shared_workspace_definition(
         max_workspace, symbol=_WORKSPACE_SYMBOL))
@@ -660,6 +683,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "kernels": kernel_records,
         "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
         "matrix_vpu_transport": "experimental_private_bf16" if matrix_vpu_transport else "disabled",
+        "vpu_matrix_transport": "experimental_private_bf16" if vpu_matrix_transport else "disabled",
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
         "native_tile_policy": native_tile_policy,
@@ -735,6 +759,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 share_activation_packing: bool = False,
                                 retain_shared_activation_rhs: bool = False,
                                 matrix_vpu_transport: bool = False,
+                                vpu_matrix_transport: bool = False,
                                 virtual_zero_padding: bool = False,
                                 integer_group_packing: bool = False,
                                 native_tile_policy: str = "legacy",
@@ -776,6 +801,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     share_activation_packing=share_activation_packing,
                                     retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     matrix_vpu_transport=matrix_vpu_transport,
+                                    vpu_matrix_transport=vpu_matrix_transport,
                                     virtual_zero_padding=virtual_zero_padding,
                                     integer_group_packing=integer_group_packing,
                                     native_tile_policy=native_tile_policy,

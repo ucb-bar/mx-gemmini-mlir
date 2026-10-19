@@ -242,7 +242,8 @@ void {symbol}({parameters}) {{
 
 def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                                 logical_shape_mnk: tuple[int, int, int], *,
-                                symbol: str, virtual_zero_padding: bool = False) -> tuple[str, int, int]:
+                                symbol: str, virtual_zero_padding: bool = False,
+                                input_dtype: str = "f32") -> tuple[str, int, int]:
     """Emit deterministic packing into a caller-owned contiguous byte tensor.
 
     Codes precede scales with the exact extents consumed by the checked issuer.
@@ -257,28 +258,33 @@ def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX activation preparation needs a safe symbol")
     lm, _, lk = logical_shape_mnk
     m, _, k = issuer.shape_mnk
+    if input_dtype not in {"f32", "bf16"}:
+        raise ValueError("activation preparation needs f32 or BF16 input storage")
     codes = issuer.buffer_bytes["activation"]
     size = codes + issuer.buffer_bytes["activation_scales"]
     zero_rows = virtual_zero_padding and lm < m
+    if zero_rows and input_dtype == "bf16":
+        raise ValueError("BF16 preparation does not supply implicit zero rows")
+    scalar, element_bytes = ("uint16_t", 2) if input_dtype == "bf16" else ("float", 4)
     plan = DenseZeroPadding((lm, lk), (m, k), (0,) if zero_rows else ())
     padded = plan.needs_copy
-    declaration = (f"static float padded[{plan.elements}] __attribute__((aligned(64)));\n"
+    declaration = (f"static {scalar} padded[{plan.elements}] __attribute__((aligned(64)));\n"
                    if padded else "")
     padding = emit_dense_zero_padding(plan, source="lhs", destination="padded")
     a_source = "padded" if padded else "lhs"
     call = (f"mx_pack_activation_zero_rows_f32({a_source}, {lm}u, {m}u, {k}u"
-            if zero_rows else f"mx_pack_activation_f32({a_source}, {m}u, {k}u")
+            if zero_rows else f"mx_pack_activation_{input_dtype}({a_source}, {m}u, {k}u")
     source = f'''#include <stddef.h>
 #include <stdint.h>
 #include "runtime_quant.h"
 {declaration}
-void {symbol}(const float *lhs, uint8_t *out) {{
+void {symbol}(const {scalar} *lhs, uint8_t *out) {{
   if (!lhs || !out) __builtin_trap();
 {padding}  if ({call},
       MX_RUNTIME_{issuer.precision}, out, out+{codes}u)) __builtin_trap();
 }}
 '''
-    return source, size, plan.elements * 4
+    return source, size, plan.elements * element_bytes
 
 
 def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
