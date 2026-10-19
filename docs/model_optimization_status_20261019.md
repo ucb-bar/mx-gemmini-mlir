@@ -1,9 +1,9 @@
 # Whole-model optimization checkpoint, 19 October 2026
 
 The optimization goal remains active. The latest completed independent TinyLlama
-forward uses **11,008,973,639 modeled cycles**, versus Nicolás's equal-boundary
-12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 13.7387%
-and 31.1278%, respectively. The older 15,170,996,572-cycle compiler archive had
+forward uses **10,433,218,556 modeled cycles**, versus Nicolás's equal-boundary
+12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 18.2501%
+and 34.7298%, respectively. The older 15,170,996,572-cycle compiler archive had
 different numerical quality and is not the equal-quality compiler control.
 
 Every completed optimized forward preserves all 5,120,000 F32 logit words from
@@ -24,6 +24,7 @@ not be described as bit identity with the independent implementation.
 | Exact guarded host math | 11,105,781,721 |
 | Movement-bounded native tile selection | 11,094,646,734 |
 | Reverse connected-VPU/BF16 preparation transport | 11,008,973,639 |
+| Source-proven repeated batch RHS preparation | 10,433,218,556 |
 
 The last tile change reduces measured load bytes from 4,198,111,552 to
 3,939,506,496 and scale bytes from 115,279,872 to 107,198,464. Commands 3,312,204,
@@ -51,7 +52,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and compact source input within a synchronous batch | RHS reuse/compaction have native and complete-graph qualification with full-model runs pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing with a qualified complete forward, and compact source input within a synchronous batch | Compact full-forward and newer cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -102,11 +103,15 @@ Both the real forward and cached decoder prove 44 eligible current calls across
 two shared declarations. Their initial new-pass builds stopped before simulation
 because the adapter incorrectly required one declaration per source call. The
 corrected generic and target binders independently prove selected calls, validate
-each shared native kernel family and retain original unproved users. Fresh
-full-model builds are running in new directories; failed attempts are preserved.
-The cached candidate reuses the exact latest prefill stage and adds RHS reuse
-only to its decoder. A separate latest cached control includes the newer packing,
-broadcast, guarded-math and reverse-transport passes and is still executing.
+each shared native kernel family and retain original unproved users. The fresh
+ordinary full-forward run completed: **11,008,973,639 → 10,433,218,556 cycles**
+(5.22987% fewer), with all 5,120,000 logit words identical and the original source
+quality gate unchanged. Device work/transfer counters and literal allocation
+sums are unchanged. The image grows by 12,072 bytes, with the same 10,579,968-byte
+native workspace and 2 GiB arena. Failed attempts remain preserved. The cached
+candidate reuses the exact latest prefill stage and adds RHS reuse only to its
+decoder. A separate latest cached control includes the newer packing, broadcast,
+guarded-math and reverse-transport passes and is still executing.
 
 A further optional compact-input ABI removes the need to construct the expanded
 RHS for private consumers. Merlin supplies one source matrix per proved group,
@@ -172,6 +177,7 @@ Primary retained evidence and standalone verification:
 - [Guarded-math full forward](evidence/matched_guarded_math_forward_20261019/README.md)
 - [Tile-selection full forward](evidence/matched_native_tiles_forward_20261019/README.md)
 - [Reverse BF16 full forward](evidence/matched_reverse_transport_forward_20261019/README.md)
+- [Repeated RHS preparation full forward](evidence/matched_batch_rhs_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
