@@ -1,0 +1,91 @@
+{
+  "archive": {
+    "bytes": 13252524,
+    "name": "execution.tar.xz",
+    "sha256": "92cd9d72532f6690479f7498b51fe8a0313b662e1bc5a2df720200abe3a0913b"
+  },
+  "members": {
+    "compilation_recipe.json": {
+      "bytes": 38554,
+      "sha256": "5e60d327eb43e9384a182d0753c00323cf19385c7f03deb72cf436137b83f91c"
+    },
+    "complete_output_validation.json": {
+      "bytes": 1096,
+      "sha256": "215903b69410606afbda6b44606e246be05708a6ef68a1990bcb27dfb2c7af3c"
+    },
+    "device/catalog_binding.json": {
+      "bytes": 9639,
+      "sha256": "1d67b651828e67fed740523671c147fb299c98fea25ba091ead5a6a1752824a6"
+    },
+    "device_catalog/mx_catalog.json": {
+      "bytes": 761832,
+      "sha256": "9c3c18b63ba5aa946461dc5aba46b5d3905b1d28b5b41fdb5ae9f55bb1165180"
+    },
+    "device_host_abi/mx_fixed_rhs_rewrite.json": {
+      "bytes": 30917,
+      "sha256": "397fc998fc1e2acf7f6b7095f4213dc73f6d1abfd99bc4b4c51171f7918fc9e4"
+    },
+    "device_host_abi/mx_matrix_transport_rewrite.json": {
+      "bytes": 17670,
+      "sha256": "ee2ac998d9e9242abfea35e3a7bf6a00e3686bfb6b1c7b2ff3027c7673f7e293"
+    },
+    "device_host_abi/mx_shared_activation_rewrite.json": {
+      "bytes": 14871,
+      "sha256": "43d6594c491452b5bdbd332800f970e6ef80ef06740fee24c4f62a25f722d287"
+    },
+    "device_host_abi/mx_vpu_add_rewrite.json": {
+      "bytes": 18561,
+      "sha256": "befdbb1c591ab7b90b892301a4cbeafed9afea9142dc55e9ee5dfc05d730cd7b"
+    },
+    "device_host_abi/mx_vpu_elementwise_rewrite.json": {
+      "bytes": 86537,
+      "sha256": "8713329e27104bfb5d4a41bbde9a799f5d9936099755bf7f26bfa2e3529e88d6"
+    },
+    "device_host_abi/mx_vpu_reduce_rewrite.json": {
+      "bytes": 5829,
+      "sha256": "9c977d8292d63d1ef9a9c0d85865cfd66f64bb505018cd317d0afd57d6afdf27"
+    },
+    "device_host_abi/mx_vpu_unary_rewrite.json": {
+      "bytes": 19245,
+      "sha256": "1a7705aea7d4b2ebc2abdc14fb3c051d9f412ffd1b9b3f7c0cde92e5c6630e95"
+    },
+    "device_host_abi/post_offload_transform.json": {
+      "bytes": 626,
+      "sha256": "3604162fdfe3cc1caf343301cd92b76a302c5e971bebc4e988deae2077c67a28"
+    },
+    "device_signatures.json": {
+      "bytes": 99175,
+      "sha256": "735be5dba46411f2ef94835c98abf520b58ef80fb2cc708f45e803e056fd6c20"
+    },
+    "invocations/c0ba16126779424c83bd27f7f44d225a/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "bb45ca9a6cc6eb6cba40892606b35f564f15241afce02cc4f788167a2784c0c9"
+    },
+    "live_environment.json": {
+      "bytes": 1200,
+      "sha256": "469c6ebb0656eb111f547ff94f263f6b27c28b75366adb88000d2eef75031855"
+    },
+    "mx_stage_probe.json": {
+      "bytes": 161586,
+      "sha256": "db2a4080f392db37b95ee72c3bfcf7bea23da04bb3bb3d0fcc4d2c9dde19bd21"
+    },
+    "op_profile_table.json": {
+      "bytes": 1484497,
+      "sha256": "03128d9d0e4c4648e1b7759b3a575d034b2a1bf780ebcec63dd1197b23f0199f"
+    },
+    "reader/report_stage_profile.py": {
+      "bytes": 9282,
+      "sha256": "001369cc4ec740d410280b1a75981499c8c54080f08eaa6144d449d6b77dd8fc"
+    },
+    "spike.log": {
+      "bytes": 56509264,
+      "sha256": "e76e67070dc48333b4e4d45bbc7ae2ab075170cb3a3dbbf560863d5c3aecdd05"
+    },
+    "stage_profile_report.json": {
+      "bytes": 44654,
+      "sha256": "20fb3d321a598a6b2aee11486a6b99133211ddfa4e0126585751e1409c7959c7"
+    }
+  },
+  "schema": "mx_gemmini.full_forward_profile_evidence.v1",
+  "scope": "instrumented_full_forward_call_intervals_not_clean_speedup"
+}
