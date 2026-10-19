@@ -644,6 +644,18 @@ selection: measure the candidate on the chosen inputs before adopting it.
 The [stage integration evidence](evidence/stage_multiply_20261018/README.md)
 records an executed small MX graph and the checkpoint-backed MLP section.
 
+`--reuse-batch-rhs` additionally selects exact contiguous RHS batch repetition
+proved from typed copies, reshapes, matrix transposes and singleton broadcasts.
+It requires `--integer-quant-groups` and an explicit execution policy. Merlin
+proves the repetition and retargets the unchanged tensor ABI; MX retains the
+private encoded RHS across synchronous slices within each repeated group.
+Every group refreshes on every invocation. Original activation packing, matrix
+order, rounding, exceptional partial outputs and fences remain required.
+Unknown source repetition retains the original entry. This does not remove
+the materialized broadcast or cache state across decode steps. Native section
+and complete compiled graph measurements are required before enabling a policy
+broadly; the flag defaults off.
+
 Current Merlin requires explicit linked-image admission for device builds.
 For these trusted compiler experiments, pass `--structural-elf-admission` to
 select Merlin's existing digest-and-declared-ISA service. Its receipt is

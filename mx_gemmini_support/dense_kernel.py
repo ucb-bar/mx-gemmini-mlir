@@ -56,6 +56,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           prepared_activation: bool = False,
                           retain_prepared_rhs: bool = False,
                           virtual_zero_padding: bool = False,
+                          retain_runtime_weight: bool = False,
                           output_dtype: str = "f32") -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
@@ -73,6 +74,11 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
 
     if type(virtual_zero_padding) is not bool:
         raise ValueError("MX virtual zero padding needs an explicit boolean selection")
+    if type(retain_runtime_weight) is not bool:
+        raise ValueError("MX private runtime weight retention needs an explicit boolean selection")
+    if retain_runtime_weight and (prepacked_weight_symbols is not None or cache_immutable_weight
+                                  or prepared_activation or retain_prepared_rhs):
+        raise ValueError("MX runtime weight retention needs a private live-weight slice")
     if not _identifier(symbol) or not _identifier(issuer_symbol) or symbol == issuer_symbol:
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
     if shared_workspace_symbol is not None and not _identifier(shared_workspace_symbol):
@@ -190,6 +196,14 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
 """)
             weight_codes, weight_scale = "weight", "weight_scales"
             external_weight = ""
+            if retain_runtime_weight:
+                pack = (f"""  if ({activation_call}, MX_RUNTIME_{issuer.precision},
+                             activation, activation_scales) ||
+      (prepare_weight && mx_pack_weight_f32({b_source}, {k}u, {n}u, MX_RUNTIME_{issuer.precision},
+                         weight, weight_scales))) __builtin_trap();
+""")
+                if b_prepare:
+                    b_prepare = "  if (prepare_weight) {\n" + b_prepare + "  }\n"
     else:
         weight_codes, weight_scale = prepacked_weight_symbols
         external_weight = (f"extern const uint8_t {weight_codes}[];\n"
@@ -206,6 +220,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                   if retain_prepared_rhs else
                   f"const uint8_t *lhs, {out_scalar} *out" if prepared_activation else
                   f"const float *lhs, const float *rhs, {out_scalar} *out")
+    if retain_runtime_weight:
+        parameters += ", unsigned prepare_weight"
     pointer_check = ("!lhs || !out" if prepared_activation and not retain_prepared_rhs
                      else "!lhs || !rhs || !out")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
@@ -228,7 +244,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
 void {issuer_symbol}(const void *, const void *, const void *, const void *,
                      const void *, const void *);
 {external_weight}{''.join(declarations)}
-void {symbol}({parameters}) {{
+{"static " if retain_runtime_weight else ""}void {symbol}({parameters}) {{
   if ({pointer_check}) __builtin_trap();
 {local_buffers}{a_prepare}{b_prepare}{pack}  {issuer_symbol}(activation, activation_scales, {weight_codes}, {weight_scale},
                   {"out" if direct_bf16 else "output_bf16"}, scratch_output_scales);
@@ -292,19 +308,30 @@ def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                                 symbol: str,
                                 issuer_symbol: str = "mx_issue_encoded",
                                 shared_workspace_symbol: str | None = None,
-                                virtual_zero_padding: bool = False) -> DenseBatchKernel:
-    """Call one checked matrix kernel for each disjoint dense batch slice."""
+                                virtual_zero_padding: bool = False,
+                                rhs_batch_repeat: int = 1) -> DenseBatchKernel:
+    """Call one checked matrix kernel for each disjoint dense batch slice.
+
+    A repeat greater than one requires a separately proved exact contiguous
+    RHS repetition. Private encoded RHS storage is refreshed for every group
+    in every call and retained only through synchronous slice issuers. Input
+    tensors, per-slice activation packing, output order and fences are unchanged.
+    """
     if (len(logical_shape_bmnk) != 4 or
             any(type(value) is not int or value <= 0 for value in logical_shape_bmnk)):
         raise ValueError("MX batch adapter needs positive B,M,N,K")
     batch, m, n, k = logical_shape_bmnk
+    if type(rhs_batch_repeat) is not int or rhs_batch_repeat <= 0 or batch % rhs_batch_repeat:
+        raise ValueError("MX batch RHS reuse needs complete positive contiguous groups")
     if any(value > 0x7fffffff for value in (batch * m * k, batch * k * n,
                                             batch * m * n)):
         raise ValueError("MX batch adapter exceeds the selected runtime extent")
     slice_symbol = f"{symbol}_slice"
     slice_kernel = emit_dense_f32_kernel(
         issuer, (m, n, k), symbol=slice_symbol, issuer_symbol=issuer_symbol,
-        shared_workspace_symbol=shared_workspace_symbol, virtual_zero_padding=virtual_zero_padding)
+        shared_workspace_symbol=shared_workspace_symbol, virtual_zero_padding=virtual_zero_padding,
+        retain_runtime_weight=rhs_batch_repeat > 1)
+    refresh = f", batch % {rhs_batch_repeat}u == 0u" if rhs_batch_repeat > 1 else ""
     source = slice_kernel.source + f"""
 /* Whole-batch Merlin ABI: each slice has independent dense row-major storage. */
 void {symbol}(const float *lhs, const float *rhs, float *out) {{
@@ -312,7 +339,7 @@ void {symbol}(const float *lhs, const float *rhs, float *out) {{
   for (size_t batch = 0; batch < {batch}u; ++batch)
     {slice_symbol}(lhs + batch * {m}u * {k}u,
                    rhs + batch * {k}u * {n}u,
-                   out + batch * {m}u * {n}u);
+                   out + batch * {m}u * {n}u{refresh});
 }}
 """
     return DenseBatchKernel(source, symbol, logical_shape_bmnk,

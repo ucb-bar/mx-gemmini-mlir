@@ -98,6 +98,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          vpu_matrix_transport: bool = False,
                          virtual_zero_padding: bool = False,
                          integer_group_packing: bool = False,
+                         reuse_batch_rhs: bool = False,
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
@@ -111,6 +112,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("broadcast preparation requires a nonnegative integer byte budget")
     if type(integer_group_packing) is not bool:
         raise ValueError("integer group packing requires an explicit boolean selection")
+    if type(reuse_batch_rhs) is not bool or reuse_batch_rhs and not integer_group_packing:
+        raise ValueError("batch RHS reuse requires explicit integer group packing")
     if type(vpu_matrix_transport) is not bool:
         raise ValueError("VPU matrix transport requires an explicit boolean selection")
     if vpu_matrix_transport and not (share_activation_packing and connect_multiplies and integer_group_packing):
@@ -138,6 +141,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         cache_immutable_weights=cache_immutable_weights,
         prepack_immutable_weights=prepack_immutable_weights,
         precision_overrides=precision_overrides)
+    repeated_inputs = {}
+    if reuse_batch_rhs:
+        from .merlin_batch_rhs import analyze_bound_repetitions
+
+        repeated_inputs = analyze_bound_repetitions(prepared, plan)
     if prepack_immutable_weights and (checkpoint_weights_path is None or
                                       not Path(checkpoint_weights_path).is_file() or
                                       Path(checkpoint_weights_path).is_symlink()):
@@ -155,6 +163,11 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     if not all(tool.is_file() for tool in (cc, ld, nm)):
         raise ValueError("MX catalog needs an explicit RV64 compiler, linker, and nm")
     out_dir.mkdir(parents=True)
+    if reuse_batch_rhs:
+        snapshot = out_dir / "batch_rhs_source.mlir"
+        snapshot.write_bytes(Path(prepared).read_bytes())
+        if _sha(snapshot) != plan["source_sha256"]:
+            raise ValueError("batch RHS source changed before snapshot binding")
     flags = ["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2",
              "-ffreestanding", "-fno-fast-math", "-fno-common",
              "-fno-tree-loop-distribute-patterns", "-std=gnu11",
@@ -268,6 +281,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         elif previous_issuer != generated.issuer.source:
             raise ValueError("MX shared issuer differs across cached source sites")
         compile_source(symbol, generated.kernel.source)
+        if reuse_batch_rhs and entry["rank"] == 3:
+            from .merlin_batch_rhs import register_repetitions
+
+            register_repetitions(entry, generated, plan["bindings"], repeated_inputs,
+                                 _WORKSPACE_SYMBOL, compile_source, prepared_entries,
+                                 virtual_zero_padding=virtual_zero_padding)
         activation_preparation = None
         private_bf16_transport = None
         prepared_private_bf16_transport = None
@@ -686,6 +705,9 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "vpu_matrix_transport": "experimental_private_bf16" if vpu_matrix_transport else "disabled",
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
+        **({"batch_rhs_reuse": "experimental_exact_contiguous_repetition"} if reuse_batch_rhs else {}),
+        **({"batch_rhs_source": {"file": "batch_rhs_source.mlir", "sha256": plan["source_sha256"]}}
+           if reuse_batch_rhs else {}),
         "native_tile_policy": native_tile_policy,
         "connect_sigmoid_multiplies": connect_sigmoid_multiplies,
         "connect_broadcast_multiplies": connect_broadcast_multiplies,
@@ -762,6 +784,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 vpu_matrix_transport: bool = False,
                                 virtual_zero_padding: bool = False,
                                 integer_group_packing: bool = False,
+                                reuse_batch_rhs: bool = False,
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -804,6 +827,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     vpu_matrix_transport=vpu_matrix_transport,
                                     virtual_zero_padding=virtual_zero_padding,
                                     integer_group_packing=integer_group_packing,
+                                    reuse_batch_rhs=reuse_batch_rhs,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

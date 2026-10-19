@@ -211,6 +211,8 @@ def main() -> None:
                         help="experimentally encode known zero activation rows without materializing them")
     parser.add_argument("--integer-quant-groups", action="store_true",
                         help="experimentally use BF16-word group preparation and inline its fixed-axis loops")
+    parser.add_argument("--reuse-batch-rhs", action="store_true",
+                        help="experimentally retain RHS packing across source-proved contiguous batch repetitions")
     parser.add_argument("--host-math-guard", type=Path,
                         help="explicit reviewed guarded-f32 library contract; requires pinned endpoint suppliers")
     parser.add_argument("--native-tile-policy", choices=("legacy", "movement"), default="legacy",
@@ -232,6 +234,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.reuse_batch_rhs and (not args.integer_quant_groups or args.execution_policy is None):
+        parser.error("--reuse-batch-rhs requires integer groups and an explicit execution policy")
     if args.connect_vpu_multiplies and args.execution_policy is None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
     if args.connect_vpu_broadcast_multiplies and not args.connect_vpu_multiplies:
@@ -450,6 +454,7 @@ def main() -> None:
             vpu_matrix_transport=args.vpu_matrix_transport,
             virtual_zero_padding=args.virtual_zero_padding,
             integer_group_packing=args.integer_quant_groups,
+            reuse_batch_rhs=args.reuse_batch_rhs,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -466,6 +471,7 @@ def main() -> None:
             activation_packing_budget_bytes=args.activation_packing_budget_bytes,
             matrix_vpu_transport=args.matrix_vpu_transport,
             vpu_matrix_transport=args.vpu_matrix_transport,
+            batch_rhs_catalog=(work / "device_catalog/mx_catalog.json" if args.reuse_batch_rhs else None),
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -729,6 +735,7 @@ def main() -> None:
         "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
         "packed_object_storage_reuse": catalog.get("packed_object_storage_reuse"),
         "share_activation_packing": args.share_activation_packing,
+        **({"reuse_batch_rhs": True} if args.reuse_batch_rhs else {}),
         "retain_shared_activation_rhs": args.retain_shared_activation_rhs,
         "matrix_vpu_transport": args.matrix_vpu_transport,
         "vpu_matrix_transport": args.vpu_matrix_transport,

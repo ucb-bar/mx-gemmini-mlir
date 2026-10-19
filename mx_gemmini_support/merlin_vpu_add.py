@@ -249,7 +249,8 @@ class MXVPUPostOffload:
                  share_activation_packing: bool = False,
                  activation_packing_budget_bytes: int = 1048576,
                  matrix_vpu_transport: bool = False,
-                 vpu_matrix_transport: bool = False):
+                 vpu_matrix_transport: bool = False,
+                 batch_rhs_catalog: Path | None = None):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
@@ -314,6 +315,11 @@ class MXVPUPostOffload:
             from .merlin_vpu_matrix_transport import MXVPUMatrixTransportPostOffload
 
             self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
+        self.batch_rhs_reuse = None
+        if batch_rhs_catalog is not None:
+            from .merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+            self.batch_rhs_reuse = MXBatchRHSReusePostOffload(batch_rhs_catalog)
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         selected = prepared
@@ -344,4 +350,6 @@ class MXVPUPostOffload:
             selected = self.matrix_transport(selected, sidecar, workdir)
         if self.vpu_matrix_transport is not None:
             selected = self.vpu_matrix_transport(selected, sidecar, workdir)
+        if self.batch_rhs_reuse is not None:
+            selected = self.batch_rhs_reuse(selected, sidecar, workdir)
         return selected
