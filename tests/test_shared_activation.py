@@ -25,7 +25,7 @@ PROFILE = ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketC
 
 @pytest.mark.parametrize("precision", ["FP4", "FP8"])
 @pytest.mark.parametrize("logical", [(1, 17, 37), (19, 23, 37), (32, 32, 64)])
-def test_prepared_bytes_readout_and_changed_inputs(tmp_path, precision, logical):
+def test_prepared_bytes_readout_and_changed_inputs(tmp_path, tmp_path_factory, precision, logical):
     cc = shutil.which("cc")
     if cc is None:
         pytest.skip("host C compiler unavailable")
@@ -67,7 +67,9 @@ void mx_issue_encoded(const void *a,const void *as,const void *b,const void *bs,
         path = tmp_path / (name + ".c")
         path.write_text(source)
         paths.append(str(path))
-    library = tmp_path / "activation.so"
+    # Keep dlopen inputs alive for the session: a suite that deletes each passed
+    # tmp_path may reuse its inode while the native loader still caches the DSO.
+    library = tmp_path_factory.mktemp("activation-dso") / "activation.so"
     subprocess.run([cc, "-shared", "-fPIC", "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror",
                     "-I", str(ROOT / "mx_gemmini_support"), *paths,
                     str(ROOT / "mx_gemmini_support/runtime_quant.c"), "-lm", "-o", str(library)], check=True)
