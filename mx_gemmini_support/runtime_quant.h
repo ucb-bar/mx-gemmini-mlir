@@ -21,6 +21,13 @@ int mx_pack_activation_zero_rows_f32(const float *input, uint32_t live_rows,
 int mx_pack_weight_f32(const float *input, uint32_t k, uint32_t n,
                        uint32_t format, uint8_t *codes, uint8_t *scales);
 
+/* Explicit MX_QUANT_BF16_INPUT build only. Input already holds the exact BF16
+ * boundary words. Scale/code layout, nonfinite refusal and partial publication
+ * order equal packing their exact f32 widenings. Complete padded shape required.
+ */
+int mx_pack_activation_bf16(const uint16_t *input, uint32_t m, uint32_t k,
+                            uint32_t format, uint8_t *codes, uint8_t *scales);
+
 /* Widen one BF16 readout tensor into its model-visible f32 buffer. */
 int mx_widen_bf16_f32(const uint16_t *input, uint32_t count, float *output);
 

@@ -117,23 +117,23 @@ static inline int mx_round_group_word(float value, uint16_t *word) {
   return (*word & 0x7f80u) == 0x7f80u ? -1 : 0;
 }
 static inline uint16_t mx_group_word_magnitude(uint16_t word) { return word & 0x7fffu; }
+#if defined(MX_QUANT_BF16_INPUT)
+static inline int mx_copy_group_word(uint16_t value, uint16_t *word) {
+  *word = value;
+  return (value & 0x7f80u) == 0x7f80u ? -1 : 0;
+}
+#endif
 #include "runtime_group_prepare.h"
-#endif
 
-#if defined(MX_QUANT_INLINE_GROUP)
+/* The caller has prepared all 32 finite words and their unsigned magnitude
+ * maximum. Keep target scale selection, codebook and nibble layout shared by
+ * float and word input routes. Inlining retains each caller's fixed axis.
+ */
 static inline __attribute__((always_inline))
-#else
-static
-#endif
-int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
-                          uint32_t axis, uint32_t major, uint32_t group,
-                          uint32_t format, uint8_t *codes, uint8_t *scales) {
-#if defined(MX_QUANT_GROUP_WORDS) && !defined(MX_QUANT_REFERENCE) && !defined(MX_QUANT_LUT_GENERATOR)
-  uint16_t values[32];
-  uint16_t maximum = 0;
-  const float *start = input + (axis == 1 ? (size_t)major * cols + group * 32u :
-                                         (size_t)group * 32u * cols + major);
-  if (mx_prepare_group_words(start, axis == 1 ? 1u : cols, values, &maximum)) return -1;
+void pack_prepared_group(const uint16_t *values, uint16_t maximum,
+                         uint32_t rows, uint32_t cols, uint32_t axis,
+                         uint32_t major, uint32_t group, uint32_t format,
+                         uint8_t *codes, uint8_t *scales) {
   int exponent = (int)(maximum >> 7) - 127;
   if (exponent < -23) exponent = -23;
   uint32_t group_major = axis == 1 ? rows : cols;
@@ -170,6 +170,24 @@ int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
       else codes[index] = code;
     }
   }
+}
+#endif
+
+#if defined(MX_QUANT_INLINE_GROUP)
+static inline __attribute__((always_inline))
+#else
+static
+#endif
+int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
+                          uint32_t axis, uint32_t major, uint32_t group,
+                          uint32_t format, uint8_t *codes, uint8_t *scales) {
+#if defined(MX_QUANT_GROUP_WORDS) && !defined(MX_QUANT_REFERENCE) && !defined(MX_QUANT_LUT_GENERATOR)
+  uint16_t values[32];
+  uint16_t maximum = 0;
+  const float *start = input + (axis == 1 ? (size_t)major * cols + group * 32u :
+                                         (size_t)group * 32u * cols + major);
+  if (mx_prepare_group_words(start, axis == 1 ? 1u : cols, values, &maximum)) return -1;
+  pack_prepared_group(values, maximum, rows, cols, axis, major, group, format, codes, scales);
 #else
   float values[32];
   float maximum = 0.0f;
@@ -212,7 +230,7 @@ int pack_one_group(const float *input, uint32_t rows, uint32_t cols,
   return 0;
 }
 
-static int valid_shape(const float *input, uint32_t rows, uint32_t cols,
+static int valid_shape(const void *input, uint32_t rows, uint32_t cols,
                        uint32_t axis, uint32_t format,
                        const uint8_t *codes, const uint8_t *scales) {
   uint32_t tile = format == MX_RUNTIME_FP8 ? 16u : 32u;
@@ -272,3 +290,23 @@ int mx_widen_bf16_f32(const uint16_t *input, uint32_t count, float *output) {
     output[index] = float_of_bits((uint32_t)input[index] << 16);
   return 0;
 }
+
+#if defined(MX_QUANT_BF16_INPUT)
+#if !defined(MX_QUANT_GROUP_WORDS) || defined(MX_QUANT_REFERENCE) || defined(MX_QUANT_LUT_GENERATOR)
+#error "BF16 input needs the selected word-group LUT preparation"
+#endif
+int mx_pack_activation_bf16(const uint16_t *input, uint32_t m, uint32_t k,
+                            uint32_t format, uint8_t *codes, uint8_t *scales) {
+  /* valid_shape retains the original conservative f32 byte-span bound. */
+  if (!valid_shape(input, m, k, 1, format, codes, scales)) return -1;
+  for (uint32_t group = 0; group < k / 32u; ++group) {
+    for (uint32_t row = 0; row < m; ++row) {
+      uint16_t values[32], maximum;
+      if (mx_prepare_bf16_group_words(input + (size_t)row * k + group * 32u,
+                                      1u, values, &maximum)) return -1;
+      pack_prepared_group(values, maximum, m, k, 1u, row, group, format, codes, scales);
+    }
+  }
+  return 0;
+}
+#endif
