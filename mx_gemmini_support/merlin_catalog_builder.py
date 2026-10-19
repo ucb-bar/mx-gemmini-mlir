@@ -85,9 +85,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          precision_overrides: dict[str, str] | None = None,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                          connect_multiplies: bool = False,
+                         share_activation_packing: bool = False,
+                         retain_shared_activation_rhs: bool = False,
                          reuse_prepacked_data: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if share_activation_packing and not prepack_immutable_weights:
+        raise ValueError("shared activation packing requires immutable prepacked weights")
+    if retain_shared_activation_rhs and not share_activation_packing:
+        raise ValueError("retained shared RHS requires shared activation packing")
     if reuse_prepacked_data is not None:
         reuse_prepacked_data = Path(reuse_prepacked_data)
         if (not prepack_immutable_weights or reuse_prepacked_data.is_symlink()
@@ -141,6 +147,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     fixed_data: list[tuple[str, Path]] = []
     fixed_records: dict[str, dict] = {}
     checkpoint = None
+    preparation_sources = {}
+    prepared_entries = {}
     if prepack_immutable_weights:
         import torch
         from safetensors import safe_open
@@ -213,6 +221,46 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         elif previous_issuer != generated.issuer.source:
             raise ValueError("MX shared issuer differs across cached source sites")
         compile_source(symbol, generated.kernel.source)
+        activation_preparation = None
+        if share_activation_packing and fixed_symbols is not None:
+            from merlin.llvmlower.device_shim import LogicalBuffer
+            from .dense_kernel import emit_activation_preparation, emit_dense_f32_kernel
+
+            pm, _, pk = generated.issuer.shape_mnk
+            prepare_entry = f"mx_prepare_a_{precision.lower()}_m{m}_k{k}_pm{pm}_pk{pk}"
+            prepare_kernel = prepare_entry + "_kernel"
+            source, packed_bytes, padding_bytes = emit_activation_preparation(
+                generated.issuer, shape, symbol=prepare_kernel)
+            previous = preparation_sources.get(prepare_entry)
+            if previous is None:
+                compile_source(prepare_kernel, source)
+                preparation_sources[prepare_entry] = source
+            elif previous != source:
+                raise ValueError("shared activation preparation changed across consumers")
+            packed_entry, packed_kernel = symbol + "_prepared", symbol + "_prepared_kernel"
+            packed = emit_dense_f32_kernel(
+                generated.issuer, shape, symbol=packed_kernel, issuer_symbol=issuer_symbol,
+                shared_workspace_symbol=_WORKSPACE_SYMBOL,
+                prepacked_weight_symbols=fixed_symbols, prepared_activation=True,
+                retain_prepared_rhs=retain_shared_activation_rhs)
+            compile_source(packed_kernel, packed.source)
+            prepared_entries[prepare_entry] = (prepare_kernel, (
+                LogicalBuffer("activation", "input", "input_0", (m, k), "f32"),
+                LogicalBuffer("packed", "output", "out_0", (packed_bytes,), "i8")))
+            prepared_entries[packed_entry] = (packed_kernel, (
+                LogicalBuffer("packed", "input", "input_0", (packed_bytes,), "i8"),
+                *((LogicalBuffer("unused_rhs", "input", "input_1", (k, n), "f32"),)
+                  if retain_shared_activation_rhs else ()),
+                LogicalBuffer("output", "output", "out_0", (m, n), "f32")))
+            activation_preparation = {
+                "prepare_symbol": prepare_entry, "prepare_kernel": prepare_kernel,
+                "consumer_symbol": packed_entry, "consumer_kernel": packed_kernel,
+                "packed_bytes": packed_bytes, "padding_workspace_bytes": padding_bytes,
+                "consumer_workspace_bytes": packed.workspace_bytes,
+                "consumer_arguments": [0, 1, 2] if retain_shared_activation_rhs else [0, 2],
+                "ownership": "explicit_readonly_ssa_tensor",
+                "completion": "synchronous_native_issuer",
+            }
         if generated.schedule_text is None or generated.schedule_digest is None:
             raise ValueError("MX catalog kernel has no checked schedule IR")
         schedule_path = out_dir / f"{issuer_symbol}.mk"
@@ -237,6 +285,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "persistent_weight_bytes": getattr(generated.kernel, "persistent_bytes", 0),
             "cache_immutable_weight": entry["cache_immutable_weight"],
             "prepacked_checkpoint_weight": entry["prepacked_checkpoint_weight"],
+            **({"activation_preparation": activation_preparation}
+               if activation_preparation is not None else {}),
             **fixed_records.get(symbol, {}),
             **({"checkpoint_parameter_arg": entry["checkpoint_parameter_arg"],
                 "checkpoint_parameter_name": entry["checkpoint_parameter_name"],
@@ -365,6 +415,16 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "padded_width": generated.padded_width,
             "rows_per_chunk": generated.rows_per_chunk,
         })
+    if prepared_entries:
+        from merlin.llvmlower.device_shim import emit_logical_translation_unit
+
+        unit = emit_logical_translation_unit("mx_gemmini", {
+            entry: (buffers, [{"role": b.role, "shape": b.shape, "dtype": b.dtype} for b in buffers])
+            for entry, (_, buffers) in prepared_entries.items()
+        }, kernel_symbol_for=lambda entry: prepared_entries[entry][0])
+        if unit.skipped or set(unit.symbols) != set(prepared_entries):
+            raise ValueError("shared activation ABI could not be emitted")
+        compile_source("shared_activation_shims", unit.text)
     compile_source("runtime_quant", _QUANTIZER)
     source_hashes["runtime_quant_lut"] = _sha(_QUANTIZER_LUT)
     compile_source("shared_workspace", emit_shared_workspace_definition(
@@ -390,6 +450,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     rows = [line.split() for line in symbols.stdout.splitlines()]
     defined = [row[0] for row in rows if len(row) >= 2 and row[1].upper() == "T"]
     if (any(len(row) < 2 or row[1].upper() == "U" for row in rows) or
+            any(defined.count(name) != 1 for entry, (kernel, _) in prepared_entries.items()
+                for name in (entry, kernel, "_mlir_ciface_" + entry)) or
             any(defined.count(entry["symbol"]) != 1 for entry in plan["kernels"]) or
             any(defined.count(site[name]) != 1 for site in softmax_shapes.values()
                 for name in ("symbol", "kernel_symbol")) or
@@ -461,6 +523,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "shared_bytes": sum(path.stat().st_size for _, path in fixed_data),
         } if reuse_prepacked_data is not None else None),
         "kernels": kernel_records,
+        "shared_activation_packing": "experimental_explicit_tensor" if share_activation_packing else "disabled",
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
         "resolved_vpu_regions": ({name: sorted(sites) for name, sites in
@@ -520,6 +583,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 precision_overrides: dict[str, str] | None = None,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                                 connect_multiplies: bool = False,
+                                share_activation_packing: bool = False,
+                                retain_shared_activation_rhs: bool = False,
                                 reuse_prepacked_data: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
@@ -550,6 +615,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     precision_overrides=precision_overrides,
                                     enabled_vpu_regions=enabled_vpu_regions,
                                     connect_multiplies=connect_multiplies,
+                                    share_activation_packing=share_activation_packing,
+                                    retain_shared_activation_rhs=retain_shared_activation_rhs,
                                     reuse_prepacked_data=reuse_prepacked_data)
 
     return build

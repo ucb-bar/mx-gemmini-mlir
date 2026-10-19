@@ -183,6 +183,13 @@ def main() -> None:
     parser.add_argument("--connect-vpu-multiplies", action="store_true",
                         help="experimentally retain private BF16 multiply intermediates; "
                              "requires --execution-policy; measure profitability separately")
+    parser.add_argument("--share-activation-packing", action="store_true",
+                        help="experimentally share explicit packed activation tensors; requires "
+                             "prepacked weights and an execution policy")
+    parser.add_argument("--activation-packing-budget-bytes", type=int, default=1048576,
+                        help="maximum simultaneously live shared packed tensors (default: 1 MiB)")
+    parser.add_argument("--retain-shared-activation-rhs", action="store_true",
+                        help="diagnostic ablation: share packing but retain unused RHS descriptors")
     parser.add_argument("--structural-elf-admission", action="store_true",
                         help="explicitly select Merlin's digest/ISA linked-image admission "
                              "for this compiler experiment; this imposes no instruction policy")
@@ -198,6 +205,13 @@ def main() -> None:
     args = parser.parse_args()
     if args.connect_vpu_multiplies and args.execution_policy is None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
+    if args.share_activation_packing and (not args.prepack_checkpoint_weights
+                                         or args.execution_policy is None):
+        parser.error("--share-activation-packing requires prepacked weights and an execution policy")
+    if args.activation_packing_budget_bytes <= 0:
+        parser.error("--activation-packing-budget-bytes must be positive")
+    if args.retain_shared_activation_rhs and not args.share_activation_packing:
+        parser.error("--retain-shared-activation-rhs requires --share-activation-packing")
     if args.prune_unused_checkpoint_weights and not args.prepack_checkpoint_weights:
         parser.error("--prune-unused-checkpoint-weights requires --prepack-checkpoint-weights")
     if args.reuse_prepacked_data is not None and not args.prepack_checkpoint_weights:
@@ -365,6 +379,8 @@ def main() -> None:
             precision_overrides=overrides,
             enabled_vpu_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            share_activation_packing=args.share_activation_packing,
+            retain_shared_activation_rhs=args.retain_shared_activation_rhs,
             reuse_prepacked_data=args.reuse_prepacked_data),
         post_offload_transform=MXVPUPostOffload(
             profile,
@@ -373,6 +389,8 @@ def main() -> None:
             enabled_elementwise_regions=enabled_elementwise_regions,
             enabled_site_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            share_activation_packing=args.share_activation_packing,
+            activation_packing_budget_bytes=args.activation_packing_budget_bytes,
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -593,6 +611,11 @@ def main() -> None:
         "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
         "prepack_checkpoint_weights": args.prepack_checkpoint_weights,
         "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
+        "share_activation_packing": args.share_activation_packing,
+        "retain_shared_activation_rhs": args.retain_shared_activation_rhs,
+        "shared_activation_rewrite": (
+            json.loads((work / "device_host_abi/mx_shared_activation_rewrite.json").read_text())
+            if args.share_activation_packing and device is not None else None),
         "prune_unused_checkpoint_weights": args.prune_unused_checkpoint_weights,
         "entry_weight_projection_receipt_sha256": (
             _sha(work / "entry_weight_projection/entry_weight_projection.json")

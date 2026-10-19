@@ -244,7 +244,9 @@ class MXVPUPostOffload:
                  enabled_elementwise_operations: frozenset[str] | None = None,
                  enabled_elementwise_regions: frozenset[str] | None = None,
                  enabled_site_regions: dict[str, frozenset[str]] | None = None,
-                 connect_multiplies: bool = False):
+                 connect_multiplies: bool = False,
+                 share_activation_packing: bool = False,
+                 activation_packing_budget_bytes: int = 1048576):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
@@ -277,6 +279,14 @@ class MXVPUPostOffload:
             self.fixed_weight = MXFixedWeightPostOffload(fixed_weight_catalog)
         else:
             self.fixed_weight = None
+        self.shared_activation = None
+        if share_activation_packing:
+            if fixed_weight_catalog is None:
+                raise ValueError("shared activation packing requires a fixed weight catalog")
+            from .merlin_shared_activation import MXSharedActivationPostOffload
+
+            self.shared_activation = MXSharedActivationPostOffload(
+                fixed_weight_catalog, max_live_bytes=activation_packing_budget_bytes)
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         selected = prepared
@@ -292,5 +302,8 @@ class MXVPUPostOffload:
         for name in ("softmax", "add", "elementwise", "unary", "reduce"):
             if name in self.enabled_classes and self.enabled_site_regions.get(name) != frozenset():
                 selected = getattr(self, name)(selected, sidecar, workdir)
-        return (self.fixed_weight(selected, sidecar, workdir)
-                if self.fixed_weight is not None else selected)
+        if self.fixed_weight is not None:
+            selected = self.fixed_weight(selected, sidecar, workdir)
+        if self.shared_activation is not None:
+            selected = self.shared_activation(selected, sidecar, workdir)
+        return selected

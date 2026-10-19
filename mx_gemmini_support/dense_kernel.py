@@ -52,7 +52,9 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           symbol: str, issuer_symbol: str = "mx_issue_encoded",
                           shared_workspace_symbol: str | None = None,
                           prepacked_weight_symbols: tuple[str, str] | None = None,
-                          cache_immutable_weight: bool = False) -> DenseKernel:
+                          cache_immutable_weight: bool = False,
+                          prepared_activation: bool = False,
+                          retain_prepared_rhs: bool = False) -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
     The issuer must have been checked against its profile. A payload-bound
@@ -71,6 +73,10 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX prepacked weight needs two distinct safe symbols")
     if cache_immutable_weight and prepacked_weight_symbols is not None:
         raise ValueError("MX fixed weight must be either cached or prepacked")
+    if prepared_activation and prepacked_weight_symbols is None:
+        raise ValueError("MX prepared activation entry requires immutable prepacked weights")
+    if retain_prepared_rhs and not prepared_activation:
+        raise ValueError("MX retained prepared RHS is a shared-activation diagnostic only")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -98,11 +104,13 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     padded_a = (lm, lk) != (m, k)
     padded_b = (lk, ln) != (k, n)
     buffers = []
-    if padded_a:
+    if padded_a and not prepared_activation:
         buffers.append(("padded_a", "float", m * k * 4, m * k))
     if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
     for name, size in expected.items():
+        if prepared_activation and name in {"activation", "activation_scales"}:
+            continue
         if (prepacked_weight_symbols is not None or cache_immutable_weight) and name in {
                 "weight", "weight_scales"}:
             continue
@@ -176,6 +184,16 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         pack = (f"""  if (mx_pack_activation_f32({a_source}, {m}u, {k}u, MX_RUNTIME_{issuer.precision},
                              activation, activation_scales)) __builtin_trap();
 """)
+    if prepared_activation:
+        a_prepare = ""
+        pack = (f"  const uint8_t *activation = lhs;\n"
+                f"  const uint8_t *activation_scales = lhs + {expected['activation']}u;\n")
+    parameters = ("const uint8_t *lhs, const float *rhs, float *out"
+                  if retain_prepared_rhs else
+                  "const uint8_t *lhs, float *out" if prepared_activation else
+                  "const float *lhs, const float *rhs, float *out")
+    pointer_check = ("!lhs || !out" if prepared_activation and not retain_prepared_rhs
+                     else "!lhs || !rhs || !out")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
     for (uint32_t col = 0; col < {ln}u; ++col) {{
       union {{ uint32_t bits; float value; }} word;
@@ -191,8 +209,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
 void {issuer_symbol}(const void *, const void *, const void *, const void *,
                      const void *, const void *);
 {external_weight}{''.join(declarations)}
-void {symbol}(const float *lhs, const float *rhs, float *out) {{
-  if (!lhs || !rhs || !out) __builtin_trap();
+void {symbol}({parameters}) {{
+  if ({pointer_check}) __builtin_trap();
 {local_buffers}{a_prepare}{b_prepare}{pack}  {issuer_symbol}(activation, activation_scales, {weight_codes}, {weight_scale},
                   output_bf16, scratch_output_scales);
 {copy_output}}}
@@ -201,6 +219,44 @@ void {symbol}(const float *lhs, const float *rhs, float *out) {{
                   if cache_immutable_weight else 0)
     return DenseKernel(source, symbol, logical_shape_mnk, issuer.shape_mnk,
                        workspace, persistent)
+
+
+def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
+                                logical_shape_mnk: tuple[int, int, int], *,
+                                symbol: str) -> tuple[str, int, int]:
+    """Emit deterministic packing into a caller-owned contiguous byte tensor.
+
+    Codes precede scales with the exact extents consumed by the checked issuer.
+    Padding scratch is private to this synchronous serial entry; packed output
+    survives independently of every matrix adapter's shared workspace.
+    """
+    # Reuse the adapter's full shape/format/extent validation.
+    emit_dense_f32_kernel(issuer, logical_shape_mnk, symbol=symbol + "_check")
+    if not _identifier(symbol):
+        raise ValueError("MX activation preparation needs a safe symbol")
+    lm, _, lk = logical_shape_mnk
+    m, _, k = issuer.shape_mnk
+    codes = issuer.buffer_bytes["activation"]
+    size = codes + issuer.buffer_bytes["activation_scales"]
+    padded = (lm, lk) != (m, k)
+    declaration = (f"static float padded[{m * k}] __attribute__((aligned(64)));\n"
+                   if padded else "")
+    padding = (f"""  for (uint32_t i=0; i<{m * k}u; ++i) padded[i]=0.0f;
+  for (uint32_t row=0; row<{lm}u; ++row)
+    for (uint32_t col=0; col<{lk}u; ++col)
+      padded[(size_t)row*{k}u+col]=lhs[(size_t)row*{lk}u+col];
+""" if padded else "")
+    source = f'''#include <stddef.h>
+#include <stdint.h>
+#include "runtime_quant.h"
+{declaration}
+void {symbol}(const float *lhs, uint8_t *out) {{
+  if (!lhs || !out) __builtin_trap();
+{padding}  if (mx_pack_activation_f32({"padded" if padded else "lhs"}, {m}u, {k}u,
+      MX_RUNTIME_{issuer.precision}, out, out+{codes}u)) __builtin_trap();
+}}
+'''
+    return source, size, m * k * 4 if padded else 0
 
 
 def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,

@@ -100,7 +100,10 @@ def compare(stage, archive, baseline, candidate, out):
             "complete_output_shape": list(golden.shape), "output_words_sha256": digest,
             "top1_agreement_all_160": int(np.count_nonzero(values.argmax(-1) == reference.argmax(-1))),
             "top1_matches_archived_compiler_all_160": int(np.count_nonzero(values.argmax(-1) == old_tops)),
-            "performance": parse_gemmini_perf(Path(env["GEMMINI_PERF_OUT"]).read_text()),
+            "performance": parse_gemmini_perf(
+                Path(env["GEMMINI_PERF_OUT"]).read_text() if env.get("GEMMINI_PERF_OUT")
+                else console_path.read_text()),
+            "performance_counter_source": env.get("GEMMINI_PERF_OUT") or str(console_path),
             "stage_receipt_sha256": sha(receipt_path), "console_sha256": sha(console_path),
             "catalog_sha256": sha(build / "device_catalog/mx_catalog.json"),
             "live_environment_sha256": sha(build / "live_environment.json"),
