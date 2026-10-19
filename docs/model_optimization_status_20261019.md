@@ -66,6 +66,16 @@ BF16 reverse transport retains F32 preparation for implicit-zero rows without a
 qualified compact endpoint. Private-edge rewrites refuse public outputs, real
 fanout, changed types, unknown effects or missing completion/layout contracts.
 
+Two resident scalar-epilogue probes now retain the original route. A native
+compute plus store-only scratchpad loop produces correct finite-case words,
+but its timing counters account for only one of three expected matrix/VPU
+executions, so its cycle comparison is refused. The existing explicit
+scratchpad schedule has complete matching arithmetic counters and exact words,
+but costs 4,550 → 5,693 section cycles (25.1209% more) despite 18,432 → 12,288
+load bytes. Both use separate actual admitted images and three distinct inputs;
+neither qualifies a general or full-model resident epilogue. Larger shapes,
+broader epilogues and a complete native handoff remain unmeasured.
+
 The completed 128-token prefill plus 32 decodes measures 74,065,304,284 cycles for
 the corrected cached compiler control, 55,871,481,378 for the earlier reuse
 passes plus virtual decode padding, and **41,567,160,094 for newer passes**.
@@ -203,6 +213,7 @@ Primary retained evidence and standalone verification:
 - [Private compact RHS full forward](evidence/matched_compact_batch_rhs_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete cached session with newer passes](evidence/cached_latest_session_20261019/README.md)
+- [Resident matrix epilogue counterexamples](evidence/native_resident_epilogue_rejections_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)
