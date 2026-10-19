@@ -55,7 +55,8 @@ def main():
             raise ValueError("capture changed: " + name)
     profile = load_profile(args.profile)
     source = capture / "source.mlir"
-    pair, = multiply_pairs(parse_mlir_file(source), selected_elementwise_sites(source.read_text(), profile))
+    pair, = multiply_pairs(parse_mlir_file(source), selected_elementwise_sites(source.read_text(), profile),
+                           include_broadcasts=True)
     _, adapter = chain_adapter(pair, profile)
     code, removed = emit_chain_kernel(pair, profile)
     out = args.out_dir.resolve()
@@ -73,7 +74,8 @@ def main():
         (retained_source / path.name).write_bytes(path.read_bytes())
     sidecar = out / "sidecar.json"
     sidecar.write_text("{}")
-    rewritten = MXVPUElementwisePostOffload(profile, connect_multiplies=True)(source, sidecar, out / "rewrite")
+    rewritten = MXVPUElementwisePostOffload(profile, connect_multiplies=True,
+                                          connect_broadcast_multiplies=True)(source, sidecar, out / "rewrite")
     module = parse_mlir_file(rewritten)
     module.verify()
     calls = [op for op in module.walk() if op.name == "func.call"]

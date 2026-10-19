@@ -153,12 +153,11 @@ class MXVPUAddPostOffload:
         self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
+        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.xdsl_dialects._common import text
         from xdsl.dialects import func, tensor
         from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
         from xdsl.ir import Region
-
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
@@ -245,14 +244,15 @@ class MXVPUPostOffload:
                  enabled_elementwise_regions: frozenset[str] | None = None,
                  enabled_site_regions: dict[str, frozenset[str]] | None = None,
                  connect_multiplies: bool = False,
+                 connect_broadcast_multiplies: bool = False,
                  connect_sigmoid_multiplies: bool = False,
                  share_activation_packing: bool = False,
                  activation_packing_budget_bytes: int = 1048576,
                  matrix_vpu_transport: bool = False):
-        from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
-        from .merlin_vpu_unary import MXVPUUnaryPostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
+        from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
+        from .merlin_vpu_unary import MXVPUUnaryPostOffload
 
         self.enabled_site_regions = enabled_site_regions or {}
         self.softmax = MXVPUSoftmaxPostOffload(
@@ -262,6 +262,7 @@ class MXVPUPostOffload:
         self.elementwise = MXVPUElementwisePostOffload(
             profile, enabled_operations=enabled_elementwise_operations,
             connect_multiplies=connect_multiplies,
+            connect_broadcast_multiplies=connect_broadcast_multiplies,
             enabled_regions=(self.enabled_site_regions.get("elementwise") or None
                              if "elementwise" in self.enabled_site_regions else
                              enabled_elementwise_regions))

@@ -190,6 +190,9 @@ def main() -> None:
     parser.add_argument("--connect-vpu-sigmoid-multiplies", action="store_true",
                         help="experimentally keep selected sigmoid and two multiplies resident; "
                              "requires connected multiplies, prepacking and a site policy")
+    parser.add_argument("--connect-vpu-broadcast-multiplies", action="store_true",
+                        help="experimentally connect projected multiply pairs and either consumer operand order; "
+                             "requires connected multiplies; measure profitability separately")
     parser.add_argument("--share-activation-packing", action="store_true",
                         help="experimentally share explicit packed activation tensors; requires "
                              "prepacked weights and an execution policy")
@@ -217,6 +220,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.connect_vpu_multiplies and args.execution_policy is None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
+    if args.connect_vpu_broadcast_multiplies and not args.connect_vpu_multiplies:
+        parser.error("--connect-vpu-broadcast-multiplies requires --connect-vpu-multiplies")
     if args.connect_vpu_sigmoid_multiplies and (not args.connect_vpu_multiplies
             or not args.prepack_checkpoint_weights or args.execution_policy is None):
         parser.error("--connect-vpu-sigmoid-multiplies requires connected multiplies, prepacking and a policy")
@@ -414,6 +419,7 @@ def main() -> None:
             precision_overrides=overrides,
             enabled_vpu_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            connect_broadcast_multiplies=args.connect_vpu_broadcast_multiplies,
             connect_sigmoid_multiplies=args.connect_vpu_sigmoid_multiplies,
             share_activation_packing=args.share_activation_packing,
             retain_shared_activation_rhs=args.retain_shared_activation_rhs,
@@ -428,6 +434,7 @@ def main() -> None:
             enabled_elementwise_regions=enabled_elementwise_regions,
             enabled_site_regions=enabled_site_regions,
             connect_multiplies=args.connect_vpu_multiplies,
+            connect_broadcast_multiplies=args.connect_vpu_broadcast_multiplies,
             connect_sigmoid_multiplies=args.connect_vpu_sigmoid_multiplies,
             share_activation_packing=args.share_activation_packing,
             activation_packing_budget_bytes=args.activation_packing_budget_bytes,
@@ -644,6 +651,7 @@ def main() -> None:
         "execution_policy_sha256": policy_sha,
         "execution_policy": execution_policy,
         "connect_vpu_multiplies": args.connect_vpu_multiplies,
+        "connect_vpu_broadcast_multiplies": args.connect_vpu_broadcast_multiplies,
         "connect_vpu_sigmoid_multiplies": args.connect_vpu_sigmoid_multiplies,
         "elf_admission_selection": ("structural_digest_and_declared_isa"
                                     if args.structural_elf_admission and device is not None else None),

@@ -8,7 +8,7 @@ from math import prod
 from .connected_elementwise import F32MultiplyAdapter, multiply_projection
 
 
-def multiply_pairs(module, sites):
+def multiply_pairs(module, sites, *, include_broadcasts: bool = False):
     """Bind supported pairs to actual SSA arithmetic, never provenance alone."""
     from merlin.xdsl_dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
@@ -68,6 +68,8 @@ def multiply_pairs(module, sites):
             continue
         input_shapes = (*first_pattern.input_shapes, second_pattern.input_shapes[external_index])
         input_axes = (*first_axes, second_axes[external_index])
+        if not include_broadcasts and (middle_index != 0 or any(shape != tuple(a["shape"]) for shape in input_shapes)):
+            continue
         symbol = "mx_vpu_mul_chain_f32_" + "_".join(map(str, a["shape"]))
         if middle_index != 0 or any(shape != tuple(a["shape"]) for shape in input_shapes):
             symbol += "_inputs_" + "__".join(

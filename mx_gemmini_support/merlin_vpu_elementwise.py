@@ -181,9 +181,13 @@ class MXVPUElementwisePostOffload:
 
     def __init__(self, profile: dict, *, enabled_operations: frozenset[str] | None = None,
                  enabled_regions: frozenset[str] | None = None,
-                 connect_multiplies: bool = False):
+                 connect_multiplies: bool = False,
+                 connect_broadcast_multiplies: bool = False):
+        if connect_broadcast_multiplies and not connect_multiplies:
+            raise ValueError("broadcast connections require connected multiplies")
         self.profile = profile
         self.connect_multiplies = connect_multiplies
+        self.connect_broadcast_multiplies = connect_broadcast_multiplies
         valid = frozenset(("mul", "add", "sub", "div"))
         self.enabled_operations = (valid if enabled_operations is None
                                    else frozenset(enabled_operations))
@@ -256,7 +260,7 @@ class MXVPUElementwisePostOffload:
         if self.connect_multiplies:
             from .merlin_connected_multiply import multiply_pairs
 
-            for pair in multiply_pairs(module, sites):
+            for pair in multiply_pairs(module, sites, include_broadcasts=self.connect_broadcast_multiplies):
                 first, second = pair["first"], pair["second"]
                 result_type = second.results[0].type
                 destination = tensor.EmptyOp((), result_type)

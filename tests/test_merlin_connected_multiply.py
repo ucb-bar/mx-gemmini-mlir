@@ -26,12 +26,12 @@ PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuG
 SOURCE = (ROOT / "docs/evidence/connected_model_section_20261016/tiny_mlp/source.mlir").read_text()
 
 
-def pairs(source=SOURCE, enabled=None):
+def pairs(source=SOURCE, enabled=None, *, include_broadcasts=True):
     module = parse_mlir_text(source)
     sites = selected_elementwise_sites(source, PROFILE)
     if enabled is not None:
         sites = [site for site in sites if site["region"] in enabled]
-    return multiply_pairs(module, sites)
+    return multiply_pairs(module, sites, include_broadcasts=include_broadcasts)
 
 
 @pytest.mark.parametrize("shape", ["1x1x137", "1x3x2731", "1x64x5632"])
@@ -110,7 +110,8 @@ def test_mixed_rank_rewrite_and_compiled_descriptor_abi(tmp_path):
     source.write_text(broadcast_source())
     sidecar.write_text("{}")
     pair, = pairs(source.read_text())
-    result = MXVPUElementwisePostOffload(PROFILE, connect_multiplies=True)(source, sidecar, tmp_path / "out")
+    result = MXVPUElementwisePostOffload(PROFILE, connect_multiplies=True,
+                                        connect_broadcast_multiplies=True)(source, sidecar, tmp_path / "out")
     module = parse_mlir_file(result)
     module.verify()
     call, = [op for op in module.walk() if op.name == "func.call"]
@@ -163,3 +164,15 @@ def test_broadcast_fusion_refuses_observable_or_changed_arithmetic(change):
     else:
         source = source.replace('"arith.mulf"(%x, %y)', '"arith.mulf"(%x, %x)', 1)
     assert not pairs(source)
+
+
+def test_broadcast_selection_is_separate_and_requires_the_original_connection_option(tmp_path):
+    assert not pairs(broadcast_source(), include_broadcasts=False)
+    assert len(pairs(SOURCE, include_broadcasts=False)) == 1
+    with pytest.raises(ValueError, match="require connected multiplies"):
+        MXVPUElementwisePostOffload(PROFILE, connect_broadcast_multiplies=True)
+    source, sidecar = tmp_path / "source.mlir", tmp_path / "sidecar.json"
+    source.write_text(broadcast_source())
+    sidecar.write_text("{}")
+    result = MXVPUElementwisePostOffload(PROFILE, connect_multiplies=True)(source, sidecar, tmp_path / "out")
+    assert len([op for op in parse_mlir_file(result).walk() if op.name == "func.call"]) == 2

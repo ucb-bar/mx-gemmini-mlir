@@ -68,6 +68,10 @@ def test_operand_order_has_a_distinct_endpoint_for_exceptional_fallback(source):
     assert normal["symbol"] != commuted["symbol"]
 
 
+def test_second_multiply_operand_order_requires_its_own_sigmoid_qualification(source):
+    assert not selected(source.replace("ins(%12, %1", "ins(%1, %12", 1))
+
+
 @pytest.mark.parametrize("missing", ["connect_multiplies", "prepack_immutable_weights", "enabled_vpu_regions"])
 def test_direct_catalog_api_requires_explicit_experiment_prerequisites(tmp_path, missing):
     from mx_gemmini_support.merlin_catalog_builder import build_merlin_catalog
