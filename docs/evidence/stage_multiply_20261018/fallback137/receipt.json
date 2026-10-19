@@ -1,0 +1,122 @@
+{
+  "boundary_policy": "bf16_rne_each_vpu_call",
+  "capture_receipt": {
+    "files_sha256": {
+      "bf16_policy_golden.npy": "848928e0d684b2e02e8825bc8c42835ab972cb5c52a827c8a1143f038fb0a638",
+      "inputs.npz": "aeaf76500daa81adfa5ee18e1c035266fc99ba230c329a81bf3390057be6c8b6",
+      "source.mlir": "48f9e96737c915f09ab2455ffebe32229598f0ba267dffa1110ab8b9b8f76f4c"
+    },
+    "parent_receipt": {
+      "elements": 137,
+      "fixture": "fallback",
+      "schema": "mx_gemmini.independent_fixture.v1"
+    },
+    "schema": "mx_gemmini.bound_fixture.v1"
+  },
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/physical/libgemmini.so",
+    "--extension=gemmini",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_vpu_opt_20261018/fallback137_abi_final/connected/section.elf"
+  ],
+  "expected_fallback": true,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "implementation_sha256": {
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/xdsl_dialects/lowering/connected_dispatch.py": "e8d694e0520f9cefbde8c8ee7079eed61d0fad76b8706bdb9009c88424ec3e63",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/xdsl_dialects/lowering/tensor_chains.py": "f83cd48d80b3070be436a01e4e3108835f364b34b5f40dcca928054e6b084018",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/connected_elementwise.py": "ee6a810fe3f5a9ba2c35bf6664a5efd5f0336b4f6ee0ff7b4852a712db4c6c1b",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/merlin_connected_multiply.py": "17b6889fbb7323aa6ef1aa1699067496b9fcb329bdb1117f2c7665bb4e6aa890",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/merlin_vpu_elementwise.py": "209aea749e7ef8a2a139434b762b8a29000ddfa657719fd798dac991517ae2b3",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/qualify_stage_multiply_spike.py": "c8a053d6bdac1866223b4fd82d2df6e3f108db1831798ee482c0a7ad79fddd9f"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "profile_source_verification": "archived_profile_only_no_live_rtl_check",
+  "removed_transfer_bytes_per_call": 0,
+  "results": {
+    "connected": {
+      "checks": [
+        {
+          "cycles": "15916",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "0"
+        },
+        {
+          "cycles": "15524",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "1"
+        },
+        {
+          "cycles": "15524",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "2"
+        }
+      ],
+      "counters": {
+        "commands": 60,
+        "fences": 18,
+        "load_bytes": 3456,
+        "scale_bytes": 0,
+        "store_puts": 108
+      },
+      "files_sha256": {
+        "issue.c": "05513689ae5e5cb7dfaee58d456dd4343e71520dda32f92bbc6aaad82066c27c",
+        "issue.o": "4cf3d5202adb571d13e6e9b83fca16e0c41eb4ff645d1caab9e9032bad9ce5f7",
+        "perf.txt": "5d03bf977984c386dcffefa612db38a444c0c6c15f7fd0c92dc8e891b1206f22",
+        "section.elf": "6e6dc26a776eb2279623dd26fb00a3a7133e5d1969e37a717ddcfa72491bb577",
+        "spike.log": "de6e8c1ba56e0d7f57948d4fa5a933d4658d5f5cccff09c05486fd73a156630e"
+      }
+    },
+    "materialized": {
+      "checks": [
+        {
+          "cycles": "9997",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "0"
+        },
+        {
+          "cycles": "9605",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "1"
+        },
+        {
+          "cycles": "9605",
+          "hash": "3053039615",
+          "mismatches": "0",
+          "run": "2"
+        }
+      ],
+      "counters": {
+        "commands": 60,
+        "fences": 18,
+        "load_bytes": 3456,
+        "scale_bytes": 0,
+        "store_puts": 108
+      },
+      "files_sha256": {
+        "issue.c": "373b52430e800b55c18c46425112429d7ba5a8eba4e7307dbda376233bb8ecd3",
+        "issue.o": "30b0ca136c13a221b335187746803bb2400e32951ea5ab0c51272894f61594ba",
+        "perf.txt": "7aeb78df0d171d77a44160b3d75ddd561fb5fa555715be200e6c9510c174a2d2",
+        "section.elf": "9318387dc4aad777647f643ed57d667127356ff71b81cdb18a52affcb0eb668b",
+        "spike.log": "624c3e06d16c58945ed7e45d6732606f70c81e88dfa9bfcfebbc744c8f697475"
+      }
+    }
+  },
+  "schema": "mx_gemmini.stage_multiply_spike.v1",
+  "shape": [
+    137
+  ],
+  "source_files_sha256": {
+    "driver.c": "1ec421220e8e31c083a7a79f392bec39d6165fcd90bd349faf4c931b0f6b87bd",
+    "payload.S": "02006e21c1b8f405482febe9cf5e0b0dadfea6b98d0ec0640f126e21f7f5a6f0",
+    "payload.bin": "ed0bbe50154db794017dc6d46190e2f56a3d1ea64944db3a59cbad53043a3dfe"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "warm_saved_cycles": -5919
+}

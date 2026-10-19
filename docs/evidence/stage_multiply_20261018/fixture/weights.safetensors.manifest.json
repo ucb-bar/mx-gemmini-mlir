@@ -1,0 +1,23 @@
+{
+  "0": {
+    "weight": "up.weight",
+    "kind": "param",
+    "dtype": "float32",
+    "shape": [
+      32,
+      32
+    ]
+  },
+  "1": {
+    "kind": "input",
+    "name": "a"
+  },
+  "2": {
+    "kind": "input",
+    "name": "b"
+  },
+  "3": {
+    "kind": "input",
+    "name": "x"
+  }
+}

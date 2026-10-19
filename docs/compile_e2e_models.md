@@ -618,6 +618,32 @@ needs a Spike check; see the half-sweep receipt in the same archive.
 
 ## Connected dispatch qualification
 
+`tools.build_merlin_stage --execution-policy POLICY --connect-vpu-multiplies`
+now integrates private f32 multiply pairs into whole-stage compilation. This
+is an opt-in experiment under the existing per-call BF16 VPU policy. Both
+operations must already be selected for the VPU. The pass derives the pair
+from actual typed arithmetic and SSA uses, checks intervening tensor work,
+and retains the private BF16 intermediate in scratchpad. It preserves both
+rounding steps and falls back to the original kernels for nonfinite or extreme
+inputs. Unknown effects, fanout, unsupported arithmetic, and host-selected
+operations prevent connection. The catalog and final rewrite must report the
+same pairs, or compilation fails.
+
+The existing generated execution policy keeps softmax and general elementwise
+adds on the host. Connecting multiplies does not change those placements or
+qualify full-model numerical quality. There is no automatic profitability
+selection: measure the candidate on the chosen inputs before adopting it.
+The [stage integration evidence](evidence/stage_multiply_20261018/README.md)
+records an executed small MX graph and the checkpoint-backed MLP section.
+
+Current Merlin requires explicit linked-image admission for device builds.
+For these trusted compiler experiments, pass `--structural-elf-admission` to
+select Merlin's existing digest-and-declared-ISA service. Its receipt is
+bound to the final ELF; it imposes no accelerator instruction policy and
+establishes no hardware or numerical qualification. Leaving this option out
+does not silently select a policy. The tool also respects an explicitly set
+`MERLIN_COMPILER_PYTHON`, so capture and LLVM Python environments can differ.
+
 `tools.qualify_connected_dispatch_spike` exercises the generic Merlin residency
 pass with source-derived BF16 VPU fragments. It captures a small PyTorch graph,
 builds materialized and connected RV64 executables, compares all output bits,

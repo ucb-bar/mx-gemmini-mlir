@@ -1,0 +1,233 @@
+{
+  "abi": {
+    "argument_order": [
+      "lhs",
+      "rhs",
+      "out"
+    ],
+    "batch_call": "whole_batch",
+    "dtypes": [
+      "f32",
+      "f32",
+      "f32"
+    ],
+    "pointee_layout": "dense_row_major"
+  },
+  "bindings": [
+    {
+      "region": "matmul_0",
+      "source_operation_ordinal": 11,
+      "symbol": "mx_dense_kernel_0",
+      "target_dtypes": [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ],
+      "tensor_types": [
+        "tensor<32x32xf32>",
+        "tensor<32x32xf32>",
+        "tensor<32x32xf32>"
+      ]
+    }
+  ],
+  "cached_checkpoint_kernels": 0,
+  "checkpoint_weights_sha256": null,
+  "compilation": {
+    "compiler": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/riscv64-unknown-elf-gcc",
+    "flags": [
+      "-march=rv64gc",
+      "-mabi=lp64d",
+      "-mcmodel=medany",
+      "-O2",
+      "-ffreestanding",
+      "-fno-fast-math",
+      "-fno-common",
+      "-fno-tree-loop-distribute-patterns",
+      "-std=gnu11",
+      "-I",
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support"
+    ],
+    "issuer_modes": {
+      "mx_dense_kernel_0": "merlin_mk_native_dram_loop"
+    },
+    "object_sha256": "a5f171afba512a0105071c04847b5555fe6fc4190be938e5a13df0559e65017a",
+    "shared_workspace_bytes": 6272,
+    "source_sha256": {
+      "mx_dense_kernel_0": "b0c525356562276ade61829144d5ff54343e70931f715fc86df3abd77914efbf",
+      "mx_issue_0": "6458e5532553bda26ae47b3535ebdd5a41e8fe7ee4c2f86faa8e37085cdd7889",
+      "mx_vpu_mul_chain_f32_32_32": "832f79951d3be1881aadfadb0daa739333cc56740d4e9920a42b4f80776c82a3",
+      "mx_vpu_mul_chain_f32_32_32_kernel": "d130ecf3a8452df32963c68c4334f53a6441231d3a06ba6272a4a13c9fab2e32",
+      "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1": "c68dfa4c667301d59eee6a17a883dd5aab1390a302260972e2b113d80a262cc0",
+      "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1_kernel": "1f60982581ad3ef51cfaef8feb5ee8fefb40fee03b030ca199e5a033eb02e567",
+      "runtime_quant": "d098a5193c865e277d88a1f53b73cd011be9d74cc02f64e3d885d9c73bea9aae",
+      "runtime_quant_lut": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db",
+      "shared_workspace": "a66b858bc986fa7a345533b26433957f7bb06cdae07556c4a0490c03df0f3402"
+    }
+  },
+  "coverage_complete": true,
+  "covered_contractions": 1,
+  "kernels": [
+    {
+      "batched": false,
+      "cache_immutable_weight": false,
+      "dimensions": {
+        "batch": 1,
+        "k": 32,
+        "m": 32,
+        "n": 32
+      },
+      "instruction_set_sha256": "404756b56cd8ca12979109070d902917ad2d6248a500703c1c28003040218fef",
+      "issuer_mode": "merlin_mk_native_dram_loop",
+      "padded_shape_mnk": [
+        32,
+        32,
+        32
+      ],
+      "persistent_weight_bytes": 0,
+      "policy_file": "mx_dense_kernel_0.schedule.mlir",
+      "policy_ir": "merlin.schedule",
+      "policy_sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+      "precision": "mxfp8",
+      "prepacked_checkpoint_weight": false,
+      "schedule_file": "mx_issue_0.mk",
+      "schedule_ir": "merlin.mk",
+      "schedule_sha256": "a53ec1f2dd470436a1a528b20ba7872a09217783a55241703e23abcd36275a12",
+      "symbol": "mx_dense_kernel_0",
+      "tile_mnk": [
+        32,
+        32,
+        32
+      ],
+      "workspace_bytes": 6272
+    }
+  ],
+  "matched_contractions": 1,
+  "precision_overrides": {
+    "matmul_0": "mxfp8"
+  },
+  "precision_proposals": 1,
+  "prepacked_checkpoint_kernels": 0,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "resolved_vpu_regions": {
+    "add": [],
+    "elementwise": [
+      "mul_0#mul0",
+      "mul_1#mul0"
+    ],
+    "reduce": [],
+    "softmax": [],
+    "unary": []
+  },
+  "schema": "mx_gemmini.merlin_device_catalog.v1",
+  "source_conversion": {
+    "policy": {
+      "accumulation_and_readout": "bf16_then_exact_widen_to_f32",
+      "batch": "serial_disjoint_slices",
+      "edge": "zero_pad_to_mesh_and_wave",
+      "fp4": "e2m1_via_e3m1_intermediate",
+      "fp8": "e4m3_rne",
+      "input_rounding": "bf16_rne",
+      "scale": "e8m0_block32",
+      "schema": "mx_gemmini.dense_f32_conversion.v1"
+    },
+    "policy_sha256": "f5df334ccbc42a57990af3b8b4ba3cd69073d4bfa330722ba87e316f7a4b150c",
+    "schema": "target_owned_dtype_conversion_v1",
+    "source_dtypes": [
+      "f32",
+      "f32",
+      "f32"
+    ],
+    "target_dtypes": [
+      [
+        "f8E4M3FN",
+        "f8E4M3FN",
+        "bf16"
+      ]
+    ]
+  },
+  "source_sha256": "f695536805f4638e967e60a459e0d0646c00c8aefe1e11b99db6f925c7c09297",
+  "status": "compiled_experimental_numeric_qualification_pending",
+  "unbound_precision_proposals": [],
+  "unique_issuers": 1,
+  "unique_kernels": 1,
+  "vpu_add": {
+    "kernels": [],
+    "numeric_policy": "bf16_vpu_add_or_f32_to_bf16_rne_vpu_add_to_f32",
+    "source_regions": [],
+    "status": "source_bound_bf16_or_explicit_f32_conversion"
+  },
+  "vpu_elementwise": {
+    "connected_multiplies": [
+      {
+        "kernel_symbol": "mx_vpu_mul_chain_f32_32_32_kernel",
+        "regions": [
+          "mul_0#mul0",
+          "mul_1#mul0"
+        ],
+        "removed_transfer_bytes": 4096,
+        "shape": [
+          32,
+          32
+        ],
+        "symbol": "mx_vpu_mul_chain_f32_32_32"
+      }
+    ],
+    "connected_selection": "experimental_legality_only",
+    "kernels": [
+      {
+        "dtype": "f32",
+        "elements_per_chunk": 1024,
+        "kernel_symbol": "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1_kernel",
+        "lhs_axes": [
+          0,
+          1
+        ],
+        "lhs_dtype": "f32",
+        "lhs_shape": [
+          32,
+          32
+        ],
+        "operation": "mul",
+        "rhs_axes": [
+          0,
+          1
+        ],
+        "rhs_dtype": "f32",
+        "rhs_shape": [
+          32,
+          32
+        ],
+        "shape": [
+          32,
+          32
+        ],
+        "symbol": "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1"
+      }
+    ],
+    "numeric_policy": "f32_to_bf16_rne_vpu_to_f32_or_direct_bf16",
+    "source_regions": [
+      "mul_0#mul0",
+      "mul_1#mul0"
+    ],
+    "status": "source_bound_bf16_or_explicit_f32_conversion"
+  },
+  "vpu_reduce": {
+    "kernels": [],
+    "numeric_policy": "f32_to_bf16_rne_vpu_row_reduce_to_f32",
+    "source_regions": [],
+    "status": "source_bound_f32_to_bf16_reduce_to_f32"
+  },
+  "vpu_softmax": {
+    "kernels": [],
+    "numeric_policy": "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities",
+    "source_regions": [],
+    "status": "source_bound_f32_to_bf16_vpu_to_f32"
+  },
+  "vpu_source_aliases": {},
+  "vpu_unary": {
+    "kernels": [],
+    "numeric_policy": "f32_to_bf16_rne_vpu_unary_to_f32_or_direct_bf16",
+    "source_regions": [],
+    "status": "source_bound_bf16_or_explicit_f32_conversion"
+  }
+}

@@ -162,6 +162,12 @@ def main() -> None:
                         help="receipt-bound FP8 overrides for sensitive FP4 source regions")
     parser.add_argument("--execution-policy", type=Path,
                         help="capture-bound MX matrix precision and per-site VPU routing")
+    parser.add_argument("--connect-vpu-multiplies", action="store_true",
+                        help="experimentally retain private BF16 multiply intermediates; "
+                             "requires --execution-policy; measure profitability separately")
+    parser.add_argument("--structural-elf-admission", action="store_true",
+                        help="explicitly select Merlin's digest/ISA linked-image admission "
+                             "for this compiler experiment; this imposes no instruction policy")
     parser.add_argument("--compile-timeout-s", type=int,
                         default=int(os.environ.get("MERLIN_COMPILE_TIMEOUT_S", "3600")),
                         help="wall-clock limit per compiler/link command; 0 disables it")
@@ -172,6 +178,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.connect_vpu_multiplies and args.execution_policy is None:
+        parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
     if args.execution_policy is not None and (
             args.precision_overrides is not None or args.diagnostic_host_vpu or
             args.diagnostic_vpu_classes is not None or
@@ -261,7 +269,7 @@ def main() -> None:
     override_sha = _sha(override_path) if override_path is not None else None
     policy_sha = _sha(policy_path) if policy_path is not None else None
     os.environ["MERLIN_TARGET_PATH"] = str(ROOT)
-    os.environ["MERLIN_COMPILER_PYTHON"] = sys.executable
+    os.environ.setdefault("MERLIN_COMPILER_PYTHON", sys.executable)
     os.environ["MERLIN_MLIR_INSTALL"] = str(llvm_root)
     os.environ["MERLIN_CLANG"] = str(llvm_root / "bin/clang")
     os.environ["MERLIN_RISCV_GCC"] = str(riscv_root / "bin/riscv64-unknown-elf-gcc")
@@ -273,6 +281,7 @@ def main() -> None:
     from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation
     from mx_gemmini_support.merlin_catalog_builder import make_merlin_catalog_builder
     from mx_gemmini_support.merlin_vpu_inventory import audit_softmax_boundaries
+    from merlin.model_check.admission import service as structural_admission
     from mx_gemmini_support.merlin_vpu_softmax import selected_softmax_sites
     from mx_gemmini_support.merlin_vpu_add import MXVPUPostOffload, selected_add_sites
     from mx_gemmini_support.merlin_vpu_elementwise import selected_elementwise_sites
@@ -308,6 +317,8 @@ def main() -> None:
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
+        linked_elf_admission=(structural_admission("mx_gemmini")
+                              if args.structural_elf_admission else None),
         prepared_transform=MXBF16CatalogPreparation(
             profile, precision_overrides=overrides),
         catalog_builder=make_merlin_catalog_builder(
@@ -315,13 +326,15 @@ def main() -> None:
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
             precision_overrides=overrides,
-            enabled_vpu_regions=enabled_site_regions),
+            enabled_vpu_regions=enabled_site_regions,
+            connect_multiplies=args.connect_vpu_multiplies),
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
             enabled_elementwise_operations=enabled_elementwise_operations,
             enabled_elementwise_regions=enabled_elementwise_regions,
             enabled_site_regions=enabled_site_regions,
+            connect_multiplies=args.connect_vpu_multiplies,
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
     ) if expected_regions else None)
@@ -413,6 +426,12 @@ def main() -> None:
     if (len({row["region"] for row in lowered_elementwise}) != len(lowered_elementwise) or
             not {row["region"] for row in lowered_elementwise} <= catalog_elementwise_regions):
         raise RuntimeError("MX VPU elementwise rewrite exceeds its source-bound catalog")
+    connected_multiplies = (json.loads(elementwise_rewrite_path.read_text()).get("connected_multiplies", [])
+                            if elementwise_rewrite_path.is_file() else [])
+    planned_multiplies = catalog.get("vpu_elementwise", {}).get("connected_multiplies", [])
+    if connected_multiplies != [
+            {key: row[key] for key in ("regions", "shape", "symbol")} for row in planned_multiplies]:
+        raise RuntimeError("MX connected multiply rewrite differs from its source-bound catalog")
     unary_rewrite_path = work / "device_host_abi/mx_vpu_unary_rewrite.json"
     lowered_unary = (json.loads(unary_rewrite_path.read_text(encoding="utf-8"))["regions"]
                      if unary_rewrite_path.is_file() else [])
@@ -482,6 +501,10 @@ def main() -> None:
         "precision_overrides_sha256": override_sha,
         "execution_policy_sha256": policy_sha,
         "execution_policy": execution_policy,
+        "connect_vpu_multiplies": args.connect_vpu_multiplies,
+        "elf_admission_selection": ("structural_digest_and_declared_isa"
+                                    if args.structural_elf_admission else None),
+        "connected_vpu_multiply_pairs": connected_multiplies,
         "precision_overrides": overrides or {},
         "catalog_manifest": str(catalog_path) if device is not None else None,
         "execution_route": route,

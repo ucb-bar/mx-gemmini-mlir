@@ -67,7 +67,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          cache_immutable_weights: bool = False,
                          prepack_immutable_weights: bool = False,
                          precision_overrides: dict[str, str] | None = None,
-                         enabled_vpu_regions: dict[str, frozenset[str]] | None = None
+                         enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
+                         connect_multiplies: bool = False
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     plan = plan_merlin_catalog(
@@ -271,6 +272,22 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         })
     elementwise_sites = routed("elementwise", selected_elementwise_sites(
         prepared_text, profile))
+    connected_multiplies = []
+    if connect_multiplies:
+        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from .merlin_connected_multiply import emit_chain_kernel, emit_chain_shim, multiply_pairs
+
+        pairs = multiply_pairs(parse_mlir_file(prepared), elementwise_sites)
+        compiled = {}
+        for pair in pairs:
+            if pair["symbol"] not in compiled:
+                source, removed = emit_chain_kernel(pair, profile)
+                compile_source(pair["kernel_symbol"], source)
+                compile_source(pair["symbol"], emit_chain_shim(pair))
+                compiled[pair["symbol"]] = removed
+            connected_multiplies.append({key: pair[key] for key in
+                                         ("regions", "shape", "symbol", "kernel_symbol")} |
+                                        {"removed_transfer_bytes": compiled[pair["symbol"]]})
     elementwise_shapes = {site["symbol"]: site for site in elementwise_sites}
     elementwise_kernels = []
     for site in elementwise_shapes.values():
@@ -364,6 +381,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 for name in ("symbol", "kernel_symbol")) or
             any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
                 for site in elementwise_shapes.values()) or
+            any(defined.count(site[name]) != 1 for site in connected_multiplies
+                for name in ("symbol", "kernel_symbol")) or
+            any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
+                for site in connected_multiplies) or
             any(defined.count(site[name]) != 1 for site in unary_shapes.values()
                 for name in ("symbol", "kernel_symbol")) or
             any(defined.count("_mlir_ciface_" + site["symbol"]) != 1
@@ -435,6 +456,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "numeric_policy": "f32_to_bf16_rne_vpu_to_f32_or_direct_bf16",
             "source_regions": [site["region"] for site in elementwise_sites],
             "kernels": elementwise_kernels,
+            "connected_multiplies": connected_multiplies,
+            "connected_selection": "experimental_legality_only" if connect_multiplies else "disabled",
         },
         "vpu_unary": {
             "status": "source_bound_bf16_or_explicit_f32_conversion",
@@ -467,7 +490,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 cached_weight_stage: Path | None = None,
                                 prepacked_weight_stage: Path | None = None,
                                 precision_overrides: dict[str, str] | None = None,
-                                enabled_vpu_regions: dict[str, frozenset[str]] | None = None
+                                enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
+                                connect_multiplies: bool = False
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
@@ -495,6 +519,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     cache_immutable_weights=cached_weight_stage is not None,
                                     prepack_immutable_weights=prepacked_weight_stage is not None,
                                     precision_overrides=precision_overrides,
-                                    enabled_vpu_regions=enabled_vpu_regions)
+                                    enabled_vpu_regions=enabled_vpu_regions,
+                                    connect_multiplies=connect_multiplies)
 
     return build

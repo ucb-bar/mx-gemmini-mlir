@@ -182,8 +182,10 @@ class MXVPUElementwisePostOffload:
     """Replace verified binary generics with destination-passing VPU calls."""
 
     def __init__(self, profile: dict, *, enabled_operations: frozenset[str] | None = None,
-                 enabled_regions: frozenset[str] | None = None):
+                 enabled_regions: frozenset[str] | None = None,
+                 connect_multiplies: bool = False):
         self.profile = profile
+        self.connect_multiplies = connect_multiplies
         valid = frozenset(("mul", "add", "sub", "div"))
         self.enabled_operations = (valid if enabled_operations is None
                                    else frozenset(enabled_operations))
@@ -252,7 +254,34 @@ class MXVPUElementwisePostOffload:
             raise ValueError("MX VPU elementwise source regions changed after routing")
         declarations = {}
         records = []
+        connected = []
+        consumed = {}
+        if self.connect_multiplies:
+            from .merlin_connected_multiply import multiply_pairs
+
+            for pair in multiply_pairs(module, sites):
+                first, second = pair["first"], pair["second"]
+                result_type = second.results[0].type
+                destination = tensor.EmptyOp((), result_type)
+                call = func.CallOp(pair["symbol"],
+                                   [*first.inputs, second.inputs[1], destination.results[0]],
+                                   [result_type])
+                block.insert_op_before(destination, second)
+                block.insert_op_before(call, second)
+                second.results[0].replace_all_uses_with(call.results[0])
+                second.detach()
+                second.erase()
+                first.detach()
+                first.erase()
+                declarations[pair["symbol"]] = tuple(v.type for v in call.arguments)
+                consumed.update({region: pair["symbol"] for region in pair["regions"]})
+                connected.append({key: pair[key] for key in ("regions", "shape", "symbol")})
         for site in sites:
+            if site["region"] in consumed:
+                records.append({key: site[key] for key in
+                                ("region", "operation", "dtype", "swap")} |
+                               {"symbol": consumed[site["region"]], "source_symbol": site["symbol"]})
+                continue
             op = candidates[site["region"]][0]
             args = list(op.inputs)
             if site["swap"]:
@@ -287,7 +316,7 @@ class MXVPUElementwisePostOffload:
         for symbol, signature in declarations.items():
             module.body.block.add_op(func.FuncOp(
                 symbol, (signature, (signature[-1],)), Region(),
-                visibility="private", arg_attrs=ArrayAttr([read, read, write])))
+                visibility="private", arg_attrs=ArrayAttr([read] * (len(signature) - 1) + [write])))
         workdir.mkdir(parents=True, exist_ok=True)
         out = workdir / "mx_vpu_elementwise.mlir"
         out.write_text(text(module))
@@ -302,6 +331,7 @@ class MXVPUElementwisePostOffload:
             "enabled_regions": (sorted(self.enabled_regions)
                                 if self.enabled_regions is not None else None),
             "regions": records,
+            "connected_multiplies": connected,
         }
         (workdir / "mx_vpu_elementwise_rewrite.json").write_text(
             json.dumps(receipt, indent=2, sort_keys=True) + "\n")

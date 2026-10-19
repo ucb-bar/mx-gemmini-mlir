@@ -1,0 +1,5 @@
+gemmini perf [e4m3_vpu]: 53 commands, 1 loops, 103 fences; last activity 231181; host stalled 2151 cycles; 2480 events
+  mesh: 8 tiles, 128 busy cycles; VPU: 2 commands
+  load: 8192 bytes in 448 Gets (mean latency 81.2); store: 160 reads, 160 Puts; scales: 64 bytes
+  memory: L2 320 hits (320 on a pending fill), 130 misses; bus busy 608, DRAM busy 1296 cycles; CPU stores 0 lines, L1 probes 0, partial-write fills 32, dirty write-backs 0 (host tracking off)
+  ports busy: sp0 r384/w320 sp1 r320/w320 sp2 r128/w128 sp3 r0/w0 acc0 96 acc1 0

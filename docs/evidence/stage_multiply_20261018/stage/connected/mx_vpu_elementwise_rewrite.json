@@ -1,0 +1,49 @@
+{
+  "connected_multiplies": [
+    {
+      "regions": [
+        "mul_0#mul0",
+        "mul_1#mul0"
+      ],
+      "shape": [
+        32,
+        32
+      ],
+      "symbol": "mx_vpu_mul_chain_f32_32_32"
+    }
+  ],
+  "enabled_operations": [
+    "add",
+    "div",
+    "mul",
+    "sub"
+  ],
+  "enabled_regions": [
+    "mul_0#mul0",
+    "mul_1#mul0"
+  ],
+  "numeric_policy": "f32_to_bf16_rne_vpu_to_f32_or_direct_bf16",
+  "output_sha256": "188dee5dc7d25551fcc275cf8641597d592074ff75b7ddb88b70d4ec34dd9f4c",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "regions": [
+    {
+      "dtype": "f32",
+      "operation": "mul",
+      "region": "mul_0#mul0",
+      "source_symbol": "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1",
+      "swap": false,
+      "symbol": "mx_vpu_mul_chain_f32_32_32"
+    },
+    {
+      "dtype": "f32",
+      "operation": "mul",
+      "region": "mul_1#mul0",
+      "source_symbol": "mx_vpu_mul_f32_lf32_rf32_32_32_lhs_32_32_laxes_0_1_rhs_32_32_axes_0_1",
+      "swap": false,
+      "symbol": "mx_vpu_mul_chain_f32_32_32"
+    }
+  ],
+  "schema": "mx_gemmini.merlin_vpu_elementwise_rewrite.v1",
+  "sidecar_sha256": "e7a20b01c931d13055f692cde48f211ce5f5ce7b1617048195e3895a3ea9d824",
+  "source_sha256": "f82a01cd7b9457cfbdc960361b85efab312693581b18097b7209a2a3e544b735"
+}

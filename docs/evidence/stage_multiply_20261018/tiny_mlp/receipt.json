@@ -1,0 +1,137 @@
+{
+  "boundary_policy": "bf16_rne_each_vpu_call",
+  "capture_receipt": {
+    "files_sha256": {
+      "bf16_policy_golden.npy": "6f798897606731ba90fdeece500541c737d34b47d9fe4dceaf6af853586ccc5b",
+      "capture_trace.json": "b7ddc72a158229482839845e874f3a3f2d56660a722b5385ce119cadad30a0e3",
+      "golden.npy": "12cda653d2a3a4b572153328f988fb56d202e6e3dd5d3b6d2baadbeb2a5b877c",
+      "inputs.npz": "ad4bdbc99c77c671a8becd3988f92491f5539ebe05a05d70609b89ce03f432c1",
+      "source.mlir": "dc3072fd3c4d8f525b7383ab96e66fdde4e6f1c38ac26d7b06299ea7dcbf3b24"
+    },
+    "layer_index": 5,
+    "model2mlir_revision": "905d2c918f839596c9d1198cbdeb42d4c12a325b",
+    "original_layer_golden_checked": true,
+    "preparation_sha256": "c39dfb3a67ae6b3117456d64a79712bca2a9a5bdbf3320c37472cfae3a6bb049",
+    "relative_error_to_f32": 0.0036849760054217255,
+    "schema": "mx_gemmini.connected_mlp_capture.v1",
+    "shape": [
+      1,
+      64,
+      5632
+    ],
+    "source_bundle_sha256": {
+      "capture_receipt.json": "950cbe5761c5b7ab18f2c6632cb759011a8aede76cec6167a3d21ae6b2df4ae1",
+      "golden.npy": "7cecd342c993b521d0560768b815373f8aadff20e1f9c3ab05f793cecb0ed699",
+      "inputs.npz": "02dba20348c34cd092b63e734cf88246e6c44ac134786d38fc36d1b19aa8e0a6",
+      "weights.safetensors": "a0530edeba3284f307f6d81f065fb2c8b89df010a7e4f2c3f40bc4f918403a40"
+    }
+  },
+  "command": [
+    "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+    "--isa=rv64gc_zicntr",
+    "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/physical/libgemmini.so",
+    "--extension=gemmini",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/tiny_vpu_opt_20261018/tiny_mlp_abi_final/connected/section.elf"
+  ],
+  "expected_fallback": false,
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "gcc_sha256": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+  "implementation_sha256": {
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/xdsl_dialects/lowering/connected_dispatch.py": "e8d694e0520f9cefbde8c8ee7079eed61d0fad76b8706bdb9009c88424ec3e63",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/xdsl_dialects/lowering/tensor_chains.py": "f83cd48d80b3070be436a01e4e3108835f364b34b5f40dcca928054e6b084018",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/connected_elementwise.py": "ee6a810fe3f5a9ba2c35bf6664a5efd5f0336b4f6ee0ff7b4852a712db4c6c1b",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/merlin_connected_multiply.py": "17b6889fbb7323aa6ef1aa1699067496b9fcb329bdb1117f2c7665bb4e6aa890",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/mx_gemmini_support/merlin_vpu_elementwise.py": "209aea749e7ef8a2a139434b762b8a29000ddfa657719fd798dac991517ae2b3",
+    "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/qualify_stage_multiply_spike.py": "c8a053d6bdac1866223b4fd82d2df6e3f108db1831798ee482c0a7ad79fddd9f"
+  },
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "profile_source_verification": "archived_profile_only_no_live_rtl_check",
+  "removed_transfer_bytes_per_call": 1441792,
+  "results": {
+    "connected": {
+      "checks": [
+        {
+          "cycles": "16883870",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "0"
+        },
+        {
+          "cycles": "16878353",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "1"
+        },
+        {
+          "cycles": "16878353",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "2"
+        }
+      ],
+      "counters": {
+        "commands": 34848,
+        "fences": 270,
+        "load_bytes": 6488064,
+        "scale_bytes": 0,
+        "store_puts": 135168
+      },
+      "files_sha256": {
+        "issue.c": "fdab417dba98e1fbc97e41e5b4a2149a303b4b3a80efdf367c132dfc53714f1f",
+        "issue.o": "45c90b84116285b66c2f2f5d7edee56ff7aa2e4bb104d2ff62fde6280d51ff9b",
+        "perf.txt": "85ffb50de0faf1b910a7b1ba6316290d6d28c232feddfd1ea7363285b6163571",
+        "section.elf": "e353ac3bac996a077922a9f8c29171d80b8312942330ec1585a5fd2893b2c38e",
+        "spike.log": "884242f58ed3e80119fd8838abe6cb47fd3db6a47b2c666907c96690abfc8f3b"
+      }
+    },
+    "materialized": {
+      "checks": [
+        {
+          "cycles": "22767324",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "0"
+        },
+        {
+          "cycles": "22760183",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "1"
+        },
+        {
+          "cycles": "22759408",
+          "hash": "3940654533",
+          "mismatches": "0",
+          "run": "2"
+        }
+      ],
+      "counters": {
+        "commands": 51744,
+        "fences": 534,
+        "load_bytes": 8650752,
+        "scale_bytes": 0,
+        "store_puts": 270336
+      },
+      "files_sha256": {
+        "issue.c": "24e8ceb9073f35001e2600fd618236b67ed3f8bee0c947be2065fa4a7ad5a023",
+        "issue.o": "9bf879a4305a02e4f169c3f0155d9214667ad4b6cf80e4066558597bf48a1bf4",
+        "perf.txt": "29f61e57bb5c5649b8e166b4b110a64e7313405af2b848c9fe26bc30793a4701",
+        "section.elf": "1e9afff7576275fa1508769e4ba38aa7948773411d6eaaaf802a8df47d84579f",
+        "spike.log": "bf7f44ff60198dd89493b3fe9e5fbe0911fc55dd811f0f0484fdf06005387933"
+      }
+    }
+  },
+  "schema": "mx_gemmini.stage_multiply_spike.v1",
+  "shape": [
+    1,
+    64,
+    5632
+  ],
+  "source_files_sha256": {
+    "driver.c": "5c0c6fc9f8bfd552ef9544bc45cd70a0965435bf23e7bb74ba90167de73764fe",
+    "payload.S": "02006e21c1b8f405482febe9cf5e0b0dadfea6b98d0ec0640f126e21f7f5a6f0",
+    "payload.bin": "bec269d54189e0fb4ecc14158608ba79103b88758d7e7eb26e95e9cf4bca7744"
+  },
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "warm_saved_cycles": 5881055
+}

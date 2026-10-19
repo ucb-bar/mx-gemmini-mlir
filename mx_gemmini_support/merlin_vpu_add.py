@@ -243,7 +243,8 @@ class MXVPUPostOffload:
                  enabled_classes: frozenset[str] | None = None,
                  enabled_elementwise_operations: frozenset[str] | None = None,
                  enabled_elementwise_regions: frozenset[str] | None = None,
-                 enabled_site_regions: dict[str, frozenset[str]] | None = None):
+                 enabled_site_regions: dict[str, frozenset[str]] | None = None,
+                 connect_multiplies: bool = False):
         from .merlin_vpu_softmax import MXVPUSoftmaxPostOffload
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
@@ -256,6 +257,7 @@ class MXVPUPostOffload:
             profile, enabled_regions=self.enabled_site_regions.get("add"))
         self.elementwise = MXVPUElementwisePostOffload(
             profile, enabled_operations=enabled_elementwise_operations,
+            connect_multiplies=connect_multiplies,
             enabled_regions=(self.enabled_site_regions.get("elementwise") or None
                              if "elementwise" in self.enabled_site_regions else
                              enabled_elementwise_regions))
