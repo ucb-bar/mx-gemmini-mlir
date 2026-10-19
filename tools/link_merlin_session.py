@@ -358,6 +358,8 @@ def link_session(
     for program in session.programs:
         build = builds[program.name]
         receipt = json.loads((build / "mx_stage_probe.json").read_text(encoding="utf-8"))
+        if receipt.get("prune_unused_checkpoint_weights"):
+            raise ValueError("projected stage entry ABI requires a projection-aware session linker")
         if (receipt.get("schema") != "mx_gemmini.merlin_stage_probe.v1"
                 or receipt.get("profile_sha256") != expected_profile
                 or receipt.get("capture_model_sha256") != _sha(program.bundle / "model.mlir")

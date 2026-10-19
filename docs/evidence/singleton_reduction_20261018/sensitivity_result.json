@@ -1,0 +1,23 @@
+{
+  "schema": "mx_gemmini.rotary_angle_sensitivity.v1",
+  "scope": "measured_angles_in_otherwise_fp32_forward_not_quantized_model_execution",
+  "control_logits_bitwise_equal": true,
+  "metrics": {
+    "all_rows": {
+      "mean_kl_nats": 0.20817174253482187,
+      "worst_kl_nats": 1.2047912214370764,
+      "positions": 160,
+      "top1_agreement": 105
+    },
+    "late_33_rows": {
+      "mean_kl_nats": 0.28755118468140034,
+      "worst_kl_nats": 0.6873535383452803,
+      "positions": 33,
+      "top1_agreement": 21
+    }
+  },
+  "capture_receipt_sha256": "a32f31f3f8cc8a4657b0e965f8d0bff8e7af5da350c572305eda892f359e224a",
+  "angles_sha256": "14efd12f8e1b07c11b5577d56cfeb436dbfde63ec0d74e9233dc5aa0224d92c9",
+  "threads": 2,
+  "output_sha256": "393ce86ccb1f06ea2720131df30879cc10e69b0481f3b1185fc19315030d8b61"
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "mx_gemmini.host_singleton_reductions.v1",
+  "source_sha256": "2d9b7e8435a6a0e6a00bcab049b45f734f50af16dba79ffacd0c3588935d1ec7",
+  "selected_sha256": "553ec8b9459ffcea0c1f1440bf0b90b096aed210801c422d9d3bb4f588c78c8e",
+  "regions": [
+    {
+      "region": "matmul_0",
+      "removed_reduction_axes": [
+        3
+      ],
+      "operand_types": [
+        "tensor<1x32x1xf32>",
+        "tensor<1x1x160xf32>",
+        "tensor<1x32x160xf32>"
+      ],
+      "indexing_maps": [
+        "(d0, d1, d2) -> (d0, d1, 0)",
+        "(d0, d1, d2) -> (d0, 0, d2)",
+        "(d0, d1, d2) -> (d0, d1, d2)"
+      ],
+      "scalar_operations": [
+        "arith.mulf",
+        "arith.addf",
+        "linalg.yield"
+      ],
+      "numeric_contract": "unchanged_scalar_body_initializer_and_types"
+    }
+  ]
+}

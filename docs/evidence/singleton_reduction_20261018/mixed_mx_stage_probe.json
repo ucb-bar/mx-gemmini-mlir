@@ -1,0 +1,181 @@
+{
+  "all_output_sha256_enabled": true,
+  "arena_estimate": {
+    "callsites": 1,
+    "dynamic_sites": 0,
+    "literal_bytes": 2112
+  },
+  "arena_mb": 2048,
+  "arena_selection": "llvm_site_estimate",
+  "build_hash": "8425bac439e8",
+  "cache_checkpoint_weights": false,
+  "cached_checkpoint_kernels": 0,
+  "capture_model_sha256": "2d9b7e8435a6a0e6a00bcab049b45f734f50af16dba79ffacd0c3588935d1ec7",
+  "catalog_manifest": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/mx_model_goal_20261018/rotary_probe/build_mixed/device_catalog/mx_catalog.json",
+  "checkpoint_weights_sha256": null,
+  "compile_timeout_s": 3600,
+  "connect_vpu_multiplies": false,
+  "connected_vpu_multiply_pairs": [],
+  "diagnostic_host_vpu": false,
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/rotary_probe/build_mixed/model.elf",
+  "elf_admission_selection": "structural_digest_and_declared_isa",
+  "elf_bytes": 40472,
+  "enabled_vpu_classes": [
+    "add",
+    "elementwise",
+    "reduce",
+    "softmax",
+    "unary"
+  ],
+  "enabled_vpu_elementwise_operations": null,
+  "enabled_vpu_elementwise_regions": null,
+  "entry_weight_projection_receipt_sha256": null,
+  "execution_policy": {
+    "matrix_formats": {
+      "matmul_0": "host",
+      "matmul_1": "mxfp8"
+    },
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "schema": "mx_gemmini.execution_policy.v2",
+    "source_mlir_sha256": "2d9b7e8435a6a0e6a00bcab049b45f734f50af16dba79ffacd0c3588935d1ec7",
+    "vpu_placements": {
+      "add": {},
+      "elementwise": {},
+      "reduce": {},
+      "softmax": {},
+      "unary": {}
+    }
+  },
+  "execution_policy_sha256": "2eb0f1423b16daa62472ba048378a8bee0e49ccf81310ffae2591d99c315005b",
+  "execution_route": "mx_gemmini_per_site_policy",
+  "expected_selected_operations": 1,
+  "first_output_sha256_enabled": true,
+  "host_singleton_matrix_regions": [
+    "matmul_0"
+  ],
+  "host_singleton_preparation": {
+    "regions": [
+      {
+        "indexing_maps": [
+          "(d0, d1, d2) -> (d0, d1, 0)",
+          "(d0, d1, d2) -> (d0, 0, d2)",
+          "(d0, d1, d2) -> (d0, d1, d2)"
+        ],
+        "numeric_contract": "unchanged_scalar_body_initializer_and_types",
+        "operand_types": [
+          "tensor<1x32x1xf32>",
+          "tensor<1x1x160xf32>",
+          "tensor<1x32x160xf32>"
+        ],
+        "region": "matmul_0",
+        "removed_reduction_axes": [
+          3
+        ],
+        "scalar_operations": [
+          "arith.mulf",
+          "arith.addf",
+          "linalg.yield"
+        ]
+      }
+    ],
+    "schema": "mx_gemmini.host_singleton_reductions.v1",
+    "selected_sha256": "553ec8b9459ffcea0c1f1440bf0b90b096aed210801c422d9d3bb4f588c78c8e",
+    "source_sha256": "2d9b7e8435a6a0e6a00bcab049b45f734f50af16dba79ffacd0c3588935d1ec7"
+  },
+  "host_singleton_receipt_sha256": "b1c0165b994c04ea36349d67145da675eae0724a101a418d6b527b5b5a5e1b95",
+  "mem_bytes": 6442450944,
+  "op_profile": false,
+  "op_profile_capacity": null,
+  "op_profile_operations": null,
+  "op_profile_table": null,
+  "op_profile_table_sha256": null,
+  "precision_overrides": {},
+  "precision_overrides_sha256": null,
+  "prepack_checkpoint_weights": false,
+  "prepacked_checkpoint_kernels": 0,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "prune_unused_checkpoint_weights": false,
+  "raw_matrix_operations_accounted": 2,
+  "raw_selected_source_coverage_complete": true,
+  "schema": "mx_gemmini.merlin_stage_probe.v1",
+  "selected_operations": 1,
+  "spike": {
+    "command": [
+      "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+      "--isa=rv64gc_zicntr",
+      "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/physical/libgemmini.so",
+      "--extension=gemmini",
+      "-m0x80000000:0x180000000",
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/rotary_probe/build_mixed/model.elf"
+    ],
+    "done": true,
+    "exit_code": 0,
+    "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+    "log": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/mx_model_goal_20261018/rotary_probe/build_mixed/spike.log",
+    "output_digests": {
+      "first_typed": {
+        "bytes": 20480,
+        "elements": 5120,
+        "encoding": "f32le",
+        "sha256": "93ec34145acb86da3d6c6506611c239a70e850ee13a4d19bb3074237600a6e6d"
+      },
+      "indexed": [
+        {
+          "bytes": 20480,
+          "dtype": "f32",
+          "elements": 5120,
+          "index": 0,
+          "sha256": "93ec34145acb86da3d6c6506611c239a70e850ee13a4d19bb3074237600a6e6d",
+          "shape": [
+            1,
+            32,
+            160
+          ]
+        },
+        {
+          "bytes": 2048,
+          "dtype": "f32",
+          "elements": 512,
+          "index": 1,
+          "sha256": "9bf80f73bf8c080375a3d0bf5a63c56ec85dada9fbf06a67fa2812493d0dd855",
+          "shape": [
+            1,
+            32,
+            16
+          ]
+        }
+      ],
+      "numerical_qualification": "not_established"
+    }
+  },
+  "spike_arena_base": 3489660928,
+  "spike_isa": "rv64gc_zicntr",
+  "status": "linked_policy_numeric_qualification_pending",
+  "unbound_precision_proposals": 0,
+  "unique_kernels": 1,
+  "vpu_add_lowered_regions": 0,
+  "vpu_elementwise_lowered_regions": 0,
+  "vpu_reduce_lowered_regions": 0,
+  "vpu_residual_eligible": {
+    "add": 0,
+    "elementwise": 0,
+    "reduce": 0,
+    "softmax": 0,
+    "unary": 0
+  },
+  "vpu_softmax_host_regions": 0,
+  "vpu_softmax_inventory": {
+    "direct_profile_matches_unlowered": 0,
+    "host_owned_regions": 0,
+    "inventory_phase": "reconciled_after_link",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "regions": [],
+    "schema": "mx_gemmini.merlin_vpu_softmax_inventory.v1",
+    "softmax_regions": 0,
+    "source_sha256": "2d9b7e8435a6a0e6a00bcab049b45f734f50af16dba79ffacd0c3588935d1ec7"
+  },
+  "vpu_softmax_lowered_regions": 0,
+  "vpu_softmax_selected_regions": 0,
+  "vpu_unary_lowered_regions": 0,
+  "widened_bf16_contractions": 0
+}

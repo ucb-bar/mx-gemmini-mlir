@@ -49,6 +49,8 @@ def build_mx_worklist_from_merlin(mlir_text: str, profile: dict) -> dict:
                 raise ValueError("Merlin batch matmul has no source region identity")
             if prov.get("aten") != "aten.bmm.default":
                 continue  # retain this region below as a host-owned candidate
+            if not op["reduction_dims"]:
+                continue  # source provenance can survive legal reduction elimination
             inputs, outputs, results = op["ins"], op["outs"], op["results"]
             if len(inputs) != 2 or len(outputs) != 1 or len(results) != 1:
                 continue

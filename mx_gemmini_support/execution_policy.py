@@ -50,14 +50,33 @@ def eligible_sites(source: str, profile: dict) -> tuple[
     return matrix, vpu, singleton_adds
 
 
-def make_policy(source: str, profile: dict) -> dict:
+def singleton_matrix_regions(source: str, matrix_regions) -> frozenset[str]:
+    """Bind matrix sites to proven unit reductions, without provenance heuristics."""
+    from merlin.frontends.linalg_mlir import parse_mlir_text
+    from merlin.xdsl_dialects.lowering.singleton_reductions import (
+        singleton_reduction_axes,
+    )
+
+    by_region = {}
+    for op in parse_mlir_text(source).walk():
+        region = getattr(op.attributes.get("prov.region_id"), "data", None)
+        if op.name == "linalg.generic" and region in matrix_regions:
+            by_region.setdefault(region, []).append(op)
+    return frozenset(region for region, ops in by_region.items()
+                     if len(ops) == 1 and singleton_reduction_axes(ops[0]))
+
+
+def make_policy(source: str, profile: dict, *, preserve_singleton_reductions=False) -> dict:
     """Start from all FP8 and retain VPU except sensitive float paths."""
     matrix, vpu, singleton_adds = eligible_sites(source, profile)
+    host = singleton_matrix_regions(source, matrix) if preserve_singleton_reductions else ()
     return {
-        "schema": "mx_gemmini.execution_policy.v1",
+        "schema": ("mx_gemmini.execution_policy.v2" if preserve_singleton_reductions
+                   else "mx_gemmini.execution_policy.v1"),
         "source_mlir_sha256": hashlib.sha256(source.encode()).hexdigest(),
         "profile_sha256": profile_sha256(profile),
-        "matrix_formats": {region: "mxfp8" for region in sorted(matrix)},
+        "matrix_formats": {region: "host" if region in host else "mxfp8"
+                           for region in sorted(matrix)},
         "vpu_placements": {
             name: {region: ("host" if name == "softmax" or
                             (name == "add" and region in singleton_adds) or
@@ -73,14 +92,17 @@ def validate_policy(data: dict, source: str, profile: dict) -> dict:
     if (not isinstance(data, dict) or
             set(data) != {"schema", "source_mlir_sha256", "profile_sha256",
                          "matrix_formats", "vpu_placements"} or
-            data["schema"] != "mx_gemmini.execution_policy.v1" or
+            data["schema"] not in {"mx_gemmini.execution_policy.v1", "mx_gemmini.execution_policy.v2"} or
             data["source_mlir_sha256"] != hashlib.sha256(source.encode()).hexdigest() or
             data["profile_sha256"] != profile_sha256(profile)):
         raise ValueError("MX execution policy differs from the captured source or profile")
     formats = data["matrix_formats"]
+    host_eligible = (singleton_matrix_regions(source, matrix)
+                     if data["schema"] == "mx_gemmini.execution_policy.v2" else ())
     if not isinstance(formats, dict) or set(formats) != set(matrix) or any(
-            value not in ({"mxfp4", "mxfp8"} if matrix[region] == "mxfp4"
-                          else {"mxfp8"}) for region, value in formats.items()):
+            value not in (({"mxfp4", "mxfp8"} if matrix[region] == "mxfp4"
+                           else {"mxfp8"}) | ({"host"} if region in host_eligible else set()))
+            for region, value in formats.items()):
         raise ValueError("MX execution policy has invalid matrix site formats")
     placements = data["vpu_placements"]
     if (not isinstance(placements, dict) or set(placements) != set(_CLASSES) or
@@ -91,6 +113,8 @@ def validate_policy(data: dict, source: str, profile: dict) -> dict:
                 for name, sites in vpu.items())):
         raise ValueError("MX execution policy has invalid VPU site placements")
     return {
+        "host_singleton_regions": frozenset(region for region, fmt in formats.items()
+                                            if fmt == "host"),
         "precision_overrides": {region: "mxfp8" for region, fmt in formats.items()
                                 if matrix[region] == "mxfp4" and fmt == "mxfp8"},
         "enabled_vpu_regions": {name: frozenset(

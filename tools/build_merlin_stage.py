@@ -20,6 +20,18 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _generated_weight_projection():
+    """The standalone harness owns every caller and readonly checkpoint span."""
+    from merlin.llvmlower.entry_weight_projection import GeneratedDispatchABI
+
+    return GeneratedDispatchABI(
+        entry_symbol="forward", compiler_generated_dispatch_only=True,
+        entry_address_unobserved=True, nontrapping_arithmetic=True,
+        arithmetic_flags_unobserved=True, generated_weight_storage_readonly=True,
+        weight_addresses_unobserved=True,
+    )
+
+
 def _sha(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -107,14 +119,15 @@ def _require_softmax_coverage(selected: set[str], lowered: list[dict],
 
 
 def _observe_spike_evidence(console: str, source: Path, build_hash: str,
-                            *, first_typed: bool) -> dict:
+                            *, first_typed: bool, require_complete: bool = False) -> dict:
     """Check completed console records against the captured result ABI."""
     from merlin.common.mlir_query import forward_signature
     from merlin.runtime.backends.spike_model import parse_console
     from merlin.runtime.output_digest import observe_output_digests
 
     _, outputs = forward_signature(source)
-    parsed = parse_console(console)
+    parsed = parse_console(console, expected_output_elements=(
+        int(np.prod(outputs[0][0])) if require_complete else None))
     if parsed["output_dtype"] != outputs[0][1]:
         raise ValueError("Spike first-output wire dtype differs from the capture")
     hash_lines = [line for line in console.splitlines()
@@ -156,6 +169,11 @@ def main() -> None:
                         help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--prepack-checkpoint-weights", action="store_true",
                         help="embed source-proven packed checkpoint RHS values at build time")
+    parser.add_argument("--prune-unused-checkpoint-weights", action="store_true",
+                        help="remove unused immutable weights from the generated entry ABI "
+                             "after prepacking; standalone stage builds only")
+    parser.add_argument("--reuse-prepacked-data", type=Path,
+                        help="hardlink packed data from this catalog after checking freshly quantized bytes")
     parser.add_argument("--op-profile", action="store_true",
                         help="instrument Merlin's prepared top-level operations for a diagnostic Spike build")
     parser.add_argument("--precision-overrides", type=Path,
@@ -180,6 +198,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.connect_vpu_multiplies and args.execution_policy is None:
         parser.error("--connect-vpu-multiplies requires an explicit --execution-policy")
+    if args.prune_unused_checkpoint_weights and not args.prepack_checkpoint_weights:
+        parser.error("--prune-unused-checkpoint-weights requires --prepack-checkpoint-weights")
+    if args.reuse_prepacked_data is not None and not args.prepack_checkpoint_weights:
+        parser.error("--reuse-prepacked-data requires --prepack-checkpoint-weights")
     if args.execution_policy is not None and (
             args.precision_overrides is not None or args.diagnostic_host_vpu or
             args.diagnostic_vpu_classes is not None or
@@ -249,6 +271,7 @@ def main() -> None:
     policy_path = None
     execution_policy = None
     enabled_site_regions = None
+    host_singleton_regions = frozenset()
     if args.execution_policy is not None:
         from mx_gemmini_support.execution_policy import load_policy
 
@@ -258,6 +281,7 @@ def main() -> None:
         execution_policy, resolved_policy = load_policy(
             policy_path, source.read_text(encoding="utf-8"), profile)
         enabled_site_regions = resolved_policy["enabled_vpu_regions"]
+        host_singleton_regions = resolved_policy["host_singleton_regions"]
     if args.precision_overrides is not None and args.precision_overrides.is_symlink():
         parser.error("--precision-overrides must be a regular file")
     override_path = (args.precision_overrides.resolve(strict=True)
@@ -294,6 +318,9 @@ def main() -> None:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(
         source, profile, precision_overrides=overrides)
+    if not host_singleton_regions <= expected_regions:
+        raise RuntimeError("host singleton policy differs from raw matrix coverage")
+    expected_regions -= host_singleton_regions
     fixed_weights = args.cache_checkpoint_weights or args.prepack_checkpoint_weights
     if fixed_weights and not expected_regions:
         parser.error("checkpoint weight preparation requires selected MX contractions")
@@ -312,22 +339,33 @@ def main() -> None:
                     or record.get("sha256") != (_sha(artifact) if name.endswith(".json")
                                                 else weights_sha)):
                 parser.error(f"checkpoint artifact differs from capture receipt: {name}")
-    if (diagnostic_vpu or execution_policy is not None) and not expected_regions:
+    if (diagnostic_vpu or execution_policy is not None) and not expected_regions and (
+            not host_singleton_regions or any(enabled_site_regions.values())):
         parser.error("VPU diagnostics require selected MX contractions")
+    preparation = MXBF16CatalogPreparation(profile, precision_overrides=overrides)
+    host_preparation = None
+    if host_singleton_regions:
+        from mx_gemmini_support.merlin_singleton_prepare import MXSingletonReductionPreparation
+
+        if expected_regions:
+            preparation = MXSingletonReductionPreparation(
+                host_singleton_regions, downstream=preparation)
+        else:
+            host_preparation = MXSingletonReductionPreparation(host_singleton_regions)
     device = (DeviceRouting(
         device="mx_gemmini", package_dir=ROOT,
         operand_dtype="catalog_mixed_direct_fp4_fp8", accum_dtype="bf16",
         linked_elf_admission=(structural_admission("mx_gemmini")
                               if args.structural_elf_admission else None),
-        prepared_transform=MXBF16CatalogPreparation(
-            profile, precision_overrides=overrides),
+        prepared_transform=preparation,
         catalog_builder=make_merlin_catalog_builder(
             profile_path=profile_path, riscv_root=riscv_root,
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
             precision_overrides=overrides,
             enabled_vpu_regions=enabled_site_regions,
-            connect_multiplies=args.connect_vpu_multiplies),
+            connect_multiplies=args.connect_vpu_multiplies,
+            reuse_prepacked_data=args.reuse_prepacked_data),
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
@@ -346,6 +384,9 @@ def main() -> None:
         cflags_override=["-march=rv64gc", "-mabi=lp64d", "-mcmodel=medany", "-O2"],
         output_dump_cap=args.output_dump_cap, output_sha256=output_sha256,
         output_all_sha256=True, op_profile=args.op_profile,
+        prepared_model_transform=host_preparation,
+        entry_weight_projection=(
+            _generated_weight_projection() if args.prune_unused_checkpoint_weights else None),
     )
     profile_table_path = work / "op_profile_table.json"
     profile_op_count = None
@@ -364,12 +405,25 @@ def main() -> None:
     if policy_sha is not None and _sha(policy_path) != policy_sha:
         raise RuntimeError("MX execution policy changed during stage compilation")
     elf = Path(result["elf"])
+    singleton_receipt = None
+    singleton_path = work / ("device_prepared" if device is not None else
+                             "prepared_model_transform") / "singleton_reductions.json"
+    if host_singleton_regions:
+        singleton_receipt = json.loads(singleton_path.read_text(encoding="utf-8"))
+        host_records = singleton_receipt["regions"]
+        if (len(host_records) != len(host_singleton_regions) or
+                {row["region"] for row in host_records} != host_singleton_regions):
+            raise RuntimeError("prepared host singleton coverage differs from selected policy")
     catalog_path = work / "device_catalog/mx_catalog.json"
     if device is None:
         if catalog_path.exists():
             raise RuntimeError("host-only stage unexpectedly emitted an MX catalog")
         catalog = {"covered_contractions": 0, "unbound_precision_proposals": [],
                    "unique_kernels": 0, "bindings": []}
+        if enabled_site_regions is not None:
+            catalog["resolved_vpu_regions"] = {name: [] for name in enabled_site_regions}
+            catalog.update({f"vpu_{name}": {"source_regions": []}
+                            for name in enabled_site_regions})
     else:
         catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
         _require_source_coverage(expected_regions, catalog)
@@ -503,7 +557,7 @@ def main() -> None:
         "execution_policy": execution_policy,
         "connect_vpu_multiplies": args.connect_vpu_multiplies,
         "elf_admission_selection": ("structural_digest_and_declared_isa"
-                                    if args.structural_elf_admission else None),
+                                    if args.structural_elf_admission and device is not None else None),
         "connected_vpu_multiply_pairs": connected_multiplies,
         "precision_overrides": overrides or {},
         "catalog_manifest": str(catalog_path) if device is not None else None,
@@ -518,6 +572,10 @@ def main() -> None:
             if enabled_elementwise_regions is not None else None),
         "selected_operations": catalog["covered_contractions"],
         "expected_selected_operations": len(expected_regions),
+        "host_singleton_matrix_regions": sorted(host_singleton_regions),
+        "host_singleton_preparation": singleton_receipt,
+        "host_singleton_receipt_sha256": _sha(singleton_path) if singleton_receipt else None,
+        "raw_matrix_operations_accounted": len(expected_regions) + len(host_singleton_regions),
         "raw_selected_source_coverage_complete": True,
         "unbound_precision_proposals": len(catalog["unbound_precision_proposals"]),
         "widened_bf16_contractions": widened_bf16,
@@ -534,6 +592,11 @@ def main() -> None:
         "cache_checkpoint_weights": args.cache_checkpoint_weights,
         "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
         "prepack_checkpoint_weights": args.prepack_checkpoint_weights,
+        "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
+        "prune_unused_checkpoint_weights": args.prune_unused_checkpoint_weights,
+        "entry_weight_projection_receipt_sha256": (
+            _sha(work / "entry_weight_projection/entry_weight_projection.json")
+            if args.prune_unused_checkpoint_weights else None),
         "prepacked_checkpoint_kernels": catalog.get("prepacked_checkpoint_kernels", 0),
         "op_profile": args.op_profile,
         "op_profile_table": str(profile_table_path) if args.op_profile else None,
@@ -563,10 +626,11 @@ def main() -> None:
                    f"-m{hex(spike_model.DRAM_BASE)}:{hex(result['mem_bytes'])}",
                    str(elf)]
         log = work / "spike.log"
+        spike_environment = os.environ.copy()
         with log.open("wb") as stream:
             try:
                 completed = subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT,
-                                           timeout=args.spike_timeout, check=False)
+                                           timeout=args.spike_timeout, check=False, env=spike_environment)
                 exit_code = completed.returncode
             except subprocess.TimeoutExpired:
                 exit_code = 124
@@ -575,11 +639,14 @@ def main() -> None:
             "command": command, "extension_sha256": hashlib.sha256(extlib.read_bytes()).hexdigest(),
             "exit_code": exit_code, "done": exit_code == 0 and "DONE\n" in console,
             "log": str(log),
+            "environment": {name: spike_environment.get(name) for name in (
+                "GEMMINI_MODE", "GEMMINI_PERF_CONFIG", "GEMMINI_PERF_SET", "GEMMINI_PERF_OUT")},
         }
         if receipt["spike"]["done"]:
             try:
                 receipt["spike"]["output_digests"] = _observe_spike_evidence(
-                    console, source, result["build_hash"], first_typed=output_sha256)
+                    console, source, result["build_hash"], first_typed=output_sha256,
+                    require_complete=args.output_dump_cap > 1_048_576)
             except (ValueError, spike_model.SpikeModelError) as exc:
                 receipt["spike"]["done"] = False
                 receipt["spike"]["output_evidence_error"] = str(exc)

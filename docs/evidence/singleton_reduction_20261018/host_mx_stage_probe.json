@@ -1,0 +1,163 @@
+{
+  "all_output_sha256_enabled": true,
+  "arena_estimate": {
+    "callsites": 0,
+    "dynamic_sites": 0,
+    "literal_bytes": 0
+  },
+  "arena_mb": 2048,
+  "arena_selection": "llvm_site_estimate",
+  "build_hash": "64dfc1fe1ffd",
+  "cache_checkpoint_weights": false,
+  "cached_checkpoint_kernels": 0,
+  "capture_model_sha256": "e553cbc206149ba216c18f26c33cea3ec7cda602bd956a8a989711b4ca71c49a",
+  "catalog_manifest": null,
+  "checkpoint_weights_sha256": null,
+  "compile_timeout_s": 3600,
+  "connect_vpu_multiplies": false,
+  "connected_vpu_multiply_pairs": [],
+  "diagnostic_host_vpu": false,
+  "elf": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/rotary_probe/build_host_recorded/model.elf",
+  "elf_admission_selection": null,
+  "elf_bytes": 20496,
+  "enabled_vpu_classes": [
+    "add",
+    "elementwise",
+    "reduce",
+    "softmax",
+    "unary"
+  ],
+  "enabled_vpu_elementwise_operations": null,
+  "enabled_vpu_elementwise_regions": null,
+  "entry_weight_projection_receipt_sha256": null,
+  "execution_policy": {
+    "matrix_formats": {
+      "matmul_0": "host"
+    },
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "schema": "mx_gemmini.execution_policy.v2",
+    "source_mlir_sha256": "e553cbc206149ba216c18f26c33cea3ec7cda602bd956a8a989711b4ca71c49a",
+    "vpu_placements": {
+      "add": {},
+      "elementwise": {},
+      "reduce": {},
+      "softmax": {},
+      "unary": {}
+    }
+  },
+  "execution_policy_sha256": "66e8929171c566427417de2cce5c7e32e2601ecea5c7b5ecb4b3debdd79f9010",
+  "execution_route": "mx_gemmini_per_site_policy",
+  "expected_selected_operations": 0,
+  "first_output_sha256_enabled": true,
+  "host_singleton_matrix_regions": [
+    "matmul_0"
+  ],
+  "host_singleton_preparation": {
+    "regions": [
+      {
+        "indexing_maps": [
+          "(d0, d1, d2) -> (d0, d1, 0)",
+          "(d0, d1, d2) -> (d0, 0, d2)",
+          "(d0, d1, d2) -> (d0, d1, d2)"
+        ],
+        "numeric_contract": "unchanged_scalar_body_initializer_and_types",
+        "operand_types": [
+          "tensor<1x32x1xf32>",
+          "tensor<1x1x160xf32>",
+          "tensor<1x32x160xf32>"
+        ],
+        "region": "matmul_0",
+        "removed_reduction_axes": [
+          3
+        ],
+        "scalar_operations": [
+          "arith.mulf",
+          "arith.addf",
+          "linalg.yield"
+        ]
+      }
+    ],
+    "schema": "mx_gemmini.host_singleton_reductions.v1",
+    "selected_sha256": "ac0f6d02b4b0e02cb533b442821a63310692e04c89ed5b6f9c4b1c9b04d87185",
+    "source_sha256": "e553cbc206149ba216c18f26c33cea3ec7cda602bd956a8a989711b4ca71c49a"
+  },
+  "host_singleton_receipt_sha256": "168e12e4a0271a348f698dac9f778a0f2ac9ae65f7023111c90d19035cdb4506",
+  "mem_bytes": 6442450944,
+  "op_profile": false,
+  "op_profile_capacity": null,
+  "op_profile_operations": null,
+  "op_profile_table": null,
+  "op_profile_table_sha256": null,
+  "packed_data_storage_reuse": null,
+  "precision_overrides": {},
+  "precision_overrides_sha256": null,
+  "prepack_checkpoint_weights": false,
+  "prepacked_checkpoint_kernels": 0,
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "prune_unused_checkpoint_weights": false,
+  "raw_matrix_operations_accounted": 1,
+  "raw_selected_source_coverage_complete": true,
+  "schema": "mx_gemmini.merlin_stage_probe.v1",
+  "selected_operations": 0,
+  "spike": {
+    "command": [
+      "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/bin/spike",
+      "--isa=rv64gc_zicntr",
+      "--extlib=/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/docs/evidence/nicolas_e4m3_lut_requant_public_74bceeb_266c593/physical/libgemmini.so",
+      "--extension=gemmini",
+      "-m0x80000000:0x180000000",
+      "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/rotary_probe/build_host_recorded/model.elf"
+    ],
+    "done": true,
+    "exit_code": 0,
+    "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+    "log": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/../.tmp/mx_model_goal_20261018/rotary_probe/build_host_recorded/spike.log",
+    "output_digests": {
+      "first_typed": {
+        "bytes": 20480,
+        "elements": 5120,
+        "encoding": "f32le",
+        "sha256": "93ec34145acb86da3d6c6506611c239a70e850ee13a4d19bb3074237600a6e6d"
+      },
+      "indexed": [
+        {
+          "bytes": 20480,
+          "dtype": "f32",
+          "elements": 5120,
+          "index": 0,
+          "sha256": "93ec34145acb86da3d6c6506611c239a70e850ee13a4d19bb3074237600a6e6d",
+          "shape": [
+            1,
+            32,
+            160
+          ]
+        }
+      ],
+      "numerical_qualification": "not_established"
+    }
+  },
+  "spike_arena_base": 3489660928,
+  "spike_isa": "rv64gc_zicntr",
+  "status": "linked_policy_numeric_qualification_pending",
+  "unbound_precision_proposals": 0,
+  "unique_kernels": 0,
+  "vpu_add_lowered_regions": 0,
+  "vpu_elementwise_lowered_regions": 0,
+  "vpu_reduce_lowered_regions": 0,
+  "vpu_residual_eligible": {},
+  "vpu_softmax_host_regions": 0,
+  "vpu_softmax_inventory": {
+    "direct_profile_matches_unlowered": 0,
+    "host_owned_regions": 0,
+    "inventory_phase": "reconciled_after_link",
+    "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+    "regions": [],
+    "schema": "mx_gemmini.merlin_vpu_softmax_inventory.v1",
+    "softmax_regions": 0,
+    "source_sha256": "e553cbc206149ba216c18f26c33cea3ec7cda602bd956a8a989711b4ca71c49a"
+  },
+  "vpu_softmax_lowered_regions": 0,
+  "vpu_softmax_selected_regions": 0,
+  "vpu_unary_lowered_regions": 0,
+  "widened_bf16_contractions": 0
+}

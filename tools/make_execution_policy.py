@@ -16,18 +16,23 @@ def main() -> None:
     parser.add_argument("--stage", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--preserve-singleton-reductions", action="store_true",
+                        help="emit v2 host placement for proven single-iteration reductions")
     args = parser.parse_args()
     if args.out.exists():
         parser.error("--out must name a new file")
     source = _capture_model(args.stage.resolve(strict=True)).read_text(encoding="utf-8")
     profile = load_profile(args.profile.resolve(strict=True))
-    policy = make_policy(source, profile)
+    policy = make_policy(source, profile,
+                         preserve_singleton_reductions=args.preserve_singleton_reductions)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(policy, indent=2, sort_keys=True) + "\n",
                         encoding="utf-8")
     routes = policy["vpu_placements"]
     print(json.dumps({"out": str(args.out),
                       "matrix_sites": len(policy["matrix_formats"]),
+                      "host_matrix_sites": sum(value == "host" for value in
+                                               policy["matrix_formats"].values()),
                       "eligible_vpu_sites": sum(len(sites) for sites in
                                                 routes.values()),
                       "enabled_vpu_sites": sum(

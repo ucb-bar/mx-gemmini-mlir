@@ -1,0 +1,68 @@
+{
+  "scope": "native_operand_quantization_diagnostic_not_mesh_oracle",
+  "shape_mnk": [
+    32,
+    160,
+    1
+  ],
+  "inv_freq_sha256": "734f9e6b629f7baccc4de81b7e8d2982035ee1b81f73f158e7d33a4dcf13fa0e",
+  "maximum_frequency_error": 0.015803486108779907,
+  "maximum_position_error": 8.0,
+  "maximum_angle_error_radians": 8.0,
+  "maximum_cosine_error": 1.9937407970428467,
+  "maximum_sine_error": 1.9934089183807373,
+  "changed_positions": 118,
+  "position_examples": [
+    {
+      "position": 15,
+      "quantized": 15.0
+    },
+    {
+      "position": 31,
+      "quantized": 32.0
+    },
+    {
+      "position": 63,
+      "quantized": 64.0
+    },
+    {
+      "position": 127,
+      "quantized": 128.0
+    },
+    {
+      "position": 128,
+      "quantized": 128.0
+    },
+    {
+      "position": 129,
+      "quantized": 128.0
+    },
+    {
+      "position": 132,
+      "quantized": 128.0
+    },
+    {
+      "position": 159,
+      "quantized": 160.0
+    }
+  ],
+  "source_sha256": "d098a5193c865e277d88a1f53b73cd011be9d74cc02f64e3d885d9c73bea9aae",
+  "spike": {
+    "complete_elements": 5120,
+    "cycles": 427146,
+    "maximum_angle_error_radians": 9.234024047851562,
+    "maximum_cosine_error": 1.9998255968093872,
+    "maximum_sine_error": 1.9937913417816162,
+    "maximum_error_vs_operand_only_proxy": 6.0,
+    "changed_angle_elements": 5029,
+    "output_sha256": "754a56520704b9de45591cd77dec8af918110d56e3d485e4e1614c5dc6c0e3ef",
+    "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5"
+  },
+  "transformed_host": {
+    "complete_elements": 5120,
+    "all_words_equal_fp32": true,
+    "cycles": 54418,
+    "maximum_angle_error_radians": 0.0,
+    "output_sha256": "93ec34145acb86da3d6c6506611c239a70e850ee13a4d19bb3074237600a6e6d"
+  }
+}

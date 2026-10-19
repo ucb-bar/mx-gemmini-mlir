@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 from typing import Callable
@@ -49,6 +50,21 @@ def _run(command: list[str], *, label: str) -> None:
         raise RuntimeError(f"MX {label} failed: {result.stderr[-1200:]}")
 
 
+def _write_packed_data(path: Path, payload: bytes, reuse_dir: Path | None) -> None:
+    """Reuse storage only after freshly derived packed bytes prove its identity."""
+    if reuse_dir is None:
+        path.write_bytes(payload)
+        return
+    source = reuse_dir / path.name
+    expected = hashlib.sha256(payload).hexdigest()
+    if (source.is_symlink() or not source.is_file() or
+            source.stat().st_size != len(payload) or _sha(source) != expected):
+        raise ValueError("packed weight reuse differs from freshly computed bytes: " + str(source))
+    os.link(source, path)
+    if not os.path.samefile(source, path) or _sha(path) != expected:
+        raise ValueError("packed weight reuse changed during binding")
+
+
 def select_routed_vpu_sites(name: str, sites: list[dict],
                             enabled: dict[str, frozenset[str]] | None) -> list[dict]:
     """Compile only VPU kernels that the captured execution policy can call."""
@@ -68,9 +84,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          prepack_immutable_weights: bool = False,
                          precision_overrides: dict[str, str] | None = None,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
-                         connect_multiplies: bool = False
+                         connect_multiplies: bool = False,
+                         reuse_prepacked_data: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if reuse_prepacked_data is not None:
+        reuse_prepacked_data = Path(reuse_prepacked_data)
+        if (not prepack_immutable_weights or reuse_prepacked_data.is_symlink()
+                or not reuse_prepacked_data.is_dir()):
+            raise ValueError("packed data reuse needs explicit prepacking and a regular source directory")
     plan = plan_merlin_catalog(
         prepared, profile, checkpoint_manifest=checkpoint_manifest,
         cache_immutable_weights=cache_immutable_weights,
@@ -160,7 +182,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             for suffix, payload, fixed_symbol in zip(
                     ("codes", "scales"), (codes, scales), fixed_symbols, strict=True):
                 path = out_dir / f"{symbol}_{suffix}.bin"
-                path.write_bytes(payload)
+                _write_packed_data(path, payload, reuse_prepacked_data)
                 fixed_data.append((fixed_symbol, path))
         policy_text = build_policy_plan(symbol, schedule="native")
         selected = selected_policy(policy_text, symbol=symbol)
@@ -432,6 +454,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "prepacked_checkpoint_kernels": plan["prepacked_checkpoint_kernels"],
         "checkpoint_weights_sha256": (_sha(Path(checkpoint_weights_path))
                                       if prepack_immutable_weights else None),
+        "packed_data_storage_reuse": ({
+            "source_directory": str(reuse_prepacked_data.resolve()),
+            "verification": "fresh_quantization_full_byte_hash_then_hardlink",
+            "files": len(fixed_data),
+            "shared_bytes": sum(path.stat().st_size for _, path in fixed_data),
+        } if reuse_prepacked_data is not None else None),
         "kernels": kernel_records,
         "bindings": plan["bindings"],
         "precision_overrides": plan.get("precision_overrides", {}),
@@ -491,7 +519,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 prepacked_weight_stage: Path | None = None,
                                 precision_overrides: dict[str, str] | None = None,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
-                                connect_multiplies: bool = False
+                                connect_multiplies: bool = False,
+                                reuse_prepacked_data: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
@@ -520,6 +549,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     prepack_immutable_weights=prepacked_weight_stage is not None,
                                     precision_overrides=precision_overrides,
                                     enabled_vpu_regions=enabled_vpu_regions,
-                                    connect_multiplies=connect_multiplies)
+                                    connect_multiplies=connect_multiplies,
+                                    reuse_prepacked_data=reuse_prepacked_data)
 
     return build
