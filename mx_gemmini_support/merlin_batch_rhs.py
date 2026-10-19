@@ -49,7 +49,7 @@ def analyze_bound_repetitions(prepared, plan):
 
 
 def register_repetitions(entry, generated, bindings, selected, workspace,
-                         compile_source, abi_entries, *, virtual_zero_padding=False):
+                         compile_source, abi_entries, *, virtual_zero_padding=False, compact_rhs=False):
     from merlin.llvmlower.device_shim import LogicalBuffer
 
     from .dense_kernel import emit_dense_f32_batch_kernel
@@ -61,20 +61,20 @@ def register_repetitions(entry, generated, bindings, selected, workspace,
             continue
         batch, m, n, k = entry["shape"]
         repeat = proof["contiguous_batch_repeat"]
-        logical_entry = f"mx_repeated_rhs_{index}"
-        kernel = f"{entry['symbol']}_repeated_rhs_{repeat}_kernel"
+        logical_entry = f"mx_{'compact_' if compact_rhs else ''}repeated_rhs_{index}"
+        kernel = f"{entry['symbol']}_repeated_rhs_{repeat}_{'compact_' if compact_rhs else ''}kernel"
         if kernel not in compiled:
             alternative = emit_dense_f32_batch_kernel(
                 generated.issuer, (batch, m, n, k), symbol=kernel,
                 issuer_symbol=entry["issuer_symbol"], shared_workspace_symbol=workspace,
-                virtual_zero_padding=virtual_zero_padding, rhs_batch_repeat=repeat)
+                virtual_zero_padding=virtual_zero_padding, rhs_batch_repeat=repeat, compact_rhs=compact_rhs)
             if alternative.workspace_bytes != generated.kernel.workspace_bytes:
                 raise ValueError("batch reuse changed the original serial workspace extent")
             compile_source(kernel, alternative.source)
             compiled[kernel] = alternative.workspace_bytes
         abi_entries[logical_entry] = (kernel, (
             LogicalBuffer("lhs", "input", "input_0", (batch, m, k), "f32"),
-            LogicalBuffer("rhs", "input", "input_1", (batch, k, n), "f32"),
+            LogicalBuffer("rhs", "input", "input_1", (batch // repeat if compact_rhs else batch, k, n), "f32"),
             LogicalBuffer("out", "output", "out_0", (batch, m, n), "f32")))
         binding["batch_rhs_reuse"] = {
             "entry_symbol": logical_entry, "kernel_symbol": kernel,
@@ -83,6 +83,7 @@ def register_repetitions(entry, generated, bindings, selected, workspace,
             "lifetime": "private_serial_batch_call",
             "workspace_bytes": compiled[kernel],
             "provider_obligation": "original_results_rounding_effects_and_partial_refusal",
+            **({"compact_input": True} if compact_rhs else {}),
         }
 
 
@@ -103,6 +104,9 @@ class MXBatchRHSReusePostOffload:
         prepared, sidecar, workdir = map(Path, (prepared, sidecar, workdir))
         catalog = json.loads(self.catalog_path.read_text())
         routing = json.loads(sidecar.read_text())
+        compact = catalog.get("compact_batch_rhs", False)
+        if type(compact) is not bool:
+            raise ValueError("compact batch RHS requires an explicit boolean ABI selection")
         if (Path(routing["catalog_manifest"]).resolve() != self.catalog_path.resolve()
                 or routing["model_sha256"] != catalog["source_sha256"]
                 or catalog.get("batch_rhs_reuse") != "experimental_exact_contiguous_repetition"
@@ -128,6 +132,8 @@ class MXBatchRHSReusePostOffload:
             alternative = binding.get("batch_rhs_reuse")
             if alternative is None:
                 continue
+            if alternative.get("compact_input", False) is not compact:
+                raise ValueError("batch RHS endpoint differs from the selected compact input ABI")
             if (alternative["completion"] != "synchronous_native_issuer"
                     or alternative["lifetime"] != "private_serial_batch_call"
                     or alternative["provider_obligation"] != "original_results_rounding_effects_and_partial_refusal"):
@@ -168,7 +174,8 @@ class MXBatchRHSReusePostOffload:
                     grouped.setdefault(proof.repeat, []).append(call)
             for repeat, selected in grouped.items():
                 alternative = family["alternatives"][repeat]
-                contracts.append(RepeatedBatchConsumer(symbol, alternative["entry_symbol"], 1, repeat, tuple(selected)))
+                contracts.append(RepeatedBatchConsumer(symbol, alternative["entry_symbol"], 1, repeat,
+                                                        tuple(selected), compact=compact))
         report = rewrite_repeated_batch_consumers(result, contracts)
         workdir.mkdir(parents=True, exist_ok=True)
         output = workdir / "mx_batch_rhs_reuse.mlir"

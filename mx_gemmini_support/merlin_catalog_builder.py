@@ -99,6 +99,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          virtual_zero_padding: bool = False,
                          integer_group_packing: bool = False,
                          reuse_batch_rhs: bool = False,
+                         compact_batch_rhs: bool = False,
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
@@ -114,6 +115,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("integer group packing requires an explicit boolean selection")
     if type(reuse_batch_rhs) is not bool or reuse_batch_rhs and not integer_group_packing:
         raise ValueError("batch RHS reuse requires explicit integer group packing")
+    if type(compact_batch_rhs) is not bool or compact_batch_rhs and not reuse_batch_rhs:
+        raise ValueError("compact batch RHS requires explicit batch preparation reuse")
     if type(vpu_matrix_transport) is not bool:
         raise ValueError("VPU matrix transport requires an explicit boolean selection")
     if vpu_matrix_transport and not (share_activation_packing and connect_multiplies and integer_group_packing):
@@ -286,7 +289,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
             register_repetitions(entry, generated, plan["bindings"], repeated_inputs,
                                  _WORKSPACE_SYMBOL, compile_source, prepared_entries,
-                                 virtual_zero_padding=virtual_zero_padding)
+                                 virtual_zero_padding=virtual_zero_padding, compact_rhs=compact_batch_rhs)
         activation_preparation = None
         private_bf16_transport = None
         prepared_private_bf16_transport = None
@@ -706,6 +709,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
         **({"batch_rhs_reuse": "experimental_exact_contiguous_repetition"} if reuse_batch_rhs else {}),
+        **({"compact_batch_rhs": True} if compact_batch_rhs else {}),
         **({"batch_rhs_source": {"file": "batch_rhs_source.mlir", "sha256": plan["source_sha256"]}}
            if reuse_batch_rhs else {}),
         "native_tile_policy": native_tile_policy,
@@ -785,6 +789,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 virtual_zero_padding: bool = False,
                                 integer_group_packing: bool = False,
                                 reuse_batch_rhs: bool = False,
+                                compact_batch_rhs: bool = False,
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -828,6 +833,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     virtual_zero_padding=virtual_zero_padding,
                                     integer_group_packing=integer_group_packing,
                                     reuse_batch_rhs=reuse_batch_rhs,
+                                    compact_batch_rhs=compact_batch_rhs,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

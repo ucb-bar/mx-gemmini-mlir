@@ -29,10 +29,11 @@ def test_repeated_packing_refreshes_groups_and_invocations(tmp_path_factory, pre
     profile = load_profile(PROFILE)
     issuer = emit_planned_runtime_issuer(profile, (32, 32, 64), (32, 32, 64), precision=precision)
     batch = 3 * repeat
-    kernels = [emit_dense_f32_batch_kernel(issuer, (batch, m, n, k), symbol=name, rhs_batch_repeat=r)
-               for name, r in (("baseline", 1), ("reused", repeat))]
-    assert kernels[0].workspace_bytes == kernels[1].workspace_bytes
-    for name, kernel in zip(("baseline", "reused"), kernels, strict=True):
+    kernels = [emit_dense_f32_batch_kernel(issuer, (batch, m, n, k), symbol=name, rhs_batch_repeat=r,
+                                          compact_rhs=name == "compact")
+               for name, r in (("baseline", 1), ("reused", repeat), ("compact", repeat))]
+    assert len({kernel.workspace_bytes for kernel in kernels}) == 1
+    for name, kernel in zip(("baseline", "reused", "compact"), kernels, strict=True):
         (work / (name + ".c")).write_text(kernel.source)
     sizes = issuer.buffer_bytes
     snapshots = {"a": sizes["activation"], "asc": sizes["activation_scales"],
@@ -60,7 +61,7 @@ void mx_issue_encoded(const void*a,const void*asc,const void*b,const void*bsc,co
     subprocess.run([cc, "-shared", "-fPIC", "-O2", "-Wall", "-Wextra", "-Werror",
                     "-DMX_QUANT_GROUP_WORDS", "-DMX_QUANT_INLINE_GROUP",
                     "-I", str(work), "-I", str(ROOT / "mx_gemmini_support"),
-                    str(work / "baseline.c"), str(work / "reused.c"), str(work / "stub.c"),
+                    str(work / "baseline.c"), str(work / "reused.c"), str(work / "compact.c"), str(work / "stub.c"),
                     str(ROOT / "mx_gemmini_support/runtime_quant.c"),
                     "-Wl,--wrap=mx_pack_weight_f32", "-o", str(library)], check=True)
     loaded = ctypes.CDLL(str(library))
@@ -73,20 +74,23 @@ void mx_issue_encoded(const void*a,const void*asc,const void*b,const void*bsc,co
         rhs[repeat:2 * repeat, invocation, invocation] += np.float32(2)
         inputs = lhs.tobytes(), rhs.tobytes()
         observations = []
-        for name, weight_calls in (("baseline", batch), ("reused", 3)):
+        for name, weight_calls in (("baseline", batch), ("reused", 3), ("compact", 3)):
             loaded.reset()
             entry = getattr(loaded, name)
             entry.argtypes = [ctypes.c_void_p] * 3
             storage = np.full(batch * m * n + 32, 0xDEADBEEF, dtype=np.uint32)
             output = storage[16:-16].view(np.float32).reshape(batch, m, n)
-            entry(lhs.ctypes.data, rhs.ctypes.data, output.ctypes.data)
+            selected_rhs = rhs[::repeat].copy() if name == "compact" else rhs
+            original_rhs = selected_rhs.tobytes()
+            entry(lhs.ctypes.data, selected_rhs.ctypes.data, output.ctypes.data)
+            assert selected_rhs.tobytes() == original_rhs
             assert ctypes.c_uint.in_dll(loaded, "calls").value == batch
             assert ctypes.c_uint.in_dll(loaded, "weight_calls").value == weight_calls
             assert np.all(storage[:16] == 0xDEADBEEF) and np.all(storage[-16:] == 0xDEADBEEF)
             observed = {field: bytes((ctypes.c_ubyte * (batch * size)).in_dll(loaded, "observed_" + field))
                         for field, size in snapshots.items()}
             observations.append((output.tobytes(), observed))
-        assert observations[0] == observations[1]
+        assert observations[0] == observations[1] == observations[2]
         assert inputs == (lhs.tobytes(), rhs.tobytes())
 
 
@@ -156,8 +160,40 @@ def test_provider_retargets_only_source_proved_serial_rhs(tmp_path):
     assert record["consumers"][0]["input_proofs"][0]["contiguous_batch_repeat"] == 3
 
 
+def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
+    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from xdsl.dialects.func import CallOp
+
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, _ = post_fixture(tmp_path)
+    catalog["compact_batch_rhs"] = True
+    catalog["bindings"][0]["batch_rhs_reuse"]["compact_input"] = True
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    output = MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    module = parse_mlir_file(output)
+    module.verify()
+    call, = [op for op in module.walk() if isinstance(op, CallOp)]
+    assert [str(value.type) for value in call.arguments] == [
+        "tensor<6x1x4xf32>", "tensor<2x4x5xf32>", "tensor<6x1x5xf32>"]
+    report = json.loads((output.parent / "mx_batch_rhs_reuse_rewrite.json").read_text())
+    assert report["selected_calls"] == 1 and report["consumers"][0]["compact_input"]
+
+
+def test_compact_endpoint_requires_matching_catalog_abi(tmp_path):
+    from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
+
+    source, catalog, _ = post_fixture(tmp_path)
+    catalog["compact_batch_rhs"] = True
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog))
+    with pytest.raises(ValueError, match="compact input ABI"):
+        MXBatchRHSReusePostOffload(tmp_path / "catalog.json")(source, tmp_path / "route.json", tmp_path / "rewrite")
+    assert not (tmp_path / "rewrite").exists()
+
+
 @pytest.mark.parametrize("unproved", [False, True])
-def test_shared_declaration_selects_each_current_call_independently(tmp_path, unproved):
+@pytest.mark.parametrize("compact", [False, True])
+def test_shared_declaration_selects_each_current_call_independently(tmp_path, unproved, compact):
     import copy
 
     from merlin.frontends.linalg_mlir import parse_mlir_file
@@ -167,6 +203,9 @@ def test_shared_declaration_selects_each_current_call_independently(tmp_path, un
     from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
 
     source, catalog, route = post_fixture(tmp_path)
+    if compact:
+        catalog["compact_batch_rhs"] = True
+        catalog["bindings"][0]["batch_rhs_reuse"]["compact_input"] = True
     module = parse_mlir_file(source)
     call = next(op for op in module.walk() if isinstance(op, func.CallOp))
     arguments = list(call.arguments)
@@ -247,3 +286,11 @@ def test_unselected_integer_packing_cannot_admit_batch_reuse(tmp_path):
     with pytest.raises(ValueError, match="explicit integer group packing"):
         build_merlin_catalog(tmp_path / "missing", tmp_path / "out", profile={}, riscv_root=tmp_path,
                               reuse_batch_rhs=True)
+
+
+def test_compact_catalog_requires_explicit_reuse_selection(tmp_path):
+    from mx_gemmini_support.merlin_catalog_builder import build_merlin_catalog
+
+    with pytest.raises(ValueError, match="explicit batch preparation reuse"):
+        build_merlin_catalog(tmp_path / "missing", tmp_path / "out", profile={}, riscv_root=tmp_path,
+                              integer_group_packing=True, compact_batch_rhs=True)

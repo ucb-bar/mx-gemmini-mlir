@@ -309,13 +309,15 @@ def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                                 issuer_symbol: str = "mx_issue_encoded",
                                 shared_workspace_symbol: str | None = None,
                                 virtual_zero_padding: bool = False,
-                                rhs_batch_repeat: int = 1) -> DenseBatchKernel:
+                                rhs_batch_repeat: int = 1,
+                                compact_rhs: bool = False) -> DenseBatchKernel:
     """Call one checked matrix kernel for each disjoint dense batch slice.
 
     A repeat greater than one requires a separately proved exact contiguous
     RHS repetition. Private encoded RHS storage is refreshed for every group
     in every call and retained only through synchronous slice issuers. Input
-    tensors, per-slice activation packing, output order and fences are unchanged.
+    per-slice activation packing, output order and fences are unchanged. Explicit
+    compact mode reads one RHS matrix per group from a separately qualified ABI.
     """
     if (len(logical_shape_bmnk) != 4 or
             any(type(value) is not int or value <= 0 for value in logical_shape_bmnk)):
@@ -323,6 +325,8 @@ def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     batch, m, n, k = logical_shape_bmnk
     if type(rhs_batch_repeat) is not int or rhs_batch_repeat <= 0 or batch % rhs_batch_repeat:
         raise ValueError("MX batch RHS reuse needs complete positive contiguous groups")
+    if type(compact_rhs) is not bool or compact_rhs and rhs_batch_repeat <= 1:
+        raise ValueError("compact batch RHS requires an explicit repeated-input ABI")
     if any(value > 0x7fffffff for value in (batch * m * k, batch * k * n,
                                             batch * m * n)):
         raise ValueError("MX batch adapter exceeds the selected runtime extent")
@@ -332,13 +336,14 @@ def emit_dense_f32_batch_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         shared_workspace_symbol=shared_workspace_symbol, virtual_zero_padding=virtual_zero_padding,
         retain_runtime_weight=rhs_batch_repeat > 1)
     refresh = f", batch % {rhs_batch_repeat}u == 0u" if rhs_batch_repeat > 1 else ""
+    rhs_index = f"(batch / {rhs_batch_repeat}u)" if compact_rhs else "batch"
     source = slice_kernel.source + f"""
 /* Whole-batch Merlin ABI: each slice has independent dense row-major storage. */
 void {symbol}(const float *lhs, const float *rhs, float *out) {{
   if (!lhs || !rhs || !out) __builtin_trap();
   for (size_t batch = 0; batch < {batch}u; ++batch)
     {slice_symbol}(lhs + batch * {m}u * {k}u,
-                   rhs + batch * {k}u * {n}u,
+                   rhs + {rhs_index} * {k}u * {n}u,
                    out + batch * {m}u * {n}u{refresh});
 }}
 """

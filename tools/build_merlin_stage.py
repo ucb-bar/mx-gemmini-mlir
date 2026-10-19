@@ -213,6 +213,8 @@ def main() -> None:
                         help="experimentally use BF16-word group preparation and inline its fixed-axis loops")
     parser.add_argument("--reuse-batch-rhs", action="store_true",
                         help="experimentally retain RHS packing across source-proved contiguous batch repetitions")
+    parser.add_argument("--compact-batch-rhs", action="store_true",
+                        help="experimentally bind one source matrix per proved batch group; requires RHS reuse")
     parser.add_argument("--host-math-guard", type=Path,
                         help="explicit reviewed guarded-f32 library contract; requires pinned endpoint suppliers")
     parser.add_argument("--native-tile-policy", choices=("legacy", "movement"), default="legacy",
@@ -234,6 +236,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.compact_batch_rhs and not args.reuse_batch_rhs:
+        parser.error("--compact-batch-rhs requires --reuse-batch-rhs")
     if args.reuse_batch_rhs and (not args.integer_quant_groups or args.execution_policy is None):
         parser.error("--reuse-batch-rhs requires integer groups and an explicit execution policy")
     if args.connect_vpu_multiplies and args.execution_policy is None:
@@ -455,6 +459,7 @@ def main() -> None:
             virtual_zero_padding=args.virtual_zero_padding,
             integer_group_packing=args.integer_quant_groups,
             reuse_batch_rhs=args.reuse_batch_rhs,
+            compact_batch_rhs=args.compact_batch_rhs,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -736,6 +741,7 @@ def main() -> None:
         "packed_object_storage_reuse": catalog.get("packed_object_storage_reuse"),
         "share_activation_packing": args.share_activation_packing,
         **({"reuse_batch_rhs": True} if args.reuse_batch_rhs else {}),
+        **({"compact_batch_rhs": True} if args.compact_batch_rhs else {}),
         "retain_shared_activation_rhs": args.retain_shared_activation_rhs,
         "matrix_vpu_transport": args.matrix_vpu_transport,
         "vpu_matrix_transport": args.vpu_matrix_transport,

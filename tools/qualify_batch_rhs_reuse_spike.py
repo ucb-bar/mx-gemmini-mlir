@@ -26,8 +26,12 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def driver(batch, m, n, k, repeat, *, refusal):
+def driver(batch, m, n, k, repeat, *, refusal, compact_rhs=False):
     count, ae, be = batch * m * n, batch * m * k, batch * k * n
+    if compact_rhs:
+        be //= repeat
+    source_index = f"(i/{k * n}u)*{repeat * k * n}u+i%{k * n}u" if compact_rhs else "i"
+    copies = 1 if compact_rhs else repeat
     return f'''#include <stdint.h>
 #include <stdio.h>
 extern const unsigned char payload[];
@@ -53,8 +57,8 @@ int main(void){{
   for(unsigned i=0;i<{be + 32};++i)b[i]=value(0xa5a50000u);
   for(unsigned i=0;i<{count + 32};++i)out[i]=value(0xa5a50000u);
   for(unsigned i=0;i<{ae};++i)a[i+16]=((const float*)payload)[i];
-  for(unsigned i=0;i<{be};++i)b[i+16]=((const float*)payload)[{ae}+i];
-  if(!{int(refusal)})for(unsigned group=0;group<{batch // repeat};++group)if((run==1&&group==0)||(run==2&&group==1))for(unsigned r=0;r<{repeat};++r)b[16+(group*{repeat}+r)*{k * n}]=-b[16+(group*{repeat}+r)*{k * n}];
+  for(unsigned i=0;i<{be};++i)b[i+16]=((const float*)payload)[{ae}+{source_index}];
+  if(!{int(refusal)})for(unsigned group=0;group<{batch // repeat};++group)if((run==1&&group==0)||(run==2&&group==1))for(unsigned r=0;r<{copies};++r)b[16+(group*{copies}+r)*{k * n}]=-b[16+(group*{copies}+r)*{k * n}];
   uint64_t t=cycle();produce(a+16,b+16,out+16);t=cycle()-t;
   printf("PERF run=%u cycles=%lu\\n",run,(unsigned long)t);dump();
  }}
@@ -71,6 +75,8 @@ def main():
         parser.add_argument("--" + name, type=int, required=True)
     parser.add_argument("--precision", choices=("FP4", "FP8"), default="FP8")
     parser.add_argument("--virtual-zero-padding", action="store_true")
+    parser.add_argument("--compact-rhs", action="store_true",
+                        help="Give the retained endpoint one original RHS matrix per group")
     parser.add_argument("--refusal", choices=("none", "lhs", "rhs"), default="none")
     parser.add_argument("--refusal-bits", type=lambda word: int(word, 0), default=0x7FC12345)
     parser.add_argument("--structural-elf-admission", action="store_true")
@@ -136,9 +142,11 @@ def main():
         directory.mkdir()
         kernel = emit_dense_f32_batch_kernel(generated.issuer, (batch, m, n, k), symbol="produce",
                                             issuer_symbol="native_issue", rhs_batch_repeat=selected_repeat,
-                                            virtual_zero_padding=args.virtual_zero_padding)
+                                            virtual_zero_padding=args.virtual_zero_padding,
+                                            compact_rhs=args.compact_rhs and role == "retained")
         (directory / "adapter.c").write_text(kernel.source)
-        (directory / "driver.c").write_text(driver(batch, m, n, k, repeat, refusal=args.refusal != "none"))
+        (directory / "driver.c").write_text(driver(batch, m, n, k, repeat, refusal=args.refusal != "none",
+                                                   compact_rhs=args.compact_rhs and role == "retained"))
         objects = []
         paths = [directory / "adapter.c", directory / "driver.c", out / "issuer.c", out / "runtime_quant.c", out / "payload.S",
                  *sorted(startup.glob("*.c")), *sorted(startup.glob("*.S"))]
@@ -212,6 +220,7 @@ def main():
               "shape_bmnk": [batch, m, n, k], "repeat": repeat, "precision": args.precision, "refusal": args.refusal,
               "results": results, "commands": commands, "profile_sha256": profile_sha256(profile),
               "extension_sha256": sha(args.extlib), "compiler_sha256": sha(cc), "spike_sha256": sha(riscv / "bin/spike"),
+              **({"compact_rhs": True} if args.compact_rhs else {}),
               "files_sha256": {str(path.relative_to(out)): sha(path) for path in out.rglob("*") if path.is_file()}}
     (out / "receipt.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"shape": report["shape_bmnk"], "repeat": repeat, "refusal": args.refusal,
