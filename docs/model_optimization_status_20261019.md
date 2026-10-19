@@ -51,7 +51,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing within a synchronous batch | RHS reuse has native/small-graph qualification with full-model retries running; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and compact source input within a synchronous batch | RHS reuse/compaction have native and complete-graph qualification with full-model runs pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -108,6 +108,23 @@ The cached candidate reuses the exact latest prefill stage and adds RHS reuse
 only to its decoder. A separate latest cached control includes the newer packing,
 broadcast, guarded-math and reverse-transport passes and is still executing.
 
+A further optional compact-input ABI removes the need to construct the expanded
+RHS for private consumers. Merlin supplies one source matrix per proved group,
+including a compact transpose when necessary; target code reads matrix
+`batch / repeat`. All original rounding, packing order, private workspace and
+synchronous completion remain. Other consumers keep their original tensors;
+profitability depends on the actual remaining uses. Explicit flags remain off
+by default. A complete tail graph improves another 4.4939% (765,994 → 731,571
+cycles), while a complete one-token QK graph improves 56.9763% (5,504,459 →
+2,368,224), with all output words and device counters identical. Literal
+allocations sum to 51,568 → 17,454 bytes and 2,642,152 → 184,478 bytes,
+respectively; these are not peak measurements. Equal sample values without a
+source proof select zero calls and preserve the original 1,091,675 cycles.
+Seven native compact-ABI cases qualify tails, repeated calls and partial
+refusals. Both real forward/decode graphs admit 44 compact calls, reducing RHS
+batch32 to4. A fresh compact full forward is simulating; no compact full-model
+or cached-session improvement is claimed yet.
+
 The completed SmolVLA session currently measures 89,671,723,299 → 87,964,565,915
 cycles for equivalent BF16 read-view packing reuse (1.9038%). All 33 output/state
 hashes and 11 full action tensors match. Its diagnostic final cosine is 0.9752;
@@ -135,6 +152,7 @@ Primary retained evidence and standalone verification:
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
 - [Repeated batch RHS native and graph qualification](evidence/repeated_batch_rhs_20261019/README.md)
+- [Compact batch RHS native, complete graph and fallback qualification](evidence/compact_batch_rhs_20261019/README.md)
 - [Actual runtime state-copy attribution](evidence/state_copy_attribution_20261019/README.md)
 
 The initial changes came from profiling and inspecting generated IR. Subsequent
