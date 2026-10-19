@@ -180,18 +180,24 @@ def compare(stage, archive, baseline, candidate, out, *, boundary_archive=None):
             "elf_sha256": elf_digest, "elf_bytes": elf.stat().st_size,
             "recipe_sha256": sha(build / "compilation_recipe.json"),
             "admission_sha256": sha(admissions[0]), "arena_estimate": receipt["arena_estimate"],
+            "timing_instrumented": bool(receipt["op_profile"]),
         }
         arrays[label] = values
     source_cycles = boundary["cycles"] if boundary else None
     qualified = records["candidate"]["quality_late_33"]["passed"]
+    clean_timing = not any(row["timing_instrumented"] for row in records.values())
     report = {"schema": "mx_gemmini.matched_complete_forward_comparison.v1",
               "scope": "two_complete_compiler_forwards_vs_33_archived_independent_source_logit_rows",
               "source_cycles": source_cycles, "records": records,
               "source_boundary": boundary,
               "same_logical_timing_boundary": boundary is not None,
+              "uninstrumented_cycle_comparison": clean_timing,
+              "compiler_words_equal": bool(np.array_equal(arrays["baseline"].view(np.uint32),
+                                                           arrays["candidate"].view(np.uint32))),
               "source_relative_quality_passed": qualified,
               "candidate_to_source_cycle_ratio_if_qualified": (
-                  records["candidate"]["cycles"] / source_cycles if qualified and boundary else None),
+                  records["candidate"]["cycles"] / source_cycles
+                  if qualified and boundary and clean_timing else None),
               "source_full_logits_available": False,
               "capture_receipt_sha256": sha(stage / "capture_receipt.json"),
               "source_identity_sha256": sha(archive / "input_identity.json")}

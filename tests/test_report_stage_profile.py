@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from tools.report_stage_profile import report_stage_profile
+from tools.report_stage_profile import _source_regions, report_stage_profile
 
 
 def test_stage_profile_reconciles_guest_ticks_and_build(tmp_path) -> None:
@@ -61,3 +61,23 @@ def test_stage_profile_accepts_receipt_bound_capacity_above_8192(tmp_path) -> No
     (build / "mx_stage_probe.json").write_text(json.dumps(receipt))
     with pytest.raises(ValueError, match="linked profiler capacity"):
         report_stage_profile(build, log)
+
+
+def test_prepared_and_private_transport_calls_keep_original_matrix_attribution(tmp_path):
+    (tmp_path / "device").mkdir()
+    (tmp_path / "device_catalog").mkdir()
+    (tmp_path / "device/catalog_binding.json").write_text(json.dumps({
+        "entry_to_kernel": {"original_a": "kernel_a", "original_b": "kernel_b"}}))
+    catalog = {"bindings": [
+        {"symbol": "kernel_a", "region": "a", "source_operation_ordinal": 10},
+        {"symbol": "kernel_b", "region": "b", "source_operation_ordinal": 20}],
+        "kernels": [
+            {"symbol": "kernel_a", "activation_preparation": {"consumer_symbol": "prepared_a"}},
+            {"symbol": "kernel_b", "prepared_private_bf16_transport": {"symbol": "compact_b"}}]}
+    (tmp_path / "device_catalog/mx_catalog.json").write_text(json.dumps(catalog))
+    assert _source_regions(tmp_path, [{"id": 0, "callee": "@prepared_a"},
+                                      {"id": 1, "callee": "@compact_b"}]) == {0: "a", 1: "b"}
+    catalog["kernels"][1]["private_bf16_transport"] = {"symbol": "prepared_a"}
+    (tmp_path / "device_catalog/mx_catalog.json").write_text(json.dumps(catalog))
+    with pytest.raises(ValueError, match="inconsistent"):
+        _source_regions(tmp_path, [])

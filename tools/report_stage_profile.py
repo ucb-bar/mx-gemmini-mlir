@@ -40,7 +40,17 @@ def _source_regions(build: Path, table: list[dict]) -> dict[int, str]:
     if not binding_path.exists() or not catalog_path.exists():
         raise ValueError("incomplete MX catalog binding for operation profile")
     entry_to_kernel = json.loads(binding_path.read_text())["entry_to_kernel"]
-    bindings = json.loads(catalog_path.read_text())["bindings"]
+    catalog = json.loads(catalog_path.read_text())
+    bindings = catalog["bindings"]
+    for kernel in catalog.get("kernels", []):
+        for field, key in (("activation_preparation", "consumer_symbol"),
+                           ("private_bf16_transport", "symbol"),
+                           ("prepared_private_bf16_transport", "symbol")):
+            endpoint = kernel.get(field)
+            if endpoint:
+                alias = endpoint[key]
+                if entry_to_kernel.setdefault(alias, kernel["symbol"]) != kernel["symbol"]:
+                    raise ValueError("profiled matrix transport alias has inconsistent source bindings")
     calls: dict[str, list[dict]] = defaultdict(list)
     sources: dict[str, list[dict]] = defaultdict(list)
     for record in table:
@@ -125,7 +135,7 @@ def report_stage_profile(build: Path, spike_log: Path,
         if not hits:
             continue
         callee = record.get("callee") or ""
-        owner = ("mx" if callee.startswith("@merlin_dev_mx_gemmini_") else
+        owner = ("mx" if ident in source_regions or callee.startswith("@merlin_dev_mx_gemmini_") else
                  "vpu" if callee.startswith("@mx_vpu_") else "host")
         family = record.get("family") or record.get("mlir_op") or "unknown"
         buckets[owner] += ticks
