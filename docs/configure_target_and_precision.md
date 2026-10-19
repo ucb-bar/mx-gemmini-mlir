@@ -1,0 +1,224 @@
+# Configure the target and choose layer precision
+
+Use the [model build guide](compile_e2e_models.md) to set up the pinned
+repositories, Python environments, checkpoints, and toolchains. This guide
+changes the hardware profile or the quantization policy for a new build.
+The published model results use the exact policies in
+[`examples/models/policies/`](../examples/models/policies/); changing a
+policy produces a new numerical configuration.
+
+## Select the hardware profile
+
+The same `mx-gemmini-opt` binary handles the supported MX configurations.
+Select hardware with a source-bound profile JSON and the build's `--profile`
+argument. The profile describes the array dimensions, scratchpad and
+accumulator limits, DMA resources, legal operand formats and PE modes, and
+VPU capabilities. Precision choices must fit those capabilities.
+
+The completed model workloads use
+`MxE4M3Fp4VpuGemminiRocketConfig`: a 16×16 mesh, direct FP4 E2M1 and
+FP8 E4M3 matrix operations, 32-element scale groups, and a BF16 VPU.
+FP6 is available in other profiles, but this VPU profile has no FP6 compute
+tuple. The [profile catalog](current_mx_profiles.md) describes the other
+Rocket wrappers and standalone fragments, including their qualification
+limits. A legal profile alone does not establish that every whole-model
+adapter supports it.
+
+Export a named configuration from the selected Gemmini checkout, including
+its pinned MxGen submodule:
+
+```sh
+export GEMMINI_ROOT=/path/to/pinned/gemmini
+export CONFIG=MxE4M3Fp4VpuGemminiRocketConfig
+export PROFILE_DIR="$ARTIFACT_ROOT/selected-profiles"
+
+"$CAPTURE_PY" -m tools.export_profiles --gemmini "$GEMMINI_ROOT" \
+  --config "$CONFIG" --out "$PROFILE_DIR"
+export PROFILE="$PROFILE_DIR/$CONFIG.json"
+```
+
+Use a fresh output directory. The exporter reads supported Scala
+declarations; it does not elaborate arbitrary Scala. For the published
+configuration, use the Gemmini and MxGen revisions in the
+[release registry](../examples/models/release.json).
+
+Check the complete profile against that checkout:
+
+```sh
+"$CAPTURE_PY" - <<'PY'
+import os
+from pathlib import Path
+from mx_gemmini_support.target_profile import load_profile, profile_sha256
+
+profile = load_profile(Path(os.environ["PROFILE"]),
+                       rtl_root=Path(os.environ["GEMMINI_ROOT"]))
+print(profile["name"], profile_sha256(profile))
+print(profile["geometry"])
+for mode in profile["legal_compute"]:
+    print(mode)
+PY
+```
+
+This check regenerates the profile and compares source revisions, source
+hashes, and capabilities. Change the RTL configuration and re-export when
+changing hardware. Editing capability fields in the JSON cannot enable a
+missing hardware feature.
+
+For a typed MX handoff, bind and verify it against the selected profile:
+
+```sh
+"$CAPTURE_PY" -m mx_gemmini_support.bind_profile \
+  --mlir /path/to/handoff.mlir --profile "$PROFILE" \
+  --rtl-root "$GEMMINI_ROOT" --out "$ARTIFACT_ROOT/profile-bound.mlir"
+"$CAPTURE_PY" -m mx_gemmini_support.verify_profile_ir \
+  --mlir "$ARTIFACT_ROOT/profile-bound.mlir" --profile "$PROFILE" \
+  --rtl-root "$GEMMINI_ROOT" --mx-opt "$MX_ROOT/build/tools/mx-gemmini-opt"
+```
+
+The binder preserves the handoff's captured operand formats and
+projections. For complete-model builds, pass `--profile` and `--rtl-root`
+to `tools.build_merlin_stage`; the separate handoff command above is for
+the typed dialect workflow. After changing profiles, regenerate the
+execution policy and rebuild the stage objects and session executable.
+The Spike extension or FireSim hardware must implement the selected profile.
+
+## Find the compiler sites belonging to a layer
+
+The executable backend uses a JSON `mx_gemmini.execution_policy.v1` or `v2`
+policy. It binds every eligible matrix and VPU site to the exact captured
+MLIR and profile hashes. Matrix decisions use `prov.region_id`, because a
+layer can contain several contractions with different numerical roles.
+The precision inventory also records the module's fully qualified name
+(`fqn`), operation, role, and shape.
+
+For example, use the TinyLlama cached-prefill inputs exported by the model
+guide:
+
+```sh
+export INPUT_DIR="$ARTIFACT_ROOT/tinyllama-cached-inputs"
+export STAGE="$INPUT_DIR/capture/stages/prefill"
+export PRECISION_PLAN="$ARTIFACT_ROOT/prefill-precision-plan.json"
+export POLICY_BASE="$INPUT_DIR/prefill-policy.json"
+export POLICY_OUT="$ARTIFACT_ROOT/prefill-mixed-policy.json"
+
+"$CAPTURE_PY" -m tools.plan_model_precision --reader merlin \
+  --model-mlir "$STAGE/model.mlir" --profile "$PROFILE" \
+  --rtl-root "$GEMMINI_ROOT" --out "$PRECISION_PLAN"
+
+"$CAPTURE_PY" - <<'PY'
+import json, os
+from pathlib import Path
+
+plan = json.loads(Path(os.environ["PRECISION_PLAN"]).read_text())
+for site in plan["sites"]:
+    print(site["region_id"], site["fqn"], site["role"],
+          site.get("shape_mnk", site.get("shape_bmnk")),
+          site["selected_format"])
+PY
+```
+
+The plan proposes FP4 for eligible dense projections and FP8 for batched
+contractions, including attention QK/PV. It is an eligibility inventory;
+it does not change the build policy. The published execution policies
+explicitly choose FP8 for every offloaded matrix and retain selected
+sensitive operations on the host.
+
+For a new capture without a published policy, generate a starting policy:
+
+```sh
+"$CAPTURE_PY" -m tools.make_execution_policy --stage "$STAGE" \
+  --profile "$PROFILE" --preserve-singleton-reductions \
+  --out "$ARTIFACT_ROOT/new-stage-policy.json"
+```
+
+This starts eligible matrices at FP8 and selects VPU placements from the
+source operations. Review sensitive host/VPU boundaries before execution.
+For an existing release capture, keep its exported policy as the starting
+point so that its reviewed placement choices are preserved.
+
+## Assign different precisions to different layers
+
+Choose an exact region from the inventory. The example below changes one
+eligible dense contraction to FP4 and preserves every other decision.
+Repeat for the region IDs belonging to each layer you want to change.
+Do not infer region IDs from layer names or reuse them across captures.
+
+```sh
+export FP4_REGION=replace-with-an-exact-region-id-from-the-inventory
+
+"$CAPTURE_PY" - <<'PY'
+import json, os
+from pathlib import Path
+from mx_gemmini_support.execution_policy import validate_policy
+from mx_gemmini_support.target_profile import load_profile
+
+plan = json.loads(Path(os.environ["PRECISION_PLAN"]).read_text())
+policy = json.loads(Path(os.environ["POLICY_BASE"]).read_text())
+region = os.environ["FP4_REGION"]
+site = next(site for site in plan["sites"] if site["region_id"] == region)
+if site["selected_format"] != "mxfp4":
+    raise ValueError("choose a dense site that the inventory admits at FP4")
+if policy["matrix_formats"][region] != "mxfp8":
+    raise ValueError("the selected baseline site must currently use FP8")
+policy["matrix_formats"][region] = "mxfp4"
+source = (Path(os.environ["STAGE"]) / "model.mlir").read_text()
+profile = load_profile(Path(os.environ["PROFILE"]),
+                       rtl_root=Path(os.environ["GEMMINI_ROOT"]))
+validate_policy(policy, source, profile)
+with Path(os.environ["POLICY_OUT"]).open("x") as output:
+    output.write(json.dumps(policy, indent=2, sort_keys=True) + "\n")
+PY
+```
+
+The current full-model policy admits FP4 or FP8 at eligible dense sites,
+and FP8 at supported batched sites. It does not admit FP6 or arbitrary
+activation/weight format pairs. Both operands of a contraction use its
+selected format. MX scales remain E8M0 per 32 elements; operands round
+through BF16 and VPU operations remain BF16. Version 2 additionally permits
+host placement for proven singleton reductions; `host` is not a general
+matrix override. VPU decisions are separate `host`/`vpu` mappings under
+`vpu_placements` for `softmax`, `add`, `elementwise`, `unary`, and `reduce`.
+
+Unknown sites, incomplete policies, unsupported formats, and changed source
+or profile hashes are rejected. Generate policies separately for prefill,
+decode, prefix, and flow stages. Changing a quantization decision requires
+repacking its constants and rebuilding affected objects; relinking an old
+object with a new policy is insufficient.
+
+## Build and check the changed policy
+
+For a stage build, pass the new policy explicitly:
+
+```sh
+"$CAPTURE_PY" -m tools.build_merlin_stage --stage "$STAGE" \
+  --workdir "$ARTIFACT_ROOT/prefill-mixed-build" \
+  --profile "$PROFILE" --rtl-root "$GEMMINI_ROOT" \
+  --execution-policy "$POLICY_OUT" --merlin-src "$MERLIN_ROOT/src" \
+  --llvm-install "$LLVM_INSTALL" --riscv-root "$RISCV_ROOT" \
+  --prepack-checkpoint-weights --prune-unused-checkpoint-weights \
+  --host-math-guard "$INPUT_DIR/guard.json" --arena-mb 2048 \
+  --spike-arena-base 0xd0000000 --structural-elf-admission \
+  --compile-timeout-s 6000
+```
+
+This is a custom stage build. To keep the published optimization options,
+first generate the model guide's complete build plan without `--execute`.
+Use its stage and session commands with fresh build directories and the new
+policy paths. The `tools.model_release build` wrapper verifies the published
+policy hashes and deliberately refuses a modified input export. Keep custom
+policies outside that export and invoke the stage/link tools directly.
+
+Inspect `mx_stage_probe.json` and `device_catalog/mx_catalog.json` for the
+selected policy, actual matrix formats, placement census, and zero unbound
+proposals. Link sessions through `tools.link_merlin_session` using the
+rebuilt stages and the captured state bindings described in the model guide.
+Check every state/output digest and complete selected tensor after execution.
+The published output checker tests reproduction of the original policy;
+a changed precision policy needs its own numerical comparison against the
+same floating-point inputs and an independent quantized reference. Operand
+fake quantization alone does not model the MX mesh arithmetic.
+
+The [capture-time quantization handoff](quantization_handoff.md) documents
+the separate TorchAO adapter, module-name overrides, FP6 codebook rules, and
+typed handoff contracts. Those capture-time policies use a different schema
+and do not replace the executable backend policy above.

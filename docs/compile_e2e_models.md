@@ -146,6 +146,11 @@ attention and normalization boundaries therefore cannot silently move to a
 lower precision under a broad default policy. Mixed FP4/FP8 remains an
 experimental alternative and is not the policy behind the current numbers.
 
+For another target or mixed layer precision, follow
+[configure the target and choose layer precision](configure_target_and_precision.md).
+It covers source-checked profiles, layer-to-region mapping, policy validation,
+and rebuilding custom stages separately from the fixed release recipe.
+
 ## Obtain captures and checkpoint files
 
 For an exact input replay, use the archived captures. Exporting requires the

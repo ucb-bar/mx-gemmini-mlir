@@ -69,6 +69,9 @@ describes the dialect's typed contract and verifier.
 
 The [configuration guide](docs/current_mx_profiles.md) distinguishes Rocket,
 standalone, VPU, precision, and mesh variants. The
+[target and layer-precision guide](docs/configure_target_and_precision.md)
+shows how to select a hardware profile, identify a layer's compiler sites,
+and build with a validated FP4/FP8 policy. The
 [application-kernel coverage map](docs/nicolas_application_kernel_coverage.md)
 tracks compiled equivalents of source kernels. The
 [physical compiler record](docs/compiled_mx_pipeline.md) contains detailed
