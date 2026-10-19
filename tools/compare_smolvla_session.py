@@ -70,7 +70,7 @@ def compare_session(run_receipt: Path, link_receipt: Path, session_root: Path) -
         if row["bytes"] != 6400 or path.stat().st_size != 6400 or _sha(path) != row["sha256"]:
             raise ValueError("SmolVLA output dump differs from its run receipt")
         values[key] = np.frombuffer(path.read_bytes(), dtype="<f4").reshape(1, 50, 32).copy()
-    if not np.array_equal(values[1, 9, 0], values[2, 0, 0]):
+    if values[1, 9, 0].tobytes() != values[2, 0, 0].tobytes():
         raise ValueError("action_decode did not preserve the final flow state")
     steps = [{"step": step, **_metrics(values[1, step, 0], expected[step])}
              for step in range(10)]

@@ -11,11 +11,13 @@ import pytest
 from tools.compare_smolvla_session import compare_session
 
 
-def test_flow_and_action_comparison_checks_every_dump(tmp_path) -> None:
+@pytest.mark.parametrize("changed_final_zero_sign", [False, True])
+def test_flow_and_action_comparison_checks_every_dump(tmp_path, changed_final_zero_sign) -> None:
     session = tmp_path / "session"
     stage = session / "stages/flow_denoise"
     stage.mkdir(parents=True)
     reference = np.arange(10 * 50 * 32, dtype=np.float32).reshape(10, 1, 50, 32) / 1000
+    reference[9, 0, 0, 0] = 0.0
     np.savez(stage / "session_goldens.npz", actions=reference)
     link_path = tmp_path / "link.json"
     link_path.write_text(json.dumps({
@@ -30,6 +32,8 @@ def test_flow_and_action_comparison_checks_every_dump(tmp_path) -> None:
         value = reference[step if program == 1 else 9].copy()
         if program == 1 and step == 3:
             value += 0.25
+        if program == 2 and changed_final_zero_sign:
+            value[0, 0, 0] = -0.0
         relative = f"output_dumps/p{program}_s{step}_o0.bin"
         raw = value.tobytes()
         (tmp_path / relative).write_bytes(raw)
@@ -49,6 +53,10 @@ def test_flow_and_action_comparison_checks_every_dump(tmp_path) -> None:
         "link_receipt_sha256": hashlib.sha256(link_path.read_bytes()).hexdigest(),
         "output_dumps": dumps,
     }))
+    if changed_final_zero_sign:
+        with pytest.raises(ValueError, match="final flow state"):
+            compare_session(run_path, link_path, session)
+        return
     report = compare_session(run_path, link_path, session)
     assert report["final_action_metrics"]["max_abs"] == 0
     assert report["flow_step_metrics"][3]["max_abs"] == 0.25
