@@ -53,7 +53,7 @@ The eight requested areas currently have the following coverage:
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
 | Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
-| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and private compact inputs with qualified complete forwards | Newer cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
+| Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing and private compact inputs with qualified complete forwards | Repeated/compact RHS cached runs remain pending; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
 | Host/memory | Generic word-group conversion/max preparation, fixed-axis inlining, exact guarded library calls, bounded private buffers and session weight pools | Allocation sums are not peak measurements; no general temporal allocator or zero-copy state rotation is claimed |
 | Cost selection | Actual matched native measurements, bounded tile search and resource guards, retained original routes | Experimental flags remain explicit; no general XLA-style fusion cost model is implemented |
@@ -67,13 +67,28 @@ qualified compact endpoint. Private-edge rewrites refuse public outputs, real
 fanout, changed types, unknown effects or missing completion/layout contracts.
 
 The completed 128-token prefill plus 32 decodes measures 74,065,304,284 cycles for
-the corrected cached compiler control and 55,871,481,378 for the earlier reuse
-passes plus virtual decode padding, a 24.5646% reduction. All 99 output/state
-hashes and all 33 complete logit tensors match. This is a separate workload from
-the independent forward and uses earlier passes, without the later RMS,
-word-group, guarded-math, tile or reverse-transport changes. Its FP32 diagnostic
-is identical across variants, but no independent Nicolás cached baseline or new
-generation-quality threshold has been established.
+the corrected cached compiler control, 55,871,481,378 for the earlier reuse
+passes plus virtual decode padding, and **41,567,160,094 for newer passes**.
+The latest is 25.6022% below the earlier reuse session and 43.8777% below the
+original corrected cached compiler. Inclusive prefill costs 8,885,018,358 cycles,
+32 decodes 32,677,635,948, and reset 4,505,788. All 99 output/state hashes and
+all 33 full logit tensors match exactly, including every actual dump and console
+HEX stream. Its FP32 diagnostic is unchanged: mean KL 0.07095571052388557,
+worst KL 0.18586350146524108, top agreement 28/33. No independent Nicolás cached
+baseline or generation-quality threshold has been established. This separate
+workload retains legacy native tiles; its latest completed result includes
+broadcast/RMS, integer word packing, guarded math and private BF16 transport,
+but not the still-running repeated/compact RHS changes.
+
+The latest cached result reduces process-wide commands 9,797,152 → 9,329,686,
+fences 182,241 → 181,785 and load bytes 37,556,271,872 → 37,493,680,896. Mesh
+work and scale bytes match; VPU commands increase 42,730 → 42,754. The image
+grows 5,288,040 bytes and static catalog BSS grows 5,416,512 bytes. Prefill/decode
+literal allocation sums decrease 133,699,068/869,884 bytes, respectively; these
+are not peak-memory measurements. Both keep the same 2 GiB arena and native
+workspaces. The standalone reader and actual image/section/stage-object checks
+passed; new evidence is 4,830,056 compressed bytes with a pinned dependency on
+the earlier complete cached archive.
 
 Inspection of the actual generated cached adapter confirms that each decode
 calls `merlin_commit_state` before returning. That runtime copies the entire
@@ -187,6 +202,7 @@ Primary retained evidence and standalone verification:
 - [Repeated RHS preparation full forward](evidence/matched_batch_rhs_forward_20261019/README.md)
 - [Private compact RHS full forward](evidence/matched_compact_batch_rhs_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
+- [Complete cached session with newer passes](evidence/cached_latest_session_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
 - [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)
