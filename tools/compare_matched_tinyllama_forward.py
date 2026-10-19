@@ -14,9 +14,10 @@ from pathlib import Path
 
 import numpy as np
 
+from mx_gemmini_support.spike_timing import reject_deadlocked_timing
 from tools.capture_matched_tinyllama_onepass import sha
-from tools.compare_mx_model_quality import compare_tinyllama
 from tools.compare_fair_tinyllama_onepass import rows, unique
+from tools.compare_mx_model_quality import compare_tinyllama
 from tools.report_stage_profile import parse_gemmini_perf
 
 
@@ -30,6 +31,7 @@ def read_equal_boundary(archive, boundary):
     build = json.loads((boundary / "build_receipt.json").read_text())
     run = json.loads((boundary / "run_receipt.json").read_text())
     source = gzip.decompress((boundary / "source_spike.log.gz").read_bytes())
+    reject_deadlocked_timing(source.decode())
     original = gzip.decompress((archive / "source_timed.log.gz").read_bytes())
     if (report.get("schema") != "mx_gemmini.tinyllama_onepass_equal_boundary.v1"
             or not report.get("same_logical_input_output_boundary")
@@ -105,7 +107,9 @@ def compare(stage, archive, baseline, candidate, out, *, boundary_archive=None):
     boundary = read_equal_boundary(archive, boundary_archive) if boundary_archive else None
     archived_build = json.loads((archive / "compiler_build_summary.json").read_text())
     archived_run = json.loads((archive / "compiler_run.json").read_text())
-    old_tops = parse_console((archive / "compiler_spike.log").read_text())["argmax"]
+    old_console = (archive / "compiler_spike.log").read_text()
+    reject_deadlocked_timing(old_console)
+    old_tops = parse_console(old_console)["argmax"]
     records, arrays = {}, {}
     for label, build in (("baseline", baseline), ("candidate", candidate)):
         receipt_path = build / "mx_stage_probe.json"
@@ -139,6 +143,7 @@ def compare(stage, archive, baseline, candidate, out, *, boundary_archive=None):
                 Path(observation["command"][-1]).resolve() != Path(receipt["elf"]).resolve()):
             raise ValueError(label + " observed execution environment differs")
         console_path = build / "spike.log"
+        reject_deadlocked_timing(console_path.read_text())
         elf = build / "model.elf"
         elf_digest = sha(elf)
         recipe = json.loads((build / "compilation_recipe.json").read_text())

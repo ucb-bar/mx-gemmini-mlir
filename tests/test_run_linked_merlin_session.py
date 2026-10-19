@@ -43,6 +43,16 @@ def test_complete_session_checks_all_programs_and_state_outputs() -> None:
     assert len(report["output_digests"]) == 4
 
 
+@pytest.mark.parametrize("position", ["prefix", "suffix", "interleaved"])
+def test_exit_zero_complete_values_do_not_hide_timing_model_deadlock(position):
+    diagnostic = "gemmini perf: MODEL DEADLOCK at fence (cycle 343755): loops busy\n"
+    console = diagnostic + _log() if position == "prefix" else _log() + diagnostic
+    if position == "interleaved":
+        console = _log().replace("METRIC memref_rank_mismatch 0", "partial " + diagnostic + "METRIC memref_rank_mismatch 0")
+    with pytest.raises(ValueError, match="timing model deadlocked"):
+        observe_session_output(console, _session(), exit_code=0)
+
+
 def test_completed_run_refuses_wrong_state_bytes_and_missing_records() -> None:
     with pytest.raises(ValueError, match="result digest differs"):
         observe_session_output(_log().replace("0 0 1 12", "0 0 1 8"),

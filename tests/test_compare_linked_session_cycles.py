@@ -84,10 +84,25 @@ def test_changed_capture_or_timing_model_is_rejected(tmp_path) -> None:
         compare_sessions(*reference, *candidate)
 
 
+def test_receipt_bound_exit_zero_model_deadlock_is_not_a_speedup(tmp_path):
+    reference = _write_pair(tmp_path / "reference", cycles=100)
+    candidate = _write_pair(tmp_path / "candidate", cycles=1)
+    log = candidate[1].parent / "spike.log"
+    log.write_text(log.read_text() + "gemmini perf: MODEL DEADLOCK at end of program\n")
+    run = json.loads(candidate[1].read_text())
+    run["log_sha256"] = hashlib.sha256(log.read_bytes()).hexdigest()
+    candidate[1].write_text(json.dumps(run))
+    with pytest.raises(ValueError, match="timing model deadlocked"):
+        compare_sessions(*reference, *candidate)
+
+
 def measured_pair(root, capture, *, cycles, reset, prepare):
     from merlin.llvmlower.session_bundle import load
 
-    from tools.run_linked_merlin_session import observe_preparation_output, observe_session_output
+    from tools.run_linked_merlin_session import (
+        observe_preparation_output,
+        observe_session_output,
+    )
 
     link_path, run_path = _write_pair(root, cycles=cycles)
     link, run = (json.loads(p.read_text()) for p in (link_path, run_path))

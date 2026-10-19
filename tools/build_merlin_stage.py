@@ -124,6 +124,9 @@ def _observe_spike_evidence(console: str, source: Path, build_hash: str,
     from merlin.runtime.backends.spike_model import parse_console
     from merlin.runtime.output_digest import observe_output_digests
 
+    from mx_gemmini_support.spike_timing import reject_deadlocked_timing
+
+    reject_deadlocked_timing(console)
     _, outputs = forward_signature(source)
     parsed = parse_console(console, expected_output_elements=(
         int(np.prod(outputs[0][0])) if require_complete else None))

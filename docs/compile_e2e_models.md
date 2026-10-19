@@ -258,7 +258,12 @@ policy, timing preset and overrides, Spike binary, and extension. These are
 Nicolas's modeled cycles; the fast setting excludes CPU-store cache effects,
 and hardware latency claims still need RTL or FPGA calibration.
 `incomplete` or a nonzero command result is a failed execution; process exit
-alone is insufficient. Full-model numerical correctness still requires an
+alone is insufficient. The stage/session observers and matched timing comparators
+also refuse an explicit `gemmini perf: MODEL DEADLOCK` diagnostic, including
+receipt-bound exit-zero runs with complete functional outputs. Absence of that
+diagnostic does not establish complete modeled arithmetic work; retain the work
+counter checks for experimental command sequences.
+Full-model numerical correctness still requires an
 independent reference that implements the selected FP4/FP8 conversion and
 MX/VPU BF16 arithmetic and checks logits or actions plus recurrent state.
 An [independent 64-token, 22-layer TinyLlama source run](evidence/nicolas_tinyllama_full_source_20261014/README.md)

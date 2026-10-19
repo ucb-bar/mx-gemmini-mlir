@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from mx_gemmini_support.scheduled_native_issuer import emit_scheduled_native_issuer
+from mx_gemmini_support.spike_timing import reject_deadlocked_timing
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
 
 
@@ -159,6 +160,7 @@ def main():
     with (out / "spike.log").open("wb") as log:
         result = subprocess.run(command, cwd=out, env=environment, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
     lines = (out / "spike.log").read_text().splitlines()
+    reject_deadlocked_timing((out / "spike.log").read_text())
     rows = [dict(part.split("=", 1) for part in line.split()[1:]) for line in lines if line.startswith("TILE ")]
     report = {"schema": "mx_gemmini.native_tile_pair.v1", "scope": "encoded_issuer_section_only", "shape_mnk": shape,
               "pattern": args.pattern, "seed": 581203, "payload_offsets": offsets, "exit_code": result.returncode,

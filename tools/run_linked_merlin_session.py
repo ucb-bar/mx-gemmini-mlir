@@ -12,6 +12,8 @@ import sys
 import time
 from pathlib import Path
 
+from mx_gemmini_support.spike_timing import reject_deadlocked_timing
+
 from .link_merlin_session import (
     DEFAULT_DUMP_LIMIT_BYTES,
     MAX_DUMP_LIMIT_BYTES,
@@ -173,6 +175,7 @@ def observe_session_output(
     log: str, session, *, exit_code: int, require_perf: bool = False,
 ) -> dict:
     """Accept only a correct prefix of the captured session's output/state ABI."""
+    reject_deadlocked_timing(log)
     expected = _expected(session)
     seen = 0
     records = []

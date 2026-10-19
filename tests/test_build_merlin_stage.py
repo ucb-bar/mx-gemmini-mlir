@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-import numpy as np
-import pytest
 import hashlib
 import json
+
+import numpy as np
+import pytest
+from test_merlin_bf16_prepare import ROOT, SOURCE
 
 from mx_gemmini_support.target_profile import load_profile
 from tools.build_merlin_stage import (
@@ -13,11 +15,10 @@ from tools.build_merlin_stage import (
     _load_precision_overrides,
     _observe_spike_evidence,
     _raw_selected_regions,
-    _require_source_coverage,
     _require_softmax_coverage,
+    _require_source_coverage,
 )
 from tools.make_precision_overrides import make_manifest
-from test_merlin_bf16_prepare import ROOT, SOURCE
 
 
 def test_precision_override_file_is_bound_to_source_and_profile(tmp_path) -> None:
@@ -106,6 +107,9 @@ def test_completed_spike_evidence_covers_all_result_shapes(tmp_path, monkeypatch
                                      first_typed=True)
     assert len(result["indexed"]) == 2
     assert result["numerical_qualification"] == "not_established"
+    with pytest.raises(ValueError, match="timing model deadlocked"):
+        _observe_spike_evidence(console + "gemmini perf: MODEL DEADLOCK at fence\n",
+                                tmp_path / "model.mlir", "deadbeef", first_typed=True)
     numeric_hash = console.replace("deadbeef", "000000000001")
     assert _observe_spike_evidence(numeric_hash, tmp_path / "model.mlir", "000000000001",
                                    first_typed=True)["indexed"][0]["sha256"] == first

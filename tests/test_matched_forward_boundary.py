@@ -1,5 +1,7 @@
 """A source performance ratio must include the same token lookup work."""
 
+import gzip
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -35,4 +37,24 @@ def test_changed_boundary_or_run_refuses(tmp_path, field, value):
     report[field] = value
     path.write_text(json.dumps(report))
     with pytest.raises(ValueError):
+        read_equal_boundary(ARCHIVE, tmp_path)
+
+
+def test_receipt_bound_source_timing_model_deadlock_refuses(tmp_path):
+    for path in BOUNDARY.iterdir():
+        if path.is_file():
+            shutil.copyfile(path, tmp_path / path.name)
+    log = tmp_path / "source_spike.log.gz"
+    console = gzip.decompress(log.read_bytes()) + b"gemmini perf: MODEL DEADLOCK at fence\n"
+    log.write_bytes(gzip.compress(console, mtime=0))
+    run_path = tmp_path / "run_receipt.json"
+    run = json.loads(run_path.read_text())
+    run["log_sha256"] = hashlib.sha256(console).hexdigest()
+    run_path.write_text(json.dumps(run))
+    comparison_path = tmp_path / "fair_comparison.json"
+    comparison = json.loads(comparison_path.read_text())
+    comparison["source_log_sha256"] = run["log_sha256"]
+    comparison["source_run_receipt_sha256"] = hashlib.sha256(run_path.read_bytes()).hexdigest()
+    comparison_path.write_text(json.dumps(comparison))
+    with pytest.raises(ValueError, match="timing model deadlocked"):
         read_equal_boundary(ARCHIVE, tmp_path)

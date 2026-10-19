@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from mx_gemmini_support.spike_timing import reject_deadlocked_timing
+
 
 def _sha(path: Path) -> str:
     with path.open("rb") as stream:
@@ -26,6 +28,7 @@ def _load(link_path: Path, run_path: Path) -> tuple[dict, dict]:
         raise ValueError("comparison needs complete receipt-bound timing runs")
     if _sha(run_path.parent / "spike.log") != run.get("log_sha256"):
         raise ValueError("Spike log differs from its run receipt")
+    reject_deadlocked_timing((run_path.parent / "spike.log").read_text())
     command = run.get("command", [])
     if (not command or Path(command[-1]).resolve() != Path(link.get("elf", "")).resolve()):
         raise ValueError("Spike command does not run the linked ELF")
