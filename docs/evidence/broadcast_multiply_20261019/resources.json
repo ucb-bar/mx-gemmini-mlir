@@ -1,0 +1,158 @@
+{
+  "finite_overflow_prepared": {
+    "connected": {
+      "allocated_file_bytes": 9721,
+      "allocated_nobits_bytes": 13722,
+      "elf_bytes": 26536
+    },
+    "materialized": {
+      "allocated_file_bytes": 8029,
+      "allocated_nobits_bytes": 8404,
+      "elf_bytes": 23168
+    }
+  },
+  "infinite_input_prepared": {
+    "connected": {
+      "allocated_file_bytes": 9721,
+      "allocated_nobits_bytes": 13722,
+      "elf_bytes": 26536
+    },
+    "materialized": {
+      "allocated_file_bytes": 8029,
+      "allocated_nobits_bytes": 8404,
+      "elf_bytes": 23168
+    }
+  },
+  "late_activation_prepared": {
+    "connected": {
+      "allocated_file_bytes": 249653,
+      "allocated_nobits_bytes": 475450,
+      "elf_bytes": 266480
+    },
+    "materialized": {
+      "allocated_file_bytes": 242531,
+      "allocated_nobits_bytes": 295092,
+      "elf_bytes": 257696
+    }
+  },
+  "late_weight_plain": {
+    "connected": {
+      "allocated_file_bytes": 249549,
+      "allocated_nobits_bytes": 458996,
+      "elf_bytes": 266248
+    },
+    "materialized": {
+      "allocated_file_bytes": 242531,
+      "allocated_nobits_bytes": 295092,
+      "elf_bytes": 257696
+    }
+  },
+  "late_weight_prepared": {
+    "connected": {
+      "allocated_file_bytes": 249653,
+      "allocated_nobits_bytes": 475450,
+      "elf_bytes": 266480
+    },
+    "materialized": {
+      "allocated_file_bytes": 242531,
+      "allocated_nobits_bytes": 295092,
+      "elf_bytes": 257696
+    }
+  },
+  "nan_activation_prepared_checked": {
+    "connected": {
+      "allocated_file_bytes": 249547,
+      "allocated_nobits_bytes": 475450,
+      "elf_bytes": 266440
+    },
+    "materialized": {
+      "allocated_file_bytes": 242425,
+      "allocated_nobits_bytes": 295092,
+      "elf_bytes": 257592
+    }
+  },
+  "nan_weight_prepared_checked": {
+    "connected": {
+      "allocated_file_bytes": 9615,
+      "allocated_nobits_bytes": 13722,
+      "elf_bytes": 26432
+    },
+    "materialized": {
+      "allocated_file_bytes": 7923,
+      "allocated_nobits_bytes": 8404,
+      "elf_bytes": 23128
+    }
+  },
+  "norm160_plain": {
+    "connected": {
+      "allocated_file_bytes": 2649619,
+      "allocated_nobits_bytes": 4096100,
+      "elf_bytes": 2666344
+    },
+    "materialized": {
+      "allocated_file_bytes": 2643039,
+      "allocated_nobits_bytes": 2719844,
+      "elf_bytes": 2658168
+    }
+  },
+  "norm160_prepared": {
+    "connected": {
+      "allocated_file_bytes": 2649811,
+      "allocated_nobits_bytes": 4100516,
+      "elf_bytes": 2666608
+    },
+    "materialized": {
+      "allocated_file_bytes": 2643039,
+      "allocated_nobits_bytes": 2719844,
+      "elf_bytes": 2658168
+    }
+  },
+  "one_token_plain": {
+    "connected": {
+      "allocated_file_bytes": 32715,
+      "allocated_nobits_bytes": 65636,
+      "elf_bytes": 49424
+    },
+    "materialized": {
+      "allocated_file_bytes": 30385,
+      "allocated_nobits_bytes": 41060,
+      "elf_bytes": 45560
+    }
+  },
+  "one_token_prepared": {
+    "connected": {
+      "allocated_file_bytes": 32709,
+      "allocated_nobits_bytes": 65638,
+      "elf_bytes": 49552
+    },
+    "materialized": {
+      "allocated_file_bytes": 30385,
+      "allocated_nobits_bytes": 41060,
+      "elf_bytes": 45560
+    }
+  },
+  "tail_plain": {
+    "connected": {
+      "allocated_file_bytes": 9615,
+      "allocated_nobits_bytes": 13396,
+      "elf_bytes": 26248
+    },
+    "materialized": {
+      "allocated_file_bytes": 8029,
+      "allocated_nobits_bytes": 8404,
+      "elf_bytes": 23168
+    }
+  },
+  "tail_prepared": {
+    "connected": {
+      "allocated_file_bytes": 9721,
+      "allocated_nobits_bytes": 13722,
+      "elf_bytes": 26536
+    },
+    "materialized": {
+      "allocated_file_bytes": 8029,
+      "allocated_nobits_bytes": 8404,
+      "elf_bytes": 23168
+    }
+  }
+}
