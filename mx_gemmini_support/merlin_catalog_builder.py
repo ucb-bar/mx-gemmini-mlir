@@ -425,7 +425,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 compile_source(pair["symbol"], emit_chain_shim(pair))
                 compiled[pair["symbol"]] = removed
             connected_multiplies.append({key: pair[key] for key in
-                                         ("regions", "shape", "symbol", "kernel_symbol")} |
+                                         ("regions", "shape", "input_shapes", "input_axes", "middle_index",
+                                          "symbol", "kernel_symbol")} |
                                         {"removed_transfer_bytes": compiled[pair["symbol"]]})
     elementwise_shapes = {site["symbol"]: site for site in elementwise_sites}
     elementwise_kernels = []

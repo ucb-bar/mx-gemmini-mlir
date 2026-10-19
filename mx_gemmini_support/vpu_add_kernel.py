@@ -52,34 +52,9 @@ def _issue(profile: dict, *, elements: int, symbol: str, operation: str) -> str:
 
 def _broadcast_index(result_shape: tuple[int, ...], rhs_shape: tuple[int, ...],
                      rhs_axes: tuple[int, ...]) -> str:
-    if len(rhs_shape) > len(result_shape):
-        raise ValueError("VPU elementwise RHS cannot exceed result rank")
-    if (len(rhs_axes) != len(rhs_shape) or
-            tuple(sorted(set(rhs_axes))) != rhs_axes or
-            any(axis < 0 or axis >= len(result_shape) for axis in rhs_axes) or
-            any(dim not in (1, result_shape[axis])
-                for axis, dim in zip(rhs_axes, rhs_shape))):
-        raise ValueError("VPU elementwise RHS shape does not broadcast to result")
-    if rhs_shape == result_shape and rhs_axes == tuple(range(len(result_shape))):
-        return "(base + index)"
-    strides = []
-    for axis in range(len(rhs_shape)):
-        step = 1
-        for dim in rhs_shape[axis + 1:]:
-            step *= dim
-        strides.append(step)
-    terms = []
-    for axis, dim in enumerate(rhs_shape):
-        out_axis = rhs_axes[axis]
-        if dim == 1:
-            continue
-        out_step = 1
-        for size in result_shape[out_axis + 1:]:
-            out_step *= size
-        coordinate = (f"((base + index) % {result_shape[out_axis]}u)" if out_step == 1
-                      else f"((base + index) / {out_step}u % {result_shape[out_axis]}u)")
-        terms.append(f"({coordinate} * {strides[axis]}u)")
-    return " + ".join(terms) if terms else "0u"
+    from merlin.llvmlower.tensor_broadcast import dense_broadcast_index
+
+    return dense_broadcast_index(result_shape, rhs_shape, rhs_axes)
 
 
 def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],

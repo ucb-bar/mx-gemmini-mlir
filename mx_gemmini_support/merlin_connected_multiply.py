@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from math import prod
 
-from .connected_elementwise import F32MultiplyAdapter
+from .connected_elementwise import F32MultiplyAdapter, multiply_projection
 
 
 def multiply_pairs(module, sites):
@@ -15,10 +15,8 @@ def multiply_pairs(module, sites):
         private_tensor_pairs,
         pure_tensor_compute,
     )
-    from xdsl.ir.affine import AffineMap
-
     selected = {site["region"]: site for site in sites}
-    operations, ordinals = {}, defaultdict(int)
+    operations, projections, ordinals = {}, {}, defaultdict(int)
     for function in module.body.block.ops:
         if function.name != "func.func" or not function.body.blocks or function.sym_name.data != "forward":
             continue
@@ -39,29 +37,47 @@ def multiply_pairs(module, sites):
             site = selected.get(key)
             if site is None or site["dtype"] != "f32" or site["operation"] != "mul":
                 continue
-            shape = tuple(site["shape"])
-            fastmath = arithmetic[0].properties.get("fastmath")
-            if (tuple(site["lhs_shape"]) != shape or tuple(site["rhs_shape"]) != shape
-                    or len(op.inputs) != 2 or len(op.results) != 1
-                    or len(op.indexing_maps) != 3
-                    or any(m.data != AffineMap.identity(len(shape)) for m in op.indexing_maps)
-                    or any(str(i) != "#linalg.iterator_type<parallel>" for i in op.iterator_types)
-                    or list(arithmetic[0].operands) != list(op.body.block.args[:2])
-                    or list(steps[-1].operands) != list(arithmetic[0].results)
-                    or (fastmath is not None and fastmath.data)):
+            try:
+                pattern, axes = multiply_projection(op)
+            except ValueError:
+                continue
+            order = (1, 0) if site["swap"] else (0, 1)
+            if (pattern.shape != tuple(site["shape"])
+                    or tuple(pattern.input_shapes[i] for i in order) !=
+                    (tuple(site["lhs_shape"]), tuple(site["rhs_shape"]))
+                    or tuple(axes[i] for i in order) !=
+                    (tuple(site["lhs_axes"]), tuple(site["rhs_axes"]))):
                 continue
             operations[op] = site
+            projections[op] = pattern, axes
     result = []
     for first, second in private_tensor_pairs(
             operations, can_cross=lambda op: pure_tensor_compute(op) or destination_only_tensor_call(op)):
         a, b = operations[first], operations[second]
+        middle_indices = [i for i, value in enumerate(second.inputs) if value == first.results[0]]
         if (tuple(a["shape"]) != tuple(b["shape"])
-                or second.inputs[0] != first.results[0]
-                or len({*first.inputs, second.inputs[1]}) != 3):
+                or len(middle_indices) != 1):
             continue
+        middle_index = middle_indices[0]
+        external_index = 1 - middle_index
+        if len({*first.inputs, second.inputs[external_index]}) != 3:
+            continue
+        first_pattern, first_axes = projections[first]
+        second_pattern, second_axes = projections[second]
+        if second_axes[middle_index] != tuple(range(len(a["shape"]))):
+            continue
+        input_shapes = (*first_pattern.input_shapes, second_pattern.input_shapes[external_index])
+        input_axes = (*first_axes, second_axes[external_index])
         symbol = "mx_vpu_mul_chain_f32_" + "_".join(map(str, a["shape"]))
+        if middle_index != 0 or any(shape != tuple(a["shape"]) for shape in input_shapes):
+            symbol += "_inputs_" + "__".join(
+                ("_".join(map(str, shape)) or "scalar") + "_axes_" +
+                ("_".join(map(str, axes)) or "none")
+                for shape, axes in zip(input_shapes, input_axes, strict=True)) + f"_middle{middle_index}"
         result.append({"first": first, "second": second, "regions": [a["region"], b["region"]],
-                           "shape": list(a["shape"]), "symbol": symbol, "kernel_symbol": symbol + "_kernel"})
+                       "shape": list(a["shape"]), "input_shapes": [list(shape) for shape in input_shapes],
+                       "input_axes": [list(axes) for axes in input_axes], "middle_index": middle_index,
+                       "external_index": external_index, "symbol": symbol, "kernel_symbol": symbol + "_kernel"})
     return result
 
 
@@ -86,12 +102,14 @@ def chain_adapter(pair, profile):
         block.add_ops([empty, clone, func.ReturnOp(*clone.results)])
         functions.append(func.FuncOp(f"multiply{index}",
                                     ([v.type for v in op.inputs], [op.results[0].type]), Region(block)))
+    shapes = dict(zip("abc", pair["input_shapes"], strict=True)) | {"m": pair["shape"], "o": pair["shape"]}
     program = DispatchProgram("forward", [0, 1, 2], {
-        name: Buffer(name, pair["shape"], "f32", "arg" if name in "abc" else "intermediate",
+        name: Buffer(name, shapes[name], "f32", "arg" if name in "abc" else "intermediate",
                      "abc".index(name) if name in "abc" else None)
         for name in ("a", "b", "c", "m", "o")}, [
             Node("dispatch", "multiply0", ["a", "b"], ["m"]),
-            Node("dispatch", "multiply1", ["m", "c"], ["o"])], ["o"])
+            Node("dispatch", "multiply1", ["m", "c"] if pair["middle_index"] == 0 else ["c", "m"],
+                 ["o"])], ["o"])
     return program, F32MultiplyAdapter(ModuleOp(functions), program.to_dict(), profile,
                                        boundary_policy="bf16_rne_each_vpu_call")
 
@@ -121,6 +139,21 @@ def emit_chain_kernel(pair, profile):
 def emit_chain_shim(pair):
     """Four ranked descriptors: three contiguous inputs and one fresh output."""
     shape, symbol, kernel = pair["shape"], pair["symbol"], pair["kernel_symbol"]
+    if any(input_shape != shape for input_shape in pair["input_shapes"]):
+        from merlin.llvmlower.device_shim import (
+            LogicalBuffer,
+            emit_logical_translation_unit,
+        )
+
+        buffers = tuple(LogicalBuffer(name, "input", f"input_{i}", tuple(input_shape), "f32")
+                        for i, (name, input_shape) in enumerate(zip("abc", pair["input_shapes"], strict=True)))
+        buffers += (LogicalBuffer("o", "output", "out_0", tuple(shape), "f32"),)
+        unit = emit_logical_translation_unit("mx_gemmini", {symbol: (
+            buffers, [{"role": b.role, "shape": b.shape, "dtype": b.dtype} for b in buffers])},
+            kernel_symbol_for=lambda _: kernel)
+        if unit.skipped or unit.symbols != (symbol,):
+            raise ValueError("broadcast multiply ABI could not be emitted")
+        return unit.text
     rank = len(shape)
     strides = [prod(shape[i + 1:]) for i in range(rank)]
     params = []

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
+from dataclasses import asdict
+from pathlib import Path
 
 from mx_gemmini_support.connected_elementwise import F32MultiplyAdapter
 from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -17,7 +17,10 @@ from tools.qualify_nicolas_dense_attention import _perf_counters
 from tools.qualify_vpu_row_softmax_spike import _run
 
 
-def driver(elements: int) -> str:
+def driver(elements: int, *, input_elements: tuple[int, int, int] | None = None) -> str:
+    counts = input_elements or (elements,) * 3
+    if len(counts) != 3 or any(type(n) is not int or n <= 0 for n in counts):
+        raise ValueError("multiply driver needs three positive input extents")
     return f'''#include <stdint.h>
 #include <stdio.h>
 extern const unsigned char payload[];
@@ -27,8 +30,8 @@ static float output[{elements}] __attribute__((aligned(64)));
 static uint64_t cycle(void) {{ uint64_t n;
   asm volatile("rdcycle %0" : "=r"(n) :: "memory"); return n; }}
 int main(void) {{
-  const float *a=(const float *)payload, *b=a+{elements}, *c=b+{elements};
-  const uint32_t *golden=(const uint32_t *)(c+{elements});
+  const float *a=(const float *)payload, *b=a+{counts[0]}, *c=b+{counts[1]};
+  const uint32_t *golden=(const uint32_t *)(c+{counts[2]});
   for(unsigned run=0;run<3;++run) {{
     uint64_t start=cycle(); run_chain(a,b,c,middle,output);
     uint64_t elapsed=cycle()-start;
@@ -57,7 +60,9 @@ def main():
     import numpy as np
     from merlin.frontends.linalg_mlir import parse_mlir_text
     from merlin.xdsl_dialects.lowering import connected_dispatch
-    from merlin.xdsl_dialects.lowering.dispatch_program import lower_model_to_dispatch_program
+    from merlin.xdsl_dialects.lowering.dispatch_program import (
+        lower_model_to_dispatch_program,
+    )
 
     profile = load_profile(args.profile, rtl_root=args.rtl_root)
     source = (args.capture / "source.mlir").read_text()

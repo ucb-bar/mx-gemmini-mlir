@@ -9,9 +9,7 @@ from itertools import combinations
 from math import prod
 from pathlib import Path
 
-from .merlin_vpu_add import emit_memref_add_shim
 from .target_profile import profile_sha256
-
 
 _SOURCE_OPS = {
     "mul": ("aten.mul.Tensor", "arith.mulf"),
@@ -198,12 +196,11 @@ class MXVPUElementwisePostOffload:
             raise ValueError("MX VPU elementwise regions must be nonempty")
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
+        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.xdsl_dialects._common import text
         from xdsl.dialects import func, tensor
         from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
         from xdsl.ir import Region
-
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()
@@ -264,7 +261,7 @@ class MXVPUElementwisePostOffload:
                 result_type = second.results[0].type
                 destination = tensor.EmptyOp((), result_type)
                 call = func.CallOp(pair["symbol"],
-                                   [*first.inputs, second.inputs[1], destination.results[0]],
+                                   [*first.inputs, second.inputs[pair["external_index"]], destination.results[0]],
                                    [result_type])
                 block.insert_op_before(destination, second)
                 block.insert_op_before(call, second)
