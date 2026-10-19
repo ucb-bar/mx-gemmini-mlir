@@ -1,9 +1,9 @@
 # Whole-model optimization checkpoint, 19 October 2026
 
 The optimization goal remains active. The latest completed independent TinyLlama
-forward uses **11,094,646,734 modeled cycles**, versus Nicolás's equal-boundary
-12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 13.0674%
-and 30.5919%, respectively. The older 15,170,996,572-cycle compiler archive had
+forward uses **11,008,973,639 modeled cycles**, versus Nicolás's equal-boundary
+12,762,360,525 and the corrected compiler's 15,984,649,026: reductions of 13.7387%
+and 31.1278%, respectively. The older 15,170,996,572-cycle compiler archive had
 different numerical quality and is not the equal-quality compiler control.
 
 Every completed optimized forward preserves all 5,120,000 F32 logit words from
@@ -23,6 +23,7 @@ not be described as bit identity with the independent implementation.
 | Generic word-group preparation | 11,197,470,681 |
 | Exact guarded host math | 11,105,781,721 |
 | Movement-bounded native tile selection | 11,094,646,734 |
+| Reverse connected-VPU/BF16 preparation transport | 11,008,973,639 |
 
 The last tile change reduces measured load bytes from 4,198,111,552 to
 3,939,506,496 and scale bytes from 115,279,872 to 107,198,464. Commands 3,312,204,
@@ -34,8 +35,12 @@ arena is 2 GiB in both builds.
 
 Measurements bind specific archived sources, objects and images. A later generic
 BF16-input helper refactor changes object bytes. Its fresh matched full-model
-control/candidate pair is running; the table does not claim exact binary identity
-with current HEAD. The historical OOT word-packing prototype is separately
+pair completed: 11,094,643,214 → 11,008,973,639 cycles (0.77217%). The control
+differs by 3,520 cycles from the historical native-tile row. The candidate
+selects 44 private edges, with unchanged device counters and all logit words.
+Literal allocations sum to 1,343,648,814 bytes, 28,835,840 fewer; this is not
+peak memory. Its image is 1,330,837,896 bytes. The table binds frozen binaries,
+without claiming exact binary identity with current HEAD. The historical OOT word-packing prototype is separately
 archived and is not the generic Merlin implementation.
 
 The eight requested areas currently have the following coverage:
@@ -44,7 +49,7 @@ The eight requested areas currently have the following coverage:
 |---|---|---|
 | Numerical placement | Intermediate diagnosis, corrected sensitive host placement, unchanged source-relative acceptance | Captured policies remain explicit; no automatic model-wide numerical-policy inference is claimed |
 | Connected pointwise | Multiply pairs, sigmoid/multiply chains, projected broadcasts, prepared broadcast operands, exact intermediate rounding and fallback | General arbitrary pointwise DAG fusion is not implemented |
-| Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks | Reverse full-model pair is running; broader batched attention and accumulator-resident epilogues remain unqualified |
+| Matrix/VPU/requant handoffs | Private matrix-to-VPU BF16 edges; reverse connected-VPU-to-shared-packing BF16 endpoints with graph/privacy checks and qualified full-forward improvement | Broader batched attention and accumulator-resident epilogues remain unqualified |
 | Network scheduling | Shared preparations across independent consumers under checked effects, liveness and memory budgets | No asynchronous overlap or double buffering; native matrix code already batches loop commands without a CPU fence per loop |
 | Weight/activation reuse | Source-proven immutable prepacking, unused entry-weight pruning, shared live activation preparation, BF16 read-view reuse, exact repeated RHS packing within a synchronous batch | RHS reuse has native/small-graph qualification with full-model retries running; no cross-stage encoded constant deduplication or persistent encoded KV preparation |
 | Prefill/decode/state | Separate captures and schedules, qualified virtual zero rows, complete cached-session comparison | State copies identified below; incremental KV packing requires ownership/update/version proof or exact content revalidation |
@@ -123,6 +128,7 @@ Primary retained evidence and standalone verification:
 - [Generic packing full forward](evidence/matched_merlin_word_packing_20261019/README.md)
 - [Guarded-math full forward](evidence/matched_guarded_math_forward_20261019/README.md)
 - [Tile-selection full forward](evidence/matched_native_tiles_forward_20261019/README.md)
+- [Reverse BF16 full forward](evidence/matched_reverse_transport_forward_20261019/README.md)
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
