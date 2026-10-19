@@ -3,22 +3,23 @@
 from __future__ import annotations
 
 import ctypes
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
-from mx_gemmini_support.dense_kernel import (emit_dense_f32_batch_kernel,
-                                             emit_dense_f32_kernel,
-                                             emit_shared_workspace_definition)
+from mx_gemmini_support.dense_kernel import (
+    emit_dense_f32_batch_kernel,
+    emit_dense_f32_kernel,
+    emit_shared_workspace_definition,
+)
 from mx_gemmini_support.offline_weight_pack import pack_weight
 from mx_gemmini_support.physical_program import lower_bound_source
-from mx_gemmini_support.runtime_issuer import RuntimeIssuer, emit_runtime_issuer
 from mx_gemmini_support.planned_runtime_issuer import emit_planned_runtime_issuer
+from mx_gemmini_support.runtime_issuer import RuntimeIssuer, emit_runtime_issuer
 from mx_gemmini_support.source_payload import load_bundle
 from mx_gemmini_support.target_profile import load_profile
-
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs/evidence/model2mlir_small_llama_mlp_fp4_padding_e9ded36_266c593"
@@ -35,7 +36,11 @@ def _issuer(site: str) -> RuntimeIssuer:
 
 
 @pytest.mark.parametrize("site", ["g", "dn"])
-def test_dense_wrapper_packs_archived_model_operands_and_unpads_output(tmp_path, site: str) -> None:
+def test_dense_wrapper_packs_archived_model_operands_and_unpads_output(tmp_path_factory, site: str) -> None:
+    # Keep each loaded DSO's path until session end. Passed-test cleanup can
+    # reuse a truncated tmp_path between parameters; dlopen then returns the
+    # previous image for the recompiled pathname, with different buffer extents.
+    tmp_path = tmp_path_factory.mktemp("dense_image_" + site)
     np = pytest.importorskip("numpy")
     cc = shutil.which("cc")
     if cc is None:
