@@ -152,6 +152,14 @@ diagnostic final cosine remains 0.9752. There is no independently established
 full Nicolás SmolVLA baseline or action acceptance threshold. The earlier
 89,671,723,299 → 87,964,565,915 widening-only pair remains separate evidence.
 
+Replaying the current repeated-RHS proof on the completed SmolVLA source selects
+zero of 56 prefix and zero of 32 flow batch calls. Widening and non-matrix-axis
+permutations interrupt its current exact-copy proof. Full source traces retain
+repeated broadcasts behind some of those operations, so this is a present
+eligibility limit, not a proof that broader reuse is impossible. Supporting
+them needs a new coordinate/conversion proof and matched execution; no additional
+SmolVLA batch-reuse result is claimed.
+
 The session linker now carries an explicit exact guarded-math selection into
 the final image and verifies its original library suppliers. A complete small
 recurrent qualifier preserves every state/output hash and dumped word while
@@ -167,6 +175,7 @@ Primary retained evidence and standalone verification:
 - [Complete cached sessions](evidence/cached_session_reuse_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
 - [Complete SmolVLA preparation/host bundle](evidence/smolvla_latest_session_20261019/README.md)
+- [SmolVLA repeated-RHS source applicability](evidence/smolvla_rhs_applicability_20261019/README.md)
 - [Reverse BF16 transport qualifiers](evidence/vpu_matrix_transport_20261019/README.md)
 - [Guarded session integration](evidence/guarded_session_link_20261019/README.md)
 - [Rejected/accepted native tile measurements](evidence/native_tile_search_20261019/README.md)
