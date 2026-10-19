@@ -1,0 +1,2468 @@
+{
+  "archive_bytes": 282416,
+  "archive_sha256": "cf09a1dc55f339c1fe2e58112a2d04ea77822f75cd667ef30d68d399d7a50bad",
+  "artifacts": {
+    "fixture/capture.command.json": {
+      "bytes": 464,
+      "sha256": "64bdc4c28f9d3119e3a18bd30bcc1cfb568b9a824d25332639f1b002af010bd3",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture.command.json"
+    },
+    "fixture/capture.log": {
+      "bytes": 942,
+      "sha256": "4843645d8e9521d8875635afff94e0adf7032ff2a5001496fd798e8cc2530205",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture.log"
+    },
+    "fixture/capture/decode_policy.json": {
+      "bytes": 499,
+      "sha256": "3f68f6622a300278483c0973119e01000b266affe9a795d39b86116dcad06988",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/decode_policy.json"
+    },
+    "fixture/capture/expected.npz": {
+      "bytes": 8704,
+      "sha256": "5159030db57ba94769a17373e2b46b5d08bc05d2609b0b74523f94794e1729d0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/expected.npz"
+    },
+    "fixture/capture/prefill_policy.json": {
+      "bytes": 499,
+      "sha256": "bfbe58bcfbfecb3397d241d908da7c36a9b3b6dcfa429ac63a67cb22fe8de34c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/prefill_policy.json"
+    },
+    "fixture/capture/session_contract.yaml": {
+      "bytes": 535,
+      "sha256": "b879fad51af11b8edf86bc91a283a2716ebee22a165e1cecae2a02d62e55de85",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/session_contract.yaml"
+    },
+    "fixture/capture/stages/decode/capture_receipt.json": {
+      "bytes": 8290,
+      "sha256": "263b97888cff68d4eca9dccb0a176373a5e1e0e8a39e54406402b1ffeb575e12",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/capture_receipt.json"
+    },
+    "fixture/capture/stages/decode/extra.npz": {
+      "bytes": 22,
+      "sha256": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/extra.npz"
+    },
+    "fixture/capture/stages/decode/golden.npy": {
+      "bytes": 2176,
+      "sha256": "8c535213e3023e20628215044c0c7f8816a0cac70b44421fb427a41f8677d240",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/golden.npy"
+    },
+    "fixture/capture/stages/decode/input_order.json": {
+      "bytes": 26,
+      "sha256": "9e23b90731653ff19c86b3de65de4e65dbf4d05a4a6b7ebb3be1ebc7b446dd0a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/input_order.json"
+    },
+    "fixture/capture/stages/decode/inputs.npz": {
+      "bytes": 4594,
+      "sha256": "951de3d82eb18b6c48d6494a98b31627273133536c95d3f8a8b43788e9a0cae7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/inputs.npz"
+    },
+    "fixture/capture/stages/decode/model.mlir": {
+      "bytes": 8328,
+      "sha256": "5585c09936a961d30c0bcca1bceb00ed7e30e9bf567766fc012af27df739a604",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/model.mlir"
+    },
+    "fixture/capture/stages/decode/session_contract.yaml": {
+      "bytes": 305,
+      "sha256": "cf31ea54d70e1ce99b583c350521cad9dab104091d489b931976ef4ccca5a51c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/session_contract.yaml"
+    },
+    "fixture/capture/stages/decode/session_goldens.npz": {
+      "bytes": 6410,
+      "sha256": "65e6380fda4751c90ce76c25aeeaacb1966184ea4b6e898b7b1d0e768d729892",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/session_goldens.npz"
+    },
+    "fixture/capture/stages/decode/session_inputs.npz": {
+      "bytes": 6410,
+      "sha256": "a90227ce29e4b3cdc413966ea275ac9a15773e68656718aa80f4d4db9fa73b21",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/session_inputs.npz"
+    },
+    "fixture/capture/stages/decode/weights.safetensors": {
+      "bytes": 4376,
+      "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/weights.safetensors"
+    },
+    "fixture/capture/stages/decode/weights.safetensors.manifest.json": {
+      "bytes": 356,
+      "sha256": "ccb5f0d211abe358c402125eb5897169c578634bcabc5134eaae576cfa589b49",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/decode/weights.safetensors.manifest.json"
+    },
+    "fixture/capture/stages/prefill/capture_receipt.json": {
+      "bytes": 8290,
+      "sha256": "628912dae0348e818369563b52c51588b49c19e1bcd8051d87011481f1cb9ffe",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/capture_receipt.json"
+    },
+    "fixture/capture/stages/prefill/extra.npz": {
+      "bytes": 22,
+      "sha256": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/extra.npz"
+    },
+    "fixture/capture/stages/prefill/golden.npy": {
+      "bytes": 2176,
+      "sha256": "a9d55714f8e5a15f9daf1926e79d76032ca1258ec1aeb417568b056e5ed9fd9d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/golden.npy"
+    },
+    "fixture/capture/stages/prefill/input_order.json": {
+      "bytes": 26,
+      "sha256": "9e23b90731653ff19c86b3de65de4e65dbf4d05a4a6b7ebb3be1ebc7b446dd0a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/input_order.json"
+    },
+    "fixture/capture/stages/prefill/inputs.npz": {
+      "bytes": 4594,
+      "sha256": "369d8c3d3c54acead69eb2eb4fce8ff5e905605838b8330d823bb532adf832d5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/inputs.npz"
+    },
+    "fixture/capture/stages/prefill/model.mlir": {
+      "bytes": 8329,
+      "sha256": "00b76f8c17d2eb414f8b6330bb07b8d665540e51e157df86e1fecaeac3525494",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/model.mlir"
+    },
+    "fixture/capture/stages/prefill/weights.safetensors": {
+      "bytes": 4376,
+      "sha256": "9c1172ac72d4062c6ff64614aa187d528687de8149c3530ed0cd96f17f3740f6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/weights.safetensors"
+    },
+    "fixture/capture/stages/prefill/weights.safetensors.manifest.json": {
+      "bytes": 356,
+      "sha256": "ccb5f0d211abe358c402125eb5897169c578634bcabc5134eaae576cfa589b49",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/capture/stages/prefill/weights.safetensors.manifest.json"
+    },
+    "fixture/checked_comparison.json": {
+      "bytes": 2364,
+      "sha256": "f65e06418ad87716426334456cb412924a44af733f2992b54a6f9373a322c330",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/checked_comparison.json"
+    },
+    "fixture/comparison.json": {
+      "bytes": 1852,
+      "sha256": "c5f448bb3c4f5f77f4162a5db9211093bdf8c066d649b9ec935eca811a78eded",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/comparison.json"
+    },
+    "fixture/guarded_decode.command.json": {
+      "bytes": 1281,
+      "sha256": "270165a8871cd6f32100c4ffdb6f8f8f2c7c9c305336bbd7a274676885a8c4a1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode.command.json"
+    },
+    "fixture/guarded_decode.log": {
+      "bytes": 515,
+      "sha256": "f766ecf18441932aef7aea70bda32743446ea90a3ebedd72c4b24c5105c07588",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode.log"
+    },
+    "fixture/guarded_decode/cgen/model_call.c": {
+      "bytes": 163,
+      "sha256": "eaeec2432928575d46bb8005759946e6a1d3dba9f68303849235f0f988334f61",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/cgen/model_call.c"
+    },
+    "fixture/guarded_decode/cgen/model_gen.h": {
+      "bytes": 728,
+      "sha256": "994b9341717437de9d63a04e79eb3e85254e62b9a20194112bcb8575ea6fd4df",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/cgen/model_gen.h"
+    },
+    "fixture/guarded_decode/cgen/model_io.h": {
+      "bytes": 35819,
+      "sha256": "2ae72f389cc86e36f19697e02b6be7c1c0c7a19fd31e39e1f8037257da7aa45c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/cgen/model_io.h"
+    },
+    "fixture/guarded_decode/cgen/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/cgen/weights.bin"
+    },
+    "fixture/guarded_decode/compilation_recipe.json": {
+      "bytes": 42165,
+      "sha256": "2fdd779db31800e625974fb7a2fb7ff62a1d613b613fd9a22c12635d2141b186",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/compilation_recipe.json"
+    },
+    "fixture/guarded_decode/console.o": {
+      "bytes": 10288,
+      "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/console.o"
+    },
+    "fixture/guarded_decode/crt.o": {
+      "bytes": 4344,
+      "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/crt.o"
+    },
+    "fixture/guarded_decode/device/catalog_binding.json": {
+      "bytes": 1117,
+      "sha256": "1e864ee07fa5d6a202f9c65af3c6f542c3127f123d4114630f22dd58abd70540",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device/catalog_binding.json"
+    },
+    "fixture/guarded_decode/device/device_catalog_shim.c": {
+      "bytes": 5568,
+      "sha256": "5a6d682599ebadb1c8e263c445f0bd54eccccbbe71e5af3d29450ea19592885c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device/device_catalog_shim.c"
+    },
+    "fixture/guarded_decode/device/device_catalog_shim.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device/device_catalog_shim.o"
+    },
+    "fixture/guarded_decode/device_catalog/checkpoint_weights.S": {
+      "bytes": 557,
+      "sha256": "f3d7504c9e537f2a753f5022cc21b4fe6847fb3e8d7a0c41eef5d62d6922f202",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/checkpoint_weights.S"
+    },
+    "fixture/guarded_decode/device_catalog/checkpoint_weights.o": {
+      "bytes": 2144,
+      "sha256": "72156f61e9fa429431af8a161c8ade5e1bbfd6bb71901c1de8f0338e5e49005d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/checkpoint_weights.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_catalog.json": {
+      "bytes": 9596,
+      "sha256": "5c83aad3bf567229a1a04de17a20636fc8cd37a8085ee9d089b6797a27f633b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_catalog.json"
+    },
+    "fixture/guarded_decode/device_catalog/mx_catalog.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_catalog.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_dense_kernel_0.c": {
+      "bytes": 1376,
+      "sha256": "a204dd624fa10a1f725b33e229d8b44b8ba5593dbd3dd023503ed3946b1bb527",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_dense_kernel_0.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_dense_kernel_0.o": {
+      "bytes": 3072,
+      "sha256": "cdeffacf67d8eb7965cd3f81e20075a97f29b53624015cfc2f76ab5d9cdd12d8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_dense_kernel_0.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_dense_kernel_0.schedule.mlir": {
+      "bytes": 326,
+      "sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_dense_kernel_0.schedule.mlir"
+    },
+    "fixture/guarded_decode/device_catalog/mx_dense_kernel_0_codes.bin": {
+      "bytes": 1024,
+      "sha256": "2e1b3a4420182fd5087a06852f4daf6b6b0f7d905b9762bd3c78fdeba62607e2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_dense_kernel_0_codes.bin"
+    },
+    "fixture/guarded_decode/device_catalog/mx_dense_kernel_0_scales.bin": {
+      "bytes": 32,
+      "sha256": "17a7384bf1c50a94b712ce507c5ccd58638cd091278078c6e7dc00ae0aa152fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_dense_kernel_0_scales.bin"
+    },
+    "fixture/guarded_decode/device_catalog/mx_issue_0.c": {
+      "bytes": 2616,
+      "sha256": "d3216ef00ead23a36dd9eddf022693145bc763f4c4e405cc7746e78b0245e3ea",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_issue_0.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_issue_0.mk": {
+      "bytes": 692,
+      "sha256": "8964f267acfcef629ac086b680b88a7d11d18e7663c6692ea520bd1f5270db8e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_issue_0.mk"
+    },
+    "fixture/guarded_decode/device_catalog/mx_issue_0.o": {
+      "bytes": 1528,
+      "sha256": "94b0cffc167b0269ff11526e98b894079a5ba930cfc5bc0709872fefa62893eb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_issue_0.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c972c856263b71b56ffe77a9005f190b1194cd05dbac15d52d53ff37f161ad70",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32.o": {
+      "bytes": 2256,
+      "sha256": "a87317e52009a409bd1189edaec29b13a5f4b97bc13329f59a50cf6af13c13f9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c": {
+      "bytes": 4653,
+      "sha256": "cf54c24e2e265266d919e9f5a53e7ed286717d1329cb559db98c64ed87cb28c5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o": {
+      "bytes": 4184,
+      "sha256": "942b12bdb3b964c95e0a40556c6a90eb43df9c3cf957441245baeb71a6f1f482",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "d3d4d550bb96a105ea41fb0648c8c912b770d5c9173fdf295aea3ac00d780c1c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "fb0cb73fb16edb89d5bc816cfe1c28e4ab811ed427385b161823f9035cae8364",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "29e2be417138cbaf2feb88c2525cf8588a0197f572e839f6b3f7548b66cd1c54",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "02eef04833e87067764b7a8b52f9270d2ac011c8c423edb401921b2e964f53c8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c7dc8a5691bf7d11bccdb8cff603b7df52e9a2cdf60f0ce6a1ec402036d5c9c7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32.o": {
+      "bytes": 2328,
+      "sha256": "c3c3ebdfce40e0120b7778058e588ca3bceac79cae851c6e0f63b5e0e6221254",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c": {
+      "bytes": 4638,
+      "sha256": "c5e169c6e21316f8313da5778eceac4b54573b2cde5e056edda1b1ab8d59dbd2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o": {
+      "bytes": 4032,
+      "sha256": "0f2bdb53d149bf657acea79f79bf1d909c28962becafc59db16b188d5a85e87d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "47f7502e2627016018ca55efc514958304e57d37d0c4725ae93d4f4188c57bcc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "8eaef03e7da8281ab08e5ae64b4a851c22b524b5efaf28cc6fc2b17dd9a6b2fb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "c3b7bfeba3610d188a265aecbe1dcd7bd9f82b07400a67b0b168628af593a968",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "74526c600404703a56b1e4e191aa840dd34c8e4fda633db273742af67f2108ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/guarded_decode/device_catalog/runtime_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/runtime_quant.c"
+    },
+    "fixture/guarded_decode/device_catalog/runtime_quant.h": {
+      "bytes": 1669,
+      "sha256": "39edbd0684ecda33f61961b15c8a65a0f85fdc36f219b91a4f55d37663d32b39",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/runtime_quant.h"
+    },
+    "fixture/guarded_decode/device_catalog/runtime_quant.o": {
+      "bytes": 14496,
+      "sha256": "f52f5698f7c9d90b0789329cfe66001c383558c967774aae985adf3235083ae0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/runtime_quant.o"
+    },
+    "fixture/guarded_decode/device_catalog/runtime_quant_c4a20af0500d6421.so": {
+      "bytes": 20024,
+      "sha256": "8b99278cdfff60f4e93a5c11c70168b8b3f89df38a9b4bf6cee84c63f1352991",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/runtime_quant_c4a20af0500d6421.so"
+    },
+    "fixture/guarded_decode/device_catalog/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/runtime_quant_lut.h"
+    },
+    "fixture/guarded_decode/device_catalog/shared_workspace.c": {
+      "bytes": 71,
+      "sha256": "7f2eaaa6c13211f098df98df86d043e35e554c0b3cee5d86ab1a0d60f7709c6e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/shared_workspace.c"
+    },
+    "fixture/guarded_decode/device_catalog/shared_workspace.o": {
+      "bytes": 1056,
+      "sha256": "f22fffaf4dd24522db574d7a6219d3457f6fc4cde3b7e0ecef8348d5e0478637",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_catalog/shared_workspace.o"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_fixed_rhs.mlir": {
+      "bytes": 7773,
+      "sha256": "a00466e56157c6b205594a89ddd23571d41ea487df0091e4a3812585129b8181",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_fixed_rhs.mlir"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_fixed_rhs_rewrite.json": {
+      "bytes": 633,
+      "sha256": "07bbf41d6e79172091c5a046c1f94dcbd9307ca3a0ec21637155b645388332b7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_fixed_rhs_rewrite.json"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_vpu_add.mlir": {
+      "bytes": 7854,
+      "sha256": "0a0f592056d46cd18bb9f75d5b09786df40c957f03ac3c79da668a036d36a824",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_vpu_add.mlir"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_vpu_add_rewrite.json": {
+      "bytes": 864,
+      "sha256": "d2ab1fbb640477e4a0df372dd98a015a1f74a7a12b35dc906670e22fab074486",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_vpu_add_rewrite.json"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_vpu_elementwise.mlir": {
+      "bytes": 7874,
+      "sha256": "ff87e20d6756fe64ab1948aea9f95dcc47b5897686327890847d09cce4e89c0e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_vpu_elementwise.mlir"
+    },
+    "fixture/guarded_decode/device_host_abi/mx_vpu_elementwise_rewrite.json": {
+      "bytes": 1060,
+      "sha256": "ca894a380b02395873d2f2790bb651ceb42ba8a8a45dcf8762c7109d33a65165",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/mx_vpu_elementwise_rewrite.json"
+    },
+    "fixture/guarded_decode/device_host_abi/post_offload_transform.json": {
+      "bytes": 627,
+      "sha256": "60a29a1b2c5f2b3af7b7d1b82d3b7c6be68ba853ffb828b5b8d72e458fce7b94",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_host_abi/post_offload_transform.json"
+    },
+    "fixture/guarded_decode/device_signatures.json": {
+      "bytes": 1324,
+      "sha256": "6052ef2bb7bcecdceb79804d578212561a437695465aad79f07ac8ee780f4393",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/device_signatures.json"
+    },
+    "fixture/guarded_decode/entry_weight_projection/entry_weight_projection.json": {
+      "bytes": 5113,
+      "sha256": "c281041bbea86d96af69ae3436683b73e15eb18d1e902c3d06655e6640d6f596",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/entry_weight_projection/entry_weight_projection.json"
+    },
+    "fixture/guarded_decode/entry_weight_projection/projected.mlir": {
+      "bytes": 8843,
+      "sha256": "cb0fd0e38388d0758b93120a3ac998bc65f5d370c5795e8ec4622e7b6b03dbd5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/entry_weight_projection/projected.mlir"
+    },
+    "fixture/guarded_decode/host_math/host_math.c": {
+      "bytes": 329,
+      "sha256": "1d7fc0f93ec62db79a94eea0c3546c304e43028ee8b3af20a2e3d2a6be3c4ed7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/host_math/host_math.c"
+    },
+    "fixture/guarded_decode/host_math/host_math.o": {
+      "bytes": 1528,
+      "sha256": "35060115df6791c39d97ca35a3668692f92d41e303f287a24e6b53ac47e03ad6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/host_math/host_math.o"
+    },
+    "fixture/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/invocation.json": {
+      "bytes": 2517,
+      "sha256": "7fb26591a21bf41bc909de3013c00ff4b3c872da7390c3b82b5e5ed4082f1c5d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/invocation.json"
+    },
+    "fixture/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "f20df37cfb50f713258fde69eb22b00ef09537ab9b7443af60f82780fd921ea9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/policy/admission.json"
+    },
+    "fixture/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/stderr.bin"
+    },
+    "fixture/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/stdout.bin": {
+      "bytes": 640,
+      "sha256": "f5c4cc3f9b8af0b3f40e459cdc4c1dcddc466690a7110b76d0876675763ab08e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/invocations/109e33d342104e77866c0d46a93ed2b4/stdout.bin"
+    },
+    "fixture/guarded_decode/libc_min.o": {
+      "bytes": 3864,
+      "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/libc_min.o"
+    },
+    "fixture/guarded_decode/lower/lowering_recipe.json": {
+      "bytes": 4313,
+      "sha256": "730a2c1cddec4afaadd0696835c730bacdb7751dbafaa0aefdf14172434e8ce2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/lower/lowering_recipe.json"
+    },
+    "fixture/guarded_decode/lower/model.ll": {
+      "bytes": 41250,
+      "sha256": "5cf10e992ccd6472a4fba902ce64a91d506ffbe70e4b07702a5be25257d7b2fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/lower/model.ll"
+    },
+    "fixture/guarded_decode/lower/model.mlir": {
+      "bytes": 8987,
+      "sha256": "c15c21cf7609b287c33c9dd2317dd5a266da178c1385809f3b49c891c37036c6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/lower/model.mlir"
+    },
+    "fixture/guarded_decode/lower/model.upstream.mlir": {
+      "bytes": 8987,
+      "sha256": "c15c21cf7609b287c33c9dd2317dd5a266da178c1385809f3b49c891c37036c6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/lower/model.upstream.mlir"
+    },
+    "fixture/guarded_decode/lower/run_lowering.py": {
+      "bytes": 242044,
+      "sha256": "057a0b76709b90b129d56265ef8a6551bffb199dce2697a503d8f34eba0be747",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/lower/run_lowering.py"
+    },
+    "fixture/guarded_decode/malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/malloc.o"
+    },
+    "fixture/guarded_decode/merlin_model.o": {
+      "bytes": 3776,
+      "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/merlin_model.o"
+    },
+    "fixture/guarded_decode/mlir_rt.o": {
+      "bytes": 6680,
+      "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/mlir_rt.o"
+    },
+    "fixture/guarded_decode/model.elf": {
+      "bytes": 47872,
+      "sha256": "f624e4b671b14c3f8037c6e3f7da4d351ff22898650a52df392feb6600370a3f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/model.elf"
+    },
+    "fixture/guarded_decode/model.o": {
+      "bytes": 9384,
+      "sha256": "3b2b60af1990a25f16c2a9127606abef41e3481ff2a73fac083aed3e3acd5f52",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/model.o"
+    },
+    "fixture/guarded_decode/model.prepared.mlir": {
+      "bytes": 8053,
+      "sha256": "ca3b1ced903ba866b624c9fc42690d8d99e665577f3eb5eb5718d46cf8d29079",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/model.prepared.mlir"
+    },
+    "fixture/guarded_decode/model_call.o": {
+      "bytes": 1328,
+      "sha256": "49acd4435231700eb46b957c3678239fbbb1699457ec8f8ed14186f98b496f00",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/model_call.o"
+    },
+    "fixture/guarded_decode/model_main.o": {
+      "bytes": 24584,
+      "sha256": "c868a8a62a1d43d0be256a3ed31cc7dde3bb78e9913bfea6f1f7d99d3fd186de",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/model_main.o"
+    },
+    "fixture/guarded_decode/mx_stage_probe.json": {
+      "bytes": 5699,
+      "sha256": "9af7d41ca3e78e2560da27fb1c876a549cdd3aaa8b72691c612cb012062230e1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/mx_stage_probe.json"
+    },
+    "fixture/guarded_decode/runtime_compiler.json": {
+      "bytes": 959,
+      "sha256": "4831279a10928413a8149826b4cd07fb5faa07bc3a7210db32616e2b440eee44",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/runtime_compiler.json"
+    },
+    "fixture/guarded_decode/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_decode/weights_blob.o"
+    },
+    "fixture/guarded_link.command.json": {
+      "bytes": 1356,
+      "sha256": "0e7104441963b975d4b722ec37b06b0a0bad1f0e90f52b214829ae496780dd33",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link.command.json"
+    },
+    "fixture/guarded_link.log": {
+      "bytes": 13850,
+      "sha256": "97c870400c374e8e872180ef47e054e1e1f88ae7b26e5787ac1f9913a6c84070",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link.log"
+    },
+    "fixture/guarded_link/adapter_0.o": {
+      "bytes": 10792,
+      "sha256": "ee878c32c973e2e51097c44c5c3cf279fe2042f1b5790cdf0a0a437d726b7fae",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/adapter_0.o"
+    },
+    "fixture/guarded_link/adapter_1.o": {
+      "bytes": 37048,
+      "sha256": "d98ef0b4e0d92d26cce002812dc131ca7b15e13bf7995a74317dd5e1e52fb894",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/adapter_1.o"
+    },
+    "fixture/guarded_link/call_0.o": {
+      "bytes": 1344,
+      "sha256": "8842799442bd4f97e867296b0656c2afcd1b84c32c0ccad1e5cfc897b22c0779",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/call_0.o"
+    },
+    "fixture/guarded_link/call_1.o": {
+      "bytes": 1352,
+      "sha256": "5cd5fd5fe3232f9af6931c47b4aa71a1b07915b67f29b890539f60cc2889e688",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/call_1.o"
+    },
+    "fixture/guarded_link/generated/merlin_session.c": {
+      "bytes": 3728,
+      "sha256": "10b7c23339c9984c4bf0c4f037c17af0ffb5479213920988f4240111c752ebdb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/merlin_session.c"
+    },
+    "fixture/guarded_link/generated/merlin_session.h": {
+      "bytes": 917,
+      "sha256": "6f6f4eff9358e1b5c0a4543aab59b408235729af94dbfb6d5eddab964f3e6122",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/merlin_session.h"
+    },
+    "fixture/guarded_link/generated/session_build.json": {
+      "bytes": 3540,
+      "sha256": "5dcc6e145bfcb6e6769d7735c16246422ab455086dc1d2e6a6ccc104dc7e99e5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/session_build.json"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/model.renamed.mlir": {
+      "bytes": 8859,
+      "sha256": "971c4a17c55fc3b63cc2a659c2359c7e86044a5765bdfb11f586815937aa1b7f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/model.renamed.mlir"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/model_call.c": {
+      "bytes": 193,
+      "sha256": "ff9bf0891038e4f270734298b9745944a6a77e55ffdfb9bbb7ca1e861d8814b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/model_call.c"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/model_gen.h"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/model_io.h"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/projection_source.mlir": {
+      "bytes": 9115,
+      "sha256": "09141f2812702e34fc3e155b826d02d3f012b374c625342f6edccbd2301c6942",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/projection_source.mlir"
+    },
+    "fixture/guarded_link/generated/stage_0_prefill/stage_adapter.c": {
+      "bytes": 3107,
+      "sha256": "81fcc89dad9c453c97c1b8d2a75ef1eb06cd44edb5f5f1cac3ca94a67baf6e4a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_0_prefill/stage_adapter.c"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/model.renamed.mlir": {
+      "bytes": 8857,
+      "sha256": "ab09558beb910076ddad4feb77c1c72c283e03114e655b2c52d16c25e50186a4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/model.renamed.mlir"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/model_call.c": {
+      "bytes": 199,
+      "sha256": "ff262d00d97e388e27470ce6d73edab5fbc24339c978a1741428ff96813af80b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/model_call.c"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/model_gen.h": {
+      "bytes": 728,
+      "sha256": "32b7cc0be713b069a9185457862e0552075a30c33a34437f954ee5fe9263e0f6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/model_gen.h"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/model_io.h": {
+      "bytes": 83089,
+      "sha256": "ca84b64e5e8e1ee6e43020006a029cb485964a47fc0d2e66f7abacb412f563a5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/model_io.h"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/projection_source.mlir": {
+      "bytes": 9113,
+      "sha256": "e99a449b057158a9a73a9e9bb307f7e0f4046cea8d923a873d4451d7987d126e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/projection_source.mlir"
+    },
+    "fixture/guarded_link/generated/stage_1_decode/stage_adapter.c": {
+      "bytes": 3123,
+      "sha256": "221ccfe3225de987b553a222637ce71ce64d93ca77565d20beb305664a6d3b25",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/generated/stage_1_decode/stage_adapter.c"
+    },
+    "fixture/guarded_link/host_math/compilation_recipe.json": {
+      "bytes": 3373,
+      "sha256": "7069aeabc8077457e645017b0e2b7b391e47323121cfe5544208afc9fccd72a4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/host_math/compilation_recipe.json"
+    },
+    "fixture/guarded_link/host_math/guard.json": {
+      "bytes": 390,
+      "sha256": "ca3aa966d6aa4696bf0f4e0d33d0bd2501d53a02dc0a293dfb05832589c778a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/host_math/guard.json"
+    },
+    "fixture/guarded_link/host_math/host_math.c": {
+      "bytes": 329,
+      "sha256": "1d7fc0f93ec62db79a94eea0c3546c304e43028ee8b3af20a2e3d2a6be3c4ed7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/host_math/host_math.c"
+    },
+    "fixture/guarded_link/host_math/host_math.o": {
+      "bytes": 1528,
+      "sha256": "35060115df6791c39d97ca35a3668692f92d41e303f287a24e6b53ac47e03ad6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/host_math/host_math.o"
+    },
+    "fixture/guarded_link/host_math/link_attempt_0/compilation_recipe.json": {
+      "bytes": 16265,
+      "sha256": "82f2a8ef70aaecc476fa55559b6fe95544622bbe50c5e5fc2afa6715d9c8e02e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/host_math/link_attempt_0/compilation_recipe.json"
+    },
+    "fixture/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/invocation.json": {
+      "bytes": 2511,
+      "sha256": "f922373d527f2ea0fd2594a9615d433c750555f16c7492903b5f2d03be9514f5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/invocation.json"
+    },
+    "fixture/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "6d3c76376dbd74af20aa7fe5edbd7d5051fa492e7d8558a92ae83b7f02065cff",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/policy/admission.json"
+    },
+    "fixture/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/stderr.bin"
+    },
+    "fixture/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/stdout.bin": {
+      "bytes": 638,
+      "sha256": "f51e9e4f8a82aa586fab3b54351abf0e560ecfc54d6e0e58bd2dcd83719977ad",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/invocations/2791f5d0bcef49c0899aaefa8c015872/stdout.bin"
+    },
+    "fixture/guarded_link/mx_session_link.json": {
+      "bytes": 15768,
+      "sha256": "bca5089e38b5ba05ca0fc659da80223f7120b36b5d7b6a8e64a360d20071df32",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/mx_session_link.json"
+    },
+    "fixture/guarded_link/mx_session_link.ld": {
+      "bytes": 1701,
+      "sha256": "89c8c41be2229f6ef090e19dd4437a1be857d35b7d7b98d492c9fb065a7eb782",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/mx_session_link.ld"
+    },
+    "fixture/guarded_link/session.elf": {
+      "bytes": 111848,
+      "sha256": "28d63dc1e06659c9d6324a42dbba600e0ee5eafb281f9669a7a206c262dec3e1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/session.elf"
+    },
+    "fixture/guarded_link/session.o": {
+      "bytes": 5512,
+      "sha256": "39c3752db8b4a5c11722e3cf5dcf17f641c9ba82e8cceb585779ff5e02bbf13f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/session.o"
+    },
+    "fixture/guarded_link/session_main.c": {
+      "bytes": 6114,
+      "sha256": "57b1c96ef8d277e5c782dca2f0da8ebd85529c5b950a26c9b8c205ff9ed9d305",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/session_main.c"
+    },
+    "fixture/guarded_link/session_main.o": {
+      "bytes": 15320,
+      "sha256": "d42fc03d94c35ff28d41c91185c81308372433889974e8fcc820f240f4845335",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/session_main.o"
+    },
+    "fixture/guarded_link/session_malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/session_malloc.o"
+    },
+    "fixture/guarded_link/shared_weights/model_call.c": {
+      "bytes": 193,
+      "sha256": "ff9bf0891038e4f270734298b9745944a6a77e55ffdfb9bbb7ca1e861d8814b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/shared_weights/model_call.c"
+    },
+    "fixture/guarded_link/shared_weights/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/shared_weights/model_gen.h"
+    },
+    "fixture/guarded_link/shared_weights/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/shared_weights/model_io.h"
+    },
+    "fixture/guarded_link/shared_weights/projection_source.mlir": {
+      "bytes": 9115,
+      "sha256": "09141f2812702e34fc3e155b826d02d3f012b374c625342f6edccbd2301c6942",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/shared_weights/projection_source.mlir"
+    },
+    "fixture/guarded_link/shared_weights/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/shared_weights/weights.bin"
+    },
+    "fixture/guarded_link/stage_0_0.namespace.json": {
+      "bytes": 849,
+      "sha256": "6ae4e461043df04d161469d15b98eb4a2c180cca62ccd2c03114d171a8b71054",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_0.namespace.json"
+    },
+    "fixture/guarded_link/stage_0_0.o": {
+      "bytes": 9488,
+      "sha256": "0d8486f7e9c2a3bc227544b38cf97a3f5ce02ee4f57e7ed8748c038bbdd96082",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_0.o"
+    },
+    "fixture/guarded_link/stage_0_1.namespace.json": {
+      "bytes": 758,
+      "sha256": "f0b52af4d4c281dada90d789d1ea9803e470d2f58cc45a2bedcdf89dbe8c0260",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_1.namespace.json"
+    },
+    "fixture/guarded_link/stage_0_1.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_1.o"
+    },
+    "fixture/guarded_link/stage_0_2.namespace.json": {
+      "bytes": 759,
+      "sha256": "c81e11121b6913a0e842cec0f7cb8cabae0462d3a36ea836b160f2145e532c8a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_2.namespace.json"
+    },
+    "fixture/guarded_link/stage_0_2.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_2.o"
+    },
+    "fixture/guarded_link/stage_0_symbols.txt": {
+      "bytes": 88,
+      "sha256": "44508f1d585b07cb5652bcf7c0bcff74ddd384d34f916a511dac0212d126b5de",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_0_symbols.txt"
+    },
+    "fixture/guarded_link/stage_1_0.namespace.json": {
+      "bytes": 1580,
+      "sha256": "8371cad3a349562963813897544d5ea90fc849950b2962391ff3a9793880dcc0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_0.namespace.json"
+    },
+    "fixture/guarded_link/stage_1_0.o": {
+      "bytes": 9576,
+      "sha256": "9eb79cfe54b07e3de8bc010230a2d37bfe8996c65a32ad56722252359e003fac",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_0.o"
+    },
+    "fixture/guarded_link/stage_1_1.namespace.json": {
+      "bytes": 993,
+      "sha256": "a43bb653f150cb829ea1b5cc44b4b0a3fc201f11218938ef6e2d1b46a8084109",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_1.namespace.json"
+    },
+    "fixture/guarded_link/stage_1_1.o": {
+      "bytes": 3176,
+      "sha256": "0772f763f0783d8320fa72f623346b95ab6c84dd014d4b3d22714d97c2e56fad",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_1.o"
+    },
+    "fixture/guarded_link/stage_1_2.namespace.json": {
+      "bytes": 2982,
+      "sha256": "cea03a0a497384edcacc57d1a185a06bdac9a89004333618addc01759428c146",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_2.namespace.json"
+    },
+    "fixture/guarded_link/stage_1_2.o": {
+      "bytes": 35168,
+      "sha256": "50177baeda750f3a0ef1e3aecb39c1de7a5db1d93797abe2c7ce43eaddce831d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_2.o"
+    },
+    "fixture/guarded_link/stage_1_symbols.txt": {
+      "bytes": 2294,
+      "sha256": "ee6fe97d3867c4cd6e173b7cbf95ba591cc593946820b34787a0cf4887cb78b4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/stage_1_symbols.txt"
+    },
+    "fixture/guarded_link/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_link/weights_blob.o"
+    },
+    "fixture/guarded_prefill.command.json": {
+      "bytes": 1284,
+      "sha256": "e3dcbb5d7e18cdbc9301104ccbf874657edce2529a3ee62415c6b026e9484bad",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill.command.json"
+    },
+    "fixture/guarded_prefill.log": {
+      "bytes": 516,
+      "sha256": "1be4687ce1f5d241984c6152d5986ab5b7c5bb2c66f34a532a5751ca2ce74b91",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill.log"
+    },
+    "fixture/guarded_prefill/cgen/model_call.c": {
+      "bytes": 163,
+      "sha256": "eaeec2432928575d46bb8005759946e6a1d3dba9f68303849235f0f988334f61",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/cgen/model_call.c"
+    },
+    "fixture/guarded_prefill/cgen/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/cgen/model_gen.h"
+    },
+    "fixture/guarded_prefill/cgen/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/cgen/model_io.h"
+    },
+    "fixture/guarded_prefill/cgen/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/cgen/weights.bin"
+    },
+    "fixture/guarded_prefill/compilation_recipe.json": {
+      "bytes": 42242,
+      "sha256": "22b541cea7b37469145e00d003c6b418195294c28bd076b7f598b832b4985232",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/compilation_recipe.json"
+    },
+    "fixture/guarded_prefill/console.o": {
+      "bytes": 10288,
+      "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/console.o"
+    },
+    "fixture/guarded_prefill/crt.o": {
+      "bytes": 4344,
+      "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/crt.o"
+    },
+    "fixture/guarded_prefill/device/catalog_binding.json": {
+      "bytes": 1117,
+      "sha256": "7af5af36e01ca693c586d4808c41730b0bcca2c62b487446c4f0095f8b788c21",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device/catalog_binding.json"
+    },
+    "fixture/guarded_prefill/device/device_catalog_shim.c": {
+      "bytes": 5568,
+      "sha256": "5a6d682599ebadb1c8e263c445f0bd54eccccbbe71e5af3d29450ea19592885c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device/device_catalog_shim.c"
+    },
+    "fixture/guarded_prefill/device/device_catalog_shim.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device/device_catalog_shim.o"
+    },
+    "fixture/guarded_prefill/device_catalog/checkpoint_weights.S": {
+      "bytes": 559,
+      "sha256": "93963a95541a97050ff0408784856da70471804c0dd15d6a4910d37f37160962",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/checkpoint_weights.S"
+    },
+    "fixture/guarded_prefill/device_catalog/checkpoint_weights.o": {
+      "bytes": 2144,
+      "sha256": "72156f61e9fa429431af8a161c8ade5e1bbfd6bb71901c1de8f0338e5e49005d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/checkpoint_weights.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_catalog.json": {
+      "bytes": 9596,
+      "sha256": "3123ef97ba97b76a99a0edc2a072463dadd9a7a26b9ebd6a360d8af49d02632c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_catalog.json"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_catalog.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_catalog.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_dense_kernel_0.c": {
+      "bytes": 1376,
+      "sha256": "a204dd624fa10a1f725b33e229d8b44b8ba5593dbd3dd023503ed3946b1bb527",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_dense_kernel_0.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_dense_kernel_0.o": {
+      "bytes": 3072,
+      "sha256": "cdeffacf67d8eb7965cd3f81e20075a97f29b53624015cfc2f76ab5d9cdd12d8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_dense_kernel_0.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_dense_kernel_0.schedule.mlir": {
+      "bytes": 326,
+      "sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_dense_kernel_0.schedule.mlir"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_dense_kernel_0_codes.bin": {
+      "bytes": 1024,
+      "sha256": "2e1b3a4420182fd5087a06852f4daf6b6b0f7d905b9762bd3c78fdeba62607e2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_dense_kernel_0_codes.bin"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_dense_kernel_0_scales.bin": {
+      "bytes": 32,
+      "sha256": "17a7384bf1c50a94b712ce507c5ccd58638cd091278078c6e7dc00ae0aa152fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_dense_kernel_0_scales.bin"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_issue_0.c": {
+      "bytes": 2616,
+      "sha256": "d3216ef00ead23a36dd9eddf022693145bc763f4c4e405cc7746e78b0245e3ea",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_issue_0.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_issue_0.mk": {
+      "bytes": 692,
+      "sha256": "8964f267acfcef629ac086b680b88a7d11d18e7663c6692ea520bd1f5270db8e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_issue_0.mk"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_issue_0.o": {
+      "bytes": 1528,
+      "sha256": "94b0cffc167b0269ff11526e98b894079a5ba930cfc5bc0709872fefa62893eb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_issue_0.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c972c856263b71b56ffe77a9005f190b1194cd05dbac15d52d53ff37f161ad70",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.o": {
+      "bytes": 2256,
+      "sha256": "a87317e52009a409bd1189edaec29b13a5f4b97bc13329f59a50cf6af13c13f9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c": {
+      "bytes": 4653,
+      "sha256": "cf54c24e2e265266d919e9f5a53e7ed286717d1329cb559db98c64ed87cb28c5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o": {
+      "bytes": 4184,
+      "sha256": "942b12bdb3b964c95e0a40556c6a90eb43df9c3cf957441245baeb71a6f1f482",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "d3d4d550bb96a105ea41fb0648c8c912b770d5c9173fdf295aea3ac00d780c1c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "fb0cb73fb16edb89d5bc816cfe1c28e4ab811ed427385b161823f9035cae8364",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "29e2be417138cbaf2feb88c2525cf8588a0197f572e839f6b3f7548b66cd1c54",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "02eef04833e87067764b7a8b52f9270d2ac011c8c423edb401921b2e964f53c8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c7dc8a5691bf7d11bccdb8cff603b7df52e9a2cdf60f0ce6a1ec402036d5c9c7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32.o": {
+      "bytes": 2328,
+      "sha256": "c3c3ebdfce40e0120b7778058e588ca3bceac79cae851c6e0f63b5e0e6221254",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c": {
+      "bytes": 4638,
+      "sha256": "c5e169c6e21316f8313da5778eceac4b54573b2cde5e056edda1b1ab8d59dbd2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o": {
+      "bytes": 4032,
+      "sha256": "0f2bdb53d149bf657acea79f79bf1d909c28962becafc59db16b188d5a85e87d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "47f7502e2627016018ca55efc514958304e57d37d0c4725ae93d4f4188c57bcc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "8eaef03e7da8281ab08e5ae64b4a851c22b524b5efaf28cc6fc2b17dd9a6b2fb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "c3b7bfeba3610d188a265aecbe1dcd7bd9f82b07400a67b0b168628af593a968",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "74526c600404703a56b1e4e191aa840dd34c8e4fda633db273742af67f2108ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/guarded_prefill/device_catalog/runtime_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/runtime_quant.c"
+    },
+    "fixture/guarded_prefill/device_catalog/runtime_quant.h": {
+      "bytes": 1669,
+      "sha256": "39edbd0684ecda33f61961b15c8a65a0f85fdc36f219b91a4f55d37663d32b39",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/runtime_quant.h"
+    },
+    "fixture/guarded_prefill/device_catalog/runtime_quant.o": {
+      "bytes": 14496,
+      "sha256": "f52f5698f7c9d90b0789329cfe66001c383558c967774aae985adf3235083ae0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/runtime_quant.o"
+    },
+    "fixture/guarded_prefill/device_catalog/runtime_quant_c4a20af0500d6421.so": {
+      "bytes": 20024,
+      "sha256": "8b99278cdfff60f4e93a5c11c70168b8b3f89df38a9b4bf6cee84c63f1352991",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/runtime_quant_c4a20af0500d6421.so"
+    },
+    "fixture/guarded_prefill/device_catalog/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/runtime_quant_lut.h"
+    },
+    "fixture/guarded_prefill/device_catalog/shared_workspace.c": {
+      "bytes": 71,
+      "sha256": "7f2eaaa6c13211f098df98df86d043e35e554c0b3cee5d86ab1a0d60f7709c6e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/shared_workspace.c"
+    },
+    "fixture/guarded_prefill/device_catalog/shared_workspace.o": {
+      "bytes": 1056,
+      "sha256": "f22fffaf4dd24522db574d7a6219d3457f6fc4cde3b7e0ecef8348d5e0478637",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_catalog/shared_workspace.o"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_fixed_rhs.mlir": {
+      "bytes": 7774,
+      "sha256": "6015b3de613c74e098a4e232de627d2e3e23258b3f3bfe3ed69715800538783e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_fixed_rhs.mlir"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_fixed_rhs_rewrite.json": {
+      "bytes": 633,
+      "sha256": "74b985aa02d02f450b2047845af33949ca61abca09997e638c48d5d0df86736e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_fixed_rhs_rewrite.json"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_vpu_add.mlir": {
+      "bytes": 7855,
+      "sha256": "4aaf572ea8bd54f096d9a79312026733a7d6bffdca2a11b8ae7a93cc3166af62",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_vpu_add.mlir"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_vpu_add_rewrite.json": {
+      "bytes": 864,
+      "sha256": "f677bfb2dc4a9d741e2090d899bdb8a31d55d0c4abd53ab6a8c4a0ffb8884a9c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_vpu_add_rewrite.json"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_vpu_elementwise.mlir": {
+      "bytes": 7875,
+      "sha256": "db13deca34ac7482189f53d8f61b38449d8f85854f692813389867ae0f8fbdb4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_vpu_elementwise.mlir"
+    },
+    "fixture/guarded_prefill/device_host_abi/mx_vpu_elementwise_rewrite.json": {
+      "bytes": 1060,
+      "sha256": "f2085b91ecb709f1b67742aacb400da9b26d5edf8abcc4fdc210e20b1e0dadfe",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/mx_vpu_elementwise_rewrite.json"
+    },
+    "fixture/guarded_prefill/device_host_abi/post_offload_transform.json": {
+      "bytes": 629,
+      "sha256": "dda4fbf173644a407ef4a2cb75d00af773acac9a6fbb35173e07f2fc971248ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_host_abi/post_offload_transform.json"
+    },
+    "fixture/guarded_prefill/device_signatures.json": {
+      "bytes": 1326,
+      "sha256": "ee8cc79cc549fd36661ef94151999bd118f0eb8ed558a4416d46556b98c9bddf",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/device_signatures.json"
+    },
+    "fixture/guarded_prefill/entry_weight_projection/entry_weight_projection.json": {
+      "bytes": 4762,
+      "sha256": "ce93af0d43ecc4e7f945ce903ef7d687a715cf605e542c5907336a86ba66f8bf",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/entry_weight_projection/entry_weight_projection.json"
+    },
+    "fixture/guarded_prefill/entry_weight_projection/projected.mlir": {
+      "bytes": 8844,
+      "sha256": "937acc8c53df0f4eb7e8c6e504a9cd451d91818686e817493126c4519e33271d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/entry_weight_projection/projected.mlir"
+    },
+    "fixture/guarded_prefill/host_math/host_math.c": {
+      "bytes": 329,
+      "sha256": "1d7fc0f93ec62db79a94eea0c3546c304e43028ee8b3af20a2e3d2a6be3c4ed7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/host_math/host_math.c"
+    },
+    "fixture/guarded_prefill/host_math/host_math.o": {
+      "bytes": 1528,
+      "sha256": "35060115df6791c39d97ca35a3668692f92d41e303f287a24e6b53ac47e03ad6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/host_math/host_math.o"
+    },
+    "fixture/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/invocation.json": {
+      "bytes": 2521,
+      "sha256": "d2f539bf4d8216c0d090138493c30322cfeed2ed53aee1e08c7431dd3238e8f5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/invocation.json"
+    },
+    "fixture/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "f19873a678dd80cb57861eb48252bd1a35ed39ba3e2084c2bf72b071e989b0a1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/policy/admission.json"
+    },
+    "fixture/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/stderr.bin"
+    },
+    "fixture/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/stdout.bin": {
+      "bytes": 641,
+      "sha256": "ac61a892f3f48b03765e558e5705918a84c9328cae220becb1aa008ed748be8e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/invocations/63da1ab85bc54198bd8fbb088efca0ac/stdout.bin"
+    },
+    "fixture/guarded_prefill/libc_min.o": {
+      "bytes": 3864,
+      "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/libc_min.o"
+    },
+    "fixture/guarded_prefill/lower/lowering_recipe.json": {
+      "bytes": 4318,
+      "sha256": "2917bf2616c50625265210ef21a8fc7373b68cf181060f1e5d6012317aca8bc9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/lower/lowering_recipe.json"
+    },
+    "fixture/guarded_prefill/lower/model.ll": {
+      "bytes": 41250,
+      "sha256": "5cf10e992ccd6472a4fba902ce64a91d506ffbe70e4b07702a5be25257d7b2fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/lower/model.ll"
+    },
+    "fixture/guarded_prefill/lower/model.mlir": {
+      "bytes": 8988,
+      "sha256": "bc7fdfadee7629693b7833891f6af4e8c8d058837c9dce763e9f8bd7b8e66662",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/lower/model.mlir"
+    },
+    "fixture/guarded_prefill/lower/model.upstream.mlir": {
+      "bytes": 8988,
+      "sha256": "bc7fdfadee7629693b7833891f6af4e8c8d058837c9dce763e9f8bd7b8e66662",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/lower/model.upstream.mlir"
+    },
+    "fixture/guarded_prefill/lower/run_lowering.py": {
+      "bytes": 242044,
+      "sha256": "057a0b76709b90b129d56265ef8a6551bffb199dce2697a503d8f34eba0be747",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/lower/run_lowering.py"
+    },
+    "fixture/guarded_prefill/malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/malloc.o"
+    },
+    "fixture/guarded_prefill/merlin_model.o": {
+      "bytes": 3776,
+      "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/merlin_model.o"
+    },
+    "fixture/guarded_prefill/mlir_rt.o": {
+      "bytes": 6680,
+      "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/mlir_rt.o"
+    },
+    "fixture/guarded_prefill/model.elf": {
+      "bytes": 43592,
+      "sha256": "8fb270cb99c4eea029e861c5dc4b56ec32c7ef5c86562b0f54aa807a27361880",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/model.elf"
+    },
+    "fixture/guarded_prefill/model.o": {
+      "bytes": 9384,
+      "sha256": "3b2b60af1990a25f16c2a9127606abef41e3481ff2a73fac083aed3e3acd5f52",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/model.o"
+    },
+    "fixture/guarded_prefill/model.prepared.mlir": {
+      "bytes": 8054,
+      "sha256": "b6d3a416bb9e2f396b46ff39c6b7fc976ddac22af00b9858e843f2189f2ed7c1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/model.prepared.mlir"
+    },
+    "fixture/guarded_prefill/model_call.o": {
+      "bytes": 1328,
+      "sha256": "49acd4435231700eb46b957c3678239fbbb1699457ec8f8ed14186f98b496f00",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/model_call.o"
+    },
+    "fixture/guarded_prefill/model_main.o": {
+      "bytes": 18704,
+      "sha256": "fdad0095c8e15637ccc9160916342c0a3f65759a54a6cb4632d685145d2da9b7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/model_main.o"
+    },
+    "fixture/guarded_prefill/mx_stage_probe.json": {
+      "bytes": 5701,
+      "sha256": "d8ff4a900b9c73df1693dfaa572e155b091eecd3439e57f3b0b586d76ac077e7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/mx_stage_probe.json"
+    },
+    "fixture/guarded_prefill/runtime_compiler.json": {
+      "bytes": 959,
+      "sha256": "4831279a10928413a8149826b4cd07fb5faa07bc3a7210db32616e2b440eee44",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/runtime_compiler.json"
+    },
+    "fixture/guarded_prefill/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_prefill/weights_blob.o"
+    },
+    "fixture/guarded_run.command.json": {
+      "bytes": 1042,
+      "sha256": "c9861075b8b5327a7316973fda48f29940411eb66c1fd35f2901da940609406b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run.command.json"
+    },
+    "fixture/guarded_run.log": {
+      "bytes": 4220,
+      "sha256": "c223ef2dc5f8f3e1edc0aef65bcd0fa5d57bc8dc56cb31d339320683b10cb177",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run.log"
+    },
+    "fixture/guarded_run/gemmini_perf.txt": {
+      "bytes": 560,
+      "sha256": "f77514482a7c7cbe89cf43a93a2a52f939ccb6673c8aff9826955af4a5d16744",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/gemmini_perf.txt"
+    },
+    "fixture/guarded_run/mx_session_run.json": {
+      "bytes": 5166,
+      "sha256": "f4bade449f25ada4c932bb998053950c2f304823defaf1d85b9a4b79b686fcbb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/mx_session_run.json"
+    },
+    "fixture/guarded_run/output_dumps/p0_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "32b20865e8865d02fccefecb321f5ddbb38bfd373a9653d98bb2830a232e271c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/output_dumps/p0_s0_o0.bin"
+    },
+    "fixture/guarded_run/output_dumps/p1_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "3b370751c95bf7f47c442b5182090159f891e6f72ec0e1256b24ad5f0e5d99d9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/output_dumps/p1_s0_o0.bin"
+    },
+    "fixture/guarded_run/output_dumps/p1_s1_o0.bin": {
+      "bytes": 2048,
+      "sha256": "ec5cce3a854c667781bb962543e7d6ec36d8af0bfb5eb328de344f3288e08499",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/output_dumps/p1_s1_o0.bin"
+    },
+    "fixture/guarded_run/output_dumps/p1_s2_o0.bin": {
+      "bytes": 2048,
+      "sha256": "19a0363de14bb3675e84abe6a984b36d95b0c4f0b12cf5b7c95204cc29424e50",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/output_dumps/p1_s2_o0.bin"
+    },
+    "fixture/guarded_run/progress.json": {
+      "bytes": 586,
+      "sha256": "347d5d218dca533dd014e99c39f136a1037ad90b7a3011399de836c7551a82bb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/progress.json"
+    },
+    "fixture/guarded_run/spike.log": {
+      "bytes": 17643,
+      "sha256": "cb4dc2ae555fae5077495c8443a58ada624f76e4d849dd207cc3fad6c78e25f3",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run/spike.log"
+    },
+    "fixture/guarded_run_checked.log": {
+      "bytes": 4220,
+      "sha256": "dd68e757320d54a0ebdda0afe93c2168c4345f606cdd4295537c0346deb31262",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked.log"
+    },
+    "fixture/guarded_run_checked/gemmini_perf.txt": {
+      "bytes": 560,
+      "sha256": "f77514482a7c7cbe89cf43a93a2a52f939ccb6673c8aff9826955af4a5d16744",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/gemmini_perf.txt"
+    },
+    "fixture/guarded_run_checked/mx_session_run.json": {
+      "bytes": 5166,
+      "sha256": "1b230b2a6bc8916d593b1aa075a17fa705e6fbd884f67afdcde68a7f7ea75cfd",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/mx_session_run.json"
+    },
+    "fixture/guarded_run_checked/output_dumps/p0_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "32b20865e8865d02fccefecb321f5ddbb38bfd373a9653d98bb2830a232e271c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/output_dumps/p0_s0_o0.bin"
+    },
+    "fixture/guarded_run_checked/output_dumps/p1_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "3b370751c95bf7f47c442b5182090159f891e6f72ec0e1256b24ad5f0e5d99d9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/output_dumps/p1_s0_o0.bin"
+    },
+    "fixture/guarded_run_checked/output_dumps/p1_s1_o0.bin": {
+      "bytes": 2048,
+      "sha256": "ec5cce3a854c667781bb962543e7d6ec36d8af0bfb5eb328de344f3288e08499",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/output_dumps/p1_s1_o0.bin"
+    },
+    "fixture/guarded_run_checked/output_dumps/p1_s2_o0.bin": {
+      "bytes": 2048,
+      "sha256": "19a0363de14bb3675e84abe6a984b36d95b0c4f0b12cf5b7c95204cc29424e50",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/output_dumps/p1_s2_o0.bin"
+    },
+    "fixture/guarded_run_checked/progress.json": {
+      "bytes": 586,
+      "sha256": "9fcf3b7ae7bf9140834586a7ddfa63203d0a6aefbd88a22d76bc94526d6f2324",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/progress.json"
+    },
+    "fixture/guarded_run_checked/spike.log": {
+      "bytes": 17643,
+      "sha256": "cb4dc2ae555fae5077495c8443a58ada624f76e4d849dd207cc3fad6c78e25f3",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/guarded_run_checked/spike.log"
+    },
+    "fixture/missing_selection_refused.log": {
+      "bytes": 1029,
+      "sha256": "580f93197ede8e54223a1ad95baf8681e399db000284ff29b05918fc3cc990aa",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/missing_selection_refused.log"
+    },
+    "fixture/native_decode.command.json": {
+      "bytes": 1118,
+      "sha256": "b94727ea237d849eaa4c36a9e2a97ce000db0d8670ffcd4da6d029e343a8b11e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode.command.json"
+    },
+    "fixture/native_decode.log": {
+      "bytes": 514,
+      "sha256": "07ea189c8bbc58c930dd91bf625c35179d5f28872b58cfd50aba22598ee48d9b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode.log"
+    },
+    "fixture/native_decode/cgen/model_call.c": {
+      "bytes": 163,
+      "sha256": "eaeec2432928575d46bb8005759946e6a1d3dba9f68303849235f0f988334f61",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/cgen/model_call.c"
+    },
+    "fixture/native_decode/cgen/model_gen.h": {
+      "bytes": 728,
+      "sha256": "994b9341717437de9d63a04e79eb3e85254e62b9a20194112bcb8575ea6fd4df",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/cgen/model_gen.h"
+    },
+    "fixture/native_decode/cgen/model_io.h": {
+      "bytes": 35819,
+      "sha256": "2ae72f389cc86e36f19697e02b6be7c1c0c7a19fd31e39e1f8037257da7aa45c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/cgen/model_io.h"
+    },
+    "fixture/native_decode/cgen/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/cgen/weights.bin"
+    },
+    "fixture/native_decode/compilation_recipe.json": {
+      "bytes": 35905,
+      "sha256": "0ef71e91b74a80c0ed6a276acfbbd5d71c598260940ef055bb1eb35697833d55",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/compilation_recipe.json"
+    },
+    "fixture/native_decode/console.o": {
+      "bytes": 10288,
+      "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/console.o"
+    },
+    "fixture/native_decode/crt.o": {
+      "bytes": 4344,
+      "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/crt.o"
+    },
+    "fixture/native_decode/device/catalog_binding.json": {
+      "bytes": 1117,
+      "sha256": "edfabcb800da37e5206c556faaebb074b34901ddef393fc00e41b9655afc0fee",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device/catalog_binding.json"
+    },
+    "fixture/native_decode/device/device_catalog_shim.c": {
+      "bytes": 5568,
+      "sha256": "5a6d682599ebadb1c8e263c445f0bd54eccccbbe71e5af3d29450ea19592885c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device/device_catalog_shim.c"
+    },
+    "fixture/native_decode/device/device_catalog_shim.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device/device_catalog_shim.o"
+    },
+    "fixture/native_decode/device_catalog/checkpoint_weights.S": {
+      "bytes": 555,
+      "sha256": "7118f9d5c6e8e88bb294a55608e8eadccf6588de23ed345da6e8a78a25aeb278",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/checkpoint_weights.S"
+    },
+    "fixture/native_decode/device_catalog/checkpoint_weights.o": {
+      "bytes": 2144,
+      "sha256": "72156f61e9fa429431af8a161c8ade5e1bbfd6bb71901c1de8f0338e5e49005d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/checkpoint_weights.o"
+    },
+    "fixture/native_decode/device_catalog/mx_catalog.json": {
+      "bytes": 9596,
+      "sha256": "a506fc4ae25083f480770c887c62d82544f12989e7336a56fbb67a8846f52774",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_catalog.json"
+    },
+    "fixture/native_decode/device_catalog/mx_catalog.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_catalog.o"
+    },
+    "fixture/native_decode/device_catalog/mx_dense_kernel_0.c": {
+      "bytes": 1376,
+      "sha256": "a204dd624fa10a1f725b33e229d8b44b8ba5593dbd3dd023503ed3946b1bb527",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_dense_kernel_0.c"
+    },
+    "fixture/native_decode/device_catalog/mx_dense_kernel_0.o": {
+      "bytes": 3072,
+      "sha256": "cdeffacf67d8eb7965cd3f81e20075a97f29b53624015cfc2f76ab5d9cdd12d8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_dense_kernel_0.o"
+    },
+    "fixture/native_decode/device_catalog/mx_dense_kernel_0.schedule.mlir": {
+      "bytes": 326,
+      "sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_dense_kernel_0.schedule.mlir"
+    },
+    "fixture/native_decode/device_catalog/mx_dense_kernel_0_codes.bin": {
+      "bytes": 1024,
+      "sha256": "2e1b3a4420182fd5087a06852f4daf6b6b0f7d905b9762bd3c78fdeba62607e2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_dense_kernel_0_codes.bin"
+    },
+    "fixture/native_decode/device_catalog/mx_dense_kernel_0_scales.bin": {
+      "bytes": 32,
+      "sha256": "17a7384bf1c50a94b712ce507c5ccd58638cd091278078c6e7dc00ae0aa152fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_dense_kernel_0_scales.bin"
+    },
+    "fixture/native_decode/device_catalog/mx_issue_0.c": {
+      "bytes": 2616,
+      "sha256": "d3216ef00ead23a36dd9eddf022693145bc763f4c4e405cc7746e78b0245e3ea",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_issue_0.c"
+    },
+    "fixture/native_decode/device_catalog/mx_issue_0.mk": {
+      "bytes": 692,
+      "sha256": "8964f267acfcef629ac086b680b88a7d11d18e7663c6692ea520bd1f5270db8e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_issue_0.mk"
+    },
+    "fixture/native_decode/device_catalog/mx_issue_0.o": {
+      "bytes": 1528,
+      "sha256": "94b0cffc167b0269ff11526e98b894079a5ba930cfc5bc0709872fefa62893eb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_issue_0.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c972c856263b71b56ffe77a9005f190b1194cd05dbac15d52d53ff37f161ad70",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32.o": {
+      "bytes": 2256,
+      "sha256": "a87317e52009a409bd1189edaec29b13a5f4b97bc13329f59a50cf6af13c13f9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c": {
+      "bytes": 4653,
+      "sha256": "cf54c24e2e265266d919e9f5a53e7ed286717d1329cb559db98c64ed87cb28c5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o": {
+      "bytes": 4184,
+      "sha256": "942b12bdb3b964c95e0a40556c6a90eb43df9c3cf957441245baeb71a6f1f482",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "d3d4d550bb96a105ea41fb0648c8c912b770d5c9173fdf295aea3ac00d780c1c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "fb0cb73fb16edb89d5bc816cfe1c28e4ab811ed427385b161823f9035cae8364",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "29e2be417138cbaf2feb88c2525cf8588a0197f572e839f6b3f7548b66cd1c54",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "02eef04833e87067764b7a8b52f9270d2ac011c8c423edb401921b2e964f53c8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_same_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c7dc8a5691bf7d11bccdb8cff603b7df52e9a2cdf60f0ce6a1ec402036d5c9c7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_same_16_32.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_same_16_32.o": {
+      "bytes": 2328,
+      "sha256": "c3c3ebdfce40e0120b7778058e588ca3bceac79cae851c6e0f63b5e0e6221254",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_same_16_32.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c": {
+      "bytes": 4638,
+      "sha256": "c5e169c6e21316f8313da5778eceac4b54573b2cde5e056edda1b1ab8d59dbd2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o": {
+      "bytes": 4032,
+      "sha256": "0f2bdb53d149bf657acea79f79bf1d909c28962becafc59db16b188d5a85e87d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "47f7502e2627016018ca55efc514958304e57d37d0c4725ae93d4f4188c57bcc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "8eaef03e7da8281ab08e5ae64b4a851c22b524b5efaf28cc6fc2b17dd9a6b2fb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "c3b7bfeba3610d188a265aecbe1dcd7bd9f82b07400a67b0b168628af593a968",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "74526c600404703a56b1e4e191aa840dd34c8e4fda633db273742af67f2108ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/native_decode/device_catalog/runtime_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/runtime_quant.c"
+    },
+    "fixture/native_decode/device_catalog/runtime_quant.h": {
+      "bytes": 1669,
+      "sha256": "39edbd0684ecda33f61961b15c8a65a0f85fdc36f219b91a4f55d37663d32b39",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/runtime_quant.h"
+    },
+    "fixture/native_decode/device_catalog/runtime_quant.o": {
+      "bytes": 14496,
+      "sha256": "f52f5698f7c9d90b0789329cfe66001c383558c967774aae985adf3235083ae0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/runtime_quant.o"
+    },
+    "fixture/native_decode/device_catalog/runtime_quant_c4a20af0500d6421.so": {
+      "bytes": 20024,
+      "sha256": "8b99278cdfff60f4e93a5c11c70168b8b3f89df38a9b4bf6cee84c63f1352991",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/runtime_quant_c4a20af0500d6421.so"
+    },
+    "fixture/native_decode/device_catalog/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/runtime_quant_lut.h"
+    },
+    "fixture/native_decode/device_catalog/shared_workspace.c": {
+      "bytes": 71,
+      "sha256": "7f2eaaa6c13211f098df98df86d043e35e554c0b3cee5d86ab1a0d60f7709c6e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/shared_workspace.c"
+    },
+    "fixture/native_decode/device_catalog/shared_workspace.o": {
+      "bytes": 1056,
+      "sha256": "f22fffaf4dd24522db574d7a6219d3457f6fc4cde3b7e0ecef8348d5e0478637",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_catalog/shared_workspace.o"
+    },
+    "fixture/native_decode/device_host_abi/mx_fixed_rhs.mlir": {
+      "bytes": 7773,
+      "sha256": "a00466e56157c6b205594a89ddd23571d41ea487df0091e4a3812585129b8181",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_fixed_rhs.mlir"
+    },
+    "fixture/native_decode/device_host_abi/mx_fixed_rhs_rewrite.json": {
+      "bytes": 633,
+      "sha256": "fcc15838b78e5bd7bf78603d910fa53a2bf236f07bab0324a0c1ed4a07b8242c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_fixed_rhs_rewrite.json"
+    },
+    "fixture/native_decode/device_host_abi/mx_vpu_add.mlir": {
+      "bytes": 7854,
+      "sha256": "0a0f592056d46cd18bb9f75d5b09786df40c957f03ac3c79da668a036d36a824",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_vpu_add.mlir"
+    },
+    "fixture/native_decode/device_host_abi/mx_vpu_add_rewrite.json": {
+      "bytes": 864,
+      "sha256": "fb3b298306e6f6d5e557e6aef825808861f11cfcc9103841f49e5e25efeb9f62",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_vpu_add_rewrite.json"
+    },
+    "fixture/native_decode/device_host_abi/mx_vpu_elementwise.mlir": {
+      "bytes": 7874,
+      "sha256": "ff87e20d6756fe64ab1948aea9f95dcc47b5897686327890847d09cce4e89c0e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_vpu_elementwise.mlir"
+    },
+    "fixture/native_decode/device_host_abi/mx_vpu_elementwise_rewrite.json": {
+      "bytes": 1060,
+      "sha256": "64c521fd890ad8b2c6acb4968e3e16e276793a33f418bf578e545b76ce3ea8a5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/mx_vpu_elementwise_rewrite.json"
+    },
+    "fixture/native_decode/device_host_abi/post_offload_transform.json": {
+      "bytes": 625,
+      "sha256": "e5dba8263b4a01ed7020c3baf731fc552bde44f35bf5dcc4d645cdfaf9fb1340",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_host_abi/post_offload_transform.json"
+    },
+    "fixture/native_decode/device_signatures.json": {
+      "bytes": 1322,
+      "sha256": "a8b88d616e63076ea5896fc67a855d6d9f86ef5a8f29c52c4d3b452c5ba71d2e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/device_signatures.json"
+    },
+    "fixture/native_decode/entry_weight_projection/entry_weight_projection.json": {
+      "bytes": 5109,
+      "sha256": "25d8900e46d14992fceaa0c3a62a0be8822d3dc6ae46ec8ced1a608df01a406a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/entry_weight_projection/entry_weight_projection.json"
+    },
+    "fixture/native_decode/entry_weight_projection/projected.mlir": {
+      "bytes": 8843,
+      "sha256": "cb0fd0e38388d0758b93120a3ac998bc65f5d370c5795e8ec4622e7b6b03dbd5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/entry_weight_projection/projected.mlir"
+    },
+    "fixture/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/invocation.json": {
+      "bytes": 2513,
+      "sha256": "97ba00e11f3e2751fef5ffece8350e077142fd8e20bb03fea53a64b0b2c59080",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/invocation.json"
+    },
+    "fixture/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "622344bf50692a752f442693d3eaae83ca8373b2e6ae8c1c8ed74710b6496354",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/policy/admission.json"
+    },
+    "fixture/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/stderr.bin"
+    },
+    "fixture/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/stdout.bin": {
+      "bytes": 639,
+      "sha256": "aa72950ce98236e154d0b37d95dae97c02dcb85af89faecebbe4777f104fb58f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/invocations/da5cf1c3df594aad99c9cbd57c236df8/stdout.bin"
+    },
+    "fixture/native_decode/libc_min.o": {
+      "bytes": 3864,
+      "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/libc_min.o"
+    },
+    "fixture/native_decode/lower/lowering_recipe.json": {
+      "bytes": 4308,
+      "sha256": "d646a377394ccb3030ebe8dfd67c47c2f7b7fa0b12d89f9e19c33a97bf4e8d07",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/lower/lowering_recipe.json"
+    },
+    "fixture/native_decode/lower/model.ll": {
+      "bytes": 41250,
+      "sha256": "5cf10e992ccd6472a4fba902ce64a91d506ffbe70e4b07702a5be25257d7b2fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/lower/model.ll"
+    },
+    "fixture/native_decode/lower/model.mlir": {
+      "bytes": 8987,
+      "sha256": "c15c21cf7609b287c33c9dd2317dd5a266da178c1385809f3b49c891c37036c6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/lower/model.mlir"
+    },
+    "fixture/native_decode/lower/model.upstream.mlir": {
+      "bytes": 8987,
+      "sha256": "c15c21cf7609b287c33c9dd2317dd5a266da178c1385809f3b49c891c37036c6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/lower/model.upstream.mlir"
+    },
+    "fixture/native_decode/lower/run_lowering.py": {
+      "bytes": 242044,
+      "sha256": "057a0b76709b90b129d56265ef8a6551bffb199dce2697a503d8f34eba0be747",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/lower/run_lowering.py"
+    },
+    "fixture/native_decode/malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/malloc.o"
+    },
+    "fixture/native_decode/merlin_model.o": {
+      "bytes": 3776,
+      "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/merlin_model.o"
+    },
+    "fixture/native_decode/mlir_rt.o": {
+      "bytes": 6680,
+      "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/mlir_rt.o"
+    },
+    "fixture/native_decode/model.elf": {
+      "bytes": 47776,
+      "sha256": "ed9c8b1e39499459923fcb1c70b4a52e180e71a9b7063976dc95d35b8769ee2b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/model.elf"
+    },
+    "fixture/native_decode/model.o": {
+      "bytes": 9384,
+      "sha256": "3b2b60af1990a25f16c2a9127606abef41e3481ff2a73fac083aed3e3acd5f52",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/model.o"
+    },
+    "fixture/native_decode/model.prepared.mlir": {
+      "bytes": 8053,
+      "sha256": "ca3b1ced903ba866b624c9fc42690d8d99e665577f3eb5eb5718d46cf8d29079",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/model.prepared.mlir"
+    },
+    "fixture/native_decode/model_call.o": {
+      "bytes": 1328,
+      "sha256": "49acd4435231700eb46b957c3678239fbbb1699457ec8f8ed14186f98b496f00",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/model_call.o"
+    },
+    "fixture/native_decode/model_main.o": {
+      "bytes": 24584,
+      "sha256": "2a629a8fe7796a834d12f1a745d1054bcb0207d91e41d9e504f43551f3463358",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/model_main.o"
+    },
+    "fixture/native_decode/mx_stage_probe.json": {
+      "bytes": 5259,
+      "sha256": "c01419e0ffe4be8edef34d9993ca7b2bf7d06320f5be61262bbe904cc59e3302",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/mx_stage_probe.json"
+    },
+    "fixture/native_decode/runtime_compiler.json": {
+      "bytes": 959,
+      "sha256": "4831279a10928413a8149826b4cd07fb5faa07bc3a7210db32616e2b440eee44",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/runtime_compiler.json"
+    },
+    "fixture/native_decode/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_decode/weights_blob.o"
+    },
+    "fixture/native_link.command.json": {
+      "bytes": 1191,
+      "sha256": "7571dd9bef9e550c4bc130e61dff2f61431ed470c101a285c27339ed4edc66ee",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link.command.json"
+    },
+    "fixture/native_link.log": {
+      "bytes": 12438,
+      "sha256": "328c2393e5344389a09c1cd054438e4736ce7b7a788705c382179c27ec270d8c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link.log"
+    },
+    "fixture/native_link/adapter_0.o": {
+      "bytes": 10792,
+      "sha256": "ee878c32c973e2e51097c44c5c3cf279fe2042f1b5790cdf0a0a437d726b7fae",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/adapter_0.o"
+    },
+    "fixture/native_link/adapter_1.o": {
+      "bytes": 37048,
+      "sha256": "d98ef0b4e0d92d26cce002812dc131ca7b15e13bf7995a74317dd5e1e52fb894",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/adapter_1.o"
+    },
+    "fixture/native_link/call_0.o": {
+      "bytes": 1344,
+      "sha256": "8842799442bd4f97e867296b0656c2afcd1b84c32c0ccad1e5cfc897b22c0779",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/call_0.o"
+    },
+    "fixture/native_link/call_1.o": {
+      "bytes": 1352,
+      "sha256": "5cd5fd5fe3232f9af6931c47b4aa71a1b07915b67f29b890539f60cc2889e688",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/call_1.o"
+    },
+    "fixture/native_link/generated/merlin_session.c": {
+      "bytes": 3728,
+      "sha256": "10b7c23339c9984c4bf0c4f037c17af0ffb5479213920988f4240111c752ebdb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/merlin_session.c"
+    },
+    "fixture/native_link/generated/merlin_session.h": {
+      "bytes": 917,
+      "sha256": "6f6f4eff9358e1b5c0a4543aab59b408235729af94dbfb6d5eddab964f3e6122",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/merlin_session.h"
+    },
+    "fixture/native_link/generated/session_build.json": {
+      "bytes": 3538,
+      "sha256": "7d0986340a819a0832d7419835ed0ffb7a781afb8052468931b4662df3933d17",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/session_build.json"
+    },
+    "fixture/native_link/generated/stage_0_prefill/model.renamed.mlir": {
+      "bytes": 8859,
+      "sha256": "971c4a17c55fc3b63cc2a659c2359c7e86044a5765bdfb11f586815937aa1b7f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/model.renamed.mlir"
+    },
+    "fixture/native_link/generated/stage_0_prefill/model_call.c": {
+      "bytes": 193,
+      "sha256": "ff9bf0891038e4f270734298b9745944a6a77e55ffdfb9bbb7ca1e861d8814b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/model_call.c"
+    },
+    "fixture/native_link/generated/stage_0_prefill/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/model_gen.h"
+    },
+    "fixture/native_link/generated/stage_0_prefill/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/model_io.h"
+    },
+    "fixture/native_link/generated/stage_0_prefill/projection_source.mlir": {
+      "bytes": 9115,
+      "sha256": "09141f2812702e34fc3e155b826d02d3f012b374c625342f6edccbd2301c6942",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/projection_source.mlir"
+    },
+    "fixture/native_link/generated/stage_0_prefill/stage_adapter.c": {
+      "bytes": 3107,
+      "sha256": "81fcc89dad9c453c97c1b8d2a75ef1eb06cd44edb5f5f1cac3ca94a67baf6e4a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_0_prefill/stage_adapter.c"
+    },
+    "fixture/native_link/generated/stage_1_decode/model.renamed.mlir": {
+      "bytes": 8857,
+      "sha256": "ab09558beb910076ddad4feb77c1c72c283e03114e655b2c52d16c25e50186a4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/model.renamed.mlir"
+    },
+    "fixture/native_link/generated/stage_1_decode/model_call.c": {
+      "bytes": 199,
+      "sha256": "ff262d00d97e388e27470ce6d73edab5fbc24339c978a1741428ff96813af80b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/model_call.c"
+    },
+    "fixture/native_link/generated/stage_1_decode/model_gen.h": {
+      "bytes": 728,
+      "sha256": "32b7cc0be713b069a9185457862e0552075a30c33a34437f954ee5fe9263e0f6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/model_gen.h"
+    },
+    "fixture/native_link/generated/stage_1_decode/model_io.h": {
+      "bytes": 83089,
+      "sha256": "ca84b64e5e8e1ee6e43020006a029cb485964a47fc0d2e66f7abacb412f563a5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/model_io.h"
+    },
+    "fixture/native_link/generated/stage_1_decode/projection_source.mlir": {
+      "bytes": 9113,
+      "sha256": "e99a449b057158a9a73a9e9bb307f7e0f4046cea8d923a873d4451d7987d126e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/projection_source.mlir"
+    },
+    "fixture/native_link/generated/stage_1_decode/stage_adapter.c": {
+      "bytes": 3123,
+      "sha256": "221ccfe3225de987b553a222637ce71ce64d93ca77565d20beb305664a6d3b25",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/generated/stage_1_decode/stage_adapter.c"
+    },
+    "fixture/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/invocation.json": {
+      "bytes": 2507,
+      "sha256": "6f553646e75cd5498a5094db935d8b359a015f0b55cf7970522711e313d354c4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/invocation.json"
+    },
+    "fixture/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "27ac326061ba0ebd523fc08c8275ce5620d2ff3c452611eb4f93f5092327c90b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/policy/admission.json"
+    },
+    "fixture/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/stderr.bin"
+    },
+    "fixture/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/stdout.bin": {
+      "bytes": 637,
+      "sha256": "326ae2d41c2f9a36e0ccccd638490361e59a5daabe50e14cf2930ddb3880933d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/invocations/a1c3e1e31cbf4a69aa433843add2b273/stdout.bin"
+    },
+    "fixture/native_link/mx_session_link.json": {
+      "bytes": 13640,
+      "sha256": "86c7b384d6d273baf516417af489e71502e40c81e3f20e7f44a5f91662756d0e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/mx_session_link.json"
+    },
+    "fixture/native_link/mx_session_link.ld": {
+      "bytes": 1701,
+      "sha256": "89c8c41be2229f6ef090e19dd4437a1be857d35b7d7b98d492c9fb065a7eb782",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/mx_session_link.ld"
+    },
+    "fixture/native_link/session.elf": {
+      "bytes": 111752,
+      "sha256": "ae3cedea49cacd9191794e2be2ec768a5a398077f3dd0daf2820d845eb252253",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/session.elf"
+    },
+    "fixture/native_link/session.o": {
+      "bytes": 5512,
+      "sha256": "39c3752db8b4a5c11722e3cf5dcf17f641c9ba82e8cceb585779ff5e02bbf13f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/session.o"
+    },
+    "fixture/native_link/session_main.c": {
+      "bytes": 6114,
+      "sha256": "57b1c96ef8d277e5c782dca2f0da8ebd85529c5b950a26c9b8c205ff9ed9d305",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/session_main.c"
+    },
+    "fixture/native_link/session_main.o": {
+      "bytes": 15320,
+      "sha256": "d42fc03d94c35ff28d41c91185c81308372433889974e8fcc820f240f4845335",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/session_main.o"
+    },
+    "fixture/native_link/session_malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/session_malloc.o"
+    },
+    "fixture/native_link/shared_weights/model_call.c": {
+      "bytes": 193,
+      "sha256": "ff9bf0891038e4f270734298b9745944a6a77e55ffdfb9bbb7ca1e861d8814b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/shared_weights/model_call.c"
+    },
+    "fixture/native_link/shared_weights/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/shared_weights/model_gen.h"
+    },
+    "fixture/native_link/shared_weights/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/shared_weights/model_io.h"
+    },
+    "fixture/native_link/shared_weights/projection_source.mlir": {
+      "bytes": 9115,
+      "sha256": "09141f2812702e34fc3e155b826d02d3f012b374c625342f6edccbd2301c6942",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/shared_weights/projection_source.mlir"
+    },
+    "fixture/native_link/shared_weights/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/shared_weights/weights.bin"
+    },
+    "fixture/native_link/stage_0_0.namespace.json": {
+      "bytes": 847,
+      "sha256": "5343d94272c7595de2afcc9c1a7a7bf11b5cf39e18fdfc88530899df6400f251",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_0.namespace.json"
+    },
+    "fixture/native_link/stage_0_0.o": {
+      "bytes": 9488,
+      "sha256": "0d8486f7e9c2a3bc227544b38cf97a3f5ce02ee4f57e7ed8748c038bbdd96082",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_0.o"
+    },
+    "fixture/native_link/stage_0_1.namespace.json": {
+      "bytes": 756,
+      "sha256": "60ebd80068c163d38f7180c3b06f16fbcc39548a9752c811afb477766e613c5c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_1.namespace.json"
+    },
+    "fixture/native_link/stage_0_1.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_1.o"
+    },
+    "fixture/native_link/stage_0_2.namespace.json": {
+      "bytes": 757,
+      "sha256": "412e2ad816ffc8197590936b4d77db5dd37c94807cb4a21cee01e953c765be8d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_2.namespace.json"
+    },
+    "fixture/native_link/stage_0_2.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_2.o"
+    },
+    "fixture/native_link/stage_0_symbols.txt": {
+      "bytes": 88,
+      "sha256": "44508f1d585b07cb5652bcf7c0bcff74ddd384d34f916a511dac0212d126b5de",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_0_symbols.txt"
+    },
+    "fixture/native_link/stage_1_0.namespace.json": {
+      "bytes": 1578,
+      "sha256": "b70a482aab4fb9b6818adcee4390fbc5c7d191ce79147c9ef2d2ae06140e8756",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_0.namespace.json"
+    },
+    "fixture/native_link/stage_1_0.o": {
+      "bytes": 9576,
+      "sha256": "9eb79cfe54b07e3de8bc010230a2d37bfe8996c65a32ad56722252359e003fac",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_0.o"
+    },
+    "fixture/native_link/stage_1_1.namespace.json": {
+      "bytes": 991,
+      "sha256": "659daef1eb9d6d3e1304d68286be0a7b595024317c834305139ff3b6f4bec593",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_1.namespace.json"
+    },
+    "fixture/native_link/stage_1_1.o": {
+      "bytes": 3176,
+      "sha256": "0772f763f0783d8320fa72f623346b95ab6c84dd014d4b3d22714d97c2e56fad",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_1.o"
+    },
+    "fixture/native_link/stage_1_2.namespace.json": {
+      "bytes": 2980,
+      "sha256": "b99d0e1aa2ca50be03d1497e4b49cbdfe646689717aa7730c50e08121fa7c4ce",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_2.namespace.json"
+    },
+    "fixture/native_link/stage_1_2.o": {
+      "bytes": 35168,
+      "sha256": "50177baeda750f3a0ef1e3aecb39c1de7a5db1d93797abe2c7ce43eaddce831d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_2.o"
+    },
+    "fixture/native_link/stage_1_symbols.txt": {
+      "bytes": 2294,
+      "sha256": "ee6fe97d3867c4cd6e173b7cbf95ba591cc593946820b34787a0cf4887cb78b4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/stage_1_symbols.txt"
+    },
+    "fixture/native_link/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_link/weights_blob.o"
+    },
+    "fixture/native_prefill.command.json": {
+      "bytes": 1121,
+      "sha256": "f160ce5d74dcded9f91c228c5b3563b077d4ae886002fab99c67323b72741982",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill.command.json"
+    },
+    "fixture/native_prefill.log": {
+      "bytes": 515,
+      "sha256": "d96f546ff59611977a3ea39dcdab2d8a1e332bb55d3c50df0b7a2739fa83aa3b",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill.log"
+    },
+    "fixture/native_prefill/cgen/model_call.c": {
+      "bytes": 163,
+      "sha256": "eaeec2432928575d46bb8005759946e6a1d3dba9f68303849235f0f988334f61",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/cgen/model_call.c"
+    },
+    "fixture/native_prefill/cgen/model_gen.h": {
+      "bytes": 728,
+      "sha256": "91da9fed16ca4c48e330964a3edccdf09fd8c82203fb0d294fd737d33c309cc4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/cgen/model_gen.h"
+    },
+    "fixture/native_prefill/cgen/model_io.h": {
+      "bytes": 8963,
+      "sha256": "7a6258cf4591ada29dfb6c1d68232121911618ebbfb31bff32b8961015e34b3d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/cgen/model_io.h"
+    },
+    "fixture/native_prefill/cgen/weights.bin": {
+      "bytes": 128,
+      "sha256": "58491f4e26ff73539ffbb4f833f8ae1933903e63c34963a66d5e34f2f07ffd95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/cgen/weights.bin"
+    },
+    "fixture/native_prefill/compilation_recipe.json": {
+      "bytes": 35973,
+      "sha256": "6566973479861a4e62b67b258e3498350b671566e69cac0630498a7febf3be99",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/compilation_recipe.json"
+    },
+    "fixture/native_prefill/console.o": {
+      "bytes": 10288,
+      "sha256": "7ee436719caf4ee148848338dd6c4dcb6f67a34682fa7f9e10277b6a3c4443ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/console.o"
+    },
+    "fixture/native_prefill/crt.o": {
+      "bytes": 4344,
+      "sha256": "98e96247e24a2115e55e1ba4ca29be7d5ec88e86282b882d60de99bb816d745e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/crt.o"
+    },
+    "fixture/native_prefill/device/catalog_binding.json": {
+      "bytes": 1117,
+      "sha256": "209f270265347fe5d27bf0bea4bb2d48f81b48c6d54b21ee24f311150be814c9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device/catalog_binding.json"
+    },
+    "fixture/native_prefill/device/device_catalog_shim.c": {
+      "bytes": 5568,
+      "sha256": "5a6d682599ebadb1c8e263c445f0bd54eccccbbe71e5af3d29450ea19592885c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device/device_catalog_shim.c"
+    },
+    "fixture/native_prefill/device/device_catalog_shim.o": {
+      "bytes": 3032,
+      "sha256": "ddb053c47778f0a5bd2f9e3a760f31730badaf7f58c7b03bdb758aed935e8dd4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device/device_catalog_shim.o"
+    },
+    "fixture/native_prefill/device_catalog/checkpoint_weights.S": {
+      "bytes": 557,
+      "sha256": "d8bb473bd608acce833471228969800ab02b5a9563d9ce72ee320fa42e6db28d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/checkpoint_weights.S"
+    },
+    "fixture/native_prefill/device_catalog/checkpoint_weights.o": {
+      "bytes": 2144,
+      "sha256": "72156f61e9fa429431af8a161c8ade5e1bbfd6bb71901c1de8f0338e5e49005d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/checkpoint_weights.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_catalog.json": {
+      "bytes": 9596,
+      "sha256": "42c5d7ce3ba751c15c48bea626d8c680a9f8b7d170194c73fdd3d6d181fa4c3e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_catalog.json"
+    },
+    "fixture/native_prefill/device_catalog/mx_catalog.o": {
+      "bytes": 34664,
+      "sha256": "7f1ff9c44620e349b4a229a5c8bfb84160aa2de81a1d3ac26b208c52407ad66d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_catalog.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_dense_kernel_0.c": {
+      "bytes": 1376,
+      "sha256": "a204dd624fa10a1f725b33e229d8b44b8ba5593dbd3dd023503ed3946b1bb527",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_dense_kernel_0.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_dense_kernel_0.o": {
+      "bytes": 3072,
+      "sha256": "cdeffacf67d8eb7965cd3f81e20075a97f29b53624015cfc2f76ab5d9cdd12d8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_dense_kernel_0.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_dense_kernel_0.schedule.mlir": {
+      "bytes": 326,
+      "sha256": "685a21ed7820771d0927709d690325f43f918dea1f15d544a792b5cf4c72fe92",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_dense_kernel_0.schedule.mlir"
+    },
+    "fixture/native_prefill/device_catalog/mx_dense_kernel_0_codes.bin": {
+      "bytes": 1024,
+      "sha256": "2e1b3a4420182fd5087a06852f4daf6b6b0f7d905b9762bd3c78fdeba62607e2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_dense_kernel_0_codes.bin"
+    },
+    "fixture/native_prefill/device_catalog/mx_dense_kernel_0_scales.bin": {
+      "bytes": 32,
+      "sha256": "17a7384bf1c50a94b712ce507c5ccd58638cd091278078c6e7dc00ae0aa152fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_dense_kernel_0_scales.bin"
+    },
+    "fixture/native_prefill/device_catalog/mx_issue_0.c": {
+      "bytes": 2616,
+      "sha256": "d3216ef00ead23a36dd9eddf022693145bc763f4c4e405cc7746e78b0245e3ea",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_issue_0.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_issue_0.mk": {
+      "bytes": 692,
+      "sha256": "8964f267acfcef629ac086b680b88a7d11d18e7663c6692ea520bd1f5270db8e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_issue_0.mk"
+    },
+    "fixture/native_prefill/device_catalog/mx_issue_0.o": {
+      "bytes": 1528,
+      "sha256": "94b0cffc167b0269ff11526e98b894079a5ba930cfc5bc0709872fefa62893eb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_issue_0.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c972c856263b71b56ffe77a9005f190b1194cd05dbac15d52d53ff37f161ad70",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.o": {
+      "bytes": 2256,
+      "sha256": "a87317e52009a409bd1189edaec29b13a5f4b97bc13329f59a50cf6af13c13f9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c": {
+      "bytes": 4653,
+      "sha256": "cf54c24e2e265266d919e9f5a53e7ed286717d1329cb559db98c64ed87cb28c5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o": {
+      "bytes": 4184,
+      "sha256": "942b12bdb3b964c95e0a40556c6a90eb43df9c3cf957441245baeb71a6f1f482",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_bias_16_32_kernel.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "d3d4d550bb96a105ea41fb0648c8c912b770d5c9173fdf295aea3ac00d780c1c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "fb0cb73fb16edb89d5bc816cfe1c28e4ab811ed427385b161823f9035cae8364",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "29e2be417138cbaf2feb88c2525cf8588a0197f572e839f6b3f7548b66cd1c54",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "02eef04833e87067764b7a8b52f9270d2ac011c8c423edb401921b2e964f53c8",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32.c": {
+      "bytes": 2294,
+      "sha256": "c7dc8a5691bf7d11bccdb8cff603b7df52e9a2cdf60f0ce6a1ec402036d5c9c7",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32.o": {
+      "bytes": 2328,
+      "sha256": "c3c3ebdfce40e0120b7778058e588ca3bceac79cae851c6e0f63b5e0e6221254",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c": {
+      "bytes": 4638,
+      "sha256": "c5e169c6e21316f8313da5778eceac4b54573b2cde5e056edda1b1ab8d59dbd2",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o": {
+      "bytes": 4032,
+      "sha256": "0f2bdb53d149bf657acea79f79bf1d909c28962becafc59db16b188d5a85e87d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_add_f32_same_16_32_kernel.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c": {
+      "bytes": 2366,
+      "sha256": "47f7502e2627016018ca55efc514958304e57d37d0c4725ae93d4f4188c57bcc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o": {
+      "bytes": 2304,
+      "sha256": "8eaef03e7da8281ab08e5ae64b4a851c22b524b5efaf28cc6fc2b17dd9a6b2fb",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes_.o"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c": {
+      "bytes": 5424,
+      "sha256": "c3b7bfeba3610d188a265aecbe1dcd7bd9f82b07400a67b0b168628af593a968",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.c"
+    },
+    "fixture/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o": {
+      "bytes": 4248,
+      "sha256": "74526c600404703a56b1e4e191aa840dd34c8e4fda633db273742af67f2108ec",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/mx_vpu_mul_f32_lf32_rf32_16_32_lhs_16_32_laxes_0_1_rhs_scalar_axes__kernel.o"
+    },
+    "fixture/native_prefill/device_catalog/runtime_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/runtime_quant.c"
+    },
+    "fixture/native_prefill/device_catalog/runtime_quant.h": {
+      "bytes": 1669,
+      "sha256": "39edbd0684ecda33f61961b15c8a65a0f85fdc36f219b91a4f55d37663d32b39",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/runtime_quant.h"
+    },
+    "fixture/native_prefill/device_catalog/runtime_quant.o": {
+      "bytes": 14496,
+      "sha256": "f52f5698f7c9d90b0789329cfe66001c383558c967774aae985adf3235083ae0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/runtime_quant.o"
+    },
+    "fixture/native_prefill/device_catalog/runtime_quant_c4a20af0500d6421.so": {
+      "bytes": 20024,
+      "sha256": "8b99278cdfff60f4e93a5c11c70168b8b3f89df38a9b4bf6cee84c63f1352991",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/runtime_quant_c4a20af0500d6421.so"
+    },
+    "fixture/native_prefill/device_catalog/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/runtime_quant_lut.h"
+    },
+    "fixture/native_prefill/device_catalog/shared_workspace.c": {
+      "bytes": 71,
+      "sha256": "7f2eaaa6c13211f098df98df86d043e35e554c0b3cee5d86ab1a0d60f7709c6e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/shared_workspace.c"
+    },
+    "fixture/native_prefill/device_catalog/shared_workspace.o": {
+      "bytes": 1056,
+      "sha256": "f22fffaf4dd24522db574d7a6219d3457f6fc4cde3b7e0ecef8348d5e0478637",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_catalog/shared_workspace.o"
+    },
+    "fixture/native_prefill/device_host_abi/mx_fixed_rhs.mlir": {
+      "bytes": 7774,
+      "sha256": "6015b3de613c74e098a4e232de627d2e3e23258b3f3bfe3ed69715800538783e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_fixed_rhs.mlir"
+    },
+    "fixture/native_prefill/device_host_abi/mx_fixed_rhs_rewrite.json": {
+      "bytes": 633,
+      "sha256": "2d710883d752428ef62d1b209caff7e98182ddd77adc4266e2af81efa6c5eac5",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_fixed_rhs_rewrite.json"
+    },
+    "fixture/native_prefill/device_host_abi/mx_vpu_add.mlir": {
+      "bytes": 7855,
+      "sha256": "4aaf572ea8bd54f096d9a79312026733a7d6bffdca2a11b8ae7a93cc3166af62",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_vpu_add.mlir"
+    },
+    "fixture/native_prefill/device_host_abi/mx_vpu_add_rewrite.json": {
+      "bytes": 864,
+      "sha256": "9d23df84f1208cfe663acf0cca92839fab940cfff2fb0b606a149b51ab922b34",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_vpu_add_rewrite.json"
+    },
+    "fixture/native_prefill/device_host_abi/mx_vpu_elementwise.mlir": {
+      "bytes": 7875,
+      "sha256": "db13deca34ac7482189f53d8f61b38449d8f85854f692813389867ae0f8fbdb4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_vpu_elementwise.mlir"
+    },
+    "fixture/native_prefill/device_host_abi/mx_vpu_elementwise_rewrite.json": {
+      "bytes": 1060,
+      "sha256": "8d7cbdcc6a91774c3a76af5cfdd917339482a2307c86abb25a3cf65ec3a7f766",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/mx_vpu_elementwise_rewrite.json"
+    },
+    "fixture/native_prefill/device_host_abi/post_offload_transform.json": {
+      "bytes": 627,
+      "sha256": "0130fdc374b47cb85aebd6c9b27d64f88fd58fc14c4630110594849f3b93272a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_host_abi/post_offload_transform.json"
+    },
+    "fixture/native_prefill/device_signatures.json": {
+      "bytes": 1324,
+      "sha256": "0d2eddc01ac887b92ca655123cf5e8b7a0f175d9c63e307ddcbe0ec4f40b7257",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/device_signatures.json"
+    },
+    "fixture/native_prefill/entry_weight_projection/entry_weight_projection.json": {
+      "bytes": 4758,
+      "sha256": "e8f4407a78ff29d39169fc95fc57bac0fcc7ab7beaeecf0f7cad6c02f9a4c7a6",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/entry_weight_projection/entry_weight_projection.json"
+    },
+    "fixture/native_prefill/entry_weight_projection/projected.mlir": {
+      "bytes": 8844,
+      "sha256": "937acc8c53df0f4eb7e8c6e504a9cd451d91818686e817493126c4519e33271d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/entry_weight_projection/projected.mlir"
+    },
+    "fixture/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/invocation.json": {
+      "bytes": 2517,
+      "sha256": "f7c408778d484dba8715f529932a3102949fc660db86b4f738b241b12f2da365",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/invocation.json"
+    },
+    "fixture/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/policy/admission.json": {
+      "bytes": 379,
+      "sha256": "94cc45cf32711324a67b6167d31238d13c70fd53887cb6617366082802383afe",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/policy/admission.json"
+    },
+    "fixture/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/stderr.bin": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/stderr.bin"
+    },
+    "fixture/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/stdout.bin": {
+      "bytes": 640,
+      "sha256": "426a5e931e844b8fc3e6f35fa7babeb0ac08669b4b0ac7f3cd6e4d75e7c63154",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/invocations/b1600b28114f484ab659715f9a5983ff/stdout.bin"
+    },
+    "fixture/native_prefill/libc_min.o": {
+      "bytes": 3864,
+      "sha256": "b64ae901f04334aa4c2c385dd33ab70d94d2e819cf3e49c9f7ca1283bfe86d5e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/libc_min.o"
+    },
+    "fixture/native_prefill/lower/lowering_recipe.json": {
+      "bytes": 4313,
+      "sha256": "198de72872e10cfc5e65c43fd57933655bdf9cc6bec52e77eb48949cb36d4477",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/lower/lowering_recipe.json"
+    },
+    "fixture/native_prefill/lower/model.ll": {
+      "bytes": 41250,
+      "sha256": "5cf10e992ccd6472a4fba902ce64a91d506ffbe70e4b07702a5be25257d7b2fc",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/lower/model.ll"
+    },
+    "fixture/native_prefill/lower/model.mlir": {
+      "bytes": 8988,
+      "sha256": "bc7fdfadee7629693b7833891f6af4e8c8d058837c9dce763e9f8bd7b8e66662",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/lower/model.mlir"
+    },
+    "fixture/native_prefill/lower/model.upstream.mlir": {
+      "bytes": 8988,
+      "sha256": "bc7fdfadee7629693b7833891f6af4e8c8d058837c9dce763e9f8bd7b8e66662",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/lower/model.upstream.mlir"
+    },
+    "fixture/native_prefill/lower/run_lowering.py": {
+      "bytes": 242044,
+      "sha256": "057a0b76709b90b129d56265ef8a6551bffb199dce2697a503d8f34eba0be747",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/lower/run_lowering.py"
+    },
+    "fixture/native_prefill/malloc.o": {
+      "bytes": 15968,
+      "sha256": "b997c0f8fffff0cf9a1a043f7cb571c676b5de849cc67d01399aac9985d7f809",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/malloc.o"
+    },
+    "fixture/native_prefill/merlin_model.o": {
+      "bytes": 3776,
+      "sha256": "dc5d204f1df8e17593d30234612eb044b7ba99955a2ff3ac33377dd635f3187c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/merlin_model.o"
+    },
+    "fixture/native_prefill/mlir_rt.o": {
+      "bytes": 6680,
+      "sha256": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/mlir_rt.o"
+    },
+    "fixture/native_prefill/model.elf": {
+      "bytes": 43496,
+      "sha256": "be49001314d0993265d418ca03025261f52df5bce861c2e169215b4b7102ff8f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/model.elf"
+    },
+    "fixture/native_prefill/model.o": {
+      "bytes": 9384,
+      "sha256": "3b2b60af1990a25f16c2a9127606abef41e3481ff2a73fac083aed3e3acd5f52",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/model.o"
+    },
+    "fixture/native_prefill/model.prepared.mlir": {
+      "bytes": 8054,
+      "sha256": "b6d3a416bb9e2f396b46ff39c6b7fc976ddac22af00b9858e843f2189f2ed7c1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/model.prepared.mlir"
+    },
+    "fixture/native_prefill/model_call.o": {
+      "bytes": 1328,
+      "sha256": "49acd4435231700eb46b957c3678239fbbb1699457ec8f8ed14186f98b496f00",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/model_call.o"
+    },
+    "fixture/native_prefill/model_main.o": {
+      "bytes": 18704,
+      "sha256": "4e515e6bddaecb699d331b9827a9b343cfd95574c26b0a072b67b98da7190081",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/model_main.o"
+    },
+    "fixture/native_prefill/mx_stage_probe.json": {
+      "bytes": 5261,
+      "sha256": "dc070377c505571aaf64267243e44d00589fddbada2522c2d8a1c1d1ed50a2ee",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/mx_stage_probe.json"
+    },
+    "fixture/native_prefill/runtime_compiler.json": {
+      "bytes": 959,
+      "sha256": "4831279a10928413a8149826b4cd07fb5faa07bc3a7210db32616e2b440eee44",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/runtime_compiler.json"
+    },
+    "fixture/native_prefill/weights_blob.o": {
+      "bytes": 744,
+      "sha256": "9c8f7794d0d04c221e8b827dcfe9115cfdaff6fb2ab6ae37044f51dffdb640a0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_prefill/weights_blob.o"
+    },
+    "fixture/native_run.command.json": {
+      "bytes": 1040,
+      "sha256": "c7698946a1a9a584cfb7d77bf8b188b040f2f61e88b80ee94dd83aabe111040a",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run.command.json"
+    },
+    "fixture/native_run.log": {
+      "bytes": 4219,
+      "sha256": "eb45fd9cac60c5efcd4933e1a7656014bbaa8f11d644c1f1cb176fd448697f31",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run.log"
+    },
+    "fixture/native_run/gemmini_perf.txt": {
+      "bytes": 560,
+      "sha256": "77e6335ae634fe0c54bf5fc208a5cafde9ea6b99012e299c341056f01fa5b006",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/gemmini_perf.txt"
+    },
+    "fixture/native_run/mx_session_run.json": {
+      "bytes": 5165,
+      "sha256": "c61c4ca59d18d4215660e1433d1813e6ad7d4c7d6d2d0dd7ecb49ef1d8dfd481",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/mx_session_run.json"
+    },
+    "fixture/native_run/output_dumps/p0_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "32b20865e8865d02fccefecb321f5ddbb38bfd373a9653d98bb2830a232e271c",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/output_dumps/p0_s0_o0.bin"
+    },
+    "fixture/native_run/output_dumps/p1_s0_o0.bin": {
+      "bytes": 2048,
+      "sha256": "3b370751c95bf7f47c442b5182090159f891e6f72ec0e1256b24ad5f0e5d99d9",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/output_dumps/p1_s0_o0.bin"
+    },
+    "fixture/native_run/output_dumps/p1_s1_o0.bin": {
+      "bytes": 2048,
+      "sha256": "ec5cce3a854c667781bb962543e7d6ec36d8af0bfb5eb328de344f3288e08499",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/output_dumps/p1_s1_o0.bin"
+    },
+    "fixture/native_run/output_dumps/p1_s2_o0.bin": {
+      "bytes": 2048,
+      "sha256": "19a0363de14bb3675e84abe6a984b36d95b0c4f0b12cf5b7c95204cc29424e50",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/output_dumps/p1_s2_o0.bin"
+    },
+    "fixture/native_run/progress.json": {
+      "bytes": 586,
+      "sha256": "d4b77e69f5d7c863f7890de4bc80b500fc50f006ae6156d4648712cae09f07f4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/progress.json"
+    },
+    "fixture/native_run/spike.log": {
+      "bytes": 17643,
+      "sha256": "7b4d07209ee338f4b5e48d79a63f961b7e95672c083fe76231364b92ce930986",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/guarded_session_fixture_20261019/native_run/spike.log"
+    },
+    "profile.json": {
+      "bytes": 3585,
+      "sha256": "18c0c934356fc1d4c2f1d3efa6a607b83bc34471d5a01d0dbe160cfe39ef5d95",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json"
+    },
+    "sources/compare_linked_session_cycles.py": {
+      "bytes": 9599,
+      "sha256": "ec86695437c9987a42abd708b09b797ef91403f8df2d54f4f4c7600f1d7fe32e",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/compare_linked_session_cycles.py"
+    },
+    "sources/compilation_recipe.py": {
+      "bytes": 16201,
+      "sha256": "cd78d5187ffde48fcfc0bbaa608e519fd6360e5203f2b0c062d2e92f2a278783",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/llvmlower/compilation_recipe.py"
+    },
+    "sources/host_math.py": {
+      "bytes": 9681,
+      "sha256": "e3b1d6c5613e994871201d844ca8e400e5dd9f4e282c5d9694a902f09226b6c4",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/runtime/host_math.py"
+    },
+    "sources/link_merlin_session.py": {
+      "bytes": 39230,
+      "sha256": "9a20c2de40a8a61bed9c86de5939d9bf16cf64cc721816fe65f056b1d3cc9b0d",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/link_merlin_session.py"
+    },
+    "sources/link_supplier_trace.py": {
+      "bytes": 7834,
+      "sha256": "11aad4e1402469cba98559cd6f580a6666ceba0b4242ba5a11c8a33ee4fc30b1",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/merlin/src/merlin/llvmlower/link_supplier_trace.py"
+    },
+    "sources/prepare_projected_session_fixture.py": {
+      "bytes": 4862,
+      "sha256": "0307bfc05e136eff661fe4709848223b7e9dbcc229473bc20798d995df815ddd",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/prepare_projected_session_fixture.py"
+    },
+    "sources/run_fixture.py": {
+      "bytes": 3192,
+      "sha256": "33e0e4386ba0b9cfcb79a51511bdaffb866e854e01f7f8f9426f3a18644c8bd0",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/.tmp/mx_model_goal_20261018/run_guarded_session_fixture.py"
+    },
+    "sources/run_linked_merlin_session.py": {
+      "bytes": 25149,
+      "sha256": "a9b13efdea799aad515218f3d7b5060eb88a465f664a99ede9ec13f3cf77954f",
+      "source_path": "/scratch/agustin/merlin/tasks/mx-vpu-four-model-e2e/mx-gemmini-mlir/tools/run_linked_merlin_session.py"
+    },
+    "toolchain/libm.a": {
+      "bytes": 1074298,
+      "sha256": "38965f2df6e94d3389596fcf414caf37040294fc0f43f3afa3e4369acb837934",
+      "source_path": "/scratch/agustin/projects/chipyard/.conda-env/riscv-tools/riscv64-unknown-elf/lib/libm.a"
+    }
+  },
+  "schema": "mx_gemmini.guarded_session_link_evidence.v1",
+  "scope": "archived completed small recurrent session; compiler/toolchain dependency closure and whole-model speedup excluded"
+}
