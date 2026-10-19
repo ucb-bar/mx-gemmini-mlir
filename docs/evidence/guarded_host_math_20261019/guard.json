@@ -1,0 +1,14 @@
+{
+  "schema": "merlin.guarded_f32_call.v1",
+  "source_symbol": "expf",
+  "body_symbol": "__ieee754_expf",
+  "max_magnitude_bits": 1117782016,
+  "library_sha256": "38965f2df6e94d3389596fcf414caf37040294fc0f43f3afa3e4369acb837934",
+  "exact_points": [
+    [
+      4286578688,
+      0
+    ]
+  ],
+  "provider_obligation": "return_bits_errno_floating_effects_for_all_supported_rounding_modes"
+}
