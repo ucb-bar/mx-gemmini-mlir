@@ -73,8 +73,24 @@ executions, so its cycle comparison is refused. The existing explicit
 scratchpad schedule has complete matching arithmetic counters and exact words,
 but costs 4,550 → 5,693 section cycles (25.1209% more) despite 18,432 → 12,288
 load bytes. Both use separate actual admitted images and three distinct inputs;
-neither qualifies a general or full-model resident epilogue. Larger shapes,
-broader epilogues and a complete native handoff remain unmeasured.
+neither qualifies a general or full-model resident epilogue. At that checkpoint,
+larger shapes, broader epilogues and a complete native handoff were unmeasured.
+
+A subsequent explicit scale-state handoff now completes the native timing work
+across repeated calls. Two unmanaged scale configurations after readout release
+the managed halves; no simulator/profile change is made. Five finite-integer
+section pairs preserve every output word and guard, with complete matching mesh,
+VPU and scale work: 16×16×32 measures 2,052→1,796 cycles; 16×64×64
+4,625→4,445; 32×32×64 4,550→4,403; 64×16×256 13,717→13,196; and
+64×64×96 14,799→14,112. Each sums three changing-input invocations. Load bytes
+fall by exactly three BF16 output-tensor reloads. This advances the resident
+feasibility probe; there is still no production rewrite or whole-model resident
+gain. Nonzero-K alternatives without the handoff retain incomplete work and an
+explicit timing-model deadlock. New execution/comparison gates reject that
+diagnostic even with exit-zero complete functional outputs; 58 focused tests
+pass. All 91 completed stage logs and 22 completed session logs at this
+checkpoint pass the diagnostic audit. See the
+[native scale-handoff evidence](evidence/native_resident_scale_handoff_20261019/README.md).
 
 An explicit cross-stage packed-constant pool now has generic Merlin ownership
 and an MX native reader/relocation contract. The real latest prefill/decode
@@ -245,6 +261,7 @@ Primary retained evidence and standalone verification:
 - [Complete cached session with newer passes](evidence/cached_latest_session_20261019/README.md)
 - [Repeated-RHS complete cached session](evidence/cached_rhs_session_20261019/README.md)
 - [Resident matrix epilogue counterexamples](evidence/native_resident_epilogue_rejections_20261019/README.md)
+- [Native resident scale-state handoff and timing rejection](evidence/native_resident_scale_handoff_20261019/README.md)
 - [Immutable constant-pool native qualifiers](evidence/shared_catalog_constants_native_20261019/README.md)
 - [Complete recurrent pooling and full-image admission](evidence/shared_catalog_constants_session_20261019/README.md)
 - [Complete SmolVLA reuse session](evidence/smolvla_widening_session_20261019/README.md)
