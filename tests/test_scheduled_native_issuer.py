@@ -93,6 +93,29 @@ def test_movement_search_does_not_promote_unqualified_precision():
     assert selected.issuer.plan["tile_selection"]["selection"] == "legacy_unqualified_precision"
 
 
+@pytest.mark.parametrize("shape,tiles", [((160,2048,2048),(80,128,256)),
+                                        ((160,64,160),(160,64,160)),
+                                        ((160,160,64),(160,32,64))])
+def test_explicit_k_limit_reaches_the_checked_issuer(shape, tiles):
+    result = emit_scheduled_native_issuer(PROFILE, shape, precision="FP8", tile_policy="movement_k256")
+    assert result.chunks == tiles
+    assert parse_kernel(result.text).digest() == result.digest
+    proof = result.issuer.plan["tile_selection"]
+    assert proof["max_k_step"] == 256 and proof["selected"][2] <= 256
+    assert proof["numerical_policy"] == "changed_k_partition_requires_complete_output_validation"
+    assert all(a <= b for a,b in zip(proof["selected_work"],proof["baseline_work"]))
+    policy = build_policy_plan("dense",schedule="movement_k256")
+    assert selected_policy(policy,symbol="dense") == "movement_k256"
+    generated = emit_dense_contraction(PROFILE,shape,precision="FP8",symbol="dense",issuer_symbol="issue",schedule=selected_policy(policy,symbol="dense"))
+    assert generated.issuer.tile_mnk == tiles
+
+
+def test_explicit_fp8_k_limit_keeps_fp4_on_its_qualified_partition():
+    legacy = emit_scheduled_native_issuer(PROFILE,(128,2048,2048),precision="FP4")
+    selected = emit_scheduled_native_issuer(PROFILE,(128,2048,2048),precision="FP4",tile_policy="movement_k256")
+    assert selected.issuer.source == legacy.issuer.source
+
+
 def test_dense_and_batch_catalog_entries_select_checked_schedule():
     dense = emit_dense_contraction(
         PROFILE, (8, 344, 128), precision="FP4", symbol="dense",

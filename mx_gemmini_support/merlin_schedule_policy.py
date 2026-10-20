@@ -11,6 +11,7 @@ from merlin.xdsl_dialects import _common
 from merlin.xdsl_dialects import schedule as s
 
 _POLICIES = {"native": "mx_native_dram_loop", "movement": "mx_native_transfer_guarded_dram_loop",
+             "movement_k256": "mx_native_transfer_guarded_dram_loop_k256",
              "serial": "mx_serial_commands",
              "queued": "mx_queued_commands",
              "pipelined": "mx_flash_cross_block_pipeline"}

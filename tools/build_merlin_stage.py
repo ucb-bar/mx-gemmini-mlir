@@ -242,8 +242,8 @@ def main() -> None:
                         help="experimentally bind one source matrix per proved batch group; requires RHS reuse")
     parser.add_argument("--host-math-guard", type=Path,
                         help="explicit reviewed guarded-f32 library contract; requires pinned endpoint suppliers")
-    parser.add_argument("--native-tile-policy", choices=("legacy", "movement"), default="legacy",
-                        help="experimental divisor search bounded by traffic, commands, launch transfer and accumulator footprint; fixed K")
+    parser.add_argument("--native-tile-policy", choices=("legacy", "movement", "movement_k256"), default="legacy",
+                        help="native partition: legacy, guarded movement with original K, or explicit FP8 K<=256 alternative")
     parser.add_argument("--activation-packing-budget-bytes", type=int, default=1048576,
                         help="maximum simultaneously live shared packed tensors (default: 1 MiB)")
     parser.add_argument("--retain-shared-activation-rhs", action="store_true",

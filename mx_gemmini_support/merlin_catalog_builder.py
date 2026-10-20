@@ -166,8 +166,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("VPU matrix transport requires an explicit boolean selection")
     if vpu_matrix_transport and not (share_activation_packing and connect_multiplies and integer_group_packing):
         raise ValueError("VPU matrix transport requires shared packing, connected multiplies and integer groups")
-    if native_tile_policy not in {"legacy", "movement"}:
-        raise ValueError("native tile policy must be legacy or movement")
+    if native_tile_policy not in {"legacy", "movement", "movement_k256"}:
+        raise ValueError("native tile policy must be legacy, movement or movement_k256")
     if share_activation_packing and not prepack_immutable_weights:
         raise ValueError("shared activation packing requires immutable prepacked weights")
     if connect_sigmoid_multiplies and (not connect_multiplies or enabled_vpu_regions is None
@@ -300,7 +300,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 path = out_dir / f"{symbol}_{suffix}.bin"
                 _write_packed_data(path, payload, reuse_prepacked_data)
                 fixed_data.append((fixed_symbol, path))
-        policy_text = build_policy_plan(symbol, schedule="native" if native_tile_policy == "legacy" else "movement")
+        policy_text = build_policy_plan(symbol, schedule="native" if native_tile_policy == "legacy" else native_tile_policy)
         selected = selected_policy(policy_text, symbol=symbol)
         policy_path = out_dir / f"{symbol}.schedule.mlir"
         policy_path.write_text(policy_text, encoding="utf-8")

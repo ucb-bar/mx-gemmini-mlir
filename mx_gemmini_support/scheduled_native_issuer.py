@@ -23,7 +23,8 @@ class NativeSchedule:
     chunks: tuple[int, int, int]
 
 
-def _pick_tiles(profile: dict, shape: tuple[int, int, int], precision: str) -> tuple[int, int, int]:
+def _pick_tiles(profile: dict, shape: tuple[int, int, int], precision: str,
+                *, k_limit: int | None = None) -> tuple[int, int, int]:
     m, n, k = shape
     dim = profile["geometry"]["mesh_columns"]
     pe = dim * (2 if precision == "FP4" else 1)
@@ -50,7 +51,12 @@ def _pick_tiles(profile: dict, shape: tuple[int, int, int], precision: str) -> t
         for nc in (512, 256, 128, 64, 32, 16):
             if nc < pe or n % nc or tm * nc // (dim * 4) > 256:
                 continue
-            for kt in (512, 256, 128, 64, 32):
+            k_choices = (512, 256, 128, 64, 32)
+            if k_limit is not None:
+                k_choices = tuple(dict.fromkeys((k, *k_choices)))
+            for kt in k_choices:
+                if k_limit is not None and kt > k_limit:
+                    continue
                 factor = 32 if precision == "FP4" else 16
                 if (k % kt == 0 and (tm + nc) * kt // factor <= half_rows and
                         max(tm, nc) * (kt // 32) <= 4096):
@@ -80,9 +86,13 @@ def validate_native_tiles(profile: dict, shape: tuple[int, int, int], precision:
         raise ValueError("native tiles exceed scratchpad, accumulator or scale capacity")
 
 
-def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: str):
+def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: str,
+                        *, k_limit: int | None = None):
     """Search a structural movement proxy while retaining the original K partition.
 
+    An explicit K limit admits a different accumulation partition, including a
+    complete aligned source K extent within that limit. It needs a new numerical
+    comparison. The default retains the existing partition.
     Byte counts describe encoded input/scale traffic, not cache misses or cycles.
     The selected schedule remains experimental and needs native qualification.
     """
@@ -90,9 +100,13 @@ def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: s
 
     from merlin.sched.tile_search import select_divisor_tiles
 
-    original = _pick_tiles(profile, shape, precision)
+    if k_limit is not None and (type(k_limit) is not int or k_limit < 32
+                                or k_limit > 512 or k_limit % 32):
+        raise ValueError("native K limit must be a complete block32 extent up to 512")
+    unconstrained = _pick_tiles(profile, shape, precision)
     if precision != "FP8":
-        return original, {"selection": "legacy_unqualified_precision", "performance": "UNMEASURED"}
+        return unconstrained, {"selection": "legacy_unqualified_precision", "performance": "UNMEASURED"}
+    original = _pick_tiles(profile, shape, precision, k_limit=k_limit)
     m, n, k = shape
     dim = profile["geometry"]["mesh_columns"]
     group = profile["resources"]["scale_block_elements"]
@@ -115,7 +129,10 @@ def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: s
     return result.selected, {"selection": "experimental_nonincreasing_input_bytes_and_commands",
                              "axes": ["encoded_input_and_scale_bytes", "issued_commands",
                                       "max_single_launch_input_and_scale_bytes", "live_accumulator_bytes"],
-                             "frozen_axes": [2], "performance": "UNMEASURED", **asdict(result)}
+                             "frozen_axes": [2], "performance": "UNMEASURED", **asdict(result),
+                             **({"max_k_step": k_limit, "unconstrained_baseline": list(unconstrained),
+                                 "numerical_policy": "changed_k_partition_requires_complete_output_validation"}
+                                if k_limit is not None else {})}
 
 
 def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int], *,
@@ -136,11 +153,12 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
     if type(defer_completion) is not bool:
         raise ValueError("native completion selection must be explicit")
     m, n, k = shape_mnk
-    if tile_policy not in {"legacy", "movement"} or (tile_policy != "legacy" and tile_mnk is not None):
-        raise ValueError("native tile policy must be legacy or movement, without an override conflict")
+    if tile_policy not in {"legacy", "movement", "movement_k256"} or (tile_policy != "legacy" and tile_mnk is not None):
+        raise ValueError("native tile policy must be legacy, movement or movement_k256, without an override conflict")
     selection = None
-    if tile_policy == "movement":
-        tiles, selection = select_native_tiles(profile, shape_mnk, precision)
+    if tile_policy in {"movement", "movement_k256"}:
+        tiles, selection = select_native_tiles(profile, shape_mnk, precision,
+                                               k_limit=256 if tile_policy == "movement_k256" else None)
     else:
         tiles = _pick_tiles(profile, shape_mnk, precision) if tile_mnk is None else tile_mnk
     validate_native_tiles(profile, shape_mnk, precision, tiles)

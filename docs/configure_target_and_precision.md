@@ -400,3 +400,15 @@ With `--fuse-gated-projections`, the default gated activation evaluates
 It removes one FP32 multiply per element but changes floating-point rounding.
 The catalog and build receipt record this choice. It does not inherit the
 default fusion's bit-preservation claim; validate complete logits separately.
+
+`--native-tile-policy movement_k256` is an explicit FP8 accumulation alternative.
+It caps the K step at 256 and considers a complete block32-aligned K extent
+within that limit, such as 160. The movement search still checks scratchpad,
+accumulator, scale storage, traffic and command bounds against that constrained
+baseline. FP4 keeps its existing partition. The default `movement` policy
+retains the original K partition.
+
+Changing the K step can change floating-point accumulation order. This option
+therefore needs independent complete-output validation and does not inherit
+the original partition's numerical results. Catalog `tile_selection` records
+the constrained and unconstrained baselines and the selected kernel schedule.
