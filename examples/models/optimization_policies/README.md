@@ -196,3 +196,58 @@ It requires RNE and unobserved floating status and `errno`. Use MX
 `91fd90edb9e483ccbd7967d523efa63fea2124d5`. The same F32-residual policy and
 fresh-build instructions apply. This is an explicit alternative, pending a
 separate full-model comparison.
+
+## Build the RNE host-softmax alternative
+
+After the model guide exports the exact `tinyllama-forward` capture and sets
+the toolchain and timing environment, run the following from the MX checkout.
+Use the MX and Merlin pins immediately above and a fresh build directory.
+Checkpoint preparation happens before the timed model call.
+
+```sh
+"$CAPTURE_PY" -m tools.build_merlin_stage \
+  --stage "$ARTIFACT_ROOT/tinyllama-forward-inputs/capture" \
+  --workdir "$ARTIFACT_ROOT/tinyllama-forward-rne-build" \
+  --profile "$MX_ROOT/profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json" \
+  --merlin-src "$MERLIN_ROOT/src" --llvm-install "$LLVM_INSTALL" \
+  --riscv-root "$RISCV_ROOT" \
+  --execution-policy "$MX_ROOT/examples/models/optimization_policies/tinyllama-forward-host-softmax-f32-residual.json" \
+  --prepack-checkpoint-weights --prune-unused-checkpoint-weights \
+  --share-activation-packing --integer-quant-groups \
+  --host-math-guard "$ARTIFACT_ROOT/tinyllama-forward-inputs/guard.json" \
+  --host-softmax-policy libm_f32_ordered_rne \
+  --native-tile-policy movement --reuse-batch-rhs --compact-batch-rhs \
+  --group-projections --fuse-softmax-packing \
+  --vpu-sigmoid-implementation f32_reciprocal --fuse-gated-projections \
+  --gated-activation-arithmetic divide \
+  --fuse-f32-rms-packing --f32-rms-reduction striped16 \
+  --vpu-softmax-implementation f32_reduce \
+  --structural-elf-admission --spike-arena-base 0xd0000000 \
+  --compile-timeout-s 6000 --output-dump-cap 5120000 \
+  --spike-timeout 43200 --spike-extlib "$SPIKE_EXTLIB"
+```
+
+This configuration keeps residual state, softmax normalization and other
+unselected arithmetic on the FP32 host. Matrices remain FP8 E4M3/E8M0 block32
+with BF16 outputs; sigmoid exponentials use the VPU. It selects all 22 host
+softmax regions uniformly, with 45 RMS packing fusions, 22 gate/up fusions
+and 22 grouped QKV completions. The softmax packing option has no selected
+VPU softmax to fuse. Check the actual receipts and lowered calls.
+
+Build and run the [independent port](../../../docs/radiance_rocket_model_baseline.md)
+with the same capture and timing environment. Then compare its complete
+execution against the new compiler build:
+
+```sh
+"$CAPTURE_PY" -m tools.compare_radiance_rocket_candidate \
+  --port-build "$ARTIFACT_ROOT/radiance-tinyllama-forward" \
+  --capture "$ARTIFACT_ROOT/tinyllama-forward-inputs/capture" \
+  --compiler-build "$ARTIFACT_ROOT/tinyllama-forward-rne-build" \
+  --out "$ARTIFACT_ROOT/tinyllama-forward-rne-comparison.json"
+```
+
+The comparator reopens both full outputs and requires all original numerical
+limits before reporting a qualified speedup. Changing only the host policy
+to `libm_f32_ordered_finite` gives the separate maximum-only control; omitting
+`--host-softmax-policy` gives the original ordered-libm control. Use a fresh
+directory for each execution.
