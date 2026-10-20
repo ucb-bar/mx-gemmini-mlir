@@ -5,6 +5,8 @@ The completed results measure three workloads on the pinned Rocket-Spike
 TinyLlama forward has an independent full-program performance baseline.
 Cached TinyLlama and complete SmolVLA compare two compiler builds. There is
 no independently stitched full-model Radiance baseline in these results.
+The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) uses the
+full Llama application added upstream; it is being measured separately.
 
 ## Complete models
 

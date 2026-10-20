@@ -25,6 +25,9 @@ Completed Rocket-Spike results use FP8 for every offloaded matrix binding:
 
 The [comparison methodology](docs/fair_full_model_comparisons.md) explains
 numerical gates, timing boundaries, source repositories, and kernel coverage.
+The [Radiance Rocket port](docs/radiance_rocket_model_baseline.md) documents
+the newer full Llama application and its completed numerical port checks;
+its full-model measurements are separate from the table above.
 The [artifact audit](docs/model_results_audit.md) checks the completed output
 streams, actual executables, generated catalogs, and build receipts. FireSim
 workload packaging is format-validated; FPGA execution remains unmeasured.

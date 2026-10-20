@@ -1,0 +1,13 @@
+The Rocket Llama port in tools/fixtures/radiance_rocket_llama.c adapts the
+phase program, tensor layouts, and arithmetic in radiance-kernels:
+https://github.com/ucb-bar/radiance-kernels
+Copyright The radiance-kernels authors.
+Licensed under the Apache License, Version 2.0; see LICENSE.
+
+The source reference tools used by the port include Spike-derived MX
+floating-point primitives under the BSD 3-Clause License. Their original
+notices and licenses are retained with any archived reference sources.
+
+The paired native-kernel qualification archive includes npu-exploration's
+mx_native.h, Copyright (c) 2026, UC Berkeley Architecture Research, under
+the BSD 3-Clause License. Its full license is retained in that archive.

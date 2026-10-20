@@ -1,0 +1,212 @@
+[
+  {
+    "fixture": "gemm_mxgemmini_ws",
+    "shape_mnk": [
+      256,
+      64,
+      2048
+    ],
+    "precision": "FP8",
+    "later_native_median": 133820.5,
+    "later_compiler_median": 140395.0,
+    "source_to_compiler": 0.9531714092382207,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 135032,
+        "compiler": 143627,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 134230,
+        "compiler": 149641,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemm_mxgemmini_ws_downproj_fp4",
+    "shape_mnk": [
+      256,
+      64,
+      5632
+    ],
+    "precision": "FP4",
+    "later_native_median": 94167.5,
+    "later_compiler_median": 105011.0,
+    "source_to_compiler": 0.896739389206845,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 121021,
+        "compiler": 108546,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 100273,
+        "compiler": 128966,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemm_mxgemmini_ws_restream",
+    "shape_mnk": [
+      256,
+      64,
+      2048
+    ],
+    "precision": "FP8",
+    "later_native_median": 133820.5,
+    "later_compiler_median": 140395.0,
+    "source_to_compiler": 0.9531714092382207,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 135032,
+        "compiler": 143627,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 134230,
+        "compiler": 149641,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemv_batched_fp4_m128",
+    "shape_mnk": [
+      128,
+      128,
+      2048
+    ],
+    "precision": "FP4",
+    "later_native_median": 33899.0,
+    "later_compiler_median": 34092.0,
+    "source_to_compiler": 0.9943388478235363,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 35970,
+        "compiler": 34416,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 34265,
+        "compiler": 38279,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemv_batched_fp8_m128",
+    "shape_mnk": [
+      128,
+      128,
+      2048
+    ],
+    "precision": "FP8",
+    "later_native_median": 133535.5,
+    "later_compiler_median": 134050.5,
+    "source_to_compiler": 0.9961581642739117,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 134671,
+        "compiler": 135882,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 134515,
+        "compiler": 137897,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemv_batched_fp8_m32",
+    "shape_mnk": [
+      32,
+      128,
+      2048
+    ],
+    "precision": "FP8",
+    "later_native_median": 33756.5,
+    "later_compiler_median": 33656.0,
+    "source_to_compiler": 1.002986094604231,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 42841,
+        "compiler": 34295,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 34326,
+        "compiler": 42968,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  },
+  {
+    "fixture": "gemv_batched_fp8_m64",
+    "shape_mnk": [
+      64,
+      128,
+      2048
+    ],
+    "precision": "FP8",
+    "later_native_median": 66783.0,
+    "later_compiler_median": 66963.5,
+    "source_to_compiler": 0.9973045017061534,
+    "first_calls": [
+      {
+        "trial": 0,
+        "native": 68070,
+        "compiler": 67923,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      },
+      {
+        "trial": 0,
+        "native": 67429,
+        "compiler": 69692,
+        "mismatch": 0,
+        "oracle": 0,
+        "guard": 0
+      }
+    ]
+  }
+]

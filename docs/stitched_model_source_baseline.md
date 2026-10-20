@@ -11,10 +11,17 @@ three experiments that require different interpretations:
    host graph, VPU objects, state adapter, and outputs fixed while replacing
    the MX matrix-issuer catalog. This measures issuer overhead within the
    compiler's schedule.
-3. **Radiance source controls:** pinned `radiance-kernels` GEMM/GEMV drivers
+3. **Radiance source controls:** the historical pinned `radiance-kernels` GEMM/GEMV drivers
    supply packed operands, BF16 references, and tile/traffic schedules. These
-   do not supply an independently stitched complete MX+VPU model application
+   did not measure an independently stitched complete MX+VPU model application
    or paired standalone Rocket-Spike cycle measurements.
+
+The newer `radiance-kernels` revision
+[`5866983682583486b38ae64a4d1bfa5e7b2a002e`](https://github.com/ucb-bar/radiance-kernels/tree/5866983682583486b38ae64a4d1bfa5e7b2a002e)
+includes `kernels/nightly/llama_e2e`, a complete Llama phase program for Muon
+and MX. The [Rocket port guide](radiance_rocket_model_baseline.md) describes
+its adaptation, completed smoke checks, and remaining comparison gates.
+The historical results above retain their original sources and meaning.
 
 The word “stitched” in older artifact identifiers refers to the second
 experiment. It must not be used to imply the third repository supplied a
