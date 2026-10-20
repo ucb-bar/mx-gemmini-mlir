@@ -92,6 +92,18 @@ fusion receipts with actual calls in the lowered LLVM. An artifact
 verification pass means these observations and bindings agree; it does not
 mean that a candidate passed the numerical gate.
 
+The FP32 host-softmax/residual execution passes all six numerical checks at
+7,087,996,683 cycles, 0.08% slower than the 7,082,331,012-cycle port. Its
+artifact verification and numerical acceptance are both recorded. The
+FP32-host-softmax/BF16-residual alternative fails two numerical limits.
+
+The separate polynomial-softmax integration exposed a dense-float
+serialization error in entry projection. Merlin revision
+`f8a1464c9` fixes that writer by using the shared portable representation.
+Regression tests preserve F32 and F64 infinities, NaN payloads and signed
+zeros through projection and reparse. Initial incomplete executions stopped
+at the first probability packer and supply no full-forward timing result.
+
 The learned-weight audit reopens the actual source and compiler executables,
 undoes the source's combined/tiled layouts, and checks all 155 FP8 code and
 E8M0 scale payloads in canonical coordinates. Those encoded matrices match.

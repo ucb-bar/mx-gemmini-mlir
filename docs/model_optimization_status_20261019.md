@@ -5,6 +5,9 @@ uses a 7,082,331,012-cycle full-forward control. The fastest completed compiler
 placement takes 5,849,962,853 modeled cycles, but fails the unchanged full/late
 top-token gates. No qualified Radiance speedup is established by that result.
 The linked evidence preserves every completed alternative and its failures.
+An FP32 host-softmax/residual alternative passes all six numerical checks at
+7,087,996,683 cycles, 0.08% slower than that control. A faster numerically
+qualified execution is still required.
 
 The fixed release below takes **10,326,818,367 modeled cycles**, versus
 12,762,360,525 for the independent `npu-exploration` program: 1.236× speedup

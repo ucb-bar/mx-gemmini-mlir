@@ -180,3 +180,11 @@ specializing the maximum, select `--host-softmax-policy libm_f32_ordered_finite`
 Both host options require Merlin `94f747964881fddecb2808992c06f13cad451c2b`.
 This includes the entry-IR serialization fix needed to preserve dense
 floating constants through weight projection.
+
+The current host-softmax options use MX revision
+`66ee86e0d60bd7b282a56be31c339b617b80527d`, Merlin
+`94f747964881fddecb2808992c06f13cad451c2b`, and model2MLIR
+`f5e5c674a585bebbc2507dbd028ebf9d26e2afbc`. Use the F32-residual host-softmax
+policy, omit `--matrix-vpu-transport`, and select either host option above in
+a fresh build directory. Other pinned commands on this page describe their
+original measured configurations.

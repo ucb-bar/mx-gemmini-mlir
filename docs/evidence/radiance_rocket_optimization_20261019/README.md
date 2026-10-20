@@ -13,6 +13,12 @@ versus **7,082,331,012** for the port. Its raw cycle ratio is **1.211×**,
 but it fails the top-token agreement requirements. **This is not a qualified
 speedup.** Both the full-160 and late-33 gates remain unchanged.
 
+FP32 host softmax with FP32 residual state passes every numerical limit. It
+takes **7,087,996,683 cycles**, **0.08% more** than the port. Its full and late
+top-token matches are **134/160 and 29/33**, versus **132/160 and 27/33**.
+This establishes numerical qualification at near parity; it does not establish
+a faster execution.
+
 | Completed configuration | Modeled cycles | Full-160 mean KL | Full-160 top tokens | Numerical gate |
 | --- | ---: | ---: | ---: | --- |
 | Radiance-derived Rocket port | 7,082,331,012 | 0.0774637 | 132/160 | Control |
@@ -34,6 +40,8 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | Sixteen-lane FP32 RMS packing | 5,968,133,789 | 0.0803546 | 130/160 | Fails full top tokens; late worst KL, top tokens |
 | Sixteen-lane RMS and softmax reductions | 5,995,071,328 | 0.0815260 | 135/160 | Fails full mean KL; late worst KL |
 | Sixteen-lane reductions and direct SiLU division | 5,975,235,678 | 0.0864567 | 131/160 | Fails full mean KL, top tokens; late mean KL, worst KL |
+| FP32 host softmax and BF16 residual state | 7,255,103,136 | 0.0842984 | 132/160 | Fails full mean KL and late worst KL |
+| FP32 host softmax and FP32 residual state | 7,087,996,683 | 0.0766243 | 134/160 | Passes all full and late limits; 0.08% slower |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -119,6 +127,15 @@ Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 in the hybrid-softmax/host-score placement. Full logits remain identical to
 the corresponding unfused configurations. These are measured alternatives,
 not percentage savings to add together.
+
+Keeping all 22 softmax regions in FP32 host arithmetic avoids the BF16
+exponential approximation. The measured FP32-residual execution passes all
+six quality checks, including late worst KL **0.1790303** and late agreement
+**29/33**. It retains matrix acceleration and VPU sigmoid EXP, with **3,520 VPU
+operations** overall. The BF16-residual alternative uses **5,280 VPU operations**,
+takes **7,255,103,136 cycles** and fails full mean KL and late worst KL.
+These two runs use the original scalar libm, sequential sum and division;
+they do not include the newer polynomial or finite-maximum host options.
 
 The layout audit also reopens both actual executables and compares every
 learned matrix after undoing the source's tiled/combined layouts. All
