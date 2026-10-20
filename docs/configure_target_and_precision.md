@@ -304,7 +304,9 @@ serial workspace. Calls complete synchronously, with fresh state on every
 invocation. `mx_gated_projections_rewrite.json` records each fusion, its source
 kernels, sigmoid and terminal consumer. Operation profiling is not supported
 for this option. The pass is available from MX commit `129cd185`; the Merlin
-and model2MLIR versions above remain applicable. Compare all model outputs
+and model2MLIR versions above remain applicable. Use MX commit `a4c2cfbb` or
+later when combining it with matrix-to-VPU transport: gate/up fusion runs
+before the down-projection handoff. Compare all model outputs
 against the unfused configuration before attributing a timing change to it.
 
 For a stage build, pass the new policy explicitly:
