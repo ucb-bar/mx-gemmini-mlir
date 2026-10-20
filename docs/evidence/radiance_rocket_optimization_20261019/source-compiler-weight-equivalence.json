@@ -1,0 +1,4663 @@
+{
+  "schema": "mx_gemmini.source_compiler_weight_equivalence.v1",
+  "status": "all_encoded_checkpoint_matrices_equal",
+  "source_elf_sha256": "bc3bac906c12050cc0441e1e2d8f934717b84e3b9da43b9023bdf8539f7b220f",
+  "compiler_elf_sha256": "a5897cb1a87c0beac64a1c57ffedc1f34a6685f975fcdf5fe1e226884b1afd75",
+  "source_receipt_sha256": "945fd17c18c4a584ad3ebbc1377410f360cfa0384b90740ed52e3bb050bd5c9b",
+  "compiler_catalog_sha256": "dcbc99c92affa78ffd05b6cbd70b7dd1ff4785b07f4355709563aeca5ab46ca9",
+  "checkpoint_sha256": "dbf36534f3989372fb1541e95fe358b5e0bd9bad89288f86311e366597e9ac57",
+  "matrices_checked": 155,
+  "scope": "actual learned FP8 codes and block32 scales after layout conversion; runtime activations excluded",
+  "matrices": [
+    {
+      "checkpoint_parameter": "lm.model.layers.0.self_attn.q_proj.weight",
+      "source_phase": 1,
+      "compiler_kernel": "mx_dense_kernel_0",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "0511ad9dc376b41a7b4c2d8564290af6794dd978bbbf9ee306134f98e50c0590"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "f2b276b4471272c8509200c7fa6ced597ad78d5b4f769616e4db8d3db12560a0"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.self_attn.k_proj.weight",
+      "source_phase": 1,
+      "compiler_kernel": "mx_dense_kernel_1",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "8cbebfa98373f742d1b756a7c66bd1ddd44feb7501a9d14a6fb3b2ee65a5d81b"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "9a064d7f7bcc0885ba0171d73185be31bec5274ab0f28a54fd62e2ce9be73783"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.self_attn.v_proj.weight",
+      "source_phase": 1,
+      "compiler_kernel": "mx_dense_kernel_2",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "56871e59a6fb13ecb9933f4f8b4bc8388b83ffb197fee34d33831ce81d06cb7b"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "c3149f2dde3696ef418273e072e8797f919d419d29511b4f8930d0decd16c5ed"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.self_attn.o_proj.weight",
+      "source_phase": 7,
+      "compiler_kernel": "mx_dense_kernel_3",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "d6b3ae2d240e9128987302cc85dabfddc49910522b6210740b0a2a909c0c7b1d"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "8365affff0e9553e5dfd833ae0af6748ef4554fd630d79acb53718bd7e289edf"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.mlp.gate_proj.weight",
+      "source_phase": 9,
+      "compiler_kernel": "mx_dense_kernel_4",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "6beec5519109bd252204719ff32db539c681688a22b8477ea7e6be5dc7e2d48f"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "115fe3c75ea42d596faf0ce9aeb916d6df46c1716a97aa5624443d81e1a6fed7"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.mlp.up_proj.weight",
+      "source_phase": 9,
+      "compiler_kernel": "mx_dense_kernel_5",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "6fb18c1bb5926e113e9689866caa2d9fa0918c4ed288a323ab60384d2bdc513a"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "ce603aec20b5e6f7842c98f507febce9f4de25aeab30355a741ab3b49a070e6e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.0.mlp.down_proj.weight",
+      "source_phase": 11,
+      "compiler_kernel": "mx_dense_kernel_6",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "a981f0773dbebf79c1f9f15cc032a12cc06245f6259ff9bc8c3246c70bd467ce"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e779603d0ce6297ec55c45c0e564fe4f4414a92de20fc1b2fe585fe73e5578b1"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.self_attn.q_proj.weight",
+      "source_phase": 13,
+      "compiler_kernel": "mx_dense_kernel_7",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "31aa46fdcc09e44fe9001018ada573c2e0d628c83c2499952ea94633a95fe927"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "9cea9b3ced867e319fe1e3157644014d679f76a8668bd24ce89f87701eeb430f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.self_attn.k_proj.weight",
+      "source_phase": 13,
+      "compiler_kernel": "mx_dense_kernel_8",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "b3dd4aa85cff386d923d0094765d06c70dbcaa219f6725cea2de511744189fc8"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "ebd33ea37c30f0e0ef42e44e3e351b7b1c6093aa1439740cd933a6f82e3a6425"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.self_attn.v_proj.weight",
+      "source_phase": 13,
+      "compiler_kernel": "mx_dense_kernel_9",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "b95b77e6f9fe7e237ec3cd64863735954e4742a0270bb2919da750da114b0155"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "738f5a7ac001cd68264440ff5c8305b6cb2313311760664a0292b53c4f0db586"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.self_attn.o_proj.weight",
+      "source_phase": 19,
+      "compiler_kernel": "mx_dense_kernel_10",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "173919358b8754f7c174f61707c81bf2102623f7eeaeef7ad8db700bad1947dc"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "cb4a6e2015c2f450d587fdb9be8fa8ca4cdda1cc6b990b2efcaebbd145924b37"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.mlp.gate_proj.weight",
+      "source_phase": 21,
+      "compiler_kernel": "mx_dense_kernel_11",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "5e80bdc2306c651d739eb08d876c766b115dc29749f02964e1cf1c6feaaa14ab"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "ce33b2fad4266bb3fad44470449b662008c29574e16901fc81c483a4c4548e9e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.mlp.up_proj.weight",
+      "source_phase": 21,
+      "compiler_kernel": "mx_dense_kernel_12",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "6fbac01644db7e7ed8dfb614cd54caa7ebb1f2dda83bec443f09f05e96bdc795"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "811a1470c8ae7d968d4c9074a233b14384bc3a035e2b5d115b0d3642b48b5e0a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.1.mlp.down_proj.weight",
+      "source_phase": 23,
+      "compiler_kernel": "mx_dense_kernel_13",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "2e35da94405ddf7c66395b3cb5e679031ef2ff51561dd90218a9c1811a7339a7"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "42d2e4fd94133fbf431b72b7d3e1b0094f1573eab6e4ebf20f3ceed24a9469fa"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.self_attn.q_proj.weight",
+      "source_phase": 25,
+      "compiler_kernel": "mx_dense_kernel_14",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "e64d91b719ab2269fb19a7d729b1c1c7d6b41837d3a92f648fc718983c3da26f"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "0f5dbbcf12b2f9bf2b32961e93e879e8311c9a88d21af5c47cfb4ec7999e91c2"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.self_attn.k_proj.weight",
+      "source_phase": 25,
+      "compiler_kernel": "mx_dense_kernel_15",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "208892f60c52f6e2dfbdbc5b9d5ee6a13b81ac9cf0c29edc960517b0892cfe1b"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "a4a3c5b2f14bacc41583d907e529468e07c24c2283b368bf3bf6845fd2692270"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.self_attn.v_proj.weight",
+      "source_phase": 25,
+      "compiler_kernel": "mx_dense_kernel_16",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "024644611d9bcbf9b155a6b72c2a533bcd7ffecb894deed64adb621307bdf304"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "1705032889fe0452a06cc255ad570daa5199dae5022b74ebf5fd04901cccc78d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.self_attn.o_proj.weight",
+      "source_phase": 31,
+      "compiler_kernel": "mx_dense_kernel_17",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "c35b4c76c20ce5e7175545ed92dcc3c0c7c4650b25ab094f33705fea50b14128"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "c619e79094cabafdb575cd283ce2d0e928b6e2ffb8cca1400aee321ad9fa21a7"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.mlp.gate_proj.weight",
+      "source_phase": 33,
+      "compiler_kernel": "mx_dense_kernel_18",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "5d612daf668a8f97396a82952645e3ce7f1861258bbd52355be81ff902c8e2b6"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "c4c6fa0ff486cbdd2dffac596b5b86e8efeaf98590fa5095aababb35b429ddfa"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.mlp.up_proj.weight",
+      "source_phase": 33,
+      "compiler_kernel": "mx_dense_kernel_19",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "3f8427317e69a0e1ffcadfd859021f6fdf2e5607531f041933c2b1cc59f77fce"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "431369b98f16b5fd37b68c3fde2792b13f4a133e0c121e190ef55f3f9d50ea14"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.2.mlp.down_proj.weight",
+      "source_phase": 35,
+      "compiler_kernel": "mx_dense_kernel_20",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "9a5651cbfc10e68b5b69fe38d1cdea170aae0a4dea606eb008fa82ae2cfe9f0c"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "83ad4b5720d728e706250311f2c32c46ff917b00ef2cc95353ef604716669488"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.self_attn.q_proj.weight",
+      "source_phase": 37,
+      "compiler_kernel": "mx_dense_kernel_21",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "d8d41528027f9ed3da4d0bd2497f9a7371baad8bcd82dd382bc0478900d87d43"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "51a2910a4219d994df66de0ec0add5767dc95b88eb14291c64f293c34158e6f2"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.self_attn.k_proj.weight",
+      "source_phase": 37,
+      "compiler_kernel": "mx_dense_kernel_22",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "36160cc6be0c16cb2f2da139d0941c4dc2791ec96e54ade139aee725d2ac9d10"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "be8b9fff203fe1d77446e81d81b5eea67e82809a34199fd2d2ff2e76fbb22441"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.self_attn.v_proj.weight",
+      "source_phase": 37,
+      "compiler_kernel": "mx_dense_kernel_23",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "54e77c02d37d77d278cc7a1dad7d836d093f5e775710430b01e7d7a6ad2acd84"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "12e300d6e825e75425d363808028cf368ebadfd010b9bccfab71def76aa2f77f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.self_attn.o_proj.weight",
+      "source_phase": 43,
+      "compiler_kernel": "mx_dense_kernel_24",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "49dd0be7315d23477e728480b4145ea6e1fd31dfee96cbe0b336d7dce73462c8"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "fd394b80b6e02cd80c93830b8bdfa8222e48a09d94d8b88e4998d6e0a2a2e233"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.mlp.gate_proj.weight",
+      "source_phase": 45,
+      "compiler_kernel": "mx_dense_kernel_25",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "caf340da6e5aeee59de1862ef8ad11d50c0f164f22c8c5393a4905437fcb50aa"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "cd3357233e09bf197f0b70cd03b7ce6c0686c7c246d868b3a73ecbb078daec07"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.mlp.up_proj.weight",
+      "source_phase": 45,
+      "compiler_kernel": "mx_dense_kernel_26",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "e5392fc9c8639c531e965e4cf319ac9585ac4e6d2bba57b90e9f3499f1511cbe"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "a90e008a717d936132cdd9e11162ab6fa01b2461e5ae8b2379f7616d407dc361"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.3.mlp.down_proj.weight",
+      "source_phase": 47,
+      "compiler_kernel": "mx_dense_kernel_27",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "c6b4c192101bd5c44501b7cd2e89b210c0b25b6ab51c0c6a3f203e0fed58b3bf"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "9d18af925d82136222924889e4f54baff843900d2204568c794f0216529199dd"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.self_attn.q_proj.weight",
+      "source_phase": 49,
+      "compiler_kernel": "mx_dense_kernel_28",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "eacda14e25bc22d0e33f0c1a92c0436b8b90954b907bb786fb62643c31b62bc2"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "75d91bfc32dfbae22605d28211f9a29a7e6fe52c84d1654b75878b3ec368636a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.self_attn.k_proj.weight",
+      "source_phase": 49,
+      "compiler_kernel": "mx_dense_kernel_29",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "709cf6a9f069d2d620ac501878a9bc87670d03f9d38b54e83928e6cfa981851d"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "f1800f240ca94c4da44971b957ff123d5ca3e2e07c9708467f084e7279e7111e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.self_attn.v_proj.weight",
+      "source_phase": 49,
+      "compiler_kernel": "mx_dense_kernel_30",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "07717078d719c93621cf957ed32786b33e36b7b4cce965e890f8a61d71f37449"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "8ae80b061067caed292288bf8577142e9045f210ecb6be7e5e3495060f98e965"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.self_attn.o_proj.weight",
+      "source_phase": 55,
+      "compiler_kernel": "mx_dense_kernel_31",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "c6fcd500125e10751943a9fe889a69d009ea095ee354246abae10023461e6dcd"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "7860e52a74eabb269f86062f22a85cb38a174e4065301717fa971e9b1ff80e27"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.mlp.gate_proj.weight",
+      "source_phase": 57,
+      "compiler_kernel": "mx_dense_kernel_32",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "266ac6183b1cabd601beccbb2df54193c8f0c396f6f1c6eafc686c7955c934a7"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "d2dbc326af9b773f6c8457f983b85ea13caa0bbb56eec277604650fae866d3eb"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.mlp.up_proj.weight",
+      "source_phase": 57,
+      "compiler_kernel": "mx_dense_kernel_33",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "7ecb1ed656a1c00c257365022cb29a0c6bf7e37f64fe4ae3f20dc8806d852f57"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "f71aa8071dfa64e63c2209e38cf189a52be3652b4224353a12bab8a34dde0dab"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.4.mlp.down_proj.weight",
+      "source_phase": 59,
+      "compiler_kernel": "mx_dense_kernel_34",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "6a98625418f117b6798fbf1cf241ea6584eb0b98509477fec9498aa0fc12f0fb"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e11d3d460f17c5b7dc512742f8a265e6c7967b8832e118930ff31cd8f235a1f5"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.self_attn.q_proj.weight",
+      "source_phase": 61,
+      "compiler_kernel": "mx_dense_kernel_35",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "3af68a37fd081ec6bd0beecb221607f2f6f48a15fcc6188a45479d06cac52bd7"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "4765c574287976416d81208d086f618c8269ef65c6d67a866fc2ac70d1957da3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.self_attn.k_proj.weight",
+      "source_phase": 61,
+      "compiler_kernel": "mx_dense_kernel_36",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "6201af9752aef35e7a7c0e7d94552e8611c8909b379a8c9bb18276f71b5634a6"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "ac9ed2186584567828b7e45207c31115dbb68c71e1d341080a7488c1c4ea6633"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.self_attn.v_proj.weight",
+      "source_phase": 61,
+      "compiler_kernel": "mx_dense_kernel_37",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "325f388a51c999ecf4543af789004f0354ca79fecd9c3bfa72f32c2b0beb04de"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "9a2849a860c1a7c8c8da77ebb078da4d5f169a4db9552de6b253d6909e9c40a3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.self_attn.o_proj.weight",
+      "source_phase": 67,
+      "compiler_kernel": "mx_dense_kernel_38",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "2f831748d33ea5de7ac28fa1b86fbf79717695b2c34782dc35b73f3488be341a"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "c81957b184126cb8e1bccf72cd60a9c1985c9788ca5eda7df6bfa6666174b310"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.mlp.gate_proj.weight",
+      "source_phase": 69,
+      "compiler_kernel": "mx_dense_kernel_39",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "8c568da2bdc999adbf0c6ed9322f8f499ad6abd614b82ef2391c2538f2d17dd6"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "a4a5a5c53b191824b27bdfe1418d7427ca16f85c32a1632eb35a37e728d16d68"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.mlp.up_proj.weight",
+      "source_phase": 69,
+      "compiler_kernel": "mx_dense_kernel_40",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "cc63fb9c129addaf0891afd16a7f4530c3d3ddc8785d2cb5ef6f8fcc62a98d0e"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "71736dac966bad9c2bd1781104c25872c0eb0462c41e7d0f972232497856bc25"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.5.mlp.down_proj.weight",
+      "source_phase": 71,
+      "compiler_kernel": "mx_dense_kernel_41",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "5def7fc29f5bc47839de1b2c190547c0998ff804a9a156962107a69db27ff534"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "2540bf9577fab5715dc5aa0d7693e6b55e829cc07062354a127fcb1d65cea8f8"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.self_attn.q_proj.weight",
+      "source_phase": 73,
+      "compiler_kernel": "mx_dense_kernel_42",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "5e366f1c4f528031b1a626ccd8fc945ae9e7a3bf4f266fc1cb6d1ce2501f96d6"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "9b2bd1dcbd0f6f83ac69f7bc6ee4f91e1c049104dc3534dc5d9c7db20830b886"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.self_attn.k_proj.weight",
+      "source_phase": 73,
+      "compiler_kernel": "mx_dense_kernel_43",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "e5accde5d00746a0ae2f6ba9f8fe68e94a2e8ecb20ddcea17abd84a8d2100b75"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "42d21ba5e6469d1be66e06e412b71dcc8e3d8f7a5a5c84f4e42d44b479609934"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.self_attn.v_proj.weight",
+      "source_phase": 73,
+      "compiler_kernel": "mx_dense_kernel_44",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "1155faf1c86952e076a8348a5ab5123ec87e1f49b6384cbf566e7ff3f7960c7c"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "5d363829c358dee7641449c6c9eaba57e6b350069d6b34980afd067ced194529"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.self_attn.o_proj.weight",
+      "source_phase": 79,
+      "compiler_kernel": "mx_dense_kernel_45",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "14569f28052417b2eb7fa6e6e4b8e8ef867ec615dfd12e963d639668a3b5cb78"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "f64691606ca2c4faaf638593308aa863c3f2a6960ad47ce324ecb5c928763dc5"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.mlp.gate_proj.weight",
+      "source_phase": 81,
+      "compiler_kernel": "mx_dense_kernel_46",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "efe261e886f18bdb442d21c1977041ca46be4121fe632801b4241274362c02fa"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "c68d44ccfd54e156aee9f12b426cd235b6ae5a49aeb7d1463ecf0c1cbe1d300e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.mlp.up_proj.weight",
+      "source_phase": 81,
+      "compiler_kernel": "mx_dense_kernel_47",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "cc85316e3a9711be4d023bd774e02cce6e4ce15745a454c521367ae89941eeee"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "5d517ca5cfcd14e37dd2c89f6861a030a40cbae88b103352aa6c3de1b31b14df"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.6.mlp.down_proj.weight",
+      "source_phase": 83,
+      "compiler_kernel": "mx_dense_kernel_48",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "9922ff13f9f1c35309623f0d901d7e920f28f2c203e043d2bc3fa8def8aaed13"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "79ec13685fe4a204f4ddc2e8fd0173f4412766fc5d969bc7c8a6f461d114f63b"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.self_attn.q_proj.weight",
+      "source_phase": 85,
+      "compiler_kernel": "mx_dense_kernel_49",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "3dbaaaa3249f184e800c737960daab3dd313db16b24817e842ce579d34b2387d"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "a89e0690dc807a7329cef1bb9041e7853dc337aa68a4aaa6e00eef89b4bf7aea"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.self_attn.k_proj.weight",
+      "source_phase": 85,
+      "compiler_kernel": "mx_dense_kernel_50",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "c72a80c23e73932cdd4ffc808573f38f6db77720d0ac8089ae5a5fd24234eb23"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "2f1e079982d9e6c82ce848418f565c3089d84eed081bbbe395ca5178e6bc2a01"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.self_attn.v_proj.weight",
+      "source_phase": 85,
+      "compiler_kernel": "mx_dense_kernel_51",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "932a6c543706322237e41b36f03e45ea2802efa063dccaf7c8fa4ff9402b96de"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "43ceeb929c8425970eb066cd3f797caf24e233a4bd8b3385f6c7f9ecd24a4f60"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.self_attn.o_proj.weight",
+      "source_phase": 91,
+      "compiler_kernel": "mx_dense_kernel_52",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "533167d2f7ada699191882803c3c499b1de99fa9de0481a8efc066254ee7eb83"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "452964d8a174e193712b52f2496923e10b6aa0789e5bfd4173970f2ad6c1a75a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.mlp.gate_proj.weight",
+      "source_phase": 93,
+      "compiler_kernel": "mx_dense_kernel_53",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "3513834772a7b52a4f1f7a74071188ac730e751163b1d62ebf3be8963de95cf5"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e92042dc59edc1106859ecb78cef56a2c664f440f0b41f97b38520389b418410"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.mlp.up_proj.weight",
+      "source_phase": 93,
+      "compiler_kernel": "mx_dense_kernel_54",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "3bcd612435a47b776f0595d12bd3753f746271d71034f605107c89abc38fa357"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "08c55a4456caeb9dd550ef3777ecb03c82466b116c4ba25e43e71dbbbcc3093c"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.7.mlp.down_proj.weight",
+      "source_phase": 95,
+      "compiler_kernel": "mx_dense_kernel_55",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "1ac5ff53dc5af275a90a8d99a416fd059b4d52f520b3f4324b1c85486da97e70"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "c28c989703739426285c41f71b69510efa320cfc23df9212caf42ed1f1d1de74"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.self_attn.q_proj.weight",
+      "source_phase": 97,
+      "compiler_kernel": "mx_dense_kernel_56",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "68c9802a3852c766f76be9f4d7f632c8b913d18ee88f6fc7c88cceba9934e130"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "0474fafd4d67aae439c40c0e992fc28cf41a1f5dafe38e07428825e4f1ebe56f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.self_attn.k_proj.weight",
+      "source_phase": 97,
+      "compiler_kernel": "mx_dense_kernel_57",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "a7f4efb6065df6588363f7bba692cf14871ff719f25b11530fd6c53d2d287d0c"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "ea7ddce73530d845c38c7945b3f101b77bb918e3d7bf1605ad8db3e53036a21d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.self_attn.v_proj.weight",
+      "source_phase": 97,
+      "compiler_kernel": "mx_dense_kernel_58",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "7527c922e63df49f5a3a6b038294337824707301f740b8d0c57099a2a1ca219c"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "e8df9326048f9381c7c202420f844a4e8ffdf0b875b5291a639d58c19ea503bf"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.self_attn.o_proj.weight",
+      "source_phase": 103,
+      "compiler_kernel": "mx_dense_kernel_59",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "34fdbe6a65e923478b97bf08a48e27a9beddefb2aa5ac4962bbb25297a5058ed"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "6d4669b76e6124ddf0fe5b521a347bda3f9843c797614436cd3fdfd85b0b8d4e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.mlp.gate_proj.weight",
+      "source_phase": 105,
+      "compiler_kernel": "mx_dense_kernel_60",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "2a4957e07c98910de3035217aa8c70902e1ffddf2d0aab445efcf49d2366ea12"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "879227e3dcd9446de5940a2634950c81b4b0e1f60ab53a343da986e9c0c2a10b"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.mlp.up_proj.weight",
+      "source_phase": 105,
+      "compiler_kernel": "mx_dense_kernel_61",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "64dbdf7caf3bd32b3b03747183f8d359a3db13b8f2a5ba22e6d79e54888582da"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "f93f0b086c88bd67837aa87c8d830473125f13b8d19b9336509cbdf76996d0ee"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.8.mlp.down_proj.weight",
+      "source_phase": 107,
+      "compiler_kernel": "mx_dense_kernel_62",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "a880248489b5daf0a2d436358a48c093af458410d9db40046fe296502e2cf271"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "aeaeb08699bd09edd4c5d5945570e1504b95f5f8bbac1bdb1afccf94d0ff1bd1"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.self_attn.q_proj.weight",
+      "source_phase": 109,
+      "compiler_kernel": "mx_dense_kernel_63",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "1beda264144a456e3860f30b3347a7760a3e26b148e09a55a8f935d402f7cedb"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "805ac5663b74f801b3c28ececd4dcdcab4a9cd2d3809da00bdfd38e0eb932c85"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.self_attn.k_proj.weight",
+      "source_phase": 109,
+      "compiler_kernel": "mx_dense_kernel_64",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "67771ef1d55b0894e874e3da4eff890441b35cfb1344fccf7f300434a86cfb9e"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "23812c31e4402ffd179552d55dbceece0fc88e7f18ee7dbd76d5730f57401ac7"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.self_attn.v_proj.weight",
+      "source_phase": 109,
+      "compiler_kernel": "mx_dense_kernel_65",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "722822476c34eb82dda380423d3fbe8a1be9ec02c527731b9ce556b71b047316"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "b9a2174ae9d10d50ef3919028749fb3db00e18bc4f7ad83a0db97529fee238d5"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.self_attn.o_proj.weight",
+      "source_phase": 115,
+      "compiler_kernel": "mx_dense_kernel_66",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "1ed7222072bd2b805be0530eeeefb70b562b97b7499a7144fb52ceadc36d82f5"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "57a94ad009741b0c5bc8a4b8f17cd9826a9d632c5948c4e79842f221db16169f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.mlp.gate_proj.weight",
+      "source_phase": 117,
+      "compiler_kernel": "mx_dense_kernel_67",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "53b1f3d1c01a9c86720450532de30e4d55891a116b461fafb6e3289358fa98bf"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "342340969646efb54cb9b57f23152b8ba158add80e49afa0d0d84b1a665f46d5"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.mlp.up_proj.weight",
+      "source_phase": 117,
+      "compiler_kernel": "mx_dense_kernel_68",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "395ca6079c322f9403097117a4efe1cc74d670b0501b2ee2fbd649913f5fc13a"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "89446d45259cd5c44245448428dd9a7762ebf08e2a8070e73d523c2cb8d315db"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.9.mlp.down_proj.weight",
+      "source_phase": 119,
+      "compiler_kernel": "mx_dense_kernel_69",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "bf12efa2b417859d107abcd8864f5fabd12d65505c1dca8a10682dbce1d75c68"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e630f7109bd8e716431e044e55eeb40e4097c7176fc0d9b318a7ac90da32929e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.self_attn.q_proj.weight",
+      "source_phase": 121,
+      "compiler_kernel": "mx_dense_kernel_70",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "3b31d057d58f37ba42252885314d2d6eed9e57018d95c08aa26f7d3a827b03e3"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "2e58b6ae461dd7e20edf7115dfdc8a20b28a17c3ef20eb64010d9628b037bfa3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.self_attn.k_proj.weight",
+      "source_phase": 121,
+      "compiler_kernel": "mx_dense_kernel_71",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "30073462d68746a19b91cdcab05882618c06834b8cc1888bc670e6e041f2b643"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "d2c8a0ff53578571dc0b27753b1bb28e452f5037a8c6ec93db55f1d8366c9ee7"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.self_attn.v_proj.weight",
+      "source_phase": 121,
+      "compiler_kernel": "mx_dense_kernel_72",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "9dfc23b72cca1de4d7de832705d9c7e482da6bc0faa6a86e423920f17389e097"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "ee97e056ec3b910d7a80f097da92736810b9b7da987d849ca9cc3a3c94ef493c"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.self_attn.o_proj.weight",
+      "source_phase": 127,
+      "compiler_kernel": "mx_dense_kernel_73",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "1fc08ef2942c74673ae1e20df2815cf133e989c85072a9550f74599da17f891e"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "19fe0821e3980e1fecd63b2bdaabefb1874300d8955eafb4fae29e1ed182806d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.mlp.gate_proj.weight",
+      "source_phase": 129,
+      "compiler_kernel": "mx_dense_kernel_74",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "59712f5b97f39ae8f054335669bd8cae0a7b3096385c0fd2bc29db9feeb8606d"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e5b2fd232c59b6fc9e8e7265be2cb5f1d548511d2e2fa130ac75ee41c5ea5c6b"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.mlp.up_proj.weight",
+      "source_phase": 129,
+      "compiler_kernel": "mx_dense_kernel_75",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "0b78e225527ea361aa6e6969739c0c541a482e152b2a78def9e682676b48fe01"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "7e58dafb7c1177d1ec2a2f686bb75ec08f0371dc7a25f91ef780322071caacfd"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.10.mlp.down_proj.weight",
+      "source_phase": 131,
+      "compiler_kernel": "mx_dense_kernel_76",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "66029d92a0426494e34eff5bf67ac668e7e5cb0ed9265661571a0e004003103f"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "d7be23d0b077f3c650691b524b10cec2a943c12575eca42874dc2052752baed3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.self_attn.q_proj.weight",
+      "source_phase": 133,
+      "compiler_kernel": "mx_dense_kernel_77",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "33e230ec7c2c6039d30176d747ceaf791b90a6be79e6444a401aa69cce8bf7f9"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "1727f9454074254c6c89992c5d226ede5edeadd6b47199089c612b613abd3423"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.self_attn.k_proj.weight",
+      "source_phase": 133,
+      "compiler_kernel": "mx_dense_kernel_78",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "d9fac6d97a0b1878af19fb6d5f0d0d50177ddb1ca760b7fc64b99cdb4eeb6875"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "16abdc1b5eec6fba6499555483ae49de8140d2d5b5296a38d2c06097ca0b9391"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.self_attn.v_proj.weight",
+      "source_phase": 133,
+      "compiler_kernel": "mx_dense_kernel_79",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "7d726e6994ca16c0cd5334847adadcab6adcd06ebdb37af271abdbd3c7cf1552"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "f207778c905f736e7b0c57ec56ad8559f28c6f5946e63305f763be656ea41a2e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.self_attn.o_proj.weight",
+      "source_phase": 139,
+      "compiler_kernel": "mx_dense_kernel_80",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "b8981b27a57a5d42a9832d34e00f957ca5bd089edbf53a381c0d09e68a76621e"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "9951d3091a32698adf23a90ee61fd7bd8bb3c134f6ff4de6f1bab7a409425e2b"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.mlp.gate_proj.weight",
+      "source_phase": 141,
+      "compiler_kernel": "mx_dense_kernel_81",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "e62d71b4de6f22dd146783600ca52f33c5b0a0d874d70816baadee5010d4be8f"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "a855e885d7b727335f49d2a7b478f2b096bd7b89c7a9e732ccde5076b40c512e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.mlp.up_proj.weight",
+      "source_phase": 141,
+      "compiler_kernel": "mx_dense_kernel_82",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "922545b0d0f6dedfd8e89d57904a88837d776207a727bbc6a8f0f224220b112b"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "4dfc43f33213e06ef840790d7a63d53cb08ecfc8f19d3212920617a70485d655"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.11.mlp.down_proj.weight",
+      "source_phase": 143,
+      "compiler_kernel": "mx_dense_kernel_83",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "c73267720207a228d2e4da38826708ce31421dc8ea180548445f1d5412072798"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "8ffa5cd7d376255d383864d33aa4faaba507c419fac2599e3619baaed5ed07c9"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.self_attn.q_proj.weight",
+      "source_phase": 145,
+      "compiler_kernel": "mx_dense_kernel_84",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "20733fb488c1b718e891f4c8ff5bc43fa84996433f314308f4267260955b76b5"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "23fb540a8a1d9cfc477415a13431322e9e5fb4dd78f1c57e978b2f26e3cdd276"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.self_attn.k_proj.weight",
+      "source_phase": 145,
+      "compiler_kernel": "mx_dense_kernel_85",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "f8b87d1c8abaf7553a55990244985095ae88cff23c8a574b83cdd373749398f4"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "8241cd34e3d6bf668c5f0f8043996fdb53fbbe4ee31443f8da9b5824428c2aee"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.self_attn.v_proj.weight",
+      "source_phase": 145,
+      "compiler_kernel": "mx_dense_kernel_86",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "cdfe196135437f302ad6598d84f5adcc175d89ab2eb6c727d6c0f850de748ffb"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "c25a79eb979e5339020a1a984cab44c37dd7abb19f03b556f2cac3dc06261489"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.self_attn.o_proj.weight",
+      "source_phase": 151,
+      "compiler_kernel": "mx_dense_kernel_87",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "a07e0c21748efa3882dc518c6dd8d0b178ae1f4a0a400de60853a04e3cd33737"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "e6c6b5c8a31e5ba08dbcb2b3abbf9a7a6199b0d67f60efbf3f364496982c6ed8"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.mlp.gate_proj.weight",
+      "source_phase": 153,
+      "compiler_kernel": "mx_dense_kernel_88",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "2dda4157f8eb101c80fa15ade8d38ab485cfbd9069856e1308c1a153030f609a"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "0d8a11a51898ee0d854e0d5267f4730f6a5cdd4139f1d3e3c8280ffee65c931a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.mlp.up_proj.weight",
+      "source_phase": 153,
+      "compiler_kernel": "mx_dense_kernel_89",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "290a936c07d4e682fd7575ae5005385e85747d4274e1e716144c6e49d3967afa"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "a6f4aad6bdf478313e66ad3c882ac47925c4a7da8cbe42cd54b45f55576350da"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.12.mlp.down_proj.weight",
+      "source_phase": 155,
+      "compiler_kernel": "mx_dense_kernel_90",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "0fd6aaa94afc86dfe3da472a2728e709ce5648bfc75f6d4280e8d6ba671dcbe4"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "6c174925c9725ee02b63d378bc837543aab87a6aa410866877072b194aa833f4"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.self_attn.q_proj.weight",
+      "source_phase": 157,
+      "compiler_kernel": "mx_dense_kernel_91",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "426bcda11bd1665d8ae302f5c736d77736653d7a75e3cee0ac8eb0696da94d85"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "62d48d2b8c3c1b61449ee31670a6e1516d8d4075c668d5d178aa52c7d10db7e0"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.self_attn.k_proj.weight",
+      "source_phase": 157,
+      "compiler_kernel": "mx_dense_kernel_92",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "7ee35b8589e3ba5fbd3bdee2cff8ea1779d288cdb4f1dc8066a3bf3e46ed9faf"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "4f01a7892bc06be78dfbbbfee7bcb064c28633b8053213d4f6e6a35714a84b36"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.self_attn.v_proj.weight",
+      "source_phase": 157,
+      "compiler_kernel": "mx_dense_kernel_93",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "53af27514c3c40ceab654afbf2275a190bb61f4ebb07655506ee3478db42888f"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "fcde74327823276c7d207969e4d8892be0e68dae5ec81e1ede28cd5b5184303d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.self_attn.o_proj.weight",
+      "source_phase": 163,
+      "compiler_kernel": "mx_dense_kernel_94",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "118bd89a1d424553dc1882ab26be337c1049bc913744e0fc99760e5a5b16a181"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "0e2233b02a523385dff552b5eadd5ce23bd8e61eebc047a92721b9952f30059a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.mlp.gate_proj.weight",
+      "source_phase": 165,
+      "compiler_kernel": "mx_dense_kernel_95",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "a2309862d3cafedbb77d5b1e3c51133807668b2782dd34fc11e85e2edcc6322a"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "04a921fd466e0abc764c817960ba9d9303e4e2e2280f7d5a6a0b535d5e6cea71"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.mlp.up_proj.weight",
+      "source_phase": 165,
+      "compiler_kernel": "mx_dense_kernel_96",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "4c9923af7148146a352ac120bd6f5c5ec9ff11eedb2f406e253a058344f07515"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "eb79ef2eefb66629ba69e094a258254d3ad375af169f76ae15370abec0965609"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.13.mlp.down_proj.weight",
+      "source_phase": 167,
+      "compiler_kernel": "mx_dense_kernel_97",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "a01c8b7265e05062f21c40e3b3c45c30ce449788374174e7a0f9774032d4baac"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "7ab8c422cb1d922debf0920486c38054e20f5811ac486f6d1e106becfde990f1"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.self_attn.q_proj.weight",
+      "source_phase": 169,
+      "compiler_kernel": "mx_dense_kernel_98",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "f08ba2f5bbf3fbd483971d9b440770a4a641588377349d248bfe7b6a110290f7"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "56fbc733714a84f41b724ca6d174b35b4873a789d7a043e1ab2a1cb79a4c75bc"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.self_attn.k_proj.weight",
+      "source_phase": 169,
+      "compiler_kernel": "mx_dense_kernel_99",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "644e0d2319addfbadc3e81e5b291e56138ba3b9b7a26f4890a25e33e2da2b9c4"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "d33c9a640ed9421dcd0af5133f666156c78952bb7ed869ee3ceec6bf0d1f6d59"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.self_attn.v_proj.weight",
+      "source_phase": 169,
+      "compiler_kernel": "mx_dense_kernel_100",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "7d0625117d5ddd4db6e0c346805402f918278d6520906574d91c1e8981bb20f5"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "e92282100eccc5e1ecc0c3dcb151923f884c33c1f87825bd9a8eece4b811bcf0"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.self_attn.o_proj.weight",
+      "source_phase": 175,
+      "compiler_kernel": "mx_dense_kernel_101",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "6beff17037606ca9b458fff9363d286c3d48d37381ffa7cc4beda7a329dd450c"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "524672e03291748be0ec3b93964e4ee92aece37ac7021ec4a14b3ca591c91ea6"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.mlp.gate_proj.weight",
+      "source_phase": 177,
+      "compiler_kernel": "mx_dense_kernel_102",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "4f0819f69196e76c4d63eb0b532864800a983f4b0062760749c37375e0c77c39"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "e15a015f04f29cfe0ce0ccc2012f6a0a520a20963e63ab5935c31bfa9be7707a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.mlp.up_proj.weight",
+      "source_phase": 177,
+      "compiler_kernel": "mx_dense_kernel_103",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "bb73aff1f95c814e849625c056eb0c17d57fb63c257c5c9b4c897a03615130eb"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "267d040677adf783d8cd5ab8cb4d24660f0a771c79251f4302e83ce8c726e411"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.14.mlp.down_proj.weight",
+      "source_phase": 179,
+      "compiler_kernel": "mx_dense_kernel_104",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "bac9fd29981d1b8e033f320f0ba1a3c6249fd6cda9d49d1a5ad4d9962ebeeb7c"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "6fccee22518737567d2299c13882a2b76fad8f8db20d94c03cad0a5732fea224"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.self_attn.q_proj.weight",
+      "source_phase": 181,
+      "compiler_kernel": "mx_dense_kernel_105",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "d4cb9336d049fd8270a2997fc8e5128b29cb375cd0787cb010d67550a99c3097"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "ac2dbaffd5ac2d3652fb138c5a6b7c423789920f661e373d5ef155c76cb7b9a8"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.self_attn.k_proj.weight",
+      "source_phase": 181,
+      "compiler_kernel": "mx_dense_kernel_106",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "886cd3995229c641a8654920361d456720f9f7865fd49d4aeb3677da70fcb00c"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "2d10097027c0ba53c3db661e47dbe672248af1ca8a4d045f0d21f00c0d98f2d8"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.self_attn.v_proj.weight",
+      "source_phase": 181,
+      "compiler_kernel": "mx_dense_kernel_107",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "53b20dfde6196f40537c32741b2581b2d60246028fd75e51ef96a3fd05620ded"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "1118bd72005be944a5e70c290a5a3566be50009af326de1dead2935a3bc9d788"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.self_attn.o_proj.weight",
+      "source_phase": 187,
+      "compiler_kernel": "mx_dense_kernel_108",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "e92c1bcc915eba8b5100528a2122ecbd0b3d17e049235c6578971e16eab7463b"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "9a1ee3ee3b39e4cb77a511c65641fcd6b5c5a1e32098636717943a17febaff8d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.mlp.gate_proj.weight",
+      "source_phase": 189,
+      "compiler_kernel": "mx_dense_kernel_109",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "8821dfb34b731ae139f6e16d7f17d91e84025a97abb4151a9160e2c95746def5"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "d409cc81a7247c238d3cd8d0e04951c30140b4740c6866d80c470222c4800231"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.mlp.up_proj.weight",
+      "source_phase": 189,
+      "compiler_kernel": "mx_dense_kernel_110",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "b3a0b02d588e3f1ffe4231802be6bff1554b90b6b707ca5e34a44a738c232dda"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "2cb4aebeacfa91eeae26def853467310d8196fe8696a2b37ec05ea506058c45c"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.15.mlp.down_proj.weight",
+      "source_phase": 191,
+      "compiler_kernel": "mx_dense_kernel_111",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "d783a4bd4030117ae1a3a0304dde728287c97d33851581c6e8f37c30d52f338d"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "0c11eb6d95d0f067976b1de8ce417bf2ce5d02cac04be0642d151e2242eb8389"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.self_attn.q_proj.weight",
+      "source_phase": 193,
+      "compiler_kernel": "mx_dense_kernel_112",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "a97d3b28da7b7acdfdb8e3c0ad79207dfe3379fdf1bda37385318c4d47789e9f"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "3021b9d2c7bb05686bc8d5098a7348d555f50d8a96842d8e50324766ac392727"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.self_attn.k_proj.weight",
+      "source_phase": 193,
+      "compiler_kernel": "mx_dense_kernel_113",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "44c464f0d20a964022c9bd4cc72f2ce22dc10b91acf098cb8f94e4e008ab8230"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "3075be9d080aac1feb9b0656c7db94bc1fdce5f57ea89c8493f82181a42d02ca"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.self_attn.v_proj.weight",
+      "source_phase": 193,
+      "compiler_kernel": "mx_dense_kernel_114",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "f4574c942af801879dfcdd1044f0b1ca8de57fcf7b34047ac87188a0701d79cc"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "e1b0a8c9e1c3e5e54f300902f494880703e4ae658d582eff4be5e0fee3bbc230"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.self_attn.o_proj.weight",
+      "source_phase": 199,
+      "compiler_kernel": "mx_dense_kernel_115",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "2c7032260500e76c64278941c95bb57cea8515d77badeab604fe87100b229647"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "566fa6deecccb68ae6792eb559609bfc42a7bde49ee594be07a8f1f90d8f3c57"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.mlp.gate_proj.weight",
+      "source_phase": 201,
+      "compiler_kernel": "mx_dense_kernel_116",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "cbbf6a127adc0d84c8e38266381a7c2b59ee4608ac152d5e235169cc25119076"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "4505cbcb321d466d3df3064228a9de3ca7ab3693020940ca80044d525b5d4bd3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.mlp.up_proj.weight",
+      "source_phase": 201,
+      "compiler_kernel": "mx_dense_kernel_117",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "2465bfed6f2dd4c2cf5b7ff338b38982125ede0c6ca595fdb6704dcb292bfd29"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "4777ac703ba2a3b8fff437b1d8ffcca70ce43bac46a98deed5807b726ae12280"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.16.mlp.down_proj.weight",
+      "source_phase": 203,
+      "compiler_kernel": "mx_dense_kernel_118",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "ab6c63cbb56249235f14ceda091d3c242f62f6b7ef5567ef457849317ab038be"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "97958cff8d74fa79a5f82f7c286e3ab2c14f48c80688cff092655a04174429d1"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.self_attn.q_proj.weight",
+      "source_phase": 205,
+      "compiler_kernel": "mx_dense_kernel_119",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "49642f7d68af299ab91b1a07214080df2622d36c2ca555ae7c192a108d975b69"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "39d8a386d6d23505d5d3b244ae0f82b245974f4ae587e9d57c13b702bf8cdbf4"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.self_attn.k_proj.weight",
+      "source_phase": 205,
+      "compiler_kernel": "mx_dense_kernel_120",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "a6a6f90ff765167071461748fbca06be1e35c7ab8dc6df0a6ca81386739f3b4d"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "49a57518640a0c73144e98b1a6fdd295b6588a72cc0c8576646f547600ae1005"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.self_attn.v_proj.weight",
+      "source_phase": 205,
+      "compiler_kernel": "mx_dense_kernel_121",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "ac13e91e7556e0ece32894cbe1e3a366450111bc0e445d0d445c57f7bdf7d825"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "5d1555377599b64cde5e1881682c0e573bc4706918d2126e4394e62d6fa1529d"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.self_attn.o_proj.weight",
+      "source_phase": 211,
+      "compiler_kernel": "mx_dense_kernel_122",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "8916a778a6348a34738a5ecc063b908ad52334429a16f1889446622b1f15e857"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "958581f0ca163c3c3445a241c97cb533659328366009ab7b95505286bfea13d0"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.mlp.gate_proj.weight",
+      "source_phase": 213,
+      "compiler_kernel": "mx_dense_kernel_123",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "f7768c0a021eaa5c189e9d6097471693e2ead8802562fb4b0bffac9021d8ae37"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "50c8190a9f51c159534f891e009a5eb73982958502a74f901c280792a9e311f9"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.mlp.up_proj.weight",
+      "source_phase": 213,
+      "compiler_kernel": "mx_dense_kernel_124",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "e217bc3359ae2b5a0cdc97257d7b855ed3e474353bb7cc330e9087c2f25fde37"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "da9b6e0de30dd315cab58ed4c3e11d8f2d5d3e23181ecbcf3d0a0bd5e11398ad"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.17.mlp.down_proj.weight",
+      "source_phase": 215,
+      "compiler_kernel": "mx_dense_kernel_125",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "108bb8a89068cf81191cfc2f7cda0ca238d2e3bb52afa495f6b468be23cb170b"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "ee5527df92293a1b53b2bdde6c8f24b3e2c883ccf09041fe49ff03ca3c103e64"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.self_attn.q_proj.weight",
+      "source_phase": 217,
+      "compiler_kernel": "mx_dense_kernel_126",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "fc2683634a2c94a15ca1cf084a775b202b4a37b44883e9d4b89f715a8e20ac48"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "990a5615a15861804d8073bd2edf77c81376ed96b803794c1ad777eabd7e0754"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.self_attn.k_proj.weight",
+      "source_phase": 217,
+      "compiler_kernel": "mx_dense_kernel_127",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "e5269d48c523a72b29ddb82223b090205796e99f928f8e49172e617bc74b84cd"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "5f760c7445674eb8fa1cee96fb86f37ba6756f83c9a19c91b849fa117214a48b"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.self_attn.v_proj.weight",
+      "source_phase": 217,
+      "compiler_kernel": "mx_dense_kernel_128",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "c1b0ed97f6f89d0993c942ad7f5ba2361624b676990446dc4d34da8f7acd7bfc"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "ba7f80e21994c0a4d3a65e18cd8033be4f04d930860a0cbfff50c664e80f319a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.self_attn.o_proj.weight",
+      "source_phase": 223,
+      "compiler_kernel": "mx_dense_kernel_129",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "2a8ed3a0fc7615ac7c7948509e4900c4c2d5dd47d4b7e13a28bde24f1098cf80"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "6fbd78fb869fe3121f1f8f4866e4858bf11d2605be90c4cbf300f65bf01bffb5"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.mlp.gate_proj.weight",
+      "source_phase": 225,
+      "compiler_kernel": "mx_dense_kernel_130",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "cbd4e96a2e249b89e3b59b816baff22a105d084aaa8af738e6d1038ed706be30"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "b3adac1a171d0815ad0a4394891704f274546d0374a73492684b98f42613ffed"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.mlp.up_proj.weight",
+      "source_phase": 225,
+      "compiler_kernel": "mx_dense_kernel_131",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "66cc0a651b0668a905cec3ec5a4dd32c5969cc64887d8fd514dfebb7ee449ebe"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "f42e32f5afde68053d2ee45b2477ac77d5ee5e7187179dd84e1f31a2a59416a3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.18.mlp.down_proj.weight",
+      "source_phase": 227,
+      "compiler_kernel": "mx_dense_kernel_132",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "8c0aa6e768bdacad2ebb4feedba75913038589b5fe3109eac0c80663a463eb23"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "5a878e0e8012129f2bc225853c9ba0cfb11aab4ac4ae5248d665d69d6df75d02"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.self_attn.q_proj.weight",
+      "source_phase": 229,
+      "compiler_kernel": "mx_dense_kernel_133",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "4cd0f5834e26a893b3befd4f199f5854d513b5dbb62a758d9e079b46c26a9d38"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "c63d0ab221ff48759ae25778abf9e5cbe1129b5f78e180700e5706985f440fb3"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.self_attn.k_proj.weight",
+      "source_phase": 229,
+      "compiler_kernel": "mx_dense_kernel_134",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "d821e415f241d213164431786527d364aae1e66663d2c460c2fbbc949ce5266b"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "921f8bf1c01e8de7173fc12749a7036b6c474cf2976e1f9d1317375adcc5e57c"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.self_attn.v_proj.weight",
+      "source_phase": 229,
+      "compiler_kernel": "mx_dense_kernel_135",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "8ad384aaaa3ea5a5795737c04643b026a3ca9ec32b1e04f358b5e78e427ef6f7"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "30b12c3d9446d3c5cc44bcddef9218e3b046e03b08db996d449feb09528c0b11"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.self_attn.o_proj.weight",
+      "source_phase": 235,
+      "compiler_kernel": "mx_dense_kernel_136",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "a37d81d3177a179ca6f1d3bd663e4de0c39bb1175f071b9917e8363969a0c0d2"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "955dab0732470d430b70e59c1523579fc55d1bccea2455745098c1a16753053a"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.mlp.gate_proj.weight",
+      "source_phase": 237,
+      "compiler_kernel": "mx_dense_kernel_137",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "76928babe25522e0c0175c0ee6759e7d242e44448fde59d0c4fd510395709fee"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "120db9472ac8416b5a50f0b5f2279ace220f7540ce9b95bc04d7aab44b279e8f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.mlp.up_proj.weight",
+      "source_phase": 237,
+      "compiler_kernel": "mx_dense_kernel_138",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "4180f2a847d237ec560c1bcb71b9dda96d0be65cbdb5dcf42641daa088d4ceb4"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "d0d81c24a7560ae27180e3a2176b8de89adb08c556457aff70571ea06f6a6816"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.19.mlp.down_proj.weight",
+      "source_phase": 239,
+      "compiler_kernel": "mx_dense_kernel_139",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "b695c523981d874467cf7f0906a2819423ab8f765ac9446305d368cd895753e8"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "1a6eb95aa56ecf2f89c3f80f7738d42761053e4ac3d63b8b6e6c6b5cddab22fc"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.self_attn.q_proj.weight",
+      "source_phase": 241,
+      "compiler_kernel": "mx_dense_kernel_140",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "46c092192bb6a8b0713b43d4c8b1bd662500d6422782320dda6c153ac2819374"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "004086bc72e471c8ffac9d29443041b6a7d53d351b4a25a7509f019e7d2b7a5e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.self_attn.k_proj.weight",
+      "source_phase": 241,
+      "compiler_kernel": "mx_dense_kernel_141",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "ad0e448bd340400f08dcaa1f04acc53406232820b9fef950d79cb0108513c1b1"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "0f8db98795cf3cf4ca76b057dfbbbfbbe9e5b2a5f669a99ca3baa4df9ad67612"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.self_attn.v_proj.weight",
+      "source_phase": 241,
+      "compiler_kernel": "mx_dense_kernel_142",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "5966b58f36d5d4d654fc350d516fe74e8a719ee03741dcf2752ad8e2041d67d4"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "08b55433a751a85311f6c1a2d94e1238112583a67da669ded4c550d6d5cdbe2e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.self_attn.o_proj.weight",
+      "source_phase": 247,
+      "compiler_kernel": "mx_dense_kernel_143",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "3b1d1e4d3edcf87e090512af696d9ff56a48a6d7cdf5ed6ac419467f68425a88"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "0133b34fe35602d83f0cd1ac5411bb967eb60cc4cf4668715c7d8ceff6a1422e"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.mlp.gate_proj.weight",
+      "source_phase": 249,
+      "compiler_kernel": "mx_dense_kernel_144",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "58f38686c40a900d9c7860aeb5c6999e93a31fc141da2c3233275f6b6ee8c44a"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "c6360c91265ea7cb9db1d393ad019f394349e7732e62caba4cda7207682115f7"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.mlp.up_proj.weight",
+      "source_phase": 249,
+      "compiler_kernel": "mx_dense_kernel_145",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "00ff113bfa3d7d2ad9ef6050ac1ff619f0f08e552b48254302ccbf2d11e26299"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "2cf6a4ca5b54b220c7e35853b1382f267832fc9bee4f6d91c76131f9c4f16fea"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.20.mlp.down_proj.weight",
+      "source_phase": 251,
+      "compiler_kernel": "mx_dense_kernel_146",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "ea09df30861be92d578fbf28ffe110b6021f4195f68ca8c0c9d97d8b4136f921"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "b577eb9fb9113474b76686a3c7487f660be4bb2cb074d1ea33e986b896949221"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.self_attn.q_proj.weight",
+      "source_phase": 253,
+      "compiler_kernel": "mx_dense_kernel_147",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "287ded6d968d81bf97ae5dcd9a5fa60e916b2a9dd9071f1301e754f58b3b129d"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "8307ae5e880868babd1f2688a8a27c7380bc1641281f51d8a766ac4e9400ef32"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.self_attn.k_proj.weight",
+      "source_phase": 253,
+      "compiler_kernel": "mx_dense_kernel_148",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2048,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "e6f90118521fd34bca0d4a5a5f19fa11746b698d602dca1d5d964ede673f08f0"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "12b24e954056f9e9f14fe2253094fbe448885d194630edc1c5a4e5ae2813972f"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.self_attn.v_proj.weight",
+      "source_phase": 253,
+      "compiler_kernel": "mx_dense_kernel_149",
+      "shape_kn": [
+        2048,
+        256
+      ],
+      "source_column_offset": 2304,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 524288,
+          "canonical_sha256": "bdaac97f9f27a49e8e5714bdd0a086a0331ae2d02d7ffe5aa8082535fac18293"
+        },
+        "scales": {
+          "bytes": 16384,
+          "canonical_sha256": "6c006f20fec262fc0cdf4ca15d460ee847fae3af9629a658535fda3c23342dc0"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.self_attn.o_proj.weight",
+      "source_phase": 259,
+      "compiler_kernel": "mx_dense_kernel_150",
+      "shape_kn": [
+        2048,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 4194304,
+          "canonical_sha256": "446fbd18c7fd089ad1b0f81683d41c8742b39d2ebfe41bafd00316b0e6487a5c"
+        },
+        "scales": {
+          "bytes": 131072,
+          "canonical_sha256": "7da61fdedb9d783aced3f03c43e32c1d0e1b948ab44c13d3124111dfdf5ad38c"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.mlp.gate_proj.weight",
+      "source_phase": 261,
+      "compiler_kernel": "mx_dense_kernel_151",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "d954120d6d65e637864d9f22adb4a5c3eda7da45eca22ce113dfb6e03048066d"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "9e67fb88f51ea1e6a8dd72f7242496ae0fcf134d4a1fa070e47694881f7d20d1"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.mlp.up_proj.weight",
+      "source_phase": 261,
+      "compiler_kernel": "mx_dense_kernel_152",
+      "shape_kn": [
+        2048,
+        5632
+      ],
+      "source_column_offset": 5632,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "1a371a636eccf31f8fa84d4e1b9f8a55006eb32e1d04770fac81e0aad1198c53"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "5785f1c4c90f5d584e156406f493fc89c0f604177c0c31605be6b55248530b56"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.model.layers.21.mlp.down_proj.weight",
+      "source_phase": 263,
+      "compiler_kernel": "mx_dense_kernel_153",
+      "shape_kn": [
+        5632,
+        2048
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 11534336,
+          "canonical_sha256": "c79f8e8f9b6a51fd39f8c41be2de168b97741157f9c050c0f4d7f0b3c3938a10"
+        },
+        "scales": {
+          "bytes": 360448,
+          "canonical_sha256": "7c241d71850adb5e76a8387060aae473b4e3a6cdd123b2aa77be651b8bacd3ba"
+        }
+      }
+    },
+    {
+      "checkpoint_parameter": "lm.lm_head.weight",
+      "source_phase": 265,
+      "compiler_kernel": "mx_dense_kernel_154",
+      "shape_kn": [
+        2048,
+        32000
+      ],
+      "source_column_offset": 0,
+      "source_tile_mnk": [
+        160,
+        64,
+        256
+      ],
+      "compiler_tile_mnk": [
+        80,
+        128,
+        512
+      ],
+      "payloads": {
+        "codes": {
+          "bytes": 65536000,
+          "canonical_sha256": "0fb94bb29e4cc4f29b12d790e68162f0ac35bc65916b3b2515326e4370747511"
+        },
+        "scales": {
+          "bytes": 2048000,
+          "canonical_sha256": "cebcda8ffe75b6b37532c4ac41d753abdced918c7ddff89e6f6227471f7e77a5"
+        }
+      }
+    }
+  ]
+}

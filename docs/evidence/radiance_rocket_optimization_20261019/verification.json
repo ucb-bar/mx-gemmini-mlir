@@ -1,5 +1,7 @@
 {
   "passed": true,
+  "artifact_manifest_sha256": "5ebde0c1d27402a17eff5add5ef15e7f7ac0ee76857178b5ca92a55826d7dae7",
+  "verifier_sha256": "ce3b16f3a6f763b211aabaf34b93657760eb2ffef530cc04f6ac53eb35380689",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
   "source_control_and_profiles_rechecked": true,

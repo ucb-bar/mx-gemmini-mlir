@@ -24,6 +24,8 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
+Checkpoint prepacking and output dumping are outside both timed intervals.
+
 The two RMS rows are alternative configurations. They are not additional
 transformations applied to the EXP-only row. The archive preserves failed
 quality results alongside faster timings.
@@ -50,6 +52,21 @@ Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 in the hybrid-softmax/host-score placement. Full logits remain identical to
 the corresponding unfused configurations. These are measured alternatives,
 not percentage savings to add together.
+
+The layout audit also reopens both actual executables and compares every
+learned matrix after undoing the source's tiled/combined layouts. All
+**155 FP8 code and E8M0 scale payloads are identical** in canonical coordinates.
+The retained [weight-equivalence report](source-compiler-weight-equivalence.json)
+records each checkpoint parameter and both tile partitions. Learned source
+matrices use K steps of 256; these compiler matrices use 512. Tile scheduling
+therefore contributes to the comparison as well as operator placement.
+
+Hybrid softmax batches 51 rows per VPU launch. In the EXP-only configuration,
+its 22 softmax sites use **2,222 EXP launches**, versus **112,640** in the
+port's row-at-a-time schedule. The compiler's default BF16 sigmoid contributes
+9,680 additional vector operations, for **11,902 VPU operations** in the
+complete EXP-only run; the port uses 116,160 EXP operations overall. These
+counts explain launch amortization without equating different phase timings.
 
 All compiler runs execute **40,970,240 matrix tiles** and **655,523,840 matrix
 busy cycles**. The port executes 41,308,160 tiles, 0.825% more, because its
@@ -87,6 +104,18 @@ audit bindings; it does not reopen absent binaries or establish a hermetic
 rebuild. The separate EXP-only rebuild record reproduces its original ELF
 exactly from clean MX revision `d4797f2d`; it records build identity and adds
 no execution measurement.
+
+To repeat the learned-weight check with the actual large executables:
+
+```sh
+python -m tools.audit_radiance_compiler_weights \
+  --port-build /path/to/radiance-forward-build \
+  --compiler-build "$ARTIFACT_ROOT/tinyllama-forward-exp-build" \
+  --out "$ARTIFACT_ROOT/source-compiler-weight-equivalence.json"
+```
+
+This check covers encoded learned matrices. Runtime activations retain the
+selected placement and arithmetic differences described above.
 
 The [placement policies and commands](../../../examples/models/optimization_policies/README.md)
 and [target configuration guide](../../configure_target_and_precision.md)

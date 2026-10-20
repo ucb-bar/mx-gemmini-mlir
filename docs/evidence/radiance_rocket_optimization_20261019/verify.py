@@ -26,12 +26,59 @@ def load(name, path):
     return result
 
 
+def expected_exp_placement_commands(catalog, probe):
+    """Count launches for the uniform EXP-only/residual placement alternatives."""
+    from math import ceil, prod
+
+    if (
+        catalog["vpu_elementwise"]["source_regions"]
+        or catalog["vpu_reduce"]["source_regions"]
+    ):
+        return None
+    soft = catalog["vpu_softmax"]
+    unary = catalog["vpu_unary"]
+    add = catalog["vpu_add"]
+    if len(soft["kernels"]) != 1 or len(unary["kernels"]) != 1:
+        return None
+    soft_kernel, sig = soft["kernels"][0], unary["kernels"][0]
+    if soft_kernel["implementation"] != "f32_reduce" or sig["operation"] != "sigmoid":
+        return None
+    soft_fusions = (probe.get("softmax_packing_rewrite") or {}).get("fusions", [])
+    gate_fusions = (probe.get("gated_projection_rewrite") or {}).get("fusions", [])
+    assert len(soft_fusions) <= len(soft["source_regions"])
+    assert len(gate_fusions) <= len(unary["source_regions"])
+    rows_per_chunk = soft_kernel["rows_per_chunk"]
+    commands = (len(soft["source_regions"]) - len(soft_fusions)) * ceil(
+        soft_kernel["logical_rows"] / rows_per_chunk
+    )
+    endpoints = {row["symbol"]: row for row in catalog.get("softmax_packing", [])}
+    for fusion in soft_fusions:
+        endpoint = endpoints[fusion["symbol"]]
+        batch, m, _, _ = endpoint["matrix_shape_bmnk"]
+        commands += batch * ceil(m / rows_per_chunk)
+    steps = 1 if sig.get("implementation", "bf16") == "f32_reciprocal" else 4
+    commands += (
+        (len(unary["source_regions"]) - len(gate_fusions))
+        * ceil(prod(sig["shape"]) / sig["elements_per_chunk"])
+        * steps
+    )
+    commands += sum(row["shape_mnk"][0] for row in gate_fusions)
+    if add["source_regions"]:
+        assert len(add["kernels"]) == 1
+        commands += len(add["source_regions"]) * ceil(
+            prod(add["kernels"][0]["shape"]) / 8192
+        )
+    return commands
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     assert not args.out.exists(), "output must be fresh"
-    manifest = json.loads((HERE / "artifacts.json").read_text())
+    verifier_hash = sha(Path(__file__).read_bytes())
+    manifest_raw = (HERE / "artifacts.json").read_bytes()
+    manifest = json.loads(manifest_raw)
     for name, record in manifest["supplements"].items():
         raw = (HERE / name).read_bytes()
         assert len(raw) == record["bytes"] and sha(raw) == record["sha256"]
@@ -61,6 +108,20 @@ def main():
     # Use the same checked archive decoder with this evidence directory.
     archive_reader = load("candidate_archive_reader", source_dir / "verify.py")
     archive_reader.HERE = HERE
+    weight_audit = json.loads(
+        (HERE / "source-compiler-weight-equivalence.json").read_text()
+    )
+    assert weight_audit["status"] == "all_encoded_checkpoint_matrices_equal"
+    assert weight_audit["source_elf_sha256"] == source_receipt["elf_sha256"]
+    assert weight_audit["source_receipt_sha256"] == sha(data["source/receipt.json"])
+    assert (
+        weight_audit["checkpoint_sha256"]
+        == source_receipt["capture_files_sha256"]["weights.safetensors"]
+    )
+    weight_payloads = {
+        row["checkpoint_parameter"]: row for row in weight_audit["matrices"]
+    }
+    assert len(weight_payloads) == weight_audit["matrices_checked"] == 155
     report = {}
     for name, case in manifest["cases"].items():
         files = archive_reader.unpack(case["archive"], case)
@@ -140,6 +201,28 @@ def main():
             np.array([int(v) for v in ids[0].split(",")], dtype="<i8").tobytes()
             == data["source/token_ids.bin"]
         )
+        linked = {row["symbol"]: row for row in audit["linked_payloads"]}
+        for kernel in catalog["kernels"]:
+            if not kernel["prepacked_checkpoint_weight"]:
+                continue
+            weight = weight_payloads[kernel["checkpoint_parameter_name"]]
+            assert weight["shape_kn"] == [
+                kernel["dimensions"]["k"],
+                kernel["dimensions"]["n"],
+            ]
+            for kind in ("codes", "scales"):
+                source_payload = weight["payloads"][kind]
+                target_payload = linked[kernel["symbol"] + "_fixed_" + kind]
+                assert (
+                    source_payload["bytes"]
+                    == target_payload["bytes"]
+                    == kernel[kind + "_bytes"]
+                )
+                assert (
+                    source_payload["canonical_sha256"]
+                    == target_payload["sha256"]
+                    == kernel[kind + "_sha256"]
+                )
         kernels = {row["symbol"]: row for row in catalog["kernels"]}
         tiles = 0
         assert len(catalog["bindings"]) == 199
@@ -151,6 +234,9 @@ def main():
             tiles += kernel["dimensions"]["batch"] * (m // 16) * (n // 16) * (k // 16)
         work = perf_reader.parse_gemmini_perf(raw.decode())
         assert work == comparison["matrix_work"]
+        expected_vectors = expected_exp_placement_commands(catalog, probe)
+        if expected_vectors is not None:
+            assert work["vpu_commands"] == expected_vectors
         assert (
             work["mesh_tiles"]
             == tiles
@@ -233,6 +319,15 @@ def main():
             "full_160": comparison["quality_all_160"]["compiler"],
             "late_33": comparison["quality_late_33"]["compiler"],
         }
+    exp_case = manifest["cases"]["exp_vpu"]
+    exp_data = archive_reader.unpack(exp_case["archive"], exp_case)
+    assert (
+        weight_audit["compiler_elf_sha256"]
+        == json.loads(exp_data["comparison.json"])["elf_sha256"]
+    )
+    assert weight_audit["compiler_catalog_sha256"] == sha(
+        exp_data["build/device_catalog/mx_catalog.json"]
+    )
     original = json.loads(data["comparison.json"])["compiler_logits_sha256"]
     for name in manifest["exact_original_output_cases"]:
         if name in report:
@@ -254,12 +349,17 @@ def main():
             )
     result = {
         "passed": True,
+        "artifact_manifest_sha256": sha(manifest_raw),
+        "verifier_sha256": verifier_hash,
         "source_cycles": source_receipt["cycles"],
         "all_5120000_logits_checked_per_candidate": True,
         "source_control_and_profiles_rechecked": True,
         "actual_large_ELFs_reopened_by_this_portable_reader": False,
         "cases": report,
     }
+    assert sha(Path(__file__).read_bytes()) == verifier_hash, (
+        "reader changed during verification"
+    )
     args.out.write_text(json.dumps(result, indent=2) + "\n")
     print(args.out.read_text())
 
