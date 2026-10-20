@@ -106,11 +106,24 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          group_projections: bool = False,
                          fuse_softmax_packing: bool = False,
                          vpu_sigmoid_implementation: str = "bf16",
+                         fuse_gated_projections: bool = False,
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if (
+        type(fuse_gated_projections) is not bool
+        or fuse_gated_projections
+        and (
+            not share_activation_packing
+            or not integer_group_packing
+            or vpu_sigmoid_implementation != "f32_reciprocal"
+        )
+    ):
+        raise ValueError(
+            "gated projection packing requires shared FP8 preparation, integer groups and hybrid sigmoid"
+        )
     if (vpu_sigmoid_implementation not in {"bf16", "f32_reciprocal"}
             or vpu_sigmoid_implementation != "bf16" and connect_sigmoid_multiplies):
         raise ValueError("hybrid sigmoid cannot use the connected BF16 sigmoid implementation")
@@ -164,7 +177,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         prepack_immutable_weights=prepack_immutable_weights,
         precision_overrides=precision_overrides)
     projection_groups = []
-    if group_projections:
+    if group_projections or fuse_gated_projections:
         from .merlin_projection_group import projection_candidates
 
         projection_groups = projection_candidates(prepared, plan)
@@ -600,6 +613,18 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
         softmax_packing = register_softmax_packing(
             softmax_kernels, kernel_records, plan["bindings"], profile, compile_source, prepared_entries)
+    gated_projection_packing = []
+    if fuse_gated_projections:
+        from .merlin_gated_projection import register_gated_projections
+
+        gated_projection_packing = register_gated_projections(
+            projection_groups,
+            kernel_records,
+            profile,
+            max_workspace,
+            compile_source,
+            prepared_entries,
+        )
     if group_projections:
         from .merlin_projection_group import register_projection_groups
 
@@ -754,6 +779,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
         "vpu_softmax_implementation": vpu_softmax_implementation,
+        "fuse_gated_projections": fuse_gated_projections,
+        "gated_projection_packing": gated_projection_packing,
         "vpu_sigmoid_implementation": vpu_sigmoid_implementation,
         "fuse_softmax_packing": fuse_softmax_packing,
         "softmax_packing": softmax_packing,
@@ -853,6 +880,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 group_projections: bool = False,
                                 fuse_softmax_packing: bool = False,
                                 vpu_sigmoid_implementation: str = "bf16",
+                                fuse_gated_projections: bool = False,
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -902,6 +930,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     group_projections=group_projections,
                                     fuse_softmax_packing=fuse_softmax_packing,
                                     vpu_sigmoid_implementation=vpu_sigmoid_implementation,
+                                    fuse_gated_projections=fuse_gated_projections,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

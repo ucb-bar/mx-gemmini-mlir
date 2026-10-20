@@ -217,6 +217,11 @@ def main() -> None:
     parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
+    parser.add_argument(
+        "--fuse-gated-projections",
+        action="store_true",
+        help="consume private gate/up BF16 matrix outputs through hybrid sigmoid into FP8 packing",
+    )
     parser.add_argument("--vpu-sigmoid-implementation", choices=("bf16", "f32_reciprocal"),
                         default="bf16", help="policy-selected sigmoid arithmetic: all BF16 or BF16 EXP with FP32 reciprocal")
     parser.add_argument("--fuse-softmax-packing", action="store_true",
@@ -250,6 +255,18 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.fuse_gated_projections and (
+        not args.share_activation_packing
+        or not args.integer_quant_groups
+        or args.vpu_sigmoid_implementation != "f32_reciprocal"
+    ):
+        parser.error(
+            "gated projection packing requires shared preparation, integer groups and hybrid sigmoid"
+        )
+    if args.fuse_gated_projections and args.op_profile:
+        parser.error(
+            "gated projection packing currently requires uninstrumented timing"
+        )
     if args.vpu_sigmoid_implementation != "bf16" and (args.execution_policy is None
             or args.connect_vpu_sigmoid_multiplies):
         parser.error("hybrid sigmoid requires an explicit policy without connected BF16 sigmoid")
@@ -493,6 +510,7 @@ def main() -> None:
             fuse_rms_packing=args.fuse_rms_packing,
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
+            fuse_gated_projections=args.fuse_gated_projections,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -512,6 +530,7 @@ def main() -> None:
             fuse_rms_packing=args.fuse_rms_packing,
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
+            fuse_gated_projections=args.fuse_gated_projections,
             batch_rhs_catalog=(work / "device_catalog/mx_catalog.json" if args.reuse_batch_rhs else None),
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
@@ -586,6 +605,61 @@ def main() -> None:
                                   == "mxfp8" else "f4E2M1FN")
                 if binding["target_dtypes"][:2] != [expected_dtype, expected_dtype]:
                     raise RuntimeError("MX linked catalog differs from execution policy")
+    gated_projection_rewrite = None
+    if args.fuse_gated_projections:
+        gated_path = work / "device_host_abi/mx_gated_projections_rewrite.json"
+        gated_projection_rewrite = json.loads(gated_path.read_text())
+        from mx_gemmini_support.merlin_gated_projection import (
+            prepared_matrix_consumers,
+            source_matrix_callees,
+        )
+
+        endpoints = {row["symbol"]: row for row in catalog["gated_projection_packing"]}
+        source_callees = source_matrix_callees(
+            catalog, json.loads((work / "device_signatures.json").read_text())
+        )
+
+        def valid_gated_terminal(row):
+            endpoint = endpoints[row["symbol"]]
+            if row["original_prepare"] is not None:
+                return (
+                    row["original_prepare"] in endpoint["prepare_symbols"]
+                    and row["original_matrix_consumer"] is None
+                    and row["matrix_consumer_kernel"] is None
+                )
+            matrix = prepared_matrix_consumers(catalog, endpoint, source_callees).get(
+                row["original_matrix_consumer"]
+            )
+            return (
+                matrix is not None and matrix["symbol"] == row["matrix_consumer_kernel"]
+            )
+
+        sigmoid = {
+            row["symbol"]
+            for row in catalog["vpu_unary"]["kernels"]
+            if row["operation"] == "sigmoid"
+            and row.get("implementation") == "f32_reciprocal"
+        }
+        if (
+            gated_projection_rewrite["catalog_sha256"] != _sha(catalog_path)
+            or gated_projection_rewrite["sidecar_sha256"]
+            != _sha(work / "device_signatures.json")
+            or gated_projection_rewrite["output_sha256"]
+            != _sha(gated_path.with_name("mx_gated_projections.mlir"))
+            or any(
+                row["symbol"] not in endpoints
+                or any(
+                    row[key] != endpoints[row["symbol"]][key]
+                    for key in ("source_kernels", "source_regions", "shape_mnk")
+                )
+                or row["original_sigmoid"] not in sigmoid
+                or not valid_gated_terminal(row)
+                for row in gated_projection_rewrite["fusions"]
+            )
+        ):
+            raise RuntimeError(
+                "gated projection packing differs from its compiled endpoints"
+            )
     softmax_packing_rewrite = None
     if args.fuse_softmax_packing:
         packing_path = work / "device_host_abi/mx_softmax_packing_rewrite.json"
@@ -854,6 +928,8 @@ def main() -> None:
         "integer_quant_groups": args.integer_quant_groups,
         "vpu_softmax_implementation": args.vpu_softmax_implementation,
         "vpu_sigmoid_implementation": args.vpu_sigmoid_implementation,
+        "fuse_gated_projections": args.fuse_gated_projections,
+        "gated_projection_rewrite": gated_projection_rewrite,
         "fuse_softmax_packing": args.fuse_softmax_packing,
         "softmax_packing_rewrite": softmax_packing_rewrite,
         "group_projections": args.group_projections,
