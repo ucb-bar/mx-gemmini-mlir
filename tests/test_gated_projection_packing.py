@@ -22,8 +22,9 @@ PROFILE = (
 
 
 @pytest.mark.parametrize("width", [32, 160, 5632])
+@pytest.mark.parametrize("activation_arithmetic", ["reciprocal", "divide"])
 def test_private_projection_values_keep_independent_exp_and_packing_bytes(
-    tmp_path, monkeypatch, width
+    tmp_path, monkeypatch, width, activation_arithmetic
 ):
     rows, reduction = 16, 32
     with tarfile.open(
@@ -53,6 +54,7 @@ def test_private_projection_values_keep_independent_exp_and_packing_bytes(
         issuer_symbol="matrix",
         tile_mnk=(16, 16, 32),
         workspace_symbol="workspace",
+        activation_arithmetic=activation_arithmetic,
     )
     stub = f"""
 unsigned char workspace[{kernel.workspace_bytes + 64}] __attribute__((aligned(64)));
@@ -71,6 +73,14 @@ void reference(const uint16_t *g,const uint16_t *u,float *out) {{
  }}
 }}
 """
+    if activation_arithmetic == "divide":
+        stub = stub.replace(
+            "float sigmoid=1.0f/(1.0f+vpu_bf16_to_f(vpu_exp(vpu_f_to_bf16(-gate))));",
+            "float denominator=1.0f+vpu_bf16_to_f(vpu_exp(vpu_f_to_bf16(-gate)));",
+        ).replace(
+            "(gate*sigmoid)*vpu_bf16_to_f(u[i])",
+            "(gate/denominator)*vpu_bf16_to_f(u[i])",
+        )
     source = tmp_path / "packed.c"
     source.write_text(EMULATOR + kernel.source + stub)
     library = tmp_path / "packed.so"

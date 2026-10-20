@@ -10,7 +10,14 @@ from .gated_projection_packing import emit_gated_projection_packing
 
 
 def register_gated_projections(
-    groups, kernels, profile, workspace_bytes, compile_source, abi_entries
+    groups,
+    kernels,
+    profile,
+    workspace_bytes,
+    compile_source,
+    abi_entries,
+    *,
+    activation_arithmetic="reciprocal",
 ):
     from merlin.llvmlower.device_shim import LogicalBuffer
 
@@ -59,6 +66,7 @@ def register_gated_projections(
                     symbol=name,
                     issuer_symbol=issuer,
                     tile_mnk=tuple(gate["tile_mnk"]),
+                    activation_arithmetic=activation_arithmetic,
                 )
             except ValueError:
                 continue
@@ -110,7 +118,12 @@ void {entry}_kernel(const uint8_t *input,uint8_t *output) {{
                 "output_packed_bytes": generated.output_packed_bytes,
                 "workspace_bytes": generated.workspace_bytes,
                 "schedule_digest": generated.schedule_digest,
-                "numeric_policy": "unchanged_fp8_matrices_bf16_outputs_f32_reciprocal_sigmoid_two_f32_multiplies_fp8",
+                "activation_arithmetic": activation_arithmetic,
+                "numeric_policy": (
+                    "unchanged_fp8_matrices_bf16_outputs_f32_reciprocal_sigmoid_two_f32_multiplies_fp8"
+                    if activation_arithmetic == "reciprocal"
+                    else "unchanged_fp8_matrices_bf16_outputs_f32_gate_divide_denominator_multiply_up_fp8"
+                ),
                 "completion": "original_matrix_issuers_and_each_vector_tile_synchronous",
             }
         )

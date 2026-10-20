@@ -24,14 +24,19 @@ def emit_gated_projection_packing(
     issuer_symbol,
     tile_mnk,
     workspace_symbol="mx_catalog_workspace",
+    activation_arithmetic="reciprocal",
 ):
     """Retain both original matrix schedules and the hybrid sigmoid arithmetic.
 
     All intermediates are private. Original matrix issuers complete before
     vector work. Each row evaluates (gate * (1 / (1 + exp(-gate)))) * up,
     with BF16 EXP and FP32 arithmetic, then canonical BF16-input FP8 packing.
+    Explicit divide arithmetic evaluates (gate / (1 + exp(-gate))) * up
+    instead; this changes rounding and requires separate numerical acceptance.
     The caller proves static shapes, constant weights and complete use closure.
     """
+    if activation_arithmetic not in {"reciprocal", "divide"}:
+        raise ValueError("unknown gated activation arithmetic")
     if (
         len(shape) != 3
         or any(type(d) is not int or d <= 0 for d in shape)
@@ -93,6 +98,11 @@ def emit_gated_projection_packing(
         + _issue(profile, elements=n, operation="exp", symbol=symbol + "_exp")
         + emit_fp8_row_packer(rows=m, width=n, symbol=symbol + "_pack")
     )
+    arithmetic = (
+        "float sigmoid=1.0f/(1.0f+e.f);\n      values[col]=(g.f*sigmoid)*u.f;"
+        if activation_arithmetic == "reciprocal"
+        else "values[col]=(g.f/(1.0f+e.f))*u.f;"
+    )
     source += f"""
 extern unsigned char {workspace_symbol}[];
 void {issuer_symbol}(const void *,const void *,const void *,const void *,const void *,const void *);
@@ -118,8 +128,7 @@ void {symbol}(const uint8_t *input,const uint8_t *gate_codes,const uint8_t *gate
     for (uint32_t col=0;col<{n}u;++col) {{
       union {{uint32_t u;float f;}} g={{.u=(uint32_t)gate[row*{n}u+col]<<16}},
         u={{.u=(uint32_t)up[row*{n}u+col]<<16}},e={{.u=(uint32_t)exponential[col]<<16}};
-      float sigmoid=1.0f/(1.0f+e.f);
-      values[col]=(g.f*sigmoid)*u.f;
+      {arithmetic}
     }}
     if ({symbol}_pack(values,row,1,output,output+{m * n}u)) __builtin_trap();
   }}

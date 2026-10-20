@@ -109,11 +109,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          fuse_softmax_packing: bool = False,
                          vpu_sigmoid_implementation: str = "bf16",
                          fuse_gated_projections: bool = False,
+                         gated_activation_arithmetic: str = "reciprocal",
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if gated_activation_arithmetic not in {"reciprocal", "divide"} or (
+            gated_activation_arithmetic != "reciprocal" and not fuse_gated_projections):
+        raise ValueError("gated divide arithmetic requires explicit gated projection packing")
     if (type(fuse_f32_rms_packing) is not bool or
             fuse_f32_rms_packing and
             (not share_activation_packing or not integer_group_packing or fuse_rms_packing)):
@@ -640,6 +644,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             max_workspace,
             compile_source,
             prepared_entries,
+            activation_arithmetic=gated_activation_arithmetic,
         )
     if group_projections:
         from .merlin_projection_group import register_projection_groups
@@ -796,6 +801,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "integer_group_packing": integer_group_packing,
         "vpu_softmax_implementation": vpu_softmax_implementation,
         "fuse_gated_projections": fuse_gated_projections,
+        "gated_activation_arithmetic": gated_activation_arithmetic,
         "gated_projection_packing": gated_projection_packing,
         "vpu_sigmoid_implementation": vpu_sigmoid_implementation,
         "fuse_softmax_packing": fuse_softmax_packing,
@@ -904,6 +910,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 fuse_softmax_packing: bool = False,
                                 vpu_sigmoid_implementation: str = "bf16",
                                 fuse_gated_projections: bool = False,
+                                gated_activation_arithmetic: str = "reciprocal",
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -956,6 +963,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     fuse_softmax_packing=fuse_softmax_packing,
                                     vpu_sigmoid_implementation=vpu_sigmoid_implementation,
                                     fuse_gated_projections=fuse_gated_projections,
+                                    gated_activation_arithmetic=gated_activation_arithmetic,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

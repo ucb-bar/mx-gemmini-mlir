@@ -392,3 +392,11 @@ row width divisible by 32. This follows the Rocket port's softmax reduction
 and normalization order. The existing `f32_reduce` choice uses sequential
 summation and FP32 division for each output. These are explicit arithmetic
 alternatives; the same complete-model quality gates apply to either one.
+
+With `--fuse-gated-projections`, the default gated activation evaluates
+`(gate * (1 / (1 + exp(-gate)))) * up` in FP32 around BF16 EXP. The explicit
+`--gated-activation-arithmetic divide` alternative evaluates
+`(gate / (1 + exp(-gate))) * up`, following the Rocket port's SiLU order.
+It removes one FP32 multiply per element but changes floating-point rounding.
+The catalog and build receipt record this choice. It does not inherit the
+default fusion's bit-preservation claim; validate complete logits separately.

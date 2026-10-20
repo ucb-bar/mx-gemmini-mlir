@@ -222,6 +222,8 @@ def main() -> None:
         action="store_true",
         help="consume private gate/up BF16 matrix outputs through hybrid sigmoid into FP8 packing",
     )
+    parser.add_argument("--gated-activation-arithmetic", choices=("reciprocal", "divide"), default="reciprocal",
+                        help="explicit gated FP32 arithmetic: reciprocal/multiply or gate/divide")
     parser.add_argument("--vpu-sigmoid-implementation", choices=("bf16", "f32_reciprocal"),
                         default="bf16", help="policy-selected sigmoid arithmetic: all BF16 or BF16 EXP with FP32 reciprocal")
     parser.add_argument("--fuse-softmax-packing", action="store_true",
@@ -259,6 +261,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.gated_activation_arithmetic != "reciprocal" and not args.fuse_gated_projections:
+        parser.error("gated divide arithmetic requires --fuse-gated-projections")
     if args.fuse_f32_rms_packing and (
             not args.share_activation_packing or not args.integer_quant_groups or args.fuse_rms_packing):
         parser.error("FP32 RMS fusion requires shared integer-group packing without BF16 RMS fusion")
@@ -524,6 +528,7 @@ def main() -> None:
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
             fuse_gated_projections=args.fuse_gated_projections,
+            gated_activation_arithmetic=args.gated_activation_arithmetic,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -976,6 +981,7 @@ def main() -> None:
         "vpu_softmax_implementation": args.vpu_softmax_implementation,
         "vpu_sigmoid_implementation": args.vpu_sigmoid_implementation,
         "fuse_gated_projections": args.fuse_gated_projections,
+        "gated_activation_arithmetic": args.gated_activation_arithmetic,
         "gated_projection_rewrite": gated_projection_rewrite,
         "fuse_softmax_packing": args.fuse_softmax_packing,
         "softmax_packing_rewrite": softmax_packing_rewrite,
