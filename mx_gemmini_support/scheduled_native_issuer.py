@@ -121,7 +121,8 @@ def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: s
 def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int], *,
                                  precision: str, symbol: str = "mx_issue_encoded",
                                  tile_mnk: tuple[int, int, int] | None = None,
-                                 tile_policy: str = "legacy") -> NativeSchedule:
+                                 tile_policy: str = "legacy",
+                                 defer_completion: bool = False) -> NativeSchedule:
     """Lower one padded dense shape to checked native DRAM-loop commands."""
     from merlin.sched.check.static import check_kernel
     from merlin.sched.codegen import emit_c_function
@@ -132,6 +133,8 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
 
     if not symbol.isidentifier():
         raise ValueError("MX native issuer needs a C identifier")
+    if type(defer_completion) is not bool:
+        raise ValueError("native completion selection must be explicit")
     m, n, k = shape_mnk
     if tile_policy not in {"legacy", "movement"} or (tile_policy != "legacy" and tile_mnk is not None):
         raise ValueError("native tile policy must be legacy or movement, without an override conflict")
@@ -216,7 +219,7 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
             "native_loop": InstrDef(
                 "native_loop", tuple(Operand(a, b) for a, b in zip(names, kinds)),
                 render_loop, check=check_loop, footprint=footprints),
-        }, {"i8": "uint8_t", "i16": "uint16_t"}, "MX_FENCE();",
+        }, {"i8": "uint8_t", "i16": "uint16_t"}, "" if defer_completion else "MX_FENCE();",
         facts={"profile_sha256": profile_sha256(profile), "precision": precision,
                "tm": tm, "nc": nc, "kt": kt},
         provenance={"recipe": "nicolas mx_native.h native DRAM loops"},
@@ -240,7 +243,8 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
         for name, size in lengths.items()),
         (call("configure"), *body),
         attrs=(("precision", precision), ("tm", str(tm)),
-               ("nc", str(nc)), ("kt", str(kt))))
+               ("nc", str(nc)), ("kt", str(kt))) +
+              ((("completion", "caller_fence_before_readout"),) if defer_completion else ()))
     errors = check_kernel(kernel, iset, max_instances=2_000_000)
     if errors:
         raise ValueError("MX native schedule fails static check: " + "; ".join(errors[:5]))
@@ -275,6 +279,8 @@ extern void mx_trace_fence(void);
     plan = {"execution_transport": "native_dram_loop", "m_tile": tm,
             "n_chunk": nc, "k_tile": kt,
             "output_layout": "row_major_bf16", "schedule_ir": "merlin.mk"}
+    if defer_completion:
+        plan["completion"] = "caller_fence_before_readout"
     if selection is not None:
         plan["tile_selection"] = selection
     issuer = PlannedRuntimeIssuer(preamble + inner + wrapper, shape_mnk,

@@ -222,6 +222,26 @@ its removed calls. The catalog retains the compiled endpoint and source
 hashes. Check complete model outputs after compilation; a local packed-byte
 test does not establish a complete-model performance improvement.
 
+### Complete independent projections together
+
+`--group-projections` groups two through eight immutable FP8 projections of
+the same packed SSA input. Each projection retains its original weights,
+matrix tiles and BF16 output. The generated endpoint writes disjoint BF16
+destinations, completes the group once, then widens each output to FP32.
+It does not concatenate checkpoint weights or reduce activation load traffic.
+
+This option requires shared activation packing without retained unused RHS
+arguments. The pass checks readonly input and private destination contracts,
+matching tile partitions, an even native-loop count for each projection,
+and the absence of intervening effects. The combined readouts must fit the
+existing serial workspace reservation. Unsupported groups retain their
+original calls. `mx_projection_groups_rewrite.json` records the groups that
+were actually rewritten.
+
+Measure this option separately: fewer completion boundaries can have little
+effect when matrix transfers dominate. Grouped operation profiling is not
+yet supported; use uninstrumented full-model timing and check every output.
+
 For a stage build, pass the new policy explicitly:
 
 ```sh

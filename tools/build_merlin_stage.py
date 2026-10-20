@@ -217,6 +217,8 @@ def main() -> None:
     parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
+    parser.add_argument("--group-projections", action="store_true",
+                        help="complete independent immutable projections of one packed input together")
     parser.add_argument("--fuse-rms-packing", action="store_true",
                         help="stream qualified private BF16 VPU RMS sequences into FP8 packing")
     parser.add_argument("--reuse-batch-rhs", action="store_true",
@@ -244,6 +246,10 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.group_projections and (not args.share_activation_packing or args.retain_shared_activation_rhs):
+        parser.error("--group-projections requires shared packing without retained RHS descriptors")
+    if args.group_projections and args.op_profile:
+        parser.error("grouped projections currently require uninstrumented timing")
     if args.fuse_rms_packing and not args.vpu_matrix_transport:
         parser.error("--fuse-rms-packing requires --vpu-matrix-transport")
     if args.compact_batch_rhs and not args.reuse_batch_rhs:
@@ -472,6 +478,7 @@ def main() -> None:
             compact_batch_rhs=args.compact_batch_rhs,
             vpu_softmax_implementation=args.vpu_softmax_implementation,
             fuse_rms_packing=args.fuse_rms_packing,
+            group_projections=args.group_projections,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -489,6 +496,7 @@ def main() -> None:
             matrix_vpu_transport=args.matrix_vpu_transport,
             vpu_matrix_transport=args.vpu_matrix_transport,
             fuse_rms_packing=args.fuse_rms_packing,
+            group_projections=args.group_projections,
             batch_rhs_catalog=(work / "device_catalog/mx_catalog.json" if args.reuse_batch_rhs else None),
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
@@ -563,6 +571,19 @@ def main() -> None:
                                   == "mxfp8" else "f4E2M1FN")
                 if binding["target_dtypes"][:2] != [expected_dtype, expected_dtype]:
                     raise RuntimeError("MX linked catalog differs from execution policy")
+    projection_rewrite = None
+    if args.group_projections:
+        group_path = work / "device_host_abi/mx_projection_groups_rewrite.json"
+        projection_rewrite = json.loads(group_path.read_text())
+        endpoints = {row["symbol"]: row for row in catalog["projection_groups"]}
+        if (projection_rewrite["catalog_sha256"] != _sha(catalog_path)
+                or projection_rewrite["sidecar_sha256"] != _sha(work / "device_signatures.json")
+                or projection_rewrite["output_sha256"] != _sha(group_path.with_name("mx_projection_groups.mlir"))
+                or any(row["symbol"] not in endpoints
+                       or any(row[key] != endpoints[row["symbol"]][key]
+                              for key in ("consumer_symbols", "kernel_symbols", "source_regions"))
+                       for row in projection_rewrite["groups"])):
+            raise RuntimeError("projection grouping differs from its compiled endpoints")
     rms_rewrite = None
     if args.fuse_rms_packing:
         rms_path = work / "device_host_abi/mx_rms_packing_rewrite.json"
@@ -803,6 +824,8 @@ def main() -> None:
         "virtual_zero_padding": args.virtual_zero_padding,
         "integer_quant_groups": args.integer_quant_groups,
         "vpu_softmax_implementation": args.vpu_softmax_implementation,
+        "group_projections": args.group_projections,
+        "projection_group_rewrite": projection_rewrite,
         "fuse_rms_packing": args.fuse_rms_packing,
         "rms_packing_rewrite": rms_rewrite,
         "native_tile_policy": args.native_tile_policy,

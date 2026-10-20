@@ -251,6 +251,7 @@ class MXVPUPostOffload:
                  matrix_vpu_transport: bool = False,
                  vpu_matrix_transport: bool = False,
                  fuse_rms_packing: bool = False,
+                 group_projections: bool = False,
                  batch_rhs_catalog: Path | None = None):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
@@ -316,6 +317,13 @@ class MXVPUPostOffload:
             from .merlin_vpu_matrix_transport import MXVPUMatrixTransportPostOffload
 
             self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
+        self.projection_groups = None
+        if group_projections:
+            if fixed_weight_catalog is None or not share_activation_packing:
+                raise ValueError("projection grouping requires a shared packed-input catalog")
+            from .merlin_projection_group import MXProjectionGroupPostOffload
+
+            self.projection_groups = MXProjectionGroupPostOffload(fixed_weight_catalog)
         self.batch_rhs_reuse = None
         self.rms_packing = None
         if fuse_rms_packing:
@@ -362,4 +370,6 @@ class MXVPUPostOffload:
             selected = self.rms_packing(selected, sidecar, workdir)
         if self.batch_rhs_reuse is not None:
             selected = self.batch_rhs_reuse(selected, sidecar, workdir)
+        if self.projection_groups is not None:
+            selected = self.projection_groups(selected, sidecar, workdir)
         return selected
