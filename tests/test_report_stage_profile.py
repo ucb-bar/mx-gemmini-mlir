@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -81,3 +82,22 @@ def test_prepared_and_private_transport_calls_keep_original_matrix_attribution(t
     (tmp_path / "device_catalog/mx_catalog.json").write_text(json.dumps(catalog))
     with pytest.raises(ValueError, match="inconsistent"):
         _source_regions(tmp_path, [])
+
+
+def test_compact_repeated_matrix_calls_keep_receipt_bound_attribution(tmp_path):
+    for directory in ("device", "device_catalog", "device_host_abi"):
+        (tmp_path / directory).mkdir()
+    (tmp_path / "device/catalog_binding.json").write_text(json.dumps({
+        "entry_to_kernel": {"original": "matrix"}}))
+    catalog = tmp_path / "device_catalog/mx_catalog.json"
+    catalog.write_text(json.dumps({"bindings": [
+        {"symbol": "matrix", "region": "matmul_4", "source_operation_ordinal": 10}]}))
+    receipt = {"catalog_sha256": hashlib.sha256(catalog.read_bytes()).hexdigest(),
+               "consumers": [{"symbol": "original", "alternative": "compact"}]}
+    path = tmp_path / "device_host_abi/mx_batch_rhs_reuse_rewrite.json"
+    path.write_text(json.dumps(receipt))
+    assert _source_regions(tmp_path, [{"id": 2, "callee": "@compact"}]) == {2: "matmul_4"}
+    receipt["catalog_sha256"] = "0" * 64
+    path.write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match="differ from the catalog"):
+        _source_regions(tmp_path, [{"id": 2, "callee": "@compact"}])

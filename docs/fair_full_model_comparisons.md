@@ -4,9 +4,11 @@ The completed results measure three workloads on the pinned Rocket-Spike
 `e4m3_vpu` timing model with host tracking disabled. Only the 160-token
 TinyLlama forward has an independent full-program performance baseline.
 Cached TinyLlama and complete SmolVLA compare two compiler builds. There is
-no independently stitched full-model Radiance baseline in these results.
-The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) uses the
-full Llama application added upstream; it is being measured separately.
+no accepted equal-quality Radiance speedup in the table below.
+The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) completes
+the same full forward in 7,082,331,012 cycles. The compiler takes 45.81% more
+cycles and fails the full-160 mean-KL gate, so that result is reported
+separately with its [complete observations and profiles](evidence/radiance_rocket_forward_20261019/README.md).
 
 ## Complete models
 

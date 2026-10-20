@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
 import hashlib
 import json
-from pathlib import Path
 import re
+from collections import defaultdict
+from pathlib import Path
 
 
 def parse_gemmini_perf(text: str) -> dict:
@@ -51,6 +51,18 @@ def _source_regions(build: Path, table: list[dict]) -> dict[int, str]:
                 alias = endpoint[key]
                 if entry_to_kernel.setdefault(alias, kernel["symbol"]) != kernel["symbol"]:
                     raise ValueError("profiled matrix transport alias has inconsistent source bindings")
+    repeated_path = build / "device_host_abi/mx_batch_rhs_reuse_rewrite.json"
+    if repeated_path.exists():
+        repeated = json.loads(repeated_path.read_text())
+        if repeated["catalog_sha256"] != hashlib.sha256(catalog_path.read_bytes()).hexdigest():
+            raise ValueError("profiled repeated-input aliases differ from the catalog")
+        for consumer in repeated["consumers"]:
+            original, alias = consumer["symbol"], consumer["alternative"]
+            if original not in entry_to_kernel:
+                raise ValueError("profiled repeated-input source entry is unknown")
+            kernel = entry_to_kernel[original]
+            if entry_to_kernel.setdefault(alias, kernel) != kernel:
+                raise ValueError("profiled repeated-input alias has inconsistent source bindings")
     calls: dict[str, list[dict]] = defaultdict(list)
     sources: dict[str, list[dict]] = defaultdict(list)
     for record in table:

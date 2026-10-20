@@ -73,6 +73,18 @@ signed zero, small values, and rounding boundaries.
 
 ## Completed checks
 
+The complete 22-layer, 160-token TinyLlama forward completes in
+**7,082,331,012 modeled cycles**. The published compiler control takes
+10,326,818,367 cycles, or 45.81% more. This is a raw timing comparison:
+the compiler passes the late-33 numerical gate but fails the new all-160
+mean-KL gate. Its mean KL is 0.0821650 versus 0.0774637 for the port, a
+6.07% increase against the allowed 5%. The compiler has better worst-row KL
+and top-token agreement. No equal-quality speedup is qualified.
+
+The [full-forward archive](evidence/radiance_rocket_forward_20261019/README.md)
+retains every output, the floating reference, and both diagnostic profiles.
+Profiling preserves all compiler words and all retained port tensors.
+
 Both 64- and 128-token, two-layer source smoke programs complete on the
 pinned Rocket-Spike extension. These use random weights and hidden width 256.
 All arena guards remain intact. Every byte
