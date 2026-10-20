@@ -1,4 +1,4 @@
-"""Select Merlin's explicit Torch 2.10 FP32 CPU softmax arithmetic."""
+"""Bind explicit Merlin FP32 host softmax arithmetic to captured source regions."""
 
 from __future__ import annotations
 
@@ -14,9 +14,12 @@ class MXHostSoftmaxPostOffload:
     """Replace closed host softmax regions under an explicit finite-input policy."""
 
     def __init__(self, profile: dict, *, policy: str, enabled_regions: frozenset[str]):
-        from merlin.llvmlower.cpu_softmax import CPU_SOFTMAX_F32_AVX2_POLICY
+        from merlin.llvmlower.cpu_softmax import (
+            CPU_SOFTMAX_F32_AVX2_POLICY,
+            LIBM_SOFTMAX_F32_FINITE_POLICY,
+        )
 
-        if policy != CPU_SOFTMAX_F32_AVX2_POLICY:
+        if policy not in {CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY}:
             raise ValueError("unsupported host softmax arithmetic policy")
         self.profile = profile
         self.policy = policy
@@ -24,9 +27,13 @@ class MXHostSoftmaxPostOffload:
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.llvmlower.cpu_softmax import build_cpu_softmax_lastdim
+        from merlin.llvmlower.cpu_softmax import (
+            LIBM_SOFTMAX_F32_FINITE_POLICY,
+            build_cpu_softmax_lastdim,
+            build_cpu_softmax_maximum,
+        )
         from merlin.xdsl_dialects._common import text
-        from xdsl.dialects import arith, func
+        from xdsl.dialects import func
         from xdsl.ir.affine import AffineExpr, AffineMap
 
         source = Path(prepared).read_text()
@@ -156,21 +163,26 @@ class MXHostSoftmaxPostOffload:
                 for use in value.uses
             ):
                 raise ValueError("host softmax has an escaping intermediate")
+            if self.policy == LIBM_SOFTMAX_F32_FINITE_POLICY:
+                body = maximum.regions[0].block
+                original_maximum = body.first_op
+                finite_maximum = build_cpu_softmax_maximum(
+                    *original_maximum.operands,
+                    maximum_policy="finite",
+                    assume_finite_inputs=True,
+                )
+                body.insert_op_before(finite_maximum, original_maximum)
+                original_maximum.result.replace_all_uses_with(finite_maximum.result)
+                original_maximum.detach()
+                original_maximum.erase()
+                records.append({"region": region, "shape": list(row["shape"])})
+                continue
             new_ops, replacement = build_cpu_softmax_lastdim(
-                score, backend_policy=self.policy, assume_finite_inputs=True
+                score,
+                backend_policy=self.policy,
+                assume_finite_inputs=True,
+                maximum_policy="finite",
             )
-            # The selected contract excludes NaNs. Maxnum therefore has the
-            # same result here, including the -infinity reduction initializer,
-            # and permits a direct scalar maximum instruction on Rocket.
-            maximum_body = new_ops[1].body.block
-            original_maximum = maximum_body.first_op
-            if not isinstance(original_maximum, arith.MaximumfOp):
-                raise TypeError("Merlin CPU softmax maximum decomposition changed")
-            finite_maximum = arith.MaxnumfOp(*original_maximum.operands)
-            maximum_body.insert_op_before(finite_maximum, original_maximum)
-            original_maximum.result.replace_all_uses_with(finite_maximum.result)
-            original_maximum.detach()
-            original_maximum.erase()
             block.insert_ops_before(new_ops, members[0])
             result.results[0].replace_all_uses_with(replacement)
             for op in reversed(members):

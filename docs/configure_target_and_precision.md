@@ -226,9 +226,16 @@ This is a different numerical choice from scalar libm plus sequential
 reduction and from BF16 VPU EXP. It changes rounding and needs the same
 complete-output checks. It does not depend on a destination AVX2 instruction
 set: the scalar arithmetic lowers to the selected target. Merlin revision
-`bb7c352a9e9c8ad085d24091fc83e4e7f5ff92ca` provides this policy and retains the
+`94f747964881fddecb2808992c06f13cad451c2b` provides this policy, finite-maximum
+selection and bit-preserving serialization of dense floating constants. It retains the
 SLEEF implementation's license notice. No full-model result is established
 for this option by the kernel arithmetic tests.
+
+`--host-softmax-policy libm_f32_ordered_finite` retains the captured libm
+exponential, sequential FP32 sum and final division. It specializes only the
+maximum under the same finite-input contract. This option provides a separate
+way to test the maximum optimization while retaining the original host
+softmax arithmetic. Its rewrite receipt lists every selected region.
 
 ### Select sigmoid arithmetic
 

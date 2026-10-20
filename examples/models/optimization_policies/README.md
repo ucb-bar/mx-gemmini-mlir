@@ -174,3 +174,9 @@ it changes numerical arithmetic and requires a fresh complete-output check.
 The original host-softmax runs above retain scalar libm arithmetic. See the
 [arithmetic contract](../../../docs/configure_target_and_precision.md#select-softmax-arithmetic)
 before selecting this option.
+
+To retain the original libm exponential, sequential sum and division while
+specializing the maximum, select `--host-softmax-policy libm_f32_ordered_finite`.
+Both host options require Merlin `94f747964881fddecb2808992c06f13cad451c2b`.
+This includes the entry-IR serialization fix needed to preserve dense
+floating constants through weight projection.

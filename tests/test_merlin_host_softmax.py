@@ -24,7 +24,7 @@ def merlin_available():
     pytest.importorskip("merlin.llvmlower.cpu_softmax")
 
 
-def rewrite(tmp_path, source, regions=None):
+def rewrite(tmp_path, source, regions=None, policy=POLICY):
     pytest.importorskip("merlin.frontends.linalg_mlir")
     prepared = tmp_path / "source.mlir"
     prepared.write_text(source)
@@ -34,7 +34,7 @@ def rewrite(tmp_path, source, regions=None):
         regions = frozenset(
             row["region"] for row in selected_softmax_sites(source, PROFILE)
         )
-    return MXHostSoftmaxPostOffload(PROFILE, policy=POLICY, enabled_regions=regions)(
+    return MXHostSoftmaxPostOffload(PROFILE, policy=policy, enabled_regions=regions)(
         prepared, sidecar, tmp_path / "rewrite"
     )
 
@@ -74,6 +74,16 @@ def test_unselected_regions_are_preserved(tmp_path, source):
     regions = frozenset([selected_softmax_sites(source, PROFILE)[0]["region"]])
     output = rewrite(tmp_path, source, regions)
     assert len(selected_softmax_sites(output.read_text(), PROFILE)) == 1
+
+
+def test_libm_policy_preserves_every_other_source_operation(tmp_path, source):
+    from merlin.frontends.linalg_mlir import parse_mlir_text
+    from merlin.xdsl_dialects._common import text
+
+    original = text(parse_mlir_text(source))
+    assert original.count("arith.maximumf") == 2
+    output = rewrite(tmp_path, source, policy="libm_f32_ordered_finite")
+    assert output.read_text() == original.replace("arith.maximumf", "arith.maxnumf")
 
 
 @pytest.mark.parametrize(

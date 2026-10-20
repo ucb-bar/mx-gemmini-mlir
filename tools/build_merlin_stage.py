@@ -217,9 +217,10 @@ def main() -> None:
     parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce", "f32_striped16"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
-    parser.add_argument("--host-softmax-policy", choices=("torch_2_10_cpu_softmax_f32_avx2",),
-                        help="explicit finite-input FP32 host softmax arithmetic: SLEEF EXP, "
-                             "eight-lane sums and reciprocal multiplication; changes rounding")
+    parser.add_argument("--host-softmax-policy",
+                        choices=("torch_2_10_cpu_softmax_f32_avx2", "libm_f32_ordered_finite"),
+                        help="explicit finite-input FP32 host softmax: retain libm/ordered "
+                             "normalization, or select Torch SLEEF/eight-lane arithmetic")
     parser.add_argument(
         "--fuse-gated-projections",
         action="store_true",
