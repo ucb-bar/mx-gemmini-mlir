@@ -19,6 +19,11 @@ PROFILE = load_profile(
 POLICY = "torch_2_10_cpu_softmax_f32_avx2"
 
 
+@pytest.fixture(autouse=True)
+def merlin_available():
+    pytest.importorskip("merlin.llvmlower.cpu_softmax")
+
+
 def rewrite(tmp_path, source, regions=None):
     pytest.importorskip("merlin.frontends.linalg_mlir")
     prepared = tmp_path / "source.mlir"
@@ -56,10 +61,12 @@ def test_source_policy_replaces_complete_regions(tmp_path, source):
         for op in module.walk()
     )
     assert any(op.name == "math.fma" for op in module.walk())
+    assert sum(op.name == "arith.maxnumf" for op in module.walk()) == 2
     assert sum(op.name == "math.exp" for op in module.walk()) == original_exp - 2
     record = json.loads((output.parent / "mx_host_softmax_rewrite.json").read_text())
     assert record["numeric_policy"] == POLICY
     assert record["finite_input_contract"]
+    assert record["finite_maximum_specialization"]
     assert len(record["regions"]) == 2
 
 

@@ -214,7 +214,9 @@ they are different arithmetic implementations.
 `--host-softmax-policy torch_2_10_cpu_softmax_f32_avx2` selects Merlin's
 explicit PyTorch 2.10 FP32 CPU arithmetic for sites assigned to `host`. It
 uses an FMA polynomial exponential, eight-lane ordered sums and reciprocal
-multiplication. Inputs must be finite; IEEE status flags and `errno` are
+multiplication. The finite-input contract also permits a direct maximum
+instruction in place of NaN-propagating maximum logic, with identical results
+within that contract. Inputs must be finite; IEEE status flags and `errno` are
 outside this unconstrained arithmetic policy. The captured causal mask uses
 finite negative scores and is compatible with that contract. The rewrite
 requires a closed, recognized last-axis FP32 softmax decomposition and

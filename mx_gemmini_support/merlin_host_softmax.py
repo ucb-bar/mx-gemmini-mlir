@@ -26,7 +26,7 @@ class MXHostSoftmaxPostOffload:
         from merlin.frontends.linalg_mlir import parse_mlir_file
         from merlin.llvmlower.cpu_softmax import build_cpu_softmax_lastdim
         from merlin.xdsl_dialects._common import text
-        from xdsl.dialects import func
+        from xdsl.dialects import arith, func
         from xdsl.ir.affine import AffineExpr, AffineMap
 
         source = Path(prepared).read_text()
@@ -159,6 +159,18 @@ class MXHostSoftmaxPostOffload:
             new_ops, replacement = build_cpu_softmax_lastdim(
                 score, backend_policy=self.policy, assume_finite_inputs=True
             )
+            # The selected contract excludes NaNs. Maxnum therefore has the
+            # same result here, including the -infinity reduction initializer,
+            # and permits a direct scalar maximum instruction on Rocket.
+            maximum_body = new_ops[1].body.block
+            original_maximum = maximum_body.first_op
+            if not isinstance(original_maximum, arith.MaximumfOp):
+                raise TypeError("Merlin CPU softmax maximum decomposition changed")
+            finite_maximum = arith.MaxnumfOp(*original_maximum.operands)
+            maximum_body.insert_op_before(finite_maximum, original_maximum)
+            original_maximum.result.replace_all_uses_with(finite_maximum.result)
+            original_maximum.detach()
+            original_maximum.erase()
             block.insert_ops_before(new_ops, members[0])
             result.results[0].replace_all_uses_with(replacement)
             for op in reversed(members):
@@ -178,6 +190,7 @@ class MXHostSoftmaxPostOffload:
             "profile_sha256": profile_sha256(self.profile),
             "numeric_policy": self.policy,
             "finite_input_contract": True,
+            "finite_maximum_specialization": True,
             "regions": records,
         }
         output.with_name("mx_host_softmax_rewrite.json").write_text(

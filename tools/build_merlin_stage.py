@@ -861,6 +861,7 @@ def main() -> None:
         if (host_softmax_rewrite is None
                 or host_softmax_rewrite["numeric_policy"] != args.host_softmax_policy
                 or not host_softmax_rewrite["finite_input_contract"]
+                or not host_softmax_rewrite["finite_maximum_specialization"]
                 or {row["region"]: row["shape"] for row in host_softmax_rewrite["regions"]}
                 != expected_host_softmax
                 or len(host_softmax_rewrite["regions"]) != len(expected_host_softmax)):
