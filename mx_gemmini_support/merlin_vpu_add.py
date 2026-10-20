@@ -255,6 +255,7 @@ class MXVPUPostOffload:
                  group_projections: bool = False,
                  fuse_softmax_packing: bool = False,
                  fuse_gated_projections: bool = False,
+                 host_softmax_policy: str | None = None,
                  batch_rhs_catalog: Path | None = None):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
@@ -262,6 +263,13 @@ class MXVPUPostOffload:
         from .merlin_vpu_unary import MXVPUUnaryPostOffload
 
         self.enabled_site_regions = enabled_site_regions or {}
+        self.host_softmax_policy = host_softmax_policy
+        self.profile = profile
+        if host_softmax_policy is not None:
+            from merlin.llvmlower.cpu_softmax import CPU_SOFTMAX_F32_AVX2_POLICY
+
+            if host_softmax_policy != CPU_SOFTMAX_F32_AVX2_POLICY or not enabled_site_regions:
+                raise ValueError("host softmax arithmetic requires an explicit site policy")
         self.softmax = MXVPUSoftmaxPostOffload(
             profile, enabled_regions=self.enabled_site_regions.get("softmax"))
         self.add = MXVPUAddPostOffload(
@@ -386,6 +394,17 @@ class MXVPUPostOffload:
             if (name in self.enabled_classes and self.enabled_site_regions.get(name) != frozenset()
                     and getattr(self, name).enabled_regions != frozenset()):
                 selected = getattr(self, name)(selected, sidecar, workdir)
+        if self.host_softmax_policy is not None:
+            from .merlin_host_softmax import MXHostSoftmaxPostOffload
+            from .merlin_vpu_softmax import selected_softmax_sites
+
+            host_regions = frozenset(row["region"] for row in
+                                     selected_softmax_sites(selected.read_text(), self.profile))
+            if not host_regions:
+                raise ValueError("host softmax arithmetic policy has no host softmax sites")
+            selected = MXHostSoftmaxPostOffload(
+                self.profile, policy=self.host_softmax_policy,
+                enabled_regions=host_regions)(selected, sidecar, workdir)
         if self.fixed_weight is not None:
             selected = self.fixed_weight(selected, sidecar, workdir)
         if self.shared_activation is not None:

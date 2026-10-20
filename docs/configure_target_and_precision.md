@@ -211,6 +211,23 @@ their original host softmax. The catalog records the chosen implementation
 and rounding policy. Both choices need a full-output numerical comparison;
 they are different arithmetic implementations.
 
+`--host-softmax-policy torch_2_10_cpu_softmax_f32_avx2` selects Merlin's
+explicit PyTorch 2.10 FP32 CPU arithmetic for sites assigned to `host`. It
+uses an FMA polynomial exponential, eight-lane ordered sums and reciprocal
+multiplication. Inputs must be finite; IEEE status flags and `errno` are
+outside this unconstrained arithmetic policy. The captured causal mask uses
+finite negative scores and is compatible with that contract. The rewrite
+requires a closed, recognized last-axis FP32 softmax decomposition and
+records every selected site in `mx_host_softmax_rewrite.json`.
+
+This is a different numerical choice from scalar libm plus sequential
+reduction and from BF16 VPU EXP. It changes rounding and needs the same
+complete-output checks. It does not depend on a destination AVX2 instruction
+set: the scalar arithmetic lowers to the selected target. Merlin revision
+`bb7c352a9e9c8ad085d24091fc83e4e7f5ff92ca` provides this policy and retains the
+SLEEF implementation's license notice. No full-model result is established
+for this option by the kernel arithmetic tests.
+
 ### Select sigmoid arithmetic
 
 `--vpu-sigmoid-implementation f32_reciprocal` retains BF16 VPU exponentials

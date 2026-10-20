@@ -165,3 +165,12 @@ complete aligned reduction such as K=160. It keeps the target profile and
 matrix formats unchanged, while allowing a different accumulation order.
 Use a fresh build and complete-output check for this option; the original
 `movement` results do not establish its numerical behavior or performance.
+
+To evaluate the explicit PyTorch 2.10 CPU arithmetic on either host-softmax
+policy, add `--host-softmax-policy torch_2_10_cpu_softmax_f32_avx2`. This
+selects all host softmax sites uniformly and requires finite input scores.
+It uses Merlin's FMA polynomial exponential and eight-lane reduction order;
+it changes numerical arithmetic and requires a fresh complete-output check.
+The original host-softmax runs above retain scalar libm arithmetic. See the
+[arithmetic contract](../../../docs/configure_target_and_precision.md#select-softmax-arithmetic)
+before selecting this option.

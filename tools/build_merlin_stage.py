@@ -217,6 +217,9 @@ def main() -> None:
     parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce", "f32_striped16"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
+    parser.add_argument("--host-softmax-policy", choices=("torch_2_10_cpu_softmax_f32_avx2",),
+                        help="explicit finite-input FP32 host softmax arithmetic: SLEEF EXP, "
+                             "eight-lane sums and reciprocal multiplication; changes rounding")
     parser.add_argument(
         "--fuse-gated-projections",
         action="store_true",
@@ -261,6 +264,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.host_softmax_policy is not None and args.execution_policy is None:
+        parser.error("host softmax arithmetic requires --execution-policy with host softmax sites")
     if args.gated_activation_arithmetic != "reciprocal" and not args.fuse_gated_projections:
         parser.error("gated divide arithmetic requires --fuse-gated-projections")
     if args.fuse_f32_rms_packing and (
@@ -455,6 +460,9 @@ def main() -> None:
 
     vpu_inventory = audit_softmax_boundaries(source_text, profile)
     vpu_selected = selected_softmax_sites(source_text, profile)
+    if args.host_softmax_policy is not None and not (
+            {row["region"] for row in vpu_selected} - enabled_site_regions["softmax"]):
+        parser.error("host softmax arithmetic policy has no host softmax sites")
     if vpu_inventory["direct_profile_matches_unlowered"]:
         raise RuntimeError("captured direct BF16 rank-two VPU softmax has no integrated lowering")
     expected_regions = _raw_selected_regions(
@@ -550,6 +558,7 @@ def main() -> None:
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
             fuse_gated_projections=args.fuse_gated_projections,
+            host_softmax_policy=args.host_softmax_policy,
             batch_rhs_catalog=(work / "device_catalog/mx_catalog.json" if args.reuse_batch_rhs else None),
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
@@ -843,6 +852,21 @@ def main() -> None:
                 raise RuntimeError(f"MX VPU {name} did not obey the execution policy")
             if set(catalog[f"vpu_{name}"]["source_regions"]) != expected:
                 raise RuntimeError(f"MX VPU {name} catalog differs from execution policy")
+    host_softmax_path = work / "device_host_abi/mx_host_softmax_rewrite.json"
+    host_softmax_rewrite = (json.loads(host_softmax_path.read_text())
+                            if host_softmax_path.is_file() else None)
+    if args.host_softmax_policy is not None:
+        expected_host_softmax = {row["region"]: list(row["shape"]) for row in vpu_selected
+                                 if row["region"] not in resolved_vpu_regions["softmax"]}
+        if (host_softmax_rewrite is None
+                or host_softmax_rewrite["numeric_policy"] != args.host_softmax_policy
+                or not host_softmax_rewrite["finite_input_contract"]
+                or {row["region"]: row["shape"] for row in host_softmax_rewrite["regions"]}
+                != expected_host_softmax
+                or len(host_softmax_rewrite["regions"]) != len(expected_host_softmax)):
+            raise RuntimeError("host softmax arithmetic rewrite differs from the execution policy")
+    elif host_softmax_rewrite is not None:
+        raise RuntimeError("host softmax arithmetic rewrite was not requested")
     residual_eligible = {}
     post_receipt = work / "device_host_abi/post_offload_transform.json"
     if post_receipt.is_file():
@@ -979,6 +1003,8 @@ def main() -> None:
         "virtual_zero_padding": args.virtual_zero_padding,
         "integer_quant_groups": args.integer_quant_groups,
         "vpu_softmax_implementation": args.vpu_softmax_implementation,
+        "host_softmax_policy": args.host_softmax_policy,
+        "host_softmax_rewrite": host_softmax_rewrite,
         "vpu_sigmoid_implementation": args.vpu_sigmoid_implementation,
         "fuse_gated_projections": args.fuse_gated_projections,
         "gated_activation_arithmetic": args.gated_activation_arithmetic,
