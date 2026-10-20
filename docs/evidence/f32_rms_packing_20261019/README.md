@@ -19,6 +19,13 @@ and the retained original scalar quantizer generate the expected bytes.
 The reader also checks every byte printed by the target and reopens the
 actual ELF's input, gamma and expected-output payloads.
 
+The [complete model execution](../radiance_rocket_optimization_20261019/README.md)
+measures **6,001,616,063 → 5,970,974,009 cycles**, a **0.51%** reduction for
+45 sequential FP32 RMS fusions, with every logit word preserved. The model's
+original LLVM lowering already removes much of the overhead retained by this
+materialized C control. The probe's 28% reduction does not predict the
+whole-model gain.
+
 These are normalization and packing probe results, not complete model
 timings. The sixteen-lane choice changes summation order relative to the
 sequential choice and requires separate model quality validation. An earlier

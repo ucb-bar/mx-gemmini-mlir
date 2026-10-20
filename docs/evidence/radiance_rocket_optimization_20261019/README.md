@@ -29,6 +29,11 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | BF16 residual state and FP32 sigmoid reciprocal | 6,394,946,919 | 0.0833883 | 130/160 | Fails full mean KL/top tokens and late worst KL |
 | Original pass order: requested gate/up fusion does not apply | 6,394,934,285 | 0.0833883 | 130/160 | Same numerical failures as its unfused control |
 | BF16 residual state and realized gate/up fusion | 6,017,860,547 | 0.0833883 | 130/160 | Same numerical failures as its unfused control |
+| BF16 residual state, gate/up fusion and softmax launch guard | 6,001,616,063 | 0.0833883 | 130/160 | Fails full mean KL, top tokens; late worst KL |
+| Launch guard and sequential FP32 RMS packing | 5,970,974,009 | 0.0833883 | 130/160 | Fails full mean KL, top tokens; late worst KL |
+| Sixteen-lane FP32 RMS packing | 5,968,133,789 | 0.0803546 | 130/160 | Fails full top tokens; late worst KL, top tokens |
+| Sixteen-lane RMS and softmax reductions | 5,995,071,328 | 0.0815260 | 135/160 | Fails full mean KL; late worst KL |
+| Sixteen-lane reductions and direct SiLU division | 5,975,235,678 | 0.0864567 | 131/160 | Fails full mean KL, top tokens; late mean KL, worst KL |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -66,8 +71,9 @@ configuration, despite a small standalone-probe improvement. Splitting work
 at each attention matrix changes EXP launch packing from 101 to 128 launches
 per layer, adding **594** launches across 22 layers. Complete logits remain
 identical. MX revision `8df46f8a` adds a shape-based cost guard that rejects
-this fusion when it increases launches; the retained measurement precedes
-that guard.
+this fusion when it increases launches. The complete guarded execution
+takes **6,001,616,063 cycles**, saving **16,244,484** against the BF16-residual
+gate/up-fused control while preserving every logit word.
 
 Using FP32 reciprocal arithmetic for sigmoid improves full mean KL to
 **0.07846997** and full top agreement to **130/160**. Late agreement remains
@@ -93,6 +99,20 @@ pass order realizes zero gate/up fusions and differs from its control by only
 against the unfused control, and preserves every complete logit word. The
 archive and lowered-call check retain this unapplied control separately from
 the actual fusion result.
+
+The sequential FP32 RMS-to-FP8 fusion realizes 45 sites, including the LM
+head. It takes **5,970,974,009 cycles**, saving **30,642,054 cycles (0.51%)**
+against the guarded execution, with every logit word unchanged. The separate
+[normalization probe](../f32_rms_packing_20261019/README.md) saves about 28%
+against a materialized C control using the production packer. That local
+control has different optimization opportunities from the original LLVM
+model lowering; its percentage is not a whole-model projection.
+
+The sixteen-lane RMS option, sixteen-lane softmax option and direct SiLU
+`gate / (1 + exp(-gate))` option explicitly change FP32 rounding order. All
+three complete executions remain faster than the port and fail some unchanged
+numerical limits, as shown above. Matching a source kernel's reduction order
+alone does not establish model-wide numerical equivalence.
 
 Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 **825,060,684 cycles** in the original placement and **806,923,938 cycles**
