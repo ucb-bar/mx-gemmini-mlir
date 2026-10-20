@@ -113,7 +113,8 @@ def _issue(profile: dict, *, elements: int, operation: str,
 
 
 def emit_vpu_unary(profile: dict, *, shape: tuple[int, ...], dtype: str,
-                   operation: str, symbol: str) -> UnaryKernel:
+                   operation: str, symbol: str,
+                   sigmoid_implementation: str = "bf16") -> UnaryKernel:
     """Emit BF16 unary operations with explicit f32 conversion."""
     if (profile.get("transport") != "rocket_rocc" or
             profile.get("geometry", {}).get("mesh_columns") != 16 or
@@ -124,6 +125,12 @@ def emit_vpu_unary(profile: dict, *, shape: tuple[int, ...], dtype: str,
             dtype not in {"bf16", "f32"} or operation not in {"rsqrt", "sigmoid", "tanh", "square", "neg", "gelu", "pow10000"} or
             not symbol.isidentifier() or not symbol.isascii()):
         raise ValueError("VPU unary needs a static tensor and supported operation")
+    if sigmoid_implementation not in {"bf16", "f32_reciprocal"}:
+        raise ValueError("unknown sigmoid arithmetic implementation")
+    if sigmoid_implementation == "f32_reciprocal":
+        if operation != "sigmoid" or dtype != "f32":
+            raise ValueError("hybrid sigmoid requires a selected FP32 sigmoid boundary")
+        return _emit_hybrid_sigmoid(profile,shape,symbol)
     elements = prod(shape)
     chunk = min(elements, 8192)
     tail = elements % chunk
@@ -174,3 +181,48 @@ void {symbol}(const {scalar} *input, {scalar} *output) {{
 }}
 '''
     return UnaryKernel(source, elements, chunk, operation)
+
+
+def _emit_hybrid_sigmoid(profile,shape,symbol):
+    """Use BF16 EXP with FP32 negation, addition and reciprocal.
+
+    This is an explicit numerical alternative. The endpoint retains the FP32
+    output of 1/(1+exp(-x)); neighboring operators keep their own selected policy.
+    """
+    elements=prod(shape)
+    if elements>0x7fffffff:
+        raise ValueError("hybrid sigmoid exceeds the selected runtime extent")
+    chunk=min(elements,8192)
+    sizes=tuple(dict.fromkeys((chunk,elements%chunk)))
+    issuers="\n".join(_issue(profile,elements=count,operation="exp",symbol=f"{symbol}_issue_{count}")
+                        for count in sizes if count)
+    dispatch="\n".join(f"      case {count}: {symbol}_issue_{count}(a,c); break;"
+                         for count in sizes if count)
+    source=f'''#include <stdint.h>
+{issuers}
+static uint16_t {symbol}_input[{(chunk+7)//8*8}] __attribute__((aligned(64)));
+static uint16_t {symbol}_exp[{(chunk+7)//8*8}] __attribute__((aligned(64)));
+void {symbol}(const float *input,float *output) {{
+  if (!input || !output) __builtin_trap();
+  for (uint32_t base=0; base<{elements}u; base+={chunk}u) {{
+    uint32_t count={elements}u-base;
+    if (count>{chunk}u) count={chunk}u;
+    for (uint32_t i=0; i<(count+7u)/8u*8u; ++i) {{
+      union {{float f;uint32_t u;}} word={{.f=i<count ? -input[base+i] : 0.0f}};
+      if ((word.u&0x7f800000u)==0x7f800000u && (word.u&0x007fffffu)) __builtin_trap();
+      word.u+=0x7fffu+((word.u>>16)&1u);
+      {symbol}_input[i]=word.u>>16;
+    }}
+    const void *a={symbol}_input,*c={symbol}_exp;
+    switch (count) {{
+{dispatch}
+      default: __builtin_trap();
+    }}
+    for (uint32_t i=0; i<count; ++i) {{
+      union {{float f;uint32_t u;}} word={{.u=(uint32_t){symbol}_exp[i]<<16}};
+      output[base+i]=1.0f/(1.0f+word.f);
+    }}
+  }}
+}}
+'''
+    return UnaryKernel(source,elements,chunk,"sigmoid")

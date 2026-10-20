@@ -105,11 +105,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          fuse_rms_packing: bool = False,
                          group_projections: bool = False,
                          fuse_softmax_packing: bool = False,
+                         vpu_sigmoid_implementation: str = "bf16",
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if (vpu_sigmoid_implementation not in {"bf16", "f32_reciprocal"}
+            or vpu_sigmoid_implementation != "bf16" and connect_sigmoid_multiplies):
+        raise ValueError("hybrid sigmoid cannot use the connected BF16 sigmoid implementation")
     if (type(fuse_softmax_packing) is not bool or fuse_softmax_packing and
             (vpu_softmax_implementation != "f32_reduce" or not compact_batch_rhs or not integer_group_packing)):
         raise ValueError("softmax packing requires hybrid arithmetic, compact RHS and integer groups")
@@ -553,7 +557,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     for site in unary_shapes.values():
         generated = emit_vpu_unary(
             profile, shape=site["shape"], dtype=site["dtype"],
-            operation=site["operation"], symbol=site["kernel_symbol"])
+            operation=site["operation"], symbol=site["kernel_symbol"],
+            sigmoid_implementation=(vpu_sigmoid_implementation if site["operation"] == "sigmoid" else "bf16"))
         compile_source(site["kernel_symbol"], generated.source)
         compile_source(site["symbol"], emit_memref_unary_shim(site))
         unary_kernels.append({
@@ -561,6 +566,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "operation": site["operation"], "dtype": site["dtype"],
             "shape": list(site["shape"]),
             "elements_per_chunk": generated.elements_per_chunk,
+            **({"implementation": vpu_sigmoid_implementation,
+                "numeric_policy": ("f32_negate_bf16_exp_f32_add_reciprocal" if
+                    vpu_sigmoid_implementation == "f32_reciprocal" else "bf16_each_vpu_step")}
+               if site["operation"] == "sigmoid" else {}),
         })
     reduce_sites = routed("reduce", selected_row_reduce_sites(prepared_text, profile))
     reduce_shapes = {site["symbol"]: site for site in reduce_sites}
@@ -745,6 +754,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
         "vpu_softmax_implementation": vpu_softmax_implementation,
+        "vpu_sigmoid_implementation": vpu_sigmoid_implementation,
         "fuse_softmax_packing": fuse_softmax_packing,
         "softmax_packing": softmax_packing,
         "group_projections": group_projections,
@@ -793,7 +803,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         },
         "vpu_unary": {
             "status": "source_bound_bf16_or_explicit_f32_conversion",
-            "numeric_policy": "f32_to_bf16_rne_vpu_unary_to_f32_or_direct_bf16",
+            "numeric_policy": ("selected_per_kernel_arithmetic" if vpu_sigmoid_implementation != "bf16" else
+                               "f32_to_bf16_rne_vpu_unary_to_f32_or_direct_bf16"),
             "source_regions": [site["region"] for site in unary_sites],
             "kernels": unary_kernels,
         },
@@ -841,6 +852,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 fuse_rms_packing: bool = False,
                                 group_projections: bool = False,
                                 fuse_softmax_packing: bool = False,
+                                vpu_sigmoid_implementation: str = "bf16",
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -889,6 +901,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     fuse_rms_packing=fuse_rms_packing,
                                     group_projections=group_projections,
                                     fuse_softmax_packing=fuse_softmax_packing,
+                                    vpu_sigmoid_implementation=vpu_sigmoid_implementation,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

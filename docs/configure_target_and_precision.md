@@ -202,6 +202,19 @@ their original host softmax. The catalog records the chosen implementation
 and rounding policy. Both choices need a full-output numerical comparison;
 they are different arithmetic implementations.
 
+### Select sigmoid arithmetic
+
+`--vpu-sigmoid-implementation f32_reciprocal` retains BF16 VPU exponentials
+and computes negation, addition and reciprocal in FP32. The default `bf16`
+rounds every VPU step to BF16. This option applies only to policy-selected
+FP32 sigmoid boundaries; surrounding multiplies retain their own placement
+and arithmetic. The catalog records the implementation and rounding policy.
+
+The FP32 alternative requires an explicit execution policy and cannot use
+`--connect-vpu-sigmoid-multiplies`, whose resident implementation assumes
+BF16 arithmetic throughout. It is an accuracy and placement choice. Measure
+its cost and compare complete model outputs before selecting it.
+
 ### Stream private RMS normalization into packing
 
 `--fuse-rms-packing` keeps a supported BF16 VPU RMS sequence in scratchpad and

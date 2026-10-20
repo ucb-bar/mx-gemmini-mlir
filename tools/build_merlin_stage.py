@@ -217,6 +217,8 @@ def main() -> None:
     parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
+    parser.add_argument("--vpu-sigmoid-implementation", choices=("bf16", "f32_reciprocal"),
+                        default="bf16", help="policy-selected sigmoid arithmetic: all BF16 or BF16 EXP with FP32 reciprocal")
     parser.add_argument("--fuse-softmax-packing", action="store_true",
                         help="stream private hybrid softmax into batch-local FP8 matrix inputs")
     parser.add_argument("--group-projections", action="store_true",
@@ -248,6 +250,9 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.vpu_sigmoid_implementation != "bf16" and (args.execution_policy is None
+            or args.connect_vpu_sigmoid_multiplies):
+        parser.error("hybrid sigmoid requires an explicit policy without connected BF16 sigmoid")
     if args.fuse_softmax_packing and (args.vpu_softmax_implementation != "f32_reduce"
             or not args.compact_batch_rhs or not args.integer_quant_groups):
         parser.error("softmax packing requires hybrid arithmetic, compact RHS and integer groups")
@@ -484,6 +489,7 @@ def main() -> None:
             reuse_batch_rhs=args.reuse_batch_rhs,
             compact_batch_rhs=args.compact_batch_rhs,
             vpu_softmax_implementation=args.vpu_softmax_implementation,
+            vpu_sigmoid_implementation=args.vpu_sigmoid_implementation,
             fuse_rms_packing=args.fuse_rms_packing,
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
@@ -847,6 +853,7 @@ def main() -> None:
         "virtual_zero_padding": args.virtual_zero_padding,
         "integer_quant_groups": args.integer_quant_groups,
         "vpu_softmax_implementation": args.vpu_softmax_implementation,
+        "vpu_sigmoid_implementation": args.vpu_sigmoid_implementation,
         "fuse_softmax_packing": args.fuse_softmax_packing,
         "softmax_packing_rewrite": softmax_packing_rewrite,
         "group_projections": args.group_projections,
