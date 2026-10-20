@@ -99,3 +99,17 @@ Check the actual fusion and transport receipts as well as complete output
 quality and cycles. The first implementation of this combination retained
 the unfused path because transport preceded gate/up matching; that no-op
 control is kept separate from the corrected pass order.
+
+Use MX revision `8df46f8a` or later for the softmax launch-count guard.
+For the measured `32×160×160` attention shape, streamed packing would increase
+EXP launches from 101 to 128 per layer. The guard retains the original hybrid
+softmax path even when `--fuse-softmax-packing` is requested. The complete
+unguarded run regressed by 16,207,172 cycles; the standalone probe did not
+predict that result.
+
+MX revision `272afe6d` adds `--fuse-f32-rms-packing` for closed host FP32 RMS
+graphs. Sequential summation is the default. The explicit alternative
+`--f32-rms-reduction striped16` changes FP32 reduction order to match the
+Rocket port's lane summation. See the [arithmetic and legality contract](../../../docs/configure_target_and_precision.md#fp32-normalization-and-fp8-preparation).
+Both choices need a fresh complete-model execution and unchanged numerical
+gates. A local normalization probe is not a full-model speedup.

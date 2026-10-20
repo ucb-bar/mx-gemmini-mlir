@@ -22,6 +22,8 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | Hybrid softmax, host score scaling | 8,025,144,708 | 0.0818391 | 132/160 | Fails full and late mean KL |
 | EXP-only VPU placement | 6,099,702,127 | 0.0804881 | 129/160 | Fails full and late top tokens |
 | EXP-only placement and grouped QKV completion | 6,099,669,667 | 0.0804881 | 129/160 | Fails full and late top tokens |
+| EXP-only placement, grouping and streamed softmax | 6,115,876,839 | 0.0804881 | 129/160 | Fails full and late top tokens |
+| Streamed softmax and FP32 sigmoid reciprocal | 6,227,350,452 | 0.0784700 | 130/160 | Fails full and late top tokens |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -53,6 +55,19 @@ complete EXP-only execution, about **0.00053%**, with identical full logits.
 It removes 44 completion fences; matrix commands, matrix work and transfer
 bytes are unchanged. The standalone projection probe's small improvement
 does not translate into a material model-wide gain.
+
+Streamed softmax regresses by **16,207,172 cycles** against the grouped
+configuration, despite a small standalone-probe improvement. Splitting work
+at each attention matrix changes EXP launch packing from 101 to 128 launches
+per layer, adding **594** launches across 22 layers. Complete logits remain
+identical. MX revision `8df46f8a` adds a shape-based cost guard that rejects
+this fusion when it increases launches; the retained measurement precedes
+that guard.
+
+Using FP32 reciprocal arithmetic for sigmoid improves full mean KL to
+**0.07846997** and full top agreement to **130/160**. Late agreement remains
+**26/33**. Both KL limits pass on both position sets, while both top-token
+gates fail. This changes arithmetic; it is not an accuracy-preserving fusion.
 
 Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 **825,060,684 cycles** in the original placement and **806,923,938 cycles**
