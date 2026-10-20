@@ -100,7 +100,13 @@ def test_only_exact_identity_copy_may_disappear_with_private_probability():
             assert len(records) == 1 and calls(result) == ["packed"]
 
 
-def test_registered_endpoint_keeps_rhs_refresh_local_to_each_forward_call():
+@pytest.mark.parametrize(
+    "rows,width,batch,selected",
+    [(16, 32, 2, False), (16, 512, 2, True), (160, 160, 32, False)],
+)
+def test_registered_endpoint_keeps_rhs_refresh_without_extra_exp_launches(
+    rows, width, batch, selected
+):
     from pathlib import Path
 
     from mx_gemmini_support.merlin_softmax_packing import register_softmax_packing
@@ -113,9 +119,9 @@ def test_registered_endpoint_keeps_rhs_refresh_local_to_each_forward_call():
     softmax = [
         {
             "symbol": "s",
-            "shape": [1, 2, 16, 32],
-            "logical_rows": 32,
-            "row_width": 32,
+            "shape": [1, batch, rows, width],
+            "logical_rows": batch * rows,
+            "row_width": width,
             "implementation": "f32_reduce",
         }
     ]
@@ -123,8 +129,8 @@ def test_registered_endpoint_keeps_rhs_refresh_local_to_each_forward_call():
         "symbol": "matrix",
         "precision": "mxfp8",
         "batched": True,
-        "dimensions": {"batch": 2, "m": 16, "n": 16, "k": 32},
-        "padded_shape_mnk": [16, 16, 32],
+        "dimensions": {"batch": batch, "m": rows, "n": 16, "k": width},
+        "padded_shape_mnk": [rows, 16, width],
         "tile_mnk": [16, 16, 32],
         "schedule_file": "issue.mk",
     }
@@ -143,11 +149,15 @@ def test_registered_endpoint_keeps_rhs_refresh_local_to_each_forward_call():
     records = register_softmax_packing(
         softmax, [kernel], bindings, profile, lambda n, s: compiled.update({n: s}), abi
     )
+    if not selected:
+        assert not records and not compiled and not abi
+        return
     assert len(records) == len(compiled) == len(abi) == 1
     source = next(iter(compiled.values()))
-    assert "batch%2u==0u" in source and "rhs+(batch/2u)*512u" in source
+    assert "batch%2u==0u" in source and f"rhs+(batch/2u)*{width * 16}u" in source
     assert records[0]["packed_lifetime"] == "one_serial_matrix"
-    assert records[0]["packed_bytes"] == 16 * 32 * 33 // 32
+    assert records[0]["packed_bytes"] == rows * width * 33 // 32
+    assert records[0]["unfused_exp_launches"] == records[0]["fused_exp_launches"] == 2
     assert [b.dtype for b in next(iter(abi.values()))[1]] == ["f32", "f32", "f32"]
     assert not register_softmax_packing(
         softmax,

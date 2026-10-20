@@ -35,6 +35,15 @@ def register_softmax_packing(
                 or k % 32
             ):
                 continue
+            if k > 8192:
+                continue
+            chunk_rows = min(producer["logical_rows"], 8192 // k)
+            original_launches = (batch * m + chunk_rows - 1) // chunk_rows
+            serial_launches = batch * ((m + chunk_rows - 1) // chunk_rows)
+            # Serial matrices must not add EXP launches to the original batch.
+            # A smaller temporary buffer alone did not pay for that increase.
+            if serial_launches > original_launches:
+                continue
             key = (producer["symbol"], kernel["symbol"], compact["repeat"])
             if key not in records:
                 entry = f"mx_softmax_packed_{len(records)}"
@@ -115,6 +124,9 @@ void {entry}_kernel(const float *scores,const float *rhs,float *output) {{
                     "rhs_repeat": compact["repeat"],
                     "packed_bytes": packed_bytes,
                     "packed_lifetime": "one_serial_matrix",
+                    "selection": "nonincreasing_exp_launches",
+                    "unfused_exp_launches": original_launches,
+                    "fused_exp_launches": serial_launches,
                     "matrix_batch": batch,
                     "workspace_bytes": matrix.workspace_bytes,
                     "numeric_policy": "unchanged_hybrid_softmax_then_fp8_per_matrix_block32",
