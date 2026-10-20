@@ -138,3 +138,14 @@ def test_rejects_implicit_or_unknown_policy():
         MXHostSoftmaxPostOffload(
             PROFILE, policy="automatic", enabled_regions=frozenset()
         )
+
+
+@pytest.mark.parametrize("policy", [POLICY, "libm_f32_ordered_finite", "libm_f32_ordered_rne"])
+def test_host_policies_pass_the_target_entry_constructor(policy):
+    from mx_gemmini_support.merlin_vpu_add import MXVPUPostOffload
+
+    transform = MXVPUPostOffload(
+        PROFILE, host_softmax_policy=policy,
+        enabled_site_regions={"softmax": frozenset()},
+    )
+    assert transform.host_softmax_policy == policy

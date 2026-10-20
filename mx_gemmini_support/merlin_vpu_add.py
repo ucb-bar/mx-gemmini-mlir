@@ -268,9 +268,10 @@ class MXVPUPostOffload:
         if host_softmax_policy is not None:
             from merlin.llvmlower.cpu_softmax import (
                 CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY,
+                LIBM_SOFTMAX_F32_RNE_POLICY,
             )
 
-            if (host_softmax_policy not in {CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY}
+            if (host_softmax_policy not in {CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY, LIBM_SOFTMAX_F32_RNE_POLICY}
                     or not enabled_site_regions):
                 raise ValueError("host softmax arithmetic requires an explicit site policy")
         self.softmax = MXVPUSoftmaxPostOffload(
