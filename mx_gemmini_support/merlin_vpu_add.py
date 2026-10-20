@@ -382,6 +382,9 @@ class MXVPUPostOffload:
             selected = self.fixed_weight(selected, sidecar, workdir)
         if self.shared_activation is not None:
             selected = self.shared_activation(selected, sidecar, workdir)
+        # Consume the original down-projection before private BF16 transport.
+        if self.gated_projection_packing is not None:
+            selected = self.gated_projection_packing(selected, sidecar, workdir)
         if self.matrix_transport is not None:
             selected = self.matrix_transport(selected, sidecar, workdir)
         if self.vpu_matrix_transport is not None:
@@ -392,8 +395,6 @@ class MXVPUPostOffload:
             selected = self.batch_rhs_reuse(selected, sidecar, workdir)
         if self.softmax_packing is not None:
             selected = self.softmax_packing(selected, sidecar, workdir)
-        if self.gated_projection_packing is not None:
-            selected = self.gated_projection_packing(selected, sidecar, workdir)
         if self.projection_groups is not None:
             selected = self.projection_groups(selected, sidecar, workdir)
         return selected

@@ -261,3 +261,127 @@ def test_endpoint_declaration_collision_is_refused_before_replacing_calls():
     )
     with pytest.raises(ValueError, match="incompatible declaration"):
         rewrite_gated_projections(original, catalog)
+
+
+def test_full_pipeline_fuses_before_transporting_down_projection_to_residual(tmp_path):
+    import hashlib
+    import json
+
+    from merlin.xdsl_dialects._common import text
+    from xdsl.dialects import func, tensor
+    from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
+    from xdsl.ir import Region
+
+    from mx_gemmini_support.merlin_gated_projection import MXGatedProjectionPostOffload
+    from mx_gemmini_support.merlin_matrix_transport import MXMatrixTransportPostOffload
+    from mx_gemmini_support.merlin_vpu_add import MXVPUPostOffload
+
+    original, catalog = fixture(matrix=True)
+    forward = next(
+        o
+        for o in original.body.block.ops
+        if getattr(getattr(o, "sym_name", None), "data", None) == "forward"
+    )
+    terminal = forward.body.block.last_op
+    output_type = terminal.arguments[0].type
+    empty = tensor.EmptyOp((), output_type)
+    residual = func.CallOp(
+        "residual",
+        [terminal.arguments[0], forward.body.block.args[2], empty.results[0]],
+        [output_type],
+    )
+    forward.body.block.insert_ops_before([empty, residual], terminal)
+    terminal.operands = (residual.results[0],)
+    read, write = (
+        DictionaryAttr({"bufferization.access": StringAttr(mode)})
+        for mode in ("read", "write")
+    )
+    original.body.block.add_op(
+        func.FuncOp(
+            "residual",
+            ([output_type] * 3, [output_type]),
+            Region(),
+            visibility="private",
+            arg_attrs=ArrayAttr([read, read, write]),
+        )
+    )
+    prepared = tmp_path / "input.mlir"
+    prepared.write_text(text(original))
+    catalog_path = tmp_path / "catalog.json"
+    sidecar = tmp_path / "routing.json"
+    source = hashlib.sha256(prepared.read_bytes()).hexdigest()
+    catalog.update(
+        source_sha256=source,
+        fuse_gated_projections=True,
+        matrix_vpu_transport="experimental_private_bf16",
+    )
+    kernel = catalog["kernels"][0]
+    kernel["private_bf16_transport"] = {
+        "symbol": "down_bf16",
+        "original_argument_types": [
+            "tensor<16x32xf32>",
+            "tensor<32x32xf32>",
+            "tensor<16x32xf32>",
+        ],
+    }
+    kernel["prepared_private_bf16_transport"] = {
+        "symbol": "down_prepared_bf16",
+        "original_argument_types": ["tensor<528xi8>", "tensor<16x32xf32>"],
+    }
+    catalog["vpu_add"] = {
+        "kernels": [
+            {
+                "symbol": "residual",
+                "private_bf16_inputs": [{"input_index": 0, "symbol": "residual_bf16"}],
+            }
+        ]
+    }
+    binding = {
+        "region": "down_region",
+        "symbol": "down_kernel",
+        "source_operation_ordinal": 4,
+        "tensor_types": kernel["private_bf16_transport"]["original_argument_types"],
+    }
+    catalog["bindings"] = [binding]
+    routing = {
+        "catalog_manifest": str(catalog_path),
+        "model_sha256": source,
+        "routed": [
+            {
+                "source_region": "down_region",
+                "symbol": "down",
+                "source_operation_ordinal": 4,
+                "tensor_types": binding["tensor_types"],
+            }
+        ],
+    }
+    catalog_path.write_text(json.dumps(catalog))
+    sidecar.write_text(json.dumps(routing))
+    pipeline = object.__new__(MXVPUPostOffload)
+    pipeline.enabled_site_regions = {}
+    pipeline.enabled_classes = frozenset()
+    pipeline.connected_sigmoid = None
+    for attr in (
+        "fixed_weight",
+        "shared_activation",
+        "vpu_matrix_transport",
+        "rms_packing",
+        "batch_rhs_reuse",
+        "softmax_packing",
+        "projection_groups",
+    ):
+        setattr(pipeline, attr, None)
+    pipeline.gated_projection_packing = MXGatedProjectionPostOffload(catalog_path)
+    pipeline.matrix_transport = MXMatrixTransportPostOffload(catalog_path)
+    result = pipeline(prepared, sidecar, tmp_path)
+    from merlin.frontends.linalg_mlir import parse_mlir_file
+
+    assert calls(parse_mlir_file(result)) == [
+        "gated",
+        "down_prepared_bf16",
+        "residual_bf16",
+    ]
+    receipt = json.loads((tmp_path / "mx_gated_projections_rewrite.json").read_text())
+    assert len(receipt["fusions"]) == 1
+    transport = json.loads((tmp_path / "mx_matrix_transport_rewrite.json").read_text())
+    assert len(transport["edges"]) == 1
