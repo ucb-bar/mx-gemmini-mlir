@@ -77,7 +77,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     if type(retain_runtime_weight) is not bool:
         raise ValueError("MX private runtime weight retention needs an explicit boolean selection")
     if retain_runtime_weight and (prepacked_weight_symbols is not None or cache_immutable_weight
-                                  or prepared_activation or retain_prepared_rhs):
+                                  or retain_prepared_rhs):
         raise ValueError("MX runtime weight retention needs a private live-weight slice")
     if not _identifier(symbol) or not _identifier(issuer_symbol) or symbol == issuer_symbol:
         raise ValueError("MX dense adapter needs distinct C entry and issuer symbols")
@@ -90,8 +90,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX prepacked weight needs two distinct safe symbols")
     if cache_immutable_weight and prepacked_weight_symbols is not None:
         raise ValueError("MX fixed weight must be either cached or prepacked")
-    if prepared_activation and prepacked_weight_symbols is None:
-        raise ValueError("MX prepared activation entry requires immutable prepacked weights")
+    if prepared_activation and prepacked_weight_symbols is None and not retain_runtime_weight:
+        raise ValueError("MX prepared activation needs fixed weights or an explicit private runtime weight slice")
     if retain_prepared_rhs and not prepared_activation:
         raise ValueError("MX retained prepared RHS is a shared-activation diagnostic only")
     if output_dtype not in {"f32", "bf16"}:
@@ -215,14 +215,17 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         a_prepare = ""
         pack = (f"  const uint8_t *activation = lhs;\n"
                 f"  const uint8_t *activation_scales = lhs + {expected['activation']}u;\n")
+        if prepacked_weight_symbols is None:
+            pack += (f"  if (prepare_weight && mx_pack_weight_f32({b_source}, {k}u, {n}u, "
+                     f"MX_RUNTIME_{issuer.precision}, weight, weight_scales)) __builtin_trap();\n")
     out_scalar = "uint16_t" if output_dtype == "bf16" else "float"
     parameters = (f"const uint8_t *lhs, const float *rhs, {out_scalar} *out"
-                  if retain_prepared_rhs else
+                  if retain_prepared_rhs or prepared_activation and prepacked_weight_symbols is None else
                   f"const uint8_t *lhs, {out_scalar} *out" if prepared_activation else
                   f"const float *lhs, const float *rhs, {out_scalar} *out")
     if retain_runtime_weight:
         parameters += ", unsigned prepare_weight"
-    pointer_check = ("!lhs || !out" if prepared_activation and not retain_prepared_rhs
+    pointer_check = ("!lhs || !out" if prepared_activation and prepacked_weight_symbols is not None and not retain_prepared_rhs
                      else "!lhs || !rhs || !out")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
     for (uint32_t col = 0; col < {ln}u; ++col) {{

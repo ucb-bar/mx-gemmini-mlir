@@ -252,6 +252,7 @@ class MXVPUPostOffload:
                  vpu_matrix_transport: bool = False,
                  fuse_rms_packing: bool = False,
                  group_projections: bool = False,
+                 fuse_softmax_packing: bool = False,
                  batch_rhs_catalog: Path | None = None):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
@@ -317,6 +318,13 @@ class MXVPUPostOffload:
             from .merlin_vpu_matrix_transport import MXVPUMatrixTransportPostOffload
 
             self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
+        self.softmax_packing = None
+        if fuse_softmax_packing:
+            if fixed_weight_catalog is None or batch_rhs_catalog is None:
+                raise ValueError("softmax packing requires a source-bound compact batch catalog")
+            from .merlin_softmax_packing import MXSoftmaxPackingPostOffload
+
+            self.softmax_packing = MXSoftmaxPackingPostOffload(fixed_weight_catalog)
         self.projection_groups = None
         if group_projections:
             if fixed_weight_catalog is None or not share_activation_packing:
@@ -370,6 +378,8 @@ class MXVPUPostOffload:
             selected = self.rms_packing(selected, sidecar, workdir)
         if self.batch_rhs_reuse is not None:
             selected = self.batch_rhs_reuse(selected, sidecar, workdir)
+        if self.softmax_packing is not None:
+            selected = self.softmax_packing(selected, sidecar, workdir)
         if self.projection_groups is not None:
             selected = self.projection_groups(selected, sidecar, workdir)
         return selected

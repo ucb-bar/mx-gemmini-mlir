@@ -60,7 +60,8 @@ def _issuer(profile: dict, *, rows: int, rlen: int, symbol: str) -> str:
 
 def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
                          row_width: int, symbol: str,
-                         implementation: str = "bf16") -> RowSoftmaxKernel:
+                         implementation: str = "bf16",
+                         packed_matrix_rows: int | None = None) -> RowSoftmaxKernel:
     """Emit a freestanding f32-pointer softmax with explicit BF16 rounding.
 
     The function is compiled for static source extents and processes arbitrary
@@ -77,8 +78,11 @@ def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
         raise ValueError("row softmax needs positive static extents and a C symbol")
     if implementation not in {"bf16", "f32_reduce"}:
         raise ValueError("unknown row softmax implementation")
+    if packed_matrix_rows is not None and implementation != "f32_reduce":
+        raise ValueError("packed softmax requires FP32 normalization")
     if implementation == "f32_reduce":
-        return _emit_exp_softmax(profile, logical_rows, row_width, symbol)
+        return _emit_exp_softmax(profile, logical_rows, row_width, symbol,
+                                 packed_matrix_rows=packed_matrix_rows)
     padded = (row_width + 7) // 8 * 8
     rlen = padded // 8
     if rlen > 1023:
@@ -141,13 +145,18 @@ void {symbol}(const float *input, float *output) {{
                             ("rmax", "sub", "exp", "rsum", "rcp", "mul"))
 
 
-def _emit_exp_softmax(profile, logical_rows, row_width, symbol):
+def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix_rows=None):
     """Batch vector exponentials while retaining FP32 max, sum and division.
 
     This is an explicit numerical alternative to the entirely BF16 VPU
     softmax. Only the shifted exponential input and its result round to BF16.
     Rows remain independent; masked negative infinities contribute exact zero.
     """
+    packed = packed_matrix_rows is not None
+    if packed and (type(packed_matrix_rows) is not int or packed_matrix_rows < 16
+                   or packed_matrix_rows % 16 or logical_rows % packed_matrix_rows
+                   or row_width % 32 or logical_rows*row_width > 0x7fffffff):
+        raise ValueError("packed softmax requires complete mesh-aligned FP8 matrix batches")
     padded = (row_width + 7) // 8 * 8
     per_chunk = min(logical_rows, 8192 // padded)
     sizes = tuple(dict.fromkeys((per_chunk, logical_rows % per_chunk)))
@@ -170,17 +179,44 @@ def _emit_exp_softmax(profile, logical_rows, row_width, symbol):
                              symbol=f"{symbol}_exp_{count}", internal=True))
     dispatch = "\n".join(f"      case {count}: {symbol}_exp_{count}(score, result); break;"
                          for count in sizes if count)
+    extra = ""
+    if packed:
+        from .fp8_row_packing import emit_fp8_row_packer
+
+        extra = (emit_fp8_row_packer(rows=packed_matrix_rows,width=row_width,symbol=symbol+"_pack_rows")
+                 + f"\nstatic float {symbol}_probability[{per_chunk*row_width}] __attribute__((aligned(64)));\n")
+    output_type = "uint8_t" if packed else "float"
+    store = (f"{symbol}_probability[row * {row_width} + col] = x.f / sum;" if packed else
+             f"output[(base + row) * {row_width} + col] = x.f / sum;")
+    publish = ""
+    if packed:
+        matrix_bytes = packed_matrix_rows * row_width * 33 // 32
+        publish = f'''
+    for (uint32_t first=0; first<count;) {{
+      uint32_t global=base+first, matrix=global/{packed_matrix_rows}u;
+      uint32_t local=global%{packed_matrix_rows}u, length={packed_matrix_rows}u-local;
+      if (length>count-first) length=count-first;
+      uint8_t *codes=output+matrix*{matrix_bytes}u;
+      if ({symbol}_pack_rows({symbol}_probability+first*{row_width}u,
+              local,length,codes,
+              codes+{packed_matrix_rows * row_width}u)) __builtin_trap();
+      first+=length;
+    }}'''
+    overlap = (f"uintptr_t output_bytes=(uintptr_t){logical_rows}*{row_width}*33u/32u;" if packed else
+               "uintptr_t output_bytes=bytes;")
     source = f'''#include <stdint.h>
 #include <math.h>
+{extra}
 {''.join(issuers)}
 static uint16_t {symbol}_score[{per_chunk * padded}] __attribute__((aligned(64)));
 static uint16_t {symbol}_result[{per_chunk * padded}] __attribute__((aligned(64)));
-void {symbol}(const float *input, float *output) {{
+void {symbol}(const float *input, {output_type} *output) {{
   if (!input || !output) __builtin_trap();
   uintptr_t a = (uintptr_t)input, b = (uintptr_t)output;
   uintptr_t bytes = (uintptr_t){logical_rows} * {row_width} * sizeof(float);
-  if (a > UINTPTR_MAX - bytes || b > UINTPTR_MAX - bytes ||
-      !(a + bytes <= b || b + bytes <= a)) __builtin_trap();
+  {overlap}
+  if (a > UINTPTR_MAX - bytes || b > UINTPTR_MAX - output_bytes ||
+      !(a + bytes <= b || b + output_bytes <= a)) __builtin_trap();
   for (uint32_t base = 0; base < {logical_rows}; base += {per_chunk}) {{
     uint32_t count = {logical_rows} - base;
     if (count > {per_chunk}) count = {per_chunk};
@@ -215,9 +251,10 @@ void {symbol}(const float *input, float *output) {{
       for (uint32_t col = 0; col < {row_width}; ++col) {{
         union {{ float f; uint32_t u; }} x;
         x.u = (uint32_t){symbol}_result[row * {padded} + col] << 16;
-        output[(base + row) * {row_width} + col] = x.f / sum;
+        {store}
       }}
     }}
+{publish}
   }}
 }}
 '''

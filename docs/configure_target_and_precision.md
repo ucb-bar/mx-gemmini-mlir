@@ -242,6 +242,25 @@ Measure this option separately: fewer completion boundaries can have little
 effect when matrix transfers dominate. Grouped operation profiling is not
 yet supported; use uninstrumented full-model timing and check every output.
 
+### Consume softmax probabilities without a full FP32 intermediate
+
+`--fuse-softmax-packing` combines a private hybrid softmax and its following
+FP8 batch matrix call. It computes one matrix's probabilities, packs them
+into a small private buffer, and consumes that buffer before continuing to
+the next matrix. FP32 normalization, BF16 exponentials, FP8 block32 encoding,
+matrix tiles and BF16 matrix readout retain their existing arithmetic.
+
+This option requires `--vpu-softmax-implementation f32_reduce`, integer-group
+packing and compact repeated RHS inputs. The pass checks exact batch shapes,
+readonly inputs, private destinations and complete probability-use closure.
+Only contiguous shape views and exact identity copies can disappear. An
+observable probability tensor or an intervening effect retains the original
+calls. Encoded RHS data is refreshed for every repeat group in every forward
+call. `mx_softmax_packing_rewrite.json` records the selected pairs.
+
+The option currently supports uninstrumented timing. Measure it on the target:
+reducing intermediate storage does not by itself establish a speedup.
+
 For a stage build, pass the new policy explicitly:
 
 ```sh

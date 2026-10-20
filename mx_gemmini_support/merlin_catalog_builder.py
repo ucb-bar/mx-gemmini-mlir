@@ -104,11 +104,15 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          vpu_softmax_implementation: str = "bf16",
                          fuse_rms_packing: bool = False,
                          group_projections: bool = False,
+                         fuse_softmax_packing: bool = False,
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if (type(fuse_softmax_packing) is not bool or fuse_softmax_packing and
+            (vpu_softmax_implementation != "f32_reduce" or not compact_batch_rhs or not integer_group_packing)):
+        raise ValueError("softmax packing requires hybrid arithmetic, compact RHS and integer groups")
     if (type(group_projections) is not bool or group_projections and
             (not share_activation_packing or retain_shared_activation_rhs)):
         raise ValueError("projection grouping requires shared packing without retained RHS descriptors")
@@ -581,6 +585,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
         rms_packing = register_rms_packing(connected_multiplies, kernel_records, profile,
                                            compile_source, prepared_entries)
+    softmax_packing = []
+    if fuse_softmax_packing:
+        from .merlin_softmax_packing import register_softmax_packing
+
+        softmax_packing = register_softmax_packing(
+            softmax_kernels, kernel_records, plan["bindings"], profile, compile_source, prepared_entries)
     if group_projections:
         from .merlin_projection_group import register_projection_groups
 
@@ -735,6 +745,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
         "vpu_softmax_implementation": vpu_softmax_implementation,
+        "fuse_softmax_packing": fuse_softmax_packing,
+        "softmax_packing": softmax_packing,
         "group_projections": group_projections,
         "projection_groups": projection_groups,
         "fuse_rms_packing": fuse_rms_packing,
@@ -828,6 +840,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 vpu_softmax_implementation: str = "bf16",
                                 fuse_rms_packing: bool = False,
                                 group_projections: bool = False,
+                                fuse_softmax_packing: bool = False,
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -875,6 +888,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     vpu_softmax_implementation=vpu_softmax_implementation,
                                     fuse_rms_packing=fuse_rms_packing,
                                     group_projections=group_projections,
+                                    fuse_softmax_packing=fuse_softmax_packing,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)
