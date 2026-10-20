@@ -12,8 +12,10 @@ The files vary operator placement; they do not change matrix precision.
 | `tinyllama-forward-host-score.json` | Hybrid softmax, with the 22 scalar attention-score multiplications on the host |
 | `tinyllama-forward-exp-vpu.json` | Softmax and sigmoid on the VPU; normalization, reductions, RoPE arithmetic, residual additions and other elementwise arithmetic on the FP32 host |
 | `tinyllama-forward-exp-vpu-bf16-residual.json` | EXP-only placement, with all 44 residual additions on the BF16 VPU |
+| `tinyllama-forward-host-softmax-bf16-residual.json` | All 22 softmax sites retain FP32 host arithmetic; sigmoid EXP and the 44 BF16 residual adds use the VPU |
+| `tinyllama-forward-host-softmax-f32-residual.json` | FP32 host softmax and residual adds; sigmoid EXP uses the VPU |
 
-Select `--vpu-softmax-implementation f32_reduce` for each configuration.
+For policies that retain VPU softmax, select `--vpu-softmax-implementation f32_reduce`.
 This batches BF16 VPU exponentials and retains FP32 max, subtraction, ordered
 sum and division. The default sigmoid retains BF16 arithmetic at each step.
 `--vpu-sigmoid-implementation f32_reciprocal` is a separate numerical choice
@@ -147,3 +149,12 @@ The measured shape realizes 45 FP32 RMS fusions, 22 gated projection fusions,
 softmax launch-count guard retains the existing 22 batched hybrid softmax
 calls. Check those counts in the rewrite receipts and the lowered LLVM
 before interpreting the resulting execution as this configuration.
+
+The two host-softmax alternatives use the same matrix formats and select all
+softmax sites uniformly. They retain the source graph's FP32 max, exponent,
+sum and division on Rocket. To evaluate either one, replace the policy in the
+command above and select `--vpu-softmax-implementation f32_reduce`. No VPU
+softmax endpoint is then selected. For the F32-residual alternative also omit
+`--matrix-vpu-transport`, since those residual consumers run on the host.
+Keep FP32 RMS fusion and gated projection packing. These alternatives change
+precision and placement and need independent complete-output quality checks.
