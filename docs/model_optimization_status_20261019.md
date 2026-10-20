@@ -1,11 +1,17 @@
 # Completed model transformations, 19 October 2026
 
-The complete TinyLlama forward takes **10,326,818,367 modeled cycles**, versus
-12,762,360,525 for the independent quantized source program: 1.236× speedup
-with the same logical token-to-logits boundary and a passing source-relative
-numerical gate. The corrected compiler baseline takes 15,984,649,026 cycles.
-All completed forward transformations below preserve its 5,120,000 F32 output
-words exactly.
+The newer [Radiance-derived Rocket comparison](evidence/radiance_rocket_optimization_20261019/README.md)
+uses a 7,082,331,012-cycle full-forward control. The fastest completed compiler
+placement takes 6,099,702,127 modeled cycles, but fails the unchanged full/late
+top-token gates. No qualified Radiance speedup is established by that result.
+The linked evidence preserves every completed alternative and its failures.
+
+The fixed release below takes **10,326,818,367 modeled cycles**, versus
+12,762,360,525 for the independent `npu-exploration` program: 1.236× speedup
+with the same token-to-logits boundary and a passing source-relative late-33
+gate. The corrected compiler baseline takes 15,984,649,026 cycles. The
+fixed-release cumulative transformations below preserve its 5,120,000 F32
+output words exactly.
 
 | Cumulative forward build | Modeled cycles |
 | --- | ---: |

@@ -1,0 +1,23 @@
+{
+  "source_revision": "d4797f2d",
+  "scope": "clean rebuild identity; original uninstrumented execution remains separate",
+  "old": {
+    "elf_bytes": 1330050496,
+    "elf_sha256": "a5897cb1a87c0beac64a1c57ffedc1f34a6685f975fcdf5fe1e226884b1afd75",
+    "catalog": "8b5ee70c19dd35cc05fa52f7aa4d1bc52891b4dbb647b4fb011a9de9377f0fb4",
+    "model.o": "2f7f837e148bddaa626788326d516a3ef5f294264e2c066c297fbf97c8a6c97b",
+    "mlir_rt.o": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+    "model_main.o": "e69c5825f7e051da87662dc44db797b44336a181a3c97b96506b68df856ed786",
+    "weights_blob.o": "b98581ec24a07a5e45befc4920fa7f54c647ea15f4e15d873f9cc83f66c16f50"
+  },
+  "new": {
+    "elf_bytes": 1330050496,
+    "elf_sha256": "a5897cb1a87c0beac64a1c57ffedc1f34a6685f975fcdf5fe1e226884b1afd75",
+    "catalog": "8b5ee70c19dd35cc05fa52f7aa4d1bc52891b4dbb647b4fb011a9de9377f0fb4",
+    "model.o": "2f7f837e148bddaa626788326d516a3ef5f294264e2c066c297fbf97c8a6c97b",
+    "mlir_rt.o": "61509854021d2a1615d02cf28ce87c38252143dddc11ae66300830dd2dd0430e",
+    "model_main.o": "e69c5825f7e051da87662dc44db797b44336a181a3c97b96506b68df856ed786",
+    "weights_blob.o": "b98581ec24a07a5e45befc4920fa7f54c647ea15f4e15d873f9cc83f66c16f50"
+  },
+  "identical_elf": true
+}

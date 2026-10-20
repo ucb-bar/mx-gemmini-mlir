@@ -188,7 +188,7 @@ object with a new policy is insufficient.
 ## Build and check the changed policy
 
 The optional arithmetic and fusion passes below are available together at
-MX commit `9ab590c67e4695540902fd4a17eea574456b6bf3`, with Merlin
+MX commit `a4c2cfbb`, with Merlin
 `bb7c352a9e9c8ad085d24091fc83e4e7f5ff92ca` and model2MLIR
 `f5e5c674a585bebbc2507dbd028ebf9d26e2afbc`. Keep the model guide's other
 hardware and toolchain pins. The fixed release recipe predates these
