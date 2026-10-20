@@ -76,13 +76,16 @@ def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
             type(row_width) is not int or row_width <= 0 or row_width > 8184 or
             not symbol.isidentifier() or not symbol.isascii()):
         raise ValueError("row softmax needs positive static extents and a C symbol")
-    if implementation not in {"bf16", "f32_reduce"}:
+    if implementation not in {"bf16", "f32_reduce", "f32_striped16"}:
         raise ValueError("unknown row softmax implementation")
-    if packed_matrix_rows is not None and implementation != "f32_reduce":
+    if implementation == "f32_striped16" and row_width % 32:
+        raise ValueError("striped softmax requires complete sixteen-lane pairs")
+    if packed_matrix_rows is not None and implementation == "bf16":
         raise ValueError("packed softmax requires FP32 normalization")
-    if implementation == "f32_reduce":
+    if implementation != "bf16":
         return _emit_exp_softmax(profile, logical_rows, row_width, symbol,
-                                 packed_matrix_rows=packed_matrix_rows)
+                                 packed_matrix_rows=packed_matrix_rows,
+                                 striped=implementation == "f32_striped16")
     padded = (row_width + 7) // 8 * 8
     rlen = padded // 8
     if rlen > 1023:
@@ -145,7 +148,8 @@ void {symbol}(const float *input, float *output) {{
                             ("rmax", "sub", "exp", "rsum", "rcp", "mul"))
 
 
-def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix_rows=None):
+def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix_rows=None,
+                      striped=False):
     """Batch vector exponentials while retaining FP32 max, sum and division.
 
     This is an explicit numerical alternative to the entirely BF16 VPU
@@ -186,8 +190,25 @@ def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix
         extra = (emit_fp8_row_packer(rows=packed_matrix_rows,width=row_width,symbol=symbol+"_pack_rows")
                  + f"\nstatic float {symbol}_probability[{per_chunk*row_width}] __attribute__((aligned(64)));\n")
     output_type = "uint8_t" if packed else "float"
-    store = (f"{symbol}_probability[row * {row_width} + col] = x.f / sum;" if packed else
-             f"output[(base + row) * {row_width} + col] = x.f / sum;")
+    normalization = "x.f * inverse" if striped else "x.f / sum"
+    store = (f"{symbol}_probability[row * {row_width} + col] = {normalization};" if packed else
+             f"output[(base + row) * {row_width} + col] = {normalization};")
+    summation = f"""for (uint32_t col = 0; col < {row_width}; ++col) {{
+        union {{ float f; uint32_t u; }} x;
+        x.u = (uint32_t){symbol}_result[row * {padded} + col] << 16;
+        sum += x.f;
+      }}"""
+    if striped:
+        summation = f"""float partial[16]={{0}};
+      for(uint32_t lane=0;lane<16u;++lane)
+        for(uint32_t word=lane;word<{row_width // 2}u;word+=16u){{
+          union {{float f;uint32_t u;}} a,b;
+          a.u=(uint32_t){symbol}_result[row*{padded}u+2u*word]<<16;
+          b.u=(uint32_t){symbol}_result[row*{padded}u+2u*word+1u]<<16;
+          partial[lane]+=a.f+b.f;
+        }}
+      for(uint32_t lane=0;lane<16u;++lane)sum+=partial[lane];
+      float inverse=1.0f/sum;"""
     publish = ""
     if packed:
         matrix_bytes = packed_matrix_rows * row_width * 33 // 32
@@ -243,11 +264,7 @@ void {symbol}(const float *input, {output_type} *output) {{
     }}
     for (uint32_t row = 0; row < count; ++row) {{
       float sum = 0.0f;
-      for (uint32_t col = 0; col < {row_width}; ++col) {{
-        union {{ float f; uint32_t u; }} x;
-        x.u = (uint32_t){symbol}_result[row * {padded} + col] << 16;
-        sum += x.f;
-      }}
+      {summation}
       for (uint32_t col = 0; col < {row_width}; ++col) {{
         union {{ float f; uint32_t u; }} x;
         x.u = (uint32_t){symbol}_result[row * {padded} + col] << 16;

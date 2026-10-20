@@ -137,12 +137,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             or vpu_sigmoid_implementation != "bf16" and connect_sigmoid_multiplies):
         raise ValueError("hybrid sigmoid cannot use the connected BF16 sigmoid implementation")
     if (type(fuse_softmax_packing) is not bool or fuse_softmax_packing and
-            (vpu_softmax_implementation != "f32_reduce" or not compact_batch_rhs or not integer_group_packing)):
+            (vpu_softmax_implementation not in {"f32_reduce", "f32_striped16"} or not compact_batch_rhs or not integer_group_packing)):
         raise ValueError("softmax packing requires hybrid arithmetic, compact RHS and integer groups")
     if (type(group_projections) is not bool or group_projections and
             (not share_activation_packing or retain_shared_activation_rhs)):
         raise ValueError("projection grouping requires shared packing without retained RHS descriptors")
-    if vpu_softmax_implementation not in {"bf16", "f32_reduce"}:
+    if vpu_softmax_implementation not in {"bf16", "f32_reduce", "f32_striped16"}:
         raise ValueError("unknown VPU softmax implementation")
     if type(fuse_rms_packing) is not bool or fuse_rms_packing and not vpu_matrix_transport:
         raise ValueError("RMS packing requires explicit private VPU matrix transport")
@@ -828,6 +828,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "numeric_policy": (
                 "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities"
                 if vpu_softmax_implementation == "bf16" else
+                "f32_max_subtract_bf16_exp_f32_striped16_pair_sum_reciprocal_multiply"
+                if vpu_softmax_implementation == "f32_striped16" else
                 "f32_max_subtract_bf16_exp_f32_ordered_sum_and_division"),
             "source_regions": [site["region"] for site in softmax_sites],
             "kernels": softmax_kernels,

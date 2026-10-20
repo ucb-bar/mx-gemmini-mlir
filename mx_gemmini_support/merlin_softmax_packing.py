@@ -29,7 +29,7 @@ def register_softmax_packing(
             continue
         for producer in softmax:
             if (
-                producer["implementation"] != "f32_reduce"
+                producer["implementation"] not in {"f32_reduce", "f32_striped16"}
                 or producer["logical_rows"] != batch * m
                 or producer["row_width"] != k
                 or k % 32
@@ -52,7 +52,7 @@ def register_softmax_packing(
                     logical_rows=m,
                     row_width=k,
                     symbol=entry + "_softmax",
-                    implementation="f32_reduce",
+                    implementation=producer["implementation"],
                     packed_matrix_rows=m,
                 )
                 packed_bytes = m * k * 33 // 32
@@ -204,7 +204,7 @@ def rewrite_softmax_packing(module, catalog):
                 continue
             operations = set()
 
-            def flat_root(value):
+            def flat_root(value, operations=operations):
                 root = contiguous_tensor_root(value)
                 while value is not root:
                     operations.add(value.owner)

@@ -384,3 +384,11 @@ Check `mx_f32_rms_packing_rewrite.json`, catalog `f32_rms_packing`, and
 `f32_rms_reduction` in the build receipt. Registration alone does not show
 that a graph was fused. A changed reduction order needs complete model
 numerical validation; it does not inherit an existing timing or quality claim.
+
+For softmax, `--vpu-softmax-implementation f32_striped16` keeps the batched
+BF16 EXP launches, sums adjacent EXP pairs into sixteen FP32 lanes, sums
+those lanes in order, then multiplies by one FP32 reciprocal. It requires a
+row width divisible by 32. This follows the Rocket port's softmax reduction
+and normalization order. The existing `f32_reduce` choice uses sequential
+summation and FP32 division for each output. These are explicit arithmetic
+alternatives; the same complete-model quality gates apply to either one.

@@ -214,7 +214,7 @@ def main() -> None:
                         help="experimentally encode known zero activation rows without materializing them")
     parser.add_argument("--integer-quant-groups", action="store_true",
                         help="experimentally use BF16-word group preparation and inline its fixed-axis loops")
-    parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce"),
+    parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce", "f32_striped16"),
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
     parser.add_argument(
@@ -281,7 +281,7 @@ def main() -> None:
     if args.vpu_sigmoid_implementation != "bf16" and (args.execution_policy is None
             or args.connect_vpu_sigmoid_multiplies):
         parser.error("hybrid sigmoid requires an explicit policy without connected BF16 sigmoid")
-    if args.fuse_softmax_packing and (args.vpu_softmax_implementation != "f32_reduce"
+    if args.fuse_softmax_packing and (args.vpu_softmax_implementation not in {"f32_reduce", "f32_striped16"}
             or not args.compact_batch_rhs or not args.integer_quant_groups):
         parser.error("softmax packing requires hybrid arithmetic, compact RHS and integer groups")
     if args.fuse_softmax_packing and args.op_profile:

@@ -54,8 +54,21 @@ static void issue(unsigned op, uint64_t a, uint64_t b) {
 """
 
 
-@pytest.mark.parametrize("rows,width", [(3, 1), (7, 9), (345, 17), (55, 160)])
-def test_batched_exp_and_tail_keep_rows_independent(tmp_path, monkeypatch, rows, width):
+@pytest.mark.parametrize(
+    "rows,width,implementation",
+    [
+        (3, 1, "f32_reduce"),
+        (7, 9, "f32_reduce"),
+        (345, 17, "f32_reduce"),
+        (55, 160, "f32_reduce"),
+        (7, 32, "f32_striped16"),
+        (55, 160, "f32_striped16"),
+        (65, 256, "f32_striped16"),
+    ],
+)
+def test_batched_exp_and_tail_keep_rows_independent(
+    tmp_path, monkeypatch, rows, width, implementation
+):
     commands = []
 
     def trace(sequence, *, symbol, buffers, **unused):
@@ -73,7 +86,7 @@ def test_batched_exp_and_tail_keep_rows_independent(tmp_path, monkeypatch, rows,
         logical_rows=rows,
         row_width=width,
         symbol="hybrid",
-        implementation="f32_reduce",
+        implementation=implementation,
     )
     source = tmp_path / "hybrid.c"
     source.write_text(EMULATOR + generated.source)
@@ -109,9 +122,21 @@ def test_batched_exp_and_tail_keep_rows_independent(tmp_path, monkeypatch, rows,
     expected = exp.copy()
     for row in range(rows):
         total = np.float32(0)
-        for value in exp[row]:
-            total = np.float32(total + value)
-        expected[row] = exp[row] / total
+        if implementation == "f32_striped16":
+            partial = np.zeros(16, np.float32)
+            for lane in range(16):
+                for word in range(lane, width // 2, 16):
+                    partial[lane] = np.float32(
+                        partial[lane]
+                        + np.float32(exp[row, 2 * word] + exp[row, 2 * word + 1])
+                    )
+            for value in partial:
+                total = np.float32(total + value)
+            expected[row] = exp[row] * np.float32(np.float32(1) / total)
+        else:
+            for value in exp[row]:
+                total = np.float32(total + value)
+            expected[row] = exp[row] / total
     assert np.array_equal(
         output[1:-1].view(np.uint32), expected.ravel().view(np.uint32)
     )
@@ -126,3 +151,14 @@ def test_batched_exp_and_tail_keep_rows_independent(tmp_path, monkeypatch, rows,
         for c in commands
         if isinstance(c, Command)
     )
+
+
+def test_striped_sum_refuses_incomplete_pairs():
+    with pytest.raises(ValueError, match="sixteen-lane pairs"):
+        vpu_row_softmax.emit_vpu_row_softmax(
+            load_profile(PROFILE),
+            logical_rows=3,
+            row_width=33,
+            symbol="hybrid",
+            implementation="f32_striped16",
+        )
