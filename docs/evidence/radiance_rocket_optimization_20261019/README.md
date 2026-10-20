@@ -8,10 +8,11 @@ The source is `radiance-kernels` at
 `5866983682583486b38ae64a4d1bfa5e7b2a002e`, adapted to Rocket as described in
 the [port guide](../../radiance_rocket_model_baseline.md).
 
-The fastest numerically qualified configuration takes **6,997,758,443 modeled
-cycles**, versus **7,082,331,012** for the port: **1.012× speedup**, or **1.19%
-fewer cycles**. It retains FP32 host softmax and residual state and specializes
-the private maximum under the explicit finite-input contract. All 5,120,000
+The fastest numerically qualified configuration takes **6,264,147,801 modeled
+cycles**, versus **7,082,331,012** for the port: **1.131× speedup**, or **11.55%
+fewer cycles**. It retains FP32 host softmax and residual state, specializes
+the private maximum, and skips exponential calls whose FP32 result is certainly
+zero under RNE. All 5,120,000
 logit words match the preceding passing compiler control, which took
 **7,087,996,683 cycles**. Its full and late
 top-token matches are **134/160 and 29/33**, versus **132/160 and 27/33**.
@@ -46,6 +47,7 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | Sixteen-lane reductions, direct SiLU division and K≤256 | 5,985,684,594 | 0.0864567 | 131/160 | Same numerical failures as direct-division control |
 | FP32 host softmax and BF16 residual state | 7,255,103,136 | 0.0842984 | 132/160 | Fails full mean KL and late worst KL |
 | FP32 host softmax and FP32 residual state | 7,087,996,683 | 0.0766243 | 134/160 | Passes all full and late limits; 0.08% slower |
+| Ordered libm host softmax, RNE underflow shortcut and FP32 residual state | 6,264,147,801 | 0.0766243 | 134/160 | Passes all full and late limits; 1.131× speedup |
 | Ordered libm host softmax, finite maximum and FP32 residual state | 6,997,758,443 | 0.0766243 | 134/160 | Passes all full and late limits; 1.012× speedup |
 | Torch CPU softmax arithmetic, finite maximum and FP32 residual state | 6,435,411,995 | 0.0784065 | 127/160 | Fails full and late top tokens |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
@@ -158,6 +160,25 @@ the port's timing from near parity to a **1.012× qualified speedup**. Its
 matrix work, transfers and 3,520 VPU operations remain unchanged. The private
 maximum is not exposed; any possible signed-zero difference is erased by
 the following shift and exponential.
+
+The RNE underflow alternative saves a further **733,610,642 cycles (10.48%)**
+against that finite-maximum control. Shifted scores at or below -104 have
+exponentials below half the smallest FP32 subnormal, so they round to positive
+zero. This covers masked causal-attention entries. Other scores execute the
+same libm call; the sequential sum and division are unchanged. Selection
+requires RNE and unobserved floating status and `errno`; the startup selects
+RNE, and the rewrite receipt records these requirements.
+
+Together, the maximum and underflow transformations save **823,848,882 cycles
+(11.62%)** against the preceding accepted compiler control. Every complete
+logit word, matrix/VPU work counter and transfer-byte count is unchanged.
+The separate [scalar exponential probe](../softmax_rne_underflow_20261020/README.md)
+has a 41.4% local reduction for a half-underflow input mix. Its percentage is
+not the model reduction: the actual port-relative full-model reduction is
+**11.55%**. This configuration was compiled with MX
+`5aceeeb83fc11d335a31561a977fa18217844f0a`, Merlin
+`91fd90edb9e483ccbd7967d523efa63fea2124d5`, and model2MLIR
+`f5e5c674a585bebbc2507dbd028ebf9d26e2afbc`.
 
 The separate Torch CPU arithmetic option completes at **6,435,411,995 cycles**.
 Its mean and worst KL limits pass on both position sets, but top-token matches

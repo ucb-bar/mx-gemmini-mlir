@@ -92,10 +92,15 @@ fusion receipts with actual calls in the lowered LLVM. An artifact
 verification pass means these observations and bindings agree; it does not
 mean that a candidate passed the numerical gate.
 
-The FP32 host-softmax/residual execution with a finite-input maximum passes
-all six numerical checks at **6,997,758,443 cycles**, versus **7,082,331,012**
-for the port: **1.012× speedup**. All 5,120,000 output words match its preceding
-7,087,996,683-cycle passing control. The separate Torch CPU arithmetic run
+The FP32 host-softmax/residual execution with a finite-input maximum and RNE
+underflow shortcut passes all six numerical checks at **6,264,147,801 cycles**,
+versus **7,082,331,012** for the port: **1.131× speedup**, or **11.55% fewer
+cycles**. All 5,120,000 output words match both its 6,997,758,443-cycle
+maximum-only control and the preceding 7,087,996,683-cycle passing control.
+Matrix/VPU work and transfer bytes are identical across those three runs.
+The underflow receipt and actual LLVM bind all 22 conditional exponential
+paths, their -104 cutoff, positive-zero result and RNE/unobserved-status
+contract. The separate Torch CPU arithmetic run
 takes 6,435,411,995 cycles and fails both top-token agreement limits. The
 FP32-host-softmax/BF16-residual alternative fails two numerical limits.
 

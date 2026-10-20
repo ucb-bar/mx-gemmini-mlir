@@ -14,9 +14,10 @@ with `mem.host_tracking=0`. They are not FPGA measurements. See the
 
 The newer [TinyLlama host-softmax recipe](../examples/models/optimization_policies/README.md#build-the-rne-host-softmax-alternative)
 has separate implementation pins and complete build/comparison commands.
-Its finite-maximum configuration passes the Radiance-relative numerical
-gates at 6,997,758,443 modeled cycles. The fixed release and its repository
-pins below remain the reference for the other published workload recipes.
+Its RNE host-softmax configuration passes the Radiance-relative numerical
+gates at 6,264,147,801 modeled cycles, a 1.131× speedup. The fixed release and
+its repository pins below remain the reference for the other published
+workload recipes.
 
 ## Models and inputs
 

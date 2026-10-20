@@ -91,10 +91,10 @@ mean-KL gate. Its mean KL is 0.0821650 versus 0.0774637 for the port, a
 and top-token agreement. That fixed-release comparison has no qualified speedup.
 
 The subsequent [optimization measurements](evidence/radiance_rocket_optimization_20261019/README.md)
-include a **6,997,758,443-cycle** compiler execution, a **1.012× speedup** over
+include a **6,264,147,801-cycle** compiler execution, a **1.131× speedup** over
 this port, passing all six numerical limits. It uses FP32 host softmax and
-residual state with finite-maximum specialization. The fixed-release
-measurement and executable identity above remain unchanged.
+residual state with finite-maximum specialization and RNE underflow shortcuts.
+The fixed-release measurement and executable identity above remain unchanged.
 
 The [full-forward archive](evidence/radiance_rocket_forward_20261019/README.md)
 retains every output, the floating reference, and both diagnostic profiles.

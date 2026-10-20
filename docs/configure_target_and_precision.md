@@ -253,6 +253,14 @@ checks return-word equality against the pinned libm,
 including underflow boundaries. Complete-model output identity and performance
 must be checked independently; the probe alone establishes neither.
 
+The complete 160-token TinyLlama forward with this option measures
+**6,264,147,801 modeled cycles**, a **1.131× speedup** over the Radiance-derived
+Rocket port. It passes all six numerical limits, and every logit word matches
+the accepted ordered-libm control. The
+[full measurements and audit](evidence/radiance_rocket_optimization_20261019/README.md)
+retain both controls and all failed alternatives. This is a result for that
+captured workload, not a general model-quality or FPGA-performance claim.
+
 ### Select sigmoid arithmetic
 
 `--vpu-sigmoid-implementation f32_reciprocal` retains BF16 VPU exponentials

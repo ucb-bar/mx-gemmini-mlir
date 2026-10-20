@@ -70497,6 +70497,2450 @@
       "qualified_speedup": 1.0120856656726411,
       "sha256": "efc7131a90ce0e3b9212482cef4fd91664e5ba4352a5f022176e1451de1a8e6d"
     },
+    "libm_rne_softmax_f32_residual_retry": {
+      "archive": "libm_rne_softmax_f32_residual_retry.tar.xz",
+      "bytes": 10090540,
+      "cycles": 6264147801,
+      "full_logits_sha256": "9b1d8c3083651682370f3ff3fb53f8ab4ed05ad9daa23570fd8b9e64531f1c8e",
+      "gated_fusions": 22,
+      "members": {
+        "build/admission.json": {
+          "bytes": 379,
+          "sha256": "4b95b7d09e80d81f3da735fdafd98ea463c25546f3aef9f3c6d0c6924150a252"
+        },
+        "build/cgen/model_call.c": {
+          "bytes": 710,
+          "sha256": "245728c508ffb2a5857ee082b25a14662a0fa47e9fcd65a26fcfabd598eb70e4"
+        },
+        "build/cgen/model_gen.h": {
+          "bytes": 2819,
+          "sha256": "2e3c317a8aa876ade7ee2a1689ec2fe53433cd017f15a66cc11cc231329f70ad"
+        },
+        "build/cgen/model_io.h": {
+          "bytes": 361831,
+          "sha256": "338a4164fb564f6cb2562e414bf042b8236fe7d5e51b2ccdc593c582e67b393d"
+        },
+        "build/compilation_recipe.json": {
+          "bytes": 43139,
+          "sha256": "0ef79b21d7cbaceb2aae5ffcd4177025d214bef31a7e8b5a57551a6b47699cbe"
+        },
+        "build/device_catalog/batch_rhs_source.mlir": {
+          "bytes": 1567131,
+          "sha256": "894110449e5d449d43ad5628c09acf24ba408b9d2d117f2f2c09a49e7c46e925"
+        },
+        "build/device_catalog/checkpoint_weights.S": {
+          "bytes": 86943,
+          "sha256": "a90507b1848414287296e316aa95152182a0fb31291cbf63562d541a953bbf4f"
+        },
+        "build/device_catalog/constant_object_reference.S": {
+          "bytes": 102,
+          "sha256": "647c9818b696ee9827c47c27b3a2b88ec94ec7ef1262c0ef3a288a28078355db"
+        },
+        "build/device_catalog/constant_object_reuse.json": {
+          "bytes": 68800,
+          "sha256": "bf5bdfb2485dfd7378c268515add74a6a283c669cd5b1f5d355c7741f463a7da"
+        },
+        "build/device_catalog/mx_catalog.json": {
+          "bytes": 806647,
+          "sha256": "8d12a496f54b64f5b6c301dc8ae9034411b4bd690c72fae0c728249c58469655"
+        },
+        "build/device_catalog/mx_dense_kernel_0.c": {
+          "bytes": 1399,
+          "sha256": "985f7f5d21468351585a610a1dbb4a42e34b8f43353d9a7e100b0aeeb34c8b41"
+        },
+        "build/device_catalog/mx_dense_kernel_0.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "d852dbcaa769e900dde6348fe1c0e6e1d4e13ea2524ba02c120c48634f4c5d69"
+        },
+        "build/device_catalog/mx_dense_kernel_0_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "787117ed2c72ed28dfca4a5b3df715cdfd089b721c77ae97ec51d78229fc9b76"
+        },
+        "build/device_catalog/mx_dense_kernel_1.c": {
+          "bytes": 1395,
+          "sha256": "25ae6b2cb25944da874d9a3616c47a5a4b777cf5df9014ae5fb6fceeada7f0ee"
+        },
+        "build/device_catalog/mx_dense_kernel_1.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "e2bfb2d3513815df2c7c02cb9f64e9764570ea6d803525b32a77337edcc33489"
+        },
+        "build/device_catalog/mx_dense_kernel_10.c": {
+          "bytes": 1404,
+          "sha256": "5ff083cc6a6ab26702ff866caf25cf577e4c72bb306638662509a8a67be2bf97"
+        },
+        "build/device_catalog/mx_dense_kernel_10.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "7f090a9f19afd87fe606f74467a5fbba8dc31af08d4df03d79e9471765994475"
+        },
+        "build/device_catalog/mx_dense_kernel_100.c": {
+          "bytes": 1405,
+          "sha256": "9e5421a4f2e1ac44a4fb91dd6880c5cfc1f990918f21c96ab6c6c76d83a14834"
+        },
+        "build/device_catalog/mx_dense_kernel_100.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "2888758f143b0930569e894a1f1d2d45f4bd94a6e85a4d66470c92c855f4f97a"
+        },
+        "build/device_catalog/mx_dense_kernel_100_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "0a86d8e81d03e5f00cd97246fec3f46a0d6b10d81064c5799a66e49d815431ca"
+        },
+        "build/device_catalog/mx_dense_kernel_101.c": {
+          "bytes": 1409,
+          "sha256": "f721bd61c66dc5d86d19fd1144e0e9900544c222a33275b0cceed80ac69eca57"
+        },
+        "build/device_catalog/mx_dense_kernel_101.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "d00be1ce60db98505c5db9c4b56888f8efd6f9fa8d325588c937dff3bad8e9d7"
+        },
+        "build/device_catalog/mx_dense_kernel_101_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "25a19982c99d1f32a8d96ce4a4f442819b6520f0d4ec2a75ac62c1fe0a8ab363"
+        },
+        "build/device_catalog/mx_dense_kernel_102.c": {
+          "bytes": 1410,
+          "sha256": "18a5bed15a3d01998ba367676c52aaa3323f02dc7c61e0f57874d9587d13c211"
+        },
+        "build/device_catalog/mx_dense_kernel_102.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "174bd2f0a30a3fa2a56628a186a5e6bb5b83cc78b7306ad6f1cc23f660958ec0"
+        },
+        "build/device_catalog/mx_dense_kernel_102_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "f1efbfc6827212147cf8f308ed693786a7e5c87dfbb5dcdc4ef28cc1cc3c9025"
+        },
+        "build/device_catalog/mx_dense_kernel_103.c": {
+          "bytes": 1410,
+          "sha256": "a88f366ae28d2036c6a50ee2b41e07f7fa02146bc930e6dbdba751d1ad943ec1"
+        },
+        "build/device_catalog/mx_dense_kernel_103.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "8ece58d7ccc67e48083c77d5f867e69844cdaaa9700957dda181f7f9bb93d7b2"
+        },
+        "build/device_catalog/mx_dense_kernel_103_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "8522f661967394122d8d39f557ac3bac7a2ed21bdfabf1a6b27a17d5023aff2e"
+        },
+        "build/device_catalog/mx_dense_kernel_104.c": {
+          "bytes": 1410,
+          "sha256": "90fe2bd145a5129969c95bbc4991994b31a982553fd830bcd43916125028e4f6"
+        },
+        "build/device_catalog/mx_dense_kernel_104.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "b442b90dfffd4974dc280c63baf9a1fc6b254c7117156a30ad98d1cd6250e5d0"
+        },
+        "build/device_catalog/mx_dense_kernel_104_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "99806ea21043fedd97d28fe862ffa7dadda1cc76975e5c13a9809deafacff42f"
+        },
+        "build/device_catalog/mx_dense_kernel_105.c": {
+          "bytes": 1409,
+          "sha256": "067c295bca286bce784eed956195ce4f765dc56e197ce61d76390dd27dc00c69"
+        },
+        "build/device_catalog/mx_dense_kernel_105.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "594e4498ebbc8f956af4278d4fee76e8c8489826d92a62561a940cebe2f8039f"
+        },
+        "build/device_catalog/mx_dense_kernel_105_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "497cccffb25aa1691043cc296beaa559d4e4bfcd9267f499094f25ce1b4992ba"
+        },
+        "build/device_catalog/mx_dense_kernel_106.c": {
+          "bytes": 1405,
+          "sha256": "0922e330627554a9290cac090bcdf7f3cd123468058ab8fbe4408dc3167077e7"
+        },
+        "build/device_catalog/mx_dense_kernel_106.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "67990ecd1b3fe2f8ca7401966fa2144de8858d8f9cf34ecd22a3261a307062be"
+        },
+        "build/device_catalog/mx_dense_kernel_106_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "d109c7a9094b26a8f434c2c512c5c8bb96554efbe5204160dde9fcc6ed4ddcc2"
+        },
+        "build/device_catalog/mx_dense_kernel_107.c": {
+          "bytes": 1405,
+          "sha256": "a398a211584024502a2d194098979ff0aec531e689fc802678cb6af6f1c4792d"
+        },
+        "build/device_catalog/mx_dense_kernel_107.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "f1a20691abc4103fefa063ccb7c7d2c3365aa738fbbb1ab711a3005965d65dd4"
+        },
+        "build/device_catalog/mx_dense_kernel_107_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "7995c06aa070a4cc2d224145fa22400b35fddc83ef32c7eead342037a4008dbd"
+        },
+        "build/device_catalog/mx_dense_kernel_108.c": {
+          "bytes": 1409,
+          "sha256": "dd44220ee0e5b934d6f3a869ab74eb3bb08a6734d26313b64e2009db190b03f2"
+        },
+        "build/device_catalog/mx_dense_kernel_108.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "0fcd9d04cdc6084ef69e6fedcd70edf9021fd4ec05f0c2ff080b2ec4a8fc2336"
+        },
+        "build/device_catalog/mx_dense_kernel_108_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "49939d6bc936983412218d7d29b0b6fd17a85f731205610d3dabde505a9b9742"
+        },
+        "build/device_catalog/mx_dense_kernel_109.c": {
+          "bytes": 1410,
+          "sha256": "1699e8da48b1849ae5eac7398b8d85b1107d28720976d7eaf0cf5f6268abc58f"
+        },
+        "build/device_catalog/mx_dense_kernel_109.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "bf7fdf783a3b890c35a0274f19d028c1bd03ed5897ef726befff1f52121aa948"
+        },
+        "build/device_catalog/mx_dense_kernel_109_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "3a983ec793136ee20a67bc44e5090a13b6e5ccdf86e9ab222df338115b2ac480"
+        },
+        "build/device_catalog/mx_dense_kernel_10_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "229a27687828ae0f28d6fc161c8977850e008a7dfd843b18155100f0c1471052"
+        },
+        "build/device_catalog/mx_dense_kernel_11.c": {
+          "bytes": 1405,
+          "sha256": "d67b093267bba173bc133b9d633d3953a4580c8c5d0e041df2cf7b2d423f6963"
+        },
+        "build/device_catalog/mx_dense_kernel_11.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ab186bae1c7a74c757cd19259d83e64cccc34e1fc97bd6d2d645207fd7d19668"
+        },
+        "build/device_catalog/mx_dense_kernel_110.c": {
+          "bytes": 1410,
+          "sha256": "7dfcdabcc4dad4f56b351448bae4e3e70ca9162a6049028e603f620e31857c08"
+        },
+        "build/device_catalog/mx_dense_kernel_110.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "d3339b76e6c35b7048ff57ab92caa3caa69004604f6696fc3f1a63888a310a7d"
+        },
+        "build/device_catalog/mx_dense_kernel_110_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "3be59f0c34a69cea3d8dda95825b475010514edd344df65398171d2f6e235e89"
+        },
+        "build/device_catalog/mx_dense_kernel_111.c": {
+          "bytes": 1410,
+          "sha256": "4780b2348719b380924e23c3585f368d8db56e2a696d6e88dd6ff5743ba0886e"
+        },
+        "build/device_catalog/mx_dense_kernel_111.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "e2d63c21dedee6c130002d74313998b4b023d6b8dd03fd8f6549ab7c265f4646"
+        },
+        "build/device_catalog/mx_dense_kernel_111_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "039482d989160a73585e715befa03a12eafe4f7d0bc9ee8301e928dbe0934c35"
+        },
+        "build/device_catalog/mx_dense_kernel_112.c": {
+          "bytes": 1409,
+          "sha256": "ddce927c747e95451a803af9791511ec7ed2e8f5d719d6153d7e09a84d4587ec"
+        },
+        "build/device_catalog/mx_dense_kernel_112.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "d8d0022fc7ab6872467aeb88362ce1c188a9757d3f37a47905e46bdb69c0d221"
+        },
+        "build/device_catalog/mx_dense_kernel_112_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "ebc97a3135abd7b52f791bda6c1fe93e354eec14cf3e180e75ff9a761e4daa25"
+        },
+        "build/device_catalog/mx_dense_kernel_113.c": {
+          "bytes": 1405,
+          "sha256": "f0dc81c62f39b695279f13a5565e28e44072d9cf0c498f0e1f8263bece3bb886"
+        },
+        "build/device_catalog/mx_dense_kernel_113.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "99bbfd7666889836aea2a3bf2c0a4190369d91bb2ea10db20bc78736abd79086"
+        },
+        "build/device_catalog/mx_dense_kernel_113_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "6388027a1ade3d3837c3662309a2abc5deb6acf502879fc59dc79924cb1f3d7e"
+        },
+        "build/device_catalog/mx_dense_kernel_114.c": {
+          "bytes": 1405,
+          "sha256": "4987818df89c93dcb9b55a459080f59f29ae746d723a3e401606fc6ca8ae7886"
+        },
+        "build/device_catalog/mx_dense_kernel_114.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "590311ba8d2c3a2a3969592900ee0f2039d1d70fe852a62ce775d706f823b36f"
+        },
+        "build/device_catalog/mx_dense_kernel_114_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "c55c0d317c8d45fd194edfb8f2b067eff28a617eb2a680ee4d91b0add8a0b286"
+        },
+        "build/device_catalog/mx_dense_kernel_115.c": {
+          "bytes": 1409,
+          "sha256": "295f80283343f1d69efe607f5168abdee811eacbd7d0ce7d6261e0c44b0acfe8"
+        },
+        "build/device_catalog/mx_dense_kernel_115.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "cbd55152bd958ff7c66c86c0b68914c101d9430a91fbb90c35f583d8feb7e545"
+        },
+        "build/device_catalog/mx_dense_kernel_115_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "e26201886079eca531660871a98ff6c3bb574d7f9c33130ad3e68e86fec3dcd3"
+        },
+        "build/device_catalog/mx_dense_kernel_116.c": {
+          "bytes": 1410,
+          "sha256": "61c87e1b0c83e7493251d3e0e34a551a9cee5bff078ebe4b47d9ce3f6eaa50ea"
+        },
+        "build/device_catalog/mx_dense_kernel_116.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "4c088ed1529cccc1939f03538f705fd01290aab34a6765bfca7539c4a53ab521"
+        },
+        "build/device_catalog/mx_dense_kernel_116_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "83f757e9d3f4b0c811cef8294e5a871db279bfcf3104868543f48ec8b2da3159"
+        },
+        "build/device_catalog/mx_dense_kernel_117.c": {
+          "bytes": 1410,
+          "sha256": "92866e8e5b6c8fdc6ca4c5ada3f5ce4428212f04f2d90142183c88d20b8d1f27"
+        },
+        "build/device_catalog/mx_dense_kernel_117.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "3811391ef81aa8d47426a951687323fa74ffd4085b811713f1ef803f866eded1"
+        },
+        "build/device_catalog/mx_dense_kernel_117_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "0bd8f905df9445987a3b22ba51fa4cf7df66ae19f78706ae48cbbbc9b77007dd"
+        },
+        "build/device_catalog/mx_dense_kernel_118.c": {
+          "bytes": 1410,
+          "sha256": "c714c03a0bccdbc5100a9868504d1d57ca1a5b60afe2028dca8f63ac3cc66762"
+        },
+        "build/device_catalog/mx_dense_kernel_118.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "eacca470d8718ce801ebafed0fc89d628728c046a90addd48d6b47010bea6edb"
+        },
+        "build/device_catalog/mx_dense_kernel_118_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "dc0759050055460842ff96c7cc43777674fd728b956444d8314942437cc5f2bb"
+        },
+        "build/device_catalog/mx_dense_kernel_119.c": {
+          "bytes": 1409,
+          "sha256": "a721d8589b335e1f8265750539f89602c4dffab4169a6a6406af87c05bcc23b3"
+        },
+        "build/device_catalog/mx_dense_kernel_119.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "90539a7f2d9880d1029f8f35c11b66a8c8d6d934a54f9613dc60a0459441190b"
+        },
+        "build/device_catalog/mx_dense_kernel_119_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "5d777bbaa0c37297ecb0a9963e610a40f6c8f2bb682a0ad517036f0b1ef1307f"
+        },
+        "build/device_catalog/mx_dense_kernel_11_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "0621ba8c627767f8f6d51a7f78fa7b6a8d0f903b89aa7c88b8b3c6aa75852664"
+        },
+        "build/device_catalog/mx_dense_kernel_12.c": {
+          "bytes": 1405,
+          "sha256": "e37b1a93a7ef45c5030a57de8bfca94cd145ede1ef29c80c65c8135e5186cf6c"
+        },
+        "build/device_catalog/mx_dense_kernel_12.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "d5ab1c4c79a635d45cc23f04ae5d36414d651c1763bab036537088297605c253"
+        },
+        "build/device_catalog/mx_dense_kernel_120.c": {
+          "bytes": 1405,
+          "sha256": "001f19c2d36f1d3a547b93d042836b24ff434dde2b517009068792bb6b8cd86b"
+        },
+        "build/device_catalog/mx_dense_kernel_120.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "4e277a852ff5de8a428ca30ec11b49b5274e41acad16cc95790e024788cce044"
+        },
+        "build/device_catalog/mx_dense_kernel_120_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "cd7b0cd703586445e1e5711bf9d53f552e1a67b18274a02f6d11f48ff4aef3d6"
+        },
+        "build/device_catalog/mx_dense_kernel_121.c": {
+          "bytes": 1405,
+          "sha256": "65b276236cf880a4385e191b9074b45aa966ca80e6ec19863873b0f393183e06"
+        },
+        "build/device_catalog/mx_dense_kernel_121.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "b3100e87c47af36fd70ce680cdbe954fcfee94bd14ae659c66ba7fc69bee6378"
+        },
+        "build/device_catalog/mx_dense_kernel_121_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "f44f1ddad6385f830260402d944879bf200e23cb52005f415f838d83645b1657"
+        },
+        "build/device_catalog/mx_dense_kernel_122.c": {
+          "bytes": 1409,
+          "sha256": "3134ede5438cde0a7326e1a15911a49e5362c70a5e3f57476fb8cfd8aeda6b5b"
+        },
+        "build/device_catalog/mx_dense_kernel_122.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "f63fe563b860d78dd28fb20a70166b54b6c769477c3c6c5bfe2e94d488c72f89"
+        },
+        "build/device_catalog/mx_dense_kernel_122_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "eb24268e28212f03b3433a0f1a2512c72c92abfc732e7730221b18d3215f77f1"
+        },
+        "build/device_catalog/mx_dense_kernel_123.c": {
+          "bytes": 1410,
+          "sha256": "119188c66b0534567d90d7dac63e09f769f95e329d0bb16a19eaa5a8d598d171"
+        },
+        "build/device_catalog/mx_dense_kernel_123.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "1fd121bdd599657c85de8686613f8501adced23dc506792dc4e1799de2dade19"
+        },
+        "build/device_catalog/mx_dense_kernel_123_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "7f846c9117e22e9ca6a0eb43f646222494f604a45c068d23460e5f02457e4c79"
+        },
+        "build/device_catalog/mx_dense_kernel_124.c": {
+          "bytes": 1410,
+          "sha256": "a58c59eb44cc63b2e7f2618a0ec92a39496c0f697a4a5d90f150961feb280377"
+        },
+        "build/device_catalog/mx_dense_kernel_124.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "501c2abc577f04634998be67430954ae0aa58cdfb87e5a8697959d25a3b63eef"
+        },
+        "build/device_catalog/mx_dense_kernel_124_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "f12b5a9fd062870a467e2dc08af549a0b7c4fb4ec274922ef12d89061c36d359"
+        },
+        "build/device_catalog/mx_dense_kernel_125.c": {
+          "bytes": 1410,
+          "sha256": "a496bb77bc71a6ef12a0a99f693f7bcc788eef42af65644a22de1380f3749722"
+        },
+        "build/device_catalog/mx_dense_kernel_125.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "802b0bba1f4f35d28832a97c6340eca0adf0ce50a41b3d59d883f0a38cd31f5e"
+        },
+        "build/device_catalog/mx_dense_kernel_125_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "bdade5392be8ec1b993fa622d1aa6263e6ab3729cff5470fc248a5f9ff581237"
+        },
+        "build/device_catalog/mx_dense_kernel_126.c": {
+          "bytes": 1409,
+          "sha256": "f90b5264f75efbd18ac393d78d7b6838ddc131215c9dae34ece3f9f6af97a897"
+        },
+        "build/device_catalog/mx_dense_kernel_126.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "3da1e570b3622f1ffbf9aef24a409b84bf43c003f9a04fd6c03be735a13b9f1a"
+        },
+        "build/device_catalog/mx_dense_kernel_126_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "12381b52789d6fb7dcca5851bdd2e7daa496f0cd7d5040b428a14ed2cedf3a8a"
+        },
+        "build/device_catalog/mx_dense_kernel_127.c": {
+          "bytes": 1405,
+          "sha256": "4911df41d0de5148283285c9ccc945bf3aae06ca8fecb560f2ef10df65657583"
+        },
+        "build/device_catalog/mx_dense_kernel_127.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "b41d40aa54aebed532a5193262d04fbea5ed3798657f33d0f666505aa1660eb0"
+        },
+        "build/device_catalog/mx_dense_kernel_127_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "d61457782a16a40f36b9cd8f2c6ecb7028658fef2faf05b8a384b40b8209bac5"
+        },
+        "build/device_catalog/mx_dense_kernel_128.c": {
+          "bytes": 1405,
+          "sha256": "6b713deedb0887202406f27a96e54f29fd99d1e2ec5e3e1f77c0f43e8e339248"
+        },
+        "build/device_catalog/mx_dense_kernel_128.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "42d755b98b91398d507532a4acd76007776eaf6025284f815b365c4b956f282d"
+        },
+        "build/device_catalog/mx_dense_kernel_128_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "bb5c389a27ab6b714049eff9a13fe259f368e5606749cb03b57ea789e08de087"
+        },
+        "build/device_catalog/mx_dense_kernel_129.c": {
+          "bytes": 1409,
+          "sha256": "1c38c867586a2cc3f3476430cb40d23f80c5ee8df632ed914758b45675b05130"
+        },
+        "build/device_catalog/mx_dense_kernel_129.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "fa855050c52c4de1c9b8f537c3632c0e5ee679ab489508eca324c636cbffc4c7"
+        },
+        "build/device_catalog/mx_dense_kernel_129_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "43d974824f0f2d26a97b6f6f746af943933fb2cd11ba35a3dfc11aaae7ead5f6"
+        },
+        "build/device_catalog/mx_dense_kernel_12_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "4303eb3e2cca2fc25b02d47d97b4625388c9b2b57bd093f05259a8a99254ec88"
+        },
+        "build/device_catalog/mx_dense_kernel_13.c": {
+          "bytes": 1405,
+          "sha256": "82ea83b28aefeb5bc3d27ed78ce2cef311e3d29cae025dacd6fa610ac2c8cb06"
+        },
+        "build/device_catalog/mx_dense_kernel_13.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "4667198d12168f0c301e1d21d4f0db09edfa5e21c700fbaaa9f4a3a58727c431"
+        },
+        "build/device_catalog/mx_dense_kernel_130.c": {
+          "bytes": 1410,
+          "sha256": "08f6bba261a84274105c44b51e8aeb98853d57269dc9522368a9e8600504277c"
+        },
+        "build/device_catalog/mx_dense_kernel_130.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "ae9337a35e206c6976cdf8f9970dc96f20648aa71e238984fc8abdbb0b353807"
+        },
+        "build/device_catalog/mx_dense_kernel_130_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "4c8b4539f333e3604a2cb0f9446b3b64a7fe50a98b14e5fa45ee0de4d929c65e"
+        },
+        "build/device_catalog/mx_dense_kernel_131.c": {
+          "bytes": 1410,
+          "sha256": "a178a9d14fc9b091c9078469d50344d5eec03a2bfe98969c4f773b5d9bc211fd"
+        },
+        "build/device_catalog/mx_dense_kernel_131.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "338d75d8b410ee4e7a3c4adae8516e55252eb3d4bf9d1d178efcbf112f35cf98"
+        },
+        "build/device_catalog/mx_dense_kernel_131_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "a856e340b7d54add5868c655546abbd83c5d260dddce5f7d62e67d6cf0ac485c"
+        },
+        "build/device_catalog/mx_dense_kernel_132.c": {
+          "bytes": 1410,
+          "sha256": "2ce0382ba172f4a402b89e1c72ce3e4d4081120e5664e6002b1e415b1744e0bc"
+        },
+        "build/device_catalog/mx_dense_kernel_132.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "2e61b78d7c6c03bfc901a8b48fc2b19b6006b2350cbd8bacfb2f506aa3c83de3"
+        },
+        "build/device_catalog/mx_dense_kernel_132_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "6f8b208b3f53073b1b84614f989bc83c3f6d31b6867f1668121ea89318f63c2e"
+        },
+        "build/device_catalog/mx_dense_kernel_133.c": {
+          "bytes": 1409,
+          "sha256": "a06e5ebf3c17bd00dceebd0bcaec450ced93e57f33985a7b5e5f01f764876f70"
+        },
+        "build/device_catalog/mx_dense_kernel_133.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "9f77d5cd66a39671918921e7b731c2a317cf8077132a4856176722ecd3454d4e"
+        },
+        "build/device_catalog/mx_dense_kernel_133_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "c1d169d2b2411ba55640cac259fa9baed1979102af01e71890f49be1743590e6"
+        },
+        "build/device_catalog/mx_dense_kernel_134.c": {
+          "bytes": 1405,
+          "sha256": "1e6e71e0efd7fcb96839db252ef4662dc8f9349e89643ee4f4f8adaac36f0470"
+        },
+        "build/device_catalog/mx_dense_kernel_134.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "6633e3d243adeb31c3805016a629f0401e1849d2b4d628ffc297d73905e39399"
+        },
+        "build/device_catalog/mx_dense_kernel_134_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "e6fea793666cdc17831c19bc8f12eb7625fc4a3720a52fc8e12d0873030a4470"
+        },
+        "build/device_catalog/mx_dense_kernel_135.c": {
+          "bytes": 1405,
+          "sha256": "4e4550c0531ce1f3ed242cfde81633941e34892cbae4f9a4eef191fa715b9b7e"
+        },
+        "build/device_catalog/mx_dense_kernel_135.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "fb3aaac0fd7e9adcd7351719354bf1a39b3407d0b98e58776720828128a1e0e4"
+        },
+        "build/device_catalog/mx_dense_kernel_135_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "5e98e1174a93c2a46074063efb561051a09a7750d1d70937b2100baa75fc87cd"
+        },
+        "build/device_catalog/mx_dense_kernel_136.c": {
+          "bytes": 1409,
+          "sha256": "7b1a7f1eb002c6732d8b742c527cd0214e0ddc27294ae15231e10716647abe0e"
+        },
+        "build/device_catalog/mx_dense_kernel_136.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "7d2518de5861e58ea91ab053504dc26c2ddea7f55fcc07d01b7930ec92dfcb0b"
+        },
+        "build/device_catalog/mx_dense_kernel_136_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "724b974f17563658f503757f2298067d498036a91bae3145a9ab3aeda3714be4"
+        },
+        "build/device_catalog/mx_dense_kernel_137.c": {
+          "bytes": 1410,
+          "sha256": "196506b96234fd370ef63a813d3a9384de6ac0b2f8b686dd1eaf3603ccc2e0c1"
+        },
+        "build/device_catalog/mx_dense_kernel_137.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "20466fc95bc6ef88fe6b141197dd16ecd49e6e0fccbc21a2729825e31dc93f4b"
+        },
+        "build/device_catalog/mx_dense_kernel_137_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "feb42d4d1ccf13e925e9704f771c02f81444b69c15a0bfa43105585c9c37c1de"
+        },
+        "build/device_catalog/mx_dense_kernel_138.c": {
+          "bytes": 1410,
+          "sha256": "667a0f7b488f06a0b7bb175cfeec3069f80f7455a77f9acc698f321f177eeef0"
+        },
+        "build/device_catalog/mx_dense_kernel_138.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "8b60236db602e9b708ddd3566a66884e8aba5dd429dae7f178cc1e4048b7a3a1"
+        },
+        "build/device_catalog/mx_dense_kernel_138_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "bbbf4ecb5a09780d8e51bd59f82f7fc84de634d7c1163ebeb36a01f2b9badae7"
+        },
+        "build/device_catalog/mx_dense_kernel_139.c": {
+          "bytes": 1410,
+          "sha256": "3238075c1eb905a418fe44562567c1a8606f363c3443396fb9937b4937a1bfaf"
+        },
+        "build/device_catalog/mx_dense_kernel_139.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "f0c8e1358a23661ddf314dcbd32c7e05a4c01a59824b559c36acb94a0c4915f9"
+        },
+        "build/device_catalog/mx_dense_kernel_139_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "c80ccbaafd5b0cc6d076270551bfd967d71e6ac6287f778c374e45738b9a3dd9"
+        },
+        "build/device_catalog/mx_dense_kernel_13_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "33e13932687c7822579b587c4d09fee09a6580c743e811025f78979b4795c1a4"
+        },
+        "build/device_catalog/mx_dense_kernel_14.c": {
+          "bytes": 1404,
+          "sha256": "1c9f7a8571b448bf1d651f45647cbdcbdc3234a11219e2c1dcfc11e5f44498f5"
+        },
+        "build/device_catalog/mx_dense_kernel_14.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b0fa39a5c317df144ba5d9e748ae0029f1963e10fba13286236a10f1038444d8"
+        },
+        "build/device_catalog/mx_dense_kernel_140.c": {
+          "bytes": 1409,
+          "sha256": "46d9941b6c042568c024f871294fe2b38430481ca0f63eb8f851862dafcd8375"
+        },
+        "build/device_catalog/mx_dense_kernel_140.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "0e246954882f5855706ee5e455490a96acdb923dc996afc863322ac32ac62a05"
+        },
+        "build/device_catalog/mx_dense_kernel_140_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "5c744d1373d881a16c7e939418dfa6222b62872c81318280b692433aa82c6eda"
+        },
+        "build/device_catalog/mx_dense_kernel_141.c": {
+          "bytes": 1405,
+          "sha256": "a8a4015a43fb7695c24f93f308b0bf8e27674f36ba5647cfb1b42e9e03c5c35f"
+        },
+        "build/device_catalog/mx_dense_kernel_141.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "1873dfa00350feded7791f367b3b3a55321ff86f7d413700e9fb8ede23e7ba3e"
+        },
+        "build/device_catalog/mx_dense_kernel_141_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "77ecc29b532a626c8923b5a746833c9441b787458de65e3b38a9334313e106e6"
+        },
+        "build/device_catalog/mx_dense_kernel_142.c": {
+          "bytes": 1405,
+          "sha256": "8b3a0bbb5127bfd0044bdd85aa01f31b0683fdf11cbab8b21f5b8f023dc37463"
+        },
+        "build/device_catalog/mx_dense_kernel_142.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "2a6577f53a8e4b202507b1fc62bda45d7707998ea6ece3e2e64412b0e9873417"
+        },
+        "build/device_catalog/mx_dense_kernel_142_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "b6008e0b1281fa1be9fc012a634ed79b26ae4b09f392c7cc80e1a86b57be7fb4"
+        },
+        "build/device_catalog/mx_dense_kernel_143.c": {
+          "bytes": 1409,
+          "sha256": "21c68e69214b309acaa8f227e94f055ffd92b56cc4bb461fa29d4664b46a8b18"
+        },
+        "build/device_catalog/mx_dense_kernel_143.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "d2feac72421e5632d182955a991c8b8d37421034dc8eb5320e50d4a06ffcccdd"
+        },
+        "build/device_catalog/mx_dense_kernel_143_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "e379bf327fb288ef89d38375fdfbe840db7a579ea8f0fad106099720172c750e"
+        },
+        "build/device_catalog/mx_dense_kernel_144.c": {
+          "bytes": 1410,
+          "sha256": "4fe7e7fe2c83179bccad62ec4bc6920bba687e2670280c1a73a9dc82b8a63741"
+        },
+        "build/device_catalog/mx_dense_kernel_144.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "5b357985d18b0207e0bee856a3c7301dc14a6ac7fe11c4d8ff0204425ce90118"
+        },
+        "build/device_catalog/mx_dense_kernel_144_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "3ca8a36e9ee197f7cccb444e0ac94619f5c0c1bdd6c8b1838aa6dda75207e1b6"
+        },
+        "build/device_catalog/mx_dense_kernel_145.c": {
+          "bytes": 1410,
+          "sha256": "b87f1f056624aa378e3fcce52319a35b473bed37af9dda6b3518673ef7edb7ce"
+        },
+        "build/device_catalog/mx_dense_kernel_145.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "112bbdd9ef9f8e2e48d63827006f567761a25952f631f1a14c119126670b3418"
+        },
+        "build/device_catalog/mx_dense_kernel_145_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "9bfaa4f2eddb461f2d89b1ab6057630a4db7119e44da257e38e2515721e576fe"
+        },
+        "build/device_catalog/mx_dense_kernel_146.c": {
+          "bytes": 1410,
+          "sha256": "422cd6444bfe1baedfe4699f5d6db03d4476e161bc20d9648d2808f9e773c2af"
+        },
+        "build/device_catalog/mx_dense_kernel_146.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "8bebb506e0391bd17239a9c3d57f174bee0d06874f409e8389a4857064b58ea4"
+        },
+        "build/device_catalog/mx_dense_kernel_146_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "63be4242322227f4b429c4136f49ce74d6d5f50a6a3dec20b0d6f8f2af06eddb"
+        },
+        "build/device_catalog/mx_dense_kernel_147.c": {
+          "bytes": 1409,
+          "sha256": "f568e566e5fea33556a487c7b8cf546a2fe8f0ec21a4d7cdd97f5aea93115c02"
+        },
+        "build/device_catalog/mx_dense_kernel_147.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "1f0ceb42f633d856f9edc91daa03b891a68d776f459c52823b04c2333850029c"
+        },
+        "build/device_catalog/mx_dense_kernel_147_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "f2bfa39e7c5b57d9035c69da0e598f05ddbcaa11e6b58fde7be20d0026dc2c22"
+        },
+        "build/device_catalog/mx_dense_kernel_148.c": {
+          "bytes": 1405,
+          "sha256": "646a23fb3a55783806b356affe7738ad13965181f47e76cc8c2beb4d35c4c839"
+        },
+        "build/device_catalog/mx_dense_kernel_148.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "b8ece4be0e6478409bae53ead331a649aa81eaf6f86f3ba7adf1594ab55dcfcb"
+        },
+        "build/device_catalog/mx_dense_kernel_148_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "48cb032a62b2d5cfe6b1f1f8cfd637535cb0ba92c861ad3212915d91081d0252"
+        },
+        "build/device_catalog/mx_dense_kernel_149.c": {
+          "bytes": 1405,
+          "sha256": "9ef8d4124abcda6c827b61459b5d46b1eabc7d1be0f312eb64024131a220dcdc"
+        },
+        "build/device_catalog/mx_dense_kernel_149.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "59595862ac2e8e8aaf6f84caf68f137291124bef2ce3f25807e8a12d6f1df2f8"
+        },
+        "build/device_catalog/mx_dense_kernel_149_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "a7c48bc1e886613d91e6d70f213e2805271d90e4900c862cd2c789a04662b446"
+        },
+        "build/device_catalog/mx_dense_kernel_14_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "03671d90e308abe573d874aa145137894c7921e88096205b93c54d2efa5d07c7"
+        },
+        "build/device_catalog/mx_dense_kernel_15.c": {
+          "bytes": 1400,
+          "sha256": "3536d640c4554a02970da3b30b94cfd350b4d6edb6113010b18c2e93e263736f"
+        },
+        "build/device_catalog/mx_dense_kernel_15.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "4066408ba4b720d90de1c59c3e55eabd9898ce4c6f6b2843d8ae9f5fcb89d8cf"
+        },
+        "build/device_catalog/mx_dense_kernel_150.c": {
+          "bytes": 1409,
+          "sha256": "b020c40fb540a6680e958278adfe544bee8712ee430206e0002deb54695073cb"
+        },
+        "build/device_catalog/mx_dense_kernel_150.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "4593a63ddb3a5dee65e1b088302044138ba4a5a7a21c40370b68965d5ef92963"
+        },
+        "build/device_catalog/mx_dense_kernel_150_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "90a6cf10677b987c14007ba4a5006bafed35db02726682949703dd55bcfe96f1"
+        },
+        "build/device_catalog/mx_dense_kernel_151.c": {
+          "bytes": 1410,
+          "sha256": "d71f43d5b1bf3303d61102ec9002b6e9d44175590862aa5502590c7998c61398"
+        },
+        "build/device_catalog/mx_dense_kernel_151.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "0ac696372ac8cacbb91273893f1d518841d11717bfc42513e77257d4dee09742"
+        },
+        "build/device_catalog/mx_dense_kernel_151_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "43e1fbdf7e7fddc79d086e722df790c4a2e7954a326a396e9c794f4194b807da"
+        },
+        "build/device_catalog/mx_dense_kernel_152.c": {
+          "bytes": 1410,
+          "sha256": "42ced0d03e6f6ead67fbd64ca9d29d1e357509f897f2e57309ee660ab1ebea53"
+        },
+        "build/device_catalog/mx_dense_kernel_152.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "6181b8e9d30d00c0180113c4f8c07d22378dae22a6acb035012c18c6d0373080"
+        },
+        "build/device_catalog/mx_dense_kernel_152_prepared_kernel.c": {
+          "bytes": 1204,
+          "sha256": "109e15f1b51b78280641738d0911ac3de765c1258474fe22143508339f2c0d5f"
+        },
+        "build/device_catalog/mx_dense_kernel_153.c": {
+          "bytes": 1410,
+          "sha256": "940a04b2c96ce43b3188549fd2eff331266dd7a73504812b0b5816009fd6738c"
+        },
+        "build/device_catalog/mx_dense_kernel_153.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "495764ba69bd4328ca0b0d369039e0cb65d66098c123db96cc8a04569f79d176"
+        },
+        "build/device_catalog/mx_dense_kernel_153_prepared_kernel.c": {
+          "bytes": 1203,
+          "sha256": "72cb2bbdf55e53e577ae58badbe9e13d55aa29207097de199da179cd39340279"
+        },
+        "build/device_catalog/mx_dense_kernel_154.c": {
+          "bytes": 1415,
+          "sha256": "0937a52fd935c9b380420d1e744dc8a45e9b3f84302621f692f41500691cd60d"
+        },
+        "build/device_catalog/mx_dense_kernel_154.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "9afd9c69e44a02b3d8ebca1e8dd901ff2b3ae5337a0bc68430facb8978d3c05a"
+        },
+        "build/device_catalog/mx_dense_kernel_154_prepared_kernel.c": {
+          "bytes": 1209,
+          "sha256": "e69676ea0c779240cb9aface294552e8e4636176e3778abdca85329af5c32c76"
+        },
+        "build/device_catalog/mx_dense_kernel_155.c": {
+          "bytes": 1889,
+          "sha256": "04e0db6bd920914e10c2fc7a4ebd245c37902986bcb7fb76b83e0db2fad02e0b"
+        },
+        "build/device_catalog/mx_dense_kernel_155.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "d5b0a49fd0f7cbd6cf7423cc40c3fa16d0f1379738e45b683356fb4c9082fe85"
+        },
+        "build/device_catalog/mx_dense_kernel_155_repeated_rhs_8_compact_kernel.c": {
+          "bytes": 2056,
+          "sha256": "77521f068f9c653003a022d3de8ec6cdf33d188164631585715d769fce8cd449"
+        },
+        "build/device_catalog/mx_dense_kernel_155_repeated_rhs_8_kernel.c": {
+          "bytes": 2025,
+          "sha256": "4237d6c7b0dcc10b5711f2e1445a1608028fd940d983159ce970aef9db88d788"
+        },
+        "build/device_catalog/mx_dense_kernel_156.c": {
+          "bytes": 1887,
+          "sha256": "19367e9b12cdf8990beb3f9790f587a8a5e27d03473414035c5d9e530d79b739"
+        },
+        "build/device_catalog/mx_dense_kernel_156.schedule.mlir": {
+          "bytes": 347,
+          "sha256": "9d70dcb8a838145fb3a78e5cf7b70096420b830ca2aabd9b217b704ccad1355b"
+        },
+        "build/device_catalog/mx_dense_kernel_156_repeated_rhs_8_compact_kernel.c": {
+          "bytes": 2054,
+          "sha256": "55310154708b02de56e9cb39c387ada5955a4f35996542ab567b5c2d97a647ba"
+        },
+        "build/device_catalog/mx_dense_kernel_156_repeated_rhs_8_kernel.c": {
+          "bytes": 2023,
+          "sha256": "3ec3093c3d5ea34c847e5a6c3779b384b7f39d35f7268157f3e6fb2794f5d9e5"
+        },
+        "build/device_catalog/mx_dense_kernel_15_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "010e3ddc1151719a32f35bf0adfcaa6c440f02b179739ef24928b664a03ed24c"
+        },
+        "build/device_catalog/mx_dense_kernel_16.c": {
+          "bytes": 1400,
+          "sha256": "586f8686667de45592008f238d9c3bb3b3b513e1919dee6c376eb597740a56d5"
+        },
+        "build/device_catalog/mx_dense_kernel_16.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "f9b32074b7e4c74db69a8e492ced0cf427053de7da9ca542d4ef2f7b9414b791"
+        },
+        "build/device_catalog/mx_dense_kernel_16_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "897d370a3de77519c3bc760c53769727c533159fee90df35ed987eab010f3369"
+        },
+        "build/device_catalog/mx_dense_kernel_17.c": {
+          "bytes": 1404,
+          "sha256": "a7d329222fa9a520b360726b61f12bdc46e21c206aa2883b8358268ff42b1dd3"
+        },
+        "build/device_catalog/mx_dense_kernel_17.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2b1fc4314323726928fd2802c50199dcfe004907612be3f3c5991d19b7c54482"
+        },
+        "build/device_catalog/mx_dense_kernel_17_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "6bfc016e49e1c7d5532fde7f584ecc0630ad779d32c6af028b3e09244d8353a1"
+        },
+        "build/device_catalog/mx_dense_kernel_18.c": {
+          "bytes": 1405,
+          "sha256": "078752d6b5441d73a993e33efac01dc3201cfe85b3bf56bdf59ef310e6d09319"
+        },
+        "build/device_catalog/mx_dense_kernel_18.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "0d9dad2e4639851e2a29fdf04c2ceba3eb6a6fc84bfba3fb842fb7174536b3aa"
+        },
+        "build/device_catalog/mx_dense_kernel_18_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "16114cd6fe5f9db3a6153b665ec46b6c8d8a4e0d5be5d7f3723075906b6d4be0"
+        },
+        "build/device_catalog/mx_dense_kernel_19.c": {
+          "bytes": 1405,
+          "sha256": "ed2e7cde8b4c6e6d0a940c7e635f48e53e69391c8f388db420d91e32c9cf4ecc"
+        },
+        "build/device_catalog/mx_dense_kernel_19.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "74d3bd140dd048cc9d6f228ea17bb53ebaeb1d5e042d316516f461f3cd56691c"
+        },
+        "build/device_catalog/mx_dense_kernel_19_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "5e3a4c89c8d2e4e5b4871de4c69c934c208123c52db1eca8ffce4a9b8846cc12"
+        },
+        "build/device_catalog/mx_dense_kernel_1_prepared_kernel.c": {
+          "bytes": 1188,
+          "sha256": "314fc13ed7059f01a9dfa6cb665d2a589b2f2561e9ea77912c333bbd20ad3c10"
+        },
+        "build/device_catalog/mx_dense_kernel_2.c": {
+          "bytes": 1395,
+          "sha256": "2a725fb0224a8cd59956e6b8472c5dc1b34e37b8f45085f683af148708beca42"
+        },
+        "build/device_catalog/mx_dense_kernel_2.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "a3e93353624d93a2defd26f1aa4a84c6ad19cf3e6ac9d5162958a721aa9558fe"
+        },
+        "build/device_catalog/mx_dense_kernel_20.c": {
+          "bytes": 1405,
+          "sha256": "e2e5c1a711683347633898422a61a35077ac0162bb47598f422f926613be220c"
+        },
+        "build/device_catalog/mx_dense_kernel_20.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "8a5f736d46005ce2307500f7f9e68299154798be3481a8f6fa3d991d4a880354"
+        },
+        "build/device_catalog/mx_dense_kernel_20_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "7f67d608893cb8bdd2422e711954c1cc43b526723d637af22e39545fcd256d0e"
+        },
+        "build/device_catalog/mx_dense_kernel_21.c": {
+          "bytes": 1404,
+          "sha256": "6367760213a38daa074205c7e7f6bb1460d1075e46ea81b90cb1be52c6a872e7"
+        },
+        "build/device_catalog/mx_dense_kernel_21.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "03d1a089e0c05999595c973d4e5fc4465edeb52b5588b4ac006b7de5243d71bc"
+        },
+        "build/device_catalog/mx_dense_kernel_21_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "5051e59801f1b72fc53200fdbdbcb28b51772fe917980a20f08b024cf3aad251"
+        },
+        "build/device_catalog/mx_dense_kernel_22.c": {
+          "bytes": 1400,
+          "sha256": "c2dbf43d99a0181e7f262417a4c4c1823233eb00032054f805b4fe7d446880d3"
+        },
+        "build/device_catalog/mx_dense_kernel_22.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "9b667b04f2367ea391e99f444ad27718b4a41c2254df6a21605ad67eaf36a012"
+        },
+        "build/device_catalog/mx_dense_kernel_22_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "915dd734c76c31bf74e5a5993572c1a4a6357c7db58e3a9de387a889bfe73b34"
+        },
+        "build/device_catalog/mx_dense_kernel_23.c": {
+          "bytes": 1400,
+          "sha256": "1a4941cf06e2d9b2a8ca7e2e663b3e1fd882fe98a01cdf4f9402a96f343f2bfc"
+        },
+        "build/device_catalog/mx_dense_kernel_23.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b969727ca9f0d154c2d48284b5de824d1c26391478acefe80257e2f36a6886bf"
+        },
+        "build/device_catalog/mx_dense_kernel_23_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "ee2e4758f53c7b24b9866998e08e053031919dfe050dbaa44d8b861e326a4b40"
+        },
+        "build/device_catalog/mx_dense_kernel_24.c": {
+          "bytes": 1404,
+          "sha256": "e0c5a55eb04fcc8a5360b739f516f164239d0508dc90a5dea1c34a9cbfc972af"
+        },
+        "build/device_catalog/mx_dense_kernel_24.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "7a00c6a1d5aa0c0518a88ba6a7435b6f1dfc8b94e09f2dcc557cb6414a13384c"
+        },
+        "build/device_catalog/mx_dense_kernel_24_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "2404091b31eee26ff15b8c8b01a1a1ddaa4d5775762f01b6251b8ff377d916bb"
+        },
+        "build/device_catalog/mx_dense_kernel_25.c": {
+          "bytes": 1405,
+          "sha256": "2aed9903154ad03ef01197fb611c1e90b43d4e26405af64e4248d7a370f3842b"
+        },
+        "build/device_catalog/mx_dense_kernel_25.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "7964251740bb8259a6b13057bd03424be2909d217915267fdac4ddf3830a5f2c"
+        },
+        "build/device_catalog/mx_dense_kernel_25_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "83e70d67dc2ad104bb260b588f8fbb3bcbb00b604ba2b90b30db7bc95469c376"
+        },
+        "build/device_catalog/mx_dense_kernel_26.c": {
+          "bytes": 1405,
+          "sha256": "de3f355280a676ed576019c693637eb4b24688f063f153c9c78d7f616ee3c297"
+        },
+        "build/device_catalog/mx_dense_kernel_26.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "59f148aecbdd8684e4e1318a4ae32d404bbb76d6336655133ccde8ba557b854b"
+        },
+        "build/device_catalog/mx_dense_kernel_26_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "2a9ba945dd1620765c3494c1c7ca71bcd3e51882e9d15b8972c311f1f6e6f0e3"
+        },
+        "build/device_catalog/mx_dense_kernel_27.c": {
+          "bytes": 1405,
+          "sha256": "4b81d229a53a9cda18665bb96f2e8dd48dbd46a3f9f4506e7e76234fdb978ada"
+        },
+        "build/device_catalog/mx_dense_kernel_27.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "983d1268fa8281e252d2069b2adbefd37865e4b191b244690135c5ca41fcde6c"
+        },
+        "build/device_catalog/mx_dense_kernel_27_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "9a2be96d3666d27c07d9c3406a49f4c5a76129bc7843ef7c85a85793ab0015e1"
+        },
+        "build/device_catalog/mx_dense_kernel_28.c": {
+          "bytes": 1404,
+          "sha256": "5f18de475e257bcdbeaa2e734439d33a566764705a6cf415fc962355c163976f"
+        },
+        "build/device_catalog/mx_dense_kernel_28.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "e5dad7dadbc5c3b99b90d3b65ee8dac20efc0803715099956f220a736d24022a"
+        },
+        "build/device_catalog/mx_dense_kernel_28_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "b3f9641bc6f13725b0862e3826718f9e6cebf81152d414ed1002a26454c814e3"
+        },
+        "build/device_catalog/mx_dense_kernel_29.c": {
+          "bytes": 1400,
+          "sha256": "10a6a54b5702d3f883763f9711e97e2724bd0a8659422468b01bf261b1623068"
+        },
+        "build/device_catalog/mx_dense_kernel_29.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "44ccff26cb027733dd4d5861ec7726dc0bd41d80855cf9e26fcc7958229e5626"
+        },
+        "build/device_catalog/mx_dense_kernel_29_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "a8982408f825b4abff74618cab5c3b18ba3c005c3ac147194c06f3784af1602d"
+        },
+        "build/device_catalog/mx_dense_kernel_2_prepared_kernel.c": {
+          "bytes": 1188,
+          "sha256": "9dae7010e155da098c334eca716a83a5b74de0599750b3ef18fe612d73c36efc"
+        },
+        "build/device_catalog/mx_dense_kernel_3.c": {
+          "bytes": 1399,
+          "sha256": "b913fdd981c6f1467525b5c46c5e4992fd5884e907b3c23502d1cf14e17361cb"
+        },
+        "build/device_catalog/mx_dense_kernel_3.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "d859befdc084a3c872a9a43544dcb3d4c11f0404e18bfb675ee8d84eac59e496"
+        },
+        "build/device_catalog/mx_dense_kernel_30.c": {
+          "bytes": 1400,
+          "sha256": "59fed7fed7acc990d3c0d98771d6f4a746c8879559d8676b54ca6ebe8f0a2afa"
+        },
+        "build/device_catalog/mx_dense_kernel_30.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "bd51bec5af58c990399aad9f0de2bc1ec3c0fb3e1a4750f50ed54bc5fefe0a8a"
+        },
+        "build/device_catalog/mx_dense_kernel_30_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "bce70f80e6b8dcfb78655da838be969de259d43e8e32000c7fdcecbb9c1b2d52"
+        },
+        "build/device_catalog/mx_dense_kernel_31.c": {
+          "bytes": 1404,
+          "sha256": "8fa67d47cbf27ebd678c3987faa177c9590f050b099ba1cecf0246c02fb76fb3"
+        },
+        "build/device_catalog/mx_dense_kernel_31.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "04a79984fae42cb8e063eadc1868b35e3130346d6d5e06606fd322065464ab79"
+        },
+        "build/device_catalog/mx_dense_kernel_31_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "ef9f76316c2c5a328f40d1bcec39efed556032e97eadc65e7c56549ca80565dc"
+        },
+        "build/device_catalog/mx_dense_kernel_32.c": {
+          "bytes": 1405,
+          "sha256": "f0f99d0d0458379263e67a289a42e8385dd5d8aade92e56df7ab1c172e333a42"
+        },
+        "build/device_catalog/mx_dense_kernel_32.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2be27c998471ddfb35b42b14d9e95fb16eb959d241c852ada0b2352ec897db23"
+        },
+        "build/device_catalog/mx_dense_kernel_32_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "444e71e01f6f114c40f2df59073b53f674bb4e0d31df171236d7504f25c398cb"
+        },
+        "build/device_catalog/mx_dense_kernel_33.c": {
+          "bytes": 1405,
+          "sha256": "e4076aacd1a157b0ee848ce94a499dd87a5d143d0dc0219fc782b21d26df2607"
+        },
+        "build/device_catalog/mx_dense_kernel_33.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "118b60ec668332330466445c3c6b30f12c6a046ab0b56bc47a1b2d0b22b338f4"
+        },
+        "build/device_catalog/mx_dense_kernel_33_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "e5a7fe33be2013672480eb7584fdcfd0c045754bbd814f492c8f25ce144c4eba"
+        },
+        "build/device_catalog/mx_dense_kernel_34.c": {
+          "bytes": 1405,
+          "sha256": "59af5c997f0aa12961a3c334801824975e34440e06126c0675a52f2aeaddaf5e"
+        },
+        "build/device_catalog/mx_dense_kernel_34.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "89ee37fe263b286e092c9925daefd0eba3c1e41684f537da1bac1e61c2387cab"
+        },
+        "build/device_catalog/mx_dense_kernel_34_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "6b93b49c7dd46d223802258aa4106b71befd7e5d60039c6cf00d40caca30da2f"
+        },
+        "build/device_catalog/mx_dense_kernel_35.c": {
+          "bytes": 1404,
+          "sha256": "24a0fa19507383a77e22ef6ecd9baf90d857cd2f87a4eba1a70274d5d5b3ec99"
+        },
+        "build/device_catalog/mx_dense_kernel_35.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "61b442358f4102f4cbbb5284962748074b9e229e1b08a9ac5a0ec523ac806968"
+        },
+        "build/device_catalog/mx_dense_kernel_35_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "335d8efcbe967bf84fd45a7c7de1ebfbe4140461792e064a9a7383afcc18cacd"
+        },
+        "build/device_catalog/mx_dense_kernel_36.c": {
+          "bytes": 1400,
+          "sha256": "c037efbe07445df5f5b30051177c5a65d78da6007c02cab3b51c58c28f041f5a"
+        },
+        "build/device_catalog/mx_dense_kernel_36.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "66c35e4fe70a9d4bba75ee3302a1359054d7be88ef31ef2e72452498b81baaec"
+        },
+        "build/device_catalog/mx_dense_kernel_36_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "d56eb0de56b76056aa632396e9ede8396f20692028a9efb8e492d355e160fa69"
+        },
+        "build/device_catalog/mx_dense_kernel_37.c": {
+          "bytes": 1400,
+          "sha256": "52552bb3acabbba3aa38432c7129193e33f8b00ae59d24bcd450658e2c191598"
+        },
+        "build/device_catalog/mx_dense_kernel_37.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "e8c500444c0323295e9f04dba96e7410877062353ddf38939ccd8e3e5e289205"
+        },
+        "build/device_catalog/mx_dense_kernel_37_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "f917a4dc8bb2defbfc74759d3dda2b9007c9549537033190efe54928710db7a4"
+        },
+        "build/device_catalog/mx_dense_kernel_38.c": {
+          "bytes": 1404,
+          "sha256": "da14c26c614364065648ce1731bf89434512a512fd345c436fcc3adf6c46986a"
+        },
+        "build/device_catalog/mx_dense_kernel_38.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2b99b14162f22a7b8a5bd95d4baf71829655f63fd56239f8be801ec604009b38"
+        },
+        "build/device_catalog/mx_dense_kernel_38_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "d339d550001baa60a3cb61becb1a6600bd5b257b0145c84f7ea6faa4b8c7b636"
+        },
+        "build/device_catalog/mx_dense_kernel_39.c": {
+          "bytes": 1405,
+          "sha256": "8a551feaadeff4d2556e3d0dfe37586c904a4c696cb643fbd0de0d6b8f9119be"
+        },
+        "build/device_catalog/mx_dense_kernel_39.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2a32fdc105ba97922ae04260da38f1b9ed37655514512c41d1747813259d351b"
+        },
+        "build/device_catalog/mx_dense_kernel_39_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "2986072fd770b4e9d381eedae7762dcc58e9b73b59f416bf2ff0ca8f6c1550aa"
+        },
+        "build/device_catalog/mx_dense_kernel_3_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "322a42283ef520d50514b0564cf7839d2bac7a213ca2bcae80ab46f531164179"
+        },
+        "build/device_catalog/mx_dense_kernel_4.c": {
+          "bytes": 1400,
+          "sha256": "591dce6fd8293ab7b8963614108ebf5935f74db073ccdfa5edd8858a77818651"
+        },
+        "build/device_catalog/mx_dense_kernel_4.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "973a85698b60b75598adf0c901385807bec7d820566e7ced2962816146654dba"
+        },
+        "build/device_catalog/mx_dense_kernel_40.c": {
+          "bytes": 1405,
+          "sha256": "3bf98db6d1d5eede0e318930e4a73deeb000628aa5688bb8f729ae070c01226a"
+        },
+        "build/device_catalog/mx_dense_kernel_40.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "f626941240afab0d7ad2ffe6656d746aac15cd5d9442fd13db004e3e75667096"
+        },
+        "build/device_catalog/mx_dense_kernel_40_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "2f0b30aa4e1ce41f560b08d9b1edac0d94160b7634b15f70ec6caec5d83bb058"
+        },
+        "build/device_catalog/mx_dense_kernel_41.c": {
+          "bytes": 1405,
+          "sha256": "8f0ac98a3233e3ff12ad6aa74fabde5d29945f7595d18bc0abbe8fd0fb552878"
+        },
+        "build/device_catalog/mx_dense_kernel_41.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "0fb543e28bca709903c042d5bdc31db096e35f8774ab9daa90b766d0929e252c"
+        },
+        "build/device_catalog/mx_dense_kernel_41_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "2ed6789b089009c576a9ccda93daf30b8c997aa8fe99d38929e20af0614b0a72"
+        },
+        "build/device_catalog/mx_dense_kernel_42.c": {
+          "bytes": 1404,
+          "sha256": "99be1a40da8a9b3a58573fb2dc121d6f01f6ed03d0c877311af51d41595edea7"
+        },
+        "build/device_catalog/mx_dense_kernel_42.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "56c6ccd1e0548b24cdce2859918b20237b09a397425bcdbad685dad7397ef412"
+        },
+        "build/device_catalog/mx_dense_kernel_42_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "3def1b2855390c6f1db09cbf76c5d99d2c924fe91428ecc43ae5a115d541e204"
+        },
+        "build/device_catalog/mx_dense_kernel_43.c": {
+          "bytes": 1400,
+          "sha256": "01eec5f15b62db20c263aa40d7185e88cf84e4f2ea9b9a4ed809312cb443fd6e"
+        },
+        "build/device_catalog/mx_dense_kernel_43.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "1ad068804787889e40fba406d4cc05c3a758910d46b2571203d595d5c9a463aa"
+        },
+        "build/device_catalog/mx_dense_kernel_43_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "f179c9026023bca2fab20d1c36cca80dbd6a6fe7d15813d8d6e0d12df22afb8d"
+        },
+        "build/device_catalog/mx_dense_kernel_44.c": {
+          "bytes": 1400,
+          "sha256": "d60978b7b601cff9970df280e34e583be0729ab0f9278bda68a03c3594a765a3"
+        },
+        "build/device_catalog/mx_dense_kernel_44.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "57046055032ce0cf21f61d5be7fc17fddff35b5948b26eee07ad3b63429a8d13"
+        },
+        "build/device_catalog/mx_dense_kernel_44_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "6be95e1197b0666ce304c1479bf65041d8dd429bb087008e1eb4c7311d9a1a8b"
+        },
+        "build/device_catalog/mx_dense_kernel_45.c": {
+          "bytes": 1404,
+          "sha256": "9b0cf23775bf461fe61d01bf33368ddbe366f9cab1d6324f297dd4e5c9660261"
+        },
+        "build/device_catalog/mx_dense_kernel_45.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "cfcc3b3fc51d46d39a01d6d2ded41c6d6d03dad98f1903d48878e6a168349370"
+        },
+        "build/device_catalog/mx_dense_kernel_45_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "12aa135202423b05ce9e38ada3c3531d43ba984811fde96055e21e504d3402a9"
+        },
+        "build/device_catalog/mx_dense_kernel_46.c": {
+          "bytes": 1405,
+          "sha256": "3d7871e8a7141160d7737eabc25b69b9a2d36be9c5e2b6e7f64f31a44fae7118"
+        },
+        "build/device_catalog/mx_dense_kernel_46.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "04dc7d4ae7180962d723eeb73ca57096aebb9e01409d5ab41495483668a25016"
+        },
+        "build/device_catalog/mx_dense_kernel_46_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "e437dccd0bb0f17b217b730a9a9ec9dca696bd6211ef47779ba7ef70e50a5e14"
+        },
+        "build/device_catalog/mx_dense_kernel_47.c": {
+          "bytes": 1405,
+          "sha256": "dd7f7caef60a38398c91702917df540948a001cd4061ebeafa6bf469b1a20be0"
+        },
+        "build/device_catalog/mx_dense_kernel_47.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "5545b58d15dec47037f4b571a7a1963d770b4c17411cd6c5fe99639781b185e2"
+        },
+        "build/device_catalog/mx_dense_kernel_47_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "14281d6618c8e06dc309e6785fba8a899f31c65016f22a84179a8e7aeb6452cf"
+        },
+        "build/device_catalog/mx_dense_kernel_48.c": {
+          "bytes": 1405,
+          "sha256": "bf66cc331d436999d777f2e574038043d311bbf6013583a714dee49109072ec0"
+        },
+        "build/device_catalog/mx_dense_kernel_48.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "21c1fa4ce066f7971c6ea6dda5a40b6ca6c14626013d88862008a38d696f3266"
+        },
+        "build/device_catalog/mx_dense_kernel_48_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "8370f12dc38d20931975a6b277b5855368cd37e23037532135b167a679b591d7"
+        },
+        "build/device_catalog/mx_dense_kernel_49.c": {
+          "bytes": 1404,
+          "sha256": "8260d4d09fc8aa71f54f13efbef4a2c241f5d85c673c50357e59b28ffc921964"
+        },
+        "build/device_catalog/mx_dense_kernel_49.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b9dca652efa09d0616254f3c871758197cabf7eaef2fe839d17205ffffb132a1"
+        },
+        "build/device_catalog/mx_dense_kernel_49_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "f7659b2bdbc1e864429849dc2957380bef31ea050d3e5741f8c92adb1c14d742"
+        },
+        "build/device_catalog/mx_dense_kernel_4_prepared_kernel.c": {
+          "bytes": 1194,
+          "sha256": "3682d505099956fae8ed2bbc7f98de2f48349420096239c99ec22769c6e54967"
+        },
+        "build/device_catalog/mx_dense_kernel_5.c": {
+          "bytes": 1400,
+          "sha256": "7f998bfacb84254388ee20842b0a5f933560efafb41cea68d62c21ab8a250b90"
+        },
+        "build/device_catalog/mx_dense_kernel_5.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "38819683f738c57d884b95d2c64c727c47281bf5a690191f41142b8668f2659f"
+        },
+        "build/device_catalog/mx_dense_kernel_50.c": {
+          "bytes": 1400,
+          "sha256": "0ac800ef7341fc5f5a03a39935fa55983ef9dae017e8cd2eef383e21e6bb9e0d"
+        },
+        "build/device_catalog/mx_dense_kernel_50.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b44defdd6672b2c5bfb56175f54178329ba56798c903ef458dd4d1a3f492d931"
+        },
+        "build/device_catalog/mx_dense_kernel_50_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "5d9b4da4c3b2d76f43e7f21151435b828e2afcf60785f34c65ccb472307399f8"
+        },
+        "build/device_catalog/mx_dense_kernel_51.c": {
+          "bytes": 1400,
+          "sha256": "bf7feaa2bb91400bf1fd21a331869d57100fa7a44913169cf3c3989ff6bfd165"
+        },
+        "build/device_catalog/mx_dense_kernel_51.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "9c278ca43b833c3997510f0628c7c8cbda64c3dedd335ed988f2b0c0dd7f4e7f"
+        },
+        "build/device_catalog/mx_dense_kernel_51_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "b5978ed3dd65d761da66becc900e670f921d31c790e589bcf4d7eae28989921b"
+        },
+        "build/device_catalog/mx_dense_kernel_52.c": {
+          "bytes": 1404,
+          "sha256": "997e23954e133d54a021e34a239ada7f7947ef922dc0ee55e0fee10e0a562d9a"
+        },
+        "build/device_catalog/mx_dense_kernel_52.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b1e63d496415ee67c22cf5430bd9123daca44585a10cb19405103a944ba4d2e5"
+        },
+        "build/device_catalog/mx_dense_kernel_52_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "09f5226146ba54749456b5b4b5356f61cf39c9354b60b126ede510b0b6ae7e76"
+        },
+        "build/device_catalog/mx_dense_kernel_53.c": {
+          "bytes": 1405,
+          "sha256": "e48a8df6ccafd734b5e22d0b5bbdcb38fac526ae67e6abc929dd640e5b008ba4"
+        },
+        "build/device_catalog/mx_dense_kernel_53.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "12fa2c5f83a4f83d7def536327635a339702afa6b52a657461fe468e7a9f8326"
+        },
+        "build/device_catalog/mx_dense_kernel_53_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "2bbe0a530992736b58578b2c118a3e9f9f4cb0c417fee3d5424e335e5d5f8e0b"
+        },
+        "build/device_catalog/mx_dense_kernel_54.c": {
+          "bytes": 1405,
+          "sha256": "cdd96dfabea866a780b9872458e7ea9156a6fb2e7d304c164e74ad845bdc6c4d"
+        },
+        "build/device_catalog/mx_dense_kernel_54.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "d669b41cbc815301d5624ca887df3131dc2d39e83a5ff818a948ba4f4eec7bdd"
+        },
+        "build/device_catalog/mx_dense_kernel_54_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "b7124d01f994c938a1671eb192ab1206cdb0432e84b95372a6034833462bed96"
+        },
+        "build/device_catalog/mx_dense_kernel_55.c": {
+          "bytes": 1405,
+          "sha256": "e7e92b22a476836cf19ff055b7d797457a1da5c4efb4bdd9d4b898a110483c4f"
+        },
+        "build/device_catalog/mx_dense_kernel_55.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "c3e6949692c41e07c44150cffee4f0f274202669a7d5b05d15b92ab6bcc55296"
+        },
+        "build/device_catalog/mx_dense_kernel_55_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "c3e697b998cfcea2a63ab1319b628c4df1a702663cfe1af64c2b9ab25d121ceb"
+        },
+        "build/device_catalog/mx_dense_kernel_56.c": {
+          "bytes": 1404,
+          "sha256": "f9d9cad273d15cfa8a70bbbf2da6008b992c333ec60a638840f98ab6813f9d1a"
+        },
+        "build/device_catalog/mx_dense_kernel_56.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "90970c61a3436ca416eadab3566a1669c0966862d1e05990c635ebec9d605eac"
+        },
+        "build/device_catalog/mx_dense_kernel_56_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "595ef355ed857287ccb7d56b00fb1b47f4c8228c3974c6d254d7bc26a3a36212"
+        },
+        "build/device_catalog/mx_dense_kernel_57.c": {
+          "bytes": 1400,
+          "sha256": "322689ef785c9e0e7200d10d8a2d13702f9b9060ff012d36fcc3b9e9c7b9883d"
+        },
+        "build/device_catalog/mx_dense_kernel_57.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "5db52a7d1f2273e45a7d1cf3a45682c794253cd48e6beebba5467acc68d1ce50"
+        },
+        "build/device_catalog/mx_dense_kernel_57_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "9212962d1a32be298118db00a40e2b7d2599154168977a003243d884e37e8eb6"
+        },
+        "build/device_catalog/mx_dense_kernel_58.c": {
+          "bytes": 1400,
+          "sha256": "86aed063f347f3720d534809380fe79dc6c59905e07f5113634a6cbce68ebf7a"
+        },
+        "build/device_catalog/mx_dense_kernel_58.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "aa4b8756bbf38089cfe7f765660e675d2197174ff4060d077277d5507d7f0eed"
+        },
+        "build/device_catalog/mx_dense_kernel_58_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "c4131fb186a2a80fbe54829e68dc434a1d2cc47141d9f4f5da0d95d55226f4b7"
+        },
+        "build/device_catalog/mx_dense_kernel_59.c": {
+          "bytes": 1404,
+          "sha256": "7c8a2917a58b8b6218139484afb3ad3d00556215d45216e409ea8bc3ba1b756b"
+        },
+        "build/device_catalog/mx_dense_kernel_59.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ba79a90cf2fd9b6fbea48c8157737b4174d3eda8dbcdc243d2344e56fe82c1f0"
+        },
+        "build/device_catalog/mx_dense_kernel_59_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "2a4f5152f3de657fe657e5f9cbea605d07cb840d95d5344d668969c2c2c1c2eb"
+        },
+        "build/device_catalog/mx_dense_kernel_5_prepared_kernel.c": {
+          "bytes": 1194,
+          "sha256": "87f1a090bee22aff9585a1327b427625c3465ef871ba9c3fc0228bc572eea72b"
+        },
+        "build/device_catalog/mx_dense_kernel_6.c": {
+          "bytes": 1400,
+          "sha256": "a212933a71632ef272fd8aa772fa39363f3ac150b3cda576f03285a318d59454"
+        },
+        "build/device_catalog/mx_dense_kernel_6.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "eb9d6044e9db536583165f502c8ab184188413af6673b4180eb45cb1d4fb4528"
+        },
+        "build/device_catalog/mx_dense_kernel_60.c": {
+          "bytes": 1405,
+          "sha256": "ea7269ab3d8d05c4e0ad48145643ae9ac4b4b05b5ddd4c496b3a469ea82e5338"
+        },
+        "build/device_catalog/mx_dense_kernel_60.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "5eb87e637f8ca61c780ec4cd88b938cc945891a068ccfa8e2e54cfca878d1643"
+        },
+        "build/device_catalog/mx_dense_kernel_60_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "524e0a29ffc3e70c2800d726ba3dd6befdd5d2ffa7991b69bd7b4bc6666124ec"
+        },
+        "build/device_catalog/mx_dense_kernel_61.c": {
+          "bytes": 1405,
+          "sha256": "ce16e4e9fc29eb1825e5ff986f5130aa829c5fb2d45394fc266b35cf7df90390"
+        },
+        "build/device_catalog/mx_dense_kernel_61.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "615201c4d68f82a64b9cca89f49644e53190b51af1597f745fe571d68ccbd625"
+        },
+        "build/device_catalog/mx_dense_kernel_61_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "a79697427dd0570ec42953b2947c76c2a126e1f2ff6911ef635362e471b01de6"
+        },
+        "build/device_catalog/mx_dense_kernel_62.c": {
+          "bytes": 1405,
+          "sha256": "3e1b1c4d3b69e50c8dffc6215912c54cdc5df22ff6acc7871bc931b0fb5eeaac"
+        },
+        "build/device_catalog/mx_dense_kernel_62.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "91058c7ed7164d6ad59a315d959235b6bd8e4fcbb4624a0c11aa97893844e66e"
+        },
+        "build/device_catalog/mx_dense_kernel_62_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "5f0682b5fae78885c348da45b78175121bae4cdf9cb67597f43339bf9896c325"
+        },
+        "build/device_catalog/mx_dense_kernel_63.c": {
+          "bytes": 1404,
+          "sha256": "70dd45501d42c7ed8a3aa9905628a80ab3ad8440f0b6c448ec8c32a5f1277369"
+        },
+        "build/device_catalog/mx_dense_kernel_63.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ebf7e62372bbd29f2897bf563056ffb0a5430ce4fa5fbbb9fa22d2a885a25478"
+        },
+        "build/device_catalog/mx_dense_kernel_63_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "f6b1c0f1150eb06679d050a7e4504d52b4926635ebd47e244288e01de44905d9"
+        },
+        "build/device_catalog/mx_dense_kernel_64.c": {
+          "bytes": 1400,
+          "sha256": "5588e2da84f9af13cdbab56f712e45a6ccc462ef2bee43e74ea0da8173dbee7b"
+        },
+        "build/device_catalog/mx_dense_kernel_64.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "8478992023a2ca304eaaa7da7c1c63159ba1cb2a716cc8e8a69d968d721b70bd"
+        },
+        "build/device_catalog/mx_dense_kernel_64_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "77aabf24f0d0633ccca2f8e16161327d6656d40b797bc8e032a332b33d83b15c"
+        },
+        "build/device_catalog/mx_dense_kernel_65.c": {
+          "bytes": 1400,
+          "sha256": "229430e9eab14fb5b90ce970d7916ed458e9ee3f326d8ed23234afc94cd4a6a8"
+        },
+        "build/device_catalog/mx_dense_kernel_65.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2387d0311bd85c970cc8375709bbec05defc2f9a824bdec8eaae6c6ea0fc29cc"
+        },
+        "build/device_catalog/mx_dense_kernel_65_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "f21ccf4429c53974f6491a828702f1b5de7a0d04816073d527c3da5e841774a1"
+        },
+        "build/device_catalog/mx_dense_kernel_66.c": {
+          "bytes": 1404,
+          "sha256": "d9da33e04befb29ba864b9ad4861509f1d6965747f7f85fd637d424d3cbf7997"
+        },
+        "build/device_catalog/mx_dense_kernel_66.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "6e39fa4c7056c16e7f3e7e333e58f2562c206dc2a23e97123dd567b42e00f3fd"
+        },
+        "build/device_catalog/mx_dense_kernel_66_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "36cc5ed00f68581cb9175e366c8a202bac45a2a833d711181f1a4fc3cfe0cad5"
+        },
+        "build/device_catalog/mx_dense_kernel_67.c": {
+          "bytes": 1405,
+          "sha256": "4cdf8c39579d74eec22fdd4a55c8bf1d03b566ef95a8c569bf35c965c055090e"
+        },
+        "build/device_catalog/mx_dense_kernel_67.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "d154fdfdab40c2e8b69254e534cf82d152fab39362b8c5bb38105cc0ae3644a6"
+        },
+        "build/device_catalog/mx_dense_kernel_67_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "679dc34f351db7850f2f38148d2a7ae761529450e5990442ba86a7c563133b02"
+        },
+        "build/device_catalog/mx_dense_kernel_68.c": {
+          "bytes": 1405,
+          "sha256": "4c33f27c45f0b8c7d75c789e3b4e76ef5335b3f552382c633f5c7f7477f0a0a4"
+        },
+        "build/device_catalog/mx_dense_kernel_68.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "093adc950f541666ae1d8e587831f4586e6fa30bc5799b6edb2b6d9f38c1f0a9"
+        },
+        "build/device_catalog/mx_dense_kernel_68_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "b56aaac426d3a14d3461d95470a568db23b465ff210d78b3e0b426ac8ac02cb7"
+        },
+        "build/device_catalog/mx_dense_kernel_69.c": {
+          "bytes": 1405,
+          "sha256": "562250081d2f8c21cb296c17cf2f47d0008e8789f16c769099a8b2766322531f"
+        },
+        "build/device_catalog/mx_dense_kernel_69.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "5f3690a11777987610de8c5d3f71239c02a863fdbf9cc9f46e94ecd82d624757"
+        },
+        "build/device_catalog/mx_dense_kernel_69_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "a0b0409b3ad500c0dc272287dd4516a752f6c26e6823d489b5ae25e006e6906c"
+        },
+        "build/device_catalog/mx_dense_kernel_6_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "157fd621d7f294db33660c9fa68b3ef0077026950a0bcd4fdb4cef4369f10719"
+        },
+        "build/device_catalog/mx_dense_kernel_7.c": {
+          "bytes": 1399,
+          "sha256": "22c3aa8f1e4d01719d164e8700ef8bdd923844eeeab74b6a639ddfc391ce9d1b"
+        },
+        "build/device_catalog/mx_dense_kernel_7.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "b521b7d04ef02ee03f931eb9b3ce951db4f19b550bb0f6481229cc0356f7c993"
+        },
+        "build/device_catalog/mx_dense_kernel_70.c": {
+          "bytes": 1404,
+          "sha256": "bcb30f2efacdd52d489c8265807f4b18b2a2a54ad153bc9d34a4fb812341bdcd"
+        },
+        "build/device_catalog/mx_dense_kernel_70.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "10026bd292804ee69a8d407bc07530d03ff607bd41d7ab235bbdd27560d43db8"
+        },
+        "build/device_catalog/mx_dense_kernel_70_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "3df34df8eedac6cf8e1a19cf3d177d85fdeffa19ed0909ca892a6a6febf7fc58"
+        },
+        "build/device_catalog/mx_dense_kernel_71.c": {
+          "bytes": 1400,
+          "sha256": "b924fe66c63d9e0e7a0ea379f26948d14900b35751229198fe1846a233864950"
+        },
+        "build/device_catalog/mx_dense_kernel_71.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "4ebfb0350b38ad3ef78ecb499d1839e61242ef50fc1fb416deb1a9db26c6c630"
+        },
+        "build/device_catalog/mx_dense_kernel_71_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "df83540c31f111bc39e4cab31410b388cca9e1584b2af68c16e05bb3115aeb71"
+        },
+        "build/device_catalog/mx_dense_kernel_72.c": {
+          "bytes": 1400,
+          "sha256": "423671510367b75ebc316d20d19891ccafe98601665fb5c6e3445551496b3d0d"
+        },
+        "build/device_catalog/mx_dense_kernel_72.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "3974a50e72cc9e1b50e05d77011a4dd2b9582758da8877b3d1234e71edd85489"
+        },
+        "build/device_catalog/mx_dense_kernel_72_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "5addb4a458ee029f12333fcbec814f53639cc476e2d00c3a83a7d913405a7207"
+        },
+        "build/device_catalog/mx_dense_kernel_73.c": {
+          "bytes": 1404,
+          "sha256": "8601098750f98340db26c4b832db9b7db13d164bc720f2e745b73aac2c048d89"
+        },
+        "build/device_catalog/mx_dense_kernel_73.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "168eafc74ac196104be157a8dc067f5867816102851bafd7e7a955e1701553d9"
+        },
+        "build/device_catalog/mx_dense_kernel_73_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "c17402349c5d7b355936f8fc52197088acd9133da495aec01ee6f0a39e353e7f"
+        },
+        "build/device_catalog/mx_dense_kernel_74.c": {
+          "bytes": 1405,
+          "sha256": "95a4f1823e4b2b06b614729dccfbcf7949d0f7b15c103bf1812f6f50b72d883e"
+        },
+        "build/device_catalog/mx_dense_kernel_74.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "3d37afd9a8586a83d83c392e91d04557029fdaca84adf11da3904b83f880f2d1"
+        },
+        "build/device_catalog/mx_dense_kernel_74_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "901f59b694d834f76bdd41b46bc562638253cf8e0c2e6da1fc98f0cc89c5366b"
+        },
+        "build/device_catalog/mx_dense_kernel_75.c": {
+          "bytes": 1405,
+          "sha256": "5206baeedd63531a688c9c26cab0c815d9a79da7ac682ab203d13d8d3669a8b0"
+        },
+        "build/device_catalog/mx_dense_kernel_75.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2018f25f17f97014280e806f05a9c40438dcf89ac605a9d429e553e70ff49d96"
+        },
+        "build/device_catalog/mx_dense_kernel_75_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "d74478f321a099a1fb1d990fbd880ca9c40bc09941b82c6d5c3938e02b827af6"
+        },
+        "build/device_catalog/mx_dense_kernel_76.c": {
+          "bytes": 1405,
+          "sha256": "e10751f888b83f114543e0c79d7361c0998868c7ce3b20b3a2bf7585acb5ff6c"
+        },
+        "build/device_catalog/mx_dense_kernel_76.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "8b1981f77ce6118c7a8361aff5082ce929b536b6d2bd1687183c6b6f5f104d69"
+        },
+        "build/device_catalog/mx_dense_kernel_76_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "bf03e2c0da76e6d240e7a08657a840efc9dbfb79c4f7ec3eb926de378b02b66e"
+        },
+        "build/device_catalog/mx_dense_kernel_77.c": {
+          "bytes": 1404,
+          "sha256": "7060f30662c0a38279c1342c72d5dd2a13207a4c94b592af001c64c34a2c506c"
+        },
+        "build/device_catalog/mx_dense_kernel_77.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "0f16e25e888f568dcc0cc218ecd46f0f1ac13a961553a29f37b070dc7cf36b1d"
+        },
+        "build/device_catalog/mx_dense_kernel_77_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "5fb8068d79057a15d3b7c33bbd1a5a615de492e086a2bd7d0c7b330ea86e85c4"
+        },
+        "build/device_catalog/mx_dense_kernel_78.c": {
+          "bytes": 1400,
+          "sha256": "415c2f348652e63cdb76a8f74cc7db6505062e808d8bbd158e0900ea069c6c7a"
+        },
+        "build/device_catalog/mx_dense_kernel_78.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "3dc0d0c6c22eff460ab788629f185f0f2477d798b7870ca7dc0f855f60d21647"
+        },
+        "build/device_catalog/mx_dense_kernel_78_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "4d9b1498a01fc190ff9c8f53ead595ce528c6011d5201e7e750a1533573d8840"
+        },
+        "build/device_catalog/mx_dense_kernel_79.c": {
+          "bytes": 1400,
+          "sha256": "6d2f16d9e4a092bd1776db53f8343fb2034a36dbbc993484325388c5834504fc"
+        },
+        "build/device_catalog/mx_dense_kernel_79.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "e8764c464653676bc3d78bbb513ebac61a0a02bff77c6f5e785cc1fff31fb400"
+        },
+        "build/device_catalog/mx_dense_kernel_79_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "2237137f68152650a3b25461cb822e8670257d71bc79166923d30ff075395d8b"
+        },
+        "build/device_catalog/mx_dense_kernel_7_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "b9e113ab7f40a32fd3b5ce4df7e315e4ed93768b18bba5be118a8a9563282462"
+        },
+        "build/device_catalog/mx_dense_kernel_8.c": {
+          "bytes": 1395,
+          "sha256": "1287fafe9a98986549c9ea96d7864a41c1741e5fc839569d11218805dd9051b9"
+        },
+        "build/device_catalog/mx_dense_kernel_8.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "e1312174d23cc79dc0aaeaf9f462f6f9181d4a0fe3abb2086ef3983a6348d314"
+        },
+        "build/device_catalog/mx_dense_kernel_80.c": {
+          "bytes": 1404,
+          "sha256": "f88c0fba21b1e8bb05b17155e4396a85f0d607b5f3966903b9977c8b23cbe64c"
+        },
+        "build/device_catalog/mx_dense_kernel_80.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "a423ac4203d25e4c4db07fe0706e143863b09956dfca82075924a28960f1e603"
+        },
+        "build/device_catalog/mx_dense_kernel_80_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "a9334ec4a05e488aec81c9067b4900e0f8efb5a328e01ad637e3ee5a657db5a3"
+        },
+        "build/device_catalog/mx_dense_kernel_81.c": {
+          "bytes": 1405,
+          "sha256": "2ea6c0de2a76d1cba3e5a0376771e437599bf6ad818860b85965d823a9141d25"
+        },
+        "build/device_catalog/mx_dense_kernel_81.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ac04cde6d7fa6516d4f3acc063bd1b22d6c3b936ac1169106a532c3c7c78cbc6"
+        },
+        "build/device_catalog/mx_dense_kernel_81_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "9125fcd3114f452895e11e602edac437f7d67e27eeac684a4493efc307b81587"
+        },
+        "build/device_catalog/mx_dense_kernel_82.c": {
+          "bytes": 1405,
+          "sha256": "5273b1e699619c754ea16f2b8864d26ecaf53f09da1642b195590bfd80b3a454"
+        },
+        "build/device_catalog/mx_dense_kernel_82.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "00fe833f62ca40d96e6e30bb85e0a975e92b3c62ec9ceee99b993d8983b97c0d"
+        },
+        "build/device_catalog/mx_dense_kernel_82_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "806f76eb8dd6f1efd08155af905e6c5b3ea657eed66de9fa200505b0a8bebbdf"
+        },
+        "build/device_catalog/mx_dense_kernel_83.c": {
+          "bytes": 1405,
+          "sha256": "9b8375dcfd57d1d7c0e08f9decc6f529d0ebf607e2558d90f2e150bab6ef1dfc"
+        },
+        "build/device_catalog/mx_dense_kernel_83.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "6996c40b3a35da7b2a8cdf8710587f8a8fc4c774f7e759b0d9238404784eb132"
+        },
+        "build/device_catalog/mx_dense_kernel_83_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "b5db1447db1a75bf3d3c14d1ba5835c24f7ea96eda4708e34a91d0529d4cbbad"
+        },
+        "build/device_catalog/mx_dense_kernel_84.c": {
+          "bytes": 1404,
+          "sha256": "aad0d389a8d06f78c9081ffc3a7f469e065b426a1fec6454b942221a55782006"
+        },
+        "build/device_catalog/mx_dense_kernel_84.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "2421d8150eb8a917640d99c310785617212a10e7a771ebd17751458c2352e356"
+        },
+        "build/device_catalog/mx_dense_kernel_84_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "61a3b5dcf8233d7b6de3b0cbf9788717be9e3cdb2b39a66629cc929deae083df"
+        },
+        "build/device_catalog/mx_dense_kernel_85.c": {
+          "bytes": 1400,
+          "sha256": "67bbeaa6818d1dc460d23a8562ba1068470a63aa78328e148f62ba120c9df773"
+        },
+        "build/device_catalog/mx_dense_kernel_85.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "3712889d9ee5a6f5894f0f27962fa974d087b116cb23004fdd5cdd3ca6e64e7f"
+        },
+        "build/device_catalog/mx_dense_kernel_85_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "4e4cc9116ec188dc7ec0a3d2e83c9e2a9611391e0ffe2f10ac2b13373b48d0fa"
+        },
+        "build/device_catalog/mx_dense_kernel_86.c": {
+          "bytes": 1400,
+          "sha256": "62ceadba3bea9641350352feb9954fd7f669709c2728814e5a9adc82a107dd25"
+        },
+        "build/device_catalog/mx_dense_kernel_86.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "1f194bf72e724bb222a8b0fae73bde138dd16a6f296241a631967f086828ab54"
+        },
+        "build/device_catalog/mx_dense_kernel_86_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "2659d5fe6874e90dc21bfe11ddb2a003374f9c163d06f2e401695005247bcfbb"
+        },
+        "build/device_catalog/mx_dense_kernel_87.c": {
+          "bytes": 1404,
+          "sha256": "b6e1c11d569a39a73e64ca5ffed1ebdae4ebf387f706088f4943e8bc8359aa55"
+        },
+        "build/device_catalog/mx_dense_kernel_87.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "75b14013fb46baeade9d7a60f931894b22e89defd04147694d9c08f23c757d1f"
+        },
+        "build/device_catalog/mx_dense_kernel_87_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "e366a8a8b5e4dfbc57f07ce3e8464f9a51539882d0534e83ac5654ff020f51e3"
+        },
+        "build/device_catalog/mx_dense_kernel_88.c": {
+          "bytes": 1405,
+          "sha256": "c01fd5d7fa7f1c49c894ef3a9356e6315aba823e0e3997b36d78584ffd42b590"
+        },
+        "build/device_catalog/mx_dense_kernel_88.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "3aa4165fc1bda210f52811d0ef67fa5bd262fdcab8f7a4a7ee2f3f6f147335ad"
+        },
+        "build/device_catalog/mx_dense_kernel_88_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "b33532ec8f4938c987a866dba7491f80b367d6448f24d16a2ba53425cf343bca"
+        },
+        "build/device_catalog/mx_dense_kernel_89.c": {
+          "bytes": 1405,
+          "sha256": "07a31d3b33c9ac17ee747c83505f62cff92a5f3edbb2d52ccc24ef6a47f4a7a9"
+        },
+        "build/device_catalog/mx_dense_kernel_89.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ce98ffc8de74ea52c412753248774b579565c18aae85d57f3eff5218bde15456"
+        },
+        "build/device_catalog/mx_dense_kernel_89_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "3f1d65dae1b21a1ef90ecde894b2b6a07ec5bb04eef68e13d250bad4d52f006d"
+        },
+        "build/device_catalog/mx_dense_kernel_8_prepared_kernel.c": {
+          "bytes": 1188,
+          "sha256": "303ad7616f0d3602cc967a0f5092b87514864dfa229e0804d5ab4bbe50537fb7"
+        },
+        "build/device_catalog/mx_dense_kernel_9.c": {
+          "bytes": 1395,
+          "sha256": "bd1261bae91d0b76895e23eb2bd0b8162d50db00cd916b6de41f4637b6b6cd4c"
+        },
+        "build/device_catalog/mx_dense_kernel_9.schedule.mlir": {
+          "bytes": 343,
+          "sha256": "5dcfa5dff8097617e4fbb861575c6f7fd63858f27e89912bb70912dfc663a4a9"
+        },
+        "build/device_catalog/mx_dense_kernel_90.c": {
+          "bytes": 1405,
+          "sha256": "4994579c49ef1136510b88604189ae057d49ff236fe95c97af3c446020b88a3c"
+        },
+        "build/device_catalog/mx_dense_kernel_90.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "ce44f559cf408c13cc69af9631a1569b140571a9ac197e07655a7861c390ab8f"
+        },
+        "build/device_catalog/mx_dense_kernel_90_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "ee918667d27549e3fa297e16211a18094993a9ad5d8940909f6ee8701079aa25"
+        },
+        "build/device_catalog/mx_dense_kernel_91.c": {
+          "bytes": 1404,
+          "sha256": "846c8bf8e8b63762da7bd536aacd534cf03ee63a59a584173fccfd9399edd960"
+        },
+        "build/device_catalog/mx_dense_kernel_91.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "4fc438395d595e75e93abf86665f00efcdbf40ab1f8cf3f73ee7d864b8860d1f"
+        },
+        "build/device_catalog/mx_dense_kernel_91_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "931c836b643b9d59cdb78e686d0980c4ad748e85fe1a7b3a0bdd52bf81709419"
+        },
+        "build/device_catalog/mx_dense_kernel_92.c": {
+          "bytes": 1400,
+          "sha256": "46a622a1eef94aded70ff26d8b3f7946d0331e270320c5b593cb1cbbebb6a1da"
+        },
+        "build/device_catalog/mx_dense_kernel_92.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "c23f2d83c68f719c250be9d1583346c1dce53943027f37a521818b771608686a"
+        },
+        "build/device_catalog/mx_dense_kernel_92_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "36655dbc0602a4c04c25e1e9feaccb1495a2e54fd3978bcb1d9271b687b3bb29"
+        },
+        "build/device_catalog/mx_dense_kernel_93.c": {
+          "bytes": 1400,
+          "sha256": "1061eed0ce058cb7d92bafb9aef1524e6418756010e281b3db9b804b393faa5c"
+        },
+        "build/device_catalog/mx_dense_kernel_93.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "6d556387353817f194268cc75ccaa80baa2f6e624aeabc5a1db48e8524b8ccbf"
+        },
+        "build/device_catalog/mx_dense_kernel_93_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "ac47c5b8a24ce7174e2b90c0d06d729df5b694a79de6d50df935c00c4723c950"
+        },
+        "build/device_catalog/mx_dense_kernel_94.c": {
+          "bytes": 1404,
+          "sha256": "1be6638fa200b8f766a50a7e277b5557641f233d4f0cf585f0dd459a4eabbe34"
+        },
+        "build/device_catalog/mx_dense_kernel_94.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "e7169ea368c434cd3c64b598a3b6396636afe9b98e1c07d8d225572eeb18bcbc"
+        },
+        "build/device_catalog/mx_dense_kernel_94_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "691cd11b051902c59597842c4ae4fe6ceed6d39c6e0124f2812fc9f2c2493d72"
+        },
+        "build/device_catalog/mx_dense_kernel_95.c": {
+          "bytes": 1405,
+          "sha256": "1b744de8f4f328492a6a32bc49215b2dd602c2813a5708752a4f0bfeeaed005d"
+        },
+        "build/device_catalog/mx_dense_kernel_95.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "b6d604f5401fef3ab9d9f59c5b50068988195f1eb16bb92936b9b1225571b85b"
+        },
+        "build/device_catalog/mx_dense_kernel_95_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "26fd2e1a9cfcad66b8a08382354d6f81c2f67baf7fdf47486fe9f50fb5d02266"
+        },
+        "build/device_catalog/mx_dense_kernel_96.c": {
+          "bytes": 1405,
+          "sha256": "37b5e192128531a6a7f232be1b49d6cf41237e9f8d7c23f2ee13578a9a375440"
+        },
+        "build/device_catalog/mx_dense_kernel_96.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "db2c0061af03e93d8df35a80335d5c28cf3264bc8cd9b62c13d59f9b3daaca48"
+        },
+        "build/device_catalog/mx_dense_kernel_96_prepared_kernel.c": {
+          "bytes": 1199,
+          "sha256": "9f23ce171b690940bb0fff9a9f3ae4f2b745a0a3427876a199981c325e967f91"
+        },
+        "build/device_catalog/mx_dense_kernel_97.c": {
+          "bytes": 1405,
+          "sha256": "aeb89366b51621b539f63e9c65dffcbff3f9eb61940d77a2ab95ee6e5b803368"
+        },
+        "build/device_catalog/mx_dense_kernel_97.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "31b8985b679cd97546e48763f37184f42c46ba2c6c7017106facf1c416cdf7bc"
+        },
+        "build/device_catalog/mx_dense_kernel_97_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "a9cee0d1d6873c41f107d40b91be06310e2a3756b4a3eefa66c6cf8fae0390f3"
+        },
+        "build/device_catalog/mx_dense_kernel_98.c": {
+          "bytes": 1404,
+          "sha256": "4c6a267ecd1c927ad42532c314ad5ca4d006c4051f005bf02b6be0daa936aa0b"
+        },
+        "build/device_catalog/mx_dense_kernel_98.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "28ad3b0dffd2d6fa52ea99367f57b7c4df2e917716b27dd77fc15fb75e7a6199"
+        },
+        "build/device_catalog/mx_dense_kernel_98_prepared_kernel.c": {
+          "bytes": 1198,
+          "sha256": "1312eb538ed8dc0281800fc3d355a3dac5622e52cc41d7727636e73597e88c43"
+        },
+        "build/device_catalog/mx_dense_kernel_99.c": {
+          "bytes": 1400,
+          "sha256": "b0e2f19efa851257eee2adf76e25d6347501c8fa65beb8c2512621191550f61d"
+        },
+        "build/device_catalog/mx_dense_kernel_99.schedule.mlir": {
+          "bytes": 345,
+          "sha256": "5f40bc1074eb7e2ae80f627b040d1535014757bd99b71ebac9a4d8ebc0eb1a86"
+        },
+        "build/device_catalog/mx_dense_kernel_99_prepared_kernel.c": {
+          "bytes": 1193,
+          "sha256": "d9255028d93f56683ab8b5d960aeea8907f9ac9d25c71843511f13efb67c61be"
+        },
+        "build/device_catalog/mx_dense_kernel_9_prepared_kernel.c": {
+          "bytes": 1188,
+          "sha256": "b121853dcf29ab6dffdabf52abd900f55c0d31310eab3549f4d478cbdcd421de"
+        },
+        "build/device_catalog/mx_f32_rms_packed_1_160_2048_striped16_kernel.c": {
+          "bytes": 3414,
+          "sha256": "defd915110f5dc08681336e90c09e8e9ef390b6842801818240243e952ef833f"
+        },
+        "build/device_catalog/mx_gated_projection_packed_0_kernel.c": {
+          "bytes": 613,
+          "sha256": "7f8391ca31f7f5be36e82f17b0b99dedb4cc0adc0d421450594c506cf25a3831"
+        },
+        "build/device_catalog/mx_gated_projection_packed_10_kernel.c": {
+          "bytes": 622,
+          "sha256": "d10b5d0ca6a35d79ef75176799e261d48133fe8e0eb9177e4d34bed4c762e0c7"
+        },
+        "build/device_catalog/mx_gated_projection_packed_11_kernel.c": {
+          "bytes": 622,
+          "sha256": "3a98cc907615955ec23b88c2a2deab87fd95a54fdd6af0153cfd510cf61f8202"
+        },
+        "build/device_catalog/mx_gated_projection_packed_12_kernel.c": {
+          "bytes": 622,
+          "sha256": "e60a0afe09076865e1c8de39065db8dee350cbfd37e068a83ea167a3280dafdd"
+        },
+        "build/device_catalog/mx_gated_projection_packed_13_kernel.c": {
+          "bytes": 622,
+          "sha256": "8427af22d1add2b6932bf7d2231ad2aeb04d9cfd48eec6d3decb84e4d64cd5d7"
+        },
+        "build/device_catalog/mx_gated_projection_packed_14_kernel.c": {
+          "bytes": 630,
+          "sha256": "39e49ecf94ee5835d3786b721894aba0a0c231b21a3a3fbccd5bfcd7124b7bd7"
+        },
+        "build/device_catalog/mx_gated_projection_packed_15_kernel.c": {
+          "bytes": 630,
+          "sha256": "9d54641455683a5bbb1c98e72b7ee93212aac1bcbaf73637e3eb7af4aa5cf01b"
+        },
+        "build/device_catalog/mx_gated_projection_packed_16_kernel.c": {
+          "bytes": 630,
+          "sha256": "51119f8fba2d918f598dad228520adfa844868c6efe62a6e2844dd921cecdba5"
+        },
+        "build/device_catalog/mx_gated_projection_packed_17_kernel.c": {
+          "bytes": 630,
+          "sha256": "acda2db61d6bc4f31a9616378f5ce5a661330a5a6acd20363fc24d3dde506ec1"
+        },
+        "build/device_catalog/mx_gated_projection_packed_18_kernel.c": {
+          "bytes": 630,
+          "sha256": "41ae4b241a4ede4a3684e7145a580662206e50acf9e096f26f0c7498207b78cf"
+        },
+        "build/device_catalog/mx_gated_projection_packed_19_kernel.c": {
+          "bytes": 630,
+          "sha256": "ad8b0369a6f8707f59d67b226db84a13f951524239308852395637f332b6f4e9"
+        },
+        "build/device_catalog/mx_gated_projection_packed_1_kernel.c": {
+          "bytes": 621,
+          "sha256": "64356853d3b596e78289375b9d4c3ee79a1214f8878b6923174f47dc65087734"
+        },
+        "build/device_catalog/mx_gated_projection_packed_20_kernel.c": {
+          "bytes": 630,
+          "sha256": "77bb413c1406608ad0b0114a9a403f507f214f8aa1b5feb2a5c66354c79f3a7c"
+        },
+        "build/device_catalog/mx_gated_projection_packed_21_kernel.c": {
+          "bytes": 630,
+          "sha256": "939c6d9bf9911b829b251a5934ea7b028568a6ed1f2d6350b2c9b48a5e4ea1cf"
+        },
+        "build/device_catalog/mx_gated_projection_packed_2_kernel.c": {
+          "bytes": 621,
+          "sha256": "f903f2a63766d4d9f04ebcc576dedf232f86990b2d4bf40a441a8f6dc1fe9c8c"
+        },
+        "build/device_catalog/mx_gated_projection_packed_3_kernel.c": {
+          "bytes": 621,
+          "sha256": "1ea8c9cf75ee3fd4c9a173ff7ef1a19f2b861bdfc222f2dbdc0523be0a77a00e"
+        },
+        "build/device_catalog/mx_gated_projection_packed_4_kernel.c": {
+          "bytes": 621,
+          "sha256": "7a7ed00b7b8dbfec6dd3046523afe6f87a58ac0e946f2568ea3458d790853593"
+        },
+        "build/device_catalog/mx_gated_projection_packed_5_kernel.c": {
+          "bytes": 621,
+          "sha256": "4fc12dd9d6d67a763a8966e70b5335b9fffeecda60da740d05994d1277a192d6"
+        },
+        "build/device_catalog/mx_gated_projection_packed_6_kernel.c": {
+          "bytes": 621,
+          "sha256": "d7796d743e36c93e4fd3083a36734e2a15e64f2e4c636c912993b39cdb016bc6"
+        },
+        "build/device_catalog/mx_gated_projection_packed_7_kernel.c": {
+          "bytes": 621,
+          "sha256": "4a5f5e00e0e5a0d28348a8bd0b2fa87159c49f942f5be34d6007730f9883346b"
+        },
+        "build/device_catalog/mx_gated_projection_packed_8_kernel.c": {
+          "bytes": 621,
+          "sha256": "4adbfafa66d10872d3a54597c662c4d6b1bbd8f78075921895a48302e474ca5c"
+        },
+        "build/device_catalog/mx_gated_projection_packed_9_kernel.c": {
+          "bytes": 621,
+          "sha256": "92a1e1ebbb62fbdf218a53a454893335100b5802e83bee60eb97c8e6b0136dff"
+        },
+        "build/device_catalog/mx_gated_projection_shape_0.c": {
+          "bytes": 18485,
+          "sha256": "c91ae13024d5e4e8fea5579cc507bc74263dfc64f349466af8eaee9f7750270a"
+        },
+        "build/device_catalog/mx_issue_0.c": {
+          "bytes": 2664,
+          "sha256": "c3169018c3d9b0ec36a48ed47e65c9c0c73a78a79e02b144a1d4f30c230a2ccc"
+        },
+        "build/device_catalog/mx_issue_0.mk": {
+          "bytes": 741,
+          "sha256": "5e7f0ac5e67322e77d992fe856d7439bc96560ce3ffba036645ba8dd344cd005"
+        },
+        "build/device_catalog/mx_issue_1.c": {
+          "bytes": 2654,
+          "sha256": "f04614802342dbe19ba8f9f7ef062644f9c900db1a6f12db440aab9c306a9afe"
+        },
+        "build/device_catalog/mx_issue_1.mk": {
+          "bytes": 733,
+          "sha256": "236be353c43c8f2149f4869f39481316dd41043a919fad2cb23e0179cfd36cb2"
+        },
+        "build/device_catalog/mx_issue_2.c": {
+          "bytes": 2666,
+          "sha256": "5b0add42064031832dc858e189cd83a2caf54f735b31e22180d19592441dfaca"
+        },
+        "build/device_catalog/mx_issue_2.mk": {
+          "bytes": 743,
+          "sha256": "bfbd5dee5871f6c23ad5a7784aac253e644ccf7d3f3ca822e088deed1ab06a9d"
+        },
+        "build/device_catalog/mx_issue_3.c": {
+          "bytes": 2668,
+          "sha256": "449b7d8024104ca6263ab9f5686b4c911fc8225fb32a5b1ffa0fc06e4dfe017e"
+        },
+        "build/device_catalog/mx_issue_3.mk": {
+          "bytes": 746,
+          "sha256": "67c5e2d268b2c0e16c5bcd76ae6265250fba002412ce95e80bd011a73983fd3d"
+        },
+        "build/device_catalog/mx_issue_4.c": {
+          "bytes": 2675,
+          "sha256": "eae5d40859d60a442469358932ec7aa881de6f163917a919b5264a897620ebc7"
+        },
+        "build/device_catalog/mx_issue_4.mk": {
+          "bytes": 750,
+          "sha256": "35b5fe46cce6c8cd7a222bb7b2c8bb55463d490ff57b4de0593aa7aa08729b81"
+        },
+        "build/device_catalog/mx_issue_5.c": {
+          "bytes": 2636,
+          "sha256": "8f6bc54b53d0c5895eeafdabf8547add639bbd8988cf38b7cfde13851e3cc71a"
+        },
+        "build/device_catalog/mx_issue_5.mk": {
+          "bytes": 713,
+          "sha256": "9858204ff5f86b443217dc3c1e9ea24252bb7806fbfc7fe24f25e85f2d5f0dce"
+        },
+        "build/device_catalog/mx_issue_6.c": {
+          "bytes": 2638,
+          "sha256": "e842b5a670296b6b05254a3acc7b00609bb162a50eac92a9a7295b4a3a5022ab"
+        },
+        "build/device_catalog/mx_issue_6.mk": {
+          "bytes": 718,
+          "sha256": "24d0a5364b1d3f0081aa7a2a2358e5550d80fc3762dfd3d5853c4a2023d099e4"
+        },
+        "build/device_catalog/mx_prepare_a_fp8_m160_k2048_pm160_pk2048_kernel.c": {
+          "bytes": 301,
+          "sha256": "aefea8104f3fb8f9bdd2c02329dc539abdc0f2d9d92ee62b9b4f684b20e3bb39"
+        },
+        "build/device_catalog/mx_prepare_a_fp8_m160_k5632_pm160_pk5632_kernel.c": {
+          "bytes": 301,
+          "sha256": "e167f122d6caa509fbe57b58ef45486d02d23e37959a2ccce450e2e42f462145"
+        },
+        "build/device_catalog/mx_projection_group_0_kernel.c": {
+          "bytes": 9860,
+          "sha256": "04afadf649edd87352cf1110ff10df8e58eaaa2398931ca1cbbb40337167d533"
+        },
+        "build/device_catalog/mx_projection_group_10_kernel.c": {
+          "bytes": 9885,
+          "sha256": "af9e3763466ebaa739739414ffde02dc622f8efff550cd699f8dc90120f523ab"
+        },
+        "build/device_catalog/mx_projection_group_11_kernel.c": {
+          "bytes": 6670,
+          "sha256": "425e9881de8d83ae659fbb2d30b20b028f23f0c8891d356c40209a1ae0bae9fa"
+        },
+        "build/device_catalog/mx_projection_group_12_kernel.c": {
+          "bytes": 9885,
+          "sha256": "9a683ed7641e5523de3f68a17ecc32155a8f866978efbff70db607465d444a7c"
+        },
+        "build/device_catalog/mx_projection_group_13_kernel.c": {
+          "bytes": 6670,
+          "sha256": "af7e41a02f86f37171bffe16b0580d976d421a83aeb520906cabc57ea85fd4ba"
+        },
+        "build/device_catalog/mx_projection_group_14_kernel.c": {
+          "bytes": 9885,
+          "sha256": "b3a3b0ec39db89b2d44b3d8ad5a0c644a6d71a266749ea55a386e618646a20aa"
+        },
+        "build/device_catalog/mx_projection_group_15_kernel.c": {
+          "bytes": 6670,
+          "sha256": "22f95433560e045f3f8607369b3a84fd7bf63c5cbcab13c7a7f2cadc6d13b5ef"
+        },
+        "build/device_catalog/mx_projection_group_16_kernel.c": {
+          "bytes": 9885,
+          "sha256": "0d5427b3b1c9f7e4a799b124a9db9cd6953f189a93311aa54a54a51d43aa385d"
+        },
+        "build/device_catalog/mx_projection_group_17_kernel.c": {
+          "bytes": 6670,
+          "sha256": "a50c829d7846b805e9482207e7b7e1c240a2d50cb8868bfc26ef008445c0e131"
+        },
+        "build/device_catalog/mx_projection_group_18_kernel.c": {
+          "bytes": 9885,
+          "sha256": "e6fa6f28eb48336a789d5625f77ea55271ddb85ac55e272924cc540476d669c8"
+        },
+        "build/device_catalog/mx_projection_group_19_kernel.c": {
+          "bytes": 6670,
+          "sha256": "4fde84f731f49c985f4c31b07c81e47ac6d1d51f171df6737530ade1ad2afb4e"
+        },
+        "build/device_catalog/mx_projection_group_1_kernel.c": {
+          "bytes": 6653,
+          "sha256": "4eec318ae9dffc588cd64a89fa8c09dca0900151cf6f609820578c5d7aaed820"
+        },
+        "build/device_catalog/mx_projection_group_20_kernel.c": {
+          "bytes": 9885,
+          "sha256": "19c31df1a8eb74d9799e684d141de17824380a5459a99abf2246def9b825f403"
+        },
+        "build/device_catalog/mx_projection_group_21_kernel.c": {
+          "bytes": 6670,
+          "sha256": "f77d79229f6883efd4d918015dbf5a099ce074ae24000dee4e03a01d6dfb1b13"
+        },
+        "build/device_catalog/mx_projection_group_22_kernel.c": {
+          "bytes": 9885,
+          "sha256": "89d56b8e754e229e8353765f07b537591970c5a96041995cb3899f95fdfa619d"
+        },
+        "build/device_catalog/mx_projection_group_23_kernel.c": {
+          "bytes": 6670,
+          "sha256": "0024d3a3d2f82eebef9365234042d3ce099087b963b859b84f4de7141bfa6e05"
+        },
+        "build/device_catalog/mx_projection_group_24_kernel.c": {
+          "bytes": 9885,
+          "sha256": "aa8e6f58715bbb95cd9cc9188d3e51fa00246a6b8bf5ccd8eb532066d4419074"
+        },
+        "build/device_catalog/mx_projection_group_25_kernel.c": {
+          "bytes": 6670,
+          "sha256": "0910f875b26919040138fddddc1931e9b697b65dc27c5e2d45766ae3da5f7ee0"
+        },
+        "build/device_catalog/mx_projection_group_26_kernel.c": {
+          "bytes": 9885,
+          "sha256": "067a4a2a5427cb15feb1afc7fe7990bf0096899aa94bce1496de207b69ce48e1"
+        },
+        "build/device_catalog/mx_projection_group_27_kernel.c": {
+          "bytes": 6670,
+          "sha256": "b5f2f6d919d30897b396313ebee7377624f2acd727e35fe4832df4d3b9ab2503"
+        },
+        "build/device_catalog/mx_projection_group_28_kernel.c": {
+          "bytes": 9889,
+          "sha256": "8db2708bb79e37053ecf37dd5094704cb89fd3e5118593a708279777755bdd11"
+        },
+        "build/device_catalog/mx_projection_group_29_kernel.c": {
+          "bytes": 6678,
+          "sha256": "7942a661eaa21ef49be2e3bc4be6d389faf504a80bda2c4499fca62d50388158"
+        },
+        "build/device_catalog/mx_projection_group_2_kernel.c": {
+          "bytes": 9860,
+          "sha256": "1260e60c1a795834c358c56f0dcd18d71a31e784a596f76cfbb9bf112a2904eb"
+        },
+        "build/device_catalog/mx_projection_group_30_kernel.c": {
+          "bytes": 9897,
+          "sha256": "12f8fc2f005b3fed59ef495e52f47ba0d6bde7b5bdb333173a30f30cba87dad5"
+        },
+        "build/device_catalog/mx_projection_group_31_kernel.c": {
+          "bytes": 6678,
+          "sha256": "8521abcce09c80c4ed170810900fbddbaf1bf322271e48086bb73a282e861530"
+        },
+        "build/device_catalog/mx_projection_group_32_kernel.c": {
+          "bytes": 9897,
+          "sha256": "ba48aed3a5d95574f643518f93faad9f576fe7c9a308cf10e51df5ac939b4e67"
+        },
+        "build/device_catalog/mx_projection_group_33_kernel.c": {
+          "bytes": 6678,
+          "sha256": "ba5d37b11b51086cf446533111a94d9b00f0886dbac8ce08481fcf02da55a24f"
+        },
+        "build/device_catalog/mx_projection_group_34_kernel.c": {
+          "bytes": 9897,
+          "sha256": "e7cc38d1c4d981f1877bca491161b00d1858f38e9af2d496a134b6529f64c289"
+        },
+        "build/device_catalog/mx_projection_group_35_kernel.c": {
+          "bytes": 6678,
+          "sha256": "7062e7ffd4454fcc4169b2ed62f3ef2a0461a4ff0716ed00d72fd0b195dba16a"
+        },
+        "build/device_catalog/mx_projection_group_36_kernel.c": {
+          "bytes": 9897,
+          "sha256": "a63a188d5e64c030744c2822875e7707086b6c9da6bfe8121ec1658fc73d8166"
+        },
+        "build/device_catalog/mx_projection_group_37_kernel.c": {
+          "bytes": 6678,
+          "sha256": "7dfdd728d1eb31e0debff70d2fe98c7c72a1be23ac469d993f6edfa38874c7be"
+        },
+        "build/device_catalog/mx_projection_group_38_kernel.c": {
+          "bytes": 9897,
+          "sha256": "2dec69b637f1c30668ad95e119f8205cb03d2b88638f8cfda465f3c6e6f31820"
+        },
+        "build/device_catalog/mx_projection_group_39_kernel.c": {
+          "bytes": 6678,
+          "sha256": "d5ed5be21810179b5c80a325cd1a9bf063cf21bdf4061e2cb38d791f1b778ddf"
+        },
+        "build/device_catalog/mx_projection_group_3_kernel.c": {
+          "bytes": 6661,
+          "sha256": "9eb3f8e04831143a49fb723c733864576ed2599b7f366ef2ad773c43ba245ab7"
+        },
+        "build/device_catalog/mx_projection_group_40_kernel.c": {
+          "bytes": 9897,
+          "sha256": "b1e9513d3b20d3d30bfa5f30dce29e801ac2cddc8e0540b2a189d2fde23afcc8"
+        },
+        "build/device_catalog/mx_projection_group_41_kernel.c": {
+          "bytes": 6678,
+          "sha256": "5c9eb09e05b8a6f53547c2b6317d89233246b74226499549c41ca6df5b0b9ce2"
+        },
+        "build/device_catalog/mx_projection_group_42_kernel.c": {
+          "bytes": 9897,
+          "sha256": "032a2768966b44b1339f6ac24d74d35411adcb152f2c888474d1c323e5148a84"
+        },
+        "build/device_catalog/mx_projection_group_43_kernel.c": {
+          "bytes": 6678,
+          "sha256": "951880edd32e0d902c389e4b1dfd00401c67184fc62d66645122d667fcd377b0"
+        },
+        "build/device_catalog/mx_projection_group_4_kernel.c": {
+          "bytes": 9872,
+          "sha256": "3baa951f8f5d35d132767768833d12ea75c6bf5f7018cd36e7d80f93333e5228"
+        },
+        "build/device_catalog/mx_projection_group_5_kernel.c": {
+          "bytes": 6661,
+          "sha256": "0843ba7e253e2882b9054c357bf0738501db1ff2ebce346c01cf6b19559c885f"
+        },
+        "build/device_catalog/mx_projection_group_6_kernel.c": {
+          "bytes": 9872,
+          "sha256": "ccaab74478573c34765bb61c7c73f8066efaf928c65b4fb7f2817c740e33635e"
+        },
+        "build/device_catalog/mx_projection_group_7_kernel.c": {
+          "bytes": 6661,
+          "sha256": "bdf49e09c0f1a75cbdec8af8d08737ef16b92e30f4454b1489c12455397ff859"
+        },
+        "build/device_catalog/mx_projection_group_8_kernel.c": {
+          "bytes": 9872,
+          "sha256": "722b7c25cfa6722da85ef6c23f82e82af1a2372084f8c16edd047acc438753e4"
+        },
+        "build/device_catalog/mx_projection_group_9_kernel.c": {
+          "bytes": 6661,
+          "sha256": "4e70ace2a567bc90e5db415fc8f14b11be4ee21afa4c7869fafd9faaf632445b"
+        },
+        "build/device_catalog/mx_vpu_sigmoid_f32_1_160_5632.c": {
+          "bytes": 2201,
+          "sha256": "53b612cafd0f5aebc1ad6e9a77f4ba604316584c6116dd752289aea886859269"
+        },
+        "build/device_catalog/mx_vpu_sigmoid_f32_1_160_5632_kernel.c": {
+          "bytes": 22125,
+          "sha256": "3879b71e10d1e9fe248d47231ceafd9b617643d8096307d9f14bbe7efc83d395"
+        },
+        "build/device_catalog/runtime_group_prepare.h": {
+          "bytes": 786,
+          "sha256": "12794d2ca2d9d498bfdceb774f2e10707500b6e563a083492af1035155b260a0"
+        },
+        "build/device_catalog/runtime_quant.c": {
+          "bytes": 14850,
+          "sha256": "27c8dbb17963cd3450c05a0061a0a5f90919be32f6770a6ca54c49bdfeba2982"
+        },
+        "build/device_catalog/runtime_quant.h": {
+          "bytes": 2159,
+          "sha256": "9a31bd822bb26558b7ef1fe21ff923ae954bb626bc7f6eb45719fa0b09f71ca4"
+        },
+        "build/device_catalog/runtime_quant_lut.h": {
+          "bytes": 26156,
+          "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db"
+        },
+        "build/device_catalog/shared_activation_shims.c": {
+          "bytes": 662718,
+          "sha256": "35403c255efdcb566f06ed872b734b68f4834c05eb7a5e8cf82ebd95906f83d0"
+        },
+        "build/device_catalog/shared_workspace.c": {
+          "bytes": 75,
+          "sha256": "a8ca2ea10e83be37d5f2fcc87ff288b202c08617db0c50a1299e6f65bb14920f"
+        },
+        "build/device_host_abi/mx_batch_rhs_reuse.mlir": {
+          "bytes": 1209482,
+          "sha256": "ee01c34ed10d96dfb25be07b3289b7d0b83a6239b80072d48c863fb81f850c93"
+        },
+        "build/device_host_abi/mx_batch_rhs_reuse_rewrite.json": {
+          "bytes": 15678,
+          "sha256": "97109d4eb3fba4dbb08f00b17a6cfa478660dd11a902614902111e71d82cf88d"
+        },
+        "build/device_host_abi/mx_f32_rms_packing.mlir": {
+          "bytes": 1264768,
+          "sha256": "03c3a2c71eb6cb3024e9ef791c0dc4719ac0c497b23ade6fcfdd2528ebb3286f"
+        },
+        "build/device_host_abi/mx_f32_rms_packing_rewrite.json": {
+          "bytes": 22045,
+          "sha256": "374ab831697dc86d8073fe4be0588249ee6727fa9f88dea53d6a792de517e1fe"
+        },
+        "build/device_host_abi/mx_fixed_rhs.mlir": {
+          "bytes": 1530496,
+          "sha256": "225a93f9480bf36eed6dcbcfe766897b41d477291b2b684679de6f14dc50e6c4"
+        },
+        "build/device_host_abi/mx_fixed_rhs_rewrite.json": {
+          "bytes": 30917,
+          "sha256": "d2f852047f3fa6e26d3e46c72fbcbf7dfdc6b508d606d9dcaf5e2a2eb632f6d2"
+        },
+        "build/device_host_abi/mx_gated_projections.mlir": {
+          "bytes": 1192335,
+          "sha256": "61ce0bc48cd5e9500acac0659097ae91a19ff7b49f47690c65b5e0c606b731c8"
+        },
+        "build/device_host_abi/mx_gated_projections_rewrite.json": {
+          "bytes": 11640,
+          "sha256": "6fa6f82dd3ce2a2e94f1dee1d219fc878f5b54dce6f3d56d1decd5f45ee7d124"
+        },
+        "build/device_host_abi/mx_host_softmax.mlir": {
+          "bytes": 1548305,
+          "sha256": "2079ee8c949c8ca3338dc27666240e2c4efbf8530bc724ddbdb11f89c0d9904b"
+        },
+        "build/device_host_abi/mx_host_softmax_rewrite.json": {
+          "bytes": 3273,
+          "sha256": "9504c8185c45d66c0c558d9da328d61fe262edb42707e36f0bb8c9504d74fb0c"
+        },
+        "build/device_host_abi/mx_projection_groups.mlir": {
+          "bytes": 1218624,
+          "sha256": "2ff2aebc7b8453d2dd62e3d0d50243bae29f3e3923d7c2b225a49163f18cea60"
+        },
+        "build/device_host_abi/mx_projection_groups_rewrite.json": {
+          "bytes": 9891,
+          "sha256": "a49d9a50e8cec93acd5890b29a6425364cff0d6dce4a56ca4099b0024d9ddf6b"
+        },
+        "build/device_host_abi/mx_shared_activation.mlir": {
+          "bytes": 1565749,
+          "sha256": "d234650f838b432199ec89c0f3d825461f2d8e56cb9fe59f2eb60f48aa3db741"
+        },
+        "build/device_host_abi/mx_shared_activation_rewrite.json": {
+          "bytes": 14869,
+          "sha256": "065add40103a7552ffc15b64960ab699b170d6c59d1d988e501131ff02bebbd0"
+        },
+        "build/device_host_abi/mx_softmax_packing.mlir": {
+          "bytes": 1209482,
+          "sha256": "ee01c34ed10d96dfb25be07b3289b7d0b83a6239b80072d48c863fb81f850c93"
+        },
+        "build/device_host_abi/mx_softmax_packing_rewrite.json": {
+          "bytes": 415,
+          "sha256": "913ecace480a84ec66457ada323df5aabbf09e787fe31bfa3d361c7f508b03b6"
+        },
+        "build/device_host_abi/mx_vpu_unary.mlir": {
+          "bytes": 1542412,
+          "sha256": "2fb5e52f3e3523b5f4df3effc3583946339efcc45ee890f12437eb7b88a8dd3b"
+        },
+        "build/device_host_abi/mx_vpu_unary_rewrite.json": {
+          "bytes": 3347,
+          "sha256": "c9405fd3aac76cf43eb7aa2830fc4408d105578cff4ffb621723866616eae9c3"
+        },
+        "build/device_host_abi/post_offload_transform.json": {
+          "bytes": 675,
+          "sha256": "51d3d7728847c1d880bcc2f1a403f0bcf669415ae00adfc6c5d52e73b3f2e270"
+        },
+        "build/device_prepared/host_singleton.mlir": {
+          "bytes": 1555814,
+          "sha256": "3889d6a2e744b8ca3f1a053ffb532ade4e2c164c5d79d2d725f5ec69f5b4d662"
+        },
+        "build/device_prepared/singleton_reductions.json": {
+          "bytes": 801,
+          "sha256": "0dc403ad97ce94426319d7ca74c19c54e1abc405f8cbd25e7ede54ca5dd64c5b"
+        },
+        "build/device_signatures.json": {
+          "bytes": 99223,
+          "sha256": "436f417e0b5490244261b242283e68df556e6ec699beee71ba16311bb89c8425"
+        },
+        "build/entry_weight_projection/entry_weight_projection.json": {
+          "bytes": 60935,
+          "sha256": "ddb0f6f3c43a8c834d5eb4fdbb42eca4aeda7c8ffd66bc381077d7f113627348"
+        },
+        "build/lower/lowering_recipe.json": {
+          "bytes": 4378,
+          "sha256": "35daf39d24c6c8101858ef84bad9f61fa5ed82469fdc98e953767fc34a63a958"
+        },
+        "build/lower/model.ll": {
+          "bytes": 2038475,
+          "sha256": "384c594c5ba7b38c160a3f21b038eb6075b3f3bd2800ceaa0e543e5ab8d9befe"
+        },
+        "build/lower/model.mlir": {
+          "bytes": 1130757,
+          "sha256": "30fbf0d7f43c971daccf07c9305467571bf7953b5b3a37ad7652dc642de3d3db"
+        },
+        "build/lower/model.upstream.mlir": {
+          "bytes": 1130757,
+          "sha256": "30fbf0d7f43c971daccf07c9305467571bf7953b5b3a37ad7652dc642de3d3db"
+        },
+        "build/mx_stage_probe.json": {
+          "bytes": 192065,
+          "sha256": "290d3945a49d47bec6a295cd6d4c7576ec6416cf961fa99071d05208c7c8d9dd"
+        },
+        "build/spike.log": {
+          "bytes": 56437963,
+          "sha256": "b5fd0ade9f74b5578e03a517831f735c64ab67f161030f2f46c765ac9685da50"
+        },
+        "comparison.json": {
+          "bytes": 30407,
+          "sha256": "dd1c122d53a6a08ecb9b8f8356158f08805c62f166644f3d7c9fb8f74debca34"
+        },
+        "job.json": {
+          "bytes": 4712,
+          "sha256": "46325825fb2819fd8afb0ee6f0cec47d46387c85eb75d8208f4393154e7125b5"
+        },
+        "linked_payload_audit.json": {
+          "bytes": 65116,
+          "sha256": "c40de086830ef9ad78875109317c38acaad2c953319665deaf06c11abde46240"
+        },
+        "producer.py": {
+          "bytes": 3380,
+          "sha256": "8f09363cbe4d93d4e9ee6f2a417ef700923369d3a17eb3d5e69bd82bd38d2aa9"
+        }
+      },
+      "numerical_gate_passed": true,
+      "qualified_speedup": 1.1306136504105773,
+      "sha256": "e51f3edae39030a6e85b06af0b71769f5016d8b8b3404d9a14c4aa875973f5b0"
+    },
     "quant_specialized": {
       "archive": "quant_specialized.tar.xz",
       "bytes": 10014012,

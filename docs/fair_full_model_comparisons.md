@@ -7,8 +7,8 @@ Cached TinyLlama and complete SmolVLA compare two compiler builds.
 The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) completes
 the same full forward in 7,082,331,012 cycles. The fixed compiler release takes
 45.81% more cycles and fails the full-160 mean-KL gate. The newer FP32 host
-softmax/residual configuration with a finite-input maximum takes
-**6,997,758,443 cycles**, a **1.012× speedup** with all six numerical gates
+softmax/residual configuration with a finite-input maximum and RNE underflow
+shortcut takes **6,264,147,801 cycles**, a **1.131× speedup** with all six numerical gates
 passing. A separate fused-gate configuration takes
 5,849,962,853 cycles but fails the full/late top-token gates. The
 [optimization measurements](evidence/radiance_rocket_optimization_20261019/README.md)
@@ -24,7 +24,7 @@ all-FP8 offloaded matrices and the same inputs within its comparison.
 
 | Workload | Reference | Reference cycles | Compiler cycles | Speedup | Cycle reduction |
 | --- | --- | ---: | ---: | ---: | ---: |
-| TinyLlama, all 22 layers + head, 160-token forward; FP32 host softmax and finite maximum | Radiance-derived Rocket MX+VPU port | 7,082,331,012 | 6,997,758,443 | 1.012× | 1.19% |
+| TinyLlama, all 22 layers + head, 160-token forward; RNE host softmax | Radiance-derived Rocket MX+VPU port | 7,082,331,012 | 6,264,147,801 | 1.131× | 11.55% |
 | TinyLlama, all 22 layers + head, 160-token forward | Independent `npu-exploration` program, including embedding lookup | 12,762,360,525 | 10,326,818,367 | 1.236× | 19.08% |
 | TinyLlama, 128-token prefill + 32 cached decodes | Corrected compiler baseline | 74,065,304,284 | 20,262,623,973 | 3.655× | 72.64% |
 | SmolVLA, prefix + ten flow steps + action decode | Previous compiler build | 87,964,575,985 | 73,577,503,143 | 1.196× | 16.36% |
@@ -57,13 +57,14 @@ the port's number of matching floating-reference top tokens.
 | Radiance comparison | Mean KL | Worst KL | Matching reference top tokens |
 | --- | ---: | ---: | ---: |
 | Port, all 160 | 0.0774637 | 2.7480708 | 132/160 |
-| Finite-maximum compiler, all 160 | 0.0766243 | 2.5918103 | 134/160 |
+| RNE host-softmax compiler, all 160 | 0.0766243 | 2.5918103 | 134/160 |
 | Port, late 33 | 0.0666143 | 0.1758198 | 27/33 |
-| Finite-maximum compiler, late 33 | 0.0618917 | 0.1790303 | 29/33 |
+| RNE host-softmax compiler, late 33 | 0.0618917 | 0.1790303 | 29/33 |
 
 All six limits pass. Every compiler output word matches the preceding
-passing host-softmax control; the maximum specialization saves 90,238,240
-cycles without changing those outputs. Placement and normalization precision
+passing host-softmax control. Maximum specialization saves 90,238,240 cycles;
+the RNE underflow shortcut saves a further 733,610,642 cycles. Both preserve
+those outputs exactly. Placement and normalization precision
 still differ from the port, as documented in the optimization record.
 
 For the fixed release, the older `npu-exploration` source retains full
@@ -131,6 +132,7 @@ records which changes reached full-model measurements.
 
 Two separate source repositories contribute controls:
 
+- [`radiance-kernels`, `5866983682583486b38ae64a4d1bfa5e7b2a002e`](https://github.com/ucb-bar/radiance-kernels/tree/5866983682583486b38ae64a4d1bfa5e7b2a002e): the independently executed full-model Rocket MX+VPU port used for the 1.131× result. The [port guide](radiance_rocket_model_baseline.md) describes the adaptation and stitching.
 - [`radiance-kernels`, `b6b9bf44af6d7ba88626b5d17b8b527390aec082`](https://github.com/ucb-bar/radiance-kernels/tree/b6b9bf44af6d7ba88626b5d17b8b527390aec082): Muon-issued MX GEMM/GEMV and GQA controls. These establish output and traffic properties, with no paired standalone Rocket-Spike cycle ratio.
 - [`npu-exploration`, `0344bcba70b899039ccd0ac0801ca5605d46d3eb`](https://github.com/ucb-bar/npu-exploration/tree/0344bcba70b899039ccd0ac0801ca5605d46d3eb): the independent TinyLlama program, source matrix issuers, and paired MX+VPU attention heads used in timing comparisons.
 

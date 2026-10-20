@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "ddafc8578a58ba47256ef28479e044b579b46ea13c9de93a1c98631d5b21b361",
+  "artifact_manifest_sha256": "b3753f795a3a12f2b57d21eedcffa601ab00fc6c4e557cb673900226229aee8a",
   "verifier_sha256": "c4a86b5a51c99f33e01ca180c1858569eea1851304261ebb19c58a0666039be2",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
@@ -444,6 +444,35 @@
       "gated_fusions": 22,
       "host_softmax": {
         "policy": "libm_f32_ordered_finite",
+        "regions": 22,
+        "finite_maximum_calls": 22,
+        "expf_calls": 22,
+        "fmaf_calls": 0,
+        "negative_infinity_initializer_sizes": [
+          5120
+        ]
+      },
+      "full_160": {
+        "mean_kl_nats": 0.0766243327910751,
+        "worst_kl_nats": 2.591810274989808,
+        "top1_agreement": 134,
+        "positions": 160
+      },
+      "late_33": {
+        "mean_kl_nats": 0.0618917038426349,
+        "worst_kl_nats": 0.17903030996561076,
+        "top1_agreement": 29,
+        "positions": 33
+      }
+    },
+    "libm_rne_softmax_f32_residual_retry": {
+      "cycles": 6264147801,
+      "numerical_gate_passed": true,
+      "qualified_speedup": 1.1306136504105773,
+      "full_logits_sha256": "9b1d8c3083651682370f3ff3fb53f8ab4ed05ad9daa23570fd8b9e64531f1c8e",
+      "gated_fusions": 22,
+      "host_softmax": {
+        "policy": "libm_f32_ordered_rne",
         "regions": 22,
         "finite_maximum_calls": 22,
         "expf_calls": 22,

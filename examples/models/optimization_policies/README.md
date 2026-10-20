@@ -197,8 +197,10 @@ libm arithmetic and skips exponential calls that certainly round to zero.
 It requires RNE and unobserved floating status and `errno`. Use MX
 `5aceeeb83fc11d335a31561a977fa18217844f0a` with Merlin
 `91fd90edb9e483ccbd7967d523efa63fea2124d5`. The same F32-residual policy and
-fresh-build instructions apply. This is an explicit alternative, pending a
-separate full-model comparison.
+fresh-build instructions apply. Its complete forward measures
+**6,264,147,801 cycles**, a **1.131× speedup** over the port, with all six
+numerical limits passing. Every logit word matches the preceding two passing
+libm configurations. Matrix/VPU work and transfer bytes remain unchanged.
 
 ## Build the RNE host-softmax alternative
 
@@ -210,8 +212,8 @@ Checkpoint preparation happens before the timed model call.
 To reproduce the qualified finite-maximum execution, use
 `--host-softmax-policy libm_f32_ordered_finite` in the command below with the
 MX `66ee86e0` and Merlin `94f747964` pins above, and choose a separate build
-directory. The RNE option below has its own newer pins and pending full-model
-measurement.
+directory. The RNE option below has its own newer pins and the faster
+6,264,147,801-cycle qualified measurement.
 
 ```sh
 "$CAPTURE_PY" -m tools.build_merlin_stage \
