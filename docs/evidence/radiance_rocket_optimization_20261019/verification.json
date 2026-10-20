@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "5ebde0c1d27402a17eff5add5ef15e7f7ac0ee76857178b5ca92a55826d7dae7",
+  "artifact_manifest_sha256": "b96dc7db7e8d34ed181c02b50103db0ca2cb87996f31442b2e79b50f82b8fbdc",
   "verifier_sha256": "ce3b16f3a6f763b211aabaf34b93657760eb2ffef530cc04f6ac53eb35380689",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
@@ -9,6 +9,25 @@
   "cases": {
     "exp_vpu": {
       "cycles": 6099702127,
+      "numerical_gate_passed": false,
+      "qualified_speedup": null,
+      "full_logits_sha256": "f424724029ef5606de325b3844f087212be284c4cab22f86a5810170be83aaa2",
+      "gated_fusions": 0,
+      "full_160": {
+        "mean_kl_nats": 0.08048809635487457,
+        "worst_kl_nats": 2.6871037289652016,
+        "top1_agreement": 129,
+        "positions": 160
+      },
+      "late_33": {
+        "mean_kl_nats": 0.06621966780663653,
+        "worst_kl_nats": 0.1822619204080167,
+        "top1_agreement": 26,
+        "positions": 33
+      }
+    },
+    "exp_vpu_group": {
+      "cycles": 6099669667,
       "numerical_gate_passed": false,
       "qualified_speedup": null,
       "full_logits_sha256": "f424724029ef5606de325b3844f087212be284c4cab22f86a5810170be83aaa2",

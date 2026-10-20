@@ -8,7 +8,7 @@ The source is `radiance-kernels` at
 `5866983682583486b38ae64a4d1bfa5e7b2a002e`, adapted to Rocket as described in
 the [port guide](../../radiance_rocket_model_baseline.md).
 
-The fastest completed configuration takes **6,099,702,127 modeled cycles**,
+The fastest completed configuration takes **6,099,669,667 modeled cycles**,
 versus **7,082,331,012** for the port. Its raw cycle ratio is **1.161×**,
 but it fails the top-token agreement requirements. **This is not a qualified
 speedup.** Both the full-160 and late-33 gates remain unchanged.
@@ -21,6 +21,7 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | Hybrid softmax | 8,558,679,644 | 0.0818391 | 132/160 | Fails full and late mean KL |
 | Hybrid softmax, host score scaling | 8,025,144,708 | 0.0818391 | 132/160 | Fails full and late mean KL |
 | EXP-only VPU placement | 6,099,702,127 | 0.0804881 | 129/160 | Fails full and late top tokens |
+| EXP-only placement and grouped QKV completion | 6,099,669,667 | 0.0804881 | 129/160 | Fails full and late top tokens |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -46,6 +47,12 @@ to the preceding host-score row. This combines placement and precision
 changes; it is not a bit-preserving fusion. Its two KL limits pass on both
 position sets, but top-token matches fall to **129/160 and 26/33**, against
 **132/160 and 27/33** for the port.
+
+Grouping the 22 QKV projection triplets saves only **32,460 cycles** in the
+complete EXP-only execution, about **0.00053%**, with identical full logits.
+It removes 44 completion fences; matrix commands, matrix work and transfer
+bytes are unchanged. The standalone projection probe's small improvement
+does not translate into a material model-wide gain.
 
 Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 **825,060,684 cycles** in the original placement and **806,923,938 cycles**
