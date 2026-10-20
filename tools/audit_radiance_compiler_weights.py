@@ -53,14 +53,15 @@ def phase_parameters(layer, operation):
     return [f"lm.model.layers.{layer}.{part}.weight" for part in parts]
 
 
-def audit(port, compiler):
+def audit(port, compiler, *, compiler_elf=None, symbol_prefix="", source_stage=None):
     port, compiler = Path(port), Path(compiler)
     receipt = json.loads((port / "receipt.json").read_text())
     catalog_raw = (compiler / "device_catalog/mx_catalog.json").read_bytes()
     catalog = json.loads(catalog_raw)
     if (
         receipt["source_revision"] != "5866983682583486b38ae64a4d1bfa5e7b2a002e"
-        or receipt["mode"] != "recorded_tinyllama_forward"
+        or receipt["mode"]
+        not in ("recorded_tinyllama_forward", "recorded_cached_tinyllama")
         or catalog["checkpoint_weights_sha256"]
         != receipt["capture_files_sha256"]["weights.safetensors"]
         or catalog["profile_sha256"] != receipt["profile_sha256"]
@@ -80,13 +81,24 @@ def audit(port, compiler):
         raise ValueError("source ELF differs from its executed image")
     program_raw = (port / "phases.bin").read_bytes()
     program = np.frombuffer(program_raw, "<u4").reshape(-1, 32)
-    if len(program) != receipt["phase_count"] or len(program) != 266:
+    cached = receipt["mode"] == "recorded_cached_tinyllama"
+    expected_phases = 266 * (33 if cached else 1)
+    if len(program) != receipt["phase_count"] or len(program) != expected_phases:
         raise ValueError("source phase program has an incomplete extent")
+    if (cached and source_stage not in ("prefill", "decode")) or (
+        not cached and source_stage is not None
+    ):
+        raise ValueError(
+            "cached weight audits require an explicit prefill or decode stage"
+        )
+    target_elf = (
+        Path(compiler_elf) if compiler_elf is not None else compiler / "model.elf"
+    )
     records = []
     covered = set()
     with (
         RV64PayloadImage(source_elf) as source,
-        RV64PayloadImage(compiler / "model.elf") as target,
+        RV64PayloadImage(target_elf) as target,
     ):
         regions = {}
         for label, region in receipt["regions"].items():
@@ -98,8 +110,12 @@ def audit(port, compiler):
                 )
             start, _ = source.span(symbol, size)
             regions[int(label)] = (region["virtual_base"], size, start)
-        start, size, offset = regions[3]
-        if source.image[offset : offset + len(program_raw)] != program_raw:
+        if cached:
+            linked_program = source.read("rk_session_programs", len(program_raw))
+        else:
+            start, size, offset = regions[3]
+            linked_program = source.image[offset : offset + len(program_raw)]
+        if linked_program != program_raw:
             raise ValueError(
                 "actual source phase descriptors differ from the retained program"
             )
@@ -112,6 +128,17 @@ def audit(port, compiler):
                     ]
             raise ValueError("source matrix payload exceeds its linked region")
 
+        phase_offset = 266 if source_stage == "decode" else 0
+        if cached:
+            sessions = program.reshape(33, 266, 32)
+            for index, d in enumerate(sessions[0]):
+                if d[0] == 1 and int(d[1]) & 255 not in (4, 6):
+                    for field in (6, 7, 16, 17, 19):
+                        if not np.all(sessions[:, index, field] == d[field]):
+                            raise ValueError(
+                                "learned source matrix changes across recurrent steps"
+                            )
+            program = program[phase_offset : phase_offset + 266]
         for index, raw in enumerate(program):
             d = [int(x) for x in raw]
             if d[0] != 1 or d[1] & 255 in (4, 6):
@@ -134,8 +161,9 @@ def audit(port, compiler):
                     or kernel["batched"]
                     or kernel["precision"] != "mxfp8"
                     or dims["k"] != k
-                    or dims["m"] != d[15] * d[18]
-                    or kernel["padded_shape_mnk"] != [dims["m"], dims["n"], dims["k"]]
+                    or dims["m"] != (1 if source_stage == "decode" else d[15] * d[18])
+                    or kernel["padded_shape_mnk"]
+                    != [d[15] * d[18], dims["n"], dims["k"]]
                 ):
                     raise ValueError("source/compiler matrix identity or shape differs")
                 compared = {}
@@ -145,7 +173,10 @@ def audit(port, compiler):
                     if (
                         len(blob) != kernel[kind + "_bytes"]
                         or digest != kernel[kind + "_sha256"]
-                        or target.read(kernel["symbol"] + "_fixed_" + kind, len(blob))
+                        or target.read(
+                            symbol_prefix + kernel["symbol"] + "_fixed_" + kind,
+                            len(blob),
+                        )
                         != blob
                     ):
                         raise ValueError(
@@ -158,7 +189,7 @@ def audit(port, compiler):
                 records.append(
                     {
                         "checkpoint_parameter": name,
-                        "source_phase": index,
+                        "source_phase": index + phase_offset,
                         "compiler_kernel": kernel["symbol"],
                         "shape_kn": [k, dims["n"]],
                         "source_column_offset": column,
@@ -175,11 +206,13 @@ def audit(port, compiler):
         "schema": "mx_gemmini.source_compiler_weight_equivalence.v1",
         "status": "all_encoded_checkpoint_matrices_equal",
         "source_elf_sha256": source_sha,
-        "compiler_elf_sha256": file_sha(compiler / "model.elf"),
+        "compiler_elf_sha256": file_sha(target_elf),
         "source_receipt_sha256": file_sha(port / "receipt.json"),
         "compiler_catalog_sha256": hashlib.sha256(catalog_raw).hexdigest(),
         "checkpoint_sha256": catalog["checkpoint_weights_sha256"],
         "matrices_checked": len(records),
+        "source_stage": source_stage,
+        "compiler_symbol_prefix": symbol_prefix,
         "scope": "actual learned FP8 codes and block32 scales after layout conversion; runtime activations excluded",
         "matrices": records,
     }
@@ -189,11 +222,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port-build", type=Path, required=True)
     parser.add_argument("--compiler-build", type=Path, required=True)
+    parser.add_argument("--compiler-elf", type=Path)
+    parser.add_argument("--symbol-prefix", default="")
+    parser.add_argument("--source-stage", choices=("prefill", "decode"))
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists():
         parser.error("--out must be fresh")
-    result = audit(args.port_build, args.compiler_build)
+    result = audit(
+        args.port_build,
+        args.compiler_build,
+        compiler_elf=args.compiler_elf,
+        symbol_prefix=args.symbol_prefix,
+        source_stage=args.source_stage,
+    )
     args.out.write_text(json.dumps(result, indent=2) + "\n")
     print(
         json.dumps(

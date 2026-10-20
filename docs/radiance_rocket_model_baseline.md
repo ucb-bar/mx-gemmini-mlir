@@ -1,5 +1,9 @@
 # Radiance Llama on Rocket MX+VPU
 
+For the recurrent cache port, independent replay and complete-session audit,
+see [independent session checks](independent_session_checks.md). The cached
+full-model comparison is pending.
+
 `radiance-kernels` now contains a complete Llama application. The source audit
 uses revision
 [`5866983682583486b38ae64a4d1bfa5e7b2a002e`](https://github.com/ucb-bar/radiance-kernels/tree/5866983682583486b38ae64a4d1bfa5e7b2a002e),

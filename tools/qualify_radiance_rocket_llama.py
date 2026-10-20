@@ -144,7 +144,7 @@ def _load_module(name, path):
     return module
 
 
-def _recorded_model(generator, capture, out):
+def _recorded_model(generator, capture, out, *, tokens=160):
     """Bind the real checkpoint and tokens; no model or dataset download occurs."""
     from safetensors import safe_open
 
@@ -161,8 +161,8 @@ def _recorded_model(generator, capture, out):
         if archive.files != ["in0"]:
             raise ValueError("recorded forward must have one token-ID input")
         ids = np.array(archive["in0"], dtype="<i8", copy=True)
-    if ids.shape != (1, 160) or np.any(ids < 0) or np.any(ids >= 32000):
-        raise ValueError("recorded forward requires 160 TinyLlama token IDs")
+    if ids.shape != (1, tokens) or np.any(ids < 0) or np.any(ids >= 32000):
+        raise ValueError(f"recorded forward requires {tokens} TinyLlama token IDs")
     ids.tofile(out / "token_ids.bin")
     with safe_open(capture / "weights.safetensors", framework="numpy") as tensors:
 
@@ -175,7 +175,7 @@ def _recorded_model(generator, capture, out):
         layers = []
         for layer in range(22):
             prefix = f"model.layers.{layer}."
-            w = lambda name: get(prefix + name + ".weight")
+            w = lambda name, prefix=prefix: get(prefix + name + ".weight")
             layers.append(
                 {
                     "wqkv": np.concatenate(
@@ -210,11 +210,16 @@ def _recorded_model(generator, capture, out):
 
 
 def _prepare(args, out):
+    recorded_tokens = getattr(args, "recorded_tokens", 160)
     sys.dont_write_bytecode = True
     source = args.radiance_root.resolve()
     checked_sources(source)
     generator_path = source / "kernels/nightly/llama_e2e/gen_data.py"
     generator = _load_module("radiance_llama_generator", generator_path)
+    if not args.recorded_forward and getattr(args, "smoke_query_heads", None):
+        generator.MODELS["smoke"] = dict(
+            generator.MODELS["smoke"], Hq=args.smoke_query_heads
+        )
     memories = []
     original_mem = generator.Mem
 
@@ -239,7 +244,7 @@ def _prepare(args, out):
         generator.block_exp = lambda maximum: np.maximum(original_exp(maximum), -23)
         generator.mx_quant = lambda values: original_quant(generator.bf(values))
     identities = None
-    if args.recorded_forward:
+    if args.recorded_forward or getattr(args, "zero_prefix", False):
         # This target has a larger accumulator half than Muon. M=160 fits
         # without padding queries. Pad only the key axis to the source TK=256;
         # the causal mask excludes the 96 extra columns.
@@ -251,20 +256,23 @@ def _prepare(args, out):
             raise ValueError("source forward adaptation did not match")
         # Only main is replaced: keep the redirected memory/reference helpers.
         temporary = dict(generator.__dict__)
-        exec(compile(rewritten, str(generator_path), "exec"), temporary)
+        exec(compile(rewritten, str(generator_path), "exec"), temporary)  # noqa: S102 -- hash-pinned generator
         import types
 
         generator.main = types.FunctionType(
             temporary["main"].__code__, generator.__dict__
         )
-        identities = _recorded_model(generator, args.recorded_forward.resolve(), out)
+    if args.recorded_forward:
+        identities = _recorded_model(
+            generator, args.recorded_forward.resolve(), out, tokens=recorded_tokens
+        )
     argv = sys.argv
     sys.argv = [
         str(generator_path),
         "--model",
         "tinyllama" if identities else "smoke",
         "--M",
-        "160" if identities else str(args.chunk),
+        str(recorded_tokens) if identities else str(args.chunk),
         "--ctx",
         "256",
         "--attn",
@@ -274,7 +282,11 @@ def _prepare(args, out):
         "--header",
         str(out / "llama_data.h"),
     ]
-    sys.argv += ["--no-emulate"] if identities else ["--debug-l0"]
+    sys.argv += (
+        ["--no-emulate"]
+        if identities or getattr(args, "skip_source_emulation", False)
+        else ["--debug-l0"]
+    )
     try:
         generator.main()
     finally:
@@ -284,7 +296,9 @@ def _prepare(args, out):
     memory = memories[0]
     header = (out / "llama_data.h").read_text()
     defines = dict(
-        re.findall(r"^#define (LL_[A-Z0-9_]+) (0x[0-9a-f]+|[0-9]+)u$", header, re.M)
+        re.findall(
+            r"^#define (LL_[A-Z0-9_]+) (0x[0-9a-f]+|[0-9]+)u$", header, re.MULTILINE
+        )
     )
     defines = {key: int(v, 0) for key, v in defines.items()}
     program_offset = defines["LL_PROG_ADDR"] - generator.REGION_BASE[3]
@@ -318,7 +332,12 @@ def _prepare(args, out):
     checks = []
     if identities:
         checks.append(
-            {"name": "logits", "address": 0, "bytes": 160 * 32000 * 4, "kind": "f32"}
+            {
+                "name": "logits",
+                "address": 0,
+                "bytes": recorded_tokens * 32000 * 4,
+                "kind": "f32",
+            }
         )
         for d in program:
             if d[0] == 2 and (int(d[1]) & 255) in (1, 13):
@@ -326,7 +345,7 @@ def _prepare(args, out):
                     {
                         "name": f"residual_{int(d[1])}",
                         "address": int(d[4]),
-                        "bytes": 160 * 2048 * 2,
+                        "bytes": recorded_tokens * 2048 * 2,
                         "kind": "bf16",
                     }
                 )
@@ -403,7 +422,7 @@ def _prepare(args, out):
     }
 
 
-def run_experiment(args):
+def run_experiment(args, *, prepare=None, fixture=None):
     out = args.out_dir.resolve()
     out.mkdir(parents=True)
     profile = load_profile(args.profile)
@@ -457,6 +476,7 @@ def run_experiment(args):
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 timeout=timeout,
+                check=False,
             )
         report["commands"][-1]["exit_code"] = result.returncode
         save()
@@ -466,10 +486,10 @@ def run_experiment(args):
     save()
     try:
         shutil.copyfile(Path(__file__), out / "producer.py")
-        fixture = Path(__file__).parent / "fixtures/radiance_rocket_llama.c"
+        fixture = fixture or Path(__file__).parent / "fixtures/radiance_rocket_llama.c"
         shutil.copyfile(fixture, out / "driver.c")
         report["port_source_sha256"] = sha(out / "driver.c")
-        prepared = _prepare(args, out)
+        prepared = (prepare or _prepare)(args, out)
         report.update(
             {key: value for key, value in prepared.items() if key != "checks"}
         )

@@ -17,6 +17,11 @@ The control's
 [complete observations and profiles](evidence/radiance_rocket_forward_20261019/README.md)
 remain available.
 
+The [independent session checks](independent_session_checks.md) describe the
+fresh artifact audit, recurrent-state checks and the exact source-kernel
+replay used to qualify single-token cached execution. The complete independent
+cached run is pending; the table below does not use a projected result.
+
 ## Complete models
 
 Speedup below is reference cycles divided by compiler cycles. Every row uses

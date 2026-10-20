@@ -34,13 +34,13 @@ def module(name, path):
 
 
 class Replay:
-    def __init__(self, build, source, rocc, out):
+    def __init__(self, build, source, rocc, out, *, accepted_modes=("random_smoke",)):
         self.build, self.out = build, out
         checked_sources(source)
         self.report = json.loads((build / "receipt.json").read_text())
         if (
             self.report["status"] != "completed_requires_matched_comparison"
-            or self.report["mode"] != "random_smoke"
+            or self.report["mode"] not in accepted_modes
         ):
             raise ValueError("replay expects a completed source smoke program")
         self.generator = module(
