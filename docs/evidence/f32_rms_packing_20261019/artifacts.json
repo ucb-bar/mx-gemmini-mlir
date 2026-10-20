@@ -1,0 +1,140 @@
+{
+  "archive": {
+    "bytes": 1916784,
+    "path": "probes.tar.xz",
+    "sha256": "4eec8dad850f90ae9dcf1350224b7f8a0130ac4e13ff751baa2e894e631156a0"
+  },
+  "archive_reader_sha256": "cf5e9fb9f4c028121f52d1ea15d0de5c0938ddd1f647943e25071c56986ec57b",
+  "environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0"
+  },
+  "kernel_factory_revision": "272afe6d",
+  "members": {
+    "common/elf_payload.py": {
+      "bytes": 4825,
+      "sha256": "423dc61e3a5a41c06fa8075a79f0f30e1ae6bab2b6e9963405c071a03f4b4e46"
+    },
+    "common/profile.json": {
+      "bytes": 3585,
+      "sha256": "18c0c934356fc1d4c2f1d3efa6a607b83bc34471d5a01d0dbe160cfe39ef5d95"
+    },
+    "common/reference_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1"
+    },
+    "common/runtime_quant.h": {
+      "bytes": 2159,
+      "sha256": "9a31bd822bb26558b7ef1fe21ff923ae954bb626bc7f6eb45719fa0b09f71ca4"
+    },
+    "common/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db"
+    },
+    "production/admission.json": {
+      "bytes": 612,
+      "sha256": "2604065d32cb0690d17176ffdb256e5bd994c2e3526d60a865e63fe06e0856f2"
+    },
+    "production/admission_report.json": {
+      "bytes": 338,
+      "sha256": "454087ff722b79dd7f39c248af8a56dca04008125005cead92ef147434481bb4"
+    },
+    "production/commands.json": {
+      "bytes": 12376,
+      "sha256": "1fc0efa474d62dfbcf7b13bd64541b91a9084848b0087336e77721ceb7151a4f"
+    },
+    "production/data.S": {
+      "bytes": 810,
+      "sha256": "72054ec2a853903ce25d57035aca5fe8a59925ce06a4c9301874c14b728d225c"
+    },
+    "production/expected_ordered.bin": {
+      "bytes": 337920,
+      "sha256": "4f5673de28fd3af82cd9c31f097acf67a2a35ed40a8598b6b1fe38e412b35239"
+    },
+    "production/expected_striped16.bin": {
+      "bytes": 337920,
+      "sha256": "4504972084deb6c57d3f6a3c264442519ff03a3be4903296903045e4f20e0222"
+    },
+    "production/fused_ordered.c": {
+      "bytes": 2825,
+      "sha256": "5ad7d5013976b399ce00496c9ec789b7f8362018de60b462aa7f5c945bc1dcea"
+    },
+    "production/fused_striped16.c": {
+      "bytes": 3144,
+      "sha256": "34e9c0cf0cf1b501adb7d8c0d03b1d833a46fa86c7faadf3232c236f1a55eee0"
+    },
+    "production/gamma.bin": {
+      "bytes": 8192,
+      "sha256": "7d0d5a01901d300943b285eb7d3080fb8b2cedd9afded6f9fd013d7ab648aed1"
+    },
+    "production/input.bin": {
+      "bytes": 1310720,
+      "sha256": "e8b91a0b09162e6c43230bb9bed02218d8618af6f4d2640e6bb299e61996629d"
+    },
+    "production/main.c": {
+      "bytes": 2075,
+      "sha256": "0452637c9121ea65c505054cb515d2287f3b14fbf89974ecdf86b09346283d66"
+    },
+    "production/pair.elf": {
+      "bytes": 2026192,
+      "sha256": "37743febe540cc69bc6649d8210fe18ed77a604f5e994694ff6bb819500ebfd9"
+    },
+    "production/perf.txt": {
+      "bytes": 493,
+      "sha256": "59c9ce2621c38df68f8f10e781fecfe627845646e914275e086801b3ef6a3297"
+    },
+    "production/producer.py": {
+      "bytes": 6654,
+      "sha256": "af3f9f2df3210ded617ec3f87266b9181fb7bdad4e017f37250b965f62820bb0"
+    },
+    "production/reference.c": {
+      "bytes": 1111,
+      "sha256": "83f37fd9451b2f44d068cbc20cd9a5f206d399485e66f6bbc1f64e42cd5b87bb"
+    },
+    "production/reference_quant.c": {
+      "bytes": 13163,
+      "sha256": "f58d83932541d540a2a39f379280a8f2dbeca93059604aa7d9c436db66d521b1"
+    },
+    "production/run.py": {
+      "bytes": 2384,
+      "sha256": "60187b8fe4f0605d7d9bd135cea9f120c0e5a6e041da093b9b599d67aab02420"
+    },
+    "production/runtime_group_prepare.h": {
+      "bytes": 786,
+      "sha256": "12794d2ca2d9d498bfdceb774f2e10707500b6e563a083492af1035155b260a0"
+    },
+    "production/runtime_quant.c": {
+      "bytes": 14850,
+      "sha256": "27c8dbb17963cd3450c05a0061a0a5f90919be32f6770a6ca54c49bdfeba2982"
+    },
+    "production/runtime_quant.h": {
+      "bytes": 2159,
+      "sha256": "9a31bd822bb26558b7ef1fe21ff923ae954bb626bc7f6eb45719fa0b09f71ca4"
+    },
+    "production/runtime_quant_lut.h": {
+      "bytes": 26156,
+      "sha256": "6fc81f4e52567b83f4a011af13c0a5603a967448b34d8c49d2bfd3f160f1c9db"
+    },
+    "production/spike.log": {
+      "bytes": 10617256,
+      "sha256": "e9b2ce4978ebde15b3646ec54e5517d28f6f56134c5eaf1bb25dc1c9c99180bf"
+    },
+    "production/status.json": {
+      "bytes": 99,
+      "sha256": "ed52e947fb70f4dc08ca674243d2d5e40cb8a4273fdc792fa4cd7a6b77a3a034"
+    }
+  },
+  "probes": [
+    "production"
+  ],
+  "profile_semantic_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "schema": "mx_gemmini.f32_rms_packing_probe.v1",
+  "scope": "synthetic FP32 RMS plus production FP8 packing; not full-model timing",
+  "tools_sha256": {
+    "extension": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+    "profile": "18c0c934356fc1d4c2f1d3efa6a607b83bc34471d5a01d0dbe160cfe39ef5d95",
+    "riscv_gcc": "4edd51fc7e8aecc1967d95cff423685dfe6565739fa208f876413fa8277ab8a4",
+    "spike": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9"
+  }
+}

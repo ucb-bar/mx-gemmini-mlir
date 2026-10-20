@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "manifest_sha256": "ca912aff833eb15cfe7139cf48178ac22fa2125db389cc9fc0f76d59aface89e",
+  "verifier_sha256": "4cff690292c29f4ef430e2f441e096f82fd97ca8efd00c03f67c0bf0f49f2f4b",
+  "all_observed_packed_bytes_checked": true,
+  "actual_ELF_payloads_reopened": true,
+  "scope": "normalization plus packing probe; not full-model timing",
+  "modes": {
+    "ordered": {
+      "control_cycles": [
+        24353720,
+        24353720
+      ],
+      "fused_cycles": [
+        17440707,
+        17440707
+      ],
+      "cycle_ratio": 1.396372291559052,
+      "checked_bytes_per_call": 337920,
+      "calls": 4
+    },
+    "striped16": {
+      "control_cycles": [
+        24304460,
+        24304460
+      ],
+      "fused_cycles": [
+        17377511,
+        17377511
+      ],
+      "cycle_ratio": 1.398615716600611,
+      "checked_bytes_per_call": 337920,
+      "calls": 4
+    }
+  }
+}
