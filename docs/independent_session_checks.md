@@ -78,9 +78,19 @@ decoder descriptors. Every logit and final K/V word matches. This checks the
 new scheduler's attention-head assembly and cache updates independently of
 its descriptor layout.
 
-Use the repository and toolchain pins from the
-[whole-model compilation guide](compile_e2e_models.md). The source kernel
-revision is `5866983682583486b38ae64a4d1bfa5e7b2a002e`. The following command
+For these validation tools, use the following source revisions:
+
+| Repository | Validation revision |
+| --- | --- |
+| mx-gemmini-mlir | `a1c371c51457861369f59eabdb996c8a47646f04` |
+| Merlin | `91fd90edb9e483ccbd7967d523efa63fea2124d5` |
+| model2MLIR | `f5e5c674a585bebbc2507dbd028ebf9d26e2afbc` |
+
+The port and replays used Python 3.12.13 and NumPy 2.2.6. Use the hardware and
+toolchain pins from the [whole-model compilation guide](compile_e2e_models.md);
+that guide's compiler-baseline revisions identify the historical controls.
+The source kernel revision is `5866983682583486b38ae64a4d1bfa5e7b2a002e`.
+The following command
 expects the captured 128+32 TinyLlama session and the same pinned Rocket
 profile, extension and startup files as the existing forward port.
 

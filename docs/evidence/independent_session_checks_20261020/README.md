@@ -1,9 +1,9 @@
 # Recurrent source replay and full-run artifact checks
 
 Two independent recurrent smoke tests pass exactly, using two and eight query
-heads per K/V head. Each two-layer Llama model executes 64 prefill tokens and
-33 single-token decodes. All 34 complete logit
-tensors and the final unquantized K/V cache match a separate NumPy replay
+heads per K/V head. Each synthetic two-layer model executes 64 prefill tokens
+and 33 single-token decodes. All 34 complete logit tensors and the final
+unquantized K/V cache match a separate NumPy replay
 using the pinned Radiance mesh and Rocket VPU references. The archive retains
 the target executables, inputs, port sources, replay sources, all 578 mesh
 reference invocations per case, complete output bytes and receipts.

@@ -19,6 +19,11 @@ gates at 6,264,147,801 modeled cycles, a 1.131× speedup. The fixed release and
 its repository pins below remain the reference for the other published
 workload recipes.
 
+The [independent session checks](independent_session_checks.md) have separate
+tool revisions and commands for the recurrent Radiance-derived Rocket port,
+logical graph replay, encoded-weight audit and existing full-session checks.
+The complete independent cached comparison remains pending.
+
 ## Models and inputs
 
 | Workload name | Checkpoint | Executed work | Retained numerical reference |
