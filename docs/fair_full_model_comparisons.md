@@ -7,8 +7,8 @@ Cached TinyLlama and complete SmolVLA compare two compiler builds. There is
 no accepted equal-quality Radiance speedup in the table below.
 The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) completes
 the same full forward in 7,082,331,012 cycles. The fixed compiler release takes
-45.81% more cycles and fails the full-160 mean-KL gate. A newer placement takes
-6,099,702,127 cycles but fails the full/late top-token gates. The
+45.81% more cycles and fails the full-160 mean-KL gate. A newer fused-gate configuration takes
+5,849,962,853 cycles but fails the full/late top-token gates. The
 [optimization measurements](evidence/radiance_rocket_optimization_20261019/README.md)
 keep these unqualified timings and all completed alternatives separate from
 the historical accepted comparisons below. The control's

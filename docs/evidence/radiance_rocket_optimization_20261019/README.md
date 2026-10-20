@@ -8,8 +8,8 @@ The source is `radiance-kernels` at
 `5866983682583486b38ae64a4d1bfa5e7b2a002e`, adapted to Rocket as described in
 the [port guide](../../radiance_rocket_model_baseline.md).
 
-The fastest completed configuration takes **6,099,669,667 modeled cycles**,
-versus **7,082,331,012** for the port. Its raw cycle ratio is **1.161×**,
+The fastest completed configuration takes **5,849,962,853 modeled cycles**,
+versus **7,082,331,012** for the port. Its raw cycle ratio is **1.211×**,
 but it fails the top-token agreement requirements. **This is not a qualified
 speedup.** Both the full-160 and late-33 gates remain unchanged.
 
@@ -24,6 +24,11 @@ speedup.** Both the full-160 and late-33 gates remain unchanged.
 | EXP-only placement and grouped QKV completion | 6,099,669,667 | 0.0804881 | 129/160 | Fails full and late top tokens |
 | EXP-only placement, grouping and streamed softmax | 6,115,876,839 | 0.0804881 | 129/160 | Fails full and late top tokens |
 | Streamed softmax and FP32 sigmoid reciprocal | 6,227,350,452 | 0.0784700 | 130/160 | Fails full and late top tokens |
+| FP32 sigmoid reciprocal and fused gate/up packing | 5,849,962,853 | 0.0784700 | 130/160 | Fails full and late top tokens |
+| EXP-only placement and BF16 residual state | 6,283,478,981 | 0.0802911 | 132/160 | Fails late top tokens |
+| BF16 residual state and FP32 sigmoid reciprocal | 6,394,946,919 | 0.0833883 | 130/160 | Fails full mean KL/top tokens and late worst KL |
+| Original pass order: requested gate/up fusion does not apply | 6,394,934,285 | 0.0833883 | 130/160 | Same numerical failures as its unfused control |
+| BF16 residual state and realized gate/up fusion | 6,017,860,547 | 0.0833883 | 130/160 | Same numerical failures as its unfused control |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -68,6 +73,26 @@ Using FP32 reciprocal arithmetic for sigmoid improves full mean KL to
 **0.07846997** and full top agreement to **130/160**. Late agreement remains
 **26/33**. Both KL limits pass on both position sets, while both top-token
 gates fail. This changes arithmetic; it is not an accuracy-preserving fusion.
+
+Fusing the 22 gate/up pairs, hybrid sigmoid, multiplication and FP8 preparation
+saves **377,387,599 cycles**, or **6.06%**, against that FP32-sigmoid run.
+Every complete logit word is identical. This validates the fusion's numerical
+preservation, while retaining the input configuration's failed quality gates.
+
+Matching the port's BF16 residual-state format raises full agreement from
+129/160 to **132/160** with BF16 sigmoid arithmetic. All full-160 limits pass,
+but late agreement remains **26/33**, one below the required 27/33. With FP32
+sigmoid reciprocal, late agreement rises to **29/33**, while full mean KL,
+full top tokens and late worst KL fail. Residual precision and activation
+arithmetic therefore remain separate measured numerical choices.
+
+When gate/up fusion is composed with matrix-to-BF16-residual transport, it
+must run before transport rewrites the down-projection boundary. The original
+pass order realizes zero gate/up fusions and differs from its control by only
+12,634 cycles. The corrected order realizes all 22, saves **377,086,372 cycles**
+against the unfused control, and preserves every complete logit word. The
+archive and lowered-call check retain this unapplied control separately from
+the actual fusion result.
 
 Streamed BF16 RMS preserves its selected BF16 sequence. It saves
 **825,060,684 cycles** in the original placement and **806,923,938 cycles**

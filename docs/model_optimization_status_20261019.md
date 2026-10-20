@@ -2,7 +2,7 @@
 
 The newer [Radiance-derived Rocket comparison](evidence/radiance_rocket_optimization_20261019/README.md)
 uses a 7,082,331,012-cycle full-forward control. The fastest completed compiler
-placement takes 6,099,669,667 modeled cycles, but fails the unchanged full/late
+placement takes 5,849,962,853 modeled cycles, but fails the unchanged full/late
 top-token gates. No qualified Radiance speedup is established by that result.
 The linked evidence preserves every completed alternative and its failures.
 

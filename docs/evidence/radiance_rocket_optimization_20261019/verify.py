@@ -39,24 +39,30 @@ def expected_exp_placement_commands(catalog, probe):
     soft = catalog["vpu_softmax"]
     unary = catalog["vpu_unary"]
     add = catalog["vpu_add"]
-    if len(soft["kernels"]) != 1 or len(unary["kernels"]) != 1:
+    if len(soft["kernels"]) > 1 or len(unary["kernels"]) != 1:
         return None
-    soft_kernel, sig = soft["kernels"][0], unary["kernels"][0]
-    if (
-        soft_kernel["implementation"] not in {"f32_reduce", "f32_striped16"}
-        or sig["operation"] != "sigmoid"
-    ):
+    sig = unary["kernels"][0]
+    if sig["operation"] != "sigmoid":
         return None
     soft_fusions = (probe.get("softmax_packing_rewrite") or {}).get("fusions", [])
     gate_fusions = (probe.get("gated_projection_rewrite") or {}).get("fusions", [])
     assert len(soft_fusions) <= len(soft["source_regions"])
     assert len(gate_fusions) <= len(unary["source_regions"])
-    rows_per_chunk = soft_kernel["rows_per_chunk"]
-    commands = (len(soft["source_regions"]) - len(soft_fusions)) * ceil(
-        soft_kernel["logical_rows"] / rows_per_chunk
-    )
+    commands = 0
+    rows_per_chunk = None
+    if soft["kernels"]:
+        soft_kernel = soft["kernels"][0]
+        if soft_kernel["implementation"] not in {"f32_reduce", "f32_striped16"}:
+            return None
+        rows_per_chunk = soft_kernel["rows_per_chunk"]
+        commands = (len(soft["source_regions"]) - len(soft_fusions)) * ceil(
+            soft_kernel["logical_rows"] / rows_per_chunk
+        )
+    else:
+        assert not soft["source_regions"] and not soft_fusions
     endpoints = {row["symbol"]: row for row in catalog.get("softmax_packing", [])}
     for fusion in soft_fusions:
+        assert rows_per_chunk is not None
         endpoint = endpoints[fusion["symbol"]]
         batch, m, _, _ = endpoint["matrix_shape_bmnk"]
         commands += batch * ceil(m / rows_per_chunk)
@@ -270,6 +276,7 @@ def main():
                 )
         kernels = {row["symbol"]: row for row in catalog["kernels"]}
         tiles = 0
+        native_loops = 0
         assert len(catalog["bindings"]) == 199
         for binding in catalog["bindings"]:
             kernel = kernels[binding["symbol"]]
@@ -277,8 +284,14 @@ def main():
             m, n, k = kernel["padded_shape_mnk"]
             assert min(m, n, k) > 0 and all(d % 16 == 0 for d in (m, n, k))
             tiles += kernel["dimensions"]["batch"] * (m // 16) * (n // 16) * (k // 16)
+            tm, tn, tk = kernel["tile_mnk"]
+            assert all(size % tile == 0 for size, tile in zip((m, n, k), (tm, tn, tk)))
+            native_loops += (
+                kernel["dimensions"]["batch"] * (m // tm) * (n // tn) * (k // tk)
+            )
         work = perf_reader.parse_gemmini_perf(raw.decode())
         assert work == comparison["matrix_work"]
+        assert work["loops"] == native_loops
         expected_vectors = expected_exp_placement_commands(catalog, probe)
         if expected_vectors is not None:
             assert work["vpu_commands"] == expected_vectors

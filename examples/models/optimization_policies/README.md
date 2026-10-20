@@ -150,7 +150,7 @@ softmax launch-count guard retains the existing 22 batched hybrid softmax
 calls. Check those counts in the rewrite receipts and the lowered LLVM
 before interpreting the resulting execution as this configuration.
 
-The two host-softmax alternatives use the same matrix formats and select all
+The two host-softmax alternatives, added in MX revision `5d32a8c1`, use the same matrix formats and select all
 softmax sites uniformly. They retain the source graph's FP32 max, exponent,
 sum and division on Rocket. To evaluate either one, replace the policy in the
 command above and select `--vpu-softmax-implementation f32_reduce`. No VPU
@@ -158,3 +158,10 @@ softmax endpoint is then selected. For the F32-residual alternative also omit
 `--matrix-vpu-transport`, since those residual consumers run on the host.
 Keep FP32 RMS fusion and gated projection packing. These alternatives change
 precision and placement and need independent complete-output quality checks.
+
+MX revision `b4ade581` adds the independent schedule alternative
+`--native-tile-policy movement_k256`. It caps FP8 K steps at 256 and permits a
+complete aligned reduction such as K=160. It keeps the target profile and
+matrix formats unchanged, while allowing a different accumulation order.
+Use a fresh build and complete-output check for this option; the original
+`movement` results do not establish its numerical behavior or performance.
