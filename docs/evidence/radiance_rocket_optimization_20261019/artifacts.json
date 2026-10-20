@@ -72844,7 +72844,8 @@
     "hybrid_exp_residual_guarded": "hybrid_exp_residual",
     "hybrid_host_score": "hybrid_softmax",
     "hybrid_rms": "hybrid_softmax",
-    "libm_finite_softmax_f32_residual": "host_softmax_f32_residual"
+    "libm_finite_softmax_f32_residual": "host_softmax_f32_residual",
+    "libm_rne_softmax_f32_residual_retry": "host_softmax_f32_residual"
   },
   "large_candidate_ELFs_retained": false,
   "schema": "mx_gemmini.radiance_forward_optimizations.v1",

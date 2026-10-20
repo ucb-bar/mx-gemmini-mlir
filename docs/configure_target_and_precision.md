@@ -238,6 +238,21 @@ maximum under the same finite-input contract. This option provides a separate
 way to test the maximum optimization while retaining the original host
 softmax arithmetic. Its rewrite receipt lists every selected region.
 
+`--host-softmax-policy libm_f32_ordered_rne` additionally skips exponential
+calls for shifted FP32 scores at or below -104. At round-to-nearest, ties to
+even, these exponentials round to positive zero. All other arguments use the
+same libm; the ordered sum and division remain unchanged. This option requires
+RNE and unobserved floating status and `errno`. The bare-metal startup selects
+RNE. The rewrite receipt records this contract and the cutoff. It is separate
+from the guarded-libm endpoint contract, which remains unchanged.
+
+This option is available at MX `5aceeeb83fc11d335a31561a977fa18217844f0a`
+with Merlin `91fd90edb9e483ccbd7967d523efa63fea2124d5` and the same model2MLIR
+pin above. A [target probe](evidence/softmax_rne_underflow_20261020/README.md)
+checks return-word equality against the pinned libm,
+including underflow boundaries. Complete-model output identity and performance
+must be checked independently; the probe alone establishes neither.
+
 ### Select sigmoid arithmetic
 
 `--vpu-sigmoid-implementation f32_reciprocal` retains BF16 VPU exponentials

@@ -35,9 +35,31 @@ def observations(policy="libm_f32_ordered_finite"):
     llvm += "call float @llvm.maxnum.f32(float %a, float %b)\n"
     llvm += (
         "call float @expf(float %x)\n"
-        if policy == "libm_f32_ordered_finite"
+        if policy in {"libm_f32_ordered_finite", "libm_f32_ordered_rne"}
         else "call float @fmaf(float %x, float %y, float %z)\n" * 8
     )
+    if policy == "libm_f32_ordered_rne":
+        proof["exponential_contract"] = {
+            "domain": "nonpositive",
+            "rounding_mode": "rne",
+            "floating_effects": "unobserved",
+            "underflow_cutoff": -104.0,
+            "underflow_result_bits": 0,
+        }
+        llvm = llvm.replace(
+            "call float @expf(float %x)\n",
+            """%2 = fcmp ole float %0, -1.040000e+02
+br i1 %2, label %3, label %4
+3:
+  br label %6
+4:
+  %5 = call float @expf(float %0)
+  br label %6
+6:
+  %7 = phi float [ %5, %4 ], [ 0.000000e+00, %3 ]
+}
+""",
+        )
     files = {
         PATH: json.dumps(proof).encode(),
         "build/device_signatures.json": sidecar,
@@ -67,7 +89,12 @@ def observations(policy="libm_f32_ordered_finite"):
 
 
 @pytest.mark.parametrize(
-    "policy", ["libm_f32_ordered_finite", "torch_2_10_cpu_softmax_f32_avx2"]
+    "policy",
+    [
+        "libm_f32_ordered_finite",
+        "torch_2_10_cpu_softmax_f32_avx2",
+        "libm_f32_ordered_rne",
+    ],
 )
 def test_bound_host_observations(policy):
     files, probe = observations(policy)
@@ -129,5 +156,33 @@ def test_unrequested_host_rewrite_refuses():
     assert READER.check_host_softmax({}, {}) is None
     files, probe = observations()
     probe["host_softmax_policy"] = None
+    with pytest.raises(AssertionError):
+        READER.check_host_softmax(files, probe)
+
+
+@pytest.mark.parametrize(
+    "before,after",
+    [
+        ("-1.040000e+02", "-1.030000e+02"),
+        ("fcmp ole", "fcmp ogt"),
+        ("label %3, label %4", "label %4, label %3"),
+        ("[ 0.000000e+00, %3 ]", "[ 1.000000e+00, %3 ]"),
+    ],
+)
+def test_changed_rne_underflow_branch_refuses(before, after):
+    files, probe = observations("libm_f32_ordered_rne")
+    files["build/lower/model.ll"] = files["build/lower/model.ll"].replace(
+        before.encode(), after.encode()
+    )
+    with pytest.raises(AssertionError):
+        READER.check_host_softmax(files, probe)
+
+
+def test_missing_rne_effect_contract_refuses():
+    files, probe = observations("libm_f32_ordered_rne")
+    proof = copy.deepcopy(probe["host_softmax_rewrite"])
+    proof["exponential_contract"]["rounding_mode"] = "upward"
+    files[PATH] = json.dumps(proof).encode()
+    probe["host_softmax_rewrite"] = proof
     with pytest.raises(AssertionError):
         READER.check_host_softmax(files, probe)

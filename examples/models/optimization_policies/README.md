@@ -188,3 +188,11 @@ The current host-softmax options use MX revision
 policy, omit `--matrix-vpu-transport`, and select either host option above in
 a fresh build directory. Other pinned commands on this page describe their
 original measured configurations.
+
+The additional `--host-softmax-policy libm_f32_ordered_rne` option keeps that
+libm arithmetic and skips exponential calls that certainly round to zero.
+It requires RNE and unobserved floating status and `errno`. Use MX
+`5aceeeb83fc11d335a31561a977fa18217844f0a` with Merlin
+`91fd90edb9e483ccbd7967d523efa63fea2124d5`. The same F32-residual policy and
+fresh-build instructions apply. This is an explicit alternative, pending a
+separate full-model comparison.

@@ -36,7 +36,11 @@ def check_host_softmax(files, probe):
     if policy is None:
         assert probe.get("host_softmax_rewrite") is None and path not in files
         return None
-    assert policy in {"torch_2_10_cpu_softmax_f32_avx2", "libm_f32_ordered_finite"}
+    assert policy in {
+        "torch_2_10_cpu_softmax_f32_avx2",
+        "libm_f32_ordered_finite",
+        "libm_f32_ordered_rne",
+    }
     proof = json.loads(files[path])
     assert proof == probe["host_softmax_rewrite"]
     assert proof["numeric_policy"] == policy
@@ -67,10 +71,52 @@ def check_host_softmax(files, probe):
     calls = Counter(re.findall(r"\bcall\b[^@\n]*@([A-Za-z_][A-Za-z0-9_.]*)\(", llvm))
     assert calls["llvm.maxnum.f32"] == len(expected)
     assert calls["llvm.maximum.f32"] == 0
-    if policy == "libm_f32_ordered_finite":
+    if policy in {"libm_f32_ordered_finite", "libm_f32_ordered_rne"}:
         assert calls["expf"] == len(expected) and calls["fmaf"] == 0
     else:
         assert calls["expf"] == 0 and calls["fmaf"] == 8 * len(expected)
+    if policy == "libm_f32_ordered_rne":
+        assert proof["exponential_contract"] == {
+            "domain": "nonpositive",
+            "rounding_mode": "rne",
+            "floating_effects": "unobserved",
+            "underflow_cutoff": -104.0,
+            "underflow_result_bits": 0,
+        }
+        # Observe each emitted cutoff and its conditional expf path. These
+        # observations supplement the source receipt and full output-word check.
+        guards = re.findall(
+            r"(%[0-9]+) = fcmp ole float (%[0-9]+), -1\.040000e\+02", llvm
+        )
+        assert len(guards) == len(expected)
+        for condition, value in guards:
+            edge = re.search(
+                rf"br i1 {re.escape(condition)}, label (%[0-9]+), label (%[0-9]+)", llvm
+            )
+            assert edge is not None
+            blocks = []
+            for label in edge.groups():
+                match = re.search(
+                    rf"^{label[1:]}:.*?\n(.*?)(?=^[0-9]+:|^\}})",
+                    llvm,
+                    re.MULTILINE | re.DOTALL,
+                )
+                assert match is not None
+                blocks.append(match.group(1))
+            assert "@expf(" not in blocks[0]
+            call = re.search(
+                rf"(%[0-9]+) = call float @expf\(float {re.escape(value)}\)", blocks[1]
+            )
+            assert call is not None
+            expected_incoming = {
+                (call.group(1), edge.group(2)),
+                ("0.000000e+00", edge.group(1)),
+            }
+            assert any(
+                set(re.findall(r"\[ ([^,]+), (%[0-9]+) \]", line)) == expected_incoming
+                for line in llvm.splitlines()
+                if " = phi float " in line
+            )
     # Check the serialized reduction initializers, including their complete
     # extents. This catches integer interpretation of hexadecimal float words.
     initializers = Counter()

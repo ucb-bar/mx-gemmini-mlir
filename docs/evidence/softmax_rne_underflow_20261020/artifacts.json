@@ -1,0 +1,89 @@
+{
+  "schema": "mx_gemmini.softmax_rne_probe.v1",
+  "archive_sha256": "3ded068d124b4d4fc5e4ef6b717cb59e0c7b2979b7cd408169ea559790ddd75a",
+  "members": {
+    "command0.log": {
+      "sha256": "2e2eb1dc80162438e2c38167de34456f0bb449201aaa4554d3d1448586257139",
+      "bytes": 119
+    },
+    "command1.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "command2.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "command3.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "commands.json": {
+      "sha256": "2aa52bd56a2aef2b106de95e7dfe3ad07a4d4081a37eecdb3e427a40584071f2",
+      "bytes": 3911
+    },
+    "comparison.json": {
+      "sha256": "ba2894d338d7a71335903baf12e192e6194f5a238da1f7c83f3bd8bba1e1f976",
+      "bytes": 1095
+    },
+    "data.S": {
+      "sha256": "78a7e5b73d4c15589f32a9715b5e2127971e61ee38ba81ae451a058eaa18c7a1",
+      "bytes": 368
+    },
+    "input.bin": {
+      "sha256": "f86d7d7810eddaff6ef969b7229ac397db57517ef23df0352c62891880f56232",
+      "bytes": 16492
+    },
+    "lower/lowering_recipe.json": {
+      "sha256": "94f77ed51bb2335af6fc4ac49f4b473c6e6788adee61e3d3c73310f1b0d36357",
+      "bytes": 3546
+    },
+    "lower/model.ll": {
+      "sha256": "acf6369b75a4ac8b2db14de5b1b884808dff0f3e38d7da1cacdad4a000cef0a9",
+      "bytes": 854
+    },
+    "lower/model.mlir": {
+      "sha256": "719ddf4bb288725fbd49136a4e99103e670ec4061f5d9429c2f413ae17a8c7f4",
+      "bytes": 659
+    },
+    "lower/model.upstream.mlir": {
+      "sha256": "719ddf4bb288725fbd49136a4e99103e670ec4061f5d9429c2f413ae17a8c7f4",
+      "bytes": 659
+    },
+    "lower/run_lowering.py": {
+      "sha256": "057a0b76709b90b129d56265ef8a6551bffb199dce2697a503d8f34eba0be747",
+      "bytes": 242044
+    },
+    "main.c": {
+      "sha256": "f69db4f30eabb15715d068586745c78c931fc91d72db3f20addcb2317e78af91",
+      "bytes": 1198
+    },
+    "model.mlir": {
+      "sha256": "28ec5de447ed5056601cd9c90672821a097448784932b6b1be4c41b0f65c4456",
+      "bytes": 634
+    },
+    "perf.txt": {
+      "sha256": "3c20c9781a12ec6e94979d93ab041feb50bb2acfbf273313e2458cad3eeaf1bd",
+      "bytes": 489
+    },
+    "perf_input.bin": {
+      "sha256": "69b3450c950eab9f3f244342dc9cdf26bf8f5f136ae16d78312861169be69f6d",
+      "bytes": 20480
+    },
+    "probe.elf": {
+      "sha256": "21749f66b8a0a4459a84e2c76cc40ed403452dec55ae651f2739bab33630fb58",
+      "bytes": 55936
+    },
+    "producer.py": {
+      "sha256": "9f7ddfb56c72f7378c98fdde1cb664b3e04dd3099810048344ea276f277f55c1",
+      "bytes": 5654
+    },
+    "spike.log": {
+      "sha256": "5b6cc1810d7794ca2ccba9b616c85403ecfe3bb095b3a31305aa4c9a196e3e9e",
+      "bytes": 180
+    }
+  },
+  "compiler_revision": "5aceeeb83fc11d335a31561a977fa18217844f0a",
+  "merlin_revision": "91fd90edb9e483ccbd7967d523efa63fea2124d5",
+  "scope": "standalone scalar exponential probe; no full-model numerical or timing qualification"
+}

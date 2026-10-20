@@ -1,7 +1,7 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "b0b4f165ea1889ca88d7370a30fa6465ca7ae6acab4458536382d946da0ed6de",
-  "verifier_sha256": "9bf729d723b0ab77b58095f1c35dbe5719734380911c2e90701807b2e0a19646",
+  "artifact_manifest_sha256": "075535d442d8ab648f3c6e8154635c69e6255daa296a2c2ebd51db15d3b748c8",
+  "verifier_sha256": "c4a86b5a51c99f33e01ca180c1858569eea1851304261ebb19c58a0666039be2",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
   "source_control_and_profiles_rechecked": true,
