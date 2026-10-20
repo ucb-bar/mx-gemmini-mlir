@@ -97,6 +97,14 @@ probability/EXP packing axis 60% wider. Whole-model ratios include this
 implementation difference; they do not isolate compiler fusion alone or
 establish the fastest possible handwritten Rocket program.
 
+The source's rotary coefficient tables are generated using FP64 calculations
+before execution. The compiler computes angles from captured F32 frequencies
+and calls target `sinf`/`cosf` during execution. These preserve the same model
+parameters but differ in rounding and preparation costs. Together with
+reduction order, activation arithmetic and residual precision, this is a
+reason to apply the unchanged complete-output quality gates rather than
+assume numerical identity between implementations.
+
 ## Verify the artifacts
 
 ```sh

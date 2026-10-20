@@ -63,6 +63,15 @@ differences belong to the port and must appear in any explanation of a
 speedup. This port does not establish the fastest possible handwritten Rocket
 implementation or reproduce Muon execution time.
 
+Rotary tables retain the source generator's FP64 inverse-frequency, angle
+and trigonometric calculations, followed by storage as F32 coefficients.
+Their preparation is outside the port's timer. The compiler instead uses
+the captured F32 inverse frequencies, F32 angle arithmetic and runtime target
+`sinf`/`cosf` calls. Both use the same head width, rotary base and positions,
+but their coefficient words can differ. The source-relative numerical gates
+cover the complete outputs; the comparison does not claim identical
+rotary arithmetic or attribute all preparation savings to graph fusion.
+
 All matrix operands use E4M3 codes and E8M0 scales in groups of 32. The
 source-default smoke check retains its FP32-input encoder. The recorded
 TinyLlama comparison instead rounds weights and live quantization inputs
