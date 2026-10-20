@@ -34,7 +34,7 @@ def register_gated_projections(
             for k in (gate, up)
         ):
             continue
-        m, n, k = shape
+        m, n, _k = shape
         preparations = {
             row["activation_preparation"]["prepare_symbol"]
             for row in kernels
@@ -138,6 +138,20 @@ def source_matrix_callees(catalog, routing):
 
 def prepared_matrix_consumers(catalog, endpoint, source_callees):
     m, width, _ = endpoint["shape_mnk"]
+    return prepared_consumers_for_packed_input(
+        catalog,
+        rows=m,
+        width=width,
+        packed_bytes=endpoint["output_packed_bytes"],
+        prepare_symbols=endpoint["prepare_symbols"],
+        source_callees=source_callees,
+    )
+
+
+def prepared_consumers_for_packed_input(
+    catalog, *, rows, width, packed_bytes, prepare_symbols, source_callees
+):
+    """Resolve existing immutable prepared ABIs for one canonical FP8 input."""
     kernels = {row["symbol"]: row for row in catalog["kernels"]}
     consumers = {}
     for callee, name in source_callees.items():
@@ -149,10 +163,11 @@ def prepared_matrix_consumers(catalog, endpoint, source_callees):
             and row["precision"] == "mxfp8"
             and row["prepacked_checkpoint_weight"]
             and preparation.get("consumer_arguments") == [0, 2]
-            and (dims["m"], dims["k"]) == (m, width)
-            and (row["padded_shape_mnk"][0], row["padded_shape_mnk"][2]) == (m, width)
-            and preparation["packed_bytes"] == endpoint["output_packed_bytes"]
-            and preparation["prepare_symbol"] in endpoint["prepare_symbols"]
+            and (dims["m"], dims["k"]) == (rows, width)
+            and (row["padded_shape_mnk"][0], row["padded_shape_mnk"][2])
+            == (rows, width)
+            and preparation["packed_bytes"] == packed_bytes
+            and preparation["prepare_symbol"] in prepare_symbols
         ):
             consumers[callee] = row
     return consumers
@@ -251,14 +266,14 @@ def rewrite_gated_projections(module, catalog, *, source_callees=None):
                     continue
             operations = {prepare}
 
-            def root(value):
+            def root(value, operations=operations):
                 base = contiguous_tensor_root(value)
                 while value is not base:
                     operations.add(value.owner)
                     value = value.owner.operands[0]
                 return base
 
-            def multiply(value):
+            def multiply(value, operations=operations, root=root):
                 op = root(value).owner
                 if (
                     getattr(op, "name", None) != "linalg.generic"
@@ -295,7 +310,7 @@ def rewrite_gated_projections(module, catalog, *, source_callees=None):
                 operations.add(op)
                 return op
 
-            def call(value, symbols):
+            def call(value, symbols, operations=operations, root=root):
                 op = root(value).owner
                 if (
                     not isinstance(op, func.CallOp)

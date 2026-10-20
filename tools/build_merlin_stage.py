@@ -230,6 +230,10 @@ def main() -> None:
                         help="complete independent immutable projections of one packed input together")
     parser.add_argument("--fuse-rms-packing", action="store_true",
                         help="stream qualified private BF16 VPU RMS sequences into FP8 packing")
+    parser.add_argument("--fuse-f32-rms-packing", action="store_true",
+                        help="stream closed FP32 RMS normalization directly into canonical FP8 packing")
+    parser.add_argument("--f32-rms-reduction", choices=("ordered", "striped16"), default="ordered",
+                        help="FP32 RMS sum order: source sequential order or explicit 16-lane pair sums")
     parser.add_argument("--reuse-batch-rhs", action="store_true",
                         help="experimentally retain RHS packing across source-proved contiguous batch repetitions")
     parser.add_argument("--compact-batch-rhs", action="store_true",
@@ -255,6 +259,13 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.fuse_f32_rms_packing and (
+            not args.share_activation_packing or not args.integer_quant_groups or args.fuse_rms_packing):
+        parser.error("FP32 RMS fusion requires shared integer-group packing without BF16 RMS fusion")
+    if args.f32_rms_reduction != "ordered" and not args.fuse_f32_rms_packing:
+        parser.error("--f32-rms-reduction requires --fuse-f32-rms-packing")
+    if args.fuse_f32_rms_packing and args.op_profile:
+        parser.error("FP32 RMS packing currently requires uninstrumented timing")
     if args.fuse_gated_projections and (
         not args.share_activation_packing
         or not args.integer_quant_groups
@@ -507,7 +518,9 @@ def main() -> None:
             compact_batch_rhs=args.compact_batch_rhs,
             vpu_softmax_implementation=args.vpu_softmax_implementation,
             vpu_sigmoid_implementation=args.vpu_sigmoid_implementation,
+            f32_rms_reduction=args.f32_rms_reduction,
             fuse_rms_packing=args.fuse_rms_packing,
+            fuse_f32_rms_packing=args.fuse_f32_rms_packing,
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
             fuse_gated_projections=args.fuse_gated_projections,
@@ -528,6 +541,7 @@ def main() -> None:
             matrix_vpu_transport=args.matrix_vpu_transport,
             vpu_matrix_transport=args.vpu_matrix_transport,
             fuse_rms_packing=args.fuse_rms_packing,
+            fuse_f32_rms_packing=args.fuse_f32_rms_packing,
             group_projections=args.group_projections,
             fuse_softmax_packing=args.fuse_softmax_packing,
             fuse_gated_projections=args.fuse_gated_projections,
@@ -687,6 +701,39 @@ def main() -> None:
                               for key in ("consumer_symbols", "kernel_symbols", "source_regions"))
                        for row in projection_rewrite["groups"])):
             raise RuntimeError("projection grouping differs from its compiled endpoints")
+    f32_rms_rewrite = None
+    if args.fuse_f32_rms_packing:
+        from mx_gemmini_support.merlin_gated_projection import (
+            prepared_consumers_for_packed_input,
+            source_matrix_callees,
+        )
+
+        f32_path = work / "device_host_abi/mx_f32_rms_packing_rewrite.json"
+        f32_rms_rewrite = json.loads(f32_path.read_text())
+        endpoints = {row["symbol"]: row for row in catalog["f32_rms_packing"]}
+        source_callees = source_matrix_callees(
+            catalog, json.loads((work / "device_signatures.json").read_text()))
+
+        def valid_f32_rms(row):
+            endpoint = endpoints.get(row["symbol"])
+            if endpoint is None or any(row[key] != endpoint[key] for key in ("shape", "reduction")):
+                return False
+            if row["original_prepare"] is not None:
+                return (row["original_prepare"] in endpoint["prepare_symbols"]
+                        and row["original_matrix_consumer"] is None
+                        and row["matrix_consumer_kernel"] is None)
+            consumers = prepared_consumers_for_packed_input(
+                catalog, rows=endpoint["rows"], width=endpoint["width"],
+                packed_bytes=endpoint["packed_bytes"], prepare_symbols=endpoint["prepare_symbols"],
+                source_callees=source_callees)
+            matrix = consumers.get(row["original_matrix_consumer"])
+            return matrix is not None and matrix["symbol"] == row["matrix_consumer_kernel"]
+
+        if (f32_rms_rewrite["catalog_sha256"] != _sha(catalog_path)
+                or f32_rms_rewrite["sidecar_sha256"] != _sha(work / "device_signatures.json")
+                or f32_rms_rewrite["output_sha256"] != _sha(f32_path.with_name("mx_f32_rms_packing.mlir"))
+                or any(not valid_f32_rms(row) for row in f32_rms_rewrite["fusions"])):
+            raise RuntimeError("FP32 RMS packing differs from its compiled endpoints")
     rms_rewrite = None
     if args.fuse_rms_packing:
         rms_path = work / "device_host_abi/mx_rms_packing_rewrite.json"
@@ -936,6 +983,9 @@ def main() -> None:
         "projection_group_rewrite": projection_rewrite,
         "fuse_rms_packing": args.fuse_rms_packing,
         "rms_packing_rewrite": rms_rewrite,
+        "fuse_f32_rms_packing": args.fuse_f32_rms_packing,
+        "f32_rms_reduction": args.f32_rms_reduction,
+        "f32_rms_packing_rewrite": f32_rms_rewrite,
         "native_tile_policy": args.native_tile_policy,
         **({"host_math_guard": guarded_math.to_dict()} if guarded_math is not None else {}),
         "spike_isa": args.spike_isa,

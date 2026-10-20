@@ -251,6 +251,7 @@ class MXVPUPostOffload:
                  matrix_vpu_transport: bool = False,
                  vpu_matrix_transport: bool = False,
                  fuse_rms_packing: bool = False,
+                 fuse_f32_rms_packing: bool = False,
                  group_projections: bool = False,
                  fuse_softmax_packing: bool = False,
                  fuse_gated_projections: bool = False,
@@ -319,6 +320,13 @@ class MXVPUPostOffload:
             from .merlin_vpu_matrix_transport import MXVPUMatrixTransportPostOffload
 
             self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
+        self.f32_rms_packing = None
+        if fuse_f32_rms_packing:
+            if fixed_weight_catalog is None or not share_activation_packing or fuse_rms_packing:
+                raise ValueError("FP32 RMS packing requires a shared immutable matrix catalog")
+            from .merlin_f32_rms_packing import MXF32RMSPackingPostOffload
+
+            self.f32_rms_packing = MXF32RMSPackingPostOffload(fixed_weight_catalog)
         self.gated_projection_packing = None
         if fuse_gated_projections:
             if fixed_weight_catalog is None or not share_activation_packing:
@@ -382,6 +390,8 @@ class MXVPUPostOffload:
             selected = self.fixed_weight(selected, sidecar, workdir)
         if self.shared_activation is not None:
             selected = self.shared_activation(selected, sidecar, workdir)
+        if self.f32_rms_packing is not None:
+            selected = self.f32_rms_packing(selected, sidecar, workdir)
         # Consume the original down-projection before private BF16 transport.
         if self.gated_projection_packing is not None:
             selected = self.gated_projection_packing(selected, sidecar, workdir)

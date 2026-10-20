@@ -366,6 +366,7 @@ def test_full_pipeline_fuses_before_transporting_down_projection_to_residual(tmp
         "shared_activation",
         "vpu_matrix_transport",
         "rms_packing",
+        "f32_rms_packing",
         "batch_rhs_reuse",
         "softmax_packing",
         "projection_groups",

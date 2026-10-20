@@ -360,3 +360,27 @@ The [capture-time quantization handoff](quantization_handoff.md) documents
 the separate TorchAO adapter, module-name overrides, FP6 codebook rules, and
 typed handoff contracts. Those capture-time policies use a different schema
 and do not replace the executable backend policy above.
+## FP32 normalization and FP8 preparation
+
+For host FP32 RMS normalization, `--fuse-f32-rms-packing` removes private
+normalization tensors and packs one completed row directly into the existing
+FP8 consumer layout. It requires `--share-activation-packing` and
+`--integer-quant-groups`. It cannot be combined with the BF16
+`--fuse-rms-packing` alternative. Observable intermediate tensors, unknown
+effects, different scalar arithmetic and unproved matrix consumers prevent
+fusion.
+
+The default `--f32-rms-reduction ordered` keeps sequential FP32 summation.
+The explicit alternative `--f32-rms-reduction striped16` uses sixteen FP32
+partial sums with paired elements, then sums the lanes in order. This matches
+the reduction ordering of the retained Rocket port, but changes floating-point
+results relative to sequential summation. Both choices keep FP32 square,
+division, epsilon addition, reciprocal square root and the two output
+multiplies. They use the same canonical FP8 codes and E8M0 scale encoding.
+The generated normalization object disables contraction and uses hardware
+square root without a math-library errno dependency.
+
+Check `mx_f32_rms_packing_rewrite.json`, catalog `f32_rms_packing`, and
+`f32_rms_reduction` in the build receipt. Registration alone does not show
+that a graph was fused. A changed reduction order needs complete model
+numerical validation; it does not inherit an existing timing or quality claim.

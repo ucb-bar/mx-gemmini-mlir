@@ -103,6 +103,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          compact_batch_rhs: bool = False,
                          vpu_softmax_implementation: str = "bf16",
                          fuse_rms_packing: bool = False,
+                         fuse_f32_rms_packing: bool = False,
+                         f32_rms_reduction: str = "ordered",
                          group_projections: bool = False,
                          fuse_softmax_packing: bool = False,
                          vpu_sigmoid_implementation: str = "bf16",
@@ -112,6 +114,13 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if (type(fuse_f32_rms_packing) is not bool or
+            fuse_f32_rms_packing and
+            (not share_activation_packing or not integer_group_packing or fuse_rms_packing)):
+        raise ValueError("FP32 RMS packing requires shared integer-group packing without BF16 RMS fusion")
+    if f32_rms_reduction not in {"ordered", "striped16"} or (
+            not fuse_f32_rms_packing and f32_rms_reduction != "ordered"):
+        raise ValueError("an explicit FP32 RMS fusion is required for the selected reduction")
     if (
         type(fuse_gated_projections) is not bool
         or fuse_gated_projections
@@ -607,6 +616,13 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
 
         rms_packing = register_rms_packing(connected_multiplies, kernel_records, profile,
                                            compile_source, prepared_entries)
+    f32_rms_packing = []
+    if fuse_f32_rms_packing:
+        from .merlin_f32_rms_packing import register_f32_rms_packing
+
+        f32_rms_packing = register_f32_rms_packing(
+            prepared, kernel_records, profile, max_workspace, compile_source,
+            prepared_entries, reduction=f32_rms_reduction)
     softmax_packing = []
     if fuse_softmax_packing:
         from .merlin_softmax_packing import register_softmax_packing
@@ -788,6 +804,9 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "projection_groups": projection_groups,
         "fuse_rms_packing": fuse_rms_packing,
         "rms_packing": rms_packing,
+        "fuse_f32_rms_packing": fuse_f32_rms_packing,
+        "f32_rms_reduction": f32_rms_reduction,
+        "f32_rms_packing": f32_rms_packing,
         **({"batch_rhs_reuse": "experimental_exact_contiguous_repetition"} if reuse_batch_rhs else {}),
         **({"compact_batch_rhs": True} if compact_batch_rhs else {}),
         **({"compact_profitability_guard": "private_materialization"} if compact_batch_rhs else {}),
@@ -877,6 +896,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 compact_batch_rhs: bool = False,
                                 vpu_softmax_implementation: str = "bf16",
                                 fuse_rms_packing: bool = False,
+                                fuse_f32_rms_packing: bool = False,
+                                f32_rms_reduction: str = "ordered",
                                 group_projections: bool = False,
                                 fuse_softmax_packing: bool = False,
                                 vpu_sigmoid_implementation: str = "bf16",
@@ -927,6 +948,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     compact_batch_rhs=compact_batch_rhs,
                                     vpu_softmax_implementation=vpu_softmax_implementation,
                                     fuse_rms_packing=fuse_rms_packing,
+                                    fuse_f32_rms_packing=fuse_f32_rms_packing,
+                                    f32_rms_reduction=f32_rms_reduction,
                                     group_projections=group_projections,
                                     fuse_softmax_packing=fuse_softmax_packing,
                                     vpu_sigmoid_implementation=vpu_sigmoid_implementation,
