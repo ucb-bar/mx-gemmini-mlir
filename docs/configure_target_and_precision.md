@@ -283,6 +283,30 @@ call. `mx_softmax_packing_rewrite.json` records the selected pairs.
 The option currently supports uninstrumented timing. Measure it on the target:
 reducing intermediate storage does not by itself establish a speedup.
 
+### Fuse gate/up projections through SiLU and packing
+
+`--fuse-gated-projections` consumes the private BF16 gate/up matrix outputs
+without materializing their FP32 readouts, sigmoid tensor or product tensors.
+It retains both original matrix schedules and immutable weights, evaluates
+`(gate * (1 / (1 + exp(-gate)))) * up` with BF16 VPU EXP and FP32 scalar
+arithmetic, then writes canonical FP8 block32 codes and scales directly.
+
+The option requires shared activation preparation, integer-group packing and
+`--vpu-sigmoid-implementation f32_reciprocal`. The pass checks the actual
+multiply order, matching packed input, tensor layouts, readonly contracts,
+fresh destinations and complete intermediate privacy. It can replace either
+an explicit preparation call or the packing inside a source-bound immutable
+down-projection, using that matrix's existing prepared-input ABI. Unknown
+effects, escaping tensors or unsupported shapes keep the original calls.
+
+The combined matrix outputs and row buffers must fit the catalog's existing
+serial workspace. Calls complete synchronously, with fresh state on every
+invocation. `mx_gated_projections_rewrite.json` records each fusion, its source
+kernels, sigmoid and terminal consumer. Operation profiling is not supported
+for this option. The pass is available from MX commit `129cd185`; the Merlin
+and model2MLIR versions above remain applicable. Compare all model outputs
+against the unfused configuration before attributing a timing change to it.
+
 For a stage build, pass the new policy explicitly:
 
 ```sh

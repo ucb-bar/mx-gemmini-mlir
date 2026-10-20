@@ -1,0 +1,76 @@
+# TinyLlama forward placement policies
+
+These configurations use the archived 160-token TinyLlama forward from the
+[model build guide](../../../docs/compile_e2e_models.md). All offloaded
+matrices use FP8 E4M3 with E8M0 block32 scales and BF16 matrix outputs.
+The rotary-frequency singleton contraction remains FP32 on the host.
+The files vary operator placement; they do not change matrix precision.
+
+| Policy | Placement |
+| --- | --- |
+| `tinyllama-forward-hybrid-softmax.json` | Existing matrix/VPU placement, with all 22 softmax sites on the VPU |
+| `tinyllama-forward-host-score.json` | Hybrid softmax, with the 22 scalar attention-score multiplications on the host |
+| `tinyllama-forward-exp-vpu.json` | Softmax and sigmoid on the VPU; normalization, reductions, RoPE arithmetic, residual additions and other elementwise arithmetic on the FP32 host |
+
+Select `--vpu-softmax-implementation f32_reduce` for each configuration.
+This batches BF16 VPU exponentials and retains FP32 max, subtraction, ordered
+sum and division. The default sigmoid retains BF16 arithmetic at each step.
+`--vpu-sigmoid-implementation f32_reciprocal` is a separate numerical choice
+that keeps FP32 arithmetic around the BF16 exponential.
+
+The first two policies can use the original connected BF16 multiply and
+transport options. The third uses host multiplies and normalization, so
+omit the connected multiply, connected sigmoid, matrix/VPU transport and
+RMS-packing flags. Projection grouping and private softmax/matrix streaming
+can be measured separately under their documented legality conditions.
+See [target and precision configuration](../../../docs/configure_target_and_precision.md)
+for the flags and their arithmetic contracts.
+
+Each JSON binds this captured MLIR:
+
+`5c2cc98b8d0480893ebe6e682d094869e75a9dfc34c984e9930a269111be957a`
+
+and this target profile:
+
+`e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d`
+
+Use the exact archived capture export for reproduction. For a new capture,
+generate a new policy and identify its source operations again. The build
+rejects stale or incomplete policies. Numerical and complete-model timing
+results belong to the [comparison record](../../../docs/fair_full_model_comparisons.md);
+selecting a policy alone does not establish a qualified speedup.
+
+To compile the EXP-only configuration after exporting `tinyllama-forward`
+with the model guide, use a fresh output directory:
+
+```sh
+"$CAPTURE_PY" -m tools.build_merlin_stage \
+  --stage "$ARTIFACT_ROOT/tinyllama-forward-inputs/capture" \
+  --workdir "$ARTIFACT_ROOT/tinyllama-forward-exp-build" \
+  --profile "$MX_ROOT/profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json" \
+  --merlin-src "$MERLIN_ROOT/src" --llvm-install "$LLVM_INSTALL" \
+  --riscv-root "$RISCV_ROOT" \
+  --execution-policy "$MX_ROOT/examples/models/optimization_policies/tinyllama-forward-exp-vpu.json" \
+  --prepack-checkpoint-weights --prune-unused-checkpoint-weights \
+  --share-activation-packing --integer-quant-groups \
+  --host-math-guard "$ARTIFACT_ROOT/tinyllama-forward-inputs/guard.json" \
+  --native-tile-policy movement --reuse-batch-rhs --compact-batch-rhs \
+  --vpu-softmax-implementation f32_reduce \
+  --structural-elf-admission --spike-arena-base 0xd0000000 \
+  --compile-timeout-s 6000 --output-dump-cap 5120000 \
+  --spike-timeout 43200 --spike-extlib "$SPIKE_EXTLIB"
+```
+
+This command selects the EXP-only placement with BF16 sigmoid arithmetic.
+Use MX commit `d4797f2d` or later, Merlin
+`bb7c352a9e9c8ad085d24091fc83e4e7f5ff92ca`, and model2MLIR
+`f5e5c674a585bebbc2507dbd028ebf9d26e2afbc`. Keep the model guide's exact
+checkpoint, capture, target, toolchain and timing environment.
+
+The separate transformations `--group-projections` and
+`--fuse-softmax-packing` preserve the selected arithmetic. To evaluate the
+FP32 sigmoid choice, add `--vpu-sigmoid-implementation f32_reciprocal`.
+That choice also enables `--fuse-gated-projections` from MX commit
+`129cd185cb4b3967feb4e3b91b9445fe1779dfe0`. Use separate fresh build directories
+for each configuration and compare complete outputs. None of these options
+changes the frozen release registry or its measured executable identities.
