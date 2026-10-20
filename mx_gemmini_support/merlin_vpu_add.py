@@ -250,6 +250,7 @@ class MXVPUPostOffload:
                  activation_packing_budget_bytes: int = 1048576,
                  matrix_vpu_transport: bool = False,
                  vpu_matrix_transport: bool = False,
+                 fuse_rms_packing: bool = False,
                  batch_rhs_catalog: Path | None = None):
         from .merlin_vpu_elementwise import MXVPUElementwisePostOffload
         from .merlin_vpu_reduce import MXVPUReducePostOffload
@@ -316,6 +317,13 @@ class MXVPUPostOffload:
 
             self.vpu_matrix_transport = MXVPUMatrixTransportPostOffload(fixed_weight_catalog)
         self.batch_rhs_reuse = None
+        self.rms_packing = None
+        if fuse_rms_packing:
+            if fixed_weight_catalog is None or not vpu_matrix_transport:
+                raise ValueError("RMS packing requires a catalog and private VPU matrix transport")
+            from .merlin_rms_packing import MXRmsPackingPostOffload
+
+            self.rms_packing = MXRmsPackingPostOffload(fixed_weight_catalog)
         if batch_rhs_catalog is not None:
             from .merlin_batch_rhs import MXBatchRHSReusePostOffload
 
@@ -350,6 +358,8 @@ class MXVPUPostOffload:
             selected = self.matrix_transport(selected, sidecar, workdir)
         if self.vpu_matrix_transport is not None:
             selected = self.vpu_matrix_transport(selected, sidecar, workdir)
+        if self.rms_packing is not None:
+            selected = self.rms_packing(selected, sidecar, workdir)
         if self.batch_rhs_reuse is not None:
             selected = self.batch_rhs_reuse(selected, sidecar, workdir)
         return selected

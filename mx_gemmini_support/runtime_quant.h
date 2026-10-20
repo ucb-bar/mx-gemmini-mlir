@@ -27,6 +27,14 @@ int mx_pack_weight_f32(const float *input, uint32_t k, uint32_t n,
  */
 int mx_pack_activation_bf16(const uint16_t *input, uint32_t m, uint32_t k,
                             uint32_t format, uint8_t *codes, uint8_t *scales);
+/* Pack a private FP8 producer tile into rows [first, first+count) of the
+ * complete m-by-k destination. Input contains only count dense BF16 rows.
+ * The caller owns the disjoint destination tiles and publishes after all
+ * succeed. Other destination rows remain untouched.
+ */
+int mx_pack_activation_bf16_rows(const uint16_t *input, uint32_t m, uint32_t k,
+                                uint32_t first, uint32_t count,
+                                uint8_t *codes, uint8_t *scales);
 
 /* Widen one BF16 readout tensor into its model-visible f32 buffer. */
 int mx_widen_bf16_f32(const uint16_t *input, uint32_t count, float *output);

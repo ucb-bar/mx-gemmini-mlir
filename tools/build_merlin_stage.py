@@ -214,6 +214,11 @@ def main() -> None:
                         help="experimentally encode known zero activation rows without materializing them")
     parser.add_argument("--integer-quant-groups", action="store_true",
                         help="experimentally use BF16-word group preparation and inline its fixed-axis loops")
+    parser.add_argument("--vpu-softmax-implementation", choices=("bf16", "f32_reduce"),
+                        default="bf16", help="arithmetic for policy-selected VPU softmax: "
+                        "all-BF16, or batched BF16 exponentials with FP32 normalization")
+    parser.add_argument("--fuse-rms-packing", action="store_true",
+                        help="stream qualified private BF16 VPU RMS sequences into FP8 packing")
     parser.add_argument("--reuse-batch-rhs", action="store_true",
                         help="experimentally retain RHS packing across source-proved contiguous batch repetitions")
     parser.add_argument("--compact-batch-rhs", action="store_true",
@@ -239,6 +244,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.fuse_rms_packing and not args.vpu_matrix_transport:
+        parser.error("--fuse-rms-packing requires --vpu-matrix-transport")
     if args.compact_batch_rhs and not args.reuse_batch_rhs:
         parser.error("--compact-batch-rhs requires --reuse-batch-rhs")
     if args.reuse_batch_rhs and (not args.integer_quant_groups or args.execution_policy is None):
@@ -463,6 +470,8 @@ def main() -> None:
             integer_group_packing=args.integer_quant_groups,
             reuse_batch_rhs=args.reuse_batch_rhs,
             compact_batch_rhs=args.compact_batch_rhs,
+            vpu_softmax_implementation=args.vpu_softmax_implementation,
+            fuse_rms_packing=args.fuse_rms_packing,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
             reuse_prepacked_object=args.reuse_prepacked_object),
@@ -479,6 +488,7 @@ def main() -> None:
             activation_packing_budget_bytes=args.activation_packing_budget_bytes,
             matrix_vpu_transport=args.matrix_vpu_transport,
             vpu_matrix_transport=args.vpu_matrix_transport,
+            fuse_rms_packing=args.fuse_rms_packing,
             batch_rhs_catalog=(work / "device_catalog/mx_catalog.json" if args.reuse_batch_rhs else None),
             fixed_weight_catalog=(work / "device_catalog/mx_catalog.json"
                                   if args.prepack_checkpoint_weights else None)),
@@ -553,6 +563,17 @@ def main() -> None:
                                   == "mxfp8" else "f4E2M1FN")
                 if binding["target_dtypes"][:2] != [expected_dtype, expected_dtype]:
                     raise RuntimeError("MX linked catalog differs from execution policy")
+    rms_rewrite = None
+    if args.fuse_rms_packing:
+        rms_path = work / "device_host_abi/mx_rms_packing_rewrite.json"
+        rms_rewrite = json.loads(rms_path.read_text())
+        endpoints = {row["symbol"]: row for row in catalog["rms_packing"]}
+        if (rms_rewrite["catalog_sha256"] != _sha(catalog_path)
+                or rms_rewrite["sidecar_sha256"] != _sha(work / "device_signatures.json")
+                or rms_rewrite["output_sha256"] != _sha(rms_path.with_name("mx_rms_packing.mlir"))
+                or any(row["symbol"] not in endpoints or row["shape"] != endpoints[row["symbol"]]["shape"]
+                       for row in rms_rewrite["fusions"])):
+            raise RuntimeError("RMS packing rewrite differs from its compiled endpoints")
     rewrite_path = work / "device_host_abi/mx_vpu_softmax_rewrite.json"
     lowered_vpu = (json.loads(rewrite_path.read_text(encoding="utf-8"))["regions"]
                    if rewrite_path.is_file() else [])
@@ -781,6 +802,9 @@ def main() -> None:
         "all_output_sha256_enabled": True,
         "virtual_zero_padding": args.virtual_zero_padding,
         "integer_quant_groups": args.integer_quant_groups,
+        "vpu_softmax_implementation": args.vpu_softmax_implementation,
+        "fuse_rms_packing": args.fuse_rms_packing,
+        "rms_packing_rewrite": rms_rewrite,
         "native_tile_policy": args.native_tile_policy,
         **({"host_math_guard": guarded_math.to_dict()} if guarded_math is not None else {}),
         "spike_isa": args.spike_isa,

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import ctypes
-from pathlib import Path
 import struct
 import subprocess
+from pathlib import Path
 
 import numpy as np
-
+import pytest
 
 SOURCE = Path(__file__).resolve().parents[1] / "mx_gemmini_support/runtime_quant.c"
 
@@ -46,9 +46,17 @@ def test_fast_codes_match_reference_for_all_bf16_mantissas(tmp_path) -> None:
                 value, -23, precision)
 
 
-def test_fast_group_packing_matches_reference(tmp_path) -> None:
+@pytest.mark.parametrize("word_groups", [False, True])
+def test_fast_group_packing_matches_reference(tmp_path, word_groups) -> None:
+    from mx_gemmini_support.runtime_group_preparation import (
+        emit_runtime_group_preparation,
+    )
+
+    (tmp_path / "runtime_group_prepare.h").write_text(emit_runtime_group_preparation())
     libraries = []
     for name, flags in (("fast", []), ("reference", ["-DMX_QUANT_REFERENCE"])):
+        if name == "fast" and word_groups:
+            flags = ["-DMX_QUANT_GROUP_WORDS", "-DMX_QUANT_INLINE_GROUP", "-I", str(tmp_path)]
         library = tmp_path / f"{name}.so"
         subprocess.run([
             "cc", "-O2", "-fno-fast-math", "-fPIC", "-shared", *flags,

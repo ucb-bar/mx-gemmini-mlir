@@ -101,11 +101,17 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          integer_group_packing: bool = False,
                          reuse_batch_rhs: bool = False,
                          compact_batch_rhs: bool = False,
+                         vpu_softmax_implementation: str = "bf16",
+                         fuse_rms_packing: bool = False,
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
                          reuse_prepacked_object: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
+    if vpu_softmax_implementation not in {"bf16", "f32_reduce"}:
+        raise ValueError("unknown VPU softmax implementation")
+    if type(fuse_rms_packing) is not bool or fuse_rms_packing and not vpu_matrix_transport:
+        raise ValueError("RMS packing requires explicit private VPU matrix transport")
     if connect_broadcast_multiplies and not connect_multiplies:
         raise ValueError("broadcast connections require connected multiplies")
     if prepare_broadcast_operands and not connect_broadcast_multiplies:
@@ -411,7 +417,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     for shape, site in softmax_shapes.items():
         generated = emit_vpu_row_softmax(
             profile, logical_rows=site["logical_rows"],
-            row_width=site["row_width"], symbol=site["kernel_symbol"])
+            row_width=site["row_width"], symbol=site["kernel_symbol"],
+            implementation=vpu_softmax_implementation)
         compile_source(site["kernel_symbol"], generated.source)
         compile_source(site["symbol"], emit_memref_softmax_shim(shape))
         softmax_kernels.append({
@@ -422,6 +429,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "symbol": site["symbol"],
             "kernel_symbol": site["kernel_symbol"],
             "vpu_steps": list(generated.vpu_steps),
+            "implementation": vpu_softmax_implementation,
         })
     add_sites = routed("add", selected_add_sites(prepared_text, profile))
     add_shapes = {site["symbol"]: site for site in add_sites}
@@ -558,6 +566,12 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "padded_width": generated.padded_width,
             "rows_per_chunk": generated.rows_per_chunk,
         })
+    rms_packing = []
+    if fuse_rms_packing:
+        from .merlin_rms_packing import register_rms_packing
+
+        rms_packing = register_rms_packing(connected_multiplies, kernel_records, profile,
+                                           compile_source, prepared_entries)
     if prepared_entries:
         from merlin.llvmlower.device_shim import emit_logical_translation_unit
 
@@ -706,6 +720,9 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "vpu_matrix_transport": "experimental_private_bf16" if vpu_matrix_transport else "disabled",
         "virtual_zero_padding": virtual_zero_padding,
         "integer_group_packing": integer_group_packing,
+        "vpu_softmax_implementation": vpu_softmax_implementation,
+        "fuse_rms_packing": fuse_rms_packing,
+        "rms_packing": rms_packing,
         **({"batch_rhs_reuse": "experimental_exact_contiguous_repetition"} if reuse_batch_rhs else {}),
         **({"compact_batch_rhs": True} if compact_batch_rhs else {}),
         **({"compact_profitability_guard": "private_materialization"} if compact_batch_rhs else {}),
@@ -724,7 +741,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         "vpu_source_aliases": route_aliases,
         "vpu_softmax": {
             "status": "source_bound_f32_to_bf16_vpu_to_f32",
-            "numeric_policy": "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities",
+            "numeric_policy": (
+                "f32_scores_to_bf16_rne_vpu_round_each_step_to_f32_probabilities"
+                if vpu_softmax_implementation == "bf16" else
+                "f32_max_subtract_bf16_exp_f32_ordered_sum_and_division"),
             "source_regions": [site["region"] for site in softmax_sites],
             "kernels": softmax_kernels,
         },
@@ -789,6 +809,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 integer_group_packing: bool = False,
                                 reuse_batch_rhs: bool = False,
                                 compact_batch_rhs: bool = False,
+                                vpu_softmax_implementation: str = "bf16",
+                                fuse_rms_packing: bool = False,
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
                                 reuse_prepacked_object: Path | None = None
@@ -833,6 +855,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     integer_group_packing=integer_group_packing,
                                     reuse_batch_rhs=reuse_batch_rhs,
                                     compact_batch_rhs=compact_batch_rhs,
+                                    vpu_softmax_implementation=vpu_softmax_implementation,
+                                    fuse_rms_packing=fuse_rms_packing,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
                                     reuse_prepacked_object=reuse_prepacked_object)

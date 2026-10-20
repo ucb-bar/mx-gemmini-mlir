@@ -138,6 +138,26 @@ void pack_prepared_group(const uint16_t *values, uint16_t maximum,
   if (exponent < -23) exponent = -23;
   uint32_t group_major = axis == 1 ? rows : cols;
   scales[(size_t)group * group_major + major] = (uint8_t)(exponent + 127);
+  /* Select the codebook and destination layout once per group. Keeping the
+   * FP8 path separate avoids FP4 nibble and format branches for every member.
+   * The prepared words, scale, traversal and signed-zero encoding are unchanged.
+   */
+  if (format == MX_RUNTIME_FP8) {
+    size_t start = axis == 1 ? (size_t)major * cols + group * 32u
+                             : (size_t)group * 32u * cols + major;
+    size_t stride = axis == 1 ? 1u : cols;
+    uint32_t scale_biased = (uint32_t)(exponent + 127);
+    for (uint32_t offset = 0; offset < 32; ++offset) {
+      uint32_t word = values[offset];
+      uint32_t biased = (word >> 7) & 255u;
+      uint32_t delta = scale_biased - biased;
+      uint8_t code = (uint8_t)((word >> 15) << 7);
+      if (biased != 0u && delta < 16u)
+        code |= mx_fp8_code_lut[delta][word & 127u];
+      codes[start + offset * stride] = code;
+    }
+    return;
+  }
   for (uint32_t offset = 0; offset < 32; ++offset) {
     uint32_t row = axis == 1 ? major : group * 32u + offset;
     uint32_t col = axis == 1 ? group * 32u + offset : major;
@@ -305,6 +325,23 @@ int mx_pack_activation_bf16(const uint16_t *input, uint32_t m, uint32_t k,
       if (mx_prepare_bf16_group_words(input + (size_t)row * k + group * 32u,
                                       1u, values, &maximum)) return -1;
       pack_prepared_group(values, maximum, m, k, 1u, row, group, format, codes, scales);
+    }
+  }
+  return 0;
+}
+
+int mx_pack_activation_bf16_rows(const uint16_t *input, uint32_t m, uint32_t k,
+                                uint32_t first, uint32_t count,
+                                uint8_t *codes, uint8_t *scales) {
+  if (!valid_shape(input, m, k, 1, MX_RUNTIME_FP8, codes, scales) ||
+      first >= m || !count || count > m - first) return -1;
+  for (uint32_t group = 0; group < k / 32u; ++group) {
+    for (uint32_t row = 0; row < count; ++row) {
+      uint16_t values[32], maximum;
+      if (mx_prepare_bf16_group_words(input + (size_t)row * k + group * 32u,
+                                      1u, values, &maximum)) return -1;
+      pack_prepared_group(values, maximum, m, k, 1u, first + row, group,
+                          MX_RUNTIME_FP8, codes, scales);
     }
   }
   return 0;

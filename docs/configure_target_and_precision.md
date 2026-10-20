@@ -187,6 +187,41 @@ object with a new policy is insufficient.
 
 ## Build and check the changed policy
 
+### Select softmax arithmetic
+
+Policy-selected VPU softmax has two implementations. The default `bf16`
+rounds the input scores to BF16 and runs the complete softmax on the VPU.
+`--vpu-softmax-implementation f32_reduce` instead computes the maximum,
+subtraction, ordered sum and final division in FP32. It batches shifted BF16
+inputs through the VPU exponential. This preserves FP32 normalization while
+amortizing vector launches across several rows.
+
+Set the relevant entries under `vpu_placements.softmax` to `vpu` in a copied
+custom policy before selecting this option. Entries left at `host` retain
+their original host softmax. The catalog records the chosen implementation
+and rounding policy. Both choices need a full-output numerical comparison;
+they are different arithmetic implementations.
+
+### Stream private RMS normalization into packing
+
+`--fuse-rms-packing` keeps a supported BF16 VPU RMS sequence in scratchpad and
+packs each completed row tile into its FP8 consumer layout. It requires
+`--vpu-matrix-transport` and that option's existing shared-packing, connected
+multiply and integer-group prerequisites.
+
+The pass checks the actual square, row sum, power-of-two division, epsilon
+addition, reciprocal square root, gamma multiplication and packing calls.
+It preserves their BF16 arithmetic boundaries. Static widths from 32 through
+4096 that are powers of two are supported. Constants, readonly inputs,
+destination ownership and complete intermediate privacy must match. A live
+intermediate output or an unknown intervening effect keeps the original
+sequence. Other precision formats retain their existing path.
+
+The generated `mx_rms_packing_rewrite.json` lists each selected sequence and
+its removed calls. The catalog retains the compiled endpoint and source
+hashes. Check complete model outputs after compilation; a local packed-byte
+test does not establish a complete-model performance improvement.
+
 For a stage build, pass the new policy explicitly:
 
 ```sh
