@@ -16,7 +16,7 @@ with `mem.host_tracking=0`. They are not FPGA measurements. See the
 
 | Workload name | Checkpoint | Executed work | Retained numerical reference |
 | --- | --- | --- | --- |
-| `tinyllama-forward` | `TinyLlama/TinyLlama-1.1B-Chat-v1.0` | All 22 layers and LM head, 160 fixed token IDs; all 160 logit rows | Floating-point model, all 5,120,000 F32 logits; independent quantized source distributions at 33 positions |
+| `tinyllama-forward` | `TinyLlama/TinyLlama-1.1B-Chat-v1.0` | All 22 layers and LM head, 160 fixed token IDs; all 160 logit rows | Floating-point model, all 5,120,000 F32 logits; Radiance-derived Rocket port at all 160 positions, older source at 33 |
 | `tinyllama-cached` | Same checkpoint | 128-token prefill, then 32 one-token decodes with persistent KV state | Floating-point trajectory; 33 last-token logit tensors and all output/state digests |
 | `smolvla` | `lerobot/smolvla_base` | Prefix, ten recurrent flow steps, action decode | Floating-point trajectory preserving the model's native BF16 backbone; ten flow outputs and final action |
 

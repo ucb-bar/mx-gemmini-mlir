@@ -75,11 +75,35 @@ Gemmini configuration source was also retrieved and matched the target
 profile's recorded source digest; an unrelated older local checkout was not
 used to infer hardware compatibility.
 
+## Complete Radiance-derived forward audit
+
+The [Radiance Rocket port evidence](evidence/radiance_rocket_forward_20261019/README.md)
+adds an independent full-forward comparison on the same Rocket MX+VPU target.
+Its reader checks all 160 source and compiler logit rows, both the late-33
+and complete-160 numerical gates, descriptor-derived accelerator work, and
+unchanged outputs under diagnostic profiling. This is separate from the
+older `npu-exploration` control above.
+
+The [linked payload checker](../tools/audit_merlin_elf_payloads.py) can also
+reopen a compiler ELF and check its actual token IDs, captured constants,
+all fixed matrix codes/scales, and retained embedding/normalization weights
+against the supplied capture and compiled catalog. It supplements executable
+hashes with checks of the bytes the executable will read; it does not run the
+model or establish timing or numerical quality.
+
+```sh
+python -m tools.audit_merlin_elf_payloads \
+  --capture "$ARTIFACT_ROOT/tinyllama-forward-inputs/capture" \
+  --build "$ARTIFACT_ROOT/tinyllama-forward-exp-build" \
+  --out "$ARTIFACT_ROOT/tinyllama-forward-linked-payloads.json"
+```
+
 ## Limits of the result
 
 The numbers are modeled Rocket-Spike cycles with `mem.host_tracking=0`.
-No matching FPGA run or bitstream is qualified. TinyLlama source distributions
-cover 33 positions; the compiler's full output covers 160. Cached TinyLlama
+No matching FPGA run or bitstream is qualified. The older TinyLlama source
+distributions cover 33 positions; the newer Radiance-derived Rocket port and
+compiler both retain all 160. Cached TinyLlama
 and complete SmolVLA have no independent full source-session performance
 baseline. SmolVLA has no robot-task acceptance threshold. Synthetic inputs
 do not establish dataset accuracy or perplexity.

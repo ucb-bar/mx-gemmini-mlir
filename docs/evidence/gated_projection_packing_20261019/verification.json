@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "probes": {
+    "prototype": {
+      "control_cycles": [
+        93842868,
+        93842996
+      ],
+      "candidate_cycles": [
+        74925615,
+        74926598
+      ],
+      "cycle_ratio": 1.2524730882686397,
+      "checked_bytes_per_call": 929280,
+      "calls": 4
+    },
+    "production": {
+      "control_cycles": [
+        93842868,
+        93844408
+      ],
+      "candidate_cycles": [
+        76728902,
+        76729906
+      ],
+      "cycle_ratio": 1.2230466171742973,
+      "checked_bytes_per_call": 929280,
+      "calls": 4
+    }
+  },
+  "full_model_speedup_claim": false
+}

@@ -62,7 +62,7 @@ with the model guide, use a fresh output directory:
 ```
 
 This command selects the EXP-only placement with BF16 sigmoid arithmetic.
-Use MX commit `d4797f2d` or later, Merlin
+Use MX commit `157c8b07` or later, Merlin
 `bb7c352a9e9c8ad085d24091fc83e4e7f5ff92ca`, and model2MLIR
 `f5e5c674a585bebbc2507dbd028ebf9d26e2afbc`. Keep the model guide's exact
 checkpoint, capture, target, toolchain and timing environment.
