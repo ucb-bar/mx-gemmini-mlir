@@ -113,3 +113,37 @@ graphs. Sequential summation is the default. The explicit alternative
 Rocket port's lane summation. See the [arithmetic and legality contract](../../../docs/configure_target_and_precision.md#fp32-normalization-and-fp8-preparation).
 Both choices need a fresh complete-model execution and unchanged numerical
 gates. A local normalization probe is not a full-model speedup.
+
+The following complete build command combines BF16 residual state, FP32 RMS
+and the port's lane-ordered FP32 normalization choices. It requires MX
+revision `cab1021e`, with the Merlin and model2MLIR revisions above. The
+choice of gated division changes rounding relative to reciprocal/multiply.
+Its timing and quality must come from its own complete execution.
+
+```sh
+"$CAPTURE_PY" -m tools.build_merlin_stage \
+  --stage "$ARTIFACT_ROOT/tinyllama-forward-inputs/capture" \
+  --workdir "$ARTIFACT_ROOT/tinyllama-forward-lane-order-build" \
+  --profile "$MX_ROOT/profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json" \
+  --merlin-src "$MERLIN_ROOT/src" --llvm-install "$LLVM_INSTALL" \
+  --riscv-root "$RISCV_ROOT" \
+  --execution-policy "$MX_ROOT/examples/models/optimization_policies/tinyllama-forward-exp-vpu-bf16-residual.json" \
+  --prepack-checkpoint-weights --prune-unused-checkpoint-weights \
+  --share-activation-packing --integer-quant-groups \
+  --host-math-guard "$ARTIFACT_ROOT/tinyllama-forward-inputs/guard.json" \
+  --native-tile-policy movement --reuse-batch-rhs --compact-batch-rhs \
+  --matrix-vpu-transport --group-projections --fuse-softmax-packing \
+  --fuse-gated-projections --vpu-sigmoid-implementation f32_reciprocal \
+  --gated-activation-arithmetic divide \
+  --fuse-f32-rms-packing --f32-rms-reduction striped16 \
+  --vpu-softmax-implementation f32_striped16 \
+  --structural-elf-admission --spike-arena-base 0xd0000000 \
+  --compile-timeout-s 6000 --output-dump-cap 5120000 \
+  --spike-timeout 43200 --spike-extlib "$SPIKE_EXTLIB"
+```
+
+The measured shape realizes 45 FP32 RMS fusions, 22 gated projection fusions,
+22 grouped QKV completions and 44 matrix-to-BF16-residual handoffs. The
+softmax launch-count guard retains the existing 22 batched hybrid softmax
+calls. Check those counts in the rewrite receipts and the lowered LLVM
+before interpreting the resulting execution as this configuration.

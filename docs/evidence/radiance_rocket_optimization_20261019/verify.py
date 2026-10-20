@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +42,10 @@ def expected_exp_placement_commands(catalog, probe):
     if len(soft["kernels"]) != 1 or len(unary["kernels"]) != 1:
         return None
     soft_kernel, sig = soft["kernels"][0], unary["kernels"][0]
-    if soft_kernel["implementation"] != "f32_reduce" or sig["operation"] != "sigmoid":
+    if (
+        soft_kernel["implementation"] not in {"f32_reduce", "f32_striped16"}
+        or sig["operation"] != "sigmoid"
+    ):
         return None
     soft_fusions = (probe.get("softmax_packing_rewrite") or {}).get("fusions", [])
     gate_fusions = (probe.get("gated_projection_rewrite") or {}).get("fusions", [])
@@ -132,6 +136,47 @@ def main():
         audit = json.loads(files["linked_payload_audit.json"])
         catalog_raw = files["build/device_catalog/mx_catalog.json"]
         catalog = json.loads(catalog_raw)
+        llvm_calls = Counter(
+            re.findall(
+                r"\bcall\b[^@\n]*@([A-Za-z_][A-Za-z0-9_]*)\(",
+                files["build/lower/model.ll"].decode(),
+            )
+        )
+        for field, prefix in (
+            ("gated_projection_rewrite", "mx_gated_projection_packed_"),
+            ("f32_rms_packing_rewrite", "mx_f32_rms_packed_"),
+        ):
+            fusions = (probe.get(field) or {}).get("fusions", [])
+            assert Counter(row["symbol"] for row in fusions) == Counter(
+                {
+                    name: count
+                    for name, count in llvm_calls.items()
+                    if name.startswith(prefix)
+                }
+            )
+        if probe.get("fuse_f32_rms_packing"):
+            proof = probe["f32_rms_packing_rewrite"]
+            endpoints = {row["symbol"]: row for row in catalog["f32_rms_packing"]}
+            assert len(proof["fusions"]) == 45
+            assert catalog["f32_rms_reduction"] == probe["f32_rms_reduction"]
+            assert proof["catalog_sha256"] == sha(catalog_raw)
+            assert proof["sidecar_sha256"] == sha(files["build/device_signatures.json"])
+            assert proof["output_sha256"] == sha(
+                files["build/device_host_abi/mx_f32_rms_packing.mlir"]
+            )
+            assert all(
+                row["shape"] == endpoints[row["symbol"]]["shape"] == [1, 160, 2048]
+                and row["reduction"]
+                == endpoints[row["symbol"]]["reduction"]
+                == probe["f32_rms_reduction"]
+                for row in proof["fusions"]
+            )
+        arithmetic = probe.get("gated_activation_arithmetic", "reciprocal")
+        assert catalog.get("gated_activation_arithmetic", "reciprocal") == arithmetic
+        assert all(
+            row.get("activation_arithmetic", "reciprocal") == arithmetic
+            for row in catalog.get("gated_projection_packing", [])
+        )
         raw = files["build/spike.log"]
         assert "MODEL DEADLOCK" not in raw.decode()
         values, metrics = parser_module.parse(raw)
