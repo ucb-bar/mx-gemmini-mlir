@@ -218,9 +218,10 @@ def main() -> None:
                         default="bf16", help="arithmetic for policy-selected VPU softmax: "
                         "all-BF16, or batched BF16 exponentials with FP32 normalization")
     parser.add_argument("--host-softmax-policy",
-                        choices=("torch_2_10_cpu_softmax_f32_avx2", "libm_f32_ordered_finite"),
+                        choices=("torch_2_10_cpu_softmax_f32_avx2", "libm_f32_ordered_finite", "libm_f32_ordered_rne"),
                         help="explicit finite-input FP32 host softmax: retain libm/ordered "
-                             "normalization, or select Torch SLEEF/eight-lane arithmetic")
+                             "normalization (optionally skip certain RNE underflows with "
+                             "unobserved floating status), or select Torch SLEEF/eight-lane arithmetic")
     parser.add_argument(
         "--fuse-gated-projections",
         action="store_true",

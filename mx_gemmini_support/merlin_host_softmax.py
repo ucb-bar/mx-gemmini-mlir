@@ -17,9 +17,14 @@ class MXHostSoftmaxPostOffload:
         from merlin.llvmlower.cpu_softmax import (
             CPU_SOFTMAX_F32_AVX2_POLICY,
             LIBM_SOFTMAX_F32_FINITE_POLICY,
+            LIBM_SOFTMAX_F32_RNE_POLICY,
         )
 
-        if policy not in {CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY}:
+        if policy not in {
+            CPU_SOFTMAX_F32_AVX2_POLICY,
+            LIBM_SOFTMAX_F32_FINITE_POLICY,
+            LIBM_SOFTMAX_F32_RNE_POLICY,
+        }:
             raise ValueError("unsupported host softmax arithmetic policy")
         self.profile = profile
         self.policy = policy
@@ -29,8 +34,10 @@ class MXHostSoftmaxPostOffload:
         from merlin.frontends.linalg_mlir import parse_mlir_file
         from merlin.llvmlower.cpu_softmax import (
             LIBM_SOFTMAX_F32_FINITE_POLICY,
+            LIBM_SOFTMAX_F32_RNE_POLICY,
             build_cpu_softmax_lastdim,
             build_cpu_softmax_maximum,
+            build_libm_softmax_exp_rne,
         )
         from merlin.xdsl_dialects._common import text
         from xdsl.dialects import func
@@ -163,7 +170,10 @@ class MXHostSoftmaxPostOffload:
                 for use in value.uses
             ):
                 raise ValueError("host softmax has an escaping intermediate")
-            if self.policy == LIBM_SOFTMAX_F32_FINITE_POLICY:
+            if self.policy in {
+                LIBM_SOFTMAX_F32_FINITE_POLICY,
+                LIBM_SOFTMAX_F32_RNE_POLICY,
+            }:
                 body = maximum.regions[0].block
                 original_maximum = body.first_op
                 finite_maximum = build_cpu_softmax_maximum(
@@ -175,6 +185,19 @@ class MXHostSoftmaxPostOffload:
                 original_maximum.result.replace_all_uses_with(finite_maximum.result)
                 original_maximum.detach()
                 original_maximum.erase()
+                if self.policy == LIBM_SOFTMAX_F32_RNE_POLICY:
+                    body = exps.regions[0].block
+                    original_exp = body.first_op
+                    exp_ops, exp_result = build_libm_softmax_exp_rne(
+                        original_exp.operands[0],
+                        domain="nonpositive",
+                        rounding_mode="rne",
+                        floating_effects="unobserved",
+                    )
+                    body.insert_ops_before(exp_ops, original_exp)
+                    original_exp.result.replace_all_uses_with(exp_result)
+                    original_exp.detach()
+                    original_exp.erase()
                 records.append({"region": region, "shape": list(row["shape"])})
                 continue
             new_ops, replacement = build_cpu_softmax_lastdim(
@@ -205,6 +228,14 @@ class MXHostSoftmaxPostOffload:
             "finite_maximum_specialization": True,
             "regions": records,
         }
+        if self.policy == LIBM_SOFTMAX_F32_RNE_POLICY:
+            receipt["exponential_contract"] = {
+                "domain": "nonpositive",
+                "rounding_mode": "rne",
+                "floating_effects": "unobserved",
+                "underflow_cutoff": -104.0,
+                "underflow_result_bits": 0,
+            }
         output.with_name("mx_host_softmax_rewrite.json").write_text(
             json.dumps(receipt, indent=2) + "\n"
         )

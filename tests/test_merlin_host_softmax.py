@@ -86,6 +86,30 @@ def test_libm_policy_preserves_every_other_source_operation(tmp_path, source):
     assert output.read_text() == original.replace("arith.maximumf", "arith.maxnumf")
 
 
+def test_rne_policy_guards_only_exp_underflow(tmp_path, source):
+    from merlin.frontends.linalg_mlir import parse_mlir_file
+
+    output = rewrite(tmp_path, source, policy="libm_f32_ordered_rne")
+    module = parse_mlir_file(output)
+    module.verify()
+    branches = [op for op in module.walk() if op.name == "scf.if"]
+    assert len(branches) == 2
+    for branch in branches:
+        assert [op.name for op in branch.true_region.block.ops] == ["scf.yield"]
+        assert [op.name for op in branch.false_region.block.ops] == [
+            "math.exp",
+            "scf.yield",
+        ]
+    record = json.loads((output.parent / "mx_host_softmax_rewrite.json").read_text())
+    assert record["exponential_contract"] == {
+        "domain": "nonpositive",
+        "rounding_mode": "rne",
+        "floating_effects": "unobserved",
+        "underflow_cutoff": -104.0,
+        "underflow_result_bits": 0,
+    }
+
+
 @pytest.mark.parametrize(
     "before,after",
     [
