@@ -1,12 +1,41 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "075535d442d8ab648f3c6e8154635c69e6255daa296a2c2ebd51db15d3b748c8",
+  "artifact_manifest_sha256": "ddafc8578a58ba47256ef28479e044b579b46ea13c9de93a1c98631d5b21b361",
   "verifier_sha256": "c4a86b5a51c99f33e01ca180c1858569eea1851304261ebb19c58a0666039be2",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
   "source_control_and_profiles_rechecked": true,
   "actual_large_ELFs_reopened_by_this_portable_reader": false,
   "cases": {
+    "cpu_finite_softmax_f32_residual_retry": {
+      "cycles": 6435411995,
+      "numerical_gate_passed": false,
+      "qualified_speedup": null,
+      "full_logits_sha256": "d00e8c792d64cfe0caa6834cfcd8c8823c31f467a1d908427c576905e9ea20e7",
+      "gated_fusions": 22,
+      "host_softmax": {
+        "policy": "torch_2_10_cpu_softmax_f32_avx2",
+        "regions": 22,
+        "finite_maximum_calls": 22,
+        "expf_calls": 0,
+        "fmaf_calls": 176,
+        "negative_infinity_initializer_sizes": [
+          5120
+        ]
+      },
+      "full_160": {
+        "mean_kl_nats": 0.07840649621374966,
+        "worst_kl_nats": 2.591810274989808,
+        "top1_agreement": 127,
+        "positions": 160
+      },
+      "late_33": {
+        "mean_kl_nats": 0.06815164882861756,
+        "worst_kl_nats": 0.17178267303100747,
+        "top1_agreement": 25,
+        "positions": 33
+      }
+    },
     "exp_vpu": {
       "cycles": 6099702127,
       "numerical_gate_passed": false,
@@ -404,6 +433,35 @@
         "mean_kl_nats": 0.07047531257955301,
         "worst_kl_nats": 0.14899218651258553,
         "top1_agreement": 28,
+        "positions": 33
+      }
+    },
+    "libm_finite_softmax_f32_residual": {
+      "cycles": 6997758443,
+      "numerical_gate_passed": true,
+      "qualified_speedup": 1.0120856656726411,
+      "full_logits_sha256": "9b1d8c3083651682370f3ff3fb53f8ab4ed05ad9daa23570fd8b9e64531f1c8e",
+      "gated_fusions": 22,
+      "host_softmax": {
+        "policy": "libm_f32_ordered_finite",
+        "regions": 22,
+        "finite_maximum_calls": 22,
+        "expf_calls": 22,
+        "fmaf_calls": 0,
+        "negative_infinity_initializer_sizes": [
+          5120
+        ]
+      },
+      "full_160": {
+        "mean_kl_nats": 0.0766243327910751,
+        "worst_kl_nats": 2.591810274989808,
+        "top1_agreement": 134,
+        "positions": 160
+      },
+      "late_33": {
+        "mean_kl_nats": 0.0618917038426349,
+        "worst_kl_nats": 0.17903030996561076,
+        "top1_agreement": 29,
         "positions": 33
       }
     },

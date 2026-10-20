@@ -88,7 +88,13 @@ The complete 22-layer, 160-token TinyLlama forward completes in
 the compiler passes the late-33 numerical gate but fails the new all-160
 mean-KL gate. Its mean KL is 0.0821650 versus 0.0774637 for the port, a
 6.07% increase against the allowed 5%. The compiler has better worst-row KL
-and top-token agreement. No equal-quality speedup is qualified.
+and top-token agreement. That fixed-release comparison has no qualified speedup.
+
+The subsequent [optimization measurements](evidence/radiance_rocket_optimization_20261019/README.md)
+include a **6,997,758,443-cycle** compiler execution, a **1.012× speedup** over
+this port, passing all six numerical limits. It uses FP32 host softmax and
+residual state with finite-maximum specialization. The fixed-release
+measurement and executable identity above remain unchanged.
 
 The [full-forward archive](evidence/radiance_rocket_forward_20261019/README.md)
 retains every output, the floating reference, and both diagnostic profiles.

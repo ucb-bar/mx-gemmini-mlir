@@ -3,15 +3,17 @@
 The completed results measure three workloads on the pinned Rocket-Spike
 `e4m3_vpu` timing model with host tracking disabled. Only the 160-token
 TinyLlama forward has an independent full-program performance baseline.
-Cached TinyLlama and complete SmolVLA compare two compiler builds. There is
-no accepted equal-quality Radiance speedup in the table below.
+Cached TinyLlama and complete SmolVLA compare two compiler builds.
 The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) completes
 the same full forward in 7,082,331,012 cycles. The fixed compiler release takes
-45.81% more cycles and fails the full-160 mean-KL gate. A newer fused-gate configuration takes
+45.81% more cycles and fails the full-160 mean-KL gate. The newer FP32 host
+softmax/residual configuration with a finite-input maximum takes
+**6,997,758,443 cycles**, a **1.012× speedup** with all six numerical gates
+passing. A separate fused-gate configuration takes
 5,849,962,853 cycles but fails the full/late top-token gates. The
 [optimization measurements](evidence/radiance_rocket_optimization_20261019/README.md)
-keep these unqualified timings and all completed alternatives separate from
-the historical accepted comparisons below. The control's
+retain every completed alternative, including failed quality results.
+The control's
 [complete observations and profiles](evidence/radiance_rocket_forward_20261019/README.md)
 remain available.
 
@@ -22,15 +24,18 @@ all-FP8 offloaded matrices and the same inputs within its comparison.
 
 | Workload | Reference | Reference cycles | Compiler cycles | Speedup | Cycle reduction |
 | --- | --- | ---: | ---: | ---: | ---: |
+| TinyLlama, all 22 layers + head, 160-token forward; FP32 host softmax and finite maximum | Radiance-derived Rocket MX+VPU port | 7,082,331,012 | 6,997,758,443 | 1.012× | 1.19% |
 | TinyLlama, all 22 layers + head, 160-token forward | Independent `npu-exploration` program, including embedding lookup | 12,762,360,525 | 10,326,818,367 | 1.236× | 19.08% |
 | TinyLlama, 128-token prefill + 32 cached decodes | Corrected compiler baseline | 74,065,304,284 | 20,262,623,973 | 3.655× | 72.64% |
 | SmolVLA, prefix + ten flow steps + action decode | Previous compiler build | 87,964,575,985 | 73,577,503,143 | 1.196× | 16.36% |
 
-The baseline distinction matters: **3.655× is a compiler improvement, not a
-speedup over independently stitched kernels**. The original 15,170,996,572-cycle
+The two forward rows use different source programs and compiler configurations.
+The Radiance row uses the newer host-softmax policy; the `npu-exploration`
+row uses the fixed release. **3.655× measures improvement over a compiler
+baseline**. The original 15,170,996,572-cycle
 TinyLlama forward failed the numerical gate and is excluded from accepted
 performance comparisons. The corrected forward baseline is 15,984,649,026
-cycles; its complete output is bit-identical to the latest compiler result.
+cycles; its complete output is bit-identical to the fixed compiler release.
 
 | Current session | Reset cycles | First program, including handoff | Recurrent program, including handoffs | Final action |
 | --- | ---: | ---: | ---: | ---: |
@@ -45,7 +50,24 @@ inclusive totals. The independent forward times token lookup through logits.
 ## Numerical comparison
 
 TinyLlama's floating-point reference is the same checkpoint and input stream.
-The independent source retains full distributions only at 33 aligned late
+The Radiance-derived port and newer compiler both retain all 160 rows. Each
+position set must pass mean and worst KL within 5% of the port and at least
+the port's number of matching floating-reference top tokens.
+
+| Radiance comparison | Mean KL | Worst KL | Matching reference top tokens |
+| --- | ---: | ---: | ---: |
+| Port, all 160 | 0.0774637 | 2.7480708 | 132/160 |
+| Finite-maximum compiler, all 160 | 0.0766243 | 2.5918103 | 134/160 |
+| Port, late 33 | 0.0666143 | 0.1758198 | 27/33 |
+| Finite-maximum compiler, late 33 | 0.0618917 | 0.1790303 | 29/33 |
+
+All six limits pass. Every compiler output word matches the preceding
+passing host-softmax control; the maximum specialization saves 90,238,240
+cycles without changing those outputs. Placement and normalization precision
+still differ from the port, as documented in the optimization record.
+
+For the fixed release, the older `npu-exploration` source retains full
+distributions only at 33 aligned late
 positions; the compiler retains all 160 rows. KL uses float64 log-softmax and
 `KL(reference || quantized)` in nats. The source-relative gate permits at most
 5% higher mean and worst-row KL and requires at least as many matching top
@@ -54,9 +76,9 @@ tokens on those same 33 rows.
 | 160-token TinyLlama forward | Mean KL, 33 rows | Worst KL | Matching reference top tokens |
 | --- | ---: | ---: | ---: |
 | Independent quantized source | 0.0641713 | 0.1896031 | 27/33; 131/160 over all positions |
-| Current compiler | 0.0637956 | 0.1699798 | 27/33; 133/160 over all positions |
+| Fixed compiler release | 0.0637956 | 0.1699798 | 27/33; 133/160 over all positions |
 
-The compiler passes this unchanged gate. All **5,120,000 F32 compiler output
+The fixed release passes this unchanged gate. All **5,120,000 F32 compiler output
 words** are exact against the corrected compiler baseline. This establishes
 numerical preservation for this input and source-relative gate; it is not a
 perplexity or general model-quality evaluation.

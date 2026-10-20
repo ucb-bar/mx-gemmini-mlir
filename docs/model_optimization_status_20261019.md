@@ -5,9 +5,13 @@ uses a 7,082,331,012-cycle full-forward control. The fastest completed compiler
 placement takes 5,849,962,853 modeled cycles, but fails the unchanged full/late
 top-token gates. No qualified Radiance speedup is established by that result.
 The linked evidence preserves every completed alternative and its failures.
-An FP32 host-softmax/residual alternative passes all six numerical checks at
-7,087,996,683 cycles, 0.08% slower than that control. A faster numerically
-qualified execution is still required.
+An FP32 host-softmax/residual alternative with a finite-input maximum now
+passes all six numerical checks at **6,997,758,443 cycles**, a **1.012× speedup**
+over that port. It saves 90,238,240 cycles against the preceding passing
+compiler control and preserves every one of its 5,120,000 logit words. The
+separate Torch CPU softmax alternative takes 6,435,411,995 cycles but fails
+full and late top-token agreement. Faster timings with failed numerical gates
+remain unqualified.
 
 The fixed release below takes **10,326,818,367 modeled cycles**, versus
 12,762,360,525 for the independent `npu-exploration` program: 1.236× speedup

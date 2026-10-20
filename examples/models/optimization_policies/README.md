@@ -177,6 +177,9 @@ before selecting this option.
 
 To retain the original libm exponential, sequential sum and division while
 specializing the maximum, select `--host-softmax-policy libm_f32_ordered_finite`.
+The complete F32-residual execution takes **6,997,758,443 cycles**, a **1.012×
+speedup** over the Radiance-derived Rocket port, with all six numerical limits
+passing. Every logit word matches the preceding ordered-libm control.
 Both host options require Merlin `94f747964881fddecb2808992c06f13cad451c2b`.
 This includes the entry-IR serialization fix needed to preserve dense
 floating constants through weight projection.
@@ -203,6 +206,12 @@ After the model guide exports the exact `tinyllama-forward` capture and sets
 the toolchain and timing environment, run the following from the MX checkout.
 Use the MX and Merlin pins immediately above and a fresh build directory.
 Checkpoint preparation happens before the timed model call.
+
+To reproduce the qualified finite-maximum execution, use
+`--host-softmax-policy libm_f32_ordered_finite` in the command below with the
+MX `66ee86e0` and Merlin `94f747964` pins above, and choose a separate build
+directory. The RNE option below has its own newer pins and pending full-model
+measurement.
 
 ```sh
 "$CAPTURE_PY" -m tools.build_merlin_stage \

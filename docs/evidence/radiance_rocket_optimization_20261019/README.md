@@ -8,16 +8,19 @@ The source is `radiance-kernels` at
 `5866983682583486b38ae64a4d1bfa5e7b2a002e`, adapted to Rocket as described in
 the [port guide](../../radiance_rocket_model_baseline.md).
 
-The fastest completed configuration takes **5,849,962,853 modeled cycles**,
+The fastest numerically qualified configuration takes **6,997,758,443 modeled
+cycles**, versus **7,082,331,012** for the port: **1.012× speedup**, or **1.19%
+fewer cycles**. It retains FP32 host softmax and residual state and specializes
+the private maximum under the explicit finite-input contract. All 5,120,000
+logit words match the preceding passing compiler control, which took
+**7,087,996,683 cycles**. Its full and late
+top-token matches are **134/160 and 29/33**, versus **132/160 and 27/33**.
+Both full-160 and late-33 numerical gates pass unchanged.
+
+The fastest completed raw configuration takes **5,849,962,853 modeled cycles**,
 versus **7,082,331,012** for the port. Its raw cycle ratio is **1.211×**,
 but it fails the top-token agreement requirements. **This is not a qualified
 speedup.** Both the full-160 and late-33 gates remain unchanged.
-
-FP32 host softmax with FP32 residual state passes every numerical limit. It
-takes **7,087,996,683 cycles**, **0.08% more** than the port. Its full and late
-top-token matches are **134/160 and 29/33**, versus **132/160 and 27/33**.
-This establishes numerical qualification at near parity; it does not establish
-a faster execution.
 
 | Completed configuration | Modeled cycles | Full-160 mean KL | Full-160 top tokens | Numerical gate |
 | --- | ---: | ---: | ---: | --- |
@@ -43,6 +46,8 @@ a faster execution.
 | Sixteen-lane reductions, direct SiLU division and K≤256 | 5,985,684,594 | 0.0864567 | 131/160 | Same numerical failures as direct-division control |
 | FP32 host softmax and BF16 residual state | 7,255,103,136 | 0.0842984 | 132/160 | Fails full mean KL and late worst KL |
 | FP32 host softmax and FP32 residual state | 7,087,996,683 | 0.0766243 | 134/160 | Passes all full and late limits; 0.08% slower |
+| Ordered libm host softmax, finite maximum and FP32 residual state | 6,997,758,443 | 0.0766243 | 134/160 | Passes all full and late limits; 1.012× speedup |
+| Torch CPU softmax arithmetic, finite maximum and FP32 residual state | 6,435,411,995 | 0.0784065 | 127/160 | Fails full and late top tokens |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
 | Hybrid softmax, host score scaling and streamed BF16 RMS | 7,218,220,770 | 0.0818391 | 132/160 | Fails full and late mean KL |
 
@@ -145,6 +150,20 @@ operations** overall. The BF16-residual alternative uses **5,280 VPU operations*
 takes **7,255,103,136 cycles** and fails full mean KL and late worst KL.
 These two runs use the original scalar libm, sequential sum and division;
 they do not include the newer polynomial or finite-maximum host options.
+
+The finite-maximum alternative retains the same libm exponential, sequential
+sum and division. The complete run saves **90,238,240 cycles (1.27%)** against
+the passing host-softmax control, with every logit word unchanged. This crosses
+the port's timing from near parity to a **1.012× qualified speedup**. Its
+matrix work, transfers and 3,520 VPU operations remain unchanged. The private
+maximum is not exposed; any possible signed-zero difference is erased by
+the following shift and exponential.
+
+The separate Torch CPU arithmetic option completes at **6,435,411,995 cycles**.
+Its mean and worst KL limits pass on both position sets, but top-token matches
+fall to **127/160 and 25/33**, below the port's **132/160 and 27/33**. Its faster
+timing remains unqualified. These source-wide policies apply uniformly to all
+22 softmax regions; no layer or token is selected using golden outputs.
 
 The layout audit also reopens both actual executables and compares every
 learned matrix after undoing the source's tiled/combined layouts. All
