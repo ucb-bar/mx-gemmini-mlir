@@ -1,4 +1,4 @@
-# Completed model transformations, 19 October 2026
+# Model transformations and measurements, 19–20 October 2026
 
 The newer [Radiance-derived Rocket comparison](evidence/radiance_rocket_optimization_20261019/README.md)
 uses a 7,082,331,012-cycle full-forward control. The fastest completed compiler

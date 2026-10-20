@@ -27,6 +27,71 @@ def load(name, path):
     return result
 
 
+def check_host_softmax(files, probe):
+    """Bind explicit host arithmetic to its source receipt and actual LLVM."""
+    from math import prod
+
+    policy = probe.get("host_softmax_policy")
+    path = "build/device_host_abi/mx_host_softmax_rewrite.json"
+    if policy is None:
+        assert probe.get("host_softmax_rewrite") is None and path not in files
+        return None
+    assert policy in {"torch_2_10_cpu_softmax_f32_avx2", "libm_f32_ordered_finite"}
+    proof = json.loads(files[path])
+    assert proof == probe["host_softmax_rewrite"]
+    assert proof["numeric_policy"] == policy
+    assert proof["finite_input_contract"] is True
+    assert proof["finite_maximum_specialization"] is True
+    assert proof["profile_sha256"] == probe["profile_sha256"]
+    assert proof["sidecar_sha256"] == sha(files["build/device_signatures.json"])
+    assert proof["output_sha256"] == sha(
+        files["build/device_host_abi/mx_host_softmax.mlir"]
+    )
+    assert proof["source_sha256"] in {
+        sha(raw) for name, raw in files.items() if name.endswith(".mlir")
+    }
+    placements = probe["execution_policy"]["vpu_placements"]["softmax"]
+    expected_regions = {name for name, owner in placements.items() if owner == "host"}
+    inventory = probe["vpu_softmax_inventory"]
+    assert inventory["profile_sha256"] == proof["profile_sha256"]
+    expected = {}
+    for row in inventory["regions"]:
+        if row["region"] in expected_regions:
+            assert row["input_dtype"] == row["output_dtype"] == "f32"
+            assert row["input_shape"] == row["output_shape"]
+            expected[row["region"]] = row["input_shape"]
+    assert set(expected) == expected_regions
+    assert {row["region"]: row["shape"] for row in proof["regions"]} == expected
+    assert len(proof["regions"]) == len(expected) > 0
+    llvm = files["build/lower/model.ll"].decode()
+    calls = Counter(re.findall(r"\bcall\b[^@\n]*@([A-Za-z_][A-Za-z0-9_.]*)\(", llvm))
+    assert calls["llvm.maxnum.f32"] == len(expected)
+    assert calls["llvm.maximum.f32"] == 0
+    if policy == "libm_f32_ordered_finite":
+        assert calls["expf"] == len(expected) and calls["fmaf"] == 0
+    else:
+        assert calls["expf"] == 0 and calls["fmaf"] == 8 * len(expected)
+    # Check the serialized reduction initializers, including their complete
+    # extents. This catches integer interpretation of hexadecimal float words.
+    initializers = Counter()
+    for line in llvm.splitlines():
+        if line.startswith("@") and " = private constant " in line:
+            words = re.findall(r"\bfloat\s+(0x[0-9A-Fa-f]+|[^\s,\]]+)", line)
+            if words and all(word == "0xFFF0000000000000" for word in words):
+                initializers[len(words)] += 1
+    prefixes = {tuple(shape[:-1]) for shape in expected.values()}
+    required = Counter(prod(prefix) for prefix in prefixes)
+    assert all(initializers[size] >= count for size, count in required.items())
+    return {
+        "policy": policy,
+        "regions": len(expected),
+        "finite_maximum_calls": calls["llvm.maxnum.f32"],
+        "expf_calls": calls["expf"],
+        "fmaf_calls": calls["fmaf"],
+        "negative_infinity_initializer_sizes": sorted(required.elements()),
+    }
+
+
 def expected_exp_placement_commands(catalog, probe):
     """Count launches for the uniform EXP-only/residual placement alternatives."""
     from math import ceil, prod
@@ -142,6 +207,7 @@ def main():
         audit = json.loads(files["linked_payload_audit.json"])
         catalog_raw = files["build/device_catalog/mx_catalog.json"]
         catalog = json.loads(catalog_raw)
+        host_softmax = check_host_softmax(files, probe)
         llvm_calls = Counter(
             re.findall(
                 r"\bcall\b[^@\n]*@([A-Za-z_][A-Za-z0-9_]*)\(",
@@ -374,6 +440,7 @@ def main():
             "qualified_speedup": ratio if passed else None,
             "full_logits_sha256": digest,
             "gated_fusions": fused,
+            "host_softmax": host_softmax,
             "full_160": comparison["quality_all_160"]["compiler"],
             "late_33": comparison["quality_late_33"]["compiler"],
         }

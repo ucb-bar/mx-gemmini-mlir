@@ -130,6 +130,18 @@ The VPU operates on BF16; logical inputs, outputs, and host operations retain
 the types in the captured IR, often F32. Checkpoint prepacking moves constant
 packing out of model execution; it does not remove matrix execution.
 
+For each group, `amax` is the largest absolute BF16-rounded operand. The
+shared scale exponent is `max(-23, floor(log2(amax)))`; an all-zero group
+uses −23. The E8M0 byte stores that exponent plus 127. Each code is the
+E4M3 rounding of the BF16-rounded value divided by the shared power of two.
+Both rounding steps use nearest, ties to even. Groups run along the matrix
+reduction axis: one group per 32 activation values in a row, or per 32
+weight values in an output column. This scale rule is part of the measured
+quantization policy, alongside the E4M3 and E8M0 encodings. The
+[reference packer](../mx_gemmini_support/runtime_quant.c) defines it, and the
+[learned-weight audit](evidence/radiance_rocket_optimization_20261019/source-compiler-weight-equivalence.json)
+checks the encoded payloads against the Radiance-derived port.
+
 | Stage | FP8 matrix bindings | Host matrix bindings | Other placement |
 | --- | ---: | ---: | --- |
 | TinyLlama forward / cached prefill | 199 | 1 | VPU reductions, normalization components, activations and selected adds; 22 host softmax sites and 22 host elementwise sites |

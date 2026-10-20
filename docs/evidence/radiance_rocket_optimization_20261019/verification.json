@@ -1,7 +1,7 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "890e5fb143ed13bf5d8f32ee2836ecb5db8b333b520cdfac30cab45de1bddc08",
-  "verifier_sha256": "2e92e663fa69d44523d831d7150e6be83f5c35921e1ed6817cf4fbfd4e452803",
+  "artifact_manifest_sha256": "b0b4f165ea1889ca88d7370a30fa6465ca7ae6acab4458536382d946da0ed6de",
+  "verifier_sha256": "9bf729d723b0ab77b58095f1c35dbe5719734380911c2e90701807b2e0a19646",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,
   "source_control_and_profiles_rechecked": true,
@@ -13,6 +13,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "f424724029ef5606de325b3844f087212be284c4cab22f86a5810170be83aaa2",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08048809635487457,
         "worst_kl_nats": 2.6871037289652016,
@@ -32,6 +33,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "f424724029ef5606de325b3844f087212be284c4cab22f86a5810170be83aaa2",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08048809635487457,
         "worst_kl_nats": 2.6871037289652016,
@@ -51,6 +53,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "c242fd4193ca6991fb0731b910462c493cb272ca3742bd530acb637b195ee44b",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08029114525836942,
         "worst_kl_nats": 2.6561404001821662,
@@ -70,6 +73,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "f424724029ef5606de325b3844f087212be284c4cab22f86a5810170be83aaa2",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08048809635487457,
         "worst_kl_nats": 2.6871037289652016,
@@ -89,6 +93,27 @@
       "qualified_speedup": null,
       "full_logits_sha256": "aafef0598041481adf3f11042196a81c5be49d55fe7bdc4518369a3971e18c6d",
       "gated_fusions": 22,
+      "host_softmax": null,
+      "full_160": {
+        "mean_kl_nats": 0.08645671415946038,
+        "worst_kl_nats": 2.7460516260870906,
+        "top1_agreement": 131,
+        "positions": 160
+      },
+      "late_33": {
+        "mean_kl_nats": 0.07092140256404954,
+        "worst_kl_nats": 0.23171831501390067,
+        "top1_agreement": 30,
+        "positions": 33
+      }
+    },
+    "f32_lane_order_k256_retry": {
+      "cycles": 5985684594,
+      "numerical_gate_passed": false,
+      "qualified_speedup": null,
+      "full_logits_sha256": "aafef0598041481adf3f11042196a81c5be49d55fe7bdc4518369a3971e18c6d",
+      "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08645671415946038,
         "worst_kl_nats": 2.7460516260870906,
@@ -108,6 +133,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ed4d7015cedeb61bdcb0221ba4bf6fb29c5d4ea89d81201bd8cf4fcecd102ae1",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08338830794683978,
         "worst_kl_nats": 2.8511528952774716,
@@ -127,6 +153,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "eb71e3610f0faad318bb4a68ac040ac045b15f2ea88c540a659a09879f20c6c2",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.0803545925582447,
         "worst_kl_nats": 2.742160594272027,
@@ -146,6 +173,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "5fcfca42cc87219b3722c8c8eab3859108b95f2a51d4a78b11730055748e685f",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08152602768987868,
         "worst_kl_nats": 2.742160594272027,
@@ -165,6 +193,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ac2039630fe37af0cc54ef493994f01f3f26d466a1518c2ff81ec73d46d488dc",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08429841596726531,
         "worst_kl_nats": 2.7545852608074197,
@@ -184,6 +213,7 @@
       "qualified_speedup": 0.9992006668099057,
       "full_logits_sha256": "9b1d8c3083651682370f3ff3fb53f8ab4ed05ad9daa23570fd8b9e64531f1c8e",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.0766243327910751,
         "worst_kl_nats": 2.591810274989808,
@@ -203,6 +233,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "5ecfca451b7637bc3d41ea9c540f86becfbf831931040c2cf8ea3d01e998a9f0",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.0784699725153994,
         "worst_kl_nats": 2.61406495913214,
@@ -222,6 +253,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ed4d7015cedeb61bdcb0221ba4bf6fb29c5d4ea89d81201bd8cf4fcecd102ae1",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08338830794683978,
         "worst_kl_nats": 2.8511528952774716,
@@ -241,6 +273,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ed4d7015cedeb61bdcb0221ba4bf6fb29c5d4ea89d81201bd8cf4fcecd102ae1",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08338830794683978,
         "worst_kl_nats": 2.8511528952774716,
@@ -260,6 +293,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ed4d7015cedeb61bdcb0221ba4bf6fb29c5d4ea89d81201bd8cf4fcecd102ae1",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08338830794683978,
         "worst_kl_nats": 2.8511528952774716,
@@ -279,6 +313,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "ed4d7015cedeb61bdcb0221ba4bf6fb29c5d4ea89d81201bd8cf4fcecd102ae1",
       "gated_fusions": 22,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08338830794683978,
         "worst_kl_nats": 2.8511528952774716,
@@ -298,6 +333,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "5ecfca451b7637bc3d41ea9c540f86becfbf831931040c2cf8ea3d01e998a9f0",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.0784699725153994,
         "worst_kl_nats": 2.61406495913214,
@@ -317,6 +353,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "0d4130c1f55aeb81024ad4a5e1efdb9effd1b9e23348b80e91fc745c0e1dbeea",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08183908630844641,
         "worst_kl_nats": 2.077499895615351,
@@ -336,6 +373,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "0d4130c1f55aeb81024ad4a5e1efdb9effd1b9e23348b80e91fc745c0e1dbeea",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08183908630844641,
         "worst_kl_nats": 2.077499895615351,
@@ -355,6 +393,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "0d4130c1f55aeb81024ad4a5e1efdb9effd1b9e23348b80e91fc745c0e1dbeea",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08183908630844641,
         "worst_kl_nats": 2.077499895615351,
@@ -374,6 +413,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08216504906597147,
         "worst_kl_nats": 1.915029821917136,
@@ -393,6 +433,7 @@
       "qualified_speedup": null,
       "full_logits_sha256": "d62f10e03e9587fb4e77cba002f5973368075b51bf17628926a6e5459ac6ff2a",
       "gated_fusions": 0,
+      "host_softmax": null,
       "full_160": {
         "mean_kl_nats": 0.08216504906597147,
         "worst_kl_nats": 1.915029821917136,

@@ -40,6 +40,7 @@ a faster execution.
 | Sixteen-lane FP32 RMS packing | 5,968,133,789 | 0.0803546 | 130/160 | Fails full top tokens; late worst KL, top tokens |
 | Sixteen-lane RMS and softmax reductions | 5,995,071,328 | 0.0815260 | 135/160 | Fails full mean KL; late worst KL |
 | Sixteen-lane reductions and direct SiLU division | 5,975,235,678 | 0.0864567 | 131/160 | Fails full mean KL, top tokens; late mean KL, worst KL |
+| Sixteen-lane reductions, direct SiLU division and K≤256 | 5,985,684,594 | 0.0864567 | 131/160 | Same numerical failures as direct-division control |
 | FP32 host softmax and BF16 residual state | 7,255,103,136 | 0.0842984 | 132/160 | Fails full mean KL and late worst KL |
 | FP32 host softmax and FP32 residual state | 7,087,996,683 | 0.0766243 | 134/160 | Passes all full and late limits; 0.08% slower |
 | Specialized packing and streamed BF16 RMS | 9,057,532,733 | 0.0821650 | 133/160 | Fails full mean KL |
@@ -128,6 +129,14 @@ in the hybrid-softmax/host-score placement. Full logits remain identical to
 the corresponding unfused configurations. These are measured alternatives,
 not percentage savings to add together.
 
+Capping learned FP8 reduction steps at 256 preserves every complete logit
+word against the direct-division control. It increases cycles from
+**5,975,235,678 to 5,985,684,594**, a **0.175% regression**. Native loop
+invocations rise from **38,608 to 67,360**, adding **230,016 commands** while
+load bytes, scale bytes, matrix tiles and busy cycles remain unchanged.
+This schedule adds command work without reducing transfers in this case;
+the default `movement` policy remains selected.
+
 Keeping all 22 softmax regions in FP32 host arithmetic avoids the BF16
 exponential approximation. The measured FP32-residual execution passes all
 six quality checks, including late worst KL **0.1790303** and late agreement
@@ -142,7 +151,8 @@ learned matrix after undoing the source's tiled/combined layouts. All
 **155 FP8 code and E8M0 scale payloads are identical** in canonical coordinates.
 The retained [weight-equivalence report](source-compiler-weight-equivalence.json)
 records each checkpoint parameter and both tile partitions. Learned source
-matrices use K steps of 256; these compiler matrices use 512. Tile scheduling
+matrices use K steps of 256; most compiler configurations use 512. The capped
+alternative above explicitly evaluates K steps of at most 256. Tile scheduling
 therefore contributes to the comparison as well as operator placement.
 
 Hybrid softmax batches 51 rows per VPU launch. In the EXP-only configuration,
