@@ -314,6 +314,22 @@ a changed precision policy needs its own numerical comparison against the
 same floating-point inputs and an independent quantized reference. Operand
 fake quantization alone does not model the MX mesh arithmetic.
 
+For a compiled 160-token TinyLlama forward, check the actual linked data too:
+
+```sh
+"$CAPTURE_PY" -m tools.audit_merlin_elf_payloads \
+  --capture "$FORWARD_CAPTURE" --build "$FORWARD_BUILD" \
+  --out "$ARTIFACT_ROOT/forward-payload-audit.json"
+```
+
+Set `FORWARD_CAPTURE` to its exported capture directory and `FORWARD_BUILD`
+to the directory containing `model.elf`. The audit reopens compiled catalog
+sources and checks every linked FP8 weight code and scale, the retained
+FP32 embedding and normalization weights, and the embedded mask, rotary
+constants and token IDs. It checks payload identity against the capture and
+generated data files. Complete output and timing qualification remain
+separate checks.
+
 The [capture-time quantization handoff](quantization_handoff.md) documents
 the separate TorchAO adapter, module-name overrides, FP6 codebook rules, and
 typed handoff contracts. Those capture-time policies use a different schema
