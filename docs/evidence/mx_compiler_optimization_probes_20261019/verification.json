@@ -1,0 +1,109 @@
+{
+  "scope": "standalone compiler kernel probes; not full-model speedups; synthetic inputs",
+  "probes": {
+    "fp8_pack": {
+      "control_cycles": [
+        42042029,
+        42042029,
+        42042029,
+        42042029
+      ],
+      "candidate_cycles": [
+        35594011,
+        35594011,
+        35594011,
+        35594011
+      ],
+      "mean_control_over_candidate": 1.1811545768191172,
+      "observed_check": "target checks every code/scale byte and guards; no raw output dump"
+    },
+    "hybrid_softmax": {
+      "cycles": 37808474,
+      "all_output_words": 819200
+    },
+    "rms_pack": {
+      "control_cycles": [
+        34158568,
+        34151034
+      ],
+      "candidate_cycles": [
+        15929241,
+        15925919
+      ],
+      "mean_control_over_candidate": 2.1443810673058934,
+      "observed_check": "target checks every code/scale byte and guards; no raw output dump"
+    },
+    "qkv_group": {
+      "control_cycles": [
+        5802053,
+        5801251
+      ],
+      "candidate_cycles": [
+        5798835,
+        5798036
+      ],
+      "mean_control_over_candidate": 1.0005547185960766,
+      "all_matrix_words_per_call": 409600
+    },
+    "softmax_pack_full_buffer": {
+      "control_cycles": [
+        70020558,
+        70018036
+      ],
+      "candidate_cycles": [
+        71721459,
+        71696197
+      ],
+      "mean_control_over_candidate": 0.9764390097130021,
+      "observed_check": "independent packed bytes; every matrix word equals actual unfused control"
+    },
+    "softmax_pack_serial_generic": {
+      "control_cycles": [
+        70020417,
+        70015933
+      ],
+      "candidate_cycles": [
+        71651938,
+        71647181
+      ],
+      "mean_control_over_candidate": 0.9772310602970281,
+      "observed_check": "independent packed bytes; every matrix word equals actual unfused control"
+    },
+    "softmax_pack_serial_fixed": {
+      "control_cycles": [
+        70020417,
+        70015933
+      ],
+      "candidate_cycles": [
+        70690099,
+        70685342
+      ],
+      "mean_control_over_candidate": 0.990528121500254,
+      "observed_check": "independent packed bytes; every matrix word equals actual unfused control"
+    },
+    "softmax_pack_serial": {
+      "control_cycles": [
+        70020417,
+        70015933
+      ],
+      "candidate_cycles": [
+        69716467,
+        69711710
+      ],
+      "mean_control_over_candidate": 1.0043619088557687,
+      "observed_check": "independent packed bytes; every matrix word equals actual unfused control"
+    },
+    "hybrid_sigmoid": {
+      "control_cycles": [
+        17864269,
+        17861797
+      ],
+      "candidate_cycles": [
+        22930755,
+        22928283
+      ],
+      "mean_control_over_candidate": 0.7790408948395298,
+      "arithmetic": "candidate changes intermediate precision; not a bit-equivalence claim"
+    }
+  }
+}
