@@ -11,6 +11,7 @@ The files vary operator placement; they do not change matrix precision.
 | `tinyllama-forward-hybrid-softmax.json` | Existing matrix/VPU placement, with all 22 softmax sites on the VPU |
 | `tinyllama-forward-host-score.json` | Hybrid softmax, with the 22 scalar attention-score multiplications on the host |
 | `tinyllama-forward-exp-vpu.json` | Softmax and sigmoid on the VPU; normalization, reductions, RoPE arithmetic, residual additions and other elementwise arithmetic on the FP32 host |
+| `tinyllama-forward-exp-vpu-bf16-residual.json` | EXP-only placement, with all 44 residual additions on the BF16 VPU |
 
 Select `--vpu-softmax-implementation f32_reduce` for each configuration.
 This batches BF16 VPU exponentials and retains FP32 max, subtraction, ordered
@@ -74,3 +75,27 @@ That choice also enables `--fuse-gated-projections` from MX commit
 `129cd185cb4b3967feb4e3b91b9445fe1779dfe0`. Use separate fresh build directories
 for each configuration and compare complete outputs. None of these options
 changes the frozen release registry or its measured executable identities.
+
+The BF16-residual variant uses the fourth policy in place of the EXP-only
+policy above. Its 44 additions are selected uniformly: nonbroadcast adds
+whose full result shape matches an RMS reduction input, here `1×160×2048`.
+The source port also rounds its residual state to BF16. This is an explicit
+numerical choice; no layers or tokens are selected using golden outputs.
+The remaining host arithmetic and every matrix format are unchanged.
+
+Add `--matrix-vpu-transport` to feed private BF16 matrix outputs directly
+into those VPU residual adds. This direction is matrix-to-VPU. The separate
+`--vpu-matrix-transport` option serves VPU-produced operands and is not used
+by this host-normalization configuration. To combine BF16 residuals with
+FP32 sigmoid and gated projection packing, use MX revision
+`a4c2cfbb24b93a1a1978952a3d3d55baeb2e09f2` or later and add:
+
+```sh
+--matrix-vpu-transport --group-projections --fuse-softmax-packing \
+--vpu-sigmoid-implementation f32_reciprocal --fuse-gated-projections
+```
+
+Check the actual fusion and transport receipts as well as complete output
+quality and cycles. The first implementation of this combination retained
+the unfused path because transport preceded gate/up matching; that no-op
+control is kept separate from the corrected pass order.
