@@ -84,6 +84,26 @@ and complete-160 numerical gates, descriptor-derived accelerator work, and
 unchanged outputs under diagnostic profiling. This is separate from the
 older `npu-exploration` control above.
 
+The [optimization archive](evidence/radiance_rocket_optimization_20261019/README.md)
+retains the subsequent complete forward experiments, including numerical
+failures and a softmax fusion regression. Its reader recomputes both numerical
+gates from all observed logits, checks the timing/work counters, and compares
+fusion receipts with actual calls in the lowered LLVM. An artifact
+verification pass means these observations and bindings agree; it does not
+mean that a candidate passed the numerical gate.
+
+The learned-weight audit reopens the actual source and compiler executables,
+undoes the source's combined/tiled layouts, and checks all 155 FP8 code and
+E8M0 scale payloads in canonical coordinates. Those encoded matrices match.
+Activation precision, reduction order, rotary coefficient arithmetic and
+matrix schedules remain explicit implementation differences.
+
+The [FP32 RMS packing probe](evidence/f32_rms_packing_20261019/README.md)
+has a separate complete-byte audit. It checks actual ELF constants and all
+target packed outputs against FP32 normalization and a retained independent
+scalar quantizer. Its local cycle savings are not substituted for full-model
+execution measurements.
+
 The [linked payload checker](../tools/audit_merlin_elf_payloads.py) can also
 reopen a compiler ELF and check its actual token IDs, captured constants,
 all fixed matrix codes/scales, and retained embedding/normalization weights
