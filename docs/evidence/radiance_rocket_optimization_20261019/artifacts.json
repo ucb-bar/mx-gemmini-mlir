@@ -80196,7 +80196,7 @@
   "support_sha256": {
     "docs/evidence/matched_forward_20261018/verify.py": "5f2da8621f3a243067ac96cce8e723686771cc204920c7e0084cf0b14c7982dd",
     "docs/evidence/radiance_rocket_forward_20261019/verify.py": "fe36098b80f0d2733236b86a70a9675cd67ed4bf4f03db1331ba1640c3c29cd7",
-    "tools/audit_radiance_compiler_weights.py": "eae6dd64a0c5b720bfeebb8d42a0f3e86d2f47e14d5bf307aaca4e5149f09a96",
+    "docs/evidence/radiance_rocket_optimization_20261019/support/audit_radiance_compiler_weights.py": "eae6dd64a0c5b720bfeebb8d42a0f3e86d2f47e14d5bf307aaca4e5149f09a96",
     "tools/compare_radiance_rocket_candidate.py": "8fada8b66948f28c51a5aa16621d2c1d5b739ba325404b422b2516aabc824ed3",
     "tools/report_stage_profile.py": "2953cc2d72d049503810bc22193b8731564cfe8da6c0ebe3fd676613167d103e"
   }

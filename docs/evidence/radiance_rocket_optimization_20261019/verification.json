@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "artifact_manifest_sha256": "b3753f795a3a12f2b57d21eedcffa601ab00fc6c4e557cb673900226229aee8a",
+  "artifact_manifest_sha256": "5ace258fd7282d7f55773c3f4b22bdaf8b739043660fcb6155046d9f51ab72ab",
   "verifier_sha256": "c4a86b5a51c99f33e01ca180c1858569eea1851304261ebb19c58a0666039be2",
   "source_cycles": 7082331012,
   "all_5120000_logits_checked_per_candidate": true,

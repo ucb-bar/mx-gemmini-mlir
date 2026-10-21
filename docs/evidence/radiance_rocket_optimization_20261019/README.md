@@ -232,6 +232,11 @@ gates, and derives timing ratios from the actual console intervals. It also
 checks input IDs, build identity, policy, target/environment, catalog-derived
 matrix work, completion and receipt/admission/payload-audit bindings.
 
+The original weight-audit source is retained in
+[`support/audit_radiance_compiler_weights.py`](support/audit_radiance_compiler_weights.py)
+with its original SHA-256. This keeps the historical source check reproducible
+as the current audit tool gains support for cached sessions.
+
 Each archive retains the actual console, comparison, execution receipt,
 compilation/link recipe, generated C/LLVM/MLIR/catalog text, original command
 and producer, structural admission and linked-payload audit. The primary
