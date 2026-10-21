@@ -19,15 +19,20 @@ Completed Rocket-Spike results use FP8 for every offloaded matrix binding:
 
 | Workload | Modeled cycles | Comparison |
 | --- | ---: | --- |
-| TinyLlama, 160-token full forward | 10,326,818,367 | 1.236× versus an independent quantized program |
+| TinyLlama, 160-token full forward | 6,264,147,801 | 1.131× versus the independent Radiance-derived Rocket MX+VPU port (7,082,331,012 cycles) |
 | TinyLlama, prefill + 32 cached decodes | 20,262,623,973 | 3.655× versus the corrected compiler baseline |
 | SmolVLA, prefix + ten flows + action | 73,577,503,143 | 1.196× versus the previous compiler build |
 
 The [comparison methodology](docs/fair_full_model_comparisons.md) explains
 numerical gates, timing boundaries, source repositories, and kernel coverage.
 The [Radiance Rocket port](docs/radiance_rocket_model_baseline.md) documents
-the newer full Llama application and its completed numerical port checks;
-its full-model measurements are separate from the table above.
+the independent full Llama application, its adaptations, and numerical checks.
+The [forward optimization measurements](docs/evidence/radiance_rocket_optimization_20261019/README.md)
+retain both passing and rejected configurations. The reported 1.131× result
+passes all six numerical gates; faster configurations that fail them are excluded.
+The cached TinyLlama and SmolVLA ratios compare compiler versions. Their
+[independent session checks](docs/independent_session_checks.md) describe
+completed validation and the remaining full-session comparisons.
 The [artifact audit](docs/model_results_audit.md) checks the completed output
 streams, actual executables, generated catalogs, and build receipts. FireSim
 workload packaging is format-validated; FPGA execution remains unmeasured.
