@@ -370,6 +370,7 @@ def test_full_pipeline_fuses_before_transporting_down_projection_to_residual(tmp
         "batch_rhs_reuse",
         "softmax_packing",
         "projection_groups",
+        "host_softmax_policy",
     ):
         setattr(pipeline, attr, None)
     pipeline.gated_projection_packing = MXGatedProjectionPostOffload(catalog_path)
