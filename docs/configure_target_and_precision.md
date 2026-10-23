@@ -462,3 +462,22 @@ Changing the K step can change floating-point accumulation order. This option
 therefore needs independent complete-output validation and does not inherit
 the original partition's numerical results. Catalog `tile_selection` records
 the constrained and unconstrained baselines and the selected kernel schedule.
+
+## Large packed constants
+
+For packed catalogs that exceed RISC-V's PC-relative address range, select
+`--far-constant-data` together with `--prepack-checkpoint-weights` when building
+each device stage. The catalog uses position-independent references and places
+the packed bytes in `.merlin.large_rodata`. Runtime code, ordinary constants,
+mutable data, the address table and stack stay near one another. The linker
+checks that the complete static image fits before the arena and weight blob.
+
+Select a stage arena base beyond its static image with `--spike-arena-base`.
+The session linker regenerates its own runtime layout; use its recorded memory
+requirement when packaging the complete executable for FireSim. A large
+standalone stage arena address does not select the final session's DRAM size.
+Every device catalog in a session must use this addressing mode together.
+It currently cannot be combined with `--share-catalog-constants`.
+
+This changes addressing and placement. The matrix quantization policy remains
+explicit, and the completed model still requires output and state validation.

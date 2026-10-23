@@ -171,6 +171,9 @@ def main() -> None:
                         help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--prepack-checkpoint-weights", action="store_true",
                         help="embed source-proven packed checkpoint RHS values at build time")
+    parser.add_argument("--far-constant-data", action="store_true",
+                        help="use full-address PIC references and a separate large readonly "
+                             "section for packed checkpoint data")
     parser.add_argument("--prune-unused-checkpoint-weights", action="store_true",
                         help="remove unused immutable weights from the generated entry ABI "
                              "after prepacking; sessions must regenerate projection-aware callers")
@@ -266,6 +269,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.far_constant_data and not args.prepack_checkpoint_weights:
+        parser.error("--far-constant-data requires --prepack-checkpoint-weights")
     if args.host_softmax_policy is not None and args.execution_policy is None:
         parser.error("host softmax arithmetic requires --execution-policy with host softmax sites")
     if args.gated_activation_arithmetic != "reciprocal" and not args.fuse_gated_projections:
@@ -512,6 +517,7 @@ def main() -> None:
                               if args.structural_elf_admission else None),
         prepared_transform=preparation,
         catalog_builder=make_merlin_catalog_builder(
+            far_constant_data=args.far_constant_data,
             profile_path=profile_path, riscv_root=riscv_root,
             cached_weight_stage=stage if args.cache_checkpoint_weights else None,
             prepacked_weight_stage=stage if args.prepack_checkpoint_weights else None,
@@ -964,6 +970,7 @@ def main() -> None:
         "cache_checkpoint_weights": args.cache_checkpoint_weights,
         "cached_checkpoint_kernels": catalog.get("cached_checkpoint_kernels", 0),
         "prepack_checkpoint_weights": args.prepack_checkpoint_weights,
+        "far_constant_data": args.far_constant_data,
         "packed_data_storage_reuse": catalog.get("packed_data_storage_reuse"),
         "packed_object_storage_reuse": catalog.get("packed_object_storage_reuse"),
         "share_activation_packing": args.share_activation_packing,

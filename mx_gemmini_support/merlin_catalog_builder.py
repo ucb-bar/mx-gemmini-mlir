@@ -86,6 +86,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          checkpoint_weights_path: Path | None = None,
                          cache_immutable_weights: bool = False,
                          prepack_immutable_weights: bool = False,
+                         far_constant_data: bool = False,
                          precision_overrides: dict[str, str] | None = None,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                          connect_multiplies: bool = False,
@@ -118,6 +119,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     if gated_activation_arithmetic not in {"reciprocal", "divide"} or (
             gated_activation_arithmetic != "reciprocal" and not fuse_gated_projections):
         raise ValueError("gated divide arithmetic requires explicit gated projection packing")
+    if type(far_constant_data) is not bool or far_constant_data and not prepack_immutable_weights:
+        raise ValueError("far constant data requires prepacked immutable weights")
     if (type(fuse_f32_rms_packing) is not bool or
             fuse_f32_rms_packing and
             (not share_activation_packing or not integer_group_packing or fuse_rms_packing)):
@@ -221,7 +224,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         snapshot.write_bytes(Path(prepared).read_bytes())
         if _sha(snapshot) != plan["source_sha256"]:
             raise ValueError("batch RHS source changed before snapshot binding")
-    flags = native_catalog_compile_flags()
+    flags = native_catalog_compile_flags(far_constant_data=far_constant_data)
     objects: list[Path] = []
     source_hashes = {}
     source_flags = {}
@@ -677,7 +680,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         max_workspace, symbol=_WORKSPACE_SYMBOL))
     packed_object_storage_reuse = None
     if fixed_data:
-        lines = [".section .rodata", ".balign 64"]
+        section = ".merlin.large_rodata" if far_constant_data else ".rodata"
+        directive = (f'.section {section},"a",@progbits' if far_constant_data
+                     else ".section .rodata")
+        lines = [directive, ".balign 64"]
         for fixed_symbol, path in fixed_data:
             escaped = str(path.resolve()).replace("\\", "\\\\").replace('"', '\\"')
             lines.extend((f".global {fixed_symbol}", f"{fixed_symbol}:",
@@ -698,7 +704,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             # checks every data byte, symbol, alignment and padding; a stale
             # source manifest cannot authorize sharing a different object.
             reference = out_dir / "constant_object_reference.S"
-            reference.write_text(".section .rodata\n.balign 64\n"
+            reference.write_text(f"{directive}\n.balign 64\n"
                                  ".global merlin_constant_probe\nmerlin_constant_probe:\n"
                                  "  .byte 0\n.balign 64\n", encoding="utf-8")
             reference_object = reference.with_suffix(".o")
@@ -707,7 +713,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             packed_object_storage_reuse = reuse_constant_object(
                 reuse_prepacked_object, obj,
                 tuple(ConstantBlob(symbol, path, 64) for symbol, path in fixed_data),
-                reference_object=reference_object, section=".rodata")
+                reference_object=reference_object, section=section)
             (out_dir / "constant_object_reuse.json").write_text(
                 json.dumps(packed_object_storage_reuse, indent=2) + "\n")
         objects.append(obj)
@@ -869,6 +875,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "kernels": reduce_kernels,
         },
         "compilation": {
+            "far_constant_data": far_constant_data,
             "object_sha256": _sha(object_path),
             "source_sha256": source_hashes,
             "source_flags": source_flags,
@@ -887,6 +894,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 riscv_root: Path,
                                 cached_weight_stage: Path | None = None,
                                 prepacked_weight_stage: Path | None = None,
+                                far_constant_data: bool = False,
                                 precision_overrides: dict[str, str] | None = None,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                                 connect_multiplies: bool = False,
@@ -940,6 +948,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                                              else None),
                                     cache_immutable_weights=cached_weight_stage is not None,
                                     prepack_immutable_weights=prepacked_weight_stage is not None,
+                                    far_constant_data=far_constant_data,
                                     precision_overrides=precision_overrides,
                                     enabled_vpu_regions=enabled_vpu_regions,
                                     connect_multiplies=connect_multiplies,

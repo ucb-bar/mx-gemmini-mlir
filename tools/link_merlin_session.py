@@ -493,6 +493,7 @@ def link_session(
     receipts = {}
     source_objects = {}
     projections = {}
+    far_catalogs = []
     for program in session.programs:
         build = builds[program.name]
         receipt = json.loads((build / "mx_stage_probe.json").read_text(encoding="utf-8"))
@@ -511,6 +512,11 @@ def link_session(
         if len(objects) == 3:
             require_device_elf_admission(admission_route, admission_selection)
             details = json.loads(catalog.read_text(encoding="utf-8"))
+            far = details.get("compilation", {}).get("far_constant_data", False)
+            if type(far) is not bool or far != receipt.get("far_constant_data", False) or (
+                    far and "-fPIC" not in details["compilation"]["flags"]):
+                raise ValueError("catalog far-data addressing differs from its compiled policy")
+            far_catalogs.append(far)
             if (details.get("coverage_complete") is not True
                     or details.get("covered_contractions") != receipt["selected_operations"]
                     or details.get("unbound_precision_proposals") or
@@ -524,6 +530,9 @@ def link_session(
             str(path.relative_to(build)): _sha(path) for path in objects}
         receipts[program.name] = receipt
     guarded_math = _session_math_contract(receipts, guarded_math)
+    use_far_constants = any(far_catalogs)
+    if use_far_constants and (not all(far_catalogs) or share_catalog_constants):
+        raise ValueError("far constant layout requires PIC catalogs without constant-pool rewriting")
     if output.exists():
         raise ValueError("session output directory must not already exist")
     output.mkdir(parents=True)
@@ -683,7 +692,7 @@ def link_session(
         catalog_objects.append(pool_object)
     elf = output / "session.elf"
     linker_script = (_catalog_linker_script(output, catalog_objects)
-                     if catalog_objects else bare / "model_link.ld")
+                     if catalog_objects and not use_far_constants else bare / "model_link.ld")
     static_end_symbol = "_merlin_static_end" if catalog_objects else "_stack_top"
     libm = riscv_root / "riscv64-unknown-elf/lib/libm.a"
     if guarded_math is not None:
@@ -704,6 +713,7 @@ def link_session(
                 raise ValueError("shared constants have an observer outside qualified catalog readers")
         link_command = [cc, *flags, "-nostdlib", "-nostartfiles",
               f"-Wl,--defsym,MERLIN_WEIGHTS_BASE={hex(layout['weights_base'])}",
+              f"-Wl,--defsym,MERLIN_ARENA_BASE={hex(layout['arena_base'])}",
               "-Wl,--defsym,MERLIN_STACK_BYTES=0x40000",
               "-T", linker_script, *all_objects, *math_link_flags,
               *(() if guarded_math is None else supplier_flags), libm, "-o", elf]
@@ -749,6 +759,9 @@ def link_session(
                                    "existing_step_intervals_only; reset_and_program_state_handoff_excluded"),
         "dump_outputs": selected_dumps,
         "dump_limit_bytes": dump_limit_bytes,
+        "constant_addressing": ("pic_far_readonly" if use_far_constants
+                                else "pc_relative_catalog_islands" if catalog_objects
+                                else "runtime_default"),
         "status": "linked_experimental_numeric_qualification_pending",
         "session_root": str(session_root),
         "programs": [{"name": program.name, "steps": program.steps,
