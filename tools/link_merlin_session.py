@@ -17,14 +17,14 @@ import sys
 from pathlib import Path
 
 DEFAULT_DUMP_LIMIT_BYTES = 16_384
-MAX_DUMP_LIMIT_BYTES = 262_144
-MAX_SESSION_DUMP_BYTES = 8 << 20
+MAX_DUMP_LIMIT_BYTES = 1 << 20
+MAX_SESSION_DUMP_BYTES = 64 << 20
 
 
 def _selected_output_dumps(session, requests: tuple[str, ...],
                            byte_limit: int) -> list[dict]:
     if not DEFAULT_DUMP_LIMIT_BYTES <= byte_limit <= MAX_DUMP_LIMIT_BYTES:
-        raise ValueError("output dump byte limit must be 16 KiB to 256 KiB")
+        raise ValueError("output dump byte limit must be 16 KiB to 1 MiB")
     names = set(session.program_names)
     selected = []
     seen = set()
@@ -48,7 +48,7 @@ def _selected_output_dumps(session, requests: tuple[str, ...],
             raise ValueError(f"dump output {request!r} exceeds the console byte limit")
         total_bytes += byte_count * program.steps
         if total_bytes > MAX_SESSION_DUMP_BYTES:
-            raise ValueError("selected output dumps exceed 8 MiB per session")
+            raise ValueError("selected output dumps exceed 64 MiB per session")
         seen.add((program_index, output_index))
         selected.append({"program": program_index, "name": name,
                          "output": output_index, "bytes": byte_count})
@@ -815,7 +815,7 @@ def main() -> None:
                         help="explicit exact guarded library policy for all final-image calls; must match stage guards")
     parser.add_argument("--dump-limit-bytes", type=int,
                         default=DEFAULT_DUMP_LIMIT_BYTES,
-                        help="per-output console limit (16–256 KiB; 8 MiB total)")
+                        help="per-output console limit (16 KiB–1 MiB; 64 MiB total)")
     args = parser.parse_args()
     sys.path.insert(0, str(args.merlin_src.resolve(strict=True)))
     from merlin.model_check.admission import service as structural_admission

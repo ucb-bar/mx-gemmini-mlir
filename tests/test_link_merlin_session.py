@@ -42,12 +42,28 @@ def test_large_logits_dump_requires_explicit_bounded_limit() -> None:
         _selected_output_dumps(session, requests, 16_384)
     selected = _selected_output_dumps(session, requests, 128_000)
     assert [row["bytes"] for row in selected] == [128_000, 128_000]
-    with pytest.raises(ValueError, match="8 MiB"):
+    with pytest.raises(ValueError, match="64 MiB"):
         _selected_output_dumps(SimpleNamespace(
             program_names=("prefill", "decode"),
             programs=(session.programs[0],
-                      SimpleNamespace(steps=65, outputs=session.programs[1].outputs)),
+                      SimpleNamespace(steps=525, outputs=session.programs[1].outputs)),
         ), requests, 128_000)
+
+
+@pytest.mark.parametrize("vocabulary", [151936, 256000])
+def test_complete_large_vocabulary_session_requires_explicit_limit(vocabulary):
+    session = SimpleNamespace(
+        program_names=("prefill", "decode"),
+        programs=tuple(SimpleNamespace(steps=steps, outputs=(([1, vocabulary], "f32"),))
+                       for steps in (1, 32)),
+    )
+    requests = ("prefill:0", "decode:0")
+    with pytest.raises(ValueError, match="console byte limit"):
+        _selected_output_dumps(session, requests, 16_384)
+    rows = _selected_output_dumps(session, requests, vocabulary * 4)
+    assert [row["bytes"] for row in rows] == [vocabulary * 4] * 2
+    with pytest.raises(ValueError, match="16 KiB to 1 MiB"):
+        _selected_output_dumps(session, requests, (1 << 20) + 1)
 
 
 def test_native_session_math_needs_no_selection():
