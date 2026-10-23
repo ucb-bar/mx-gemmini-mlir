@@ -1,0 +1,14 @@
+{
+  "mem.dram_latency": {
+    "e4m3_vpu": 20.0,
+    "firesim": 30.0
+  },
+  "mem.dram_max_reads": {
+    "e4m3_vpu": 0.0,
+    "firesim": 16.0
+  },
+  "mem.bus_bytes": {
+    "e4m3_vpu": 64.0,
+    "firesim": 32.0
+  }
+}

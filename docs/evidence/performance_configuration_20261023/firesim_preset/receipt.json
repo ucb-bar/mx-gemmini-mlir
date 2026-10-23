@@ -1,0 +1,16 @@
+{
+  "scope": "alternative_simulator_preset_dump_only_not_a_bitstream_or_accelerator_measurement",
+  "exit_code": 0,
+  "binary_identity": "../receipt.json",
+  "environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "firesim",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0",
+    "GEMMINI_PERF_DUMP_CONFIG": "1"
+  },
+  "artifacts": {
+    "probe_perf.txt": "28f1e9486c128b6b1491e47caa6a937db35082d7f28d2cb7d65ef2e1cd649770",
+    "config_dump.txt": "45c518d9a4372601248bf0888711fbd1c236315d7681f6bbbb7e3573f7e18109",
+    "differences.json": "37e2ed08a541f6c90947cb9db8bb1a53170f8dd70952f57c3baa21e6268aaf95"
+  }
+}

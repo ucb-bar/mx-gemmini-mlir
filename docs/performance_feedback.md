@@ -72,6 +72,15 @@ environment and run receipt. A preset name alone is insufficient.
 | DRAM latency; model | 20 cycles; fixed pipeline | Does not establish equivalence to the Chipyard outer-latency setting or a deployed FireSim memory model |
 | Host memory tracking | Disabled | CPU/device contention is not fully represented |
 
+The same binary's separate `firesim` preset has different defaults:
+[the retained probe](evidence/performance_configuration_20261023/firesim_preset/receipt.json)
+reports a 32-byte bus, 30-cycle DRAM latency and at most 16 outstanding DRAM
+reads. The selected `e4m3_vpu` configuration instead has a 64-byte bus,
+20-cycle latency and no read cap. The compiler profile specifies a 64-byte
+bus. Neither preset's name establishes the settings of a deployed image;
+match the actual hardware and runtime memory configuration before selecting
+or overriding a timing preset.
+
 The dump documents several assumptions and approximations alongside calibrated
 values. Accumulator row packing, cache topology, outer-memory timing and all
 version-dependent behavior still require a source/build-manifest match. Basic
