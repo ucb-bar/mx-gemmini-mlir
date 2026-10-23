@@ -1,0 +1,20 @@
+{
+  "schema": "mx_gemmini.simulator_configuration_probe.v1",
+  "scope": "effective_simulator_settings_only_not_accelerator_or_bitstream_qualification",
+  "exit_code": 0,
+  "probe": "RV64 CPU reads immutable data located more than 2 GiB from code; no accelerator commands",
+  "profile_sha256": "e9e33f134ddd3d0770fe3cec26f89923b2c63ca21c06657d0ae4139c95a0d28d",
+  "spike_sha256": "de7573f938268f77b8a1729420d3c47aacebed571efc090da73ee87078ce01e9",
+  "extension_sha256": "5058ebfd1b1457d5897a87ad2208f67cb98e72c27ba111a771c981e5f6b5cdc5",
+  "environment": {
+    "GEMMINI_MODE": "both",
+    "GEMMINI_PERF_CONFIG": "e4m3_vpu",
+    "GEMMINI_PERF_SET": "mem.host_tracking=0",
+    "GEMMINI_PERF_DUMP_CONFIG": "1"
+  },
+  "artifacts": {
+    "probe_perf.txt": "a155a63b901f87919b4268962b4c8b01852b2e710dea48a74e576c2f25203b36",
+    "effective_config.json": "7c44da3509530c6dab19d6c699c0780fc71f7a25e19c12bbbfe14b56db37871b",
+    "config_dump.txt": "b1a100ffe3472537e71640467c4a68d58c3837bdbbb63e2fbaf9dda7aa04d37d"
+  }
+}

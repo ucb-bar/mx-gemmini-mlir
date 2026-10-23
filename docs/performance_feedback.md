@@ -50,6 +50,35 @@ experiments with supported host-memory tracking and varied memory latency or
 bandwidth can test sensitivity; they are different timing configurations.
 Hardware counter measurements must ultimately validate the simulator's trends.
 
+## Inspect the effective simulator settings
+
+The [retained configuration dump](evidence/performance_configuration_20261023/config_dump.txt)
+comes from the actual pinned extension, with the same preset and override used
+for model measurements. The [receipt](evidence/performance_configuration_20261023/receipt.json)
+records binary hashes and scope. The probe runs CPU code only; its zero-command
+performance report is not an accelerator validation result.
+
+Set `GEMMINI_PERF_DUMP_CONFIG=1` on an otherwise unchanged Spike invocation to
+print the effective settings. Retain the dump with the command, binary hashes,
+environment and run receipt. A preset name alone is insufficient.
+
+| Setting | Effective value | Interpretation |
+| --- | --- | --- |
+| Mesh; VPU units | 16×16; 2 | Agrees with the compiler profile's basic geometry |
+| Load/execute/store controller queues | 8 / 8 / 2 | Agrees with the compiler profile; reservation-station queues are separate |
+| Scratchpad | 4 banks × 4096 rows × 16 bytes | 256 KiB in the timing model |
+| System bus; modeled DRAM throughput | 64 bytes; 8 bytes/cycle | Bus width and sustained DRAM throughput are different quantities |
+| L2 capacity; hit latency | 512 KiB; 12 cycles | Timing-model settings; complete cache topology still needs hardware verification |
+| DRAM latency; model | 20 cycles; fixed pipeline | Does not establish equivalence to the Chipyard outer-latency setting or a deployed FireSim memory model |
+| Host memory tracking | Disabled | CPU/device contention is not fully represented |
+
+The dump documents several assumptions and approximations alongside calibrated
+values. Accumulator row packing, cache topology, outer-memory timing and all
+version-dependent behavior still require a source/build-manifest match. Basic
+geometry agreement does not qualify the complete timing model against RTL or
+a bitstream. Record any calibration or sensitivity experiment separately from
+the published configuration.
+
 ## Match the target before using a bitstream
 
 The intended configuration is
