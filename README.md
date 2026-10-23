@@ -36,6 +36,8 @@ completed validation and the remaining full-session comparisons.
 The [artifact audit](docs/model_results_audit.md) checks the completed output
 streams, actual executables, generated catalogs, and build receipts. FireSim
 workload packaging is format-validated; FPGA execution remains unmeasured.
+The [performance feedback guide](docs/performance_feedback.md) describes available
+profiling counters and the checks needed to match a deployed hardware image.
 DeepSeek-R1-Distill-Qwen-1.5B and Gemma 2 2B have compilation/link evidence only.
 The target contract remains `structural_unqualified`, with
 `phase0_admitted: false`.
