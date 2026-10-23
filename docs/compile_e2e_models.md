@@ -22,7 +22,9 @@ workload recipes.
 The [independent session checks](independent_session_checks.md) have separate
 tool revisions and commands for the recurrent Radiance-derived Rocket port,
 logical graph replay, encoded-weight audit and existing full-session checks.
-The complete independent cached comparison remains pending.
+The [complete independent cached comparison](evidence/radiance_rocket_cached_20261023/README.md)
+is available: the compiler takes 1.701× as many cycles and fails the worst-row
+KL limit. It does not qualify a compiler speedup.
 
 ## Models and inputs
 

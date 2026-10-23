@@ -1,9 +1,10 @@
 # Model and kernel comparisons
 
 The completed results measure three workloads on the pinned Rocket-Spike
-`e4m3_vpu` timing model with host tracking disabled. Only the 160-token
-TinyLlama forward has an independent full-program performance baseline.
-Cached TinyLlama and complete SmolVLA compare two compiler builds.
+`e4m3_vpu` timing model with host tracking disabled. TinyLlama forward and
+cached execution have independent full-program baselines. The cached compiler
+is slower and fails its worst-row KL gate. Complete SmolVLA still compares
+two compiler builds.
 The newer [Radiance Rocket port](radiance_rocket_model_baseline.md) completes
 the same full forward in 7,082,331,012 cycles. The fixed compiler release takes
 45.81% more cycles and fails the full-160 mean-KL gate. The newer FP32 host
@@ -19,8 +20,8 @@ remain available.
 
 The [independent session checks](independent_session_checks.md) describe the
 fresh artifact audit, recurrent-state checks and the exact source-kernel
-replay used to qualify single-token cached execution. The complete independent
-cached run is pending; the table below does not use a projected result.
+replay used to qualify single-token cached execution. The [completed independent cached result](evidence/radiance_rocket_cached_20261023/README.md)
+is reported separately below because it fails a numerical gate.
 
 ## Complete models
 
@@ -92,9 +93,14 @@ perplexity or general model-quality evaluation.
 Cached TinyLlama preserves all **99 output/state digests** and all **33 complete
 logit tensors**, or 1,056,000 F32 words, across the measured transformations.
 Its floating-reference diagnostic is mean KL 0.0709557, worst KL 0.1858635,
-28/33 matching top tokens, and minimum logit cosine 0.972447. There is no
-separate accepted cached-source quality threshold or independent complete
-cached-source run.
+28/33 matching top tokens, and minimum logit cosine 0.972447. The independent
+cached port takes **11,908,883,500 cycles** against **20,262,623,973** for the
+compiler, so the compiler takes **1.701× as many cycles**. The port has mean KL
+0.0720928786, worst KL 0.1721619053 and 28/33 matching top tokens. The compiler
+passes mean KL and top-token limits but fails the predeclared worst-KL limit
+of at most 1.05 times the port's error. This complete cached result qualifies
+no compiler speedup; it is separate from the forward result and the 3.655×
+compiler-versus-compiler improvement.
 
 SmolVLA preserves all **33 output/state digests** and **11 complete action
 tensors**. Final action cosine is approximately **0.9752** against its original

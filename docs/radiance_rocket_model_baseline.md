@@ -1,8 +1,9 @@
 # Radiance Llama on Rocket MX+VPU
 
 For the recurrent cache port, independent replay and complete-session audit,
-see [independent session checks](independent_session_checks.md). The cached
-full-model comparison is pending.
+see [independent session checks](independent_session_checks.md). The
+[completed cached comparison](evidence/radiance_rocket_cached_20261023/README.md)
+finds the compiler slower and outside the worst-row KL limit.
 
 `radiance-kernels` now contains a complete Llama application. The source audit
 uses revision

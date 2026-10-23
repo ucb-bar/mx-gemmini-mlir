@@ -30,9 +30,13 @@ the independent full Llama application, its adaptations, and numerical checks.
 The [forward optimization measurements](docs/evidence/radiance_rocket_optimization_20261019/README.md)
 retain both passing and rejected configurations. The reported 1.131× result
 passes all six numerical gates; faster configurations that fail them are excluded.
-The cached TinyLlama and SmolVLA ratios compare compiler versions. Their
+The cached TinyLlama and SmolVLA ratios in the table compare compiler versions.
+The completed [independent cached comparison](docs/evidence/radiance_rocket_cached_20261023/README.md)
+takes 11,908,883,500 cycles for the port versus 20,262,623,973 for the compiler:
+the compiler takes 1.701× as many cycles and fails the worst-row KL gate.
+The forward speedup does not carry over to cached execution. The
 [independent session checks](docs/independent_session_checks.md) describe
-completed validation and the remaining full-session comparisons.
+validation and the remaining independent SmolVLA comparison.
 The [artifact audit](docs/model_results_audit.md) checks the completed output
 streams, actual executables, generated catalogs, and build receipts. FireSim
 workload packaging is format-validated; FPGA execution remains unmeasured.

@@ -119,9 +119,12 @@ python -m tools.compare_radiance_rocket_cached \
   --out "$RUN/cached-comparison.json"
 ```
 
-The complete matched run was launched after the smoke replay passed. Its
-result remains pending. Before accepting a compiler speedup, the comparison
-requires complete execution, matching model/input and hardware identities,
+The complete matched run finished after the smoke replay passed. The
+[retained comparison](evidence/radiance_rocket_cached_20261023/README.md) reports
+11,908,883,500 source cycles versus 20,262,623,973 compiler cycles. The compiler
+takes 1.701× as many cycles and fails the worst-row KL gate. Before accepting
+a compiler speedup, the comparison requires complete execution, matching
+model/input and hardware identities,
 the expected accelerator work, actual measured ELF identities, and every
 vocabulary output at all 33 positions. Mean and worst KL against the captured
 floating reference must each be at most 1.05 times the source port's error;
@@ -133,8 +136,10 @@ required. Both use FP8/E8M0 groups of 32 with BF16 matrix outputs.
 The comparison also undoes the source's weight tiling and checks all 155
 learned matrices against the actual compiler executable for both prefill and
 decode. Every FP8 code and E8M0 scale must agree; a shared checkpoint name
-alone is insufficient. This preflight has already passed for the pending full
-cached image. Full execution and its numerical gate remain pending.
+alone is insufficient. Both actual compiler-stage checks pass for the completed
+cached image. All 1,056,000 logit words per side were compared; mean KL and
+top-token gates pass, while worst KL fails. The portable evidence replays the
+complete observed outputs and timing, without changing that gate.
 
 To reproduce the small recurrent test, omit `--recorded-session` and use
 `--decode-steps 33`. Add `--smoke-query-heads 16` to the build command for
