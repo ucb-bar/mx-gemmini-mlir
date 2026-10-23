@@ -142,9 +142,10 @@ python -m tools.audit_merlin_elf_payloads \
 The numbers are modeled Rocket-Spike cycles with `mem.host_tracking=0`.
 No matching FPGA run or bitstream is qualified. The older TinyLlama source
 distributions cover 33 positions; the newer Radiance-derived Rocket port and
-compiler both retain all 160. Cached TinyLlama
-and complete SmolVLA have no independent full source-session performance
-baseline. SmolVLA has no robot-task acceptance threshold. Synthetic inputs
+compiler both retain all 160. The
+[complete independent cached comparison](evidence/radiance_rocket_cached_20261023/README.md)
+finds the compiler slower and failing the worst-row KL limit. Complete SmolVLA
+still has no independent full source-session performance baseline. SmolVLA has no robot-task acceptance threshold. Synthetic inputs
 do not establish dataset accuracy or perplexity.
 
 External checkpoint and toolchain files are still required for compilation.
