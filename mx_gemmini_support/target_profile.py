@@ -99,6 +99,61 @@ def load_profile(path: Path, *, rtl_root: Path | None = None) -> dict[str, Any]:
     return profile
 
 
+def _vpu_lanes(params: str, vpu_source: str) -> int:
+    """Resolve a VpuParams lane count, including the Scala constructor default."""
+    if not params.startswith("gemmini.vpu.VpuParams("):
+        raise ValueError("MX VPU parameters are absent")
+    fields = _assignments(_first_call_body(params, "gemmini.vpu.VpuParams("))
+    default = re.search(r"case class VpuParams\([^\n]*\blanes:\s*Int\s*=\s*(\d+)",
+                        vpu_source)
+    if default is None:
+        raise ValueError("MX VPU lane default is absent from selected RTL")
+    lanes = _int_field(fields, "lanes", int(default.group(1)))
+    if lanes <= 0:
+        raise ValueError("MX VPU lane count must be positive")
+    return lanes
+
+
+def source_vpu_lanes(profile: dict[str, Any], rtl_root: Path) -> int | None:
+    """Read lanes from the bound Scala source without changing legacy v2 hashes.
+
+    Existing v2 profiles predate the lane field. New recipe resolution can use
+    this source-bound value while historical profile JSON and receipts retain
+    their original identities.
+    """
+    root = rtl_root.resolve()
+    source = profile.get("source", {})
+    if profile.get("schema") != SCHEMA or source.get("gemmini_revision") != _revision(root):
+        raise ValueError("MX VPU lane query needs the profile's Gemmini revision")
+    selected = {}
+    for relative in ("src/main/scala/gemmini/ConfigsFP.scala",
+                     "src/main/scala/gemmini/vpu/Vpu.scala"):
+        raw = (root / relative).read_bytes()
+        if source.get("sha256", {}).get(relative) != hashlib.sha256(raw).hexdigest():
+            raise ValueError(f"MX VPU lane query source differs: {relative}")
+        selected[relative] = raw.decode()
+    configs = _resolve_array_configs(selected["src/main/scala/gemmini/ConfigsFP.scala"])
+    name = profile.get("gemmini_config")
+    if name not in configs:
+        raise ValueError("MX VPU lane query has no selected Gemmini config")
+    values = configs[name]
+    has_vpu = _bool_field(values, "has_vpu")
+    if has_vpu != profile.get("resources", {}).get("vpu"):
+        raise ValueError("MX VPU enable differs from selected source")
+    if not has_vpu:
+        return None
+    fields = _assignments(_first_call_body(values.get("vpu_params", ""),
+                                          "gemmini.vpu.VpuParams("))
+    config = profile["resources"].get("vpu_config")
+    if (not isinstance(config, dict) or
+            config != {"units": _int_field(fields, "units", 1),
+                       "exp_sub": _bool_field(fields, "expSub"),
+                       "exp_sum": _bool_field(fields, "expSum")}):
+        raise ValueError("MX VPU configuration differs from selected source")
+    return _vpu_lanes(values["vpu_params"],
+                      selected["src/main/scala/gemmini/vpu/Vpu.scala"])
+
+
 def _named_bodies(source: str, prefix: str) -> dict[str, str]:
     markers = list(re.finditer(rf"^  {prefix} (\w+) = ", source, re.M))
     result = {}

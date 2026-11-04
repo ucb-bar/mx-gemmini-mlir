@@ -88,6 +88,34 @@ def test_checked_in_census_matches_selected_sources(profiles):
         assert load_profile(output / f"{name}.json", rtl_root=root) == expected
 
 
+def test_vpu_lanes_are_source_bound_without_rewriting_legacy_profiles():
+    from mx_gemmini_support.target_profile import _vpu_lanes, source_vpu_lanes
+
+    vpu_source = "case class VpuParams(units: Int = 1, lanes: Int = 8, expSub: Boolean = false)"
+    assert _vpu_lanes("gemmini.vpu.VpuParams(units = 2)", vpu_source) == 8
+    assert _vpu_lanes("gemmini.vpu.VpuParams(units = 2, lanes = 16)", vpu_source) == 16
+    with pytest.raises(ValueError, match="positive"):
+        _vpu_lanes("gemmini.vpu.VpuParams(units = 2, lanes = 0)", vpu_source)
+
+    root_name = os.getenv("MX_GEMMINI_RTL_ROOT")
+    if not root_name:
+        return
+    root = Path(root_name)
+    from mx_gemmini_support.target_profile import _revision
+    import hashlib
+    profile = load_profile(Path(__file__).resolve().parents[1] /
+                           "profiles/gemmini-mx-cleanup-266c593/"
+                           "MxE4M3Fp4VpuGemminiRocketConfig.json")
+    profile["source"]["gemmini_revision"] = _revision(root)
+    for relative in ("src/main/scala/gemmini/ConfigsFP.scala",
+                     "src/main/scala/gemmini/vpu/Vpu.scala"):
+        profile["source"]["sha256"][relative] = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+    assert source_vpu_lanes(profile, root) == 8
+    profile["source"]["sha256"]["src/main/scala/gemmini/vpu/Vpu.scala"] = "0" * 64
+    with pytest.raises(ValueError, match="source differs"):
+        source_vpu_lanes(profile, root)
+
+
 def test_profile_source_binding(profiles, tmp_path):
     root = Path(os.environ["MX_GEMMINI_RTL_ROOT"])
     profile = profiles["MxAllAsymGemminiRocketConfig"]
