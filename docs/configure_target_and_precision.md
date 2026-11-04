@@ -48,12 +48,13 @@ Check the complete profile against that checkout:
 "$CAPTURE_PY" - <<'PY'
 import os
 from pathlib import Path
-from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from mx_gemmini_support.target_profile import load_profile, profile_sha256, source_vpu_lanes
 
 profile = load_profile(Path(os.environ["PROFILE"]),
                        rtl_root=Path(os.environ["GEMMINI_ROOT"]))
 print(profile["name"], profile_sha256(profile))
 print(profile["geometry"])
+print("VPU lanes:", source_vpu_lanes(profile, Path(os.environ["GEMMINI_ROOT"])))
 for mode in profile["legal_compute"]:
     print(mode)
 PY
@@ -63,6 +64,11 @@ This check regenerates the profile and compares source revisions, source
 hashes, and capabilities. Change the RTL configuration and re-export when
 changing hardware. Editing capability fields in the JSON cannot enable a
 missing hardware feature.
+
+The source-bound VPU lane query reads the selected Scala constructor, including
+its default lane count. Version 2 profiles omit lanes, so the query preserves
+their existing hashes and historical receipts. A new recipe identity must
+include lanes when it uses them to select a hardware build.
 
 For a typed MX handoff, bind and verify it against the selected profile:
 
