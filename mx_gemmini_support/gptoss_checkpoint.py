@@ -41,6 +41,34 @@ def repack_expert_weight(blocks: np.ndarray, scales: np.ndarray) -> PackedExpert
     return PackedExpertWeight(k, n, b.tobytes(), b_scales.tobytes())
 
 
+def repack_expert_tile(blocks: np.ndarray, scales: np.ndarray, *,
+                       output_start: int, output_count: int,
+                       block_start: int, block_count: int) -> PackedExpertWeight:
+    """Select whole MX groups and Gemmini output tiles from one expert.
+
+    The slice is over original checkpoint coordinates: output rows N and
+    input K/32 blocks. No code or scale is numerically transformed.
+    """
+    blocks = np.asarray(blocks)
+    scales = np.asarray(scales)
+    if (blocks.dtype != np.uint8 or scales.dtype != np.uint8 or blocks.ndim != 3
+            or scales.ndim != 2 or blocks.shape[-1] != 16
+            or blocks.shape[:2] != scales.shape):
+        raise ValueError("gpt-oss expert needs U8 blocks [N,K/32,16] and scales [N,K/32]")
+    if (any(type(value) is not int for value in
+            (output_start, output_count, block_start, block_count)) or
+            output_start < 0 or output_count <= 0 or output_start % 32 or
+            output_count % 32 or output_start + output_count > blocks.shape[0] or
+            block_start < 0 or block_count <= 0 or
+            block_start + block_count > blocks.shape[1]):
+        raise ValueError("gpt-oss tile needs aligned N and whole in-range K/32 blocks")
+    return repack_expert_weight(
+        blocks[output_start:output_start + output_count,
+               block_start:block_start + block_count, :],
+        scales[output_start:output_start + output_count,
+               block_start:block_start + block_count])
+
+
 def restore_checkpoint_layout(packed: PackedExpertWeight) -> tuple[np.ndarray, np.ndarray]:
     """Inverse mapping for a byte-for-byte provenance check."""
     if packed.k % 32 or packed.n % 32 or packed.k <= 0 or packed.n <= 0:
