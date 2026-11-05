@@ -52,7 +52,7 @@ def test_unary_kernel_and_ranked_shim() -> None:
     power = emit_vpu_unary(VPU, shape=(32,), dtype="f32",
                            operation="pow10000", symbol="mx_power_probe_kernel")
     assert "case 32:" in power.source
-    with pytest.raises(ValueError, match="DIM16 Rocket MX VPU"):
+    with pytest.raises(ValueError, match="selected Rocket MX VPU"):
         emit_vpu_unary(NO_VPU, shape=(8,), dtype="bf16",
                        operation="rsqrt", symbol="unavailable")
 

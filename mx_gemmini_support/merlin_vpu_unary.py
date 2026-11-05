@@ -8,7 +8,7 @@ import json
 from math import prod
 from pathlib import Path
 
-from .target_profile import profile_sha256
+from .target_profile import model_vpu_lanes, profile_sha256
 
 _SIGMOID_PATTERN = ["arith.constant", "arith.negf", "math.exp",
                     "arith.addf", "arith.divf"]
@@ -26,9 +26,7 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select exact pure unary generics with identity maps."""
     from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
 
-    if (not profile["resources"].get("vpu") or
-            profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16):
+    if model_vpu_lanes(profile) is None:
         return []
     seen = set()
     ordinals = defaultdict(int)
