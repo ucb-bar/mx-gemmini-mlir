@@ -1,5 +1,32 @@
 # Current MX profiles and VPU command lowering
 
+## Current-source v3 profile export
+
+The checked-in profiles below retain their original `mx_gemmini.target_profile.v2`
+schema and hashes. For the selected newer Gemmini source, export a separate
+`mx_gemmini.target_profile.v3` profile:
+
+```sh
+python -m tools.export_profiles --schema v3 \
+  --gemmini /path/to/pinned/gemmini --out /new/v3-profile-directory
+```
+
+V3 records the named configuration's exact legal operand and PE modes, mesh
+and tile dimensions, scratchpad/accumulator capacities and bank counts,
+`scratchpad_bank_rows`, total `accumulator_rows`, both row widths, and
+`resources.vpu_config.lanes` when a VPU exists. Row counts follow the selected
+RTL's projected scratchpad operand width and accumulator width. The exporter
+checks the RTL VPU row-width constraint and refuses incompatible lane and
+storage geometry. Its source identity adds `Scratchpad.scala` to the v2 source
+file closure. `load_profile(path, rtl_root=...)` regenerates the profile to
+verify that identity and every capability field.
+
+The managed Gemmini task currently has an uninitialized MxGen gitlink, so
+v3 export refuses with a source-closure error until the exact pinned MxGen
+files are available. A v3 profile is structural evidence only. NPU hardware
+recipe v2 may reference MX target profile v3; the version numbers describe
+different schemas.
+
 The checked-in `profiles/gemmini-mx-cleanup-266c593/` directory is projected
 from Gemmini `gemmini-mx-cleanup` at
 `266c593f2cb51d7e3fe83fc0317072b585ac3c52` and its MxGen submodule at

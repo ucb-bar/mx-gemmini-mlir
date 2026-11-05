@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from mx_gemmini_support.model_quantization_admission import validate_model_quantization_plan
-from mx_gemmini_support.target_profile import load_profile, profile_sha256
+from mx_gemmini_support.target_profile import SCHEMA_V3, load_profile, profile_sha256
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,6 +73,34 @@ class ModelQuantizationAdmissionTest(unittest.TestCase):
 
     def fixture(self):
         return _plan(self.source, copy.deepcopy(self.profile), self.worklist)
+
+    def test_v3_profile_admits_only_complete_memory_and_lane_facts(self):
+        profile = copy.deepcopy(self.profile)
+        profile["schema"] = SCHEMA_V3
+        profile["source"]["sha256"]["src/main/scala/gemmini/Scratchpad.scala"] = "0" * 64
+        resources = profile["resources"]
+        columns = profile["geometry"]["mesh_columns"] * profile["geometry"]["tile_columns"]
+        resources["scratchpad_row_bits"] = columns * 8
+        resources["scratchpad_bank_rows"] = resources["scratchpad_bytes"] * 8 // (
+            resources["scratchpad_banks"] * resources["scratchpad_row_bits"])
+        resources["accumulator_row_bits"] = columns * 64
+        resources["accumulator_bank_rows"] = resources["accumulator_bytes"] * 8 // (
+            resources["accumulator_banks"] * resources["accumulator_row_bits"])
+        resources["accumulator_rows"] = (resources["accumulator_banks"] *
+                                         resources["accumulator_bank_rows"])
+        resources["vpu_config"]["lanes"] = 8
+        plan = _plan(self.source, profile, self.worklist)
+        receipt = self.admit(plan, profile=profile)
+        self.assertEqual(receipt["site_count"], 19)
+        self.assertFalse(receipt["rtl_source_checked_against_checkout"])
+        bad = copy.deepcopy(profile)
+        del bad["resources"]["vpu_config"]["lanes"]
+        with self.assertRaisesRegex(ValueError, "positive VPU lanes"):
+            self.admit(plan, profile=bad)
+        bad = copy.deepcopy(profile)
+        bad["resources"]["accumulator_rows"] += 1
+        with self.assertRaisesRegex(ValueError, "memory rows disagree"):
+            self.admit(plan, profile=bad)
 
     def admit(self, plan, *, source=None, profile=None):
         return validate_model_quantization_plan(

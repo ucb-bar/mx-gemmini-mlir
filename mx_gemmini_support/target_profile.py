@@ -19,6 +19,7 @@ from .config_facts import _arguments, _assignments
 
 
 SCHEMA = "mx_gemmini.target_profile.v2"
+SCHEMA_V3 = "mx_gemmini.target_profile.v3"
 FORMATS = {
     "fp4_e2m1": ("FP4", 2),
     "fp6_e2m3": ("FP6_E2M3", 4),
@@ -44,6 +45,7 @@ _SCALA_FILES = (
     "src/main/scala/gemmini/vpu/Vpu.scala",
     "src/main/scala/gemmini/SpadRequant.scala",
 )
+_SCALA_FILES_V3 = _SCALA_FILES + ("src/main/scala/gemmini/Scratchpad.scala",)
 
 
 def canonical_bytes(profile: dict[str, Any]) -> bytes:
@@ -54,10 +56,13 @@ def profile_sha256(profile: dict[str, Any]) -> str:
     return hashlib.sha256(canonical_bytes(profile)).hexdigest()
 
 
-def _read_sources(root: Path) -> tuple[dict[str, str], dict[str, str]]:
+def _read_sources(root: Path, *, schema: str = SCHEMA) -> tuple[dict[str, str], dict[str, str]]:
     sources, hashes = {}, {}
-    for relative in _SCALA_FILES:
-        raw = (root / relative).read_bytes()
+    for relative in _SCALA_FILES_V3 if schema == SCHEMA_V3 else _SCALA_FILES:
+        path = root / relative
+        if not path.is_file():
+            raise ValueError(f"MX source closure is incomplete: missing {relative}")
+        raw = path.read_bytes()
         sources[relative] = raw.decode()
         hashes[relative] = hashlib.sha256(raw).hexdigest()
     return sources, hashes
@@ -69,18 +74,19 @@ def _revision(root: Path) -> str:
 
 def verify_profile_source(profile: dict[str, Any], root: Path) -> None:
     """Reject source drift and capability edits against the selected RTL checkout."""
-    if profile.get("schema") != SCHEMA:
-        raise ValueError(f"expected {SCHEMA}")
+    schema = profile.get("schema")
+    if schema not in {SCHEMA, SCHEMA_V3}:
+        raise ValueError(f"expected {SCHEMA} or {SCHEMA_V3}")
     source = profile.get("source")
     if not isinstance(source, dict):
         raise ValueError("MX profile lacks source identity")
-    _, hashes = _read_sources(root.resolve())
+    _, hashes = _read_sources(root.resolve(), schema=schema)
     expected = {"gemmini_revision": _revision(root),
                 "mxgen_revision": _revision(root / "mxgen"),
                 "sha256": hashes}
     if source != expected:
         raise ValueError("MX profile differs from selected Gemmini/MxGen source closure")
-    generated = export_profiles(root)
+    generated = export_profiles_v3(root) if schema == SCHEMA_V3 else export_profiles(root)
     name = profile.get("name")
     if name not in generated or profile != generated[name]:
         raise ValueError("MX profile capabilities differ from selected Gemmini/MxGen sources")
@@ -88,15 +94,57 @@ def verify_profile_source(profile: dict[str, Any], root: Path) -> None:
 
 def load_profile(path: Path, *, rtl_root: Path | None = None) -> dict[str, Any]:
     profile = json.loads(path.read_text())
-    if not isinstance(profile, dict) or profile.get("schema") != SCHEMA:
-        raise ValueError(f"expected {SCHEMA}")
+    if not isinstance(profile, dict) or profile.get("schema") not in {SCHEMA, SCHEMA_V3}:
+        raise ValueError(f"expected {SCHEMA} or {SCHEMA_V3}")
     if not isinstance(profile.get("legal_compute"), list) or not profile["legal_compute"]:
         raise ValueError("MX profile has no compute capabilities")
     if profile.get("qualification") != "structural_unqualified":
         raise ValueError("unknown MX profile qualification state")
+    if profile["schema"] == SCHEMA_V3:
+        validate_v3_resource_geometry(profile)
     if rtl_root is not None:
         verify_profile_source(profile, rtl_root)
     return profile
+
+
+def validate_v3_resource_geometry(profile: dict[str, Any]) -> None:
+    """Reject missing or arithmetically inconsistent v3 memory and lane facts."""
+    if profile.get("schema") != SCHEMA_V3:
+        raise ValueError(f"expected {SCHEMA_V3}")
+    source = profile.get("source")
+    source_hashes = source.get("sha256") if isinstance(source, dict) else None
+    if not isinstance(source_hashes, dict) or set(source_hashes) != set(_SCALA_FILES_V3):
+        raise ValueError("MX v3 profile needs the complete source file closure")
+    geometry = profile.get("geometry")
+    resources = profile.get("resources")
+    if not isinstance(geometry, dict) or not isinstance(resources, dict):
+        raise ValueError("MX v3 profile needs geometry and resources")
+    keys = ("mesh_rows", "mesh_columns", "tile_rows", "tile_columns")
+    if any(type(geometry.get(key)) is not int or geometry[key] <= 0 for key in keys):
+        raise ValueError("MX v3 profile needs positive mesh and tile geometry")
+    keys = ("scratchpad_bytes", "scratchpad_banks", "scratchpad_row_bits",
+            "scratchpad_bank_rows", "accumulator_bytes", "accumulator_banks",
+            "accumulator_row_bits", "accumulator_bank_rows", "accumulator_rows")
+    if any(type(resources.get(key)) is not int or resources[key] <= 0 for key in keys):
+        raise ValueError("MX v3 profile needs positive source-derived memory geometry")
+    if (resources["scratchpad_bytes"] * 8 != resources["scratchpad_banks"] *
+            resources["scratchpad_row_bits"] * resources["scratchpad_bank_rows"] or
+            resources["accumulator_bytes"] * 8 != resources["accumulator_banks"] *
+            resources["accumulator_row_bits"] * resources["accumulator_bank_rows"] or
+            resources["accumulator_rows"] != resources["accumulator_banks"] *
+            resources["accumulator_bank_rows"]):
+        raise ValueError("MX v3 profile memory rows disagree with capacities")
+    vpu_config = resources.get("vpu_config")
+    if resources.get("vpu"):
+        if (not isinstance(vpu_config, dict) or
+                type(vpu_config.get("lanes")) is not int or vpu_config["lanes"] <= 0):
+            raise ValueError("MX v3 profile needs positive VPU lanes")
+        rows = resources["scratchpad_banks"] * resources["scratchpad_bank_rows"]
+        if (resources["scratchpad_row_bits"] != vpu_config["lanes"] * 16 or
+                resources["scratchpad_banks"].bit_count() != 1 or rows > 1 << 15):
+            raise ValueError("MX v3 profile VPU lanes disagree with scratchpad geometry")
+    elif vpu_config is not None:
+        raise ValueError("MX v3 profile has VPU parameters without a VPU")
 
 
 def _vpu_lanes(params: str, vpu_source: str) -> int:
@@ -123,7 +171,7 @@ def source_vpu_lanes(profile: dict[str, Any], rtl_root: Path) -> int | None:
     """
     root = rtl_root.resolve()
     source = profile.get("source", {})
-    if profile.get("schema") != SCHEMA or source.get("gemmini_revision") != _revision(root):
+    if profile.get("schema") not in {SCHEMA, SCHEMA_V3} or source.get("gemmini_revision") != _revision(root):
         raise ValueError("MX VPU lane query needs the profile's Gemmini revision")
     selected = {}
     for relative in ("src/main/scala/gemmini/ConfigsFP.scala",
@@ -145,13 +193,19 @@ def source_vpu_lanes(profile: dict[str, Any], rtl_root: Path) -> int | None:
     fields = _assignments(_first_call_body(values.get("vpu_params", ""),
                                           "gemmini.vpu.VpuParams("))
     config = profile["resources"].get("vpu_config")
-    if (not isinstance(config, dict) or
-            config != {"units": _int_field(fields, "units", 1),
+    expected_config = {"units": _int_field(fields, "units", 1),
                        "exp_sub": _bool_field(fields, "expSub"),
-                       "exp_sum": _bool_field(fields, "expSum")}):
+                       "exp_sum": _bool_field(fields, "expSum")}
+    if profile["schema"] == SCHEMA_V3:
+        expected_config["lanes"] = _vpu_lanes(
+            values["vpu_params"], selected["src/main/scala/gemmini/vpu/Vpu.scala"])
+    if not isinstance(config, dict) or config != expected_config:
         raise ValueError("MX VPU configuration differs from selected source")
-    return _vpu_lanes(values["vpu_params"],
-                      selected["src/main/scala/gemmini/vpu/Vpu.scala"])
+    lanes = _vpu_lanes(values["vpu_params"],
+                       selected["src/main/scala/gemmini/vpu/Vpu.scala"])
+    if profile["schema"] == SCHEMA_V3 and profile["resources"]["vpu_config"].get("lanes") != lanes:
+        raise ValueError("MX v3 VPU lanes differ from selected source")
+    return lanes
 
 
 def model_vpu_lanes(profile: dict[str, Any]) -> int | None:
@@ -164,6 +218,11 @@ def model_vpu_lanes(profile: dict[str, Any]) -> int | None:
     if (not profile.get("resources", {}).get("vpu") or
             profile.get("transport") != "rocket_rocc"):
         return None
+    if profile.get("schema") == SCHEMA_V3:
+        lanes = profile["resources"].get("vpu_config", {}).get("lanes")
+        if not isinstance(lanes, int) or lanes <= 0:
+            raise ValueError("MX v3 model VPU routing needs positive source-bound lanes")
+        return lanes
     columns = profile.get("geometry", {}).get("mesh_columns")
     if columns != 16:
         raise ValueError(
@@ -331,6 +390,51 @@ def _capacity(values: dict[str, str], key: str) -> int:
     return int(match.group(1)) * 1024
 
 
+def _mx_type_width(raw: str) -> int:
+    """Resolve the literal MxFloat width used by the selected MX row geometry."""
+    match = re.fullmatch(
+        r"MxFloat\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([^)]*))?\)", raw.strip())
+    if not match:
+        raise ValueError(f"MX row type is not a literal MxFloat: {raw!r}")
+    exp, sig, count = (int(match.group(i)) for i in (1, 2, 3))
+    options = match.group(4) or ""
+    if options and options not in {"pad=false", "pad=true"}:
+        raise ValueError(f"MX row type has unrecognized options: {raw!r}")
+    width = count * (exp + sig)
+    return width if options == "pad=false" else 1 << (width - 1).bit_length()
+
+
+def _memory_rows(values: dict[str, str], geometry: dict[str, int],
+                 resources: dict[str, Any], gemmini_configs_source: str) -> dict[str, int]:
+    """Mirror the exact capacity/row equations used for gemmini_params.h."""
+    required = (
+        "val sp_width_projected = meshColumns * tileColumns * weightTypeProjected.getWidth",
+        "kb * 1024 * 8 / (sp_banks * sp_width_projected)",
+        "kb * 1024 * 8 / (acc_banks * meshColumns * tileColumns * accType.getWidth)",
+        "val ACC_ROWS        = ACC_BANKS * ACC_BANK_ROWS",
+    )
+    if any(marker not in gemmini_configs_source for marker in required):
+        raise ValueError("MX memory-row source equations changed")
+    columns = geometry["mesh_columns"] * geometry["tile_columns"]
+    sp_row_bits = columns * _mx_type_width(values["weightTypeProjected"])
+    acc_row_bits = columns * _mx_type_width(values["accType"])
+    sp_divisor = resources["scratchpad_banks"] * sp_row_bits
+    acc_divisor = resources["accumulator_banks"] * acc_row_bits
+    sp_bits = resources["scratchpad_bytes"] * 8
+    acc_bits = resources["accumulator_bytes"] * 8
+    if sp_bits % sp_divisor or acc_bits % acc_divisor:
+        raise ValueError("MX memory capacity does not divide into integral bank rows")
+    bank_rows = sp_bits // sp_divisor
+    acc_bank_rows = acc_bits // acc_divisor
+    if not bank_rows or not acc_bank_rows:
+        raise ValueError("MX memory capacity yields zero bank rows")
+    return {"scratchpad_row_bits": sp_row_bits,
+            "scratchpad_bank_rows": bank_rows,
+            "accumulator_row_bits": acc_row_bits,
+            "accumulator_bank_rows": acc_bank_rows,
+            "accumulator_rows": resources["accumulator_banks"] * acc_bank_rows}
+
+
 def _bool_field(values: dict[str, str], key: str, default: bool = False) -> bool:
     raw = values.get(key)
     if raw is None:
@@ -387,7 +491,7 @@ def _option_parameters(configs: dict[str, dict[str, str]], name: str, field: str
 
 
 def _hardware_options(configs: dict[str, dict[str, str]], name: str,
-                      source: str) -> dict[str, Any]:
+                      source: str, *, schema: str = SCHEMA) -> dict[str, Any]:
     scale = _option_parameters(configs, name, "scale_mem", "GemminiScalingFactorMemConfig",
                                _case_defaults(source, "GemminiScalingFactorMemConfig"))
     requant = _option_parameters(configs, name, "requantizer", "GemminiRequantizerConfig",
@@ -403,14 +507,22 @@ def _hardware_options(configs: dict[str, dict[str, str]], name: str,
                 ("subbank_line_bytes", "subbankLineSizeInBytes"),
                 ("subbanks_per_bank", "subbanksPerBank"), ("banks", "numBanks"))}
     if requant is not None:
-        result["requantizer"] = {
-            field: _scala_integer(requant[key]) for field, key in (
-                ("base_address", "baseAddr"), ("input_lanes", "numInputLanes"),
-                ("output_lanes", "numOutputLanes"),
-                ("min_output_bits", "minOutputBits"),
-                ("max_output_bits", "maxOutputBits"))}
-        # This field is absent from most overrides and then inherits the case-class default.
-        result["requantizer"]["gpu_input_lanes"] = _scala_integer(requant["numGPUInputLanes"])
+        if schema == SCHEMA_V3:
+            result["requantizer"] = {
+                field: _scala_integer(requant[key]) for field, key in (
+                    ("input_bits", "inputBits"),
+                    ("lut_update_regularity_width", "lutUpdateRegularityW"),
+                    ("lut_update_regularity_activation_input", "lutUpdateRegularityActIn"),
+                    ("lut_update_regularity_activation_output", "lutUpdateRegularityActOut"),
+                    ("pipeline_latency", "pipelineLatency"))}
+        else:
+            result["requantizer"] = {
+                field: _scala_integer(requant[key]) for field, key in (
+                    ("base_address", "baseAddr"), ("input_lanes", "numInputLanes"),
+                    ("output_lanes", "numOutputLanes"),
+                    ("min_output_bits", "minOutputBits"),
+                    ("max_output_bits", "maxOutputBits"))}
+            result["requantizer"]["gpu_input_lanes"] = _scala_integer(requant["numGPUInputLanes"])
     if lut is not None:
         projection = lut["projFormat"].strip()
         if projection not in {"LutFP6E3M2", "LutFP6E2M3", "LutFP8E4M3", "LutFP8E5M2"}:
@@ -512,9 +624,19 @@ def _chipyard_bodies(source: str) -> dict[str, str]:
 
 
 def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
+    """Return the historical v2 structural profiles without changing their bytes."""
+    return _export_profiles(root, schema=SCHEMA)
+
+
+def export_profiles_v3(root: Path) -> dict[str, dict[str, Any]]:
+    """Return current source-bound MX profiles, including rows and VPU lanes."""
+    return _export_profiles(root, schema=SCHEMA_V3)
+
+
+def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
     """Return structural profiles for every MX fragment and Chipyard wrapper."""
     root = root.resolve()
-    sources, hashes = _read_sources(root)
+    sources, hashes = _read_sources(root, schema=schema)
     configs = _resolve_array_configs(sources[_SCALA_FILES[0]])
     methods = _mx_config_methods(sources["mxgen/src/main/scala/mxgen/MxParameters.scala"])
     hardware_source = sources["src/main/scala/gemmini/MxConfigFragments.scala"]
@@ -542,7 +664,8 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
     fragments = _fragment_classes(sources[_SCALA_FILES[0]])
     wrappers = _chipyard_classes(sources[_SCALA_FILES[4]])
     wrapper_bodies = _chipyard_bodies(sources[_SCALA_FILES[4]])
-    if len(fragments) < 40 or len(wrappers) < 40:
+    min_fragments, min_wrappers = (40, 40) if schema == SCHEMA else (50, 10)
+    if len(fragments) < min_fragments or len(wrappers) < min_wrappers:
         raise ValueError("named MX configuration census shrank unexpectedly")
     source_identity = {"gemmini_revision": _revision(root),
                        "mxgen_revision": _revision(root / "mxgen"),
@@ -570,7 +693,7 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
         if lut_expression != "None" and not lut_expression.startswith("Some(GemminiLUTConfig("):
             raise ValueError(f"unrecognized LUT declaration in {fragment}")
         has_lut = (_bool_field(values, "enable_lut", True) and lut_expression != "None")
-        hardware = _hardware_options(configs, fragment, hardware_source)
+        hardware = _hardware_options(configs, fragment, hardware_source, schema=schema)
         if has_lut != (hardware["lut"] is not None):
             raise ValueError(f"MX LUT enable and construction disagree in {fragment}")
         mmio_raw = values.get("mx_mmio_base", "None")
@@ -588,8 +711,10 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
             vpu = {"units": _int_field(fields, "units"),
                    "exp_sub": _bool_field(fields, "expSub"),
                    "exp_sum": _bool_field(fields, "expSum")}
+            if schema == SCHEMA_V3:
+                vpu["lanes"] = _vpu_lanes(raw, vpu_abi)
         profile = {
-            "schema": SCHEMA,
+            "schema": schema,
             "name": name,
             "source": source_identity,
             "chipyard_config": chipyard_config,
@@ -632,6 +757,26 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
                                                      if values.get("requantizer", "None") != "None" else []),
             "qualification": "structural_unqualified",
         }
+        if schema == SCHEMA_V3:
+            profile["resources"].update(_memory_rows(
+                values, profile["geometry"], profile["resources"],
+                sources["src/main/scala/gemmini/GemminiConfigs.scala"]))
+            if vpu is not None:
+                scratchpad_source = sources["src/main/scala/gemmini/Scratchpad.scala"]
+                marker = ("require(spad_w == vpu_params.lanes * 16 && isPow2(sp_banks) && "
+                          "log2Ceil(sp_banks * sp_bank_entries) <= 15")
+                if (marker not in scratchpad_source or
+                        "val spad_w = (inputTypeProjected.getWidth *  block_cols)" not in scratchpad_source):
+                    raise ValueError("MX VPU scratchpad lane constraint changed")
+                resources = profile["resources"]
+                rows = resources["scratchpad_banks"] * resources["scratchpad_bank_rows"]
+                vpu_row_bits = (profile["geometry"]["mesh_columns"] *
+                                profile["geometry"]["tile_columns"] *
+                                _mx_type_width(values["inputTypeProjected"]))
+                if (resources["scratchpad_row_bits"] != vpu_row_bits or
+                        vpu_row_bits != vpu["lanes"] * 16 or
+                        resources["scratchpad_banks"].bit_count() != 1 or rows > 1 << 15):
+                    raise ValueError(f"{name} violates source-bound VPU scratchpad geometry")
         if not profile["legal_compute"]:
             raise ValueError(f"{name} has no legal MX compute tuple")
         result[name] = profile
@@ -641,8 +786,8 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
 def require_compute(profile: dict[str, Any], activation: str, weight: str,
                     *, pe_mode: int, activation_projection: str,
                     weight_projection: str) -> None:
-    if profile.get("schema") != SCHEMA:
-        raise ValueError("expected source-bound MX target profile v2")
+    if profile.get("schema") not in {SCHEMA, SCHEMA_V3}:
+        raise ValueError("expected source-bound MX target profile v2 or v3")
     selected = {"activation_format": activation, "weight_format": weight,
                 "activation_projection": activation_projection,
                 "weight_projection": weight_projection, "pe_mode": pe_mode}

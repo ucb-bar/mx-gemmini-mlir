@@ -6,16 +6,19 @@ import argparse
 import json
 from pathlib import Path
 
-from mx_gemmini_support.target_profile import export_profiles, profile_sha256
+from mx_gemmini_support.target_profile import export_profiles, export_profiles_v3, profile_sha256
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gemmini", required=True, type=Path)
     parser.add_argument("--config", help="Gemmini fragment or Chipyard config class; default exports all")
+    parser.add_argument("--schema", choices=("v2", "v3"), default="v2",
+                        help="profile schema; v3 includes current RTL lanes and memory rows")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
-    profiles = export_profiles(args.gemmini)
+    profiles = (export_profiles_v3(args.gemmini) if args.schema == "v3"
+                else export_profiles(args.gemmini))
     if args.config:
         if args.config not in profiles:
             parser.error(f"unknown MX config {args.config}")

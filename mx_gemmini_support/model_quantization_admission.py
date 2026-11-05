@@ -14,8 +14,9 @@ import json
 from pathlib import Path
 
 from .merlin_inventory import build_mx_worklist_from_merlin
-from .target_profile import (SCHEMA as PROFILE_SCHEMA, profile_sha256,
-                             require_compute, verify_profile_source)
+from .target_profile import (SCHEMA as PROFILE_SCHEMA, SCHEMA_V3 as PROFILE_SCHEMA_V3,
+                             profile_sha256, require_compute,
+                             validate_v3_resource_geometry, verify_profile_source)
 
 
 PLAN_SCHEMA = "npu_exploration.model_quantization_plan.v2"
@@ -147,9 +148,12 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
     """Return a structural receipt, or refuse a stale/changed/illegal model plan."""
     if not isinstance(source, str) or not source:
         raise ValueError("MX model admission needs captured MLIR text")
-    if (not isinstance(profile, dict) or profile.get("schema") != PROFILE_SCHEMA or
+    if (not isinstance(profile, dict) or profile.get("schema") not in
+            {PROFILE_SCHEMA, PROFILE_SCHEMA_V3} or
             profile.get("qualification") != "structural_unqualified"):
-        raise ValueError("MX model admission needs a structural target profile v2")
+        raise ValueError("MX model admission needs a structural target profile v2 or v3")
+    if profile["schema"] == PROFILE_SCHEMA_V3:
+        validate_v3_resource_geometry(profile)
     profile_source = profile.get("source")
     if (not isinstance(profile.get("geometry"), dict) or
             not isinstance(profile.get("resources"), dict) or

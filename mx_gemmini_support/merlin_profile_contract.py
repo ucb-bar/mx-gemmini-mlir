@@ -12,7 +12,8 @@ from pathlib import Path
 
 import yaml
 
-from .target_profile import SCHEMA, load_profile, profile_sha256
+from .target_profile import (SCHEMA, SCHEMA_V3, load_profile, profile_sha256,
+                             validate_v3_resource_geometry)
 
 
 _DIRECT_FORMATS = {
@@ -23,8 +24,10 @@ _DIRECT_FORMATS = {
 
 def contract_for_profile(profile: dict) -> dict:
     """Declare only direct operand modes and VPU work the profile establishes."""
-    if profile.get("schema") != SCHEMA or profile.get("qualification") != "structural_unqualified":
+    if profile.get("schema") not in {SCHEMA, SCHEMA_V3} or profile.get("qualification") != "structural_unqualified":
         raise ValueError("expected a structurally observed MX target profile")
+    if profile["schema"] == SCHEMA_V3:
+        validate_v3_resource_geometry(profile)
     source, resources = profile.get("source"), profile.get("resources")
     if not isinstance(source, dict) or not isinstance(resources, dict):
         raise ValueError("MX profile has no source or resource facts")
