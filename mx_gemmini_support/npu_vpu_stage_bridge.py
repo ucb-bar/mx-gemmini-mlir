@@ -155,6 +155,7 @@ def bind_rewrite_to_stage_policy(plan: dict, plan_bytes: bytes, source: str,
     if set(rows) != set(matrix):
         raise ValueError("npu matrix sites differ from stage catalog candidates")
     formats = {}
+    fp6_groups = {}
     for region, row in rows.items():
         choice = row["requested"]
         if choice["placement"] == "host":
@@ -166,10 +167,14 @@ def bind_rewrite_to_stage_policy(plan: dict, plan_bytes: bytes, source: str,
             formats[region] = "mxfp8"
         elif pair == ("fp4_e2m1", "fp4_e2m1", "direct", "direct", "quantize_float"):
             formats[region] = "mxfp4"
+        elif pair == ("fp6_e3m2", "fp6_e3m2", "lut", "lut", "quantize_float"):
+            formats[region] = "mxfp6"
+            fp6_groups[region] = run_recipe["quantizer"]["lut"]["group"]
         else:
             raise ValueError(f"stage policy cannot represent npu matrix format/source at {region}")
     policy = {
-        "schema": "mx_gemmini.execution_policy.v1",
+        "schema": ("mx_gemmini.execution_policy.v3" if fp6_groups
+                   else "mx_gemmini.execution_policy.v1"),
         "source_mlir_sha256": _sha(source.encode()),
         "profile_sha256": profile_sha256(profile),
         "matrix_formats": {region: formats[region] for region in sorted(formats)},
@@ -177,8 +182,12 @@ def bind_rewrite_to_stage_policy(plan: dict, plan_bytes: bytes, source: str,
             name: {region: ("vpu" if region in regions[name] else "host")
                    for region in sorted(vpu[name])} for name in VPU_CLASSES},
     }
+    if fp6_groups:
+        policy["matrix_lut_groups"] = dict(sorted(fp6_groups.items()))
+        policy["run_recipe_sha256"] = plan["run_recipe_sha256"]
     resolved = validate_policy(policy, source, profile)
-    if resolved["enabled_vpu_regions"] != regions:
+    if (resolved["enabled_vpu_regions"] != regions or
+            resolved["annotated_fp6_regions"] != frozenset(fp6_groups)):
         raise ValueError("stage policy changed admitted VPU placements")
     if out_dir.exists() or out_dir.is_symlink():
         raise ValueError("stage policy output directory must be new")
@@ -187,7 +196,9 @@ def bind_rewrite_to_stage_policy(plan: dict, plan_bytes: bytes, source: str,
     (out_dir / "execution_policy.json").write_bytes(policy_bytes)
     receipt = {
         "schema": "mx_gemmini.npu_stage_policy_bridge.v1",
-        "status": "source_site_policy_only_no_recipe_quantizer_binding_or_elf_or_spike_parity",
+        "status": ("source_site_fp6_annotation_only_no_merlin_stage_elf_or_spike_parity"
+                   if fp6_groups else
+                   "source_site_policy_only_no_recipe_quantizer_binding_or_elf_or_spike_parity"),
         "source_mlir_sha256": _sha(source.encode()),
         "rewritten_mlir_sha256": rewrite["rewritten_mlir_sha256"],
         "rewrite_receipt_sha256": _sha(receipt_path.read_bytes()),
@@ -196,7 +207,9 @@ def bind_rewrite_to_stage_policy(plan: dict, plan_bytes: bytes, source: str,
         "stage_source": "original_capture_before_post_offload_vpu_rewrite",
         "matrix_sites": len(formats),
         "vpu_sites": {name: len(regions[name]) for name in VPU_CLASSES},
-        "quantizer_binding": "not_applied_by_merlin_execution_policy",
+        "fp6_lut_groups": dict(sorted(fp6_groups.items())),
+        "quantizer_binding": ("recipe_sha_only_lut_values_not_in_merlin_stage"
+                              if fp6_groups else "not_applied_by_merlin_execution_policy"),
     }
     (out_dir / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt

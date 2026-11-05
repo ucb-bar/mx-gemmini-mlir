@@ -9,6 +9,7 @@ from pathlib import Path
 from .merlin_inventory import build_mx_worklist_from_merlin
 from .model_precision_plan import build_model_precision_plan
 from .target_profile import profile_sha256
+from .target_profile import require_compute
 
 
 _CLASSES = ("softmax", "add", "elementwise", "unary", "reduce")
@@ -98,18 +99,45 @@ def make_policy(source: str, profile: dict, *, preserve_singleton_reductions=Fal
 def validate_policy(data: dict, source: str, profile: dict) -> dict:
     """Reject stale, partial, unsupported, or silently ignored decisions."""
     matrix, vpu, _ = eligible_sites(source, profile)
+    fp6_annotation = isinstance(data, dict) and data.get("schema") == "mx_gemmini.execution_policy.v3"
+    fields = {"schema", "source_mlir_sha256", "profile_sha256",
+              "matrix_formats", "vpu_placements"}
+    if fp6_annotation:
+        fields |= {"matrix_lut_groups", "run_recipe_sha256"}
     if (not isinstance(data, dict) or
-            set(data) != {"schema", "source_mlir_sha256", "profile_sha256",
-                         "matrix_formats", "vpu_placements"} or
-            data["schema"] not in {"mx_gemmini.execution_policy.v1", "mx_gemmini.execution_policy.v2"} or
+            set(data) != fields or
+            data["schema"] not in {"mx_gemmini.execution_policy.v1", "mx_gemmini.execution_policy.v2",
+                                   "mx_gemmini.execution_policy.v3"} or
             data["source_mlir_sha256"] != hashlib.sha256(source.encode()).hexdigest() or
             data["profile_sha256"] != profile_sha256(profile)):
         raise ValueError("MX execution policy differs from the captured source or profile")
     formats = data["matrix_formats"]
+    if not isinstance(formats, dict):
+        raise ValueError("MX execution policy has invalid matrix site formats")
     host_eligible = (singleton_matrix_regions(source, matrix)
                      if data["schema"] == "mx_gemmini.execution_policy.v2" else ())
+    if fp6_annotation:
+        groups = data["matrix_lut_groups"]
+        fp6_regions = {region for region, fmt in formats.items() if fmt == "mxfp6"}
+        if (not fp6_regions or not isinstance(groups, dict) or set(groups) != fp6_regions or
+                any(type(group) is not int or not 0 <= group < 32
+                    for group in groups.values()) or
+                not isinstance(data["run_recipe_sha256"], str) or
+                len(data["run_recipe_sha256"]) != 64 or
+                any(c not in "0123456789abcdef" for c in data["run_recipe_sha256"])):
+            raise ValueError("MX FP6 stage annotation lacks an exact recipe and LUT group")
+        if any(matrix.get(region) != "mxfp4" for region in fp6_regions):
+            raise ValueError("MX FP6 stage annotation needs a source-eligible dense site")
+        try:
+            require_compute(profile, "fp6_e3m2", "fp6_e3m2", pe_mode=4,
+                            activation_projection="lut", weight_projection="lut")
+        except ValueError as exc:
+            raise ValueError("MX FP6 stage annotation lacks a legal source compute mode") from exc
+    else:
+        fp6_regions = set()
     if not isinstance(formats, dict) or set(formats) != set(matrix) or any(
-            value not in (({"mxfp4", "mxfp8"} if matrix[region] == "mxfp4"
+            value not in (({"mxfp4", "mxfp8"} | ({"mxfp6"} if region in fp6_regions else set())
+                           if matrix[region] == "mxfp4"
                            else {"mxfp8"}) | ({"host"} if region in host_eligible else set()))
             for region, value in formats.items()):
         raise ValueError("MX execution policy has invalid matrix site formats")
@@ -126,6 +154,7 @@ def validate_policy(data: dict, source: str, profile: dict) -> dict:
                                             if fmt == "host"),
         "precision_overrides": {region: "mxfp8" for region, fmt in formats.items()
                                 if matrix[region] == "mxfp4" and fmt == "mxfp8"},
+        "annotated_fp6_regions": frozenset(fp6_regions),
         "enabled_vpu_regions": {name: frozenset(
             region for region, route in placements[name].items() if route == "vpu")
             for name in _CLASSES},

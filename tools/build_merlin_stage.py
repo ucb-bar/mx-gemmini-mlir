@@ -432,6 +432,9 @@ def main() -> None:
         policy_path = args.execution_policy.resolve(strict=True)
         execution_policy, resolved_policy = load_policy(
             policy_path, source_text, profile)
+        if resolved_policy["annotated_fp6_regions"]:
+            parser.error("FP6 execution policy is a source-bound annotation; "
+                         "Merlin whole-stage FP6 catalog lowering is not yet qualified")
         enabled_site_regions = resolved_policy["enabled_vpu_regions"]
         host_singleton_regions = resolved_policy["host_singleton_regions"]
     if args.precision_overrides is not None and args.precision_overrides.is_symlink():

@@ -51,6 +51,38 @@ def test_policy_binds_all_matrix_and_vpu_sites(monkeypatch) -> None:
         validate_policy(changed, SOURCE, PROFILE)
 
 
+def test_fp6_stage_annotation_is_source_profile_and_recipe_bound(monkeypatch) -> None:
+    monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
+    source = gzip.decompress((ROOT / "docs/evidence/"
+                              "model2mlir_small_llama_precision_e9ded36_266c593/"
+                              "small_llama.model2mlir.mlir.gz").read_bytes()).decode()
+    profile = load_profile(ROOT.parent / "npu-exploration/examples/spike_model_slice/"
+                           "target_profile.v3.json")
+    policy = make_policy(source, profile)
+    policy.update(schema="mx_gemmini.execution_policy.v3",
+                  matrix_lut_groups={"matmul_6": 3}, run_recipe_sha256="a" * 64)
+    policy["matrix_formats"]["matmul_6"] = "mxfp6"
+    assert validate_policy(policy, source, profile)["annotated_fp6_regions"] == {"matmul_6"}
+    for mutate, message in (
+            (lambda row: row["matrix_lut_groups"].update(matmul_6=32), "LUT group"),
+            (lambda row: row.update(run_recipe_sha256="bad"), "recipe"),
+            (lambda row: row["matrix_formats"].update(matmul_6="mxfp8"), "LUT group"),
+            (lambda row: (row["matrix_formats"].update(batch_matmul_0="mxfp6"),
+                          row["matrix_lut_groups"].update(batch_matmul_0=3)), "dense site")):
+        changed = copy.deepcopy(policy)
+        mutate(changed)
+        with pytest.raises(ValueError, match=message):
+            validate_policy(changed, source, profile)
+    unsupported = copy.deepcopy(profile)
+    unsupported["legal_compute"] = [row for row in profile["legal_compute"]
+                                    if row["activation_format"] != "fp6_e3m2"]
+    policy_for_unsupported = copy.deepcopy(policy)
+    from mx_gemmini_support.target_profile import profile_sha256
+    policy_for_unsupported["profile_sha256"] = profile_sha256(unsupported)
+    with pytest.raises(ValueError, match="legal source compute mode"):
+        validate_policy(policy_for_unsupported, source, unsupported)
+
+
 @pytest.mark.parametrize("region", ("opaque", "opaque#add_metadata", "opaque#mul_metadata"))
 @pytest.mark.parametrize("operation,primitive,placement", (
     ("mul", "arith.mulf", "vpu"),
