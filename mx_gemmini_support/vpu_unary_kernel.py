@@ -30,8 +30,9 @@ def sigmoid_steps(*, source_row=0, temporary_row=0x1000, result_row=0x2000):
     )
 
 
-def _issue(profile: dict, *, elements: int, operation: str,
-           symbol: str) -> str:
+def unary_issue_commands(profile: dict, *, elements: int,
+                         operation: str) -> tuple:
+    """The exact typed command stream used by the generated unary issuer."""
     lanes = model_vpu_lanes(profile)
     assert lanes is not None
     row_bytes = lanes * 2
@@ -120,8 +121,15 @@ def _issue(profile: dict, *, elements: int, operation: str,
                                        result_row + start,
                                        rows=min(16, rows - start), cols=row_bytes))
     commands.append(Fence())
-    return emit_c(commands, transport="rocket_rocc",
-                  buffers=("input", "result"), symbol=symbol, internal=True)
+    return tuple(commands)
+
+
+def _issue(profile: dict, *, elements: int, operation: str,
+           symbol: str) -> str:
+    return emit_c(list(unary_issue_commands(profile, elements=elements,
+                                             operation=operation)),
+                  transport="rocket_rocc", buffers=("input", "result"),
+                  symbol=symbol, internal=True)
 
 
 def emit_vpu_unary(profile: dict, *, shape: tuple[int, ...], dtype: str,
