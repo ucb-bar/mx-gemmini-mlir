@@ -21,38 +21,52 @@ class RowSoftmaxKernel:
     padded_width: int
     rows_per_chunk: int
     vpu_steps: tuple[str, ...]
+    lanes: int = 8
 
 
-def _issuer(profile: dict, *, rows: int, rlen: int, symbol: str) -> str:
+def _issuer(profile: dict, *, rows: int, rlen: int, symbol: str,
+            row_bytes: int) -> str:
     spad_rows = rows * rlen
     if spad_rows > 1024:
         raise ValueError("softmax score tile overlaps its probability scratchpad")
-    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+    if row_bytes == 16:
+        max_base, exp_base, sum_base, result_base = 0x1000, 0x2000, 0x3000, 0x0400
+    else:
+        max_base = spad_rows
+        exp_base = max_base + rows
+        sum_base = exp_base + spad_rows
+        result_base = sum_base + rows
+        total_rows = profile["resources"]["scratchpad_bytes"] // row_bytes
+        if result_base + spad_rows > total_rows:
+            raise ValueError("softmax VPU score, temporary, and result windows exceed scratchpad")
+    commands = [_cmd(7, 0, 0), _config_ld(row_bytes, dim=row_bytes),
+                _config_st(row_bytes)]
     for start in range(0, spad_rows, 16):
         count = min(16, spad_rows - start)
-        commands.append(_transfer_rect(2, "score", start * 16, start,
-                                       rows=count))
+        commands.append(_transfer_rect(2, "score", start * row_bytes, start,
+                                       rows=count, cols=row_bytes))
     commands.extend((
         vpu_command(profile, kind="rmax", src1_row=0, src2_row=0,
-                    dst_row=0x1000, rows=spad_rows, reduction_length=rlen),
-        vpu_command(profile, kind="sub", src1_row=0, src2_row=0x1000,
-                    dst_row=0x2000, rows=spad_rows, reduction_length=rlen,
+                    dst_row=max_base, rows=spad_rows, reduction_length=rlen),
+        vpu_command(profile, kind="sub", src1_row=0, src2_row=max_base,
+                    dst_row=exp_base, rows=spad_rows, reduction_length=rlen,
                     broadcast=True),
-        vpu_command(profile, kind="exp", src1_row=0x2000, src2_row=0,
-                    dst_row=0x2000, rows=spad_rows),
-        vpu_command(profile, kind="rsum", src1_row=0x2000, src2_row=0,
-                    dst_row=0x3000, rows=spad_rows, reduction_length=rlen),
-        vpu_command(profile, kind="rcp", src1_row=0x3000, src2_row=0,
-                    dst_row=0x3000, rows=rows),
-        vpu_command(profile, kind="mul", src1_row=0x2000, src2_row=0x3000,
-                    dst_row=0x0400, rows=spad_rows, reduction_length=rlen,
+        vpu_command(profile, kind="exp", src1_row=exp_base, src2_row=0,
+                    dst_row=exp_base, rows=spad_rows),
+        vpu_command(profile, kind="rsum", src1_row=exp_base, src2_row=0,
+                    dst_row=sum_base, rows=spad_rows, reduction_length=rlen),
+        vpu_command(profile, kind="rcp", src1_row=sum_base, src2_row=0,
+                    dst_row=sum_base, rows=rows),
+        vpu_command(profile, kind="mul", src1_row=exp_base, src2_row=sum_base,
+                    dst_row=result_base, rows=spad_rows, reduction_length=rlen,
                     broadcast=True),
         Fence(),
     ))
     for start in range(0, spad_rows, 16):
         count = min(16, spad_rows - start)
-        commands.append(_transfer_rect(3, "result", start * 16,
-                                       0x0400 + start, rows=count))
+        commands.append(_transfer_rect(3, "result", start * row_bytes,
+                                       result_base + start, rows=count,
+                                       cols=row_bytes))
     commands.append(Fence())
     return emit_c(commands, transport="rocket_rocc",
                   buffers=("score", "result"), symbol=symbol, internal=True)
@@ -61,7 +75,8 @@ def _issuer(profile: dict, *, rows: int, rlen: int, symbol: str) -> str:
 def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
                          row_width: int, symbol: str,
                          implementation: str = "bf16",
-                         packed_matrix_rows: int | None = None) -> RowSoftmaxKernel:
+                         packed_matrix_rows: int | None = None,
+                         lanes: int | None = None) -> RowSoftmaxKernel:
     """Emit a freestanding f32-pointer softmax with explicit BF16 rounding.
 
     The function is compiled for static source extents and processes arbitrary
@@ -69,9 +84,23 @@ def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
     rewrite: a caller must still bind a source softmax to this function.
     """
     if (profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16 or
             not profile.get("resources", {}).get("vpu")):
         raise ValueError("row softmax needs the selected DIM16 Rocket MX VPU")
+    row_bytes = profile.get("geometry", {}).get("mesh_columns")
+    if row_bytes not in {4, 8, 16, 32}:
+        raise ValueError("row softmax needs DIM4, DIM8, DIM16, or DIM32 VPU row transfers")
+    capacity = profile.get("resources", {}).get("scratchpad_bytes")
+    if type(capacity) is not int or capacity <= 0 or capacity % row_bytes:
+        raise ValueError("row softmax scratchpad capacity does not fit selected row bytes")
+    if lanes is None:
+        if row_bytes != 16:
+            raise ValueError("non-DIM16 softmax needs an explicit source-derived VPU lane count")
+        lanes = 8  # Historical DIM16 profile predates the lane field.
+    if type(lanes) is not int or lanes not in {2, 4, 8, 16} or row_bytes != 2 * lanes:
+        raise ValueError("softmax VPU lanes must match the selected MX scratchpad row bytes")
+    if row_bytes != 16 and (packed_matrix_rows is not None or
+                            implementation == "f32_striped16"):
+        raise ValueError("packed and striped softmax layouts remain DIM16-only")
     if (type(logical_rows) is not int or logical_rows <= 0 or
             type(row_width) is not int or row_width <= 0 or row_width > 8184 or
             not symbol.isidentifier() or not symbol.isascii()):
@@ -85,9 +114,10 @@ def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
     if implementation != "bf16":
         return _emit_exp_softmax(profile, logical_rows, row_width, symbol,
                                  packed_matrix_rows=packed_matrix_rows,
-                                 striped=implementation == "f32_striped16")
-    padded = (row_width + 7) // 8 * 8
-    rlen = padded // 8
+                                 striped=implementation == "f32_striped16",
+                                 row_bytes=row_bytes, lanes=lanes)
+    padded = (row_width + lanes - 1) // lanes * lanes
+    rlen = padded // lanes
     if rlen > 1023:
         raise ValueError("softmax reduction exceeds VPU encoding")
     rows_per_chunk = min(logical_rows, 1024 // rlen)
@@ -96,6 +126,7 @@ def emit_vpu_row_softmax(profile: dict, *, logical_rows: int,
     tail = logical_rows % rows_per_chunk
     sizes = (rows_per_chunk,) if not tail else (rows_per_chunk, tail)
     issuers = "\n".join(_issuer(profile, rows=count, rlen=rlen,
+                                  row_bytes=row_bytes,
                                   symbol=f"{symbol}_issue_{count}")
                         for count in sizes)
     dispatch = "\n".join(
@@ -145,11 +176,11 @@ void {symbol}(const float *input, float *output) {{
 '''
     return RowSoftmaxKernel(source, logical_rows, row_width, padded,
                             rows_per_chunk,
-                            ("rmax", "sub", "exp", "rsum", "rcp", "mul"))
+                            ("rmax", "sub", "exp", "rsum", "rcp", "mul"), lanes)
 
 
 def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix_rows=None,
-                      striped=False):
+                      striped=False, row_bytes: int = 16, lanes: int = 8):
     """Batch vector exponentials while retaining FP32 max, sum and division.
 
     This is an explicit numerical alternative to the entirely BF16 VPU
@@ -161,23 +192,30 @@ def _emit_exp_softmax(profile, logical_rows, row_width, symbol, *, packed_matrix
                    or packed_matrix_rows % 16 or logical_rows % packed_matrix_rows
                    or row_width % 32 or logical_rows*row_width > 0x7fffffff):
         raise ValueError("packed softmax requires complete mesh-aligned FP8 matrix batches")
-    padded = (row_width + 7) // 8 * 8
+    padded = (row_width + lanes - 1) // lanes * lanes
     per_chunk = min(logical_rows, 8192 // padded)
+    if not per_chunk:
+        raise ValueError("hybrid softmax row exceeds the selected host staging buffer")
     sizes = tuple(dict.fromkeys((per_chunk, logical_rows % per_chunk)))
     issuers = []
     for count in sizes:
         if not count:
             continue
-        rows = count * padded // 8
-        commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+        rows = count * padded // lanes
+        result_base = 0x2000 if row_bytes == 16 else rows
+        if result_base + rows > profile["resources"]["scratchpad_bytes"] // row_bytes:
+            raise ValueError("hybrid softmax source/result windows exceed scratchpad")
+        commands = [_cmd(7, 0, 0), _config_ld(row_bytes, dim=row_bytes),
+                    _config_st(row_bytes)]
         for start in range(0, rows, 16):
-            commands.append(_transfer_rect(2, "score", start * 16, start,
-                                            rows=min(16, rows - start)))
+            commands.append(_transfer_rect(2, "score", start * row_bytes, start,
+                                            rows=min(16, rows - start), cols=row_bytes))
         commands.extend((vpu_command(profile, kind="exp", src1_row=0, src2_row=0,
-                                      dst_row=0x2000, rows=rows), Fence()))
+                                      dst_row=result_base, rows=rows), Fence()))
         for start in range(0, rows, 16):
-            commands.append(_transfer_rect(3, "result", start * 16, 0x2000 + start,
-                                            rows=min(16, rows - start)))
+            commands.append(_transfer_rect(3, "result", start * row_bytes,
+                                            result_base + start,
+                                            rows=min(16, rows - start), cols=row_bytes))
         commands.append(Fence())
         issuers.append(emit_c(commands, transport="rocket_rocc", buffers=("score", "result"),
                              symbol=f"{symbol}_exp_{count}", internal=True))
@@ -275,4 +313,5 @@ void {symbol}(const float *input, {output_type} *output) {{
   }}
 }}
 '''
-    return RowSoftmaxKernel(source, logical_rows, row_width, padded, per_chunk, ("exp",))
+    return RowSoftmaxKernel(source, logical_rows, row_width, padded, per_chunk,
+                            ("exp",), lanes)
