@@ -100,8 +100,9 @@ VPU_OPCODES = {
 
 
 def _mx_rows(profile: Mapping, *, vpu: bool = False) -> int:
-    if profile.get("schema") != "mx_gemmini.target_profile.v2":
-        raise ValueError("MX vector commands need a source-bound target profile v2")
+    schema = profile.get("schema")
+    if schema not in {"mx_gemmini.target_profile.v2", "mx_gemmini.target_profile.v3"}:
+        raise ValueError("MX vector commands need a source-bound target profile v2 or v3")
     resources = profile.get("resources", {})
     # SPAD_REQUANT remains DIM16-only. VPU row instructions admit the MX
     # scratchpad row widths that have a BF16 lane transfer layout below.
@@ -112,7 +113,19 @@ def _mx_rows(profile: Mapping, *, vpu: bool = False) -> int:
     capacity = resources.get("scratchpad_bytes")
     if type(capacity) is not int or capacity <= 0 or capacity % row_bytes:
         raise ValueError("MX vector scratchpad capacity does not fit selected row bytes")
-    return capacity // row_bytes
+    limit = capacity // row_bytes
+    if schema == "mx_gemmini.target_profile.v3":
+        banks = resources.get("scratchpad_banks")
+        bank_rows = resources.get("scratchpad_bank_rows")
+        if (type(banks) is not int or type(bank_rows) is not int or
+                banks <= 0 or bank_rows <= 0 or banks * bank_rows != limit or
+                resources.get("scratchpad_row_bits") != row_bytes * 8):
+            raise ValueError("MX v3 vector row geometry differs from source-derived scratchpad")
+        if vpu:
+            cfg = resources.get("vpu_config")
+            if not isinstance(cfg, dict) or cfg.get("lanes") != row_bytes // 2:
+                raise ValueError("MX v3 VPU lanes differ from source-derived row width")
+    return limit
 
 
 def _row_span(label: str, start: int, count: int, limit: int) -> None:
