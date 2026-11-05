@@ -88,6 +88,34 @@ the typed dialect workflow. After changing profiles, regenerate the
 execution policy and rebuild the stage objects and session executable.
 The Spike extension or FireSim hardware must implement the selected profile.
 
+## Recheck an npu-exploration model run plan
+
+The npu-exploration `--run` recipe owns the user's quantization choices. After
+its `plan_model_quantization` command writes `model_quantization_plan.json`,
+reopen that plan against the exact captured MLIR and MX target profile:
+
+```bash
+PYTHONPATH=/path/to/merlin/src:. python3 -m tools.admit_model_quantization_plan \
+  --plan /path/to/model_quantization_plan.json \
+  --profile /path/to/mx-target-profile.json \
+  --mlir /path/to/model.mlir.gz \
+  --run /path/to/model-run.json \
+  --out /path/to/new-admission.json
+```
+
+Pass `--rtl-root /path/to/gemmini` when the matching Gemmini and MxGen source
+closure is available; the profile is then checked against those source files.
+`--run` rechecks the recipe's declared digest without interpreting its numeric
+policy. Omitting either optional source records that limit in the receipt.
+The admission receipt verifies the source and profile hashes, regenerated
+Merlin site census, selected hardware mode, physical operand encoding, and
+padding. It leaves the quantizer policy opaque. Its status is
+`structural_admission_only_no_executable`: it does not create operand bytes,
+an execution policy, a linked model, or Spike parity. The current whole-model
+catalog still accepts only qualified direct symmetric FP4/FP8 choices; it
+must explicitly reject other run choices until its operand and issuer paths
+are extended.
+
 ## Find the compiler sites belonging to a layer
 
 The executable backend uses a JSON `mx_gemmini.execution_policy.v1` or `v2`
