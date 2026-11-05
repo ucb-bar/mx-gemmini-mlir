@@ -52,8 +52,10 @@ def _plan(source: str, profile: dict, worklist: dict) -> dict:
         "profile_name": profile["name"], "profile_sha256": profile_sha256(profile),
         "profile_source": profile["source"],
         "source_mlir_sha256": hashlib.sha256(source.encode()).hexdigest(),
-        "quantizer": {"block_size": 32, "scale_encoding": "e8m0",
-                      "user_selected_rule": "opaque_to_structural_admission"},
+        "quantizer": {"kind": "external_wire", "provider": "custom.user.rule",
+                      "implementation_sha256": "c" * 64,
+                      "settings": {"user_selected_rule": "opaque_to_structural_admission"},
+                      "activation_runtime": "host_prologue"},
         "sites": sites,
     }
 
@@ -140,10 +142,9 @@ class ModelQuantizationAdmissionTest(unittest.TestCase):
         bad["sites"][0]["requested"]["weight_format"] = "fp4_e2m1"
         with self.assertRaisesRegex(ValueError, "invalid compute mode"):
             self.admit(bad)
-        bad = copy.deepcopy(good)
-        bad["quantizer"]["block_size"] = 64
-        with self.assertRaisesRegex(ValueError, "E8M0/32 wire blocks"):
-            self.admit(bad)
+        custom = copy.deepcopy(good)
+        custom["quantizer"]["settings"]["different_numeric_rule"] = {"anything": 64}
+        self.assertEqual(self.admit(custom)["site_count"], 19)
 
     def test_explicit_host_stays_host_without_numeric_assumption(self):
         plan = self.fixture()

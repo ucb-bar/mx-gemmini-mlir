@@ -134,11 +134,8 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
         if hashlib.sha256(run_bytes).hexdigest() != run_sha:
             raise ValueError("selected run recipe differs from model plan digest")
     quantizer = plan.get("quantizer")
-    if (not isinstance(quantizer, dict) or
-            type(quantizer.get("block_size")) is not int or
-            quantizer["block_size"] != 32 or
-            quantizer.get("scale_encoding") != "e8m0"):
-        raise ValueError("MX model plan quantizer must produce E8M0/32 wire blocks")
+    if not isinstance(quantizer, dict) or not quantizer:
+        raise ValueError("MX model plan needs a declared user quantizer")
     worklist = build_mx_worklist_from_merlin(source, profile)
     if (worklist.get("source_mlir_sha256") != source_sha or
             worklist.get("profile_sha256") != profile_sha or
