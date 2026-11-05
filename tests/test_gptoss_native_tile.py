@@ -74,6 +74,25 @@ class NativeTileTests(unittest.TestCase):
         self.assertEqual(manifest["b_codes_sha256"], _sha(codes))
         self.assertIn("No direct BF16", manifest["execution_refusal"])
 
+    def test_v3_profile_admits_direct_fp4_tile(self):
+        profile = {
+            "schema": "mx_gemmini.target_profile.v3",
+            "legal_compute": [{
+                "activation_format": "fp4_e2m1", "weight_format": "fp4_e2m1",
+                "activation_projection": "direct", "weight_projection": "direct",
+                "pe_mode": 0,
+            }],
+        }
+        raw = (json.dumps(self.receipt, sort_keys=True) + "\n").encode()
+        codes, scales, manifest = bind_native_expert_tile(
+            self.receipt, raw, self.root, projection="gate_up", expert_index=0,
+            output_start=0, output_count=32, block_start=0, block_count=2,
+            activation_bf16=self.activation, activation_m=2,
+            expected_revision="a" * 40, profile=profile)
+        self.assertEqual(manifest["hardware_mode"], profile["legal_compute"][0])
+        self.assertEqual(manifest["b_codes_sha256"], _sha(codes))
+        self.assertEqual(manifest["b_scales_sha256"], _sha(scales))
+
     def test_rejects_modified_extracted_payload(self):
         path = self.root / "blocks.safetensors"
         raw = bytearray(path.read_bytes())

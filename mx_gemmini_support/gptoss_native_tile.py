@@ -162,8 +162,9 @@ def bind_native_expert_tile(extractor_receipt: dict, receipt_bytes: bytes,
         raise ValueError("activation operand must be M x selected K row-major BF16 bytes")
     mode = None
     if profile is not None:
-        if profile.get("schema") != "mx_gemmini.target_profile.v2":
-            raise ValueError("native tile needs an MX target profile v2")
+        if profile.get("schema") not in {"mx_gemmini.target_profile.v2",
+                                         "mx_gemmini.target_profile.v3"}:
+            raise ValueError("native tile needs an MX target profile v2 or v3")
         candidates = [row for row in profile.get("legal_compute", []) if
                       row.get("activation_format") == "fp4_e2m1" and
                       row.get("weight_format") == "fp4_e2m1" and
