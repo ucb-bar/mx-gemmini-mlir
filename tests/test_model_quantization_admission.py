@@ -226,6 +226,11 @@ class ModelQuantizationAdmissionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "VPU policy differs"):
             validate_model_quantization_plan(selected, self.source, self.profile,
                                              run_recipe=selected_recipe)
+        omitted = self.fixture()
+        omitted["run_recipe_sha256"] = hashlib.sha256(canonical).hexdigest()
+        with self.assertRaisesRegex(ValueError, "omits VPU choices"):
+            validate_model_quantization_plan(omitted, self.source, self.profile,
+                                             run_recipe=selected_recipe)
 
 
 if __name__ == "__main__":

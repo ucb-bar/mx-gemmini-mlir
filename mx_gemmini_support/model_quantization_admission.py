@@ -94,6 +94,8 @@ def _validate_vpu_choices(plan: dict, source: str, profile: dict,
                           run_recipe: dict | None) -> dict | None:
     """Rebuild the exact VPU site census from source instead of trusting rows."""
     if "vpu" not in plan and "vpu_sites" not in plan:
+        if run_recipe is not None and "vpu" in run_recipe:
+            raise ValueError("MX model plan omits VPU choices from selected run recipe")
         return None
     policy, rows = plan.get("vpu"), plan.get("vpu_sites")
     if (not isinstance(policy, dict) or set(policy) != {"default", "overrides"} or
