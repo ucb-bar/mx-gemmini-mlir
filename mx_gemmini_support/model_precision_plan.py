@@ -82,11 +82,12 @@ def build_model_precision_plan(worklist: dict, profile: dict, *,
         aligned = shape[1] % 32 == 0 and shape[2] % 32 == 0
         preferred = "mxfp4" if ordinary else "mxfp8"
         preferred_legal = _legal(profile, preferred)
-        can_pad = (ordinary and profile["geometry"]["mesh_rows"] == 16 and
-                   profile["geometry"]["mesh_columns"] == 16 and
-                   preferred_legal)
+        mesh_dim = profile["geometry"]["mesh_rows"]
+        can_pad = (ordinary and mesh_dim in (4, 8, 16, 32) and
+                   profile["geometry"]["mesh_columns"] == mesh_dim and
+                   _legal(profile, "mxfp8"))
         selected = (preferred if (aligned or can_pad) and preferred_legal else
-                    "mxfp8" if aligned else "host")
+                    "mxfp8" if aligned or can_pad else "host")
         override = overrides.get(site["region_id"])
         if override is not None:
             if not ordinary or selected != "mxfp4":
