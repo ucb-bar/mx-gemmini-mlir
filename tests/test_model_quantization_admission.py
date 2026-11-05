@@ -189,6 +189,44 @@ class ModelQuantizationAdmissionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "LUT hardware resources"):
             self.admit(plan, profile=profile)
 
+    def test_vpu_source_census_and_recipe_routes_are_admitted_exactly(self):
+        from mx_gemmini_support.execution_policy import eligible_sites
+
+        plan = self.fixture()
+        _, eligible, singletons = eligible_sites(self.source, self.profile)
+        self.assertEqual(len(eligible["softmax"]), 2)
+        self.assertFalse(singletons)
+        plan["vpu"] = {"default": "vpu", "overrides": {}}
+        plan["vpu_sites"] = [
+            {"operation_class": name, "region_id": region, "placement": "vpu",
+             "explicit_override": False,
+             "status": "structural_candidate_not_executable", "host_reason": None}
+            for name in sorted(eligible) for region in sorted(eligible[name])
+        ]
+        receipt = self.admit(plan)
+        self.assertEqual(receipt["vpu_site_status_counts"], {
+            "site_count": 83, "vpu_selected": 83, "host_selected": 0})
+        changed = copy.deepcopy(plan)
+        changed["vpu_sites"][0]["placement"] = "host"
+        with self.assertRaisesRegex(ValueError, "VPU site census or placement"):
+            self.admit(changed)
+        missing = copy.deepcopy(plan)
+        missing["vpu_sites"].pop()
+        with self.assertRaisesRegex(ValueError, "VPU site census or placement"):
+            self.admit(missing)
+        unknown = copy.deepcopy(plan)
+        unknown["vpu"]["overrides"] = {"not_a_source_region": "host"}
+        with self.assertRaisesRegex(ValueError, "VPU override names"):
+            self.admit(unknown)
+        selected_recipe = {"vpu": {"default": "host", "overrides": {}}}
+        canonical = (json.dumps(selected_recipe, sort_keys=True,
+                                separators=(",", ":")) + "\n").encode()
+        selected = copy.deepcopy(plan)
+        selected["run_recipe_sha256"] = hashlib.sha256(canonical).hexdigest()
+        with self.assertRaisesRegex(ValueError, "VPU policy differs"):
+            validate_model_quantization_plan(selected, self.source, self.profile,
+                                             run_recipe=selected_recipe)
+
 
 if __name__ == "__main__":
     unittest.main()

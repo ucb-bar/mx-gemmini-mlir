@@ -90,6 +90,49 @@ def _padded_shape(shape: list[int], decision: dict, profile: dict) -> list[int]:
                             for value, tile in zip((m, n, k), tiles, strict=True))]
 
 
+def _validate_vpu_choices(plan: dict, source: str, profile: dict,
+                          run_recipe: dict | None) -> dict | None:
+    """Rebuild the exact VPU site census from source instead of trusting rows."""
+    if "vpu" not in plan and "vpu_sites" not in plan:
+        return None
+    policy, rows = plan.get("vpu"), plan.get("vpu_sites")
+    if (not isinstance(policy, dict) or set(policy) != {"default", "overrides"} or
+            policy["default"] not in {"vpu", "host"} or
+            not isinstance(policy["overrides"], dict) or
+            not isinstance(rows, list)):
+        raise ValueError("MX model plan has a malformed VPU policy or site list")
+    if run_recipe is not None and run_recipe.get("vpu") != policy:
+        raise ValueError("MX model plan VPU policy differs from selected run recipe")
+    from .execution_policy import eligible_sites
+    _, eligible, singleton_adds = eligible_sites(source, profile)
+    by_region = {region: name for name, sites in eligible.items() for region in sites}
+    overrides = policy["overrides"]
+    if (any(not isinstance(region, str) or not region or route not in {"vpu", "host"}
+            for region, route in overrides.items()) or
+            set(overrides) - set(by_region)):
+        raise ValueError("MX model plan VPU override names an invalid source site")
+    if any(overrides.get(region) == "vpu" for region in singleton_adds):
+        raise ValueError("MX model plan cannot route singleton scalar adds to VPU")
+    expected = []
+    for name in sorted(eligible):
+        for region in sorted(eligible[name]):
+            singleton = name == "add" and region in singleton_adds
+            route = "host" if singleton else overrides.get(region, policy["default"])
+            expected.append({
+                "operation_class": name, "region_id": region,
+                "placement": route, "explicit_override": region in overrides,
+                "status": ("structural_candidate_not_executable" if route == "vpu"
+                           else "host_selected"),
+                "host_reason": ("singleton_add_scalar_broadcast" if singleton else
+                                "user_selected" if route == "host" else None),
+            })
+    if rows != expected:
+        raise ValueError("MX model plan VPU site census or placement differs from captured source")
+    return {"site_count": len(expected),
+            "vpu_selected": sum(row["placement"] == "vpu" for row in expected),
+            "host_selected": sum(row["placement"] == "host" for row in expected)}
+
+
 def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
                                      rtl_root: Path | None = None,
                                      run_recipe: dict | None = None) -> dict:
@@ -141,6 +184,7 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
             worklist.get("profile_sha256") != profile_sha or
             worklist.get("legal_mx_compute_modes") != profile.get("legal_compute")):
         raise ValueError("regenerated Merlin worklist differs from captured source or profile")
+    vpu_counts = _validate_vpu_choices(plan, source, profile, run_recipe)
     expected = _sites(worklist)
     rows = plan.get("sites")
     if not isinstance(rows, list):
@@ -216,7 +260,7 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
             raise ValueError(f"MX model plan physical padding differs at {region}")
         counts["structural_candidate_not_executable"] += 1
     canonical_plan = (json.dumps(plan, sort_keys=True, separators=(",", ":")) + "\n").encode()
-    return {
+    receipt = {
         "schema": ADMISSION_SCHEMA,
         "status": "structural_admission_only_no_executable",
         "source_mlir_sha256": source_sha,
@@ -230,3 +274,6 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
         "site_status_counts": counts,
         "rtl_source_checked_against_checkout": rtl_root is not None,
     }
+    if vpu_counts is not None:
+        receipt["vpu_site_status_counts"] = vpu_counts
+    return receipt
