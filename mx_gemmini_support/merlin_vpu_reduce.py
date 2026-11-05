@@ -8,7 +8,7 @@ import json
 from math import inf, prod
 from pathlib import Path
 
-from .target_profile import profile_sha256
+from .target_profile import model_vpu_lanes, profile_sha256
 
 
 _BODY = {"arith.addf": "rsum", "arith.maximumf": "rmax"}
@@ -22,9 +22,8 @@ def selected_row_reduce_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select pure zero/-inf initialized reductions with no softmax consumer."""
     from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
 
-    if (not profile["resources"].get("vpu") or
-            profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16):
+    lanes = model_vpu_lanes(profile)
+    if lanes is None:
         return []
     inventory = parse_linalg_mlir(mlir_text)
     consumers = defaultdict(list)
@@ -70,7 +69,7 @@ def selected_row_reduce_sites(mlir_text: str, profile: dict) -> list[dict]:
             "region": f"{operation}:{'x'.join(map(str, shape))}:{ordinal}",
             "operation": operation, "shape": shape,
             "output_shape": output_shape, "logical_rows": prod(output_shape),
-            "row_width": shape[-1], "symbol": name,
+            "row_width": shape[-1], "vpu_lanes": lanes, "symbol": name,
             "kernel_symbol": name + "_kernel",
         })
     return sites

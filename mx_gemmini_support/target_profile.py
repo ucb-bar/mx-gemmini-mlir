@@ -154,6 +154,25 @@ def source_vpu_lanes(profile: dict[str, Any], rtl_root: Path) -> int | None:
                       selected["src/main/scala/gemmini/vpu/Vpu.scala"])
 
 
+def model_vpu_lanes(profile: dict[str, Any]) -> int | None:
+    """Select the legacy model VPU layout, refusing unbound lane variants.
+
+    The v2 profile does not record lanes. Standalone emitters accept explicit
+    source-derived lanes for other dimensions, but model routing must first
+    bind those lanes to the same Gemmini/MxGen source closure as the profile.
+    """
+    if (not profile.get("resources", {}).get("vpu") or
+            profile.get("transport") != "rocket_rocc"):
+        return None
+    columns = profile.get("geometry", {}).get("mesh_columns")
+    if columns != 16:
+        raise ValueError(
+            "non-DIM16 model VPU routing needs source-verified lanes from "
+            "source_vpu_lanes(profile, matching_rtl_root); this catalog has no "
+            "matching RTL source closure or lane binding")
+    return 8  # Historical DIM16 model route predates the lane field.
+
+
 def _named_bodies(source: str, prefix: str) -> dict[str, str]:
     markers = list(re.finditer(rf"^  {prefix} (\w+) = ", source, re.M))
     result = {}

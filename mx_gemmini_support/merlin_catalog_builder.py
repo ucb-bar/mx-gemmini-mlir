@@ -507,7 +507,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         generated = emit_vpu_row_softmax(
             profile, logical_rows=site["logical_rows"],
             row_width=site["row_width"], symbol=site["kernel_symbol"],
-            implementation=vpu_softmax_implementation)
+            implementation=vpu_softmax_implementation,
+            lanes=site["vpu_lanes"])
         compile_source(site["kernel_symbol"], generated.source)
         compile_source(site["symbol"], emit_memref_softmax_shim(shape))
         softmax_kernels.append({
@@ -650,7 +651,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         generated = emit_vpu_row_reduce(
             profile, logical_rows=site["logical_rows"],
             row_width=site["row_width"], operation=site["operation"],
-            symbol=site["kernel_symbol"])
+            symbol=site["kernel_symbol"], lanes=site["vpu_lanes"])
         compile_source(site["kernel_symbol"], generated.source)
         compile_source(site["symbol"], emit_memref_reduce_shim(site))
         reduce_kernels.append({

@@ -14,7 +14,7 @@ from math import prod
 from pathlib import Path
 
 from .merlin_vpu_inventory import audit_softmax_boundaries
-from .target_profile import profile_sha256
+from .target_profile import model_vpu_lanes, profile_sha256
 
 
 _PATTERN = (
@@ -40,9 +40,8 @@ def kernel_symbol_for_shape(shape: tuple[int, ...]) -> str:
 
 def selected_softmax_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select f32 rank-four row softmax boundaries under this VPU profile."""
-    if (not profile["resources"].get("vpu") or
-            profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16):
+    lanes = model_vpu_lanes(profile)
+    if lanes is None:
         return []
     inventory = audit_softmax_boundaries(mlir_text, profile)
     sites = []
@@ -55,7 +54,7 @@ def selected_softmax_sites(mlir_text: str, profile: dict) -> list[dict]:
             continue
         sites.append({"region": row["region"], "shape": shape,
                       "logical_rows": prod(shape[:-1]),
-                      "row_width": shape[-1],
+                      "row_width": shape[-1], "vpu_lanes": lanes,
                       "symbol": symbol_for_shape(shape),
                       "kernel_symbol": kernel_symbol_for_shape(shape)})
     return sites
