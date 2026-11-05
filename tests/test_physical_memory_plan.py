@@ -5,12 +5,14 @@ from __future__ import annotations
 from dataclasses import asdict
 import hashlib
 import json
+from pathlib import Path
 import unittest
 
 from mx_gemmini_support.command_ir import Command, Fence, Operand
 from mx_gemmini_support.physical_memory_plan import (
     Access, MemoryEvent, MemoryValue, PhysicalMemoryError,
-    plan_physical_memory, source_bound_capacities,
+    _single_fp8_accumulator_rows, plan_physical_memory,
+    source_bound_capacities, source_bound_single_fp8_accumulator,
 )
 from mx_gemmini_support.target_profile import profile_sha256
 
@@ -157,6 +159,36 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
         with self.assertRaisesRegex(PhysicalMemoryError, "lacks exact certified effects"):
             plan_physical_memory(profile, (on_chip,), (changed, _fence("done")),
                                  bindings=bindings)
+
+    def test_single_fp8_packed_execute_and_store_bounds(self) -> None:
+        self.assertEqual(_single_fp8_accumulator_rows(1, 22), 96)
+        self.assertEqual(_single_fp8_accumulator_rows(2, 22), 192)
+        self.assertEqual(_single_fp8_accumulator_rows(1, 64), 256)
+        self.assertEqual(_single_fp8_accumulator_rows(1, 65), 272)
+        with self.assertRaisesRegex(PhysicalMemoryError, "positive tile counts"):
+            _single_fp8_accumulator_rows(0, 22)
+
+    def test_selected_acc32_source_pin_and_capacity(self) -> None:
+        rtl = Path(__file__).resolve().parents[2] / "gemmini"
+        if not (rtl / "src/main/scala/gemmini/LoopMatmul.scala").is_file():
+            self.skipTest("selected Gemmini sibling is unavailable")
+        profile = _profile()
+        profile["name"] = "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig"
+        profile["resources"].update(accumulator_bytes=32768,
+                                    accumulator_row_bits=1024,
+                                    accumulator_rows=256)
+        profile["source"] = {
+            "gemmini_revision": "12912323f1aa66d7b28687f01faf0a33af455f6f"}
+        proof = source_bound_single_fp8_accumulator(
+            profile, tiles_i=1, tiles_j=22, rtl_root=rtl)
+        self.assertEqual((proof["rows"], proof["capacity_rows"]), (96, 256))
+        with self.assertRaisesRegex(PhysicalMemoryError, "needs 272 accumulator rows"):
+            source_bound_single_fp8_accumulator(
+                profile, tiles_i=1, tiles_j=65, rtl_root=rtl)
+        profile["source"]["gemmini_revision"] = "0" * 40
+        with self.assertRaisesRegex(PhysicalMemoryError, "certified DIM16 source profile"):
+            source_bound_single_fp8_accumulator(
+                profile, tiles_i=1, tiles_j=22, rtl_root=rtl)
 
 
 if __name__ == "__main__":

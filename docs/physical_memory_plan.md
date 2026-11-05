@@ -22,15 +22,20 @@ record the total LUT table row capacity, so the receipt reports LUT capacity
 as unknown and any requested LUT allocation is refused.
 
 The captured small-Llama adapter in npu-exploration qualifies the source-named
-DIM16 FP8 E4M3 configuration with 64 KiB accumulator for the
+DIM16 FP8 E4M3 configurations with 64 KiB or 32 KiB accumulator for the
 `matmul_6 → view_19 → sigmoid_0` edge. Its matrix summary uses
 `MxGemmPlan` and checks the generated C's A/B move rows, scale selectors,
-loop geometry, and readout row. It conservatively reserves the output's
-`smem_rows` as an upper-bound reservation against accumulator capacity. This
-is not a measured accumulator footprint: `smem_rows` sizes the MX output
-scratchpad region, while RTL `LoopMatmulExecute` addresses packed accumulator
-rows. The 32 KiB accumulator variant is deliberately unqualified until that
-packed issuer footprint is certified. The actual emitted VPU `Command` and
+loop geometry, and readout row. The 64 KiB build retains the original
+conservative `smem_rows` reservation, which sizes the output scratchpad
+region rather than exact accumulator writes. For the 32 KiB build,
+`source_bound_single_fp8_accumulator` pins Gemmini `12912323` and the hashes
+of `LoopMatmul`, `MxGeom`, `ExecuteController`, and `AccumulatorMem`. The
+selected single-throughput DIM16 loop has 1 output-row tile and 22
+output-column tiles. `LoopMatmulExecute` packs four column tiles into each
+16-row accumulator window; `LoopMatmulStCSpad` reads the same six windows.
+Both bounds are 96 rows, below the source capacity of 256 rows. The helper
+rejects another revision, changed RTL file, unsupported profile, or a
+larger tile count that exceeds capacity. The actual emitted VPU `Command` and
 `Fence` objects are shared with its C issuer and checked row by row. The
 guest host materializes the BF16 mesh output as FP32; the two captured views
 alias that host buffer. They never alias scratchpad or accumulator storage.

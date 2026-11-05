@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+from pathlib import Path
+import subprocess
 from typing import Mapping
 
 from .command_ir import Command, Fence, VPU_OPCODES
@@ -23,6 +25,82 @@ class PhysicalMemoryError(ValueError):
 
 
 SPACES = frozenset({"scratchpad", "accumulator", "scale_a", "scale_b", "lut", "host"})
+
+# The packed single-throughput formula below was audited against this exact
+# Gemmini source. Re-audit before accepting another source revision or geometry.
+_PACKED_ACC_GEMMINI_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
+_PACKED_ACC_SOURCE_SHA256 = {
+    "src/main/scala/gemmini/LoopMatmul.scala":
+        "151535eb0ddd4154e713c253c86145eef91cd0627f1b420b178890e7bb598991",
+    "src/main/scala/gemmini/MxGeom.scala":
+        "f325b6ebd9d28dd789795f9e00568d661fbf6625b50b8a510bd76b0e793cc1e9",
+    "src/main/scala/gemmini/ExecuteController.scala":
+        "f72641f3bc338d8c9b30d7a3dcc53bfff0871c89d8dd17a263028f67fd695c72",
+    "src/main/scala/gemmini/AccumulatorMem.scala":
+        "e7e8834ef9b44e13656f0a0982baf75dd6327cb97ef22763db35321299704ee6",
+}
+
+
+def _single_fp8_accumulator_rows(tiles_i: int, tiles_j: int) -> int:
+    """DIM16 LOOP_WS packed accumulator extent for direct E4M3 operands.
+
+    LoopMatmulExecute uses ``c_addr=(i*round_up(J,4)+j)*4``. The execute
+    controller aligns that address to a 16-row window and writes the 16 mesh
+    rows with four output column tiles sharing it. LoopMatmulStCSpad reads
+    ``ceil(J/4)`` 16-row windows per i-tile. Both extents must agree.
+    """
+    if (type(tiles_i) is not int or type(tiles_j) is not int or
+            tiles_i <= 0 or tiles_j <= 0):
+        raise PhysicalMemoryError("packed accumulator needs positive tile counts")
+    rounded_j = (tiles_j + 3) // 4 * 4
+    execute_end = max((((i * rounded_j + j) * 4) // 16) * 16 + 16
+                      for i in range(tiles_i) for j in range(tiles_j))
+    store_end = tiles_i * ((tiles_j + 3) // 4) * 16
+    if execute_end != store_end:
+        raise PhysicalMemoryError("packed execute/store accumulator extents disagree")
+    return execute_end
+
+
+def source_bound_single_fp8_accumulator(profile: dict, *, tiles_i: int,
+                                        tiles_j: int, rtl_root: Path) -> dict:
+    """Certify one zero-based DIM16 direct-E4M3 LOOP_WS accumulator span.
+
+    The caller must separately prove the emitted loop arguments, direct FP8
+    selector, BF16 output, no alternate accumulator base, and completion fence.
+    """
+    capacity = source_bound_capacities(profile)["accumulator"]
+    resources = profile["resources"]
+    qualified = {
+        "MxFp4E3M2E4M3VpuGemminiRocketConfig": (512, 65536),
+        "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig": (256, 32768),
+    }
+    if (profile.get("geometry", {}).get("mesh_rows") != 16 or
+            profile.get("name") not in qualified or
+            (capacity, resources.get("accumulator_bytes")) != qualified[profile["name"]] or
+            profile.get("source", {}).get("gemmini_revision") !=
+            _PACKED_ACC_GEMMINI_REVISION):
+        raise PhysicalMemoryError("packed accumulator needs a certified DIM16 source profile")
+    rtl_root = Path(rtl_root).resolve(strict=True)
+    revision = subprocess.check_output(
+        ["git", "-C", str(rtl_root), "rev-parse", "HEAD"], text=True).strip()
+    if revision != _PACKED_ACC_GEMMINI_REVISION:
+        raise PhysicalMemoryError("packed accumulator RTL revision differs from profile")
+    source_sha256 = {}
+    for name, expected in _PACKED_ACC_SOURCE_SHA256.items():
+        digest = hashlib.sha256((rtl_root / name).read_bytes()).hexdigest()
+        if digest != expected:
+            raise PhysicalMemoryError(f"packed accumulator RTL source changed: {name}")
+        source_sha256[name] = digest
+    rows = _single_fp8_accumulator_rows(tiles_i, tiles_j)
+    if rows > capacity:
+        raise PhysicalMemoryError(
+            f"packed LOOP_WS needs {rows} accumulator rows; source capacity is {capacity}")
+    return {"rows": rows, "capacity_rows": capacity,
+            "address_base_row": 0, "tiles_i": tiles_i, "tiles_j": tiles_j,
+            "tiles_j_rounded_to_four": (tiles_j + 3) // 4 * 4,
+            "execute_and_store_extent_agree": True,
+            "gemmini_revision": revision, "rtl_source_sha256": source_sha256,
+            "scope": "DIM16 direct FP8 E4M3 operands, BF16 output, zero-based single LOOP_WS"}
 
 
 @dataclass(frozen=True)
