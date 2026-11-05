@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .command_ir import Fence, emit_c, vpu_command
+from .command_ir import Command, Fence, emit_c, vpu_command
 from .physical_program import _cmd, _config_ld, _config_st, _transfer_rect
 
 
@@ -17,7 +17,11 @@ class AddKernel:
     broadcast: str
 
 
-def _issue(profile: dict, *, elements: int, symbol: str, operation: str) -> str:
+def elementwise_issue_commands(profile: dict, *, elements: int,
+                               operation: str) -> tuple[Command | Fence, ...]:
+    """Return the exact typed command stream emitted for one VPU elementwise tile."""
+    if type(elements) is not int or elements <= 0 or operation not in {"add", "sub", "mul", "div"}:
+        raise ValueError("VPU elementwise commands need a positive tile and known operation")
     spad_rows = (elements + 7) // 8
     if spad_rows > 1024:
         raise ValueError("VPU add tile exceeds its scratchpad windows")
@@ -45,6 +49,12 @@ def _issue(profile: dict, *, elements: int, symbol: str, operation: str) -> str:
                                        0x2000 + start,
                                        rows=min(16, spad_rows - start)))
     commands.append(Fence())
+    return tuple(commands)
+
+
+def _issue(profile: dict, *, elements: int, symbol: str, operation: str) -> str:
+    commands = elementwise_issue_commands(profile, elements=elements,
+                                          operation=operation)
     return emit_c(commands, transport="rocket_rocc",
                   buffers=("lhs", "rhs", "result"),
                   symbol=symbol, internal=True)

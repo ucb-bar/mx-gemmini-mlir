@@ -279,7 +279,7 @@ def _check_command(event: MemoryEvent, values: Mapping[str, MemoryValue],
         if command.rs1.immediate is None or command.rs2.immediate is None:
             raise PhysicalMemoryError("VPU command needs literal encoded row fields")
         opcode = command.rs2.immediate & 0xf
-        if opcode not in {VPU_OPCODES[name] for name in ("muls", "exp", "adds", "rcp")}:
+        if opcode not in {VPU_OPCODES[name] for name in ("muls", "exp", "adds", "rcp", "mul")}:
             raise PhysicalMemoryError("VPU operation has no checked physical effect model")
         width = max(14, (capacities["scratchpad"] - 1).bit_length())
         mask = (1 << width) - 1
@@ -287,12 +287,22 @@ def _check_command(event: MemoryEvent, values: Mapping[str, MemoryValue],
         src2 = (command.rs1.immediate >> width) & mask
         dst = (command.rs1.immediate >> (2 * width)) & mask
         count = (command.rs1.immediate >> (3 * width)) & 0xffff
-        if (len(reads) != 1 or len(writes) != 1 or src2 != 0 or count <= 0 or
-                any(values[_root(values, access.value)].space != "scratchpad"
-                    for access in (reads[0], writes[0])) or
-                offsets[_root(values, reads[0].value)] + reads[0].offset != src or
-                offsets[_root(values, writes[0].value)] + writes[0].offset != dst or
-                reads[0].length != count or writes[0].length != count):
+        if opcode == VPU_OPCODES["mul"]:
+            if (command.rs2.immediate != (VPU_OPCODES["mul"] | (1 << 5)) or
+                    len(reads) != 2 or len(writes) != 1 or count <= 0 or
+                    any(values[_root(values, access.value)].space != "scratchpad"
+                        for access in (*reads, *writes)) or
+                    offsets[_root(values, reads[0].value)] + reads[0].offset != src or
+                    offsets[_root(values, reads[1].value)] + reads[1].offset != src2 or
+                    offsets[_root(values, writes[0].value)] + writes[0].offset != dst or
+                    any(access.length != count for access in (*reads, *writes))):
+                raise PhysicalMemoryError("VPU binary mul effect differs from encoded scratchpad rows")
+        elif (len(reads) != 1 or len(writes) != 1 or src2 != 0 or count <= 0 or
+              any(values[_root(values, access.value)].space != "scratchpad"
+                  for access in (reads[0], writes[0])) or
+              offsets[_root(values, reads[0].value)] + reads[0].offset != src or
+              offsets[_root(values, writes[0].value)] + writes[0].offset != dst or
+              reads[0].length != count or writes[0].length != count):
             raise PhysicalMemoryError("VPU effect differs from its encoded scratchpad rows")
         return
     raise PhysicalMemoryError(f"MX funct {command.funct} has no checked physical effect model")

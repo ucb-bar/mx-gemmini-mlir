@@ -161,6 +161,31 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
             plan_physical_memory(profile, (on_chip,), (changed, _fence("done")),
                                  bindings=bindings)
 
+    def test_binary_vpu_mul_requires_both_encoded_source_rows(self) -> None:
+        profile = _profile()
+        bindings = _bindings(profile)
+        values = (MemoryValue("lhs", "scratchpad", 2, "lhs", fixed_row=0,
+                              external=True),
+                  MemoryValue("rhs", "scratchpad", 2, "rhs", fixed_row=4,
+                              external=True),
+                  MemoryValue("out", "scratchpad", 2, "result", fixed_row=8))
+        rs1 = (4 << 14) | (8 << 28) | (2 << 42)
+        mul = Command(33, Operand(immediate=rs1), Operand(immediate=2 | (1 << 5)))
+        good = MemoryEvent("mul", "command", "encoded VPU mul",
+                           reads=(Access("lhs", 0, 2), Access("rhs", 0, 2)),
+                           writes=(Access("out", 0, 2),),
+                           command=mul, queue="gemmini")
+        receipt = plan_physical_memory(profile, values, (good, _fence("done")),
+                                       bindings=bindings)
+        self.assertEqual(receipt["placement"]["out"]["row"], 8)
+        wrong = MemoryEvent("mul", "command", "changed source 2",
+                            reads=(Access("lhs", 0, 2), Access("rhs", 1, 1)),
+                            writes=(Access("out", 0, 2),),
+                            command=mul, queue="gemmini")
+        with self.assertRaisesRegex(PhysicalMemoryError, "binary mul effect differs"):
+            plan_physical_memory(profile, values, (wrong, _fence("done")),
+                                 bindings=bindings)
+
     def test_single_fp8_packed_execute_and_store_bounds(self) -> None:
         self.assertEqual(_single_fp8_accumulator_rows(1, 22), 96)
         self.assertEqual(_single_fp8_accumulator_rows(2, 22), 192)
