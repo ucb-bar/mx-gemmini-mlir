@@ -91,7 +91,8 @@ def _padded_shape(shape: list[int], decision: dict, profile: dict) -> list[int]:
 
 
 def _validate_vpu_choices(plan: dict, source: str, profile: dict,
-                          run_recipe: dict | None) -> dict | None:
+                          run_recipe: dict | None,
+                          matrix_regions: set[str]) -> dict | None:
     """Rebuild the exact VPU site census from source instead of trusting rows."""
     if "vpu" not in plan and "vpu_sites" not in plan:
         if run_recipe is not None and "vpu" in run_recipe:
@@ -108,6 +109,9 @@ def _validate_vpu_choices(plan: dict, source: str, profile: dict,
     from .execution_policy import eligible_sites
     _, eligible, singleton_adds = eligible_sites(source, profile)
     by_region = {region: name for name, sites in eligible.items() for region in sites}
+    if (len(by_region) != sum(map(len, eligible.values())) or
+            set(by_region) & matrix_regions):
+        raise ValueError("MX model plan VPU and matrix source censuses overlap")
     overrides = policy["overrides"]
     if (any(not isinstance(region, str) or not region or route not in {"vpu", "host"}
             for region, route in overrides.items()) or
@@ -186,8 +190,9 @@ def validate_model_quantization_plan(plan: dict, source: str, profile: dict, *,
             worklist.get("profile_sha256") != profile_sha or
             worklist.get("legal_mx_compute_modes") != profile.get("legal_compute")):
         raise ValueError("regenerated Merlin worklist differs from captured source or profile")
-    vpu_counts = _validate_vpu_choices(plan, source, profile, run_recipe)
     expected = _sites(worklist)
+    vpu_counts = _validate_vpu_choices(plan, source, profile, run_recipe,
+                                       set(expected))
     rows = plan.get("sites")
     if not isinstance(rows, list):
         raise ValueError("MX model plan lacks a site list")
