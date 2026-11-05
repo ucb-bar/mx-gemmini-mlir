@@ -17,8 +17,11 @@ def main() -> None:
                         help="profile schema; v3 includes current RTL lanes and memory rows")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
-    profiles = (export_profiles_v3(args.gemmini) if args.schema == "v3"
-                else export_profiles(args.gemmini))
+    try:
+        profiles = (export_profiles_v3(args.gemmini) if args.schema == "v3"
+                    else export_profiles(args.gemmini))
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
     if args.config:
         if args.config not in profiles:
             parser.error(f"unknown MX config {args.config}")
