@@ -645,7 +645,7 @@ def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
     isa = sources["src/main/scala/gemmini/GemminiISA.scala"]
     vpu_abi = sources["src/main/scala/gemmini/vpu/Vpu.scala"]
     spad_abi = sources["src/main/scala/gemmini/SpadRequant.scala"]
-    for source, marker in (
+    marker_checks = [
         (arithmetic, "if (act.expWidth >= 5 || wei.expWidth >= 5) MxConfig.mxGemminiE5M2"),
         (arithmetic, "else if (act.sigWidth >= 4 || wei.sigWidth >= 4) MxConfig.mxGemminiAll"),
         (classifier, "object requiredPEMode"),
@@ -654,11 +654,24 @@ def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
         (classifier, "weiLut && w.sig === 4.U && (a.sig === 2.U || a.sig === 3.U), 11.U"),
         (isa, "val VPU_EXEC = 33.U"),
         (isa, "val SPAD_REQUANT = 34.U"),
-        (vpu_abi, "rs1 = src1[13:0] | src2[27:14] | dst[41:28] | rows[57:42]"),
         (vpu_abi, "rs2 = op[3:0] | bcast[4] | rlen[14:5] | imm[31:16]"),
-        (spad_abi, "rs1 = src[13:0] | dst[27:14] | tiled[28] | resident[29] | scale DRAM addr[62:30]"),
         (spad_abi, "rs2 = M[15:0] | N[31:16] | fp4[32]"),
-    ):
+    ]
+    if schema == SCHEMA_V3:
+        marker_checks.extend((
+            (vpu_abi, "def fieldW(addrW: Int): Int = math.max(14, addrW)"),
+            (vpu_abi, "c.src1 := rs1(f - 1, 0); c.src2 := rs1(2 * f - 1, f); c.dst := rs1(3 * f - 1, 2 * f); c.rows := rs1(3 * f + 15, 3 * f)"),
+            (vpu_abi, "c.op := rs2(3, 0); c.bcast := rs2(4); c.rlen := rs2(14, 5); c.imm := rs2(31, 16)"),
+            (spad_abi, "val f = gemmini.vpu.VpuCmd.fieldW(addrW)"),
+            (spad_abi, "c.src := rs1(f - 1, 0); c.dst := rs1(2 * f - 1, f); c.tiled := rs1(2 * f)"),
+            (spad_abi, "c.m := rs2(15, 0); c.n := rs2(31, 16); c.fp4 := rs2(32)"),
+        ))
+    else:
+        marker_checks.extend((
+            (vpu_abi, "rs1 = src1[13:0] | src2[27:14] | dst[41:28] | rows[57:42]"),
+            (spad_abi, "rs1 = src[13:0] | dst[27:14] | tiled[28] | resident[29] | scale DRAM addr[62:30]"),
+        ))
+    for source, marker in marker_checks:
         if marker not in source:
             raise ValueError(f"MX format/mode selection changed: {marker}")
     fragments = _fragment_classes(sources[_SCALA_FILES[0]])
