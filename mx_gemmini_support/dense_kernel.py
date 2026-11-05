@@ -281,7 +281,7 @@ static const uint8_t {symbol}_settings_json[] = {settings_literal};
                   f"const float *lhs, const float *rhs, {out_scalar} *out")
     if retain_runtime_weight:
         parameters += ", unsigned prepare_weight"
-    pointer_check = ("!lhs || !out" if prepared_activation and prepacked_weight_symbols is not None and not retain_prepared_rhs
+    pointer_check = ("!lhs || !out" if prepacked_weight_symbols is not None and not retain_prepared_rhs
                      else "!lhs || !rhs || !out")
     copy_output = (f"""  for (uint32_t row = 0; row < {lm}u; ++row)
     for (uint32_t col = 0; col < {ln}u; ++col) {{
