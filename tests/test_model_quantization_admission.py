@@ -218,6 +218,12 @@ class ModelQuantizationAdmissionTest(unittest.TestCase):
         unknown["vpu"]["overrides"] = {"not_a_source_region": "host"}
         with self.assertRaisesRegex(ValueError, "VPU override names"):
             self.admit(unknown)
+        no_vpu = copy.deepcopy(self.profile)
+        no_vpu["resources"]["vpu"] = False
+        without_hardware = copy.deepcopy(plan)
+        without_hardware["profile_sha256"] = profile_sha256(no_vpu)
+        with self.assertRaisesRegex(ValueError, "without VPU resources"):
+            self.admit(without_hardware, profile=no_vpu)
         selected_recipe = {"vpu": {"default": "host", "overrides": {}}}
         canonical = (json.dumps(selected_recipe, sort_keys=True,
                                 separators=(",", ":")) + "\n").encode()

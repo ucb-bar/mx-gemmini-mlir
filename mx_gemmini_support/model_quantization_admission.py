@@ -104,6 +104,8 @@ def _validate_vpu_choices(plan: dict, source: str, profile: dict,
             not isinstance(policy["overrides"], dict) or
             not isinstance(rows, list)):
         raise ValueError("MX model plan has a malformed VPU policy or site list")
+    if policy["default"] == "vpu" and profile["resources"].get("vpu") is False:
+        raise ValueError("MX model plan selects VPU on hardware without VPU resources")
     if run_recipe is not None and run_recipe.get("vpu") != policy:
         raise ValueError("MX model plan VPU policy differs from selected run recipe")
     from .execution_policy import eligible_sites
