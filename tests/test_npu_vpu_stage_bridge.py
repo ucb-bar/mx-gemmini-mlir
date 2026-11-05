@@ -13,7 +13,9 @@ import unittest
 
 from mx_gemmini_support.execution_policy import eligible_sites
 from mx_gemmini_support.merlin_inventory import build_mx_worklist_from_merlin
-from mx_gemmini_support.npu_vpu_stage_bridge import rewrite_selected_vpu_sites
+from mx_gemmini_support.npu_vpu_stage_bridge import (
+    bind_rewrite_to_stage_policy, rewrite_selected_vpu_sites)
+from mx_gemmini_support.execution_policy import validate_policy
 from mx_gemmini_support.target_profile import load_profile
 from tests.test_model_quantization_admission import _plan
 
@@ -82,6 +84,32 @@ class NpuVpuStageBridgeTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "plan bytes differ"):
                 rewrite_selected_vpu_sites(plan, b"{}", self.source,
                                            self.profile, run, out)
+
+    def test_rewrite_binds_existing_stage_policy_at_original_capture(self) -> None:
+        plan, run, plan_bytes = self.fixture()
+        with tempfile.TemporaryDirectory(dir=os.environ["TMPDIR"]) as scratch:
+            rewrite_dir = Path(scratch) / "rewrite"
+            rewrite_selected_vpu_sites(plan, plan_bytes, self.source,
+                                       self.profile, run, rewrite_dir)
+            out = Path(scratch) / "policy"
+            receipt = bind_rewrite_to_stage_policy(
+                plan, plan_bytes, self.source, self.profile, run, rewrite_dir, out)
+            policy = json.loads((out / "execution_policy.json").read_text())
+            resolved = validate_policy(policy, self.source, self.profile)
+            self.assertEqual(receipt["matrix_sites"], 19)
+            self.assertEqual(sum(receipt["vpu_sites"].values()), 83)
+            self.assertEqual(len(resolved["enabled_vpu_regions"]["softmax"]), 2)
+            self.assertEqual(set(policy["matrix_formats"].values()), {"mxfp8"})
+            self.assertIn("quantizer_binding", receipt)
+            self.assertIn("original_capture", receipt["stage_source"])
+
+            rewritten = rewrite_dir / json.loads((rewrite_dir / "receipt.json").read_text())[
+                "rewritten_mlir"]
+            rewritten.write_bytes(rewritten.read_bytes() + b"\n")
+            with self.assertRaisesRegex(ValueError, "rewritten MLIR differs"):
+                bind_rewrite_to_stage_policy(plan, plan_bytes, self.source,
+                                             self.profile, run, rewrite_dir,
+                                             Path(scratch) / "changed")
 
 
 if __name__ == "__main__":
