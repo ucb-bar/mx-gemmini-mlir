@@ -30,6 +30,7 @@ from .merlin_vpu_elementwise import selected_elementwise_sites
 from .merlin_vpu_reduce import emit_memref_reduce_shim, selected_row_reduce_sites
 from .merlin_vpu_softmax import emit_memref_softmax_shim, selected_softmax_sites
 from .merlin_vpu_unary import emit_memref_unary_shim, selected_unary_sites
+from .model_activation_callback import ModelActivationCallback
 from .offline_weight_pack import pack_weight
 from .target_profile import load_profile, profile_sha256
 from .vpu_add_kernel import emit_vpu_add, emit_vpu_elementwise
@@ -88,6 +89,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          prepack_immutable_weights: bool = False,
                          far_constant_data: bool = False,
                          precision_overrides: dict[str, str] | None = None,
+                         activation_callbacks: dict[str, ModelActivationCallback] | None = None,
                          enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                          connect_multiplies: bool = False,
                          connect_broadcast_multiplies: bool = False,
@@ -182,6 +184,18 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         raise ValueError("constant object reuse requires immutable prepacked weights")
     if retain_shared_activation_rhs and not share_activation_packing:
         raise ValueError("retained shared RHS requires shared activation packing")
+    if activation_callbacks:
+        if (not isinstance(activation_callbacks, dict) or
+                any(not isinstance(region, str) or
+                    not isinstance(callback, ModelActivationCallback) or
+                    callback.region_id != region
+                    for region, callback in activation_callbacks.items()) or
+                not prepack_immutable_weights or cache_immutable_weights or
+                share_activation_packing or matrix_vpu_transport or
+                vpu_matrix_transport or fuse_rms_packing or
+                fuse_f32_rms_packing or fuse_softmax_packing or
+                fuse_gated_projections or group_projections):
+            raise ValueError("live activation callbacks need exact rank-2 sites, immutable B and plain dense transport")
     if reuse_prepacked_data is not None:
         reuse_prepacked_data = Path(reuse_prepacked_data)
         if (not prepack_immutable_weights or reuse_prepacked_data.is_symlink()
@@ -191,7 +205,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         prepared, profile, checkpoint_manifest=checkpoint_manifest,
         cache_immutable_weights=cache_immutable_weights,
         prepack_immutable_weights=prepack_immutable_weights,
-        precision_overrides=precision_overrides)
+        precision_overrides=precision_overrides,
+        activation_callback_regions=frozenset(activation_callbacks or ()))
     projection_groups = []
     if group_projections or fuse_gated_projections:
         from .merlin_projection_group import projection_candidates
@@ -250,6 +265,29 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         if extra_flags:
             source_flags[name] = list(extra_flags)
 
+    if activation_callbacks:
+        callbacks = tuple(activation_callbacks.values())
+        for callback in callbacks:
+            callback.verify_files()
+        first = callbacks[0]
+        if any((callback.source_sha256, callback.headers_sha256) !=
+               (first.source_sha256, first.headers_sha256)
+               for callback in callbacks[1:]):
+            raise ValueError("one model catalog requires one pinned activation callback implementation")
+        for name, digest in first.headers_sha256:
+            if name in {"runtime_quant.h", "runtime_quant_lut.h", "runtime_group_prepare.h"}:
+                raise ValueError("activation callback header collides with MX runtime")
+            original = (first.abi_header_path if name == "model_activation_abi.h" else
+                        first.source_path.parent / name)
+            copied = out_dir / name
+            copied.write_bytes(original.read_bytes())
+            if _sha(copied) != digest:
+                raise ValueError("activation callback header changed during catalog binding")
+            source_hashes[f"activation_header:{name}"] = digest
+        compile_source("user_activation_quantizer", first.source_path)
+        if source_hashes["user_activation_quantizer"] != first.source_sha256:
+            raise ValueError("activation callback source changed during catalog binding")
+
     kernel_records = []
     max_workspace = 0
     issuer_modes = {}
@@ -270,6 +308,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         issuer_symbol = entry["issuer_symbol"]
         shape = tuple(entry["shape"])
         precision = "FP4" if entry["precision"] == "mxfp4" else "FP8"
+        callback = ((activation_callbacks or {}).get(entry.get("activation_callback_region")))
         fixed_symbols = None
         if entry["prepacked_checkpoint_weight"]:
             assert checkpoint is not None
@@ -315,7 +354,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 cache_immutable_weight=entry["cache_immutable_weight"],
                 prepacked_weight_symbols=fixed_symbols,
                 virtual_zero_padding=virtual_zero_padding,
-                schedule=selected)
+                schedule=selected, activation_callback=callback)
             batch, m, n, k = 1, *shape
         elif entry["rank"] == 3:
             generated = emit_dense_batch_contraction(
@@ -426,6 +465,10 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             "instruction_set_sha256": generated.instruction_set_digest,
             "workspace_bytes": generated.kernel.workspace_bytes,
             "persistent_weight_bytes": getattr(generated.kernel, "persistent_bytes", 0),
+            **({"activation_callback_region": callback.region_id,
+                "activation_callback_source_sha256": callback.source_sha256,
+                "activation_callback_status": "linked_guest_object_no_spike_parity"}
+               if callback is not None else {}),
             "cache_immutable_weight": entry["cache_immutable_weight"],
             "prepacked_checkpoint_weight": entry["prepacked_checkpoint_weight"],
             **({"activation_preparation": activation_preparation}
@@ -896,6 +939,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 prepacked_weight_stage: Path | None = None,
                                 far_constant_data: bool = False,
                                 precision_overrides: dict[str, str] | None = None,
+                                activation_callbacks: dict[str, ModelActivationCallback] | None = None,
                                 enabled_vpu_regions: dict[str, frozenset[str]] | None = None,
                                 connect_multiplies: bool = False,
                                 connect_broadcast_multiplies: bool = False,
@@ -950,6 +994,7 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     prepack_immutable_weights=prepacked_weight_stage is not None,
                                     far_constant_data=far_constant_data,
                                     precision_overrides=precision_overrides,
+                                    activation_callbacks=activation_callbacks,
                                     enabled_vpu_regions=enabled_vpu_regions,
                                     connect_multiplies=connect_multiplies,
                                     connect_broadcast_multiplies=connect_broadcast_multiplies,

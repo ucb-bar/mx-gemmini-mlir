@@ -29,7 +29,8 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                         checkpoint_manifest: dict | None = None,
                         cache_immutable_weights: bool = False,
                         prepack_immutable_weights: bool = False,
-                        precision_overrides: dict[str, str] | None = None) -> dict:
+                        precision_overrides: dict[str, str] | None = None,
+                        activation_callback_regions: frozenset[str] | None = None) -> dict:
     """Bind every selected direct matrix contraction to exact prepared MLIR.
 
     The caller must select the same OOT target package on MERLIN_TARGET_PATH.
@@ -77,6 +78,12 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
         "selected_format": site["selected_format"],
         "reason": "no zero-initialized direct f32 catalog contraction at this source region",
     } for region, site in selected.items() if region not in by_region]
+    callback_regions = activation_callback_regions or frozenset()
+    if (not isinstance(callback_regions, frozenset) or
+            any(not isinstance(region, str) or region not in by_region or
+                len(by_region[region][0][1].parallel) != 2
+                for region in callback_regions)):
+        raise ValueError("activation callback regions need exact rank-2 catalog sites")
     kernels: dict[tuple, dict] = {}
     issuers: dict[tuple, str] = {}
     bindings = []
@@ -114,7 +121,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                 cached_name = parameter["weight"]
                 fixed_transforms = transforms
                 fixed_shape = source_shape
-        key = base + ((region,) if cached_arg is not None else ())
+        key = base + ((region,) if cached_arg is not None or region in callback_regions else ())
         kernel = kernels.get(key)
         if kernel is None:
             issuer_symbol = issuers.setdefault(base, f"mx_issue_{len(issuers)}")
@@ -132,6 +139,8 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
                 kernel["checkpoint_parameter_name"] = cached_name
                 kernel["checkpoint_parameter_transforms"] = list(fixed_transforms)
                 kernel["checkpoint_parameter_shape"] = list(fixed_shape)
+            if region in callback_regions:
+                kernel["activation_callback_region"] = region
             kernels[key] = kernel
         bindings.append({
             "region": region, "symbol": kernel["symbol"],

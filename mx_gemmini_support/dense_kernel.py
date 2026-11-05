@@ -9,7 +9,9 @@ workspace ABI before it can use this adapter.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 
+from .model_activation_callback import ModelActivationCallback
 from .planned_runtime_issuer import PlannedRuntimeIssuer
 from .runtime_issuer import RuntimeIssuer
 
@@ -22,6 +24,7 @@ class DenseKernel:
     padded_shape_mnk: tuple[int, int, int]
     workspace_bytes: int
     persistent_bytes: int = 0
+    activation_callback_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,7 +60,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
                           retain_prepared_rhs: bool = False,
                           virtual_zero_padding: bool = False,
                           retain_runtime_weight: bool = False,
-                          output_dtype: str = "f32") -> DenseKernel:
+                          output_dtype: str = "f32",
+                          activation_callback: ModelActivationCallback | None = None) -> DenseKernel:
     """Wrap one serial FP4/FP8 BF16 issuer with live padding and MXQuant packing.
 
     The issuer must have been checked against its profile. A payload-bound
@@ -96,6 +100,12 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         raise ValueError("MX retained prepared RHS is a shared-activation diagnostic only")
     if output_dtype not in {"f32", "bf16"}:
         raise ValueError("MX dense readout requires f32 or bf16 output")
+    if activation_callback is not None and (
+            not isinstance(activation_callback, ModelActivationCallback) or
+            prepared_activation or prepacked_weight_symbols is None or
+            cache_immutable_weight or retain_runtime_weight or
+            retain_prepared_rhs):
+        raise ValueError("live activation callback needs a direct f32 A and prepacked immutable B")
     if issuer.precision not in {"FP4", "FP8"}:
         raise ValueError("MX dense adapter requires a direct FP4 or FP8 issuer")
     if (len(logical_shape_mnk) != 3 or len(issuer.shape_mnk) != 3 or
@@ -126,7 +136,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     padded_a, padded_b = a_padding.needs_copy, b_padding.needs_copy
     direct_bf16 = output_dtype == "bf16" and (lm, ln) == (m, n)
     buffers = []
-    if padded_a and not prepared_activation:
+    if padded_a and not prepared_activation and activation_callback is None:
         buffers.append(("padded_a", "float", a_padding.elements * 4, a_padding.elements))
     if padded_b and prepacked_weight_symbols is None:
         buffers.append(("padded_b", "float", k * n * 4, k * n))
@@ -161,7 +171,8 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         local_buffers = "".join(lines)
     if workspace > 0x7fffffff:
         raise ValueError("MX dense adapter workspace exceeds the selected runtime extent")
-    a_prepare = emit_dense_zero_padding(a_padding, source="lhs", destination="padded_a")
+    a_prepare = ("" if activation_callback is not None else
+                 emit_dense_zero_padding(a_padding, source="lhs", destination="padded_a"))
     b_prepare = (emit_dense_zero_padding(b_padding, source="rhs", destination="padded_b")
                  if prepacked_weight_symbols is None else "")
     a_source = "padded_a" if padded_a else "lhs"
@@ -218,6 +229,51 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
         if prepacked_weight_symbols is None:
             pack += (f"  if (prepare_weight && mx_pack_weight_f32({b_source}, {k}u, {n}u, "
                      f"MX_RUNTIME_{issuer.precision}, weight, weight_scales)) __builtin_trap();\n")
+    callback_declarations = ""
+    if activation_callback is not None:
+        fmt = "fp4_e2m1" if issuer.precision == "FP4" else "fp8_e4m3"
+        if not activation_callback.region_id or activation_callback.symbol != "npu_mx_quantize_activation_v1":
+            raise ValueError("live activation callback has no exact source site or ABI symbol")
+        settings_literal = json.dumps(activation_callback.settings_json)
+        region_literal = json.dumps(activation_callback.region_id)
+        callback_declarations = f"""
+/* User C source SHA-256: {activation_callback.source_sha256}.
+ * Header SHA-256: {dict(activation_callback.headers_sha256)['model_activation_abi.h']}.
+ * Generated stage only; caller must link the verified guest object. */
+volatile uint64_t {symbol}_host_quant_cycles;
+static inline uint64_t {symbol}_read_cycles(void) {{
+#ifdef __riscv
+  uint64_t value;
+  __asm__ volatile ("rdcycle %0" : "=r"(value));
+  return value;
+#else
+  return 0;
+#endif
+}}
+static const uint8_t {symbol}_settings_json[] = {settings_literal};
+"""
+        pack = f"""  /* `lhs` is the live model activation supplied by Merlin. */
+  for (size_t i = 0; i < {expected['activation_scales']}u; ++i)
+    activation_scales[i] = 255;
+  npu_mx_activation_quant_args_v1 args = {{
+    .input = lhs, .logical_m = {lm}u, .logical_k = {lk}u,
+    .input_row_stride = {lk}u, .physical_m = {m}u, .physical_k = {k}u,
+    .region_id = {region_literal}, .format = "{fmt}", .projection = "direct",
+    .code_bits = {bits}u, .block_size = 32u, .lut_group = 0u,
+    .codes = activation, .codes_capacity_bytes = {expected['activation']}u,
+    .scales = activation_scales,
+    .scales_capacity_bytes = {expected['activation_scales']}u,
+    .lut = 0, .lut_capacity_bytes = 0,
+    .settings_json = {symbol}_settings_json,
+    .settings_json_bytes = sizeof({symbol}_settings_json) - 1,
+  }};
+  uint64_t quant_start = {symbol}_read_cycles();
+  int quant_status = npu_mx_quantize_activation_v1(&args);
+  if (quant_status) __builtin_trap();
+  for (size_t i = 0; i < {expected['activation_scales']}u; ++i)
+    if (activation_scales[i] == 255) __builtin_trap();
+  {symbol}_host_quant_cycles = {symbol}_read_cycles() - quant_start;
+"""
     out_scalar = "uint16_t" if output_dtype == "bf16" else "float"
     parameters = (f"const uint8_t *lhs, const float *rhs, {out_scalar} *out"
                   if retain_prepared_rhs or prepared_activation and prepacked_weight_symbols is None else
@@ -239,14 +295,15 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     for (uint32_t col = 0; col < {ln}u; ++col)
       out[(size_t)row * {ln}u + col] = output_bf16[(size_t)row * {n}u + col];
 """)
+    callback_include = '\n#include "model_activation_abi.h"' if activation_callback else ''
     source = f"""/* MX dense f32 adapter: {issuer.precision}, qualified {m}x{n}x{k} schedule. */
 #include <stddef.h>
 #include <stdint.h>
-#include "runtime_quant.h"
+#include "runtime_quant.h"{callback_include}
 
 void {issuer_symbol}(const void *, const void *, const void *, const void *,
                      const void *, const void *);
-{external_weight}{''.join(declarations)}
+{external_weight}{''.join(declarations)}{callback_declarations}
 {"static " if retain_runtime_weight else ""}void {symbol}({parameters}) {{
   if ({pointer_check}) __builtin_trap();
 {local_buffers}{a_prepare}{b_prepare}{pack}  {issuer_symbol}(activation, activation_scales, {weight_codes}, {weight_scale},
@@ -256,7 +313,8 @@ void {issuer_symbol}(const void *, const void *, const void *, const void *,
     persistent = (expected["weight"] + expected["weight_scales"] + 1
                   if cache_immutable_weight else 0)
     return DenseKernel(source, symbol, logical_shape_mnk, issuer.shape_mnk,
-                       workspace, persistent)
+                       workspace, persistent,
+                       activation_callback.source_sha256 if activation_callback else None)
 
 
 def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,

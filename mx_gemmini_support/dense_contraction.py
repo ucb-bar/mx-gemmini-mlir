@@ -11,6 +11,7 @@ from .dense_kernel import (
     emit_dense_f32_batch_kernel,
     emit_dense_f32_kernel,
 )
+from .model_activation_callback import ModelActivationCallback
 from .planned_runtime_issuer import PlannedRuntimeIssuer, emit_planned_runtime_issuer
 from .scheduled_native_issuer import NativeSchedule, emit_scheduled_native_issuer
 from .source_gemm import plan_mx_gemm
@@ -138,7 +139,8 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
                            cache_immutable_weight: bool = False,
                            prepacked_weight_symbols: tuple[str, str] | None = None,
                            virtual_zero_padding: bool = False,
-                           schedule: str = "serial") -> DenseContraction:
+                           schedule: str = "serial",
+                           activation_callback: ModelActivationCallback | None = None) -> DenseContraction:
     """Emit both halves of one source-independent dense MX catalog candidate."""
     shape = plan_dense_shape(profile, logical_shape_mnk, precision=precision)
     shape, issuer, mode, native = _emit_dense_issuer(
@@ -149,7 +151,8 @@ def emit_dense_contraction(profile: dict, logical_shape_mnk: tuple[int, int, int
         shared_workspace_symbol=shared_workspace_symbol,
         cache_immutable_weight=cache_immutable_weight,
         prepacked_weight_symbols=prepacked_weight_symbols,
-        virtual_zero_padding=virtual_zero_padding)
+        virtual_zero_padding=virtual_zero_padding,
+        activation_callback=activation_callback)
     return DenseContraction(shape, issuer, kernel, mode,
                             native.text if native else None,
                             native.digest if native else None,
