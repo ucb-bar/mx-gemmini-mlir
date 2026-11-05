@@ -21,11 +21,16 @@ receive separate halves of the selected scale memory. The profile does not
 record the total LUT table row capacity, so the receipt reports LUT capacity
 as unknown and any requested LUT allocation is refused.
 
-The captured small-Llama adapter in npu-exploration qualifies the DIM16
-FP8 E4M3 `matmul_6 → view_19 → sigmoid_0` edge. Its matrix summary uses
+The captured small-Llama adapter in npu-exploration qualifies the source-named
+DIM16 FP8 E4M3 configuration with 64 KiB accumulator for the
+`matmul_6 → view_19 → sigmoid_0` edge. Its matrix summary uses
 `MxGemmPlan` and checks the generated C's A/B move rows, scale selectors,
 loop geometry, and readout row. It conservatively reserves the output's
-`smem_rows` in the accumulator capacity. The actual emitted VPU `Command` and
+`smem_rows` as an upper-bound reservation against accumulator capacity. This
+is not a measured accumulator footprint: `smem_rows` sizes the MX output
+scratchpad region, while RTL `LoopMatmulExecute` addresses packed accumulator
+rows. The 32 KiB accumulator variant is deliberately unqualified until that
+packed issuer footprint is certified. The actual emitted VPU `Command` and
 `Fence` objects are shared with its C issuer and checked row by row. The
 guest host materializes the BF16 mesh output as FP32; the two captured views
 alias that host buffer. They never alias scratchpad or accumulator storage.
