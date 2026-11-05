@@ -26,8 +26,10 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select exact pure unary generics with identity maps."""
     from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
 
-    if model_vpu_lanes(profile) is None:
+    lanes = model_vpu_lanes(profile)
+    if lanes is None:
         return []
+    dim = profile["geometry"]["mesh_columns"]
     seen = set()
     ordinals = defaultdict(int)
     sites = []
@@ -43,6 +45,8 @@ def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
                      "square" if body_ops in (_SQUARE_PATTERN, ["arith.mulf"]) else
                      "gelu" if body_ops == _GELU_PATTERN else
                      "neg" if body_ops == ["arith.negf"] else None)
+        if dim != 16 and operation != "sigmoid":
+            continue
         if source_region and operation:
             ordinal = ordinals[source_region, operation]
             ordinals[source_region, operation] += 1

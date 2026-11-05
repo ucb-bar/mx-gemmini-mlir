@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import copy
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,7 @@ import pytest
 from mx_gemmini_support.merlin_vpu_unary import (
     MXVPUUnaryPostOffload, emit_memref_unary_shim, selected_unary_sites,
 )
-from mx_gemmini_support.target_profile import load_profile
+from mx_gemmini_support.target_profile import SCHEMA_V3, load_profile
 from mx_gemmini_support.vpu_unary_kernel import emit_vpu_unary
 
 
@@ -55,6 +56,20 @@ def test_unary_kernel_and_ranked_shim() -> None:
     with pytest.raises(ValueError, match="selected Rocket MX VPU"):
         emit_vpu_unary(NO_VPU, shape=(8,), dtype="bf16",
                        operation="rsqrt", symbol="unavailable")
+
+
+def test_narrow_dimension_admission_keeps_unqualified_unary_off_vpu() -> None:
+    profile = copy.deepcopy(VPU)
+    profile["schema"] = SCHEMA_V3
+    profile["geometry"]["mesh_columns"] = 4
+    profile["resources"]["vpu_config"]["lanes"] = 2
+    with pytest.raises(ValueError, match="BF16-step sigmoid only"):
+        emit_vpu_unary(profile, shape=(8,), dtype="f32",
+                       operation="rsqrt", symbol="unqualified_rsqrt")
+    with pytest.raises(ValueError, match="BF16-step sigmoid only"):
+        emit_vpu_unary(profile, shape=(8,), dtype="f32",
+                       operation="sigmoid", symbol="unqualified_sigmoid",
+                       sigmoid_implementation="f32_reciprocal")
 
 
 @pytest.mark.parametrize("model,expected", (

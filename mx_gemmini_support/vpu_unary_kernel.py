@@ -138,6 +138,9 @@ def emit_vpu_unary(profile: dict, *, shape: tuple[int, ...], dtype: str,
         raise ValueError("VPU unary needs a static tensor and supported operation")
     if sigmoid_implementation not in {"bf16", "f32_reciprocal"}:
         raise ValueError("unknown sigmoid arithmetic implementation")
+    if profile["geometry"]["mesh_columns"] != 16 and (
+            operation != "sigmoid" or sigmoid_implementation != "bf16"):
+        raise ValueError("non-DIM16 VPU unary is qualified for BF16-step sigmoid only")
     if sigmoid_implementation == "f32_reciprocal":
         if operation != "sigmoid" or dtype != "f32":
             raise ValueError("hybrid sigmoid requires a selected FP32 sigmoid boundary")
