@@ -120,7 +120,7 @@ def _transfer(funct: int, buffer: str, offset: int, row: int, *, dim: int = 16) 
 
 def _transfer_rect(funct: int, buffer: str, offset: int, row: int, *,
                    rows: int, cols: int = 16) -> Command:
-    if not 1 <= rows <= 16 or cols not in {8, 16, 32}:
+    if not 1 <= rows <= 16 or cols not in {4, 8, 16, 32}:
         raise ValueError("MX BF16 row-major transfer needs 1..16 mesh-width rows")
     return _cmd(funct, Operand(buffer=buffer, byte_offset=offset),
                 (rows << 48) | (cols << 32) | row)

@@ -16,45 +16,64 @@ class RowReduceKernel:
     padded_width: int
     rows_per_chunk: int
     operation: str
+    lanes: int
 
 
 def _issuer(profile: dict, *, rows: int, rlen: int, operation: str,
-            symbol: str) -> str:
+            symbol: str, row_bytes: int) -> str:
     spad_rows = rows * rlen
     if spad_rows > 1024:
         raise ValueError("VPU reduction tile exceeds its scratchpad window")
-    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+    total_rows = profile["resources"]["scratchpad_bytes"] // row_bytes
+    result_base = min(0x2000, total_rows // 2)
+    if spad_rows > result_base or result_base + rows > total_rows:
+        raise ValueError("VPU reduction source/result windows exceed scratchpad")
+    commands = [_cmd(7, 0, 0), _config_ld(row_bytes, dim=row_bytes),
+                _config_st(row_bytes)]
     for start in range(0, spad_rows, 16):
-        commands.append(_transfer_rect(2, "input", start * 16, start,
-                                       rows=min(16, spad_rows - start)))
+        commands.append(_transfer_rect(2, "input", start * row_bytes, start,
+                                       rows=min(16, spad_rows - start),
+                                       cols=row_bytes))
     commands.extend((
         vpu_command(profile, kind=operation, src1_row=0, src2_row=0,
-                    dst_row=0x2000, rows=spad_rows, reduction_length=rlen),
+                    dst_row=result_base, rows=spad_rows,
+                    reduction_length=rlen),
         Fence(),
     ))
     for start in range(0, rows, 16):
-        commands.append(_transfer_rect(3, "result", start * 16,
-                                       0x2000 + start,
-                                       rows=min(16, rows - start)))
+        commands.append(_transfer_rect(3, "result", start * row_bytes,
+                                       result_base + start,
+                                       rows=min(16, rows - start),
+                                       cols=row_bytes))
     commands.append(Fence())
     return emit_c(commands, transport="rocket_rocc",
                   buffers=("input", "result"), symbol=symbol, internal=True)
 
 
 def emit_vpu_row_reduce(profile: dict, *, logical_rows: int, row_width: int,
-                        operation: str, symbol: str) -> RowReduceKernel:
+                        operation: str, symbol: str,
+                        lanes: int | None = None) -> RowReduceKernel:
     """Reduce the last axis of a contiguous f32 tensor to one f32 per row."""
     if (profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16 or
             not profile.get("resources", {}).get("vpu")):
         raise ValueError("row reduction needs the selected DIM16 Rocket MX VPU")
+    row_bytes = profile.get("geometry", {}).get("mesh_columns")
+    if lanes is None:
+        if row_bytes != 16:
+            raise ValueError("non-DIM16 row reduction needs an explicit source-derived VPU lane count")
+        lanes = 8  # Historical DIM16 profile predates the lane field.
+    if row_bytes not in {4, 8, 16, 32}:
+        raise ValueError("row reduction currently needs DIM4, DIM8, DIM16, or DIM32 VPU row transfers")
+    if (type(lanes) is not int or lanes <= 0 or
+            type(row_bytes) is not int or row_bytes != 2 * lanes):
+        raise ValueError("VPU lane count must match the selected MX scratchpad row bytes")
     if (type(logical_rows) is not int or logical_rows <= 0 or
-            type(row_width) is not int or not 1 <= row_width <= 8184 or
+            type(row_width) is not int or not 1 <= row_width <= 1023 * lanes or
             operation not in {"rsum", "rmax"} or
             not symbol.isidentifier() or not symbol.isascii()):
         raise ValueError("row reduction needs static extents and known operation")
-    padded = (row_width + 7) // 8 * 8
-    rlen = padded // 8
+    padded = (row_width + lanes - 1) // lanes * lanes
+    rlen = padded // lanes
     rows_per_chunk = min(logical_rows, 1024 // rlen)
     if not rows_per_chunk:
         raise ValueError("row reduction cannot fit selected VPU scratchpad")
@@ -62,7 +81,8 @@ def emit_vpu_row_reduce(profile: dict, *, logical_rows: int, row_width: int,
     sizes = (rows_per_chunk,) if not tail else (rows_per_chunk, tail)
     issuers = "\n".join(_issuer(profile, rows=count, rlen=rlen,
                                 operation=operation,
-                                symbol=f"{symbol}_issue_{count}")
+                                symbol=f"{symbol}_issue_{count}",
+                                row_bytes=row_bytes)
                         for count in sizes)
     dispatch = "\n".join(
         f"    case {count}: {symbol}_issue_{count}(input, result); break;"
@@ -71,7 +91,7 @@ def emit_vpu_row_reduce(profile: dict, *, logical_rows: int, row_width: int,
     source = f'''#include <stdint.h>
 {issuers}
 static uint16_t {symbol}_input[{rows_per_chunk * padded}] __attribute__((aligned(64)));
-static uint16_t {symbol}_result[{rows_per_chunk * 8}] __attribute__((aligned(64)));
+static uint16_t {symbol}_result[{rows_per_chunk * lanes}] __attribute__((aligned(64)));
 void {symbol}(const float *source, float *destination) {{
   if (!source || !destination) __builtin_trap();
   for (uint32_t base = 0; base < {logical_rows}; base += {rows_per_chunk}) {{
@@ -94,11 +114,11 @@ void {symbol}(const float *source, float *destination) {{
     }}
     for (uint32_t row=0; row<count; ++row) {{
       union {{ float f; uint32_t u; }} word;
-      word.u=(uint32_t){symbol}_result[row*8] << 16;
+      word.u=(uint32_t){symbol}_result[row*{lanes}] << 16;
       destination[base+row]=word.f;
     }}
   }}
 }}
 '''
     return RowReduceKernel(source, logical_rows, row_width, padded,
-                           rows_per_chunk, operation)
+                           rows_per_chunk, operation, lanes)

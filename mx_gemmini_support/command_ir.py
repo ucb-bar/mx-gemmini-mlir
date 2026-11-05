@@ -99,14 +99,20 @@ VPU_OPCODES = {
 }
 
 
-def _mx_rows(profile: Mapping) -> int:
+def _mx_rows(profile: Mapping, *, vpu: bool = False) -> int:
     if profile.get("schema") != "mx_gemmini.target_profile.v2":
         raise ValueError("MX vector commands need a source-bound target profile v2")
     resources = profile.get("resources", {})
-    # The selected VPU and SPAD_REQUANT read 16-byte BF16 scratchpad rows.
-    if profile.get("geometry", {}).get("mesh_columns") != 16:
-        raise ValueError("MX vector row layout has only been derived for DIM16")
-    return resources.get("scratchpad_bytes", 0) // 16
+    # SPAD_REQUANT remains DIM16-only. VPU row instructions admit the MX
+    # scratchpad row widths that have a BF16 lane transfer layout below.
+    row_bytes = profile.get("geometry", {}).get("mesh_columns")
+    if row_bytes not in ({4, 8, 16, 32} if vpu else {16}):
+        raise ValueError("MX vector row layout has only been derived for DIM16"
+                         if not vpu else "MX VPU row layout needs DIM4, DIM8, DIM16, or DIM32")
+    capacity = resources.get("scratchpad_bytes")
+    if type(capacity) is not int or capacity <= 0 or capacity % row_bytes:
+        raise ValueError("MX vector scratchpad capacity does not fit selected row bytes")
+    return capacity // row_bytes
 
 
 def _row_span(label: str, start: int, count: int, limit: int) -> None:
@@ -119,7 +125,7 @@ def vpu_command(profile: Mapping, *, kind: str, src1_row: int, src2_row: int,
                 broadcast: bool = False, immediate_bf16: int = 0,
                 second_dst_row: int | None = None) -> Command:
     """Encode RTL funct 33 after checking op gates and scratchpad row footprints."""
-    limit = _mx_rows(profile)
+    limit = _mx_rows(profile, vpu=True)
     cfg = profile["resources"].get("vpu_config")
     if not profile["resources"].get("vpu") or not isinstance(cfg, dict):
         raise ValueError("selected MX profile has no VPU")
@@ -159,9 +165,13 @@ def vpu_command(profile: Mapping, *, kind: str, src1_row: int, src2_row: int,
         immediate = immediate_bf16
     if type(immediate) is not int or not 0 <= immediate <= 0xffff:
         raise ValueError("MX VPU immediate must fit 16 bits")
-    if any(address > 0x3fff for address in (src1_row, src2_row, dst_row)):
-        raise ValueError("MX VPU address must fit 14 bits")
-    rs1 = src1_row | (src2_row << 14) | (dst_row << 28) | (rows << 42)
+    field_width = max(14, (limit - 1).bit_length())
+    if 3 * field_width + 16 > 64:
+        raise ValueError("MX VPU scratchpad row addresses do not fit rs1")
+    if any(address >= 1 << field_width for address in (src1_row, src2_row, dst_row)):
+        raise ValueError("MX VPU address exceeds selected row field width")
+    rs1 = (src1_row | (src2_row << field_width) |
+           (dst_row << (2 * field_width)) | (rows << (3 * field_width)))
     rs2 = VPU_OPCODES[kind] | (int(broadcast) << 4) | (reduction_length << 5) | (immediate << 16)
     return Command(33, Operand(immediate=rs1), Operand(immediate=rs2))
 

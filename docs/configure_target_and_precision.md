@@ -70,6 +70,16 @@ its default lane count. Version 2 profiles omit lanes, so the query preserves
 their existing hashes and historical receipts. A new recipe identity must
 include lanes when it uses them to select a hardware build.
 
+The standalone VPU row-reduction issuer accepts an explicit lane count from
+this source query for MX DIM4/8/32, and retains the historical eight-lane
+DIM16 default. It checks that one BF16 lane row occupies exactly the selected
+scratchpad row bytes (`2 * lanes == mesh_columns`). The emitted DMA row width,
+padding, reduction length, result stride, and VPU row-address field then follow
+that count. The existing source-site selectors and complete-model VPU catalog
+still gate on DIM16; this issuer change alone does not make another mesh size
+an executable model configuration. The DIM4/8/32 layouts have structural
+tests, while execution parity on matching Spike remains a separate gate.
+
 For a typed MX handoff, bind and verify it against the selected profile:
 
 ```sh
