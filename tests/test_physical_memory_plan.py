@@ -12,9 +12,10 @@ from mx_gemmini_support.command_ir import Command, Fence, Operand
 from mx_gemmini_support.physical_memory_plan import (
     Access, MemoryEvent, MemoryValue, PhysicalMemoryError,
     _single_fp8_accumulator_rows, plan_physical_memory,
-    source_bound_capacities, source_bound_single_fp8_accumulator,
+    source_bound_capacities, source_bound_fp6_lut_caches,
+    source_bound_single_fp8_accumulator,
 )
-from mx_gemmini_support.target_profile import profile_sha256
+from mx_gemmini_support.target_profile import export_profiles_v3, profile_sha256
 
 
 def _profile(dim: int = 16) -> dict:
@@ -189,6 +190,50 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
         with self.assertRaisesRegex(PhysicalMemoryError, "certified DIM16 source profile"):
             source_bound_single_fp8_accumulator(
                 profile, tiles_i=1, tiles_j=22, rtl_root=rtl)
+
+    def test_selected_fp6_direct_lut_cache_lifetime_and_bounds(self) -> None:
+        rtl = Path(__file__).resolve().parents[2] / "gemmini"
+        profile = export_profiles_v3(rtl)["MxFp4E3M2E4M3VpuGemminiRocketConfig"]
+        proof = source_bound_fp6_lut_caches(profile, rtl)
+        self.assertEqual(proof["capacity_codebooks"], {
+            "lut_weight": 64, "lut_activation": 64, "lut_output": 64})
+        bindings = _bindings(profile)
+        values = (MemoryValue("B", "lut_weight", 44, "direct sel0", fixed_row=0),
+                  MemoryValue("A", "lut_activation", 4, "direct sel1", fixed_row=0),
+                  MemoryValue("C", "lut_output", 4, "direct sel2", fixed_row=0))
+        events = (_opaque("load", bindings,
+                          writes=(Access("B", 0, 44), Access("A", 0, 4),
+                                  Access("C", 0, 4))),
+                  _opaque("compute", bindings,
+                          reads=(Access("B", 0, 44), Access("A", 0, 4),
+                                 Access("C", 0, 4))),
+                  _fence("complete"))
+        with self.assertRaisesRegex(PhysicalMemoryError, "LUT/unknown physical capacity"):
+            plan_physical_memory(profile, values, events, bindings=bindings)
+        receipt = plan_physical_memory(profile, values, events, bindings=bindings,
+                                       rtl_root=rtl)
+        self.assertEqual(receipt["peaks"]["lut_weight"]["peak_live_rows"], 44)
+        self.assertEqual(receipt["placement"]["B"]["last_use_completed_at"], 2)
+        for bad in (MemoryValue("too_many", "lut_weight", 65, "overflow", fixed_row=0),
+                    MemoryValue("past_end", "lut_weight", 1, "address", fixed_row=64)):
+            with self.subTest(bad=bad.id), self.assertRaisesRegex(
+                    PhysicalMemoryError, "exceed source capacity"):
+                plan_physical_memory(profile, (bad,),
+                                     (_opaque("write", bindings,
+                                              writes=(Access(bad.id, 0, bad.rows),)),
+                                      _fence("done")),
+                                     bindings=bindings, rtl_root=rtl)
+        overlap = (MemoryValue("B0", "lut_weight", 44, "first", fixed_row=0),
+                   MemoryValue("B1", "lut_weight", 44, "second", fixed_row=0))
+        with self.assertRaisesRegex(PhysicalMemoryError, "overlaps live physical rows"):
+            plan_physical_memory(profile, overlap,
+                                 (_opaque("both", bindings,
+                                          writes=(Access("B0", 0, 44),
+                                                  Access("B1", 0, 44))),
+                                  _fence("done")), bindings=bindings, rtl_root=rtl)
+        profile["source"]["gemmini_revision"] = "0" * 40
+        with self.assertRaisesRegex(PhysicalMemoryError, "source-bound DIM16 profile"):
+            source_bound_fp6_lut_caches(profile, rtl)
 
 
 if __name__ == "__main__":

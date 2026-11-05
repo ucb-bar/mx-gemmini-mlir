@@ -24,7 +24,54 @@ class PhysicalMemoryError(ValueError):
     """The selected program has no provably safe physical row placement."""
 
 
-SPACES = frozenset({"scratchpad", "accumulator", "scale_a", "scale_b", "lut", "host"})
+SPACES = frozenset({"scratchpad", "accumulator", "scale_a", "scale_b", "lut",
+                    "lut_weight", "lut_activation", "lut_output", "host"})
+
+# Direct MX_LOAD_LUT addresses one of three independent 64-codebook caches.
+# QuantLut also has an upper half for loop-managed ping-pong loads; this proof
+# certifies only the direct, zero-based loads emitted for one captured FP6 GEMM.
+_FP6_LUT_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
+_FP6_LUT_SOURCE_SHA256 = {
+    "src/main/scala/gemmini/ConfigsFP.scala":
+        "1c3dadf677aefb694804fef61398e166f827f7098408e7ea722310fa50c3c5ea",
+    "src/main/scala/gemmini/MxConfigFragments.scala":
+        "b6d2d468f3d8138cf56ce04623a4ea2e994a8b178022b732b2cd4db3bd18a582",
+    "src/main/scala/gemmini/Controller.scala":
+        "d9b3ef3ce4bb00d8b781f1717e5ebb5b2fea6e53a488e523ef5e761ad12a96d0",
+    "src/main/scala/gemmini/QuantLut.scala":
+        "b6af2e477f140b3426ef97652e54574ce04b8edb8c3fa3999f5abb1c08a93d33",
+}
+
+
+def source_bound_fp6_lut_caches(profile: dict, rtl_root: Path) -> dict:
+    """Certify the selected DIM16 direct FP6 cache geometry from exact RTL."""
+    lut = profile.get("resources", {}).get("lut_config")
+    if (profile.get("schema") != "mx_gemmini.target_profile.v3" or
+            profile.get("name") != "MxFp4E3M2E4M3VpuGemminiRocketConfig" or
+            profile.get("geometry", {}).get("mesh_rows") != 16 or
+            profile.get("geometry", {}).get("mesh_columns") != 16 or
+            profile.get("resources", {}).get("lut") is not True or
+            not isinstance(lut, dict) or
+            lut.get("projection_format") != "LutFP6E3M2" or
+            lut.get("read_data_bits") != 6 or lut.get("address_bits") != 4 or
+            lut.get("activation_code_bits") != 6 or
+            lut.get("weight_code_bits") != 6 or
+            profile.get("source", {}).get("gemmini_revision") != _FP6_LUT_REVISION):
+        raise PhysicalMemoryError("FP6 LUT caches need the selected source-bound DIM16 profile")
+    rtl_root = Path(rtl_root).resolve(strict=True)
+    revision = subprocess.check_output(
+        ["git", "-C", str(rtl_root), "rev-parse", "HEAD"], text=True).strip()
+    if revision != _FP6_LUT_REVISION:
+        raise PhysicalMemoryError("FP6 LUT RTL revision differs from selected profile")
+    for name, expected in _FP6_LUT_SOURCE_SHA256.items():
+        if hashlib.sha256((rtl_root / name).read_bytes()).hexdigest() != expected:
+            raise PhysicalMemoryError(f"FP6 LUT RTL source changed: {name}")
+    return {"capacity_codebooks": {"lut_weight": 64, "lut_activation": 64,
+                                    "lut_output": 64},
+            "codebook_bits": 96, "entry_bits": 6,
+            "cache_address_base": 0, "load_mode": "direct_not_half_mode",
+            "gemmini_revision": revision,
+            "rtl_source_sha256": dict(_FP6_LUT_SOURCE_SHA256)}
 
 # The packed single-throughput formula below was audited against this exact
 # Gemmini source. Re-audit before accepting another source revision or geometry.
@@ -139,8 +186,8 @@ def _digest(value: object) -> str:
                                      allow_nan=False).encode()).hexdigest()
 
 
-def source_bound_capacities(profile: dict) -> dict[str, int | None]:
-    """Derive row capacities from v3 source facts; LUT rows are not yet pinned."""
+def source_bound_capacities(profile: dict, *, rtl_root: Path | None = None) -> dict[str, int | None]:
+    """Derive physical rows; direct FP6 LUT caches require exact RTL proof."""
     if profile.get("schema") != "mx_gemmini.target_profile.v3":
         raise PhysicalMemoryError("physical row planning needs a source-bound v3 profile")
     geometry, resources = profile["geometry"], profile["resources"]
@@ -167,11 +214,15 @@ def source_bound_capacities(profile: dict) -> dict[str, int | None]:
             scale_bytes <= 0 or scale_line <= 0 or
             scale_bytes % (2 * scale_line)):
         raise PhysicalMemoryError("scale memory has no source-derived A/B row capacity")
+    lut_caps = (source_bound_fp6_lut_caches(profile, rtl_root)["capacity_codebooks"]
+                if rtl_root is not None else {})
     return {"scratchpad": spad_bytes * 8 // spad_bits,
             "accumulator": acc_rows,
             "scale_a": scale_bytes // (2 * scale_line),
             "scale_b": scale_bytes // (2 * scale_line),
-            "lut": None, "host": None}
+            "lut": None, "host": None,
+            **{space: lut_caps.get(space) for space in
+               ("lut_weight", "lut_activation", "lut_output")}}
 
 
 def _root(values: Mapping[str, MemoryValue], name: str) -> str:
@@ -249,14 +300,14 @@ def _check_command(event: MemoryEvent, values: Mapping[str, MemoryValue],
 
 def plan_physical_memory(profile: dict, values: tuple[MemoryValue, ...],
                          events: tuple[MemoryEvent, ...], *,
-                         bindings: Mapping[str, str]) -> dict:
+                         bindings: Mapping[str, str], rtl_root: Path | None = None) -> dict:
     """Place physical rows and prove no live allocations overlap.
 
     Command and opaque effects complete at a named fence. A fence releases only
     queues listed in ``completes``; a pending access with no matching fence is
     refused. Host views and materializations complete at issue.
     """
-    capacities = source_bound_capacities(profile)
+    capacities = source_bound_capacities(profile, rtl_root=rtl_root)
     if (not events or not values or len({v.id for v in values}) != len(values) or
             len({e.id for e in events}) != len(events)):
         raise PhysicalMemoryError("physical graph needs unique values and events")
@@ -272,7 +323,7 @@ def plan_physical_memory(profile: dict, values: tuple[MemoryValue, ...],
                 value.space != table[root].space or value.rows != table[root].rows):
             raise PhysicalMemoryError("view must alias an equal-extent value in the same space")
         capacity = capacities[value.space]
-        if value.space == "lut" or (capacity is None and value.space != "host"):
+        if capacity is None and value.space != "host":
             raise PhysicalMemoryError("requested LUT/unknown physical capacity is unqualified")
         if (value.fixed_row is not None and capacity is not None and
                 value.fixed_row + value.rows > capacity):
@@ -414,7 +465,8 @@ def plan_physical_memory(profile: dict, values: tuple[MemoryValue, ...],
             _check_command(event, table, offsets, capacities,
                            profile["geometry"]["mesh_columns"])
     peaks = {}
-    for space in ("scratchpad", "accumulator", "scale_a", "scale_b", "lut"):
+    for space in ("scratchpad", "accumulator", "scale_a", "scale_b", "lut",
+                  "lut_weight", "lut_activation", "lut_output"):
         members = [v for v in roots if v.space == space]
         high_water = max((offsets[v.id] + v.rows for v in members), default=0)
         live_peak = max((sum(v.rows for v in members

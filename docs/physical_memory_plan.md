@@ -18,8 +18,13 @@ fence. A fence releases only the queues named by that event.
 The source-bound v3 profile supplies scratchpad row width/capacity,
 accumulator rows, and scale-memory line capacity. A and B scale selectors
 receive separate halves of the selected scale memory. The profile does not
-record the total LUT table row capacity, so the receipt reports LUT capacity
-as unknown and any requested LUT allocation is refused.
+record the total LUT table row capacity, so the legacy `lut` space remains
+unknown and any requested allocation there is refused. For the selected
+DIM16 FP6 E3M2 configuration, `source_bound_fp6_lut_caches` verifies the
+exact Gemmini revision and four RTL source hashes, then exposes three
+independent direct-load spaces with 64 codebooks each: `lut_weight`,
+`lut_activation`, and `lut_output`. This narrow proof is described in
+`docs/fp6_lut_memory_plan.md`; other LUT modes remain unqualified.
 
 The captured small-Llama adapter in npu-exploration qualifies the source-named
 DIM16 FP8 E4M3 configurations with 64 KiB or 32 KiB accumulator for the
