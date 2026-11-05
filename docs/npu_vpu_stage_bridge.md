@@ -13,15 +13,21 @@ receipt. The output directory contains the copied source, rewritten MLIR,
 per-class rewrite receipts, and a bridge receipt with hashes and selected
 regions. Host-selected sites and their reasons remain visible.
 
-From the managed task containing both repositories, an example is:
+From the MX compiler repository root, point to the matching NPU and Merlin
+checkouts and to a planning receipt generated for the same capture. Choose a
+new output directory:
 
 ```sh
-PYTHONPATH=../merlin/src:. python3 -m tools.rewrite_npu_model_vpu_sites \
-  --plan ../.tmp/small-llama-fp8-vpu-plan/model_quantization_plan.json \
-  --run ../npu-exploration/config/run/model_fp8_e4m3_vpu.json \
+export NPU_ROOT=/path/to/npu-exploration
+export MERLIN_ROOT=/path/to/merlin
+export PLAN_RECEIPT=/path/to/model_quantization_plan.json
+export OUTPUT_DIR=/path/to/new-small-llama-vpu-rewrite
+PYTHONPATH="$MERLIN_ROOT/src:." python3 -m tools.rewrite_npu_model_vpu_sites \
+  --plan "$PLAN_RECEIPT" \
+  --run "$NPU_ROOT/config/run/model_fp8_e4m3_vpu.json" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
   --mlir docs/evidence/model2mlir_small_llama_precision_e9ded36_266c593/small_llama.model2mlir.mlir.gz \
-  --out-dir ../.tmp/small-llama-vpu-rewrite
+  --out-dir "$OUTPUT_DIR"
 ```
 
 The pinned small Llama capture selects and rewrites 83 sites: two softmax,

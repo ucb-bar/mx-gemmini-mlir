@@ -14,17 +14,21 @@ The output contains `a_bf16.bin`, `b_codes.bin`, `b_scales.bin`, and
 each byte; B scales are E8M0 `[K/32,N]`. Coordinates in the manifest refer to
 the original expert's output rows and input MX groups.
 
-For the verified gpt-oss-20b layer 0 expert 0 gate/up fixture:
+For a gpt-oss-20b layer 0 expert 0 gate/up fixture, set `FIXTURE_DIR` to
+the range extractor's output and `OUTPUT_DIR` to a new directory. Run from
+the MX compiler repository root:
 
 ```sh
+export FIXTURE_DIR=/path/to/gptoss20b-expert0
+export OUTPUT_DIR=/path/to/new-gptoss20b-native-tile
 python3 tools/bind_gptoss_native_tile.py \
-  --fixture-dir "$TASK_DIR/.tmp/gptoss20b-expert0" \
-  --extractor-receipt "$TASK_DIR/.tmp/gptoss20b-expert0/receipt.json" \
+  --fixture-dir "$FIXTURE_DIR" \
+  --extractor-receipt "$FIXTURE_DIR/receipt.json" \
   --expected-revision 6cee5e81ee83917806bbde320786a8fb61efebee \
-  --activation-bf16 "$TASK_DIR/.tmp/gptoss20b-expert0/a_bf16.bin" \
+  --activation-bf16 "$FIXTURE_DIR/a_bf16.bin" \
   --activation-m 1 --projection gate_up --expert-index 0 \
   --output-start 0 --output-count 32 --block-start 0 --block-count 2 \
-  --output-dir "$TASK_DIR/.tmp/gptoss20b-native-tile"
+  --output-dir "$OUTPUT_DIR"
 ```
 
 Use the actual receipt filename emitted by the extractor. For this example A

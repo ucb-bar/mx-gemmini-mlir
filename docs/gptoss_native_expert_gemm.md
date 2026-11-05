@@ -20,19 +20,29 @@ The recipe should first pass npu-exploration's `model_run.v2` parser. This MX
 stage checks the selected fields and hashes that it consumes; it does not
 reimplement the complete npu recipe parser or invoke the Python provider.
 
-For a managed task with the range extractor fixture and profile-bound tile:
+With a range-extracted checkpoint fixture and a profile-bound tile, set
+`NPU_ROOT` and `MERLIN_ROOT` to the matching checkouts. Set the remaining
+paths to the outputs and user-owned files selected for this run. Run from the
+MX compiler repository root:
 
 ```sh
-PYTHONPATH=../merlin/src:. python3 -m tools.emit_gptoss_native_expert_gemm \
-  --tile-dir ../.tmp/gptoss20b-native-tile-profile \
-  --fixture-dir ../.tmp/gptoss20b-expert0 \
-  --extractor-receipt ../.tmp/gptoss20b-expert0/receipt.json \
-  --run ../.tmp/gptoss-native-fp4-user-run.json \
+export NPU_ROOT=/path/to/npu-exploration
+export MERLIN_ROOT=/path/to/merlin
+export FIXTURE_DIR=/path/to/gptoss20b-expert0
+export TILE_DIR=/path/to/gptoss20b-native-tile-profile
+export RUN_RECIPE=/path/to/gptoss-native-fp4-user-run.json
+export CALLBACK_C=/path/to/user_activation_quantizer.c
+export OUTPUT_DIR=/path/to/new-gptoss20b-expert-gemm-stage
+PYTHONPATH="$MERLIN_ROOT/src:." python3 -m tools.emit_gptoss_native_expert_gemm \
+  --tile-dir "$TILE_DIR" \
+  --fixture-dir "$FIXTURE_DIR" \
+  --extractor-receipt "$FIXTURE_DIR/receipt.json" \
+  --run "$RUN_RECIPE" \
   --profile profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json \
   --site-id gptoss.expert0.gate_up.tile0 \
-  --callback-c ../.tmp/user_activation_quantizer.c \
-  --abi-header ../npu-exploration/compiler/model_activation_abi.h \
-  --out-dir ../.tmp/gptoss20b-expert-gemm-stage
+  --callback-c "$CALLBACK_C" \
+  --abi-header "$NPU_ROOT/compiler/model_activation_abi.h" \
+  --out-dir "$OUTPUT_DIR"
 ```
 
 The output has the checked native B arrays, generated matrix issuer, dense

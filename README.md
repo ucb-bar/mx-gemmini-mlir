@@ -83,6 +83,9 @@ describes the dialect's typed contract and verifier.
 
 The [configuration guide](docs/current_mx_profiles.md) distinguishes Rocket,
 standalone, VPU, precision, and mesh variants. The
+[current MX exploration guide](docs/mx_configuration_exploration.md) explains
+the recipe/quantizer boundary, selected Spike coverage, and the remaining
+whole-model and submodule gates. The
 [target and layer-precision guide](docs/configure_target_and_precision.md)
 shows how to select a hardware profile, identify a layer's compiler sites,
 and build with a validated FP4/FP8 policy. The
