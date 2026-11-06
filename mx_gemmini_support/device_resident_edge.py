@@ -198,12 +198,18 @@ def plan_matrix_vpu_edge(profile: dict, *, matrix_plan: Any,
 
 
 def _windows(profile: dict, edge: DeviceEdgePlan, *, output_row: int | None = None,
-             second_output: bool = False) -> tuple[int, int, int | None]:
+             second_output: bool = False,
+             window_rows: tuple[int, int, int] | None = None) -> tuple[int, int, int | None]:
     total = source_bound_capacities(profile)["scratchpad"]
     if edge.profile_sha256 != profile_sha256(profile):
         raise DeviceEdgeError("resident edge profile changed")
     # Reserve a complete logical producer extent, even if VPU commands split it.
-    if total >= 0x2400:
+    if window_rows is not None:
+        if (len(window_rows) != 3 or
+                any(type(row) is not int or row < 0 for row in window_rows)):
+            raise DeviceEdgeError("resident VPU window rows need three nonnegative integers")
+        temp, result, multiply = window_rows
+    elif total >= 0x2400:
         temp, result, multiply = 0x1000, 0x2000, 0x3000
     else:
         temp, result, multiply = 0x400, 0x800, 0xc00
@@ -239,9 +245,12 @@ def _readout(profile: dict, *, buffer: str, source_row: int,
 
 
 def emit_resident_sigmoid_multiply(profile: dict, edge: DeviceEdgePlan, *,
-                                   symbol: str) -> ResidentKernel:
+                                   symbol: str,
+                                   window_rows: tuple[int, int, int] | None = None
+                                   ) -> ResidentKernel:
     """Keep C live for sigmoid and the original-C multiply branch."""
-    temp, result, multiply = _windows(profile, edge, second_output=True)
+    temp, result, multiply = _windows(profile, edge, second_output=True,
+                                      window_rows=window_rows)
     assert multiply is not None
     commands: list[Command | Fence] = []
     starts = tuple(range(0, edge.physical_rows, 1024))
