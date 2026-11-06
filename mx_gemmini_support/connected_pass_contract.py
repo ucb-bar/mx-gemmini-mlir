@@ -307,6 +307,9 @@ def verify_connected_pass_trace(trace: dict, *, require_spike: bool = True) -> N
     _need(isinstance(facts, dict) and
           all(record.get("required_target_facts") == facts for record in passes[:-1]) and
           facts.get("profile_sha256") == trace.get("profile_sha256") and
+          type(facts.get("mesh_rows")) is int and
+          type(facts.get("vpu_lanes")) is int and
+          type(facts.get("multiply_chunks")) is int and
           facts.get("mesh_rows") in (4, 8, 16, 32) and
           facts.get("mesh_columns") == facts.get("mesh_rows") and
           facts.get("vpu_lanes") == facts.get("mesh_rows") // 2 and
