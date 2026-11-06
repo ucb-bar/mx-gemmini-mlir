@@ -30,7 +30,7 @@ from .merlin_vpu_elementwise import selected_elementwise_sites
 from .merlin_vpu_reduce import emit_memref_reduce_shim, selected_row_reduce_sites
 from .merlin_vpu_softmax import emit_memref_softmax_shim, selected_softmax_sites
 from .merlin_vpu_unary import emit_memref_unary_shim, selected_unary_sites
-from .offline_weight_pack import pack_weight
+from .offline_weight_pack import pack_weight, quantized_weight as _quantized_weight
 from .target_profile import load_profile, profile_sha256
 from .vpu_add_kernel import emit_vpu_add, emit_vpu_elementwise
 from .vpu_row_reduce import emit_vpu_row_reduce
@@ -113,7 +113,8 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                          gated_activation_arithmetic: str = "reciprocal",
                          native_tile_policy: str = "legacy",
                          reuse_prepacked_data: Path | None = None,
-                         reuse_prepacked_object: Path | None = None
+                         reuse_prepacked_object: Path | None = None,
+                         quantized_weights_path: Path | None = None
                          ) -> tuple[Path, Path]:
     """Compile selected source sites through checked MX native schedules."""
     if gated_activation_arithmetic not in {"reciprocal", "divide"} or (
@@ -265,6 +266,13 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         from safetensors import safe_open
 
         checkpoint = safe_open(str(checkpoint_weights_path), framework="pt", device="cpu")
+    quantized = None
+    if quantized_weights_path is not None:
+        if not prepack_immutable_weights:
+            raise ValueError("MX quantized weights require build-time checkpoint packing")
+        from safetensors import safe_open
+
+        quantized = safe_open(str(quantized_weights_path), framework="np", device="cpu")
     for entry in plan["kernels"]:
         symbol = entry["symbol"]
         issuer_symbol = entry["issuer_symbol"]
@@ -288,9 +296,14 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             if entry["rank"] != 2 or values.shape != (shape[2], shape[1]):
                 raise ValueError("MX checkpoint RHS differs from its selected contraction")
             padded = plan_dense_shape(profile, shape, precision=precision).padded_shape_mnk
-            codes, scales = pack_weight(
-                values, precision=precision, padded_shape=(padded[2], padded[1]),
-                workdir=out_dir, quantizer_source=runtime_source)
+            if quantized is not None:
+                codes, scales = _quantized_weight(quantized, parameter_name, values,
+                                                  precision=precision,
+                                                  padded_shape=(padded[2], padded[1]))
+            else:
+                codes, scales = pack_weight(
+                    values, precision=precision, padded_shape=(padded[2], padded[1]),
+                    workdir=out_dir, quantizer_source=runtime_source)
             fixed_symbols = (f"{symbol}_fixed_codes", f"{symbol}_fixed_scales")
             fixed_records[symbol] = {
                 "checkpoint_parameter_name": parameter_name,
@@ -921,7 +934,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                 gated_activation_arithmetic: str = "reciprocal",
                                 native_tile_policy: str = "legacy",
                                 reuse_prepacked_data: Path | None = None,
-                                reuse_prepacked_object: Path | None = None
+                                reuse_prepacked_object: Path | None = None,
+                                quantized_weights_path: Path | None = None
                                 ) -> Callable[[Path, Path], tuple[Path, Path]]:
     """Return the target-owned callback accepted by DeviceRouting."""
     profile_path = Path(profile_path).resolve(strict=True)
@@ -975,6 +989,8 @@ def make_merlin_catalog_builder(*, profile_path: Path,
                                     gated_activation_arithmetic=gated_activation_arithmetic,
                                     native_tile_policy=native_tile_policy,
                                     reuse_prepacked_data=reuse_prepacked_data,
-                                    reuse_prepacked_object=reuse_prepacked_object)
+                                    reuse_prepacked_object=reuse_prepacked_object,
+                                    quantized_weights_path=(Path(quantized_weights_path).resolve(strict=True)
+                                                            if quantized_weights_path is not None else None))
 
     return build

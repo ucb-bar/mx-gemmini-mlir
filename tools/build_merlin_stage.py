@@ -171,6 +171,10 @@ def main() -> None:
                         help="pack source-proven checkpoint RHS values once per compiled stage")
     parser.add_argument("--prepack-checkpoint-weights", action="store_true",
                         help="embed source-proven packed checkpoint RHS values at build time")
+    parser.add_argument("--quantized-weights", type=Path,
+                        help="embed these externally quantized checkpoint weights (safetensors: "
+                             "<param>.codes, <param>.scales, {param: format} metadata) instead "
+                             "of packing the f32 checkpoint; requires --prepack-checkpoint-weights")
     parser.add_argument("--far-constant-data", action="store_true",
                         help="use full-address PIC references and a separate large readonly "
                              "section for packed checkpoint data")
@@ -269,6 +273,8 @@ def main() -> None:
                         help="Spike ISA; zicntr supports generated cycle-counter reads")
     parser.add_argument("--spike-timeout", type=int, default=600)
     args = parser.parse_args()
+    if args.quantized_weights is not None and not args.prepack_checkpoint_weights:
+        parser.error("--quantized-weights requires --prepack-checkpoint-weights")
     if args.far_constant_data and not args.prepack_checkpoint_weights:
         parser.error("--far-constant-data requires --prepack-checkpoint-weights")
     if args.host_softmax_policy is not None and args.execution_policy is None:
@@ -547,7 +553,8 @@ def main() -> None:
             gated_activation_arithmetic=args.gated_activation_arithmetic,
             native_tile_policy=args.native_tile_policy,
             reuse_prepacked_data=args.reuse_prepacked_data,
-            reuse_prepacked_object=args.reuse_prepacked_object),
+            reuse_prepacked_object=args.reuse_prepacked_object,
+            quantized_weights_path=args.quantized_weights),
         post_offload_transform=MXVPUPostOffload(
             profile,
             enabled_classes=enabled_vpu_classes,
