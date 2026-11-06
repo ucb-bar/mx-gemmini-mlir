@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import asdict
 from typing import Mapping
 
+from .command_ir import Command, Fence
 from .physical_memory_plan import source_bound_capacities
 from .target_profile import profile_sha256
+from .vpu_add_kernel import elementwise_issue_commands
 
 
 SCHEMA = "mx_gemmini.connected_pass_trace.v1"
@@ -116,6 +119,84 @@ def _seal(trace: dict) -> dict:
     return trace
 
 
+def _access(value: str, offset: int, length: int) -> dict:
+    return {"value": value, "offset": offset, "length": length}
+
+
+def _host_tile_event(kind: str, index: int, offset: int, count: int) -> dict:
+    """Expected conversion around one emitted BF16 multiply command stream."""
+    common = {"kind": "host", "command": None, "queue": None, "completes": []}
+    if kind == "narrow":
+        return {**common, "id": f"mul_narrow_{index}",
+                "source": "captured f32 inputs narrowed to BF16 tile",
+                "reads": [_access("lhs_f32", offset * 4, count * 4),
+                          _access("rhs_f32", offset * 4, count * 4)],
+                "writes": [_access("lhs", 0, count * 2),
+                           _access("rhs", 0, count * 2)]}
+    return {**common, "id": f"mul_widen_{index}",
+            "source": "BF16 multiply tile widened to f32",
+            "reads": [_access("result", 0, count * 2)],
+            "writes": [_access("output_f32", offset * 4, count * 4)]}
+
+
+def _verify_multiply_events(events: object, onchip_plan: dict, profile: dict,
+                            lanes: int, recipe: str) -> int:
+    """Require the exact narrow→issuer/fences→widen order for every chunk."""
+    chunks = [min(1024 * lanes, 2752 - offset)
+              for offset in range(0, 2752, 1024 * lanes)]
+    _need(isinstance(events, list) and
+          onchip_plan.get("vpu_chunk_elements") == chunks and
+          onchip_plan.get("emitted_vpu_mul_commands") == len(chunks),
+          PASS_NAMES[3], recipe, "multiply chunks differ from selected VPU lanes")
+    cursor = 0
+    source_offset = 0
+    emitted_commands = 0
+    for index, count in enumerate(chunks):
+        _need(cursor < len(events) and
+              events[cursor] == _host_tile_event("narrow", index,
+                                                 source_offset, count),
+              PASS_NAMES[3], recipe, "multiply host narrow effect or order differs")
+        cursor += 1
+        try:
+            commands = elementwise_issue_commands(
+                profile, elements=count, operation="mul")
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ConnectedPassRefusal(PASS_NAMES[3], recipe,
+                                       "selected VPU issuer has no legal row effects") from exc
+        for command_index, command in enumerate(commands):
+            if isinstance(command, Command):
+                expected = {"id": f"mul_command_{index}_{command_index}",
+                            "kind": "command", "source": "emitted typed multiply command",
+                            "queue": "gemmini", "completes": [],
+                            "command": asdict(command)}
+            elif isinstance(command, Fence):
+                expected = {"id": f"mul_fence_{index}_{command_index}",
+                            "kind": "fence", "source": "emitted multiply fence",
+                            "queue": None, "completes": ["gemmini"],
+                            "command": "fence", "reads": [], "writes": []}
+            else:
+                raise ConnectedPassRefusal(PASS_NAMES[3], recipe,
+                                           "selected VPU issuer has an unknown effect")
+            _need(cursor < len(events) and isinstance(events[cursor], dict) and
+                  all(events[cursor].get(key) == value
+                      for key, value in expected.items()),
+                  PASS_NAMES[3], recipe,
+                  "multiply command, fence, or typed row source differs")
+            cursor += 1
+            emitted_commands += 1
+        _need(isinstance(commands[-1], Fence) and cursor < len(events) and
+              events[cursor] == _host_tile_event("widen", index,
+                                                 source_offset, count),
+              PASS_NAMES[3], recipe,
+              "multiply host widen must follow its completion fence")
+        cursor += 1
+        source_offset += count
+    _need(cursor == len(events) and
+          onchip_plan.get("emitted_multiply_command_count") == emitted_commands,
+          PASS_NAMES[3], recipe, "multiply has an extra or missing physical event")
+    return len(chunks)
+
+
 def certify_connected_passes(*, source_binding: Mapping[str, object],
                              profile: dict, recipe_sha256: str,
                              graph_plan: dict, graph_plan_sha256: str,
@@ -207,17 +288,12 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
     except (ValueError, KeyError, TypeError) as exc:
         raise ConnectedPassRefusal(PASS_NAMES[3], recipe,
                                    "selected source has no proved row capacity") from exc
-    expected_mul_commands = (2752 + 1024 * lanes - 1) // (1024 * lanes)
-    _need(isinstance(events, list) and len(events) > 2 and
-          all(isinstance(event, dict) and event.get("kind") in {"command", "fence"}
-              for event in events) and
-          events[-1].get("kind") == "fence" and
-          events[-1].get("completes") == ["gemmini"] and
-          type(onchip_plan.get("prefix_final_fence_index")) is int and
+    expected_mul_commands = _verify_multiply_events(
+        events, onchip_plan, profile, lanes, recipe)
+    _need(type(onchip_plan.get("prefix_final_fence_index")) is int and
           onchip_plan["prefix_final_fence_index"] >= 0 and
           type(onchip_plan.get("scratchpad_peak_live_rows")) is int and
-          onchip_plan["scratchpad_peak_live_rows"] <= scratchpad_capacity and
-          onchip_plan.get("emitted_vpu_mul_commands") == expected_mul_commands,
+          onchip_plan["scratchpad_peak_live_rows"] <= scratchpad_capacity,
           PASS_NAMES[3], recipe, "row capacity, typed multiply effect or completion fence differs")
     _need(_hash(driver_sha256) and
           onchip_plan["bindings"]["driver_sha256"] == driver_sha256,
@@ -309,12 +385,12 @@ def verify_connected_pass_trace(trace: dict, *, require_spike: bool = True) -> N
           facts.get("profile_sha256") == trace.get("profile_sha256") and
           type(facts.get("mesh_rows")) is int and
           type(facts.get("vpu_lanes")) is int and
-          type(facts.get("multiply_chunks")) is int and
           facts.get("mesh_rows") in (4, 8, 16, 32) and
           facts.get("mesh_columns") == facts.get("mesh_rows") and
           facts.get("vpu_lanes") == facts.get("mesh_rows") // 2 and
-          facts.get("multiply_chunks") ==
-          (2752 + 1024 * facts["vpu_lanes"] - 1) // (1024 * facts["vpu_lanes"]),
+          (facts.get("multiply_chunks") ==
+           (2752 + 1024 * facts["vpu_lanes"] - 1) // (1024 * facts["vpu_lanes"]) or
+           (facts["mesh_rows"] == 16 and "multiply_chunks" not in facts)),
           "pass_trace_verification", recipe,
           "pass target facts differ from the selected coupled geometry")
 

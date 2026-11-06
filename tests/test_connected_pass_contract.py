@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import asdict
 import unittest
 
+from mx_gemmini_support.command_ir import Command, Fence
 from mx_gemmini_support.connected_pass_contract import (
-    ConnectedPassRefusal, _digest, _file_digest, certify_connected_passes,
+    ConnectedPassRefusal, _digest, _file_digest, _host_tile_event,
+    certify_connected_passes,
     finalize_selected_spike_pass, verify_connected_pass_trace,
 )
 from mx_gemmini_support.target_profile import profile_sha256
+from mx_gemmini_support.vpu_add_kernel import elementwise_issue_commands
 
 
 H = "a" * 64
@@ -28,12 +32,42 @@ BRIDGE = {"kind": "guest_host_unpack_padded_bf16_and_widen_to_f32",
           "logical_elements": 2752, "fp32_staging_bytes": 11008}
 
 
+def _events(profile: dict) -> tuple[list[dict], list[int], int]:
+    lanes = profile["resources"]["vpu_config"]["lanes"]
+    chunks = [min(1024 * lanes, 2752 - offset)
+              for offset in range(0, 2752, 1024 * lanes)]
+    events = []
+    offset = 0
+    command_count = 0
+    for i, count in enumerate(chunks):
+        events.append(_host_tile_event("narrow", i, offset, count))
+        for j, command in enumerate(elementwise_issue_commands(
+                profile, elements=count, operation="mul")):
+            if isinstance(command, Command):
+                events.append({"id": f"mul_command_{i}_{j}",
+                               "kind": "command", "source": "emitted typed multiply command",
+                               "queue": "gemmini", "completes": [],
+                               "command": asdict(command), "reads": [], "writes": []})
+            else:
+                assert isinstance(command, Fence)
+                events.append({"id": f"mul_fence_{i}_{j}",
+                               "kind": "fence", "source": "emitted multiply fence",
+                               "queue": None, "completes": ["gemmini"],
+                               "command": "fence", "reads": [], "writes": []})
+            command_count += 1
+        events.append(_host_tile_event("widen", i, offset, count))
+        offset += count
+    return events, chunks, command_count
+
+
 def _inputs() -> dict:
     profile = {
         "schema": "mx_gemmini.target_profile.v3",
         "name": "MxFp4E3M2E4M3VpuGemminiRocketConfig",
+        "transport": "rocket_rocc",
         "geometry": {"mesh_rows": 16, "mesh_columns": 16},
         "resources": {"scratchpad_bytes": 262144, "scratchpad_row_bits": 128,
+                      "scratchpad_banks": 4, "scratchpad_bank_rows": 4096,
                       "accumulator_bytes": 65536, "accumulator_row_bits": 1024,
                       "accumulator_rows": 512,
                       "scale_mem_config": {"size_bytes": 16384,
@@ -66,6 +100,7 @@ def _inputs() -> dict:
                           "driver_sha256": D,
                           "dispatch_program_sha256": program_hash,
                           "dispatch_sources_sha256": _digest(dispatch_sources)}}
+    events, chunks, command_count = _events(profile)
     onchip = {"schema": "npu_exploration.connected_branch_onchip.v1",
               "status": "sequential_prefix_and_mul_rows_certified_dim16",
               "prefix_physical_status":
@@ -76,8 +111,9 @@ def _inputs() -> dict:
                            "driver_sha256": D, "profile_sha256": profile_hash,
                            "prefix_physical_plan_sha256": P,
                            "multiply_source_sha256": M},
-              "events": [{"kind": "command"}, {"kind": "command"},
-                         {"kind": "fence", "completes": ["gemmini"]}],
+              "events": events,
+              "vpu_chunk_elements": chunks,
+              "emitted_multiply_command_count": command_count,
               "prefix_final_fence_index": 58,
               "scratchpad_peak_live_rows": 3648,
               "emitted_vpu_mul_commands": 1}
@@ -153,6 +189,24 @@ class ConnectedPassContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ConnectedPassRefusal, "serialized plan hash"):
             certify_connected_passes(**args)
 
+    def test_changed_host_tile_effect_and_completion_fence_refuse(self):
+        args = _inputs()
+        args["onchip_plan"]["events"][0]["reads"][0]["length"] -= 4
+        args["onchip_plan_sha256"] = _file_digest(args["onchip_plan"])
+        with self.assertRaisesRegex(ConnectedPassRefusal, "host narrow effect"):
+            certify_connected_passes(**args)
+        args = _inputs()
+        args["onchip_plan"]["events"][-2]["completes"] = []
+        args["onchip_plan_sha256"] = _file_digest(args["onchip_plan"])
+        with self.assertRaisesRegex(ConnectedPassRefusal, "fence"):
+            certify_connected_passes(**args)
+        args = _inputs()
+        args["onchip_plan"]["events"].append(
+            _host_tile_event("widen", 1, 2752, 0))
+        args["onchip_plan_sha256"] = _file_digest(args["onchip_plan"])
+        with self.assertRaisesRegex(ConnectedPassRefusal, "extra or missing"):
+            certify_connected_passes(**args)
+
     def test_selected_spike_pass_requires_both_full_oracles(self):
         trace = certify_connected_passes(**_inputs())
         kwargs = {"functional_stdout_sha256": H,
@@ -191,6 +245,7 @@ class ConnectedPassContractTest(unittest.TestCase):
                 p["geometry"] = {"mesh_rows": dim, "mesh_columns": dim}
                 p["resources"].update(scratchpad_bytes=131072 if dim == 4 else 262144,
                                       scratchpad_row_bits=dim * 8,
+                                      scratchpad_bank_rows=(131072 if dim == 4 else 262144) // (4 * dim),
                                       accumulator_row_bits=dim * 64,
                                       accumulator_rows=8192 // dim,
                                       vpu_config={"lanes": lanes})
@@ -199,7 +254,11 @@ class ConnectedPassContractTest(unittest.TestCase):
                 args["onchip_plan"]["profile_sha256"] = ph
                 args["onchip_plan"]["bindings"]["profile_sha256"] = ph
                 args["onchip_plan"]["status"] = "sequential_prefix_and_mul_rows_certified"
-                args["onchip_plan"]["emitted_vpu_mul_commands"] = (2752 + 1024 * lanes - 1) // (1024 * lanes)
+                events, chunks, command_count = _events(p)
+                args["onchip_plan"].update(
+                    events=events, vpu_chunk_elements=chunks,
+                    emitted_multiply_command_count=command_count,
+                    emitted_vpu_mul_commands=len(chunks))
                 args["graph_plan_sha256"] = _file_digest(args["graph_plan"])
                 args["onchip_plan_sha256"] = _file_digest(args["onchip_plan"])
                 trace = certify_connected_passes(**args)
