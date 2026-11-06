@@ -31,13 +31,16 @@ BRIDGE = {"kind": "guest_host_unpack_padded_bf16_and_widen_to_f32",
 def _inputs() -> dict:
     profile = {
         "schema": "mx_gemmini.target_profile.v3",
+        "name": "MxFp4E3M2E4M3VpuGemminiRocketConfig",
         "geometry": {"mesh_rows": 16, "mesh_columns": 16},
         "resources": {"scratchpad_bytes": 262144, "scratchpad_row_bits": 128,
                       "accumulator_bytes": 65536, "accumulator_row_bits": 1024,
                       "accumulator_rows": 512,
                       "scale_mem_config": {"size_bytes": 16384,
                                            "subbank_line_bytes": 16},
-                      "vpu_config": {"lanes": 8}},
+                      "vpu": True, "vpu_config": {"lanes": 8}},
+        "source": {"gemmini_revision":
+                   "12912323f1aa66d7b28687f01faf0a33af455f6f"},
     }
     profile_hash = profile_sha256(profile)
     source = {"selected_op_ids": [169, 170, 171, 172, 173],
@@ -133,6 +136,12 @@ class ConnectedPassContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ConnectedPassRefusal, "host bridge"):
             certify_connected_passes(**args)
 
+    def test_unselected_source_revision_refuses_before_driver(self):
+        args = _inputs()
+        args["profile"]["source"]["gemmini_revision"] = "0" * 40
+        with self.assertRaisesRegex(ConnectedPassRefusal, "source-bound coupled"):
+            certify_connected_passes(**args)
+
     def test_row_over_capacity_and_changed_plan_hash_refuse(self):
         args = _inputs()
         args["onchip_plan"]["scratchpad_peak_live_rows"] = 16385
@@ -166,6 +175,46 @@ class ConnectedPassContractTest(unittest.TestCase):
         trace["digest"] = _digest({k: v for k, v in trace.items() if k != "digest"})
         with self.assertRaisesRegex(ConnectedPassRefusal, "pass record"):
             verify_connected_pass_trace(trace, require_spike=False)
+
+    def test_all_named_coupled_profiles_bind_expected_matrix_counts(self):
+        variants = (
+            (4, 2, "MxDim4Fp4E3M2VpuGemminiRocketConfig", 2752),
+            (8, 4, "MxDim8Fp4E3M2E4M3VpuGemminiRocketConfig", 2752),
+            (16, 8, "MxFp4E3M2E4M3VpuGemminiRocketConfig", 5632),
+            (32, 16, "MxDim32E4M3VpuWideMemGemminiRocketConfig", 11264),
+        )
+        for dim, lanes, name, outputs in variants:
+            with self.subTest(dim=dim):
+                args = _inputs()
+                p = args["profile"]
+                p["name"] = name
+                p["geometry"] = {"mesh_rows": dim, "mesh_columns": dim}
+                p["resources"].update(scratchpad_bytes=131072 if dim == 4 else 262144,
+                                      scratchpad_row_bits=dim * 8,
+                                      accumulator_row_bits=dim * 64,
+                                      accumulator_rows=8192 // dim,
+                                      vpu_config={"lanes": lanes})
+                ph = profile_sha256(p)
+                args["graph_plan"]["bindings"]["profile_sha256"] = ph
+                args["onchip_plan"]["profile_sha256"] = ph
+                args["onchip_plan"]["bindings"]["profile_sha256"] = ph
+                args["onchip_plan"]["status"] = "sequential_prefix_and_mul_rows_certified"
+                args["onchip_plan"]["emitted_vpu_mul_commands"] = (2752 + 1024 * lanes - 1) // (1024 * lanes)
+                args["graph_plan_sha256"] = _file_digest(args["graph_plan"])
+                args["onchip_plan_sha256"] = _file_digest(args["onchip_plan"])
+                trace = certify_connected_passes(**args)
+                self.assertEqual(trace["passes"][0]["required_target_facts"]["mesh_rows"], dim)
+                oracle = _oracle()
+                for mode in oracle.values():
+                    mode["matrix"]["elements"] = outputs
+                final = finalize_selected_spike_pass(
+                    trace, functional_stdout_sha256=H, timed_stdout_sha256=R,
+                    extension_sha256=P, oracle_results=oracle,
+                    timing_scope="Spike model prediction; no RTL or FireSim calibration")
+                verify_connected_pass_trace(final)
+                p["resources"]["vpu_config"]["lanes"] = lanes + 1
+                with self.assertRaisesRegex(ConnectedPassRefusal, "coupled mesh/VPU"):
+                    certify_connected_passes(**args)
 
 
 if __name__ == "__main__":

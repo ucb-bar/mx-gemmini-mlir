@@ -191,8 +191,37 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
         self.assertEqual(_single_fp8_accumulator_rows(2, 22), 192)
         self.assertEqual(_single_fp8_accumulator_rows(1, 64), 256)
         self.assertEqual(_single_fp8_accumulator_rows(1, 65), 272)
+        self.assertEqual(_single_fp8_accumulator_rows(2, 86, dim=4), 192)
+        self.assertEqual(_single_fp8_accumulator_rows(1, 43, dim=8), 96)
+        self.assertEqual(_single_fp8_accumulator_rows(1, 11, dim=32), 96)
+        with self.assertRaisesRegex(PhysicalMemoryError, "source-qualified mesh DIM"):
+            _single_fp8_accumulator_rows(1, 11, dim=64)
         with self.assertRaisesRegex(PhysicalMemoryError, "positive tile counts"):
             _single_fp8_accumulator_rows(0, 22)
+
+    def test_source_pinned_packed_extent_across_coupled_geometries(self) -> None:
+        rtl = Path(__file__).resolve().parents[2] / "gemmini"
+        if not (rtl / "src/main/scala/gemmini/LoopMatmul.scala").is_file():
+            self.skipTest("selected Gemmini sibling is unavailable")
+        import subprocess
+        revision = subprocess.check_output(
+            ["git", "-C", str(rtl), "rev-parse", "HEAD"], text=True).strip()
+        if revision != "12912323f1aa66d7b28687f01faf0a33af455f6f":
+            self.skipTest("selected Gemmini source revision is unavailable")
+        profiles = export_profiles_v3(rtl)
+        cases = (
+            ("MxDim4Fp4E3M2VpuGemminiRocketConfig", 2, 86, 192),
+            ("MxDim8Fp4E3M2E4M3VpuGemminiRocketConfig", 1, 43, 96),
+            ("MxFp4E3M2E4M3VpuGemminiRocketConfig", 1, 22, 96),
+            ("MxDim32E4M3VpuWideMemGemminiRocketConfig", 1, 11, 96),
+        )
+        for name, tiles_i, tiles_j, expected in cases:
+            with self.subTest(name=name):
+                proof = source_bound_single_fp8_accumulator(
+                    profiles[name], tiles_i=tiles_i, tiles_j=tiles_j,
+                    rtl_root=rtl)
+                self.assertEqual(proof["rows"], expected)
+                self.assertLessEqual(expected, proof["capacity_rows"])
 
     def test_selected_acc32_source_pin_and_capacity(self) -> None:
         rtl = Path(__file__).resolve().parents[2] / "gemmini"
@@ -212,7 +241,7 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
             source_bound_single_fp8_accumulator(
                 profile, tiles_i=1, tiles_j=65, rtl_root=rtl)
         profile["source"]["gemmini_revision"] = "0" * 40
-        with self.assertRaisesRegex(PhysicalMemoryError, "certified DIM16 source profile"):
+        with self.assertRaisesRegex(PhysicalMemoryError, "certified source profile"):
             source_bound_single_fp8_accumulator(
                 profile, tiles_i=1, tiles_j=22, rtl_root=rtl)
 

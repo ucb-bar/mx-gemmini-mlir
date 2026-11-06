@@ -74,7 +74,8 @@ def source_bound_fp6_lut_caches(profile: dict, rtl_root: Path) -> dict:
             "rtl_source_sha256": dict(_FP6_LUT_SOURCE_SHA256)}
 
 # The packed single-throughput formula below was audited against this exact
-# Gemmini source. Re-audit before accepting another source revision or geometry.
+# Gemmini source for the named DIM4/8/16/32 coupled profiles. Re-audit before
+# accepting another source revision or geometry.
 _PACKED_ACC_GEMMINI_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
 _PACKED_ACC_SOURCE_SHA256 = {
     "src/main/scala/gemmini/LoopMatmul.scala":
@@ -88,21 +89,30 @@ _PACKED_ACC_SOURCE_SHA256 = {
 }
 
 
-def _single_fp8_accumulator_rows(tiles_i: int, tiles_j: int) -> int:
-    """DIM16 LOOP_WS packed accumulator extent for direct E4M3 operands.
+def _single_fp8_accumulator_rows(tiles_i: int, tiles_j: int,
+                                 *, dim: int = 16) -> int:
+    """Source-derived LOOP_WS packed extent for one direct E4M3 GEMM.
 
-    LoopMatmulExecute uses ``c_addr=(i*round_up(J,4)+j)*4``. The execute
-    controller aligns that address to a 16-row window and writes the 16 mesh
-    rows with four output column tiles sharing it. LoopMatmulStCSpad reads
-    ``ceil(J/4)`` 16-row windows per i-tile. Both extents must agree.
+    MxGeom sets R=max(DIM,16), W=R/DIM and four column tiles per W-group.
+    LoopMatmulExecute advances by DIM/4 per j-tile and the execute controller
+    aligns writes to R-row accumulator windows. LoopMatmulStCSpad reads
+    ceil(ceil(J/4)/W)*W groups of DIM rows per i-tile. Require agreement.
     """
     if (type(tiles_i) is not int or type(tiles_j) is not int or
             tiles_i <= 0 or tiles_j <= 0):
         raise PhysicalMemoryError("packed accumulator needs positive tile counts")
-    rounded_j = (tiles_j + 3) // 4 * 4
-    execute_end = max((((i * rounded_j + j) * 4) // 16) * 16 + 16
+    if type(dim) is not int or dim not in (4, 8, 16, 32):
+        raise PhysicalMemoryError("packed accumulator needs a source-qualified mesh DIM")
+    row_window = max(dim, 16)
+    groups_per_row = row_window // dim
+    rounded_j = ((tiles_j + 4 * groups_per_row - 1) //
+                 (4 * groups_per_row)) * (4 * groups_per_row)
+    execute_end = max(((((i * rounded_j + j) * (dim // 4)) // row_window) *
+                       row_window + row_window)
                       for i in range(tiles_i) for j in range(tiles_j))
-    store_end = tiles_i * ((tiles_j + 3) // 4) * 16
+    store_groups = (((tiles_j + 3) // 4 + groups_per_row - 1) //
+                    groups_per_row) * groups_per_row
+    store_end = tiles_i * store_groups * dim
     if execute_end != store_end:
         raise PhysicalMemoryError("packed execute/store accumulator extents disagree")
     return execute_end
@@ -110,7 +120,7 @@ def _single_fp8_accumulator_rows(tiles_i: int, tiles_j: int) -> int:
 
 def source_bound_single_fp8_accumulator(profile: dict, *, tiles_i: int,
                                         tiles_j: int, rtl_root: Path) -> dict:
-    """Certify one zero-based DIM16 direct-E4M3 LOOP_WS accumulator span.
+    """Certify one zero-based direct-E4M3 LOOP_WS accumulator span.
 
     The caller must separately prove the emitted loop arguments, direct FP8
     selector, BF16 output, no alternate accumulator base, and completion fence.
@@ -118,15 +128,21 @@ def source_bound_single_fp8_accumulator(profile: dict, *, tiles_i: int,
     capacity = source_bound_capacities(profile)["accumulator"]
     resources = profile["resources"]
     qualified = {
-        "MxFp4E3M2E4M3VpuGemminiRocketConfig": (512, 65536),
-        "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig": (256, 32768),
+        "MxDim4Fp4E3M2VpuGemminiRocketConfig": (4, 2048, 65536),
+        "MxDim8Fp4E3M2E4M3VpuGemminiRocketConfig": (8, 1024, 65536),
+        "MxFp4E3M2E4M3VpuGemminiRocketConfig": (16, 512, 65536),
+        "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig": (16, 256, 32768),
+        "MxDim32E4M3VpuWideMemGemminiRocketConfig": (32, 256, 65536),
     }
-    if (profile.get("geometry", {}).get("mesh_rows") != 16 or
-            profile.get("name") not in qualified or
-            (capacity, resources.get("accumulator_bytes")) != qualified[profile["name"]] or
+    selected = qualified.get(profile.get("name"))
+    dim = profile.get("geometry", {}).get("mesh_rows")
+    if (selected is None or
+            dim != profile.get("geometry", {}).get("mesh_columns") or
+            (dim, capacity, resources.get("accumulator_bytes")) != selected or
+            resources.get("accumulator_row_bits") != dim * 64 or
             profile.get("source", {}).get("gemmini_revision") !=
             _PACKED_ACC_GEMMINI_REVISION):
-        raise PhysicalMemoryError("packed accumulator needs a certified DIM16 source profile")
+        raise PhysicalMemoryError("packed accumulator needs a certified source profile")
     rtl_root = Path(rtl_root).resolve(strict=True)
     revision = subprocess.check_output(
         ["git", "-C", str(rtl_root), "rev-parse", "HEAD"], text=True).strip()
@@ -138,16 +154,20 @@ def source_bound_single_fp8_accumulator(profile: dict, *, tiles_i: int,
         if digest != expected:
             raise PhysicalMemoryError(f"packed accumulator RTL source changed: {name}")
         source_sha256[name] = digest
-    rows = _single_fp8_accumulator_rows(tiles_i, tiles_j)
+    rows = _single_fp8_accumulator_rows(tiles_i, tiles_j, dim=dim)
     if rows > capacity:
         raise PhysicalMemoryError(
             f"packed LOOP_WS needs {rows} accumulator rows; source capacity is {capacity}")
     return {"rows": rows, "capacity_rows": capacity,
             "address_base_row": 0, "tiles_i": tiles_i, "tiles_j": tiles_j,
             "tiles_j_rounded_to_four": (tiles_j + 3) // 4 * 4,
+            "tiles_j_rounded_to_accumulator_row":
+                (tiles_j + 4 * (max(dim, 16) // dim) - 1) //
+                (4 * (max(dim, 16) // dim)) * (4 * (max(dim, 16) // dim)),
             "execute_and_store_extent_agree": True,
             "gemmini_revision": revision, "rtl_source_sha256": source_sha256,
-            "scope": "DIM16 direct FP8 E4M3 operands, BF16 output, zero-based single LOOP_WS"}
+            "scope": (f"DIM{dim} direct FP8 E4M3 operands, BF16 output, "
+                      "zero-based single LOOP_WS")}
 
 
 @dataclass(frozen=True)

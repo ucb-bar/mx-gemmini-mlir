@@ -47,6 +47,14 @@ _BRIDGE = {
     "logical_elements": 2752,
     "fp32_staging_bytes": 11008,
 }
+_QUALIFIED_GEOMETRY = {
+    "MxDim4Fp4E3M2VpuGemminiRocketConfig": (4, 2),
+    "MxDim8Fp4E3M2E4M3VpuGemminiRocketConfig": (8, 4),
+    "MxFp4E3M2E4M3VpuGemminiRocketConfig": (16, 8),
+    "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig": (16, 8),
+    "MxDim32E4M3VpuWideMemGemminiRocketConfig": (32, 16),
+}
+_GEMMINI_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
 
 
 class ConnectedPassRefusal(ValueError):
@@ -133,11 +141,17 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
           ["matmul_6", "view_19", "view_19", "sigmoid_0", "mul_12"],
           PASS_NAMES[0], recipe, "captured source sites or source hash differ")
     profile_hash = profile_sha256(profile)
-    _need(profile.get("schema") == "mx_gemmini.target_profile.v3" and
-          profile.get("geometry", {}).get("mesh_rows") == 16 and
-          profile.get("geometry", {}).get("mesh_columns") == 16 and
-          profile.get("resources", {}).get("vpu_config", {}).get("lanes") == 8,
-          PASS_NAMES[1], recipe, "selected branch needs source-bound DIM16/8-lane VPU")
+    dim = profile.get("geometry", {}).get("mesh_rows")
+    lanes = profile.get("resources", {}).get("vpu_config", {}).get("lanes")
+    _need(type(dim) is int and type(lanes) is int and
+          profile.get("schema") == "mx_gemmini.target_profile.v3" and
+          profile.get("geometry", {}).get("mesh_columns") == dim and
+          _QUALIFIED_GEOMETRY.get(profile.get("name")) == (dim, lanes) and
+          profile.get("resources", {}).get("vpu") is True and
+          profile.get("resources", {}).get("scratchpad_row_bits") == dim * 8 and
+          profile.get("source", {}).get("gemmini_revision") == _GEMMINI_REVISION,
+          PASS_NAMES[1], recipe,
+          "selected branch needs a source-bound coupled mesh/VPU profile")
     _need(dict(placement) == _PLACEMENT and dict(bridge) == _BRIDGE,
           PASS_NAMES[1], recipe, "placement or explicit host bridge differs")
     program = graph_plan.get("program")
@@ -168,8 +182,12 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
           bindings["dispatch_sources_sha256"] == _digest(dispatch_sources),
           PASS_NAMES[2], recipe, "emitted dispatch source hashes are incomplete")
     onchip_bindings = onchip_plan.get("bindings", {})
+    onchip_status = onchip_plan.get("status")
+    onchip_status_ok = (onchip_status == "sequential_prefix_and_mul_rows_certified" or
+                        (dim == 16 and onchip_status ==
+                         "sequential_prefix_and_mul_rows_certified_dim16"))
     _need(onchip_plan.get("schema") == "npu_exploration.connected_branch_onchip.v1" and
-          onchip_plan.get("status") == "sequential_prefix_and_mul_rows_certified_dim16" and
+          onchip_status_ok and
           onchip_plan.get("prefix_physical_status") ==
           "fixed_and_dynamic_rows_verified_no_live_overlap" and
           onchip_plan.get("graph_program_sha256") == graph_plan.get("program_sha256") and
@@ -189,6 +207,7 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
     except (ValueError, KeyError, TypeError) as exc:
         raise ConnectedPassRefusal(PASS_NAMES[3], recipe,
                                    "selected source has no proved row capacity") from exc
+    expected_mul_commands = (2752 + 1024 * lanes - 1) // (1024 * lanes)
     _need(isinstance(events, list) and len(events) > 2 and
           all(isinstance(event, dict) and event.get("kind") in {"command", "fence"}
               for event in events) and
@@ -198,15 +217,16 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
           onchip_plan["prefix_final_fence_index"] >= 0 and
           type(onchip_plan.get("scratchpad_peak_live_rows")) is int and
           onchip_plan["scratchpad_peak_live_rows"] <= scratchpad_capacity and
-          onchip_plan.get("emitted_vpu_mul_commands") == 1,
+          onchip_plan.get("emitted_vpu_mul_commands") == expected_mul_commands,
           PASS_NAMES[3], recipe, "row capacity, typed multiply effect or completion fence differs")
     _need(_hash(driver_sha256) and
           onchip_plan["bindings"]["driver_sha256"] == driver_sha256,
           PASS_NAMES[4], recipe, "emitted guest driver differs from certified effects")
 
     placement_hash = _digest({"placement": dict(placement), "bridge": dict(bridge)})
-    facts = {"profile_sha256": profile_hash, "mesh_rows": 16,
-             "mesh_columns": 16, "vpu_lanes": 8,
+    facts = {"profile_sha256": profile_hash, "mesh_rows": dim,
+             "mesh_columns": dim, "vpu_lanes": lanes,
+             "multiply_chunks": expected_mul_commands,
              "scratchpad_capacity_rows": scratchpad_capacity,
              "prefix_receipt_sha256": prefix_receipt_sha256,
              "prefix_physical_plan_sha256":
@@ -283,6 +303,17 @@ def verify_connected_pass_trace(trace: dict, *, require_spike: bool = True) -> N
               ("source_mlir_sha256", "graph_program_sha256", "profile_sha256",
                "recipe_sha256", "placement_sha256", "prefix_receipt_sha256")),
           "pass_trace_verification", recipe, "trace source/profile/recipe bindings differ")
+    facts = passes[0].get("required_target_facts")
+    _need(isinstance(facts, dict) and
+          all(record.get("required_target_facts") == facts for record in passes[:-1]) and
+          facts.get("profile_sha256") == trace.get("profile_sha256") and
+          facts.get("mesh_rows") in (4, 8, 16, 32) and
+          facts.get("mesh_columns") == facts.get("mesh_rows") and
+          facts.get("vpu_lanes") == facts.get("mesh_rows") // 2 and
+          facts.get("multiply_chunks") ==
+          (2752 + 1024 * facts["vpu_lanes"] - 1) // (1024 * facts["vpu_lanes"]),
+          "pass_trace_verification", recipe,
+          "pass target facts differ from the selected coupled geometry")
 
 
 def finalize_selected_spike_pass(trace: dict, *, functional_stdout_sha256: str,
@@ -299,11 +330,13 @@ def finalize_selected_spike_pass(trace: dict, *, functional_stdout_sha256: str,
     _need(isinstance(oracle_results, dict) and
           set(oracle_results) == {"functional", "timed"},
           PASS_NAMES[-1], recipe, "both functional and timed oracle results are required")
+    dim = trace["passes"][0]["required_target_facts"]["mesh_rows"]
+    matrix_outputs = ((8 + dim - 1) // dim * dim) * ((344 + dim - 1) // dim * dim)
     for mode in ("functional", "timed"):
         result = oracle_results[mode]
         matrix = result.get("matrix", {}) if isinstance(result, dict) else {}
         multiply = result.get("multiply", {}) if isinstance(result, dict) else {}
-        _need(matrix.get("elements") == 5632 and matrix.get("mismatches") == 0 and
+        _need(matrix.get("elements") == matrix_outputs and matrix.get("mismatches") == 0 and
               _hash(matrix.get("actual_sha256")) and
               matrix.get("actual_sha256") == matrix.get("expected_sha256") and
               multiply.get("elements") == 2752 and

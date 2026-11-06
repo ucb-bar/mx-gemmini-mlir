@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from .command_ir import Command, Fence, emit_c, vpu_command
 from .physical_program import _cmd, _config_ld, _config_st, _transfer_rect
+from .target_profile import model_vpu_lanes
 
 
 @dataclass(frozen=True)
@@ -19,35 +20,52 @@ class AddKernel:
 
 def elementwise_issue_commands(profile: dict, *, elements: int,
                                operation: str) -> tuple[Command | Fence, ...]:
-    """Return the exact typed command stream emitted for one VPU elementwise tile."""
+    """Return one source-sized, typed VPU elementwise command stream."""
     if type(elements) is not int or elements <= 0 or operation not in {"add", "sub", "mul", "div"}:
         raise ValueError("VPU elementwise commands need a positive tile and known operation")
-    spad_rows = (elements + 7) // 8
+    lanes = model_vpu_lanes(profile)
+    if lanes is None:
+        raise ValueError("VPU elementwise needs a selected Rocket MX VPU")
+    row_bytes = lanes * 2
+    if profile.get("geometry", {}).get("mesh_columns") != row_bytes:
+        raise ValueError("VPU lanes differ from the selected scratchpad row width")
+    spad_rows = (elements + lanes - 1) // lanes
     if spad_rows > 1024:
-        raise ValueError("VPU add tile exceeds its scratchpad windows")
-    commands = [_cmd(7, 0, 0), _config_ld(16), _config_st(16)]
+        raise ValueError("VPU elementwise tile exceeds its scratchpad windows")
+    total_rows = profile["resources"]["scratchpad_bytes"] // row_bytes
+    rhs_row, result_row = ((0x1000, 0x2000) if total_rows >= 0x2400
+                           else (0x400, 0x800))
+    if result_row + spad_rows > total_rows:
+        raise ValueError("VPU elementwise windows exceed selected scratchpad capacity")
+    reciprocal_row = 0x3000 if total_rows >= 0x2400 else 0xc00
+    if operation == "div" and reciprocal_row + spad_rows > total_rows:
+        raise ValueError("VPU reciprocal window exceeds selected scratchpad capacity")
+    commands = [_cmd(7, 0, 0), _config_ld(row_bytes, dim=row_bytes),
+                _config_st(row_bytes)]
     for start in range(0, spad_rows, 16):
-        commands.append(_transfer_rect(2, "lhs", start * 16, start,
-                                       rows=min(16, spad_rows - start)))
+        commands.append(_transfer_rect(2, "lhs", start * row_bytes, start,
+                                       rows=min(16, spad_rows - start), cols=row_bytes))
     for start in range(0, spad_rows, 16):
-        commands.append(_transfer_rect(2, "rhs", start * 16, 0x1000 + start,
-                                       rows=min(16, spad_rows - start)))
+        commands.append(_transfer_rect(2, "rhs", start * row_bytes, rhs_row + start,
+                                       rows=min(16, spad_rows - start), cols=row_bytes))
     if operation == "div":
         commands.extend((
-            vpu_command(profile, kind="rcp", src1_row=0x1000, src2_row=0,
-                        dst_row=0x3000, rows=spad_rows),
-            vpu_command(profile, kind="mul", src1_row=0, src2_row=0x3000,
-                        dst_row=0x2000, rows=spad_rows), Fence(),
+            vpu_command(profile, kind="rcp", src1_row=rhs_row, src2_row=0,
+                        dst_row=reciprocal_row, rows=spad_rows),
+            vpu_command(profile, kind="mul", src1_row=0,
+                        src2_row=reciprocal_row,
+                        dst_row=result_row, rows=spad_rows), Fence(),
         ))
     else:
         commands.extend((
-            vpu_command(profile, kind=operation, src1_row=0, src2_row=0x1000,
-                        dst_row=0x2000, rows=spad_rows), Fence(),
+            vpu_command(profile, kind=operation, src1_row=0,
+                        src2_row=rhs_row, dst_row=result_row,
+                        rows=spad_rows), Fence(),
         ))
     for start in range(0, spad_rows, 16):
-        commands.append(_transfer_rect(3, "result", start * 16,
-                                       0x2000 + start,
-                                       rows=min(16, spad_rows - start)))
+        commands.append(_transfer_rect(3, "result", start * row_bytes,
+                                       result_row + start,
+                                       rows=min(16, spad_rows - start), cols=row_bytes))
     commands.append(Fence())
     return tuple(commands)
 
@@ -77,10 +95,10 @@ def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],
                          rhs_dtype: str | None = None,
                          preserve_f32_nan_refusal: bool = False) -> AddKernel:
     """Emit contiguous BF16 VPU add, sub, mul, or rcp+mul division."""
-    if (profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16 or
-            not profile.get("resources", {}).get("vpu")):
-        raise ValueError("VPU elementwise needs the selected DIM16 Rocket MX VPU")
+    lanes = model_vpu_lanes(profile)
+    if (lanes is None or profile.get("geometry", {}).get("mesh_columns") !=
+            lanes * 2):
+        raise ValueError("VPU elementwise needs a source-bound coupled mesh/lane profile")
     if (not 1 <= len(result_shape) <= 4 or
             any(type(dim) is not int or dim <= 0 for dim in (*result_shape, *rhs_shape,
                                                               *(lhs_shape or ()))) or
@@ -102,7 +120,7 @@ def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],
     elements = 1
     for dim in result_shape:
         elements *= dim
-    chunk = min(elements, 8192)
+    chunk = min(elements, 1024 * lanes)
     tail = elements % chunk
     sizes = (chunk,) if not tail else (chunk, tail)
     issuers = "\n".join(_issue(profile, elements=count,
@@ -127,9 +145,9 @@ def emit_vpu_elementwise(profile: dict, *, result_shape: tuple[int, ...],
                  else f"{symbol}_c[index]")
     source = f'''#include <stdint.h>
 {issuers}
-static uint16_t {symbol}_a[{chunk // 8 * 8 + (8 if chunk % 8 else 0)}] __attribute__((aligned(64)));
-static uint16_t {symbol}_b[{chunk // 8 * 8 + (8 if chunk % 8 else 0)}] __attribute__((aligned(64)));
-static uint16_t {symbol}_c[{chunk // 8 * 8 + (8 if chunk % 8 else 0)}] __attribute__((aligned(64)));
+static uint16_t {symbol}_a[{(chunk + lanes - 1) // lanes * lanes}] __attribute__((aligned(64)));
+static uint16_t {symbol}_b[{(chunk + lanes - 1) // lanes * lanes}] __attribute__((aligned(64)));
+static uint16_t {symbol}_c[{(chunk + lanes - 1) // lanes * lanes}] __attribute__((aligned(64)));
 static uint16_t {symbol}_narrow(float value) {{
   union {{float f; uint32_t u;}} word;
   word.f = value;
@@ -148,7 +166,7 @@ void {symbol}(const {lhs_scalar} *lhs, const {rhs_scalar} *rhs, {scalar} *out) {
   for (uint32_t base = 0; base < {elements}; base += {chunk}) {{
     uint32_t count = {elements} - base;
     if (count > {chunk}) count = {chunk};
-    for (uint32_t index = 0; index < (count + 7u) / 8u * 8u; ++index) {{
+    for (uint32_t index = 0; index < (count + {lanes - 1}u) / {lanes}u * {lanes}u; ++index) {{
       if (index >= count) {{
         {symbol}_a[index] = {symbol}_b[index] = 0;
         continue;

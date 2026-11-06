@@ -9,7 +9,7 @@ from itertools import combinations
 from math import prod
 from pathlib import Path
 
-from .target_profile import profile_sha256
+from .target_profile import model_vpu_lanes, profile_sha256
 
 _SOURCE_OPS = {
     "mul": ("aten.mul.Tensor", "arith.mulf"),
@@ -48,9 +48,9 @@ def selected_elementwise_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Require one pure scalar op and the exact source broadcast maps."""
     from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
 
-    if (not profile["resources"].get("vpu") or
-            profile.get("transport") != "rocket_rocc" or
-            profile.get("geometry", {}).get("mesh_columns") != 16):
+    columns = profile.get("geometry", {}).get("mesh_columns")
+    lanes = model_vpu_lanes(profile)
+    if (columns not in (4, 8, 16, 32) or lanes != columns // 2):
         return []
     sites = []
     seen = set()
