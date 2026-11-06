@@ -86,8 +86,9 @@ def verify_profile_source(profile: dict[str, Any], root: Path) -> None:
                 "sha256": hashes}
     if source != expected:
         raise ValueError("MX profile differs from selected Gemmini/MxGen source closure")
-    generated = export_profiles_v3(root) if schema == SCHEMA_V3 else export_profiles(root)
     name = profile.get("name")
+    generated = (_export_profiles(root, schema=schema, selected={name})
+                 if isinstance(name, str) else {})
     if name not in generated or profile != generated[name]:
         raise ValueError("MX profile capabilities differ from selected Gemmini/MxGen sources")
 
@@ -180,8 +181,9 @@ def source_vpu_lanes(profile: dict[str, Any], rtl_root: Path) -> int | None:
         if source.get("sha256", {}).get(relative) != hashlib.sha256(raw).hexdigest():
             raise ValueError(f"MX VPU lane query source differs: {relative}")
         selected[relative] = raw.decode()
-    configs = _resolve_array_configs(selected["src/main/scala/gemmini/ConfigsFP.scala"])
     name = profile.get("gemmini_config")
+    configs = _resolve_array_configs(selected["src/main/scala/gemmini/ConfigsFP.scala"],
+                                     selected={name} if isinstance(name, str) else set())
     if name not in configs:
         raise ValueError("MX VPU lane query has no selected Gemmini config")
     values = configs[name]
@@ -274,13 +276,116 @@ def _first_call_body(source: str, marker: str) -> str:
     raise ValueError(f"unclosed Scala call {marker}")
 
 
-def _resolve_array_configs(source: str) -> dict[str, dict[str, str]]:
+def _split_scala_args(body: str) -> list[str]:
+    """Split a source call without mistaking nested calls for arguments."""
+    parts: list[str] = []
+    depth = 0
+    start = 0
+    quoted = False
+    for index, char in enumerate(body):
+        if char == '"':
+            quoted = not quoted
+        elif not quoted and char == "(":
+            depth += 1
+        elif not quoted and char == ")":
+            depth -= 1
+        elif not quoted and char == "," and depth == 0:
+            parts.append(body[start:index].strip())
+            start = index + 1
+    parts.append(body[start:].strip())
+    if depth or quoted or any(not part for part in parts):
+        raise ValueError("unrecognized composed MX Scala call")
+    return parts
+
+
+def _resolve_array_configs(source: str, selected: set[str] | None = None) -> dict[str, dict[str, str]]:
     section = source[source.index("object GemminiMxFPConfigs {"):]
     section = section[:section.index("\nclass GemminiMxFPDefaultConfig")]
-    bodies = _named_bodies(section, "lazy val")
+    markers = list(re.finditer(r"^  (?:lazy )?val (\w+)(?:\s*:\s*\w+)? = ", section, re.M))
+    bodies = {marker.group(1): section[marker.end():markers[index + 1].start()
+                                          if index + 1 < len(markers) else len(section)].strip()
+              for index, marker in enumerate(markers)}
     if "defaultMxFPConfig" not in bodies:
         raise ValueError("MX default array config is absent")
     resolved: dict[str, dict[str, str]] = {}
+
+    # The newer Gemmini source composes a small set of pure helpers. Accept
+    # only the checked operations below, and derive dimensions, lanes and PE
+    # type declarations from their selected source arguments. Unknown helper
+    # bodies still fail instead of silently inheriting a stale profile.
+    composed = "def mesh(c: MxCfg, dim: Int, accBanks: Int): MxCfg" in section
+    if composed:
+        required = (
+            "meshRows = dim, meshColumns = dim",
+            "acc_banks = accBanks",
+            "subbankLineSizeInBytes = dim",
+            "has_vpu = true",
+            "lanes = c.meshColumns / 2",
+            "def mxGemmini(c: MxCfg): MxCfg = sym(c, e3m2, MxConfig.mxGemmini)",
+            "def e4m3Single(c: MxCfg): MxCfg = sym(c, e4m3s, MxConfig.e4m3SingleOnly).copy(lut = None)",
+            "def fp4Only(c: MxCfg): MxCfg = sym(c, fp4, MxConfig.fp4Only)",
+            "def e3m2Only(c: MxCfg): MxCfg = sym(c, e3m2, MxConfig.e3m2Only)",
+            "val fp4: Lane = (2, 2, 2)",
+            "val e3m2: Lane = (3, 3, 2)",
+            "val e4m3s: Lane = (4, 4, 1)",
+        )
+        if any(marker not in section for marker in required):
+            raise ValueError("MX composed array helper changed")
+
+    def expression(body: str, active: frozenset[str]) -> dict[str, str]:
+        body = re.sub(r"//[^\n]*", "", body).strip()
+        alias = re.fullmatch(r"\w+", body)
+        if alias:
+            return resolve(alias.group(), active).copy()
+        call = re.match(r"(\w+)\(", body)
+        if call is None or not composed:
+            raise ValueError(f"unrecognized MX array config expression: {body[:70]}")
+        operation = call.group(1)
+        call_body = _first_call_body(body, f"{operation}(")
+        args = _split_scala_args(call_body)
+        tail = body[len(operation) + len(call_body) + 2:].strip()
+        if operation not in {"mesh", "vpu", "fp4Only", "e3m2Only",
+                             "mxGemmini", "e4m3Single"}:
+            raise ValueError(f"unrecognized MX array helper {operation}")
+        if operation == "mesh":
+            if len(args) != 3 or not re.fullmatch(r"\d+", args[1]) or not re.fullmatch(r"accBanks\s*=\s*\d+", args[2]):
+                raise ValueError("unrecognized MX mesh arguments")
+            values = expression(args[0], active)
+            base = args[0]
+            if not re.fullmatch(r"\w+", base):
+                raise ValueError("MX mesh base must name a source config")
+            dim = int(args[1])
+            values.update(meshRows=str(dim), meshColumns=str(dim),
+                          acc_banks=args[2].split("=", 1)[1].strip(),
+                          scale_mem=f"{base}.scale_mem.map(_.copy(subbankLineSizeInBytes = {dim}))")
+        else:
+            if len(args) != 1:
+                raise ValueError(f"unrecognized MX {operation} arguments")
+            values = expression(args[0], active)
+            if operation == "vpu":
+                columns = _int_field(values, "meshColumns")
+                if columns % 2:
+                    raise ValueError("MX VPU mesh columns are not even")
+                values.update(has_vpu="true", reservation_station_entries_ld="32",
+                              vpu_params=("gemmini.vpu.VpuParams(units = 2, "
+                                          f"lanes = {columns // 2}, expSub = true, expSum = true)"))
+            else:
+                lane, pe = {
+                    "fp4Only": ("2, 2, 2", "fp4Only"),
+                    "e3m2Only": ("3, 3, 2", "e3m2Only"),
+                    "mxGemmini": ("3, 3, 2", "mxGemmini"),
+                    "e4m3Single": ("4, 4, 1", "e4m3SingleOnly"),
+                }[operation]
+                operand = f"MxFloat({lane}, false, false, Some(MxConfig.{pe}))"
+                values.update(inputType=operand, weightType=operand,
+                              spatialArrayInputType=operand, spatialArrayWeightType=operand)
+                if operation == "e4m3Single":
+                    values["lut"] = "None"
+        if tail:
+            if not tail.startswith(".copy("):
+                raise ValueError(f"unrecognized MX array helper tail {tail[:50]}")
+            values.update(_assignments(_first_call_body(tail, ".copy(")))
+        return values
 
     def resolve(name: str, active: frozenset[str] = frozenset()) -> dict[str, str]:
         if name in resolved:
@@ -291,19 +396,16 @@ def _resolve_array_configs(source: str) -> dict[str, dict[str, str]]:
         if name == "defaultMxFPConfig":
             values = _assignments(_arguments(body, "GemminiArrayConfig[MxFloat, Float, Float]("))
         else:
-            match = re.match(r"(\w+)(?:\.copy\()", body)
+            match = re.match(r"(\w+)\.copy\(", body)
             if match:
                 values = {**resolve(match.group(1), active | {name}),
                           **_assignments(_first_call_body(body, ".copy("))}
             else:
-                alias = re.fullmatch(r"(\w+)", re.sub(r"//[^\n]*", "", body).strip())
-                if not alias:
-                    raise ValueError(f"unrecognized MX array config expression: {name}")
-                values = resolve(alias.group(1), active | {name}).copy()
+                values = expression(body, active | {name})
         resolved[name] = values
         return values
 
-    for name in bodies:
+    for name in selected if selected is not None else bodies:
         resolve(name)
     return resolved
 
@@ -628,16 +730,16 @@ def export_profiles(root: Path) -> dict[str, dict[str, Any]]:
     return _export_profiles(root, schema=SCHEMA)
 
 
-def export_profiles_v3(root: Path) -> dict[str, dict[str, Any]]:
+def export_profiles_v3(root: Path, *, names: set[str] | None = None) -> dict[str, dict[str, Any]]:
     """Return current source-bound MX profiles, including rows and VPU lanes."""
-    return _export_profiles(root, schema=SCHEMA_V3)
+    return _export_profiles(root, schema=SCHEMA_V3, selected=names)
 
 
-def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
+def _export_profiles(root: Path, *, schema: str,
+                     selected: set[str] | None = None) -> dict[str, dict[str, Any]]:
     """Return structural profiles for every MX fragment and Chipyard wrapper."""
     root = root.resolve()
     sources, hashes = _read_sources(root, schema=schema)
-    configs = _resolve_array_configs(sources[_SCALA_FILES[0]])
     methods = _mx_config_methods(sources["mxgen/src/main/scala/mxgen/MxParameters.scala"])
     hardware_source = sources["src/main/scala/gemmini/MxConfigFragments.scala"]
     arithmetic = sources["src/main/scala/gemmini/Arithmetic.scala"]
@@ -649,9 +751,6 @@ def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
         (arithmetic, "if (act.expWidth >= 5 || wei.expWidth >= 5) MxConfig.mxGemminiE5M2"),
         (arithmetic, "else if (act.sigWidth >= 4 || wei.sigWidth >= 4) MxConfig.mxGemminiAll"),
         (classifier, "object requiredPEMode"),
-        (classifier, "actLutEn && weiLut && a.sig === 4.U && w.sig === 4.U, 9.U"),
-        (classifier, "actLutEn && a.sig === 4.U && (w.sig === 2.U || w.sig === 3.U), 10.U"),
-        (classifier, "weiLut && w.sig === 4.U && (a.sig === 2.U || a.sig === 3.U), 11.U"),
         (isa, "val VPU_EXEC = 33.U"),
         (isa, "val SPAD_REQUANT = 34.U"),
         (vpu_abi, "rs2 = op[3:0] | bcast[4] | rlen[14:5] | imm[31:16]"),
@@ -674,6 +773,17 @@ def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
     for source, marker in marker_checks:
         if marker not in source:
             raise ValueError(f"MX format/mode selection changed: {marker}")
+    classifier_modes = (
+        ("actLutEn && weiLut && a.sig === 4.U && w.sig === 4.U, 9.U",
+         "actLutEn && a.sig === 4.U && (w.sig === 2.U || w.sig === 3.U), 10.U",
+         "weiLut && w.sig === 4.U && (a.sig === 2.U || a.sig === 3.U), 11.U"),
+        ("val sig44 = a.sig === 4.U && w.sig === 4.U",
+         "Mux(actLutEn && weiLut, 9.U",
+         "Mux(actLutEn && a.sig === 4.U && (w.sig === 2.U || w.sig === 3.U), 10.U",
+         "Mux(weiLut && w.sig === 4.U && (a.sig === 2.U || a.sig === 3.U), 11.U"),
+    )
+    if not any(all(marker in classifier for marker in form) for form in classifier_modes):
+        raise ValueError("MX source classifier mode selection changed")
     fragments = _fragment_classes(sources[_SCALA_FILES[0]])
     wrappers = _chipyard_classes(sources[_SCALA_FILES[4]])
     wrapper_bodies = _chipyard_bodies(sources[_SCALA_FILES[4]])
@@ -686,6 +796,23 @@ def _export_profiles(root: Path, *, schema: str) -> dict[str, dict[str, Any]]:
     result = {}
     selections = {**{name: (name, None) for name in fragments},
                   **{name: (fragment, name) for name, fragment in wrappers.items()}}
+    if selected is not None:
+        unknown = selected - set(selections)
+        if unknown:
+            raise ValueError(f"unknown selected MX config {sorted(unknown)}")
+        selections = {name: item for name, item in selections.items() if name in selected}
+    config_names = set()
+    for fragment, _ in selections.values():
+        seen = set()
+        while fragment not in seen and fragment not in fragments.values():
+            seen.add(fragment)
+            fragment = wrappers.get(fragment, fragments.get(fragment, fragment))
+        if fragment in fragments:
+            config_names.add(fragments[fragment])
+        else:
+            config_names.add(fragment)
+    configs = _resolve_array_configs(sources[_SCALA_FILES[0]],
+                                     selected=config_names if selected is not None else None)
     for name, (fragment, chipyard_config) in sorted(selections.items()):
         fragment_class = fragment
         seen = set()

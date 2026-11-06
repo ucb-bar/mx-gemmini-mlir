@@ -57,7 +57,10 @@ _QUALIFIED_GEOMETRY = {
     "MxFp4E3M2E4M3VpuAcc32GemminiRocketConfig": (16, 8),
     "MxDim32E4M3VpuWideMemGemminiRocketConfig": (32, 16),
 }
-_GEMMINI_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
+_QUALIFIED_GEMMINI_REVISIONS = {
+    "12912323f1aa66d7b28687f01faf0a33af455f6f",  # original five-profile closure
+    "abd61f98e11855fb25d5da0623724239d83e78cc",  # same profiles on current Gemmini branch
+}
 
 
 class ConnectedPassRefusal(ValueError):
@@ -230,7 +233,7 @@ def certify_connected_passes(*, source_binding: Mapping[str, object],
           _QUALIFIED_GEOMETRY.get(profile.get("name")) == (dim, lanes) and
           profile.get("resources", {}).get("vpu") is True and
           profile.get("resources", {}).get("scratchpad_row_bits") == dim * 8 and
-          profile.get("source", {}).get("gemmini_revision") == _GEMMINI_REVISION,
+          profile.get("source", {}).get("gemmini_revision") in _QUALIFIED_GEMMINI_REVISIONS,
           PASS_NAMES[1], recipe,
           "selected branch needs a source-bound coupled mesh/VPU profile")
     _need(dict(placement) == _PLACEMENT and dict(bridge) == _BRIDGE,

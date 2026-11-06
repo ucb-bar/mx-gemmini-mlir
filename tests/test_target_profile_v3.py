@@ -53,15 +53,16 @@ class TargetProfileV3Test(unittest.TestCase):
         if not RTL.joinpath("src/main/scala/gemmini/ConfigsFP.scala").is_file():
             self.skipTest("selected Gemmini RTL source is unavailable")
         src = RTL / "src/main/scala/gemmini"
-        configs = _resolve_array_configs((src / "ConfigsFP.scala").read_text())
-        formula = (src / "GemminiConfigs.scala").read_text()
-        fragments = (src / "MxConfigFragments.scala").read_text()
-        vpu_source = (src / "vpu/Vpu.scala").read_text()
         cases = (
             ("dim4Fp4VpuMxFPConfig", 4, 2, 8192, 2048),
             ("dim8Fp4VpuMxFPConfig", 8, 4, 8192, 1024),
             ("dim32E4M3VpuMxFPConfig", 32, 16, 2048, 256),
         )
+        configs = _resolve_array_configs((src / "ConfigsFP.scala").read_text(),
+                                         selected={case[0] for case in cases})
+        formula = (src / "GemminiConfigs.scala").read_text()
+        fragments = (src / "MxConfigFragments.scala").read_text()
+        vpu_source = (src / "vpu/Vpu.scala").read_text()
         for name, dim, lanes, bank_rows, acc_rows in cases:
             with self.subTest(name=name):
                 values = configs[name]

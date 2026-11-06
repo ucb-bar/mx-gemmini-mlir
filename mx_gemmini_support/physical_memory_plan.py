@@ -76,16 +76,30 @@ def source_bound_fp6_lut_caches(profile: dict, rtl_root: Path) -> dict:
 # The packed single-throughput formula below was audited against this exact
 # Gemmini source for the named DIM4/8/16/32 coupled profiles. Re-audit before
 # accepting another source revision or geometry.
-_PACKED_ACC_GEMMINI_REVISION = "12912323f1aa66d7b28687f01faf0a33af455f6f"
 _PACKED_ACC_SOURCE_SHA256 = {
-    "src/main/scala/gemmini/LoopMatmul.scala":
-        "151535eb0ddd4154e713c253c86145eef91cd0627f1b420b178890e7bb598991",
-    "src/main/scala/gemmini/MxGeom.scala":
-        "f325b6ebd9d28dd789795f9e00568d661fbf6625b50b8a510bd76b0e793cc1e9",
-    "src/main/scala/gemmini/ExecuteController.scala":
-        "f72641f3bc338d8c9b30d7a3dcc53bfff0871c89d8dd17a263028f67fd695c72",
-    "src/main/scala/gemmini/AccumulatorMem.scala":
-        "e7e8834ef9b44e13656f0a0982baf75dd6327cb97ef22763db35321299704ee6",
+    "12912323f1aa66d7b28687f01faf0a33af455f6f": {
+        "src/main/scala/gemmini/LoopMatmul.scala":
+            "151535eb0ddd4154e713c253c86145eef91cd0627f1b420b178890e7bb598991",
+        "src/main/scala/gemmini/MxGeom.scala":
+            "f325b6ebd9d28dd789795f9e00568d661fbf6625b50b8a510bd76b0e793cc1e9",
+        "src/main/scala/gemmini/ExecuteController.scala":
+            "f72641f3bc338d8c9b30d7a3dcc53bfff0871c89d8dd17a263028f67fd695c72",
+        "src/main/scala/gemmini/AccumulatorMem.scala":
+            "e7e8834ef9b44e13656f0a0982baf75dd6327cb97ef22763db35321299704ee6",
+    },
+    # Current public Gemmini branch plus the ACC32 config. The direct FP8
+    # single-throughput branches preserve the packed address formula; added
+    # narrow-activation branches are selected by separate mode bits.
+    "abd61f98e11855fb25d5da0623724239d83e78cc": {
+        "src/main/scala/gemmini/LoopMatmul.scala":
+            "22cbf3fad7c9e78e75824a5f133dcab3439903ce4ca24ae2bb040062aa89bfbc",
+        "src/main/scala/gemmini/MxGeom.scala":
+            "f325b6ebd9d28dd789795f9e00568d661fbf6625b50b8a510bd76b0e793cc1e9",
+        "src/main/scala/gemmini/ExecuteController.scala":
+            "cee3cac895e803fbe19cc7584a34367f10d691722082bf642906c6c1034e7979",
+        "src/main/scala/gemmini/AccumulatorMem.scala":
+            "f6603a1ca567962e176e3674e43560ac2c435894f45dc25b2ea93eba25aeacb8",
+    },
 }
 
 
@@ -140,16 +154,16 @@ def source_bound_single_fp8_accumulator(profile: dict, *, tiles_i: int,
             dim != profile.get("geometry", {}).get("mesh_columns") or
             (dim, capacity, resources.get("accumulator_bytes")) != selected or
             resources.get("accumulator_row_bits") != dim * 64 or
-            profile.get("source", {}).get("gemmini_revision") !=
-            _PACKED_ACC_GEMMINI_REVISION):
+            profile.get("source", {}).get("gemmini_revision") not in
+            _PACKED_ACC_SOURCE_SHA256):
         raise PhysicalMemoryError("packed accumulator needs a certified source profile")
     rtl_root = Path(rtl_root).resolve(strict=True)
     revision = subprocess.check_output(
         ["git", "-C", str(rtl_root), "rev-parse", "HEAD"], text=True).strip()
-    if revision != _PACKED_ACC_GEMMINI_REVISION:
+    if revision != profile.get("source", {}).get("gemmini_revision"):
         raise PhysicalMemoryError("packed accumulator RTL revision differs from profile")
     source_sha256 = {}
-    for name, expected in _PACKED_ACC_SOURCE_SHA256.items():
+    for name, expected in _PACKED_ACC_SOURCE_SHA256[revision].items():
         digest = hashlib.sha256((rtl_root / name).read_bytes()).hexdigest()
         if digest != expected:
             raise PhysicalMemoryError(f"packed accumulator RTL source changed: {name}")

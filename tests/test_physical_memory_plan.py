@@ -15,7 +15,7 @@ from mx_gemmini_support.physical_memory_plan import (
     source_bound_capacities, source_bound_fp6_lut_caches,
     source_bound_single_fp8_accumulator,
 )
-from mx_gemmini_support.target_profile import export_profiles_v3, profile_sha256
+from mx_gemmini_support.target_profile import _revision, export_profiles_v3, profile_sha256
 
 
 def _profile(dim: int = 16) -> dict:
@@ -206,15 +206,17 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
         import subprocess
         revision = subprocess.check_output(
             ["git", "-C", str(rtl), "rev-parse", "HEAD"], text=True).strip()
-        if revision != "12912323f1aa66d7b28687f01faf0a33af455f6f":
+        if revision not in {
+                "12912323f1aa66d7b28687f01faf0a33af455f6f",
+                "abd61f98e11855fb25d5da0623724239d83e78cc"}:
             self.skipTest("selected Gemmini source revision is unavailable")
-        profiles = export_profiles_v3(rtl)
         cases = (
             ("MxDim4Fp4E3M2VpuGemminiRocketConfig", 2, 86, 192),
             ("MxDim8Fp4E3M2E4M3VpuGemminiRocketConfig", 1, 43, 96),
             ("MxFp4E3M2E4M3VpuGemminiRocketConfig", 1, 22, 96),
             ("MxDim32E4M3VpuWideMemGemminiRocketConfig", 1, 11, 96),
         )
+        profiles = export_profiles_v3(rtl, names={case[0] for case in cases})
         for name, tiles_i, tiles_j, expected in cases:
             with self.subTest(name=name):
                 proof = source_bound_single_fp8_accumulator(
@@ -232,8 +234,7 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
         profile["resources"].update(accumulator_bytes=32768,
                                     accumulator_row_bits=1024,
                                     accumulator_rows=256)
-        profile["source"] = {
-            "gemmini_revision": "12912323f1aa66d7b28687f01faf0a33af455f6f"}
+        profile["source"] = {"gemmini_revision": _revision(rtl)}
         proof = source_bound_single_fp8_accumulator(
             profile, tiles_i=1, tiles_j=22, rtl_root=rtl)
         self.assertEqual((proof["rows"], proof["capacity_rows"]), (96, 256))
@@ -247,7 +248,11 @@ class PhysicalMemoryPlanTest(unittest.TestCase):
 
     def test_selected_fp6_direct_lut_cache_lifetime_and_bounds(self) -> None:
         rtl = Path(__file__).resolve().parents[2] / "gemmini"
-        profile = export_profiles_v3(rtl)["MxFp4E3M2E4M3VpuGemminiRocketConfig"]
+        if _revision(rtl) != "12912323f1aa66d7b28687f01faf0a33af455f6f":
+            self.skipTest("FP6 LUT cache source proof is qualified only on Gemmini 12912323")
+        profile = export_profiles_v3(
+            rtl, names={"MxFp4E3M2E4M3VpuGemminiRocketConfig"})[
+                "MxFp4E3M2E4M3VpuGemminiRocketConfig"]
         proof = source_bound_fp6_lut_caches(profile, rtl)
         self.assertEqual(proof["capacity_codebooks"], {
             "lut_weight": 64, "lut_activation": 64, "lut_output": 64})
