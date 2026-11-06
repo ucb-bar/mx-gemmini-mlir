@@ -87,6 +87,7 @@ class ResidentTensor:
     row_stride_rows: int
     row_bytes: int
     lanes: int
+    matrix_weight_first_row: int
     dtype: str = "bf16"
 
     def receipt(self) -> dict[str, Any]:
@@ -99,7 +100,8 @@ def matrix_resident_tensor(edge: DeviceEdgePlan) -> ResidentTensor:
                           edge.matrix_source_sha256, "flat_bf16_matrix_C",
                           edge.logical_shape, edge.padded_shape,
                           edge.source_row, edge.physical_rows,
-                          edge.row_stride_rows, edge.row_bytes, edge.lanes)
+                          edge.row_stride_rows, edge.row_bytes, edge.lanes,
+                          edge.matrix_weight_first_row)
 
 
 def vpu_result_tensor(edge: DeviceEdgePlan, kernel: ResidentKernel, *,
@@ -113,7 +115,8 @@ def vpu_result_tensor(edge: DeviceEdgePlan, kernel: ResidentKernel, *,
     return ResidentTensor(edge.profile_sha256, producer, kernel.source_sha256,
                           "resident_vpu_" + result, edge.logical_shape,
                           edge.padded_shape, row, edge.physical_rows,
-                          edge.row_stride_rows, edge.row_bytes, edge.lanes)
+                          edge.row_stride_rows, edge.row_bytes, edge.lanes,
+                          edge.matrix_weight_first_row)
 
 
 def _sha(source: str) -> str:
@@ -269,7 +272,8 @@ def emit_resident_sigmoid_multiply(profile: dict, edge: DeviceEdgePlan, *,
 
 def emit_resident_binary(profile: dict, *, lhs: ResidentTensor | DeviceEdgePlan,
                          rhs: ResidentTensor | DeviceEdgePlan, operation: str,
-                         output_row: int, symbol: str) -> ResidentKernel:
+                         output_row: int, symbol: str,
+                         live_protected_rows: tuple[tuple[int, int], ...] = ()) -> ResidentKernel:
     """Read two proven BF16 row layouts, write a resident result and BF16 readout."""
     if operation not in {"add", "sub", "mul"}:
         raise DeviceEdgeError("resident binary operation is unqualified")
@@ -294,6 +298,14 @@ def emit_resident_binary(profile: dict, *, lhs: ResidentTensor | DeviceEdgePlan,
             max(spans[i][0], spans[j][0]) < min(spans[i][1], spans[j][1])
             for i in range(3) for j in range(i + 1, 3)):
         raise DeviceEdgeError("resident binary input/output rows overlap or exceed capacity")
+    protected = ((lhs.matrix_weight_first_row, total),
+                 (rhs.matrix_weight_first_row, total), *live_protected_rows)
+    if any(type(lo) is not int or type(hi) is not int or
+           not 0 <= lo <= hi <= total for lo, hi in protected):
+        raise DeviceEdgeError("resident binary protected row span is invalid")
+    if any(max(output_row, lo) < min(output_row + lhs.physical_rows, hi)
+           for lo, hi in protected):
+        raise DeviceEdgeError("resident binary output overlaps retained matrix B or graph-live rows")
     commands: list[Command | Fence] = []
     starts = tuple(range(0, lhs.physical_rows, 1024))
     for start in starts:
