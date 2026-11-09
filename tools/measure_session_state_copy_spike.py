@@ -76,9 +76,9 @@ def main():
         target.write_bytes(path.read_bytes())
         objects.append(target)
     # Resolve retained runtime sources through Merlin's repository location API.
-    from merlin.common.paths import merlin_dir
+    from merlin.common.paths import runtime_dir
 
-    runtime = merlin_dir() / "runtime"
+    runtime = runtime_dir()
     for path in (runtime / "c/merlin_model.h", build / "cgen/model_gen.h"):
         (out / path.name).write_bytes(path.read_bytes())
     declarations, initialize, checks, inputs, outputs = [], [], [], [], []
