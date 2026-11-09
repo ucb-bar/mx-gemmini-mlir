@@ -65,6 +65,33 @@ environment used for compilation:
 python -m pip install -e '.[ir,capture]'
 ```
 
+The installed `mx-gemmini` Merlin backend exposes the existing single-VPU
+command emitter. In a separate Python 3.12+ environment with Merlin and this
+package's `compiler` extra (xDSL 0.65.x), use:
+
+```python
+from merlin.api import compile
+from merlin.compiler.request import CompileOptions, Source
+
+result = compile(
+    Source(bound_mx_ir, kind="mx-mlir"), backend="mx-gemmini", output="out/vpu",
+    options=CompileOptions(parameters={
+        "mx.profile": "/path/to/selected-profile.json",
+        "mx.buffers": {"src1": "left", "src2": "right", "output": "result"},
+        "mx.emit": "c-source",
+    }),
+)
+```
+
+This emits the established RoCC issuer C, header, physical command plan and
+buffer ABI for exactly one supported typed VPU operation. `expsum` also needs
+an `output2` buffer. An optional `mx.rtl-root` checks the selected profile
+against its existing RTL checkout. Profiles retain `structural_unqualified`.
+These products are source artifacts; platform images, native objects,
+execution and hardware qualification remain separate. Matrix and whole-model
+compilation continue through the handwritten tools below. This xDSL 0.65
+environment is separate from backends requiring xDSL 0.68 or newer.
+
 `mx-gemmini-opt` verifies and transforms typed target IR. The full-model
 entry point is the Merlin integration in `tools.build_merlin_stage` and
 `tools.link_merlin_session`; the [model guide](docs/compile_e2e_models.md)

@@ -1,2 +1,5 @@
 # Unified patches retain original source context, including blank context lines.
 docs/evidence/**/compiler_driver.patch whitespace=-blank-at-eol
+
+# Preserve the byte identity of the pinned semantic input on Windows.
+mx_gemmini_support/contracts/software-spec-2029218-candidate.yaml text eol=lf

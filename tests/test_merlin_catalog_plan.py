@@ -20,7 +20,7 @@ PROFILE = load_profile(
 
 
 def test_small_llama_catalog_plan_binds_every_selected_site(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "small_llama.mlir"
     source.write_bytes(gzip.decompress((ARCHIVE / "small_llama.model2mlir.mlir.gz").read_bytes()))
@@ -40,7 +40,7 @@ def test_small_llama_catalog_plan_binds_every_selected_site(tmp_path, monkeypatc
 
 def test_catalog_plan_reports_precision_proposals_outside_f32_source_abi(
         tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "small_llama.mlir"
     source.write_bytes(gzip.decompress((ARCHIVE / "small_llama.model2mlir.mlir.gz").read_bytes()))
@@ -65,7 +65,7 @@ def test_catalog_plan_reports_precision_proposals_outside_f32_source_abi(
 
 
 def test_checkpoint_cache_splits_fixed_sites_but_shares_issuer(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "small_llama.mlir"
     source.write_bytes(gzip.decompress((ARCHIVE / "small_llama.model2mlir.mlir.gz").read_bytes()))

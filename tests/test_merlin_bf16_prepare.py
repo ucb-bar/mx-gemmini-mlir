@@ -54,7 +54,7 @@ PREPARED_SOURCE = '''builtin.module attributes {prov.level = "linalg-on-tensors"
 
 
 def test_selected_bf16_source_binds_existing_f32_catalog(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "source.mlir"
     source.write_text(SOURCE, encoding="utf-8")
@@ -72,7 +72,7 @@ def test_selected_bf16_source_binds_existing_f32_catalog(tmp_path, monkeypatch) 
 
 
 def test_source_bound_precision_override_reaches_prepared_catalog(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "source.mlir"
     source.write_text(SOURCE, encoding="utf-8")
@@ -89,7 +89,7 @@ def test_source_bound_precision_override_reaches_prepared_catalog(tmp_path, monk
 
 
 def test_nonzero_bf16_init_refuses_widening(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "source.mlir"
     source.write_text(SOURCE.replace("0.000000e+00", "1.000000e+00"), encoding="utf-8")
@@ -98,7 +98,7 @@ def test_nonzero_bf16_init_refuses_widening(tmp_path, monkeypatch) -> None:
 
 
 def test_merlin_prepared_bf16_f32acc_generic_binds_mx_catalog(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.compiler.planning.contractions")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     source = tmp_path / "source.mlir"
     source.write_text(PREPARED_SOURCE, encoding="utf-8")

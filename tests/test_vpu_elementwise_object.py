@@ -10,6 +10,7 @@ import pytest
 from mx_gemmini_support.command_ir import emit_c
 from mx_gemmini_support.target_profile import load_profile
 from mx_gemmini_support.vpu_elementwise_program import lower_vpu_elementwise_program
+from mx_gemmini_support.vpu_emission import emit_vpu_elementwise
 from tools.compile_object import classify
 from tools.qualify_nicolas_vpu_elementwise import KINDS, REDUCING, bind as bind_base
 from tools.qualify_nicolas_vpu_fused import bind as bind_fused
@@ -30,6 +31,9 @@ def test_public_lowerer_reproduces_nicolas_base_vpu_issuer(kind: str) -> None:
     issuer = emit_c(list(plan.commands), transport="rocket_rocc",
                     buffers=("src1", "src2", "output"))
     assert issuer == (ARCHIVE / kind / "mx_issue.c").read_text()
+    emission = emit_vpu_elementwise(bound, PROFILE, buffers)
+    assert emission.c_source == issuer
+    assert emission.plan == plan
     assert plan.kind == kind
     assert plan.rows == 64
     assert plan.output_rows == (16 if kind in REDUCING else 64)

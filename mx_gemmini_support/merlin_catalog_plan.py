@@ -38,7 +38,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
     label alone can survive an accidental graph rewrite that changes its ABI.
     """
     from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.system.offload import catalog_source_contractions
+    from merlin.compiler.planning.contractions import catalog_source_contractions
 
     prepared = Path(prepared)
     if cache_immutable_weights and prepack_immutable_weights:

@@ -1,0 +1,7 @@
+schema = "merlin.backend.v1"
+id = "mx-gemmini"
+entry_point = "mx_gemmini_support.backend"
+inputs = ["mx-mlir"]
+outputs = ["c-source", "c-header", "json"]
+scope = "Single profile-bound MX VPU operation; source emission only"
+xdsl = ">=0.65,<0.66"

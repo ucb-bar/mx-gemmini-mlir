@@ -70,7 +70,7 @@ class MXBF16CatalogPreparation:
 
     def __call__(self, source_path: Path, workdir: Path) -> Path:
         from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.system.offload import catalog_source_contractions
+        from merlin.compiler.planning.contractions import catalog_source_contractions
         from merlin.xdsl_dialects._common import text
 
         source_path, workdir = Path(source_path), Path(workdir)
