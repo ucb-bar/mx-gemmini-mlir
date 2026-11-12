@@ -98,7 +98,7 @@ def select_native_tiles(profile: dict, shape: tuple[int, int, int], precision: s
     """
     from dataclasses import asdict
 
-    from merlin.sched.tile_search import select_divisor_tiles
+    from merlin.compiler.kernel_ir.tile_search import select_divisor_tiles
 
     if k_limit is not None and (type(k_limit) is not int or k_limit < 32
                                 or k_limit > 512 or k_limit % 32):
@@ -141,12 +141,12 @@ def emit_scheduled_native_issuer(profile: dict, shape_mnk: tuple[int, int, int],
                                  tile_policy: str = "legacy",
                                  defer_completion: bool = False) -> NativeSchedule:
     """Lower one padded dense shape to checked native DRAM-loop commands."""
-    from merlin.sched.check.static import check_kernel
-    from merlin.sched.codegen import emit_c_function
-    from merlin.sched.ir.expr import Var, select
-    from merlin.sched.ir.kernel import Kernel, Ptr, TensorArg, call, loop
-    from merlin.sched.ir.parse import parse_kernel
-    from merlin.sched.isa import InstrDef, InstructionSet, Operand
+    from merlin.compiler.kernel_ir.checks import check_kernel
+    from merlin.compiler.kernel_ir.codegen import emit_c_function
+    from merlin.compiler.kernel_ir.ir import Var, select
+    from merlin.compiler.kernel_ir.ir import Kernel, Ptr, TensorArg, call, loop
+    from merlin.compiler.kernel_ir.parse import parse_kernel
+    from merlin.compiler.kernel_ir.ir import InstrDef, InstructionSet, Operand
 
     if not symbol.isidentifier():
         raise ValueError("MX native issuer needs a C identifier")

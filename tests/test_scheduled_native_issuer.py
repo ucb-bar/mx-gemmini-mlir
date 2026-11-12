@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
-from merlin.sched.ir import parse_kernel
+from merlin.compiler.kernel_ir.parse import parse_kernel
 
 from mx_gemmini_support.dense_contraction import (
     emit_dense_batch_contraction,
