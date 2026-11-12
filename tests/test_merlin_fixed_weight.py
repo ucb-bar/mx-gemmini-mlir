@@ -10,7 +10,7 @@ from mx_gemmini_support.merlin_fixed_weight import MXFixedWeightPostOffload
 
 
 def test_fixed_rhs_rewrite_removes_dead_cast(tmp_path) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
     prepared = tmp_path / "prepared.mlir"
     prepared.write_text("""module {
       func.func @forward(%weight: tensor<2x2xbf16>,

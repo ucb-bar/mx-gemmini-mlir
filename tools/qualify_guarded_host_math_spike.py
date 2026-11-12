@@ -14,12 +14,12 @@ import os
 import subprocess
 from pathlib import Path
 
-from merlin.llvmlower.device_build import (
+from merlin.compiler.lower.model.device_build import (
     DeviceRouting,
     admit_linked_device_elf,
     freeze_device_elf_admission,
 )
-from merlin.model_check.admission import service
+from merlin.evaluation.model.admission import service
 from merlin.runtime.host_math import GuardedF32Call, host_math_recipe
 
 from mx_gemmini_support.target_profile import load_profile, profile_sha256

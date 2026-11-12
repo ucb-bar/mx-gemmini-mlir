@@ -10,7 +10,7 @@ from .connected_elementwise import F32MultiplyAdapter, multiply_projection
 
 def multiply_pairs(module, sites, *, include_broadcasts: bool = False):
     """Bind supported pairs to actual SSA arithmetic, never provenance alone."""
-    from merlin.xdsl_dialects.lowering.tensor_chains import (
+    from merlin.compiler.dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
         private_tensor_pairs,
         pure_tensor_compute,
@@ -86,7 +86,7 @@ def multiply_pairs(module, sites, *, include_broadcasts: bool = False):
 def chain_adapter(pair, profile, *, prepare_broadcasts: bool = False,
                   broadcast_preparation_budget_bytes: int = 1048576, output_dtype: str = "f32"):
     """Outline the verified source operations into the existing handoff adapter."""
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         Buffer,
         DispatchProgram,
         Node,
@@ -123,7 +123,7 @@ def chain_adapter(pair, profile, *, prepare_broadcasts: bool = False,
 def emit_chain_kernel(pair, profile, *, prepare_broadcasts: bool = False,
                       broadcast_preparation_budget_bytes: int = 1048576, output_dtype: str = "f32"):
     """Emit a legal experimental handoff; do not assert unmeasured profitability."""
-    from merlin.xdsl_dialects.lowering.connected_dispatch import (
+    from merlin.compiler.dialects.lowering.connected_dispatch import (
         lower_connected_dispatches,
     )
 
@@ -150,7 +150,7 @@ def emit_chain_shim(pair):
     """Four ranked descriptors: three contiguous inputs and one fresh output."""
     shape, symbol, kernel = pair["shape"], pair["symbol"], pair["kernel_symbol"]
     if any(input_shape != shape for input_shape in pair["input_shapes"]):
-        from merlin.llvmlower.device_shim import (
+        from merlin.compiler.lower.model.device_shim import (
             LogicalBuffer,
             emit_logical_translation_unit,
         )

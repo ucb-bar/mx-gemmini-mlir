@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from merlin.xdsl_dialects.lowering.dispatch_program import Buffer, DispatchProgram, Node
+from merlin.compiler.dialects.lowering.dispatch_program import Buffer, DispatchProgram, Node
 from mx_gemmini_support.dispatch_graph_memory import dispatch_graph_memory_plan
 from mx_gemmini_support.physical_memory_plan import PhysicalMemoryError
 from mx_gemmini_support.target_profile import load_profile

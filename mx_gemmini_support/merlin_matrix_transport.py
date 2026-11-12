@@ -11,7 +11,7 @@ def register_matrix_transport(generated, shape, symbol, issuer_symbol, fixed_sym
                               workspace_symbol, compile_source, abi_entries, *,
                               prepared_activation=False, retain_prepared_rhs=False,
                               virtual_zero_padding=False):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     from .dense_kernel import emit_dense_f32_kernel
 
@@ -42,7 +42,7 @@ def register_matrix_transport(generated, shape, symbol, issuer_symbol, fixed_sym
 
 
 def register_add_transports(site, profile, compile_source, abi_entries):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     from .vpu_add_kernel import emit_vpu_elementwise
 
@@ -74,9 +74,9 @@ class MXMatrixTransportPostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
-        from merlin.xdsl_dialects.lowering.private_transport import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
+        from merlin.compiler.dialects.lowering.private_transport import (
             PrivateTensorTransport,
             rewrite_private_transports,
         )

@@ -4,7 +4,7 @@ from mx_gemmini_support.merlin_rms_packing import rewrite_rms_packing
 
 
 def fixture(escape=False, barrier=False, divisor=32):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
     x, row, inv, scalar, bf16, packed = (
         "tensor<1x16x32xf32>",

@@ -12,8 +12,8 @@ def _sha(path):
 
 
 def analyze_bound_repetitions(prepared, plan):
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.llvmlower.repeated_batch_input import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.lower.model.repeated_batch_input import (
         prove_repeated_batch_input,
         validate_repeated_batch_input,
     )
@@ -50,7 +50,7 @@ def analyze_bound_repetitions(prepared, plan):
 
 def register_repetitions(entry, generated, bindings, selected, workspace,
                          compile_source, abi_entries, *, virtual_zero_padding=False, compact_rhs=False):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     from .dense_kernel import emit_dense_f32_batch_kernel
 
@@ -93,14 +93,14 @@ class MXBatchRHSReusePostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.llvmlower.repeated_batch_input import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.lower.model.repeated_batch_input import (
             RepeatedBatchConsumer,
             private_repeated_batch_inputs,
             prove_repeated_batch_input,
             rewrite_repeated_batch_consumers,
         )
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.dialects._common import text
         from xdsl.dialects.func import CallOp
 
         prepared, sidecar, workdir = map(Path, (prepared, sidecar, workdir))

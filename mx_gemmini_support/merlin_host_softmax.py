@@ -14,7 +14,7 @@ class MXHostSoftmaxPostOffload:
     """Replace closed host softmax regions under an explicit finite-input policy."""
 
     def __init__(self, profile: dict, *, policy: str, enabled_regions: frozenset[str]):
-        from merlin.llvmlower.cpu_softmax import (
+        from merlin.compiler.lower.model.cpu_softmax import (
             CPU_SOFTMAX_F32_AVX2_POLICY,
             LIBM_SOFTMAX_F32_FINITE_POLICY,
             LIBM_SOFTMAX_F32_RNE_POLICY,
@@ -31,15 +31,15 @@ class MXHostSoftmaxPostOffload:
         self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.llvmlower.cpu_softmax import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.lower.model.cpu_softmax import (
             LIBM_SOFTMAX_F32_FINITE_POLICY,
             LIBM_SOFTMAX_F32_RNE_POLICY,
             build_cpu_softmax_lastdim,
             build_cpu_softmax_maximum,
             build_libm_softmax_exp_rne,
         )
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.dialects._common import text
         from xdsl.dialects import func
         from xdsl.ir.affine import AffineExpr, AffineMap
 

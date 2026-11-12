@@ -17,7 +17,7 @@ from .target_profile import profile_sha256
 
 def source_program(chain):
     """Outline the actual three generics without changing their scalar bodies."""
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         Buffer,
         DispatchProgram,
         Node,
@@ -48,7 +48,7 @@ def source_program(chain):
 
 def sigmoid_chains(module, elementwise_sites, unary_sites):
     """Match selected typed sigmoid/multiply semantics; IDs bind sites only."""
-    from merlin.xdsl_dialects.lowering.tensor_chains import (
+    from merlin.compiler.dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
         private_tensor_chain,
         pure_tensor_compute,
@@ -96,7 +96,7 @@ def chain_record(chain):
 
 
 def register_chain(chain, profile, compile_source, abi_entries):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     module, program = source_program(chain)
     code = emit_connected_sigmoid_multiply(module, program.to_dict(), profile,
@@ -117,9 +117,9 @@ class MXConnectedSigmoidPostOffload:
         self._profile = profile
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
-        from merlin.xdsl_dialects.lowering.tensor_chains import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
+        from merlin.compiler.dialects.lowering.tensor_chains import (
             destination_only_tensor_call,
             pure_tensor_compute,
             replace_private_tensor_chain,

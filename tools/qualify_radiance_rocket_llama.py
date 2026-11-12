@@ -573,12 +573,12 @@ def run_experiment(args, *, prepare=None, fixture=None):
             ],
             "link",
         )
-        from merlin.llvmlower.device_build import (
+        from merlin.compiler.lower.model.device_build import (
             DeviceRouting,
             admit_linked_device_elf,
             freeze_device_elf_admission,
         )
-        from merlin.model_check.admission import service
+        from merlin.evaluation.model.admission import service
 
         route = DeviceRouting(
             device="mx_gemmini",

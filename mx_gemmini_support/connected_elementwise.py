@@ -25,8 +25,8 @@ class ConnectedElementwise:
 
 def multiply_projection(op):
     """Reuse the core's closed scalar proof and bind actual broadcast maps."""
-    from merlin.frontends.linalg_patterns import recognize_static_projected_pointwise
-    from merlin.llvmlower.tensor_broadcast import singleton_projection_axes
+    from merlin.compiler.frontend.linalg_patterns import recognize_static_projected_pointwise
+    from merlin.compiler.lower.model.tensor_broadcast import singleton_projection_axes
 
     try:
         pattern = recognize_static_projected_pointwise(op)
@@ -114,7 +114,7 @@ class F32MultiplyAdapter:
         self.elements = prod(self.shape)
         self.broadcast_preparations = ()
         if prepare_broadcasts:
-            from merlin.llvmlower.broadcast_preparation import (
+            from merlin.compiler.lower.model.broadcast_preparation import (
                 plan_broadcast_preparation,
             )
 
@@ -219,7 +219,7 @@ class F32MultiplyAdapter:
         limit = 2.0 ** floor(log2(sqrt(maximum) / 4))
         limit_bits = struct.unpack("<I", struct.pack("<f", limit))[0]
         size = (self.chunk + 7) // 8 * 8
-        from merlin.llvmlower.tensor_broadcast import dense_broadcast_index
+        from merlin.compiler.lower.model.tensor_broadcast import dense_broadcast_index
 
         external_axes = (*self.node_axes[0], self.node_axes[1][1 - self.middle_index])
         indices = [dense_broadcast_index(self.shape, tuple(self.program["buffers"][name]["shape"]),
@@ -229,7 +229,7 @@ class F32MultiplyAdapter:
         declarations, preparation, reads = [], [], []
         prepared = {plan.input_index: plan for plan in self.broadcast_preparations}
         if prepared:
-            from merlin.llvmlower.broadcast_preparation import (
+            from merlin.compiler.lower.model.broadcast_preparation import (
                 emit_broadcast_preparation,
             )
 

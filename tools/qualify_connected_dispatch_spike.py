@@ -40,12 +40,12 @@ def capture_graph(rows: int):
 
 
 def build_case(profile: dict, rows: int):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects.lowering.connected_dispatch import HandoffFacts, plan_connected_dispatches
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects.lowering.connected_dispatch import HandoffFacts, plan_connected_dispatches
     from merlin.common import mlir_query as mq
-    from merlin.xdsl_dialects.lowering.compute_groups import Group
-    from merlin.xdsl_dialects.lowering.dispatch_program import build_dispatch_program, prune_dead_nodes
-    from merlin.xdsl_dialects.lowering.outline import outline_dispatches
+    from merlin.compiler.dialects.lowering.compute_groups import Group
+    from merlin.compiler.dialects.lowering.dispatch_program import build_dispatch_program, prune_dead_nodes
+    from merlin.compiler.dialects.lowering.outline import outline_dispatches
 
     source, trace, inputs, golden = capture_graph(rows)
     module = parse_mlir_text(source)
@@ -124,8 +124,8 @@ def main() -> None:
     selected = {(h.producer, h.consumer, h.buffer) for h in plan.handoffs}
     if len(selected) != 1:
         raise ValueError("generic planner did not select the expected private intermediate")
-    from merlin.xdsl_dialects.lowering.connected_dispatch import require_realized
-    from merlin.xdsl_dialects.lowering import connected_dispatch
+    from merlin.compiler.dialects.lowering.connected_dispatch import require_realized
+    from merlin.compiler.dialects.lowering import connected_dispatch
 
     realized_plan, optimized = connected_dispatch.lower_connected_dispatches(
         program, adapter, require_profitable=False)

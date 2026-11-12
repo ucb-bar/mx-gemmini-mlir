@@ -43,8 +43,8 @@ CUSTOM = '''module attributes {prov.level = "linalg-on-tensors"} {
 
 
 def test_custom_syntax_requires_explicit_printer_work_and_preserves_capture(tmp_path):
-    from merlin.llvmlower.toolchain import compiler_python
-    from merlin.targetgen.contract.linalg_iface import LinalgParseError
+    from merlin.compiler.lower.model.toolchain import compiler_python
+    from merlin.development.targetgen.contract.linalg_iface import LinalgParseError
 
     if not compiler_python().is_file():
         pytest.skip("generic printer needs the explicitly selected MLIR interpreter")
@@ -65,7 +65,7 @@ def test_custom_syntax_requires_explicit_printer_work_and_preserves_capture(tmp_
 
 
 def test_parseable_source_retains_identity_and_has_no_printer_side_effect(tmp_path, monkeypatch):
-    import merlin.llvmlower.generic_form as printer
+    import merlin.compiler.lower.model.generic_form as printer
 
     def forbidden(*args, **kwargs):
         pytest.fail("parseable input must not launch a printer")
@@ -82,7 +82,7 @@ def test_parseable_source_retains_identity_and_has_no_printer_side_effect(tmp_pa
 
 
 def test_changed_capture_cannot_supply_a_generic_view(tmp_path, monkeypatch):
-    import merlin.llvmlower.generic_form as printer
+    import merlin.compiler.lower.model.generic_form as printer
 
     source = tmp_path / "model.mlir"
     source.write_text(CUSTOM)
@@ -101,8 +101,8 @@ def test_changed_capture_cannot_supply_a_generic_view(tmp_path, monkeypatch):
 
 
 def test_native_printer_refusal_is_not_an_empty_inventory(tmp_path):
-    from merlin.llvmlower.generic_form import GenericFormError
-    from merlin.llvmlower.toolchain import compiler_python
+    from merlin.compiler.lower.model.generic_form import GenericFormError
+    from merlin.compiler.lower.model.toolchain import compiler_python
 
     if not compiler_python().is_file():
         pytest.skip("generic printer needs the explicitly selected MLIR interpreter")

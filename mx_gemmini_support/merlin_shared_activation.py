@@ -16,9 +16,9 @@ class MXSharedActivationPostOffload:
         self.max_live_bytes = max_live_bytes
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
-        from merlin.xdsl_dialects.lowering.shared_preparation import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
+        from merlin.compiler.dialects.lowering.shared_preparation import (
             TensorPreparation,
             share_tensor_preparations,
         )

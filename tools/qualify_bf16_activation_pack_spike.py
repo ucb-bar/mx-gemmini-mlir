@@ -103,12 +103,12 @@ def main():
             or m % tile or k % 32 or m * k > 16777216
             or not -1 <= args.refuse_index < m * k or not 0 <= args.refuse_word <= 65535):
         parser.error("fresh output, explicit admission and bounded padded MX extents required")
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
 
     root, out = Path(__file__).resolve().parents[1], args.out_dir.resolve()
     out.mkdir(parents=True)
@@ -147,7 +147,7 @@ def main():
     if args.producer_capture is not None:
         from math import prod
 
-        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
         from mx_gemmini_support.merlin_connected_multiply import (
             emit_chain_kernel,

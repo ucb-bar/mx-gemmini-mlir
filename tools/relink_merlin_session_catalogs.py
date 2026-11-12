@@ -65,7 +65,7 @@ def relink(base_link: Path, builds: dict[str, Path],
     selected_dumps = None
     if dump_outputs:
         sys.path.insert(0, str(merlin_src))
-        from merlin.llvmlower import session_bundle
+        from merlin.compiler.lower.model import session_bundle
         session = session_bundle.load(Path(base["session_root"]))
         if session.program_names != tuple(programs):
             raise ValueError("base session programs differ from capture")

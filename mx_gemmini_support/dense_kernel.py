@@ -74,7 +74,7 @@ def emit_dense_f32_kernel(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     is cropped without widening. Callers must qualify downstream rounding and
     exceptional behavior before selecting this alternative boundary.
     """
-    from merlin.llvmlower.dense_padding import DenseZeroPadding, emit_dense_zero_padding
+    from merlin.compiler.lower.model.dense_padding import DenseZeroPadding, emit_dense_zero_padding
 
     if type(virtual_zero_padding) is not bool:
         raise ValueError("MX virtual zero padding needs an explicit boolean selection")
@@ -330,7 +330,7 @@ def emit_activation_preparation(issuer: RuntimeIssuer | PlannedRuntimeIssuer,
     # Reuse the adapter's full shape/format/extent validation.
     emit_dense_f32_kernel(issuer, logical_shape_mnk, symbol=symbol + "_check",
                           virtual_zero_padding=virtual_zero_padding)
-    from merlin.llvmlower.dense_padding import DenseZeroPadding, emit_dense_zero_padding
+    from merlin.compiler.lower.model.dense_padding import DenseZeroPadding, emit_dense_zero_padding
     if not _identifier(symbol):
         raise ValueError("MX activation preparation needs a safe symbol")
     lm, _, lk = logical_shape_mnk

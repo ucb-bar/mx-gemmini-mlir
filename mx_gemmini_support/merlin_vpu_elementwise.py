@@ -46,7 +46,7 @@ def _matching_axes(result_shape: tuple[int, ...], operand_shape: tuple[int, ...]
 
 def selected_elementwise_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Require one pure scalar op and the exact source broadcast maps."""
-    from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
+    from merlin.development.targetgen.contract.linalg_iface import parse_linalg_mlir
 
     columns = profile.get("geometry", {}).get("mesh_columns")
     lanes = model_vpu_lanes(profile)
@@ -200,8 +200,8 @@ class MXVPUElementwisePostOffload:
             raise ValueError("MX VPU elementwise regions must be nonempty")
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
         from xdsl.dialects import func, tensor
         from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
         from xdsl.ir import Region

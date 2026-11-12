@@ -390,7 +390,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
                 _WORKSPACE_SYMBOL, compile_source, prepared_entries,
                 virtual_zero_padding=virtual_zero_padding)
         if share_activation_packing and fixed_symbols is not None:
-            from merlin.llvmlower.device_shim import LogicalBuffer
+            from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
             from .dense_kernel import emit_activation_preparation, emit_dense_f32_kernel
 
@@ -549,7 +549,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
     connected_sigmoid_multiplies = []
     fused_regions = set()
     if connect_sigmoid_multiplies:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
         from .merlin_connected_sigmoid import (
             chain_record,
@@ -567,7 +567,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             fused_regions.update(chain["regions"])
     connected_multiplies = []
     if connect_multiplies:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
         from .merlin_connected_multiply import (
             chain_adapter,
@@ -699,7 +699,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
         projection_groups = register_projection_groups(
             projection_groups, kernel_records, profile, max_workspace, compile_source, prepared_entries)
     if prepared_entries:
-        from merlin.llvmlower.device_shim import emit_logical_translation_unit
+        from merlin.compiler.lower.model.device_shim import emit_logical_translation_unit
 
         unit = emit_logical_translation_unit("mx_gemmini", {
             entry: (buffers, [{"role": b.role, "shape": b.shape, "dtype": b.dtype} for b in buffers])
@@ -739,7 +739,7 @@ def build_merlin_catalog(prepared: Path, out_dir: Path, *, profile: dict,
             _run([str(cc), "-march=rv64gc", "-mabi=lp64d", "-c", str(assembly),
                   "-o", str(obj)], label="prepacked checkpoint assembly")
         else:
-            from merlin.llvmlower.constant_object import (
+            from merlin.compiler.lower.model.constant_object import (
                 ConstantBlob,
                 reuse_constant_object,
             )

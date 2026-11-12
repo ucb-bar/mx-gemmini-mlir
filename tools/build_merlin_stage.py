@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _generated_weight_projection():
     """The standalone harness owns every caller and readonly checkpoint span."""
-    from merlin.llvmlower.entry_weight_projection import GeneratedDispatchABI
+    from merlin.compiler.lower.model.entry_weight_projection import GeneratedDispatchABI
 
     return GeneratedDispatchABI(
         entry_symbol="forward", compiler_generated_dispatch_only=True,
@@ -411,7 +411,7 @@ def main() -> None:
     input_read_view_receipt_sha = None
     inventory_source = source
     if args.generic_input_view:
-        from merlin.llvmlower.generic_form import (
+        from merlin.compiler.lower.model.generic_form import (
             create_generic_read_view,
             recheck_generic_read_view,
         )
@@ -455,8 +455,8 @@ def main() -> None:
     os.environ["MERLIN_SPIKE"] = str(riscv_root / "bin/spike")
     os.environ["MERLIN_COMPILE_TIMEOUT_S"] = str(args.compile_timeout_s)
     sys.path.insert(0, str(merlin_src))
-    from merlin.llvmlower.device_build import DeviceRouting
-    from merlin.model_check.admission import service as structural_admission
+    from merlin.compiler.lower.model.device_build import DeviceRouting
+    from merlin.evaluation.model.admission import service as structural_admission
     from merlin.runtime.backends import spike_model
 
     from mx_gemmini_support.merlin_bf16_prepare import MXBF16CatalogPreparation

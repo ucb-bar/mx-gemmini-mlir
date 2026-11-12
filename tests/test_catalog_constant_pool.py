@@ -193,12 +193,12 @@ def test_two_real_admitted_images_preserve_three_changed_partial_tile_calls(tmp_
     startup, extension = os.environ.get("MERLIN_TEST_STARTUP"), os.environ.get("MERLIN_TEST_EXTLIB")
     if not startup or not extension:
         pytest.skip("explicit startup and selected simulator extension required")
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
 
     builds, profile, root, readelf = native_catalogs
     code, pool, maps, record = prepare(tmp_path, native_catalogs)

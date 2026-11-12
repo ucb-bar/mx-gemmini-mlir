@@ -72,7 +72,7 @@ def test_rotary_broadcast_and_subtraction_emit_vpu_programs() -> None:
 def test_frozen_elementwise_sites_are_source_bound(
         model: str, expected: int, mul: int, sub: int, add: int, div: int,
         swaps: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     sites = selected_elementwise_sites(source, VPU)
     assert len(sites) == expected
@@ -89,8 +89,8 @@ def test_frozen_elementwise_sites_are_source_bound(
                                             ("gemma2_2b", 53)))
 def test_frozen_elementwise_rewrites_to_external_calls(
         tmp_path: Path, model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     prepared = tmp_path / "source.mlir"

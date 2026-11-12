@@ -46,7 +46,7 @@ def test_row_reduce_kernel_and_ranked_shim() -> None:
 ))
 def test_frozen_reductions_exclude_fused_softmax(
         model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     sites = selected_row_reduce_sites(source, VPU)
     assert len(sites) == expected
@@ -58,8 +58,8 @@ def test_frozen_reductions_exclude_fused_softmax(
 @pytest.mark.parametrize("model,expected", (("tinyllama", 5), ("smolvla", 56)))
 def test_frozen_reductions_rewrite_to_external_calls(
         tmp_path: Path, model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     prepared = tmp_path / "source.mlir"

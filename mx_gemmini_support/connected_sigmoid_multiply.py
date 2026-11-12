@@ -87,10 +87,10 @@ def check_sigmoid_multiply(module, program):
 
 
 def _resident(profile, count, source_digest):
-    from merlin.xdsl_dialects.lowering.connected_dispatch import (
+    from merlin.compiler.dialects.lowering.connected_dispatch import (
         lower_connected_dispatches,
     )
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         Buffer,
         DispatchProgram,
         Node,

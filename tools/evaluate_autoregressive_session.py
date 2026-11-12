@@ -112,8 +112,8 @@ def evaluate(
     run_path, link_path, capture_root, profile_path, builds, policies, target_identity
 ):
     from m2m.capture.bundle_integrity import verify_bundle_integrity
-    from merlin.llvmlower.session_bundle import load
-    from merlin.llvmlower.session_outputs import (
+    from merlin.compiler.lower.model.session_bundle import load
+    from merlin.compiler.lower.model.session_outputs import (
         assembled_output_bytes,
         observed_output_dump_bytes,
     )

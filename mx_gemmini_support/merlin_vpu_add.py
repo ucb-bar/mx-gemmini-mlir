@@ -21,7 +21,7 @@ def _symbol(shape: tuple[int, ...], dtype: str, broadcast: str) -> str:
 
 def selected_add_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select pure source addf generics with exact identity or bias maps."""
-    from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
+    from merlin.development.targetgen.contract.linalg_iface import parse_linalg_mlir
 
     if (not profile["resources"].get("vpu") or
             profile.get("transport") != "rocket_rocc" or
@@ -153,8 +153,8 @@ class MXVPUAddPostOffload:
         self.enabled_regions = enabled_regions
 
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
         from xdsl.dialects import func, tensor
         from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
         from xdsl.ir import Region
@@ -266,7 +266,7 @@ class MXVPUPostOffload:
         self.host_softmax_policy = host_softmax_policy
         self.profile = profile
         if host_softmax_policy is not None:
-            from merlin.llvmlower.cpu_softmax import (
+            from merlin.compiler.lower.model.cpu_softmax import (
                 CPU_SOFTMAX_F32_AVX2_POLICY, LIBM_SOFTMAX_F32_FINITE_POLICY,
                 LIBM_SOFTMAX_F32_RNE_POLICY,
             )

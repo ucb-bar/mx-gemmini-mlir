@@ -38,8 +38,8 @@ def check(name, out, *, stage_build=None, link_path=None, run_path=None):
     else:
         if not link_path or not run_path or stage_build:
             raise ValueError("session needs --link-receipt and --run-receipt only")
-        from merlin.llvmlower.session_bundle import load
-        from merlin.llvmlower.session_outputs import observed_output_dump_bytes
+        from merlin.compiler.lower.model.session_bundle import load
+        from merlin.compiler.lower.model.session_outputs import observed_output_dump_bytes
 
         from tools.compare_linked_session_cycles import _load
 

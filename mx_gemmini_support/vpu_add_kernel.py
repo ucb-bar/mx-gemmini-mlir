@@ -80,7 +80,7 @@ def _issue(profile: dict, *, elements: int, symbol: str, operation: str) -> str:
 
 def _broadcast_index(result_shape: tuple[int, ...], rhs_shape: tuple[int, ...],
                      rhs_axes: tuple[int, ...]) -> str:
-    from merlin.llvmlower.tensor_broadcast import dense_broadcast_index
+    from merlin.compiler.lower.model.tensor_broadcast import dense_broadcast_index
 
     return dense_broadcast_index(result_shape, rhs_shape, rhs_axes)
 

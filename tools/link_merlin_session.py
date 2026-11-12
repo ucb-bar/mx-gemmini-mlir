@@ -205,7 +205,7 @@ def _session_math_contract(receipts: dict[str, dict], selected):
 
 def _projected_stage_entry(program, build: Path, receipt: dict):
     """Join the actual compiled stage to a fully rederived generic ABI proof."""
-    from merlin.llvmlower.session_projection import read_program_entry_projection
+    from merlin.compiler.lower.model.session_projection import read_program_entry_projection
 
     path = build / "entry_weight_projection/entry_weight_projection.json"
     if not receipt.get("prune_unused_checkpoint_weights"):
@@ -241,7 +241,7 @@ def _namespace_stage(
     *, index: int, name: str, objects: list[Path], previous: set[str],
     nm: Path, objcopy: Path, output: Path, external_symbols: dict[str, str] | None = None,
 ) -> tuple[list[Path], set[str]]:
-    from merlin.llvmlower.object_namespace import namespace_object
+    from merlin.compiler.lower.model.object_namespace import namespace_object
 
     symbols = set().union(*(_defined(nm, path) for path in objects))
     if "forward" not in symbols or "_mlir_ciface_forward" not in symbols:
@@ -462,8 +462,8 @@ def link_session(
     share_catalog_constants: bool = False,
 ) -> dict:
     sys.path.insert(0, str(merlin_src))
-    from merlin.llvmlower import session_bundle
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model import session_bundle
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
@@ -542,7 +542,7 @@ def link_session(
     weight_sources = [builds[row["name"]] / "cgen/weights.bin" for row in generated["programs"]
                       if row["weights_bytes"]]
     if pack_program_weights:
-        from merlin.llvmlower.session_weight_pool import materialize_program_weight_pool
+        from merlin.compiler.lower.model.session_weight_pool import materialize_program_weight_pool
 
         shared_weights = materialize_program_weight_pool(
             session, generated, output / "shared_weights", entry_projections=projections or None,
@@ -570,8 +570,8 @@ def link_session(
              "-mabi=lp64d", "-mcmodel=medany"]
     math_objects, math_link_flags, math_record = [], (), None
     if guarded_math is not None:
-        from merlin.llvmlower.compilation_recipe import CompilationRecipe
-        from merlin.llvmlower.link_supplier_trace import trace_symbol_flags
+        from merlin.compiler.lower.model.compilation_recipe import CompilationRecipe
+        from merlin.compiler.lower.model.link_supplier_trace import trace_symbol_flags
         from merlin.runtime.host_math import build_host_math, selected_libm_archive
 
         def observed_run(argv, **kwargs):
@@ -615,7 +615,7 @@ def link_session(
     shared_constants = None
     shared_code, constant_maps = {}, {}
     if share_catalog_constants:
-        from merlin.llvmlower import toolchain
+        from merlin.compiler.lower.model import toolchain
 
         from mx_gemmini_support.catalog_constant_pool import (
             prepare_shared_catalog_constants,
@@ -655,7 +655,7 @@ def link_session(
     _run(weight_command, cwd=Path(shared_weights["path"]).parent)
     linked_weight_storage_reuse = None
     if reuse_linked_weights_object is not None:
-        from merlin.llvmlower.artifact_storage import share_identical_artifact
+        from merlin.compiler.lower.model.artifact_storage import share_identical_artifact
 
         linked_weight_storage_reuse = share_identical_artifact(reuse_linked_weights_object, weight_object)
         linked_weight_storage_reuse.update(
@@ -831,7 +831,7 @@ def main() -> None:
                         help="per-output console limit (16 KiB–1 MiB; 64 MiB total)")
     args = parser.parse_args()
     sys.path.insert(0, str(args.merlin_src.resolve(strict=True)))
-    from merlin.model_check.admission import service as structural_admission
+    from merlin.evaluation.model.admission import service as structural_admission
     from merlin.runtime.host_math import GuardedF32Call
     record = link_session(
         args.session_root.resolve(strict=True), _stage_paths(args.stage_build),

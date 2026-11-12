@@ -65,7 +65,7 @@ def test_first_output_digest_matches_merlin_supported_dtype(tmp_path) -> None:
 
 
 def test_stage_refuses_partial_catalog_after_merlin_preparation(tmp_path, monkeypatch) -> None:
-    pytest.importorskip("merlin.system.offload")
+    pytest.importorskip("merlin.target.system.offload")
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
     profile = load_profile(
         ROOT / "profiles/gemmini-mx-cleanup-266c593/MxE4M3Fp4VpuGemminiRocketConfig.json")

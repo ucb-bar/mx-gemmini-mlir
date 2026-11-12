@@ -85,8 +85,8 @@ def test_catalog_transport_requires_explicit_compatible_selections(tmp_path, dis
 
 
 def fixture(tmp_path, *, live=False, barrier=""):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects._common import text
     from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
 
     result = "(tensor<2x16xf32>,tensor<32xi8>)" if live else "tensor<32xi8>"

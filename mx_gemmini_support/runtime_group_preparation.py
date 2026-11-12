@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 def emit_runtime_group_preparation(elements: int = 32, *, bf16_input: bool = False) -> str:
-    from merlin.llvmlower.word_group_preparation import emit_u16_group_preparation
+    from merlin.compiler.lower.model.word_group_preparation import emit_u16_group_preparation
 
     if type(elements) is not int or elements != 32:
         raise ValueError("MX runtime quantization requires its selected 32-element scale contract")

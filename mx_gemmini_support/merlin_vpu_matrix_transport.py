@@ -12,7 +12,7 @@ def _tensor(shape, dtype):
 
 
 def register_producer(pair, profile, selection, compile_source, abi_entries):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     from .merlin_connected_multiply import emit_chain_kernel
 
@@ -31,7 +31,7 @@ def register_producer(pair, profile, selection, compile_source, abi_entries):
 
 
 def register_preparation(generated, shape, prepare_entry, compile_source, abi_entries, sources):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     from .dense_kernel import emit_activation_preparation
 
@@ -61,9 +61,9 @@ class MXVPUMatrixTransportPostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
-        from merlin.xdsl_dialects.lowering.private_transport import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
+        from merlin.compiler.dialects.lowering.private_transport import (
             PrivateTensorTransport,
             prune_unobserved_transport_views,
             rewrite_private_transports,

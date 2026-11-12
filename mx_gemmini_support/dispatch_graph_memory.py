@@ -35,7 +35,7 @@ def dispatch_graph_memory_plan(program, profile: dict, *, source_mlir_sha256: st
     and a hash of each emitted dispatch source are required for the receipt.
     The planner does not infer accelerator effects from a dispatch symbol.
     """
-    from merlin.xdsl_dialects.lowering.dispatch_program import verify_program
+    from merlin.compiler.dialects.lowering.dispatch_program import verify_program
 
     if problems := verify_program(program):
         raise PhysicalMemoryError("invalid Merlin dispatch DAG: " + "; ".join(problems))

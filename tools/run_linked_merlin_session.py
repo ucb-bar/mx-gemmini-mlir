@@ -57,7 +57,7 @@ def validate_math_record(link: dict, riscv_root: Path) -> None:
     record = link.get("host_math")
     if record is None:
         return
-    from merlin.llvmlower.compilation_recipe import verify_completed_recipe
+    from merlin.compiler.lower.model.compilation_recipe import verify_completed_recipe
     from merlin.runtime.host_math import (
         GuardedF32Call,
         host_math_recipe,
@@ -294,7 +294,7 @@ def extract_output_dumps(log: str, session, selected: list[dict],
     """Save bounded guest values only when their bytes match the session digest."""
     if not DEFAULT_DUMP_LIMIT_BYTES <= byte_limit <= MAX_DUMP_LIMIT_BYTES:
         raise ValueError("invalid linked output dump byte limit")
-    from merlin.llvmlower.session_outputs import observed_output_dump_bytes
+    from merlin.compiler.lower.model.session_outputs import observed_output_dump_bytes
 
     values = observed_output_dump_bytes(log, session, selected, digests, byte_limit=byte_limit)
     if not values:
@@ -324,7 +324,7 @@ def run_session(
     if perf_config and spike_extlib is None:
         raise ValueError("Nicolas timing model requires a Spike extension")
     sys.path.insert(0, str(merlin_src))
-    from merlin.llvmlower.session_bundle import load
+    from merlin.compiler.lower.model.session_bundle import load
 
     session = load(session_root)
     link = json.loads(link_receipt.read_text(encoding="utf-8"))

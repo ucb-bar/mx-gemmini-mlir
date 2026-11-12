@@ -69,9 +69,9 @@ class MXBF16CatalogPreparation:
         self.precision_overrides = precision_overrides
 
     def __call__(self, source_path: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
         from merlin.compiler.planning.contractions import catalog_source_contractions
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.dialects._common import text
 
         source_path, workdir = Path(source_path), Path(workdir)
         source = source_path.read_bytes()

@@ -4,7 +4,7 @@ import copy
 from pathlib import Path
 
 import pytest
-from merlin.frontends.linalg_mlir import parse_mlir_text
+from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
 from mx_gemmini_support.merlin_gated_projection import (
     register_gated_projections,
@@ -267,7 +267,7 @@ def test_full_pipeline_fuses_before_transporting_down_projection_to_residual(tmp
     import hashlib
     import json
 
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.dialects._common import text
     from xdsl.dialects import func, tensor
     from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
     from xdsl.ir import Region
@@ -376,7 +376,7 @@ def test_full_pipeline_fuses_before_transporting_down_projection_to_residual(tmp
     pipeline.gated_projection_packing = MXGatedProjectionPostOffload(catalog_path)
     pipeline.matrix_transport = MXMatrixTransportPostOffload(catalog_path)
     result = pipeline(prepared, sidecar, tmp_path)
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     assert calls(parse_mlir_file(result)) == [
         "gated",

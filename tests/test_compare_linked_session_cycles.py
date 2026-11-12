@@ -97,7 +97,7 @@ def test_receipt_bound_exit_zero_model_deadlock_is_not_a_speedup(tmp_path):
 
 
 def measured_pair(root, capture, *, cycles, reset, prepare):
-    from merlin.llvmlower.session_bundle import load
+    from merlin.compiler.lower.model.session_bundle import load
 
     from tools.run_linked_merlin_session import (
         observe_preparation_output,

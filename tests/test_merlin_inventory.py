@@ -22,7 +22,7 @@ PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
 @pytest.mark.parametrize("model", (
     "tinyllama", "deepseek_r1_distill_qwen_1_5b", "gemma2_2b", "smolvla"))
 def test_merlin_inventory_preserves_mx_precision_plan(model: str) -> None:
-    pytest.importorskip("merlin.targetgen.contract.linalg_iface")
+    pytest.importorskip("merlin.development.targetgen.contract.linalg_iface")
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     from_merlin = build_mx_worklist_from_merlin(source, PROFILE)
     from_local = build_model2mlir_worklist(source, PROFILE)

@@ -37,7 +37,7 @@ def plan_merlin_catalog(prepared: Path, profile: dict, *,
     Source region and operation ordinal are both checked because a region
     label alone can survive an accidental graph rewrite that changes its ABI.
     """
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
     from merlin.compiler.planning.contractions import catalog_source_contractions
 
     prepared = Path(prepared)

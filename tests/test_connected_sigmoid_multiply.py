@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def source(elements=137):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         lower_model_to_dispatch_program,
     )
 

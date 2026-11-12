@@ -72,12 +72,12 @@ def main():
             or not 0 <= args.refuse_bits < 1 << 32):
         parser.error("fresh output, explicit admission, valid MX extents and a bounded source are required")
     import numpy as np
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
 
     root = Path(__file__).resolve().parents[1]
     out = args.out_dir.resolve()

@@ -62,8 +62,8 @@ def eligible_sites(source: str, profile: dict) -> tuple[
 
 def singleton_matrix_regions(source: str, matrix_regions) -> frozenset[str]:
     """Bind matrix sites to proven unit reductions, without provenance heuristics."""
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects.lowering.singleton_reductions import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects.lowering.singleton_reductions import (
         singleton_reduction_axes,
     )
 

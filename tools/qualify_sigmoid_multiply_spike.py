@@ -72,14 +72,14 @@ def main():
     if args.out_dir.exists() or not args.structural_elf_admission:
         parser.error("fresh output and explicit structural ELF admission required")
     import numpy as np
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.evaluation.model.admission import service
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         lower_model_to_dispatch_program,
     )
 

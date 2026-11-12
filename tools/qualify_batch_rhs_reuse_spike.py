@@ -87,12 +87,12 @@ def main():
             or batch // repeat < 2 or batch * m * n > 1048576
             or max(batch * m * k, batch * k * n) > 16777216 or k > 256):
         parser.error("fresh admitted bounded shapes and at least two complete repeated groups required")
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
 
     profile = load_profile(args.profile)
     generated = emit_dense_batch_contraction(profile, (batch, m, n, k), precision=args.precision,

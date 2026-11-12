@@ -141,12 +141,12 @@ def main():
         objects.append(obj)
     elf = out / "section.elf"
     run([cc, "-nostdlib", "-nostartfiles", "-static", "-T", startup / "test.ld", *objects, "-lm", "-lgcc", "-o", elf], "link")
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
     route = DeviceRouting(device="mx_gemmini", package_dir=Path(__file__).resolve().parents[1], operand_dtype="f32",
                           accum_dtype="bf16", linked_elf_admission=service("mx_gemmini"))
     admission = admit_linked_device_elf(route, freeze_device_elf_admission(route), elf=elf, linked_sha256=sha(elf), directory=out)

@@ -11,7 +11,7 @@ from .vpu_rms_packing import emit_vpu_rms_packing
 
 
 def register_rms_packing(pairs, kernels, profile, compile_source, abi_entries):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     records = {}
     for pair in pairs:
@@ -83,8 +83,8 @@ def rewrite_rms_packing(module, catalog):
     metadata establishes the target arithmetic; complete SSA use closure keeps
     every intermediate private. Unknown calls or live escapes keep the original.
     """
-    from merlin.xdsl_dialects.lowering.shared_preparation import contiguous_tensor_root
-    from merlin.xdsl_dialects.lowering.tensor_chains import (
+    from merlin.compiler.dialects.lowering.shared_preparation import contiguous_tensor_root
+    from merlin.compiler.dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
         pure_tensor_compute,
     )
@@ -275,8 +275,8 @@ class MXRmsPackingPostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
 
         catalog = json.loads(self.catalog_path.read_text())
         route = json.loads(Path(sidecar).read_text())

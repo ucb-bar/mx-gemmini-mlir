@@ -30,14 +30,14 @@ def main():
     if args.out_dir.exists() or not args.structural_elf_admission:
         parser.error("fresh output and explicit structural admission required")
     from merlin.common.yaml import load_yaml
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.llvmlower.session_bundle import load
-    from merlin.llvmlower.session_projection import read_program_entry_projection
-    from merlin.model_check.admission import service
+    from merlin.compiler.lower.model.session_bundle import load
+    from merlin.compiler.lower.model.session_projection import read_program_entry_projection
+    from merlin.evaluation.model.admission import service
 
     from mx_gemmini_support.target_profile import load_profile, profile_sha256
 

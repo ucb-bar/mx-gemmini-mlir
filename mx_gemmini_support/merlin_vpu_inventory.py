@@ -18,7 +18,7 @@ from .target_profile import profile_sha256
 
 def audit_softmax_boundaries(mlir_text: str, profile: dict) -> dict:
     """Classify actual model2MLIR softmax input/output tensors by source region."""
-    from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
+    from merlin.development.targetgen.contract.linalg_iface import parse_linalg_mlir
 
     inventory = parse_linalg_mlir(mlir_text)
     units = contract_for_profile(profile)["compute_units"]

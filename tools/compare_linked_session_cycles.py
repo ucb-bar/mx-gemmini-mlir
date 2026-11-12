@@ -44,7 +44,7 @@ def _load(link_path: Path, run_path: Path) -> tuple[dict, dict]:
         raise ValueError("session timing does not reconcile with step records")
     preparation_schema = link.get("preparation_performance_schema")
     if preparation_schema is not None:
-        from merlin.llvmlower.session_bundle import load
+        from merlin.compiler.lower.model.session_bundle import load
 
         from tools.run_linked_merlin_session import (
             observe_preparation_output,

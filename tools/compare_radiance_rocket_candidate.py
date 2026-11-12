@@ -81,7 +81,7 @@ def compare_candidate(port, capture, build):
     if sha(extension) != EXTENSION_SHA256:
         raise ValueError("candidate extension bytes differ")
     # Reopen every directly observed compiler/link input and the actual ELF.
-    from merlin.llvmlower.compilation_recipe import verify_completed_recipe
+    from merlin.compiler.lower.model.compilation_recipe import verify_completed_recipe
 
     recipe = build / "compilation_recipe.json"
     verify_completed_recipe(

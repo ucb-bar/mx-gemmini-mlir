@@ -41,7 +41,7 @@ def verify_vpu_policy_bindings(manifest, resolved_policy, receipt):
 def verify_capture_and_builds(session_root, reference_archive, builds, policies, profile_path, link):
     """Reopen the fresh capture, original tokens/checkpoint and compiled inputs."""
     from m2m.capture.bundle_integrity import verify_bundle_integrity
-    from merlin.llvmlower.session_bundle import load
+    from merlin.compiler.lower.model.session_bundle import load
 
     from mx_gemmini_support.execution_policy import load_policy
     from mx_gemmini_support.target_profile import load_profile, profile_sha256
@@ -149,7 +149,7 @@ def verify_capture_and_builds(session_root, reference_archive, builds, policies,
 
 def verify_completed_run(run_path, link_path, session):
     """Reparse all native records and reopen actual admitted image and full taps."""
-    from merlin.llvmlower.session_outputs import (
+    from merlin.compiler.lower.model.session_outputs import (
         assembled_output_bytes,
         observed_output_dump_bytes,
     )

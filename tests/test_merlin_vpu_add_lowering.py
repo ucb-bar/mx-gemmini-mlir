@@ -46,7 +46,7 @@ def test_add_kernel_chunks_tail_and_bias_abi() -> None:
     ("gemma2_2b", 17), ("smolvla", 114),
 ))
 def test_frozen_add_sites_are_source_bound(model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     sites = selected_add_sites(source, VPU)
     assert len(sites) == expected
@@ -57,8 +57,8 @@ def test_frozen_add_sites_are_source_bound(model: str, expected: int) -> None:
 @pytest.mark.parametrize("model,expected", (("tinyllama", 13), ("smolvla", 114)))
 def test_frozen_adds_rewrite_to_external_calls(
         tmp_path: Path, model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     prepared = tmp_path / "source.mlir"

@@ -17,9 +17,9 @@ class MXSingletonReductionPreparation:
         self.downstream = downstream
 
     def __call__(self, source: Path, workdir: Path) -> Path:
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
-        from merlin.xdsl_dialects.lowering.singleton_reductions import (
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
+        from merlin.compiler.dialects.lowering.singleton_reductions import (
             parallelize_singleton_reductions,
         )
 

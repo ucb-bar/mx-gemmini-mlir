@@ -22,7 +22,7 @@ def build_mx_worklist_from_merlin(mlir_text: str, profile: dict) -> dict:
     never a reason to silently use this package's older local parser.
     """
     try:
-        from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
+        from merlin.development.targetgen.contract.linalg_iface import parse_linalg_mlir
     except ImportError as error:
         raise RuntimeError("Merlin model inventory is required for whole-model MX planning") from error
 

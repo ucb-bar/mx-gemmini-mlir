@@ -1,7 +1,7 @@
 """Only independent, effect-checked packed-input projections may execute together."""
 
 import pytest
-from merlin.frontends.linalg_mlir import parse_mlir_text
+from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
 from mx_gemmini_support.merlin_projection_group import rewrite_projection_groups
 

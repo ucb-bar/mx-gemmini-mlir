@@ -6,7 +6,7 @@ import tarfile
 from pathlib import Path
 
 import pytest
-from merlin.frontends.linalg_mlir import parse_mlir_file, parse_mlir_text
+from merlin.compiler.frontend.linalg_mlir import parse_mlir_file, parse_mlir_text
 
 from mx_gemmini_support.merlin_connected_sigmoid import (
     MXConnectedSigmoidPostOffload,

@@ -72,7 +72,7 @@ def main():
         program["conversion_result"] = converted
         print("weights bound", name, flush=True)
     summary = write_multi_program_bundle(programs, dict(external.metadata), out / "capture")
-    from merlin.llvmlower.session_bundle import load
+    from merlin.compiler.lower.model.session_bundle import load
 
     session = load(out / "capture")
     if [(p.name, p.steps) for p in session.programs] != [("prefill", 1), ("decode", 32)]:

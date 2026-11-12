@@ -24,7 +24,7 @@ def _strides(shape: tuple[int, ...]) -> tuple[int, ...]:
 
 def selected_unary_sites(mlir_text: str, profile: dict) -> list[dict]:
     """Select exact pure unary generics with identity maps."""
-    from merlin.targetgen.contract.linalg_iface import parse_linalg_mlir
+    from merlin.development.targetgen.contract.linalg_iface import parse_linalg_mlir
 
     lanes = model_vpu_lanes(profile)
     if lanes is None:
@@ -212,8 +212,8 @@ class MXVPUUnaryPostOffload:
         from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
         from xdsl.ir import Region
 
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
 
         prepared, workdir = Path(prepared), Path(workdir)
         source = prepared.read_text()

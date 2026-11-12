@@ -7,7 +7,7 @@ import hashlib
 import numpy as np
 import pytest
 
-from merlin.llvmlower.session_bundle import MultiProgramSession, Program
+from merlin.compiler.lower.model.session_bundle import MultiProgramSession, Program
 from tools.assemble_session_output import assemble
 
 

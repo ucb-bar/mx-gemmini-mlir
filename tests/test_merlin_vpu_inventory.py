@@ -14,7 +14,7 @@ PROFILE = load_profile(ROOT / "profiles/gemmini-mx-cleanup-266c593/"
 
 
 def test_bf16_rank_two_source_softmax_cannot_silently_fall_back() -> None:
-    pytest.importorskip("merlin.targetgen.contract.linalg_iface")
+    pytest.importorskip("merlin.development.targetgen.contract.linalg_iface")
     source = (ROOT / "docs/evidence/nicolas_vpu_softmax_model2mlir_329718b/"
               "softmax.model2mlir.mlir").read_text()
     inventory = audit_softmax_boundaries(source, PROFILE)
@@ -26,7 +26,7 @@ def test_bf16_rank_two_source_softmax_cannot_silently_fall_back() -> None:
 
 
 def test_f32_attention_softmax_requires_conversion_before_vpu_placement() -> None:
-    pytest.importorskip("merlin.targetgen.contract.linalg_iface")
+    pytest.importorskip("merlin.development.targetgen.contract.linalg_iface")
     source = (ROOT / "docs/evidence/nicolas_attn_vpu_source_baseline_e9ded36_0344bcb/"
               "attention.model2mlir.mlir").read_text()
     inventory = audit_softmax_boundaries(source, PROFILE)

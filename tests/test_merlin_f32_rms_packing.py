@@ -1,7 +1,7 @@
 """FP32 RMS fusion preserves observable tensors and exact arithmetic boundaries."""
 
 import pytest
-from merlin.frontends.linalg_mlir import parse_mlir_text
+from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
 from mx_gemmini_support.merlin_f32_rms_packing import rewrite_f32_rms_packing
 

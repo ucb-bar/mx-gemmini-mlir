@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from merlin.llvmlower.session_bundle import MultiProgramSession, Program
+from merlin.compiler.lower.model.session_bundle import MultiProgramSession, Program
 
 from tools.evaluate_matched_tinyllama_session import (
     trajectory_metrics,

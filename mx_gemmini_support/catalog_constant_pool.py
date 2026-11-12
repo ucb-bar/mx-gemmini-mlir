@@ -75,10 +75,10 @@ def prepare_shared_catalog_constants(builds, *, profile, output, riscv_root, rea
     their nonnull aligned addresses solely for synchronous readonly DMA. Unknown
     references, changed source, objects, bytes or format contracts refuse.
     """
-    from merlin.llvmlower import immutable_constant_pool
-    from merlin.llvmlower.artifact_storage import share_identical_artifact
-    from merlin.llvmlower.constant_object import ConstantBlob, reuse_constant_object
-    from merlin.llvmlower.immutable_constant_pool import (
+    from merlin.compiler.lower.model import immutable_constant_pool
+    from merlin.compiler.lower.model.artifact_storage import share_identical_artifact
+    from merlin.compiler.lower.model.constant_object import ConstantBlob, reuse_constant_object
+    from merlin.compiler.lower.model.immutable_constant_pool import (
         ACCESS,
         PoolOperand,
         plan_immutable_constant_pool,

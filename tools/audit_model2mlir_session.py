@@ -67,7 +67,7 @@ def summarize_dense_shape_plans(proposal: dict, profile: dict) -> dict:
 
 def read_inventory_source(source: Path, profile: dict, parse_workdir: Path | None = None):
     """Use an explicit printer work directory without changing capture bytes."""
-    from merlin.targetgen.contract.linalg_iface import (
+    from merlin.development.targetgen.contract.linalg_iface import (
         LinalgParseError,
         parse_linalg_mlir,
     )
@@ -81,7 +81,7 @@ def read_inventory_source(source: Path, profile: dict, parse_workdir: Path | Non
     except LinalgParseError:
         if parse_workdir is None:
             raise
-        from merlin.llvmlower.generic_form import (
+        from merlin.compiler.lower.model.generic_form import (
             create_generic_read_view,
             recheck_generic_read_view,
         )

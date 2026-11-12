@@ -24,7 +24,7 @@ Create a policy with the same printer and original stage input:
 ```python
 from pathlib import Path
 import json
-from merlin.llvmlower.generic_form import create_generic_read_view
+from merlin.compiler.lower.model.generic_form import create_generic_read_view
 from mx_gemmini_support.execution_policy import make_policy
 from mx_gemmini_support.target_profile import load_profile
 

@@ -75,13 +75,13 @@ def main():
     args = parser.parse_args()
     if args.out_dir.exists() or not args.structural_elf_admission:
         parser.error("fresh output directory and explicit structural admission required")
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.llvmlower.device_build import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.lower.model.device_build import (
         DeviceRouting,
         admit_linked_device_elf,
         freeze_device_elf_admission,
     )
-    from merlin.model_check.admission import service
+    from merlin.evaluation.model.admission import service
 
     capture = args.capture.resolve(strict=True)
     recorded = json.loads((capture / "receipt.json").read_text())

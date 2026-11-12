@@ -19,7 +19,7 @@ def register_gated_projections(
     *,
     activation_arithmetic="reciprocal",
 ):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     by_symbol = {k["symbol"]: k for k in kernels}
     records = []
@@ -187,8 +187,8 @@ def prepared_consumers_for_packed_input(
 
 
 def rewrite_gated_projections(module, catalog, *, source_callees=None):
-    from merlin.xdsl_dialects.lowering.shared_preparation import contiguous_tensor_root
-    from merlin.xdsl_dialects.lowering.tensor_chains import (
+    from merlin.compiler.dialects.lowering.shared_preparation import contiguous_tensor_root
+    from merlin.compiler.dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
         pure_tensor_compute,
     )
@@ -423,8 +423,8 @@ class MXGatedProjectionPostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
 
         catalog = json.loads(self.catalog_path.read_text())
         routing = json.loads(Path(sidecar).read_text())

@@ -102,8 +102,8 @@ def test_incomplete_batch_groups_refuse(repeat):
 
 
 def post_fixture(tmp_path):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects._common import text
     from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
 
     module = parse_mlir_text('''module {
@@ -174,7 +174,7 @@ def enable_compact_fixture(catalog, tmp_path):
 
 
 def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
     from xdsl.dialects.func import CallOp
 
     from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
@@ -194,8 +194,8 @@ def test_compact_provider_changes_only_the_proved_read_input_abi(tmp_path):
 
 
 def test_live_expansion_uses_qualified_ordinary_packing_without_compact_views(tmp_path):
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.dialects._common import text
     from xdsl.dialects import builtin, func
 
     from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload
@@ -252,8 +252,8 @@ def test_compact_endpoint_requires_matching_catalog_abi(tmp_path):
 def test_shared_declaration_selects_each_current_call_independently(tmp_path, unproved, compact):
     import copy
 
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.dialects._common import text
     from xdsl.dialects import func, tensor
 
     from mx_gemmini_support.merlin_batch_rhs import MXBatchRHSReusePostOffload

@@ -67,10 +67,10 @@ def main():
     if args.out_dir.exists():
         parser.error("output directory must be fresh")
     import numpy as np
-    from merlin.frontends import linalg_patterns
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.llvmlower import broadcast_preparation, device_shim, tensor_broadcast
-    from merlin.xdsl_dialects.lowering import connected_dispatch, tensor_chains
+    from merlin.compiler.frontend import linalg_patterns
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.lower.model import broadcast_preparation, device_shim, tensor_broadcast
+    from merlin.compiler.dialects.lowering import connected_dispatch, tensor_chains
 
     capture = args.capture.resolve(strict=True)
     receipt = json.loads((capture / "receipt.json").read_text())

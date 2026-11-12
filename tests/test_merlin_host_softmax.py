@@ -21,11 +21,11 @@ POLICY = "torch_2_10_cpu_softmax_f32_avx2"
 
 @pytest.fixture(autouse=True)
 def merlin_available():
-    pytest.importorskip("merlin.llvmlower.cpu_softmax")
+    pytest.importorskip("merlin.compiler.lower.model.cpu_softmax")
 
 
 def rewrite(tmp_path, source, regions=None, policy=POLICY):
-    pytest.importorskip("merlin.frontends.linalg_mlir")
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
     prepared = tmp_path / "source.mlir"
     prepared.write_text(source)
     sidecar = tmp_path / "sidecar.json"
@@ -50,7 +50,7 @@ def source():
 
 
 def test_source_policy_replaces_complete_regions(tmp_path, source):
-    from merlin.frontends.linalg_mlir import parse_mlir_file, parse_mlir_text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file, parse_mlir_text
 
     original_exp = sum(op.name == "math.exp" for op in parse_mlir_text(source).walk())
     output = rewrite(tmp_path, source)
@@ -77,8 +77,8 @@ def test_unselected_regions_are_preserved(tmp_path, source):
 
 
 def test_libm_policy_preserves_every_other_source_operation(tmp_path, source):
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects._common import text
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects._common import text
 
     original = text(parse_mlir_text(source))
     assert original.count("arith.maximumf") == 2
@@ -87,7 +87,7 @@ def test_libm_policy_preserves_every_other_source_operation(tmp_path, source):
 
 
 def test_rne_policy_guards_only_exp_underflow(tmp_path, source):
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     output = rewrite(tmp_path, source, policy="libm_f32_ordered_rne")
     module = parse_mlir_file(output)

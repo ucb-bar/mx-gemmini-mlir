@@ -44,8 +44,8 @@ def test_model_sized_softmax_tiles_and_shim() -> None:
 ))
 def test_frozen_source_softmax_rewrites_to_external_vpu_calls(
         tmp_path: Path, model: str, expected: int) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     source = gzip.decompress((ARCHIVE / f"{model}.mlir.gz").read_bytes()).decode()
     sites = selected_softmax_sites(source, VPU)

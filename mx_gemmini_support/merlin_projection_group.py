@@ -11,8 +11,8 @@ from .projection_group import emit_projection_group
 
 
 def projection_candidates(prepared, plan):
-    from merlin.frontends.linalg_mlir import parse_mlir_file
-    from merlin.xdsl_dialects.lowering.shared_preparation import contiguous_tensor_root
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+    from merlin.compiler.dialects.lowering.shared_preparation import contiguous_tensor_root
 
     module = parse_mlir_file(prepared)
     operations = list(module.walk())
@@ -39,7 +39,7 @@ def projection_candidates(prepared, plan):
 def register_projection_groups(
     groups, kernels, profile, workspace_bytes, compile_source, abi_entries
 ):
-    from merlin.llvmlower.device_shim import LogicalBuffer
+    from merlin.compiler.lower.model.device_shim import LogicalBuffer
 
     by_symbol = {k["symbol"]: k for k in kernels}
     records = []
@@ -116,7 +116,7 @@ def register_projection_groups(
 
 
 def rewrite_projection_groups(module, catalog):
-    from merlin.xdsl_dialects.lowering.tensor_chains import (
+    from merlin.compiler.dialects.lowering.tensor_chains import (
         destination_only_tensor_call,
         pure_tensor_compute,
     )
@@ -226,8 +226,8 @@ class MXProjectionGroupPostOffload:
         self.catalog_path = Path(catalog_path)
 
     def __call__(self, prepared, sidecar, workdir):
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
 
         catalog = json.loads(self.catalog_path.read_text())
         route = json.loads(Path(sidecar).read_text())

@@ -18,7 +18,7 @@ _NUMPY_DTYPE = {"f32": "<f4", "f16": "<f2", "bf16": "<u2",
 def assemble(session, run: dict, root: Path, *, programs: tuple[str, ...],
              output: int, squeeze_leading_one: bool,
              omit_single_step_axis: bool) -> np.ndarray:
-    from merlin.llvmlower.session_outputs import assembled_output_bytes
+    from merlin.compiler.lower.model.session_outputs import assembled_output_bytes
 
     if (run.get("schema") != "mx_gemmini.merlin_session_spike_run.v1" or
             run.get("complete") is not True):
@@ -82,7 +82,7 @@ def main() -> None:
             receipt_path.is_symlink()):
         parser.error("--out must name a new .npy file and companion receipt")
     sys.path.insert(0, str(args.merlin_src.resolve(strict=True)))
-    from merlin.llvmlower.session_bundle import load
+    from merlin.compiler.lower.model.session_bundle import load
 
     session = load(args.session_root)
     path = args.run_receipt.resolve(strict=True)

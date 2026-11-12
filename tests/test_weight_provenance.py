@@ -12,8 +12,8 @@ from mx_gemmini_support.weight_provenance import source_parameter_arg
     ("(d1, d0)", None),
 ])
 def test_bf16_cast_requires_identity_indexing(input_map, expected_arg) -> None:
-    pytest.importorskip("merlin.frontends.linalg_mlir")
-    from merlin.frontends.linalg_mlir import parse_mlir_text
+    pytest.importorskip("merlin.compiler.frontend.linalg_mlir")
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
     module = parse_mlir_text(f"""module {{
       func.func @forward(%arg0: tensor<2x2xbf16>) -> tensor<2x2xf32> {{

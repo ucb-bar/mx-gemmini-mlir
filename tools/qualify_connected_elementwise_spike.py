@@ -58,9 +58,9 @@ def main():
     if args.out_dir.exists():
         parser.error("output directory must be fresh")
     import numpy as np
-    from merlin.frontends.linalg_mlir import parse_mlir_text
-    from merlin.xdsl_dialects.lowering import connected_dispatch
-    from merlin.xdsl_dialects.lowering.dispatch_program import (
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
+    from merlin.compiler.dialects.lowering import connected_dispatch
+    from merlin.compiler.dialects.lowering.dispatch_program import (
         lower_model_to_dispatch_program,
     )
 

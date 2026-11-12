@@ -41,8 +41,8 @@ class MXFixedWeightPostOffload:
     def __call__(self, prepared: Path, sidecar: Path, workdir: Path) -> Path:
         from xdsl.dialects import func, tensor
 
-        from merlin.frontends.linalg_mlir import parse_mlir_file
-        from merlin.xdsl_dialects._common import text
+        from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
+        from merlin.compiler.dialects._common import text
 
         prepared, sidecar, workdir = map(Path, (prepared, sidecar, workdir))
         source_bytes = prepared.read_bytes()

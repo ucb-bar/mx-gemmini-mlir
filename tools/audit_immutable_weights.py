@@ -22,7 +22,7 @@ def _sha(path: Path) -> str:
 
 
 def build_inventory(build: Path, stage: Path) -> dict:
-    from merlin.frontends.linalg_mlir import parse_mlir_file
+    from merlin.compiler.frontend.linalg_mlir import parse_mlir_file
 
     build, stage = Path(build), Path(stage)
     # Merlin's target hook may place the routed module in its final host ABI

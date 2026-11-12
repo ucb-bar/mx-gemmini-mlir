@@ -1,7 +1,7 @@
 """Softmax packing requires a private probability tensor and exact batch layouts."""
 
 import pytest
-from merlin.frontends.linalg_mlir import parse_mlir_text
+from merlin.compiler.frontend.linalg_mlir import parse_mlir_text
 
 from mx_gemmini_support.merlin_softmax_packing import rewrite_softmax_packing
 
